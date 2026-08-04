@@ -66,6 +66,10 @@ ignore = [
     "RUF001",
     "RUF002",
     "RUF003",
+    # SIM300 flags `Confidence.HIGH >= bar` as a Yoda condition. That is the exact
+    # notation §6.9 uses — `readiness_confidence >= capability.recommended_readiness` —
+    # and inverting it to `bar <= Confidence.HIGH` obscures which side is the threshold.
+    "SIM300",
 ]
 
 [tool.ruff.format]
