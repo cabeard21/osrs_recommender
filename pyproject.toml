@@ -45,7 +45,9 @@ include = ["tracker*"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = [".venv"]
+# `.claude/worktrees/` holds live checkouts of other branches during parallel work;
+# linting them would report another unit's in-progress code as this one's failure.
+extend-exclude = [".venv", ".claude"]
 
 [tool.ruff.lint]
 select = [
