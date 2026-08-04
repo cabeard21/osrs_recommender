@@ -1,0 +1,578 @@
+"""The five §10.6 factor derivations, against a stub evaluator.
+
+The evaluator itself is step 4's (`tracker/progression/`). These tests inject a stub for
+two reasons: the derivations must be provable independently of it, and the case that
+matters most — a requirement evaluating `unknown` — is one line to construct here and a
+whole fixture account to arrange through the real engine.
+
+`StubOutcome` carries exactly the fields step 4's `EvalResult` is contractually frozen to
+expose, so anything asserted here holds of the real one too (see `TestTheStep4Seam`).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+import yaml
+
+from tracker.content.loader import Content
+from tracker.content.requirements import AnyOf, MilestoneLeaf, Requirement
+from tracker.content.requirements import parse as parse_requirement
+from tracker.content.schema import Candidate, RefresherTemplate
+from tracker.content.validate import load_and_validate
+from tracker.domain.candidates import (
+    blocked,
+    completed,
+    effective_capability_weights,
+    gate_value,
+    leverage,
+    leverage_map,
+    proximity,
+    pvp_value,
+    unlock_flip_count,
+)
+from tracker.domain.types import (
+    CandidateKind,
+    PlayerState,
+    RoadmapSelection,
+    SkillState,
+    Source,
+    Tri,
+)
+
+CONTENT_ROOT = Path(__file__).parent.parent.parent / "content"
+NOW = datetime(2026, 8, 4, tzinfo=UTC)
+
+#: §9.3's worked selection: one primary, one secondary, already summing to 1.
+SDD_SELECTION = RoadmapSelection({"main_nh": 0.75, "anti_pk": 0.25})
+
+
+#: A synthetic XP curve — 100 xp per level, linear. The real table is step 5's (§8.2);
+#: proximity only needs *a* monotonic curve, and a linear one makes the arithmetic in
+#: these assertions checkable by eye.
+def linear_xp(level: int) -> int:
+    return (level - 1) * 100
+
+
+@pytest.fixture(scope="module")
+def content() -> Content:
+    return load_and_validate(CONTENT_ROOT)
+
+
+# ---------------------------------------------------------------------------
+# Stubs
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class StubOutcome:
+    """The three fields `EvalOutcome` requires (§9.1, §6.9)."""
+
+    value: Tri
+    satisfied_leaves: int = 0
+    total_leaves: int = 1
+
+
+@dataclass
+class StubEvaluator:
+    """Returns a canned outcome per requirement tree, defaulting to `unknown`.
+
+    Defaulting to `unknown` rather than `unsatisfied` is deliberate: a test that forgets
+    to arrange a tree gets the value that exposes G3 bugs, not the one that hides them.
+    """
+
+    outcomes: Mapping[Requirement, StubOutcome] = field(default_factory=dict)
+    default: StubOutcome = StubOutcome(Tri.UNKNOWN)
+
+    def __call__(
+        self, requirement: Requirement, state: PlayerState, content: Content
+    ) -> StubOutcome:
+        return self.outcomes.get(requirement, self.default)
+
+
+def always(value: Tri, satisfied: int = 0, total: int = 1) -> StubEvaluator:
+    return StubEvaluator(default=StubOutcome(value, satisfied, total))
+
+
+def candidate(
+    candidate_id: str = "c",
+    *,
+    kind: CandidateKind = CandidateKind.UNLOCK,
+    advances: Mapping[str, float] | None = None,
+    requires: str | None = None,
+    completion: str = "unlock: something",
+    grants_facts: str | None = None,
+) -> Candidate:
+    """Build a candidate from the §10.2 YAML spellings, as an author would write it."""
+    return Candidate(
+        id=candidate_id,
+        name=candidate_id,
+        kind=kind,
+        advances=dict(advances or {}),
+        requires=parse_requirement(_yaml(requires)) if requires else None,
+        completion=parse_requirement(_yaml(completion)),
+        grants_facts=parse_requirement(_yaml(grants_facts)) if grants_facts else None,
+    )
+
+
+def _yaml(source: str) -> object:
+    return yaml.safe_load(source)
+
+
+def skills(**levels: int) -> Mapping[str, SkillState]:
+    return {
+        skill: SkillState(level=level, xp=linear_xp(level), source=Source.RUNELITE, observed_at=NOW)
+        for skill, level in levels.items()
+    }
+
+
+# ---------------------------------------------------------------------------
+# §9.3 — blending
+# ---------------------------------------------------------------------------
+
+
+class TestEffectiveCapabilityWeights:
+    """§9.3: all active roadmaps collapse into **one** map before anything is scored."""
+
+    def test_reproduces_the_sdd_worked_blend(self, content: Content) -> None:
+        """0.75(1.00) + 0.25(0.60) = 0.95 in the SDD's illustration; 0.90 in this corpus,
+        whose anti_pk roadmap weights ice_barrage_nh at 0.60 (§9.3's candidate table)."""
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        assert weights["ice_barrage_nh"] == pytest.approx(0.90)
+        assert weights["vengeance_pvp"] == pytest.approx(0.375)
+
+    def test_selection_weights_are_normalized_at_read_time(self, content: Content) -> None:
+        """§4.3's UI default is `1.00` and `0.25`, which is not a convex combination
+        until it is normalized — 0.8 and 0.2."""
+        weights = effective_capability_weights(
+            RoadmapSelection({"main_nh": 1.00, "anti_pk": 0.25}), content
+        )
+        expected = 0.8 * 1.00 + 0.2 * 0.60
+        assert weights["ice_barrage_nh"] == pytest.approx(expected)
+
+    def test_a_capability_in_two_roadmaps_blends_never_accumulates(self, content: Content) -> None:
+        """D3 — the naive sum here is 1.60, outside the range every factor lives in."""
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        assert 0.0 <= weights["ice_barrage_nh"] <= 1.0
+
+    def test_every_blended_weight_stays_in_the_unit_interval(self, content: Content) -> None:
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        assert weights
+        assert all(0.0 <= weight <= 1.0 for weight in weights.values())
+
+    def test_an_empty_selection_weights_nothing(self, content: Content) -> None:
+        assert effective_capability_weights(RoadmapSelection({}), content) == {}
+
+    def test_an_unknown_roadmap_id_cannot_inflate_the_others(self, content: Content) -> None:
+        """A roadmap removed from content must make the blend conservative, never larger."""
+        with_ghost = effective_capability_weights(
+            RoadmapSelection({"main_nh": 0.75, "no_such_roadmap": 0.25}), content
+        )
+        assert with_ghost["ice_barrage_nh"] == pytest.approx(0.75)
+
+
+# ---------------------------------------------------------------------------
+# pvp_value (§9.3, A2, D11)
+# ---------------------------------------------------------------------------
+
+
+def candidate_from_refresher(refresher: RefresherTemplate, content: Content) -> Candidate:
+    """§10.6's *"Refreshers are candidates"*, minimally.
+
+    Synthesis proper belongs to step 6 (§9.8). All that matters here is the rule §10.6
+    states: a generated refresher carries `kind: practice` and inherits `advances` from
+    the group — which is what makes §9.3's second row scoreable from shipped content
+    rather than from a number invented in a test.
+    """
+    members = content.milestones_in_group(refresher.practice_group)
+    return Candidate(
+        id=refresher.id,
+        name=refresher.name,
+        kind=CandidateKind.PRACTICE,
+        advances=dict.fromkeys(refresher.advances, 1.0),
+        completion=AnyOf(children=tuple(MilestoneLeaf(key=m.id) for m in members)),
+    )
+
+
+class TestPvpValueReproducesTheSddTable:
+    """§9.3's worked table, from the shipped corpus, at `main_nh: 0.75, anti_pk: 0.25`."""
+
+    def test_train_magic_to_94_scores_zero_point_nine(self, content: Content) -> None:
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        train_magic = content.candidates["train_magic_87_to_94"]
+        assert pvp_value(train_magic, weights) == pytest.approx(0.90)
+
+    def test_practice_vengeance_timing_scores_zero_point_three_seven_five(
+        self, content: Content
+    ) -> None:
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        practice = candidate_from_refresher(
+            content.refreshers["refresh_vengeance_fundamentals"], content
+        )
+        assert pvp_value(practice, weights) == pytest.approx(0.375)
+
+
+class TestPvpValueTakesTheMaximum:
+    """D11 — *"Maximum, never sum."* Breadth must not substitute for relevance."""
+
+    def test_a_multi_capability_candidate_takes_the_max_not_the_sum(self, content: Content) -> None:
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        voidwaker = content.candidates["buy_voidwaker"]
+
+        terms = [weights[c] * w for c, w in voidwaker.advances.items()]
+        assert len(terms) > 1
+        assert sum(terms) > 1.0  # the naive sum leaves [0, 1] entirely
+        assert pvp_value(voidwaker, weights) == pytest.approx(max(terms))
+
+    def test_four_weak_capabilities_do_not_outrank_one_strong_one(self, content: Content) -> None:
+        """The exact failure D11 rejects, and the reason §9.8 forbids summing group size."""
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        broad = candidate(
+            "broad",
+            advances={
+                "ice_barrage_nh": 0.20,
+                "deep_wildy_nh": 0.20,
+                "anti_pk": 0.20,
+                "budget_nh": 0.20,
+            },
+        )
+        narrow = candidate("narrow", advances={"ice_barrage_nh": 0.80})
+
+        assert pvp_value(narrow, weights) > pvp_value(broad, weights)
+
+    def test_pvp_value_never_leaves_the_unit_interval(self, content: Content) -> None:
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        for shipped in content.candidates.values():
+            assert 0.0 <= pvp_value(shipped, weights) <= 1.0
+
+
+class TestPvpValueOrderOfOperations:
+    """§9.3: *"The order of operations is load-bearing."*"""
+
+    def test_blend_then_max_differs_from_max_then_blend(self, content: Content) -> None:
+        """`max` and convex combination do not commute, and only one order agrees with
+        §9.3's table. A candidate advancing the two capabilities the two roadmaps
+        disagree most about is where the two orders visibly part company."""
+        both = candidate("both", advances={"ice_barrage_nh": 1.00, "anti_pk": 1.00})
+
+        blend_then_max = pvp_value(both, effective_capability_weights(SDD_SELECTION, content))
+
+        max_then_blend = sum(
+            selection_weight
+            * max(
+                content.roadmaps[roadmap_id].capabilities.get(capability_id, 0.0) * contribution
+                for capability_id, contribution in both.advances.items()
+            )
+            for roadmap_id, selection_weight in SDD_SELECTION.normalized().items()
+        )
+
+        assert blend_then_max == pytest.approx(0.90)
+        assert max_then_blend == pytest.approx(1.00)
+        assert blend_then_max != pytest.approx(max_then_blend)
+
+
+class TestPvpValueEdges:
+    def test_a_candidate_advancing_nothing_scores_zero(self, content: Content) -> None:
+        """`train_woodcutting` is the shipped control: it ranks last because the content
+        says it advances nothing, not because code knows what woodcutting is (§10.8)."""
+        weights = effective_capability_weights(SDD_SELECTION, content)
+        assert content.candidates["train_woodcutting"].advances == {}
+        assert pvp_value(content.candidates["train_woodcutting"], weights) == 0.0
+
+    def test_a_capability_no_active_roadmap_weights_contributes_nothing(self) -> None:
+        assert pvp_value(candidate(advances={"unweighted": 1.0}), {}) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# leverage (§9.4, §10.6)
+# ---------------------------------------------------------------------------
+
+
+class TestUnlockFlipCount:
+    def test_counts_capabilities_the_probe_says_would_flip(self, content: Content) -> None:
+        flips = {"ice_barrage_nh", "budget_nh"}
+        count = unlock_flip_count(
+            candidate(grants_facts="unlock: ancient_magicks"),
+            PlayerState(player_id=1),
+            content,
+            lambda capability_id, _facts, _state, _content: capability_id in flips,
+        )
+        assert count == 2
+
+    def test_a_candidate_granting_no_facts_unlocks_nothing(self, content: Content) -> None:
+        """Zero, not unknown — leverage is a relevance factor, never a status (§4.4)."""
+        count = unlock_flip_count(
+            candidate(grants_facts=None),
+            PlayerState(player_id=1),
+            content,
+            lambda *_args: pytest.fail("the probe must not be consulted"),
+        )
+        assert count == 0
+
+
+class TestLeverageNormalization:
+    """§10.6 — normalized by the largest count *across the current candidate set*."""
+
+    def test_the_best_candidate_scores_one(self) -> None:
+        assert leverage(3, 3) == pytest.approx(1.0)
+
+    def test_the_rest_scale_against_it(self) -> None:
+        assert leverage(1, 3) == pytest.approx(1 / 3)
+
+    def test_a_candidate_that_unlocks_nothing_scores_zero(self) -> None:
+        """§9.4's ε floor lifts this into (0,1] at scoring time; flooring it here would
+        hide a genuine zero behind a tuning constant."""
+        assert leverage(0, 3) == 0.0
+
+    def test_when_nothing_unlocks_anything_the_factor_does_not_discriminate(self) -> None:
+        assert leverage(0, 0) == 0.0
+
+    def test_leverage_map_normalizes_within_the_set(self, content: Content) -> None:
+        many = candidate("many", grants_facts="unlock: a")
+        one = candidate("one", grants_facts="unlock: b")
+        none = candidate("none")
+
+        def probe(capability_id: str, facts: Requirement, *_rest: object) -> bool:
+            if facts == many.grants_facts:
+                return True
+            return facts == one.grants_facts and capability_id == "ice_barrage_nh"
+
+        scores = leverage_map([many, one, none], PlayerState(player_id=1), content, probe)
+
+        assert scores["many"] == pytest.approx(1.0)
+        assert scores["one"] == pytest.approx(1 / len(content.capabilities))
+        assert scores["none"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# proximity (§9.4, §10.6, A3)
+# ---------------------------------------------------------------------------
+
+
+class TestSkillTrainingProximity:
+    """§10.6 — `1 − remaining_xp / span_xp` for `kind: skill_training`."""
+
+    def test_progress_along_the_curve(self, content: Content) -> None:
+        near = candidate(kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 94}")
+        state = PlayerState(player_id=1, skills=skills(magic=87))
+
+        # 8600 xp of the 9300 the target needs, on the synthetic curve.
+        assert proximity(near, state, content, always(Tri.UNSATISFIED), linear_xp) == pytest.approx(
+            8600 / 9300
+        )
+
+    def test_the_closer_target_scores_higher_for_the_same_account(self, content: Content) -> None:
+        """§16.2 — of two otherwise identical candidates, the closer one ranks higher.
+        This is the invariant the v0.1 formula inverted (§9.4)."""
+        state = PlayerState(player_id=1, skills=skills(magic=87))
+        to_94 = candidate("a", kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 94}")
+        to_99 = candidate("b", kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 99}")
+
+        evaluate = always(Tri.UNSATISFIED)
+        assert proximity(to_94, state, content, evaluate, linear_xp) > proximity(
+            to_99, state, content, evaluate, linear_xp
+        )
+
+    def test_an_unranked_skill_falls_back_to_its_level_never_to_zero_xp(
+        self, content: Content
+    ) -> None:
+        """G5 — `xp IS NULL` means unranked, which is not the same as no progress."""
+        unranked = PlayerState(
+            player_id=1,
+            skills={
+                "magic": SkillState(level=87, xp=None, source=Source.HISCORES, observed_at=NOW)
+            },
+        )
+        target = candidate(kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 94}")
+
+        assert proximity(
+            target, unranked, content, always(Tri.UNSATISFIED), linear_xp
+        ) == pytest.approx(8600 / 9300)
+
+    def test_a_never_observed_skill_is_the_whole_way_away(self, content: Content) -> None:
+        target = candidate(kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 94}")
+        assert proximity(
+            target, PlayerState(player_id=1), content, always(Tri.UNKNOWN), linear_xp
+        ) == pytest.approx(0.0)
+
+    def test_several_skill_targets_take_the_most_distant(self, content: Content) -> None:
+        """Averaging would let a nearly-done skill mask one barely started."""
+        both = candidate(
+            kind=CandidateKind.SKILL_TRAINING,
+            completion="all_of: [{skill: {magic: 94}}, {skill: {defence: 94}}]",
+        )
+        state = PlayerState(player_id=1, skills=skills(magic=93, defence=50))
+
+        assert proximity(both, state, content, always(Tri.UNSATISFIED), linear_xp) == pytest.approx(
+            4900 / 9300
+        )
+
+    def test_proximity_is_capped_at_one_when_the_target_is_passed(self, content: Content) -> None:
+        done = candidate(kind=CandidateKind.SKILL_TRAINING, completion="skill: {magic: 94}")
+        state = PlayerState(player_id=1, skills=skills(magic=99))
+        assert proximity(done, state, content, always(Tri.SATISFIED, 1, 1), linear_xp) == 1.0
+
+
+class TestGeneralProximity:
+    """§10.6, A3 — every other kind uses the `completion` predicate's unlock_fraction."""
+
+    def test_uses_the_completion_unlock_fraction(self, content: Content) -> None:
+        acquisition = candidate(kind=CandidateKind.ACQUISITION, completion="item: voidwaker")
+        evaluate = always(Tri.UNSATISFIED, satisfied=1, total=2)
+
+        assert proximity(
+            acquisition, PlayerState(player_id=1), content, evaluate, linear_xp
+        ) == pytest.approx(0.5)
+
+    def test_unknown_leaves_stay_in_the_denominator(self, content: Content) -> None:
+        """§6.9 — one satisfied, one unsatisfied and one unknown leaf reports 0.33, not
+        0.50. Crediting unknowns would let an unobserved account look like it is
+        progressing; dropping them would make it look *closer* than an observed one."""
+        quest = candidate(kind=CandidateKind.QUEST, completion="quest: desert_treasure_i")
+        evaluate = always(Tri.UNKNOWN, satisfied=1, total=3)
+
+        assert proximity(
+            quest, PlayerState(player_id=1), content, evaluate, linear_xp
+        ) == pytest.approx(1 / 3)
+
+    def test_a_skill_training_candidate_with_no_skill_target_falls_back(
+        self, content: Content
+    ) -> None:
+        odd = candidate(kind=CandidateKind.SKILL_TRAINING, completion="unlock: something")
+        evaluate = always(Tri.UNSATISFIED, satisfied=1, total=4)
+
+        assert proximity(
+            odd, PlayerState(player_id=1), content, evaluate, linear_xp
+        ) == pytest.approx(0.25)
+
+
+# ---------------------------------------------------------------------------
+# completed (§16.2)
+# ---------------------------------------------------------------------------
+
+
+class TestCompleted:
+    """§10.6 — `completion` evaluates `satisfied`. §16.2 — a completed candidate never
+    ranks, and completion is tested *before* scoring rather than approximated by a low
+    score."""
+
+    def test_satisfied_completion_is_complete(self, content: Content) -> None:
+        assert completed(candidate(), PlayerState(player_id=1), content, always(Tri.SATISFIED))
+
+    def test_unsatisfied_completion_is_not(self, content: Content) -> None:
+        assert not completed(
+            candidate(), PlayerState(player_id=1), content, always(Tri.UNSATISFIED)
+        )
+
+    def test_unknown_completion_is_not_complete(self, content: Content) -> None:
+        """ "We have never looked in your bank" is a reason to sync, not a reason to
+        declare the Voidwaker bought (§4.5)."""
+        assert not completed(candidate(), PlayerState(player_id=1), content, always(Tri.UNKNOWN))
+
+
+# ---------------------------------------------------------------------------
+# blocked and the gate (§9.4, G3)
+# ---------------------------------------------------------------------------
+
+
+class TestTheReadinessGate:
+    def test_no_gate_means_ready(self, content: Content) -> None:
+        free = candidate(requires=None)
+        assert gate_value(free, PlayerState(player_id=1), content, always(Tri.UNKNOWN)) is (
+            Tri.SATISFIED
+        )
+        assert not blocked(free, PlayerState(player_id=1), content, always(Tri.UNKNOWN))
+
+    def test_an_unsatisfied_gate_blocks(self, content: Content) -> None:
+        gated = candidate(requires="unlock: ancient_magicks")
+        assert blocked(gated, PlayerState(player_id=1), content, always(Tri.UNSATISFIED))
+
+    def test_a_satisfied_gate_does_not_block(self, content: Content) -> None:
+        gated = candidate(requires="unlock: ancient_magicks")
+        assert not blocked(gated, PlayerState(player_id=1), content, always(Tri.SATISFIED))
+
+
+class TestAnUnknownGateIsNotBlocked:
+    """§10.6, D11, G3 — *"A candidate whose `requires` evaluates `unknown` is not
+    blocked."* It is unknown, and belongs with the capability unknowns: "sync this", not
+    "do this". Collapsing unknown into blocked is the D8 error one layer out, and §16.2
+    lists it precisely because `if gate is not Tri.SATISFIED` passes every other test.
+    """
+
+    def test_unknown_does_not_block(self, content: Content) -> None:
+        gated = candidate(requires="item: voidwaker")
+        assert not blocked(gated, PlayerState(player_id=1), content, always(Tri.UNKNOWN))
+
+    def test_unknown_is_reported_as_unknown_not_as_readiness(self, content: Content) -> None:
+        gated = candidate(requires="item: voidwaker")
+        assert gate_value(gated, PlayerState(player_id=1), content, always(Tri.UNKNOWN)) is (
+            Tri.UNKNOWN
+        )
+
+    def test_the_three_gate_values_are_all_distinguishable(self, content: Content) -> None:
+        """Two booleans (`blocked`, `unknown_gate`) reconstructed from one `Tri` — and
+        `Tri.__bool__` raises, so a derivation that reached for `if gate:` would fail
+        here rather than silently treating unknown as ready."""
+        gated = candidate(requires="item: voidwaker")
+        seen = {
+            value: gate_value(gated, PlayerState(player_id=1), content, always(value))
+            for value in Tri
+        }
+        assert seen == {value: value for value in Tri}
+
+
+# ---------------------------------------------------------------------------
+# The step 4 seam
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ContractShapedResult:
+    """Step 4's `EvalResult`, reproduced field for field from its frozen contract."""
+
+    value: Tri
+    blockers: tuple[object, ...]
+    unknowns: tuple[object, ...]
+    satisfied_leaves: int
+    total_leaves: int
+
+
+def contract_shaped_evaluate(
+    requirement: Requirement, state: PlayerState, content: Content
+) -> ContractShapedResult:
+    """Positional, like step 4's `evaluate(requirement, state, content)`."""
+    del requirement, state, content
+    return ContractShapedResult(Tri.UNKNOWN, (), (), 1, 4)
+
+
+class TestTheStep4Seam:
+    """The derivations must accept the real evaluator structurally, with neither package
+    importing the other."""
+
+    def test_every_derivation_accepts_the_frozen_contract_shape(self, content: Content) -> None:
+        subject = candidate(
+            kind=CandidateKind.ACQUISITION,
+            requires="item: voidwaker",
+            completion="item: voidwaker",
+        )
+        state = PlayerState(player_id=1)
+
+        assert not completed(subject, state, content, contract_shaped_evaluate)
+        assert not blocked(subject, state, content, contract_shaped_evaluate)
+        assert gate_value(subject, state, content, contract_shaped_evaluate) is Tri.UNKNOWN
+        assert proximity(
+            subject, state, content, contract_shaped_evaluate, linear_xp
+        ) == pytest.approx(0.25)
+
+    def test_the_module_does_not_import_the_progression_package(self) -> None:
+        """Step 4 is built in parallel; a real import here would be a hard dependency on
+        a package that does not exist yet, and a cycle once it does."""
+        source = (
+            Path(__file__).parent.parent.parent / "tracker" / "domain" / "candidates.py"
+        ).read_text(encoding="utf-8")
+        assert "import tracker.progression" not in source
+        assert "from tracker.progression" not in source

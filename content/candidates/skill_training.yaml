@@ -1,0 +1,59 @@
+# §10.6 candidates of `kind: skill_training`.
+#
+# Nothing here declares how important it is. `advances` says which capabilities care and
+# how much; every §9.4 factor — pvp_value, leverage, proximity — is derived from these
+# fields by tracker/domain/candidates.py. §10.6: "no content file can assert its own
+# priority."
+#
+# There is also no `hours` or `gp_cost` field to author: §8.2 estimates both from the
+# training methods that cover the band up to the `completion` target, so an author cannot
+# make a candidate look cheap by saying it is.
+
+# §10.6's own worked example, verbatim in `advances`: training Magic to 94 fully enables
+# Ice Barrage NH while only partly advancing Deep Wilderness NH — which still needs the
+# freeze-logging and switch milestones and a spec weapon.
+#
+# The gate is the *fast* path, not the skill: §8.1's magic_bursting requires Ancients and
+# DT1, so before those exist this candidate is blocked and complete_desert_treasure_i is
+# what the engine should be recommending instead (§16.2's DT1-over-Voidwaker judgment).
+- id: train_magic_87_to_94
+  name: Train Magic 87 → 94
+  kind: skill_training
+  advances:
+    ice_barrage_nh: 1.00
+    deep_wildy_nh: 0.70
+  requires:
+    all_of:
+      - unlock: ancient_magicks
+  completion:
+    skill: {magic: 94}
+  grants_facts:
+    skill: {magic: 94}
+
+# The counterweight §16.2 pairs against 94 Magic: strictly more work, and none of it
+# unlocks Barrage. It advances the melee-facing capabilities only weakly, so the ranking
+# has to prefer Magic on relevance rather than on any authored priority.
+- id: train_strength_to_99
+  name: Train Strength to 99
+  kind: skill_training
+  advances:
+    deep_wildy_nh: 0.20
+    anti_pk: 0.25
+  completion:
+    skill: {strength: 99}
+  grants_facts:
+    skill: {strength: 99}
+
+# The control. Woodcutting advances no PvP capability, and the honest way to say so is an
+# empty `advances` map — not a small weight, and certainly not a special case in code
+# (§10.8). It must rank last *because the content says it advances nothing*, which is
+# also what makes it a real test: if it ever ranks well, the derivation is wrong rather
+# than the corpus.
+- id: train_woodcutting
+  name: Train Woodcutting to 99
+  kind: skill_training
+  advances: {}
+  completion:
+    skill: {woodcutting: 99}
+  grants_facts:
+    skill: {woodcutting: 99}

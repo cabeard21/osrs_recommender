@@ -1,0 +1,8 @@
+# The target resolves; only the weight is wrong, so exactly one rule fires.
+id: advances_too_hard
+name: Advances a declared capability by more than 1
+kind: unlock
+advances:
+  ice_barrage_nh: 1.5
+completion:
+  unlock: something

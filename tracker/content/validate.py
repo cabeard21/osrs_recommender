@@ -3,20 +3,23 @@
 *"Unvalidated YAML fails at runtime with an unhelpful ``KeyError``, typically months
 later."* — §10.7
 
-The twelve §10.7 assertions are enforced in three places, chosen by how much of the
-corpus each rule needs to see:
+The §10.7 assertions are enforced in three places, chosen by how much of the corpus each
+rule needs to see:
 
 | §10.7 rule | Enforced by |
 |---|---|
 | id uniqueness across the corpus (per kind) | :func:`tracker.content.loader.parse_corpus` |
 | referential integrity of capability/quest/item/skill/milestone ids | here |
 | every ``grants`` target is a declared capability | here |
+| every candidate ``advances`` target is a declared capability | here |
 | every ``practiced_by`` entry is a declared practice domain | ``PracticeDomain`` enum |
 | every refresher's ``practice_group`` has an execution member | here |
+| every refresher declares ``suggested_session_hours`` | ``RefresherTemplate`` field |
+| every candidate declares a non-empty ``completion`` | ``Candidate`` model validator |
 | only ``class: execution`` milestones practice | ``Milestone`` model validator |
 | ``price_mode: live`` implies a numeric ``item_id`` | here |
 | capability and requirement graphs are acyclic | here |
-| weights, ``pvp_value``, roadmap weights ∈ [0,1] | model ``Field`` bounds |
+| weights, ``pvp_value``, ``advances`` and roadmap weights ∈ [0,1] | model validators |
 | κ presets satisfy §9.6 min/max/ordering | here |
 
 Rules land in the models where a single object can decide, and here where they need the
@@ -62,6 +65,7 @@ def validate_content(content: Content) -> list[ContentError]:
     errors: list[ContentError] = []
     errors.extend(_check_references(content))
     errors.extend(_check_grants(content))
+    errors.extend(_check_candidate_advances(content))
     errors.extend(_check_practice_groups(content))
     errors.extend(_check_live_prices(content))
     errors.extend(_check_acyclic(content))
@@ -94,6 +98,14 @@ def _requirement_sources(content: Content) -> Iterator[tuple[str, str, Requireme
     for method in content.training_methods.values():
         if method.requires is not None:
             yield "training_method", method.id, method.requires
+    # A candidate carries up to three trees (§10.6). All three name game objects, so all
+    # three need referential integrity — `grants_facts` especially, since a fact naming
+    # an item nobody declared would silently contribute nothing to `leverage` rather than
+    # failing.
+    for candidate in content.candidates.values():
+        for tree in (candidate.requires, candidate.completion, candidate.grants_facts):
+            if tree is not None:
+                yield "candidate", candidate.id, tree
 
 
 def _check_references(content: Content) -> list[ContentError]:
@@ -153,6 +165,25 @@ def _check_grants(content: Content) -> list[ContentError]:
         for capability in content.capabilities.values()
         for granted in capability.grants
         if granted not in content.capabilities
+    ]
+
+
+def _check_candidate_advances(content: Content) -> list[ContentError]:
+    """Every candidate ``advances`` target is a declared capability (§10.6, §10.7).
+
+    A dangling target does not merely mis-score: ``pvp_value`` looks the capability up in
+    the §9.3 effective-weight map, misses, and contributes ``0`` — so a typo makes a
+    candidate quietly less relevant instead of loudly wrong, which is the failure mode
+    §10.7 exists to prevent.
+    """
+    return [
+        ContentError(
+            f"advances {capability_id!r}, which is not a declared capability",
+            content.location_of("candidate", candidate.id).with_path(candidate.id),
+        )
+        for candidate in content.candidates.values()
+        for capability_id in candidate.advances
+        if capability_id not in content.capabilities
     ]
 
 
@@ -362,8 +393,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print(
         f"content OK — {len(content.capabilities)} capabilities, "
-        f"{len(content.roadmaps)} roadmaps, {len(content.milestones)} milestones, "
-        f"{len(content.items)} items, {len(content.training_methods)} training methods, "
+        f"{len(content.candidates)} candidates, {len(content.roadmaps)} roadmaps, "
+        f"{len(content.milestones)} milestones, {len(content.items)} items, "
+        f"{len(content.training_methods)} training methods, "
         f"{len(content.refreshers)} refreshers"
     )
     return 0

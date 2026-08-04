@@ -1,0 +1,6 @@
+# No completion predicate: nothing can ever make this candidate done, so §16.2's
+# completion test can never exclude it and it would rank forever.
+id: never_finishes
+name: A candidate that can never be complete
+kind: practice
+advances: {}

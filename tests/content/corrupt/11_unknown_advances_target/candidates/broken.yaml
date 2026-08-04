@@ -1,0 +1,7 @@
+id: advances_a_ghost
+name: Advances a capability nobody declared
+kind: unlock
+advances:
+  not_a_capability: 1.0
+completion:
+  unlock: something

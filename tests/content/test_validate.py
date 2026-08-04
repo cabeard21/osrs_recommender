@@ -1,4 +1,4 @@
-"""§10.7 validation: the ten rules, the ten corrupt corpora, and the CLI.
+"""§10.7 validation: the rules, one corrupt corpus each, and the CLI.
 
 *"Unvalidated YAML fails at runtime with an unhelpful ``KeyError``, typically months
 later."* Every assertion here is about the diagnostic being **usable**, not merely
@@ -35,6 +35,10 @@ CORRUPT_CORPORA: list[tuple[str, str]] = [
     ("08_capability_cycle", "form a cycle"),
     ("09_weight_out_of_range", "outside [0, 1]"),
     ("10_kappa_ordering", "ordering violated"),
+    # §10.6's three candidate rules (step 2.5).
+    ("11_unknown_advances_target", "advances 'not_a_capability'"),
+    ("12_advances_weight_out_of_range", "advances weight for 'ice_barrage_nh' is 1.5"),
+    ("13_candidate_without_completion", "no non-empty completion predicate"),
 ]
 
 
@@ -142,7 +146,7 @@ class TestIndexes:
         )
 
 
-class TestTheTenRules:
+class TestEveryRule:
     @pytest.mark.parametrize(("directory", "expected"), CORRUPT_CORPORA)
     def test_each_corrupt_corpus_fails_loudly(self, directory: str, expected: str) -> None:
         corpus = CORRUPT / directory
@@ -162,10 +166,11 @@ class TestTheTenRules:
                 continue
             assert error.location.file is not None, f"{error} has no file"
 
-    def test_all_ten_rules_have_a_fixture(self) -> None:
+    def test_every_fixture_on_disk_is_asserted_and_vice_versa(self) -> None:
+        """A fixture nobody asserts against is a rule nobody is checking."""
         on_disk = {p.name for p in CORRUPT.iterdir() if p.is_dir()}
         assert on_disk == {directory for directory, _ in CORRUPT_CORPORA}
-        assert len(CORRUPT_CORPORA) == 10
+        assert len(CORRUPT_CORPORA) == 13
 
 
 class TestCycleReporting:
