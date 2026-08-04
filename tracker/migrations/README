@@ -1,0 +1,22 @@
+Generic single-database configuration.
+
+Alembic is initialized from the first commit (§6.13) — the schema will churn for months,
+and retrofitting migrations after it stabilizes is the expensive version of this decision.
+
+To generate a new revision after changing `tracker/db/models.py`:
+
+    make migrate ARGS="revision --autogenerate -m 'describe the change'"
+
+Autogenerate diffs must be hand-reviewed before committing, not shipped unread — check
+table/column order for foreign-key safety, check that `downgrade()` drops in the reverse
+order, and check that enum/constraint names came out through the naming convention in
+`tracker/db/models.py` rather than as dialect-generated names.
+
+Then apply and format:
+
+    make migrate
+    make format
+
+`make format` matters here specifically: `op.create_table(...)` calls for wide tables
+autogenerate onto single long lines, which fails `make lint`'s `ruff format --check` until
+reformatted.
