@@ -1,0 +1,20 @@
+# §4.1's worked example. `recommended_readiness: high` is what makes decayed execution
+# evidence show up as "not today" without revoking the unlock (§6.9).
+#
+# It requires `successfully_freeze_log` — the permanent achievement — and separately
+# benefits from `freeze_logging_practice` through the nh_fundamentals refresher. That
+# split is §6.6's blockquote in action.
+id: deep_wildy_nh
+name: Deep Wilderness NH
+recommended_readiness: high
+pvp_value: 1.00
+requires:
+  all_of:
+    - capability: ice_barrage_nh
+    - milestone: successfully_freeze_log
+    - milestone: teleblock_understanding
+    - milestone: comfortable_4_way_switches
+    - milestone: consistent_overhead_prayers
+    - any_of:
+        - item: voidwaker
+        - item: armadyl_godsword

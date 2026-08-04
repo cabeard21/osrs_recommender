@@ -1,0 +1,14 @@
+# §10.4 verbatim. Refreshers are authored per practice *group*, not per milestone:
+# ungrouped refreshers produce accurate but useless coaching ("Refresh 4-way switches /
+# Refresh overhead prayers / Refresh freeze logging / …") — see §9.8 and D9.
+#
+# suggested_session_hours is mandatory (A8). With no hours, effort_decay = exp(0) = 1.0
+# and every refresher would score a perfect effort mark, defeating the §9.8 list policy.
+id: refresh_nh_fundamentals
+name: Refresh NH fundamentals
+practice_group: nh_fundamentals
+trigger:
+  any_member_freshness_at_least: stale
+suggested_session: 5 LMS matches
+suggested_session_hours: 0.5
+advances: [deep_wildy_nh, ice_barrage_nh]

@@ -25,7 +25,7 @@ SHARED_PROFILE = FIXTURES / "profile.yaml"
 
 #: One entry per §10.7 rule, paired with a phrase its diagnostic must contain.
 CORRUPT_CORPORA: list[tuple[str, str]] = [
-    ("01_duplicate_id", "duplicate id 'magic'"),
+    ("01_duplicate_id", "duplicate skill id 'magic'"),
     ("02_dangling_reference", "references item 'nonexistent_item'"),
     ("03_unknown_grant", "grants 'not_a_capability'"),
     ("04_unknown_practice_domain", "practiced_by"),
@@ -112,9 +112,34 @@ class TestIndexes:
 
     def test_every_object_knows_where_it_came_from(self) -> None:
         content = load_and_validate(MINIMAL, profile_path=SHARED_PROFILE)
-        location = content.location_of("ice_barrage_nh")
+        location = content.location_of("capability", "ice_barrage_nh")
         assert location.file is not None
         assert location.file.name == "ice_barrage_nh.yaml"
+
+    def test_a_capability_and_a_roadmap_may_share_an_id(self, tmp_path: Path) -> None:
+        """§4.2 declares a capability `anti_pk`; §4.3 and §9.3 select a roadmap `anti_pk`.
+
+        A single global id namespace would reject the SDD's own worked examples, so
+        §10.7's "across the corpus" means across every file of a kind.
+        """
+        corpus = tmp_path / "content"
+        (corpus / "capabilities").mkdir(parents=True)
+        (corpus / "roadmaps").mkdir(parents=True)
+        (corpus / "capabilities" / "anti_pk.yaml").write_text(
+            "id: anti_pk\nname: Anti-PK\n", encoding="utf-8"
+        )
+        (corpus / "roadmaps" / "anti_pk.yaml").write_text(
+            "id: anti_pk\nname: Anti-PKer\ncapabilities: {anti_pk: 1.0}\n", encoding="utf-8"
+        )
+
+        content = load_and_validate(corpus, profile_path=SHARED_PROFILE)
+
+        assert "anti_pk" in content.capabilities
+        assert "anti_pk" in content.roadmaps
+        assert (
+            content.location_of("capability", "anti_pk").file
+            != content.location_of("roadmap", "anti_pk").file
+        )
 
 
 class TestTheTenRules:

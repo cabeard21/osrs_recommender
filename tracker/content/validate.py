@@ -8,7 +8,7 @@ corpus each rule needs to see:
 
 | §10.7 rule | Enforced by |
 |---|---|
-| id uniqueness across the corpus | :func:`tracker.content.loader.parse_corpus` |
+| id uniqueness across the corpus (per kind) | :func:`tracker.content.loader.parse_corpus` |
 | referential integrity of capability/quest/item/skill/milestone ids | here |
 | every ``grants`` target is a declared capability | here |
 | every ``practiced_by`` entry is a declared practice domain | ``PracticeDomain`` enum |
@@ -93,7 +93,7 @@ def _requirement_sources(content: Content) -> Iterator[tuple[str, str, Requireme
             yield "capability", capability.id, capability.requires
     for method in content.training_methods.values():
         if method.requires is not None:
-            yield "training method", method.id, method.requires
+            yield "training_method", method.id, method.requires
 
 
 def _check_references(content: Content) -> list[ContentError]:
@@ -105,40 +105,40 @@ def _check_references(content: Content) -> list[ContentError]:
     """
     errors: list[ContentError] = []
 
-    def missing(owner_id: str, what: str, referenced: str) -> ContentError:
+    def missing(kind: str, owner_id: str, what: str, referenced: str) -> ContentError:
         return ContentError(
             f"references {what} {referenced!r}, which is not declared anywhere in the corpus",
-            content.location_of(owner_id).with_path(owner_id),
+            content.location_of(kind, owner_id).with_path(owner_id),
         )
 
-    for _label, owner_id, requirement in _requirement_sources(content):
+    for kind, owner_id, requirement in _requirement_sources(content):
         for leaf in iter_leaves(requirement):
             if isinstance(leaf, SkillLeaf) and leaf.skill not in content.skills:
-                errors.append(missing(owner_id, "skill", leaf.skill))
+                errors.append(missing(kind, owner_id, "skill", leaf.skill))
             elif isinstance(leaf, QuestLeaf) and leaf.quest_id not in content.quests:
-                errors.append(missing(owner_id, "quest", leaf.quest_id))
+                errors.append(missing(kind, owner_id, "quest", leaf.quest_id))
             elif isinstance(leaf, ItemLeaf) and leaf.item_id not in content.items:
-                errors.append(missing(owner_id, "item", leaf.item_id))
+                errors.append(missing(kind, owner_id, "item", leaf.item_id))
             elif isinstance(leaf, MilestoneLeaf) and leaf.key not in content.milestones:
-                errors.append(missing(owner_id, "milestone", leaf.key))
+                errors.append(missing(kind, owner_id, "milestone", leaf.key))
             elif (
                 isinstance(leaf, CapabilityLeaf) and leaf.capability_id not in content.capabilities
             ):
-                errors.append(missing(owner_id, "capability", leaf.capability_id))
+                errors.append(missing(kind, owner_id, "capability", leaf.capability_id))
 
     for method in content.training_methods.values():
         if method.skill not in content.skills:
-            errors.append(missing(method.id, "skill", method.skill))
+            errors.append(missing("training_method", method.id, "skill", method.skill))
 
     for roadmap in content.roadmaps.values():
         for capability_id in roadmap.capabilities:
             if capability_id not in content.capabilities:
-                errors.append(missing(roadmap.id, "capability", capability_id))
+                errors.append(missing("roadmap", roadmap.id, "capability", capability_id))
 
     for refresher in content.refreshers.values():
         for capability_id in refresher.advances:
             if capability_id not in content.capabilities:
-                errors.append(missing(refresher.id, "capability", capability_id))
+                errors.append(missing("refresher", refresher.id, "capability", capability_id))
 
     return errors
 
@@ -148,7 +148,7 @@ def _check_grants(content: Content) -> list[ContentError]:
     return [
         ContentError(
             f"grants {granted!r}, which is not a declared capability",
-            content.location_of(capability.id).with_path(capability.id),
+            content.location_of("capability", capability.id).with_path(capability.id),
         )
         for capability in content.capabilities.values()
         for granted in capability.grants
@@ -171,7 +171,7 @@ def _check_practice_groups(content: Content) -> list[ContentError]:
     errors: list[ContentError] = []
     for refresher in content.refreshers.values():
         members = content.milestones_in_group(refresher.practice_group)
-        location = content.location_of(refresher.id).with_path(refresher.id)
+        location = content.location_of("refresher", refresher.id).with_path(refresher.id)
         if not members:
             errors.append(
                 ContentError(
@@ -205,7 +205,7 @@ def _check_live_prices(content: Content) -> list[ContentError]:
         ContentError(
             "has price_mode: live but no numeric item_id; the OSRS Wiki price API is keyed "
             "by item id, so this item could never be priced live (§10.5)",
-            content.location_of(item.id).with_path(item.id),
+            content.location_of("item", item.id).with_path(item.id),
         )
         for item in content.items.values()
         if item.price_mode == "live" and item.item_id is None
@@ -258,7 +258,7 @@ def _check_acyclic(content: Content) -> list[ContentError]:
                     errors.append(
                         ContentError(
                             "capability requirements form a cycle: " + " → ".join(cycle),
-                            content.location_of(target).with_path(target),
+                            content.location_of("capability", target).with_path(target),
                         )
                     )
             elif target not in visited and target in edges:

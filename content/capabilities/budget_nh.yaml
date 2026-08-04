@@ -1,0 +1,14 @@
+# §4.4's first worked example: unlocked, medium confidence, recommended now. Cheap
+# enough that a main has usually already satisfied it, which is why §4.2 gives it a low
+# roadmap weight despite it being genuinely useful.
+id: budget_nh
+name: Budget Wilderness NH
+recommended_readiness: medium
+pvp_value: 0.55
+requires:
+  all_of:
+    - combat_level: 90
+    - skill: {magic: 82}
+    - unlock: ancient_magicks
+    - item: mystic_robe_top
+    - milestone: comfortable_4_way_switches

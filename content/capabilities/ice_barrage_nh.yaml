@@ -1,0 +1,14 @@
+# §10.2's worked example. Barraging is the entry point to serious NH, so almost
+# everything downstream requires this capability rather than restating its leaves.
+id: ice_barrage_nh
+name: Ice Barrage NH
+recommended_readiness: medium
+pvp_value: 0.95
+requires:
+  all_of:
+    - skill: {magic: 94}
+    - unlock: ancient_magicks
+    - quest: desert_treasure_i
+    - any_of:
+        - item: mystic_robe_top
+        - item: ahrims_robetop
