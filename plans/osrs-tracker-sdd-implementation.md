@@ -7,7 +7,7 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b** complete and merged to `main` (2026-08-04). Next: **2c**. |
+| **Status** | In progress — **1**, **2a**, **2b**, **2c** complete and merged to `main` (2026-08-04). Next: **2.5**, which may run in parallel with **3a**, **4** and **7**. |
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
