@@ -1,0 +1,45 @@
+# §10.6 candidates of `kind: acquisition`.
+#
+# An acquisition's `completion` names items rather than levels, so `proximity` falls back
+# to the completion predicate's unlock_fraction (§6.9) — the same machinery, no numeric
+# target required (§10.6). That also makes the §4.5 rule visible in the ranking: with no
+# ContainerScan ever recorded, `item:` leaves evaluate `unknown`, so an acquisition is
+# neither complete nor blocked — it is unknown, and the app asks for a sync.
+#
+# No price is authored here. §8.3 prices these from the `item:` leaves through the OSRS
+# Wiki feed, with items/items.yaml's fallback_price_gp as the last layer of the cascade.
+
+# The single best spec weapon for the capabilities this corpus weights: it satisfies the
+# `any_of` in both deep_wildy_nh and anti_pk. Note the two `advances` entries are a
+# deliberate test of D11's "maximum, never sum" — summed they exceed 1.0, and pvp_value
+# must still land at the larger single term.
+- id: buy_voidwaker
+  name: Buy a Voidwaker
+  kind: acquisition
+  advances:
+    deep_wildy_nh: 0.80
+    anti_pk: 0.60
+  completion:
+    item: voidwaker
+  grants_facts:
+    item: voidwaker
+
+# The expensive alternative, kept separate from buy_voidwaker so §16.2's cost invariant
+# has something to bite on: an AGS-plus-Ahrim's setup advances deep Wilderness NH less
+# than a Voidwaker does and costs more in aggregate, so it must not outrank it.
+#
+# `all_of` rather than `any_of`: a gear *set* is complete only when every piece is owned.
+- id: buy_high_risk_gear
+  name: Buy a high-risk NH setup
+  kind: acquisition
+  advances:
+    deep_wildy_nh: 0.50
+    anti_pk: 0.35
+  completion:
+    all_of:
+      - item: armadyl_godsword
+      - item: ahrims_robetop
+  grants_facts:
+    all_of:
+      - item: armadyl_godsword
+      - item: ahrims_robetop

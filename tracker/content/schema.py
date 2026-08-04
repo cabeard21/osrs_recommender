@@ -21,6 +21,7 @@ code would violate G9. Both are thin: an id and a name.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
@@ -28,6 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from tracker.content.requirements import Requirement, RequirementNode
 from tracker.content.requirements import parse as parse_requirement
 from tracker.domain.types import (
+    CandidateKind,
     Confidence,
     Freshness,
     MilestoneClass,
@@ -212,6 +214,89 @@ class Milestone(ContentModel):
                 "requires a separate execution milestone rather than one row meaning both"
             )
         return self
+
+
+# ---------------------------------------------------------------------------
+# Candidates (§10.6)
+# ---------------------------------------------------------------------------
+
+
+class Candidate(ContentModel):
+    """§10.6, D11. *"An action the player could take that changes facts"* (§4).
+
+    Candidates are the only objects the recommendation engine ranks: capabilities define
+    what *better* means, and candidates are the moves available for getting there.
+
+    ``advances`` and ``grants_facts`` are deliberately separate. ``grants_facts`` is
+    objective — it states what changes. ``advances`` is editorial — it states how much
+    each capability cares. A candidate may advance a capability it does not unlock:
+    training Magic to 94 fully enables Ice Barrage NH while only partly advancing Deep
+    Wilderness NH.
+
+    **No scoring factor appears here, and that is the whole point.** §10.6: every factor
+    of §9.4 derives from these fields, *"none is authored directly, so no content file
+    can assert its own priority."* There is no ``pvp_value``, ``leverage``, ``proximity``
+    or ``priority`` field — see :mod:`tracker.domain.candidates` for the derivations. For
+    the same reason there is no ``hours`` or ``gp_cost``: §8 estimates both from the
+    training methods and item prices the ``completion`` predicate names, so an author
+    cannot make a candidate look cheap by declaring it so.
+    """
+
+    id: str
+    name: str
+    kind: CandidateKind
+    advances: dict[str, float] = Field(default_factory=dict)
+    """Capability id → marginal contribution ∈ [0,1]. §10.7 checks each id is declared.
+
+    Empty is legal and means *this advances nothing* — the honest authoring of a
+    genuinely irrelevant action, which then ranks last because the content says so rather
+    than because code recognises its name (§10.8)."""
+    requires: Requirement | None = None
+    """Optional gate, same grammar as §10.2. ``unsatisfied`` blocks; ``unknown`` does
+    **not** — an unknown gate is *"sync this"*, not *"do this"* (§10.6, G3)."""
+    completion: Requirement
+    """Predicate over facts; ``satisfied`` ⇒ the candidate is done (§16.2)."""
+    grants_facts: Requirement | None = None
+    """What becomes true on completion. Drives ``leverage`` (§10.6)."""
+
+    _parse_requires = _requirement_field("requires")
+    _parse_completion = _requirement_field("completion")
+    _parse_grants_facts = _requirement_field("grants_facts")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _completion_is_declared(cls, data: Any) -> Any:
+        """§10.7: *"every candidate declares a non-empty ``completion`` predicate — a
+        candidate that can never be complete would rank forever."*
+
+        Checked here rather than by field presence alone so the diagnostic names the
+        consequence. An omitted key, an explicit ``null`` and an empty mapping are the
+        same authoring mistake and deserve the same message.
+        """
+        if isinstance(data, Mapping) and not data.get("completion"):
+            # The loader prefixes the candidate id, so this states only the rule.
+            raise ValueError(
+                "declares no non-empty completion predicate. §16.2 tests completion before "
+                "scoring, so a candidate that can never be complete would rank forever (§10.7)"
+            )
+        return data
+
+    @field_validator("advances")
+    @classmethod
+    def _advances_in_unit_interval(cls, value: dict[str, float]) -> dict[str, float]:
+        """§10.7 — ``advances`` weights lie in [0,1].
+
+        The bound is not decoration: ``pvp_value`` is ``effective_weight × advances`` and
+        §9.3's blend already guarantees the first term is in [0,1]. A weight above 1 would
+        let one candidate escape the range every other factor is normalized to, and the
+        §9.4 geometric mean has no upper clamp to catch it.
+        """
+        for capability_id, weight in value.items():
+            if not 0.0 <= weight <= 1.0:
+                raise ValueError(
+                    f"advances weight for {capability_id!r} is {weight}, outside [0, 1] (§10.7)"
+                )
+        return value
 
 
 # ---------------------------------------------------------------------------

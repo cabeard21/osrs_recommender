@@ -21,6 +21,7 @@ from pydantic import ValidationError
 
 from tracker.content.errors import ContentError, ContentLocation
 from tracker.content.schema import (
+    Candidate,
     Capability,
     ContentModel,
     Item,
@@ -45,6 +46,7 @@ _DIRECTORIES: tuple[tuple[str, str, type[ContentModel]], ...] = (
     ("items", "item", Item),
     ("milestones", "milestone", Milestone),
     ("capabilities", "capability", Capability),
+    ("candidates", "candidate", Candidate),
     ("roadmaps", "roadmap", Roadmap),
     ("training_methods", "training_method", TrainingMethod),
     ("refreshers", "refresher", RefresherTemplate),
@@ -86,6 +88,7 @@ class Content:
     items: Mapping[str, Item] = field(default_factory=dict)
     milestones: Mapping[str, Milestone] = field(default_factory=dict)
     capabilities: Mapping[str, Capability] = field(default_factory=dict)
+    candidates: Mapping[str, Candidate] = field(default_factory=dict)
     roadmaps: Mapping[str, Roadmap] = field(default_factory=dict)
     training_methods: Mapping[str, TrainingMethod] = field(default_factory=dict)
     refreshers: Mapping[str, RefresherTemplate] = field(default_factory=dict)
@@ -185,6 +188,7 @@ def parse_corpus(
         items=indexes["items"],
         milestones=indexes["milestones"],
         capabilities=indexes["capabilities"],
+        candidates=indexes["candidates"],
         roadmaps=indexes["roadmaps"],
         training_methods=indexes["training_methods"],
         refreshers=indexes["refreshers"],

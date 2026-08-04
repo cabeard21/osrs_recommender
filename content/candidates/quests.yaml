@@ -1,0 +1,37 @@
+# §10.6 candidates of `kind: quest`.
+#
+# A quest candidate is where `advances` and `grants_facts` most obviously differ (§10.6).
+# DT1 grants exactly two facts — the quest is complete, and Ancients are unlocked — but
+# it *advances* three capabilities by very different amounts, because two of them need
+# far more than Ancients before they are usable.
+
+# §16.2's first pairwise judgment: "DT1 outranks buying a Voidwaker while Ancients are
+# still locked." That must fall out of the derivations, not out of an authored priority —
+# DT1's leverage is what carries it, since unlocking Ancients is what lets both
+# ice_barrage_nh and train_magic_87_to_94 stop being blocked.
+- id: complete_desert_treasure_i
+  name: Complete Desert Treasure I
+  kind: quest
+  advances:
+    ice_barrage_nh: 0.90
+    deep_wildy_nh: 0.60
+    budget_nh: 0.50
+  # DT1's skill requirements. Its quest prerequisites (The Dig Site, Temple of Ikov, The
+  # Tourist Trap, Troll Stronghold, Priest in Peril, Waterfall Quest) are deliberately
+  # not listed: quests/ declares only the quests this corpus's capabilities gate on, and
+  # §10.7 rejects a `quest:` leaf naming an undeclared id. Declare them there first if
+  # you want the chain modelled.
+  requires:
+    all_of:
+      - skill: {thieving: 53}
+      - skill: {firemaking: 50}
+      - skill: {magic: 50}
+      - skill: {slayer: 10}
+  completion:
+    quest: desert_treasure_i
+  # Two facts, because the quest reward is the point: the unlock is what other content
+  # gates on, and a `quest:` leaf alone would leave `leverage` unable to see it.
+  grants_facts:
+    all_of:
+      - quest: desert_treasure_i
+      - unlock: ancient_magicks
