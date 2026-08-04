@@ -32,7 +32,7 @@ content/
     quests/            id + name; what `quest:` leaves resolve against
     skills/            id + name; what `skill:` leaves resolve against
     scoring/           profile.yaml — weights, τ, κ, thresholds
-    candidates/        actions the player could take (added in step 2.5)
+    candidates/        actions the player could take — the only objects that get ranked
 ```
 
 One object per file, or a YAML list of objects in one file — both work. Use one file per
@@ -114,6 +114,70 @@ capabilities they list.
 Weights are in `[0, 1]`. A capability in two active roadmaps *blends*, never accumulates:
 at selection weights `main_nh: 0.75, anti_pk: 0.25`, a capability weighted `1.00` and
 `0.60` lands at `0.90`, never `1.80`.
+
+## Adding a candidate
+
+A candidate is *an action the player could take that changes facts*. Capabilities define
+what **better** means; candidates are the moves available for getting there, and they are
+the only objects the engine ranks.
+
+```yaml
+# content/candidates/skill_training.yaml — grouped by kind, one file per kind
+- id: train_magic_87_to_94
+  name: Train Magic 87 → 94
+  kind: skill_training        # skill_training | acquisition | quest | unlock
+  advances:
+    ice_barrage_nh: 1.00
+    deep_wildy_nh: 0.60
+  requires:                   # optional gate — omit if there is none
+    unlock: ancient_magicks
+  completion:                 # mandatory
+    skill: {magic: 94}
+  grants_facts:               # optional
+    skill: {magic: 94}
+```
+
+**There is no priority field, and that is the whole point.** No `pvp_value`, `leverage`,
+`proximity`, `hours` or `gp_cost` — every scoring factor is *derived* from the fields
+above, so no content file can assert its own importance. If a candidate ranks lower than
+you think it should, the fix is to correct a weight or a requirement, never to add a
+thumb on the scale.
+
+The four fields do genuinely different jobs, and conflating them is the common mistake:
+
+| Field | Job | Wrong if… |
+|---|---|---|
+| `advances` | **Editorial.** How much each capability *cares*, `0`–`1` per capability. | you list a capability the action does not help, to boost the ranking. |
+| `requires` | **Gate.** What must already be true to start. | you put the goal here — that belongs in `completion`. |
+| `completion` | **Predicate.** When this is satisfied, the candidate is done. | it can never be satisfied; the validator rejects an empty one outright. |
+| `grants_facts` | **Objective.** What becomes true afterwards. | it restates `advances` — one is measurable, the other is a judgment. |
+
+`advances` and `grants_facts` differ most obviously on a quest. Desert Treasure I grants
+exactly two facts — the quest is complete, and Ancients are unlocked — but it *advances*
+three capabilities by very different amounts, because two of them need far more than
+Ancients before they are usable. `grants_facts` is what drives `leverage`: a candidate
+scores well when completing it stops *other* things being blocked.
+
+A few rules worth knowing before you author one:
+
+- **`advances` takes the maximum across capabilities, never the sum.** `buy_voidwaker`
+  advances `deep_wildy_nh: 0.80` and `anti_pk: 0.60`; blended under the active roadmaps
+  those contribute a single figure, not `1.40`. Authoring more entries cannot inflate a
+  candidate.
+- **An empty `advances` is legal** and means *this advances nothing*. That is the honest
+  way to author a genuinely irrelevant action — it then ranks last because the content
+  says so, not because code recognises its name. `train_woodcutting` is the corpus's
+  example. It also puts the candidate outside every roadmap's price-fetch scope.
+- **An `unsatisfied` gate blocks; an `unknown` gate does not.** A candidate whose
+  `requires` cannot be evaluated because nothing has been synced reads *"sync this"*, not
+  *"do this"*, and must stay rankable.
+- **Cost and duration are estimated, not authored.** A `skill_training` candidate's hours
+  come from the training methods for its skill; an `acquisition`'s gp comes from pricing
+  the `item:` leaves in its `completion`. You cannot make a candidate look cheap by
+  declaring it so.
+
+`kind: practice` is not authored. Refreshers are synthesized into practice candidates at
+recommendation time; see *Adding a refresher*.
 
 ## Adding a milestone
 
@@ -234,6 +298,9 @@ means — *high* sensitivity to cost discourages spending **sooner**, which is a
 - ids unique within each kind
 - every referenced capability, quest, item, skill and milestone id resolves
 - every `grants` target is a declared capability
+- every candidate declares a non-empty `completion`, and every `advances` target is a
+  declared capability — a typo'd id would otherwise make a candidate quietly less
+  relevant rather than loudly wrong
 - every `practiced_by` entry is one of the six practice domains
 - every refresher's `practice_group` has at least one `class: execution` member
 - only `class: execution` milestones declare `practiced_by` / `practice_group`
