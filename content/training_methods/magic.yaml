@@ -1,0 +1,22 @@
+# §8.1 verbatim. The fast method is gated behind the very content the recommender is
+# trying to sequence, which is why §8.2 step 3 selects per band among methods the
+# player *currently* satisfies rather than among all methods.
+- id: magic_bursting
+  name: Magic bursting
+  skill: magic
+  xp_per_hour: 250000
+  level_range: {min: 82, max: 99}
+  cost_per_hour_gp: 400000
+  requires:
+    all_of:
+      - unlock: ancient_magicks
+      - quest: desert_treasure_i
+
+# The conservative default: no requirements, so it is always available and every band
+# is covered. §8.2's fallback exists for bands even this does not reach.
+- id: magic_conservative
+  name: Magic — conservative default
+  skill: magic
+  xp_per_hour: 35000
+  level_range: {min: 1, max: 99}
+  cost_per_hour_gp: 40000

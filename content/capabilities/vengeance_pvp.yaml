@@ -1,0 +1,16 @@
+# §4.2 names "Vengeance PKer" as a playstyle and §10.3 authors a `vengeance_timing`
+# execution milestone, but v0.4 had no capability for either to advance. Without one,
+# the vengeance_fundamentals practice group refreshes nothing and §9.3's worked
+# candidate "Practice vengeance timing" has no capability to be relevant to.
+#
+# `unlock: spellbook_lunar` uses the §6.3 reserved prefix (A12) — no new leaf type.
+id: vengeance_pvp
+name: Vengeance PKing
+recommended_readiness: high
+pvp_value: 0.75
+requires:
+  all_of:
+    - skill: {magic: 94}
+    - quest: lunar_diplomacy
+    - unlock: spellbook_lunar
+    - milestone: vengeance_timing

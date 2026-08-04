@@ -1,0 +1,26 @@
+# The 23 OSRS skills. A registry, not a ranking: §10.7 requires every `skill:` leaf and
+# every training method to resolve against a declared skill, and §10.8 forbids putting
+# that list in code.
+- {id: attack,       name: Attack,       is_combat: true}
+- {id: strength,     name: Strength,     is_combat: true}
+- {id: defence,      name: Defence,      is_combat: true}
+- {id: ranged,       name: Ranged,       is_combat: true}
+- {id: prayer,       name: Prayer,       is_combat: true}
+- {id: magic,        name: Magic,        is_combat: true}
+- {id: hitpoints,    name: Hitpoints,    is_combat: true}
+- {id: runecraft,    name: Runecraft}
+- {id: construction, name: Construction}
+- {id: agility,      name: Agility}
+- {id: herblore,     name: Herblore}
+- {id: thieving,     name: Thieving}
+- {id: crafting,     name: Crafting}
+- {id: fletching,    name: Fletching}
+- {id: slayer,       name: Slayer}
+- {id: hunter,       name: Hunter}
+- {id: mining,       name: Mining}
+- {id: smithing,     name: Smithing}
+- {id: fishing,      name: Fishing}
+- {id: cooking,      name: Cooking}
+- {id: firemaking,   name: Firemaking}
+- {id: woodcutting,  name: Woodcutting}
+- {id: farming,      name: Farming}

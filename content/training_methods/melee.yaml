@@ -1,0 +1,30 @@
+# One conservative default per melee skill. Deliberately unambitious rates: an estimate
+# that is pessimistic and right beats one that is optimistic and wrong, because §9.4
+# ranks on effort_decay and an understated cost cannot flatter a candidate.
+- id: attack_conservative
+  name: Attack — conservative default
+  skill: attack
+  xp_per_hour: 45000
+  level_range: {min: 1, max: 99}
+  cost_per_hour_gp: 30000
+
+- id: strength_conservative
+  name: Strength — conservative default
+  skill: strength
+  xp_per_hour: 45000
+  level_range: {min: 1, max: 99}
+  cost_per_hour_gp: 30000
+
+- id: defence_conservative
+  name: Defence — conservative default
+  skill: defence
+  xp_per_hour: 45000
+  level_range: {min: 1, max: 99}
+  cost_per_hour_gp: 30000
+
+- id: ranged_conservative
+  name: Ranged — conservative default
+  skill: ranged
+  xp_per_hour: 55000
+  level_range: {min: 1, max: 99}
+  cost_per_hour_gp: 120000

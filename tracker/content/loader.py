@@ -68,9 +68,16 @@ class ContentValidationError(Exception):
 class Content:
     """The whole authored corpus, indexed by id.
 
-    ``locations`` maps every object id back to the file and line it came from, so a
-    cross-object rule violation — a dangling reference, a cycle — can point at the
+    ``locations`` maps ``(kind, id)`` back to the file and line the object came from, so
+    a cross-object rule violation — a dangling reference, a cycle — can point at the
     author's file rather than at the validator.
+
+    **Ids are unique per kind, not globally.** §10.7's *"id uniqueness across the
+    corpus"* reads as one namespace, but §4.2 declares a capability ``anti_pk`` while
+    §4.3 and §9.3 select a roadmap ``anti_pk``; a global rule would reject the SDD's own
+    examples. "Across the corpus" therefore means across every file of a kind, as opposed
+    to within a single file — which is also how ids resolve at runtime, since a
+    ``capability:`` leaf never searches roadmaps.
     """
 
     profile: ScoringProfile
@@ -82,10 +89,12 @@ class Content:
     roadmaps: Mapping[str, Roadmap] = field(default_factory=dict)
     training_methods: Mapping[str, TrainingMethod] = field(default_factory=dict)
     refreshers: Mapping[str, RefresherTemplate] = field(default_factory=dict)
-    locations: Mapping[str, ContentLocation] = field(default_factory=dict)
+    locations: Mapping[tuple[str, str], ContentLocation] = field(default_factory=dict)
 
-    def location_of(self, object_id: str) -> ContentLocation:
-        return self.locations.get(object_id, ContentLocation())
+    def location_of(self, kind: str, object_id: str) -> ContentLocation:
+        """Where an object was authored. ``kind`` is the singular label — ``capability``,
+        ``roadmap``, ``milestone`` — because ids are only unique within a kind."""
+        return self.locations.get((kind, object_id), ContentLocation())
 
     def item_by_numeric_id(self, item_id: int) -> Item | None:
         """Reverse of ``Item.item_id`` — how an ``item:`` leaf reaches an observation."""
@@ -143,7 +152,7 @@ def parse_corpus(
         return None, [ContentError("content directory does not exist", ContentLocation(file=root))]
 
     indexes: dict[str, dict[str, Any]] = {name: {} for name, _, _ in _DIRECTORIES}
-    locations: dict[str, ContentLocation] = {}
+    locations: dict[tuple[str, str], ContentLocation] = {}
 
     for directory, label, model in _DIRECTORIES:
         for obj, location in _load_directory(root / directory, label, model, errors):
@@ -151,18 +160,19 @@ def parse_corpus(
             if not isinstance(object_id, str):  # pragma: no cover — every model declares id
                 errors.append(ContentError(f"{label} has no id", location))
                 continue
-            if object_id in locations:
+            key = (label, object_id)
+            if key in locations:
                 errors.append(
                     ContentError(
-                        f"duplicate id {object_id!r}; already declared at "
-                        f"{locations[object_id]} (§10.7 requires ids to be unique across the "
-                        "whole corpus, not just within a directory)",
+                        f"duplicate {label} id {object_id!r}; already declared at "
+                        f"{locations[key]}. §10.7 requires ids to be unique across every file "
+                        "of a kind, not merely within one file",
                         location,
                     )
                 )
                 continue
             indexes[directory][object_id] = obj
-            locations[object_id] = location
+            locations[key] = location
 
     profile = _load_profile(root, profile_path, errors)
     if profile is None:

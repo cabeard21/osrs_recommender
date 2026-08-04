@@ -1,0 +1,30 @@
+# §10.5. `price_mode: live` requires the numeric item_id the OSRS Wiki price API is
+# keyed by; `fallback_price_gp` is the static hint the §8.3 cascade lands on when both
+# the live and cached layers miss.
+- id: voidwaker
+  name: Voidwaker
+  item_id: 27690
+  price_mode: live
+  fallback_price_gp: 85000000
+  price_staleness_days: 7
+
+- id: armadyl_godsword
+  name: Armadyl godsword
+  item_id: 11802
+  price_mode: live
+  fallback_price_gp: 15000000
+  price_staleness_days: 7
+
+- id: mystic_robe_top
+  name: Mystic robe top
+  item_id: 4091
+  price_mode: live
+  fallback_price_gp: 100000
+  price_staleness_days: 30
+
+- id: ahrims_robetop
+  name: Ahrim's robetop
+  item_id: 4712
+  price_mode: live
+  fallback_price_gp: 1500000
+  price_staleness_days: 30

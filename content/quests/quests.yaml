@@ -1,0 +1,9 @@
+# Only quests this corpus's capabilities actually gate on. Add a quest here before
+# referencing it from a `quest:` leaf — §10.7 will tell you if you forget.
+- id: desert_treasure_i
+  name: Desert Treasure I
+  quest_points: 3
+
+- id: lunar_diplomacy
+  name: Lunar Diplomacy
+  quest_points: 2
