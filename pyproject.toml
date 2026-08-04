@@ -89,12 +89,16 @@ plugins = ["pydantic.mypy"]
 warn_unused_configs = true
 warn_redundant_casts = true  # global-only flag; mypy rejects it in a per-module section
 ignore_missing_imports = true
-# `tests/` has no `__init__.py` anywhere, so mypy derives a module name from each file's
-# nearest non-package ancestor: every `conftest.py` becomes the module `conftest` and the
+# `tests/` has no `__init__.py` anywhere — deliberately, so pytest resolves each
+# directory's `conftest.py` per directory. Without this flag mypy derives a module name
+# from the basename alone: every `conftest.py` becomes the module `conftest`, and the
 # second one added to the tree is a hard "Duplicate module named conftest" error that
-# stops the run before it checks anything. Anchoring the package base at the repo root
-# instead names them `tests.db.conftest` / `tests.progression.conftest`, which is also how
-# a test module already imports a sibling directory's shared constants.
+# aborts the run before it checks anything. Anchoring the package base at the repo root
+# names them by path instead — `tests.db.conftest`, `tests.progression.conftest`,
+# `tests.estimation.conftest` — so they no longer collide.
+#
+# Steps 3b and 5 each hit this independently and added the same two lines. See the pytest
+# section below for the collection-time twin of the same problem.
 explicit_package_bases = true
 mypy_path = "."
 
@@ -126,7 +130,7 @@ extra_checks = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # `importlib` import mode, for the same reason `explicit_package_bases` is set for mypy
-# below: `tests/` has no `__init__.py`, so under the legacy `prepend` mode every test
+# above: `tests/` has no `__init__.py`, so under the legacy `prepend` mode every test
 # module is imported by its bare basename and two files sharing one — `tests/db/test_types.py`
 # and `tests/domain/test_types.py` — collide during collection and abort the whole run.
 # Renaming one would work until the next collision; this removes the class of failure.
