@@ -89,6 +89,13 @@ plugins = ["pydantic.mypy"]
 warn_unused_configs = true
 warn_redundant_casts = true  # global-only flag; mypy rejects it in a per-module section
 ignore_missing_imports = true
+# `tests/` has no `__init__.py` anywhere — deliberately, so pytest resolves each
+# directory's `conftest.py` per directory (see tests/progression/conftest.py). Without
+# this flag mypy derives a module name from the basename alone and rejects the second
+# `conftest.py` as a duplicate of the first; with it, the name is derived from the path,
+# so `tests.progression.conftest` and `tests.estimation.conftest` are distinct.
+explicit_package_bases = true
+mypy_path = "."
 
 [[tool.mypy.overrides]]
 module = [

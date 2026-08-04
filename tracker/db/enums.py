@@ -7,22 +7,33 @@ concerns a few SDD tables define with their own value sets, and reusing a domain
 them would either be wrong (a different set of members) or would blur a distinction the
 SDD draws deliberately. Each is cited against the table that defines it.
 
-Two are easy to mistake for a domain type that already exists and is *not* the same thing:
+One is easy to mistake for a domain type that already exists and is *not* the same thing:
+``PracticeEventConfidence`` (§6.7) is two-valued (``high | medium``) — practice evidence
+is never *low* confidence, it simply isn't recorded. ``tracker.domain.types.Confidence``
+is three-valued and ordered for a threshold comparison (§6.9); reusing it here would let
+a ``low`` value round-trip through the database with nothing to stop it.
 
-* ``PracticeEventConfidence`` (§6.7) is two-valued (``high | medium``) — practice evidence
-  is never *low* confidence, it simply isn't recorded. ``tracker.domain.types.Confidence``
-  is three-valued and ordered for a threshold comparison (§6.9); reusing it here would let
-  a ``low`` value round-trip through the database with nothing to stop it.
-* ``PriceSourceLayer`` (§6.8) names which layer of the §8.3 three-layer price cascade
-  supplied a number (``live | cached | static_hint | unknown``). It shares the *name*
-  ``source`` with the shared provenance ``Source`` enum (§6, ``runelite | wise_old_man |
-  ...``) but is a completely different axis, which is why it lives here under a distinct
-  Python name even though the SDD's own column is also called ``source``.
+**``PriceSelectionPolicy`` and ``PriceSourceLayer`` are re-exports, not definitions.**
+They moved to :mod:`tracker.domain.types` when §8.3's cascade was implemented: they are
+that cascade's *output* vocabulary, and :mod:`tracker.estimation.prices` — which produces
+them — may not import :mod:`tracker.db` under §16.1. Persistence merely records what the
+estimator decided, so the definition belongs on the estimator's side of that boundary.
+The re-export keeps ``from tracker.db.enums import PriceSourceLayer`` working at every
+existing call site, which is where the §6.8 columns are declared.
 """
 
 from __future__ import annotations
 
 from enum import Enum
+
+from tracker.domain.types import PriceSelectionPolicy, PriceSourceLayer
+
+__all__ = [
+    "PracticeEventConfidence",
+    "PriceSelectionPolicy",
+    "PriceSourceLayer",
+    "RecommendationCandidateKind",
+]
 
 
 class PracticeEventConfidence(Enum):
@@ -35,26 +46,6 @@ class PracticeEventConfidence(Enum):
 
     HIGH = "high"
     MEDIUM = "medium"
-
-
-class PriceSelectionPolicy(Enum):
-    """§6.8, §8.3 — the rule used to pick a number out of the price cascade.
-
-    ``ACQUISITION_COST`` is the only policy v1 defines: recent high -> recent low ->
-    cached -> static hint -> unknown (§8.3), conservative because a recommendation to
-    *buy* something should not understate its cost.
-    """
-
-    ACQUISITION_COST = "acquisition_cost"
-
-
-class PriceSourceLayer(Enum):
-    """§6.8, §8.3 — which layer of the price cascade supplied ``selected_price_gp``."""
-
-    LIVE = "live"
-    CACHED = "cached"
-    STATIC_HINT = "static_hint"
-    UNKNOWN = "unknown"
 
 
 class RecommendationCandidateKind(Enum):

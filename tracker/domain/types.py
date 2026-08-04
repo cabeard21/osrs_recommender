@@ -138,6 +138,38 @@ SOURCE_PRECEDENCE: tuple[Source, ...] = (
 )
 
 
+class PriceSelectionPolicy(Enum):
+    """§6.8, §8.3 — the rule used to pick a number out of the price cascade.
+
+    ``ACQUISITION_COST`` is the only policy v1 defines: recent high -> recent low ->
+    cached -> static hint -> unknown (§8.3), conservative because a recommendation to
+    *buy* something should not understate its cost.
+    """
+
+    ACQUISITION_COST = "acquisition_cost"
+
+
+class PriceSourceLayer(Enum):
+    """§6.8, §8.3 — which layer of the price cascade supplied ``selected_price_gp``.
+
+    Shares the word *source* with the provenance enum :class:`Source` above (``runelite
+    | wise_old_man | ...``) and is a completely different axis, which is why it carries a
+    distinct Python name even though §6.8's own column is also called ``source``.
+
+    Both this and :class:`PriceSelectionPolicy` live in the domain package rather than
+    with the persistence enums because they are **outputs of the §8.3 cascade**, which
+    :mod:`tracker.estimation.prices` computes — §16.1 forbids that module from importing
+    ``tracker.db``, and a vocabulary the estimator cannot name is a vocabulary the
+    estimator cannot return. ``tracker.db.enums`` re-exports both; the string values are
+    what the columns store and must not change.
+    """
+
+    LIVE = "live"
+    CACHED = "cached"
+    STATIC_HINT = "static_hint"
+    UNKNOWN = "unknown"
+
+
 class Container(Enum):
     """Where an item was observed (§6.5)."""
 
