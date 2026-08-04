@@ -23,7 +23,7 @@ lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
 typecheck:         ; $(PY) -m mypy tracker
 validate-content:  ; $(PY) -m tracker.content.validate $(ARGS)
-migrate:           ; @echo "stub — implemented in step 3a"
+migrate:           ; $(PY) -m alembic $(if $(ARGS),$(ARGS),upgrade head)
 run:               ; @echo "stub — implemented in step 9"
 
 clean: ; rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage
