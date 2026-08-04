@@ -22,7 +22,7 @@ test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing $(A
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
 typecheck:         ; $(PY) -m mypy tracker
-validate-content:  ; @echo "stub — implemented in step 2b"
+validate-content:  ; $(PY) -m tracker.content.validate $(ARGS)
 migrate:           ; @echo "stub — implemented in step 3a"
 run:               ; @echo "stub — implemented in step 9"
 

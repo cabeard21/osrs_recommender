@@ -1,0 +1,6 @@
+- id: teleblock_understanding
+  name: Teleblock understanding
+  class: knowledge
+  kind: self_attested
+  practice_group: nh_fundamentals
+  practiced_by: [lms]

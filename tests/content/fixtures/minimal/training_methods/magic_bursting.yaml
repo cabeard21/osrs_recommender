@@ -1,0 +1,10 @@
+id: magic_bursting
+name: Magic bursting
+skill: magic
+xp_per_hour: 250000
+level_range: {min: 82, max: 99}
+cost_per_hour_gp: 400000
+requires:
+  all_of:
+    - unlock: ancient_magicks
+    - quest: desert_treasure_i

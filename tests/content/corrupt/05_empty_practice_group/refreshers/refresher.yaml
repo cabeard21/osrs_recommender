@@ -1,0 +1,5 @@
+id: refresh_nothing
+name: Refresh a group that does not exist
+practice_group: no_such_group
+suggested_session: 5 LMS matches
+suggested_session_hours: 0.5

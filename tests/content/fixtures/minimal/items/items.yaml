@@ -1,0 +1,6 @@
+- id: voidwaker
+  name: Voidwaker
+  item_id: 27690
+  price_mode: live
+  fallback_price_gp: 85000000
+  price_staleness_days: 7
