@@ -89,6 +89,14 @@ plugins = ["pydantic.mypy"]
 warn_unused_configs = true
 warn_redundant_casts = true  # global-only flag; mypy rejects it in a per-module section
 ignore_missing_imports = true
+# `tests/` has no `__init__.py` anywhere, so mypy derives a module name from each file's
+# nearest non-package ancestor: every `conftest.py` becomes the module `conftest` and the
+# second one added to the tree is a hard "Duplicate module named conftest" error that
+# stops the run before it checks anything. Anchoring the package base at the repo root
+# instead names them `tests.db.conftest` / `tests.progression.conftest`, which is also how
+# a test module already imports a sibling directory's shared constants.
+explicit_package_bases = true
+mypy_path = "."
 
 [[tool.mypy.overrides]]
 module = [
