@@ -7,7 +7,7 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **4**, **7** complete and merged to `main` (2026-08-04); 528 tests. Next: **3b**, **5** (both unblocked), then **6**. |
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **7** complete and merged to `main` (2026-08-04); 753 tests. Next: **6** (unblocked by 5 + 2.5), then **8a**. Five candidate amendments are open — see the note under §20. |
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
@@ -192,6 +192,37 @@ recurring pattern behind A7, `ContainerScan` (§6.5) and the price trade timesta
 | **A19** | `ItemPrice.selected_price_gp` / `selection_policy` / `selection_reason` (§6.8) have no writer. | Step 5 computes them purely; Step 9's pipeline persists them. | §6.8 |
 | **A20** | §14's repository layout omits `tracker/domain/` (where `Tri` is defined) and `tools/`. | Add both. | §14 |
 | **A21** | Python 3.13 specified (§14.1); machine has 3.12.4 and no `uv`. | **Decided: `Python 3.12+`, 3.13 preferred but not required.** Nothing in the design needs a 3.13-only feature; the real floor is Pydantic v2 and modern typing syntax. Step 1 targets 3.12. | §14.1 |
+
+### Open amendment candidates — surfaced by implementation, not yet ratified
+
+Found while building Steps 3b and 5. Each is recorded here rather than in the SDD because
+each needs a decision, not a transcription. **The code currently ships a documented choice
+for every one of them**, so nothing is blocked; ratifying changes what the docstring cites,
+and in two cases would change behaviour.
+
+| # | Gap | What the code does today | Decision needed |
+|---|---|---|---|
+| **A23?** | `Capability.grants` is authored and validated but **inert** — the SDD gives it no evaluation semantics, §10.7 only checks the referent exists, and no seed content uses it. It looks redundant with `requires: {capability: X}` read backwards. | Nothing reads it. | Give it semantics, or delete the field. |
+| **A24?** | `ItemObservation`'s aggregation is unspecified. §6.5 defines `quantity` per container; §16.1's `PlayerState` is per item, and nothing says how they combine. | **Sum** across containers, containers unioned, `observed_at` the most recent. | Confirm sum. Nothing reads the magnitude yet (`_item` only tests `> 0`), which is why a wrong rule would be cheap to ship and expensive to find. |
+| **A25?** | §7.4 ranks only 3 of the 6 `Source` members. `manual`, `derived` and `osrs_wiki_prices` have no precedence, so a user's manual correction tying a hiscores read resolves arbitrarily. | Unranked sources sort last, deterministically. | Should `manual` outrank every automated source? |
+| **A26?** | §6.6's `achieved` invariant is assigned to the wrong layer. `models.py` says "whoever writes this table" enforces never-set-back-to-false, but §6.6's wording bars it *"by the passage of time"* — the freshness service, not a user fixing a mis-attestation. A repository writer cannot tell the two apart. | No guard in the writer; reasoning documented at `upsert_milestone`. | State that the guard belongs to Step 9's freshness pipeline. |
+| **A27?** | §8.2's *"conservative default rate"* has no authored home. Every other tunable is content (§9.7's profile, §10.4's session hours); this one number is not. | `FALLBACK_XP_PER_HOUR = 15_000` in `methods.py`, with a test asserting it is slower than anything the corpus authors. | Move to a `fallback_xp_per_hour` field on `ScoringProfile`? |
+
+Two further findings needed no amendment and were **fixed in code**:
+
+- **Every stored `datetime` was timezone-naive.** `Mapped[datetime]` rendered a plain
+  `DateTime`; SQLite stores dates without an offset, so a value written aware read back
+  naive and could not be subtracted from an aware `now` at all. Every §4.5 comparison —
+  `now − scanned_at`, `now − last_practiced_at`, `now − high_trade_at` — crosses that
+  boundary. Fixed with `tracker/db/types.py::UtcDateTime`, applied through
+  `type_annotation_map` so future columns inherit it. `sa.DateTime(timezone=True)` is
+  **not** the fix: on SQLite it is a silent no-op that absorbs the offset into the number.
+- **`hours is None` has no stated meaning for §9.4's `effort_decay`.** A `quest:` candidate
+  has no skill target and no item, so §8 can estimate neither time nor gp — but
+  `exp(−hours/τ)` then scores it as effortless. This is A8's problem one candidate kind
+  over; A8 closed it for refreshers by making `suggested_session_hours` mandatory, and
+  quests have no equivalent. **Step 6 must state a rule for `hours is None` rather than
+  letting the floor `ε` decide it by accident.**
 
 ---
 
