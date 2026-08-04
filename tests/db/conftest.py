@@ -7,11 +7,10 @@ created from the models rather than by running Alembic because that is the *othe
 subject; here a migration failure should fail ``test_migrations.py``, not every projection
 assertion at once.
 
-**Timestamps are naive UTC**, deliberately. §6's columns are plain ``DateTime`` (Step 3a),
-which SQLite stores without an offset, so a ``datetime(..., tzinfo=UTC)`` written here
-comes back naive and no round-trip assertion on it could pass. Using naive values keeps
-these tests about the projection instead of about the driver; see the report note on
-whether ``DateTime(timezone=True)`` is worth an amendment.
+**Timestamps are aware UTC**, and must be: §6's columns bind through
+:class:`tracker.db.types.UtcDateTime`, which rejects a naive value rather than guessing
+what it meant. That is what lets a projected timestamp be subtracted from an aware ``now``
+in the engine — the comparison §4.5 rests on, and the one these tests share a clock with.
 
 Builders are handed out as fixtures returning callables rather than as importable module
 functions: ``conftest`` modules from sibling test directories share one flat namespace, so
@@ -22,7 +21,7 @@ up per directory and cannot collide.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -44,8 +43,8 @@ from tracker.db.models import Base, Player
 from tracker.db.session import build_engine, build_session_factory
 from tracker.domain.types import GpSensitivity
 
-#: A fixed clock. Naive UTC — see the module docstring.
-NOW = datetime(2026, 8, 4, 12, 0, 0)
+#: A fixed clock. Aware UTC — see the module docstring.
+NOW = datetime(2026, 8, 4, 12, 0, 0, tzinfo=UTC)
 
 #: An arbitrary but valid numeric OSRS item id, used wherever a test needs one (§10.5).
 VOIDWAKER_ITEM_ID = 27_690

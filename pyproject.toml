@@ -125,7 +125,12 @@ extra_checks = true
 # --------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --strict-config"
+# `importlib` import mode, for the same reason `explicit_package_bases` is set for mypy
+# below: `tests/` has no `__init__.py`, so under the legacy `prepend` mode every test
+# module is imported by its bare basename and two files sharing one — `tests/db/test_types.py`
+# and `tests/domain/test_types.py` — collide during collection and abort the whole run.
+# Renaming one would work until the next collision; this removes the class of failure.
+addopts = "--strict-markers --strict-config --import-mode=importlib"
 markers = [
     "golden: golden-corpus ranking judgments (§16.2)",
     "contract: cross-language payload fixtures (§12.1)",

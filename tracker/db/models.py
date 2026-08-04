@@ -59,7 +59,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -70,6 +70,7 @@ from tracker.db.enums import (
     PriceSourceLayer,
     RecommendationCandidateKind,
 )
+from tracker.db.types import UtcDateTime
 from tracker.domain.types import (
     Confidence,
     Container,
@@ -98,9 +99,21 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
-    """Declarative base. ``tracker/migrations/env.py`` targets ``Base.metadata``."""
+    """Declarative base. ``tracker/migrations/env.py`` targets ``Base.metadata``.
+
+    Every ``Mapped[datetime]`` in this module resolves to :class:`UtcDateTime` through
+    ``type_annotation_map`` rather than being spelled out per column. Eighteen explicit
+    ``mapped_column(UtcDateTime)`` calls would work today and would be one omission away
+    from failing later: the columns Steps 8 and 9 add are exactly the ones whose author is
+    least likely to know the rule, and a missed one is invisible until an aware ``now``
+    meets a naive stored value at runtime. Declaring it once makes the correct type the
+    default and forgetting it impossible.
+    """
 
     metadata = sa.MetaData(naming_convention=NAMING_CONVENTION)
+    # ``ClassVar`` is required, not cosmetic: the declarative machinery maps every other
+    # annotated class attribute to a column, and ``ClassVar`` is the documented opt-out.
+    type_annotation_map: ClassVar[dict[Any, Any]] = {datetime: UtcDateTime()}
 
 
 def _enum_column(enum_cls: type[Enum]) -> sa.Enum:
