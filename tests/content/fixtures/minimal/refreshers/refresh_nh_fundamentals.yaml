@@ -1,0 +1,8 @@
+id: refresh_nh_fundamentals
+name: Refresh NH fundamentals
+practice_group: nh_fundamentals
+trigger:
+  any_member_freshness_at_least: stale
+suggested_session: 5 LMS matches
+suggested_session_hours: 0.5
+advances: [ice_barrage_nh]
