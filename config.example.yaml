@@ -1,0 +1,38 @@
+# Copy to config.yaml and edit. config.yaml is gitignored — it holds the bearer token
+# shared with the RuneLite plugin (§11.2).
+#
+# Every key here can also be supplied by environment variable with a TRACKER_ prefix and
+# __ for nesting, e.g. TRACKER_API_TOKEN, TRACKER_INTEGRATIONS__PRICES__TTL_HOURS.
+# Environment variables win over this file.
+
+# §11.1 — explicit, never 0.0.0.0. Loopback, or this machine's Tailscale interface address.
+bind_address: 127.0.0.1
+port: 8502
+
+# §11.2 — shared secret; the RuneLite plugin sends it as a bearer token on /api/*.
+# Generate one with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+api_token: CHANGE_ME
+
+database_url: sqlite:///./tracker.db
+
+content_dir: content
+scoring_profile_path: content/scoring/profile.yaml
+
+integrations:
+  # §7.5 — the provider may block generic User-Agents. Name the app, version and purpose;
+  # public contact detail is optional and is only published if you put it here.
+  prices:
+    provider: osrs_wiki
+    base_url: https://prices.runescape.wiki/api/v1/osrs
+    user_agent: >-
+      osrs-pvp-progression-tracker/0.1
+      (private local progression app; contact: github.com/example/osrs-tracker)
+    ttl_hours: 12
+    manual_refresh_min_interval_seconds: 60
+
+  # §7.3 — Wise Old Man supplies hiscores-derived skill data.
+  wise_old_man:
+    base_url: https://api.wiseoldman.net/v2
+    user_agent: >-
+      osrs-pvp-progression-tracker/0.1
+      (private local progression app; contact: github.com/example/osrs-tracker)

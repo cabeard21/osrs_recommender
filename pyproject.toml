@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osrs-pvp-progression-tracker"
+version = "0.1.0"
+description = "Locally hosted OSRS Wilderness PvP progression tracker (see docs/SDD.md)"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "nicegui",
+    "sqlalchemy",
+    "alembic",
+    "pydantic>=2",
+    "pydantic-settings",
+    "httpx",
+    "pyyaml",
+    "jsonschema",
+    "plotly",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-playwright",
+    "nicegui[testing]",
+    "ruff",
+    "mypy",
+    "hypothesis",
+    "types-PyYAML",
+    "types-jsonschema",
+]
+
+[tool.setuptools.packages.find]
+include = ["tracker*"]
+
+# --------------------------------------------------------------------------
+# ruff — lint + format
+# --------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["tests/content/corrupt", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    # This codebase quotes the SDD constantly, and the SDD is written with typographic
+    # punctuation (§, em dash, en dash, →). Flagging those as "ambiguous unicode" would
+    # mean paraphrasing the specification in every docstring that cites it.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# --------------------------------------------------------------------------
+# mypy — strict over the pure core only (§16.1)
+#
+# The pure core is where three-valued logic lives; strictness there is what
+# keeps `Tri` from silently decaying into `bool | None` (G2/G3, D8).
+# --------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_configs = true
+warn_redundant_casts = true  # global-only flag; mypy rejects it in a per-module section
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tracker.domain.*",
+    "tracker.content.*",
+    "tracker.freshness.*",
+    "tracker.progression.*",
+    "tracker.recommendations.*",
+    "tracker.estimation.*",
+]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_equality = true
+extra_checks = true
+
+# --------------------------------------------------------------------------
+# pytest
+# --------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+markers = [
+    "golden: golden-corpus ranking judgments (§16.2)",
+    "contract: cross-language payload fixtures (§12.1)",
+]
