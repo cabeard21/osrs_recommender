@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Version** | 0.5 |
+| **Version** | 0.5.1 |
 | **Date** | 2026-08-04 |
-| **Status** | Design — no implementation yet. All design questions resolved and all known specification gaps closed (§20); ready to implement. |
+| **Status** | Implementation in progress against `plans/osrs-tracker-sdd-implementation.md`. All design questions resolved and all known specification gaps closed (§20). |
 
 ## Changelog
 
@@ -15,6 +15,7 @@
 | 0.3 | 2026-08-04 | Resolved D1–D5 (§18). Milestones gain class and freshness; staleness decays confidence, never achievement. Live item prices with cached and static fallback layers. Multiple active roadmaps merge into one effective capability-weight map via convex combination. Scoring weights externalized to a versioned profile with a defined tuning method. Side-loading fixed as the v1 plugin distribution path. Separated `unlocked` from `readiness_confidence`; estimate confidence expanded to three levels. |
 | 0.4 | 2026-08-04 | Resolved D6–D10 (§18). **`CapabilityState.unlocked: bool` replaced by tri-valued `status`**, with three-valued requirement evaluation throughout (§9.1). Added `PracticeEvent` and the derived-practice-proxy model. Refresher candidates grouped by practice domain with a one-per-list cap. κ presets retained and relabelled in user terms. Price feed pinned to the OSRS Wiki real-time prices API, with confidence derived from **trade** timestamps rather than fetch time. Added the `recommended_now` status layer. |
 | 0.5 | 2026-08-04 | Closed 21 specification gaps found while planning implementation; each is traced in §20. **Added the missing `Candidate` schema (§10.6)** — a core noun that had a content directory and drove every scoring factor, but no defined fields — together with the derivations for `pvp_value`, `leverage`, `proximity`, `completed` and `blocked` (D11). Completed the three-valued leaf resolution table (§9.1), pinning `unlock: available` and `quest: in_progress` as **unsatisfied**. Fixed the `unlock_fraction` denominator and defined *contributing* and *aged* for `readiness_confidence` (§6.9). Added `Milestone.attested_at` semantics so "never prompted" is representable (§6.6). Added `ActiveRoadmap` (§6.12) and made `SyncEvent.player_id` nullable so §11.3's audit requirement is satisfiable (§6.11). Moved the health endpoint outside `/api` (§11). Added **§4.5**, naming the observation/truth distinction that now recurs three times in the design. Sync contract declared provisional until validated against a real snapshot (D12). |
+| 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
 
 ---
 
@@ -1130,9 +1131,19 @@ content/
     roadmaps/
     training_methods/
     milestones/
+    refreshers/       # practice-group templates (§10.4)
     items/            # ids, price policy, fallback hints
+    quests/           # id + name; the referents `quest:` leaves resolve against
+    skills/           # id + name; the referents `skill:` leaves resolve against
     scoring/          # profile.yaml
 ```
+
+`quests/`, `skills/` and `refreshers/` were added in v0.5.1 (A22). §10.7 requires referential
+integrity for *"every referenced capability, quest, item, skill and milestone id"*, which is
+unenforceable for two of those five without somewhere to declare them; and §10.4's refresher
+templates are authored content that had no directory. Quests and skills are thin — an id and a
+name — but they must be **content** rather than a table in code, because §10.8 names a quest as
+exactly the thing that must never require a code change.
 
 ## 10.2 Requirement grammar
 
@@ -1711,14 +1722,14 @@ Consciously postponed, with the trigger that would reopen each. None blocks impl
 
 ---
 
-# 20. Specification Gap Closure Log (v0.5)
+# 20. Specification Gap Closure Log
 
-Twenty-one gaps were found by walking v0.4 section-by-section against a proposed
-implementation order — the first time the document was read as something to *execute* rather
-than to *agree with*. Each is closed above; this table exists so a reader of v0.4 can find
-where each change landed.
+Twenty-one gaps (A1–A21) were found in v0.4 by walking the document section-by-section against
+a proposed implementation order — the first time it was read as something to *execute* rather
+than to *agree with*. A22 was found in v0.5 by implementing §10.7. Each is closed above; this
+table exists so a reader of an earlier version can find where each change landed.
 
-The gaps cluster into three kinds, and the pattern is worth noting for future revisions:
+The gaps cluster into four kinds, and the pattern is worth noting for future revisions:
 
 * **Named but never defined** (A1) — the largest single gap. `Candidate` had a role in four
   sections and a definition in none.
@@ -1727,6 +1738,9 @@ The gaps cluster into three kinds, and the pattern is worth noting for future re
   worked example.
 * **Contract with no sink** (A12, A13, A17, A19) — a field specified on one side of a boundary
   with nothing on the other side to receive it.
+* **Rule without a referent** (A20, A22) — a constraint stated over a set the document never
+  provides a place to populate. Both were found by writing the thing that had to satisfy the
+  rule, which is the only reliable way to find this kind.
 
 | # | Gap in v0.4 | Closed in |
 |---|---|---|
@@ -1751,3 +1765,4 @@ The gaps cluster into three kinds, and the pattern is worth noting for future re
 | A19 | `ItemPrice.selected_*` columns had no specified writer | §6.8 |
 | A20 | §14's layout omitted the shared domain types and a tools directory | §14 |
 | A21 | Python 3.13 pinned without need | §14.1 |
+| A22 | §10.7 requires referential integrity for quest and skill ids, but §10.1 gave neither a content directory to be declared in; §10.4's refresher templates likewise had no directory | §10.1 |
