@@ -19,13 +19,13 @@ from tracker.integrations.prices.client import PricesClient, PriceSource
 _FIXED_NOW = datetime(2026, 8, 4, 12, 0, tzinfo=UTC)
 
 
-def _client(handler: httpx.MockTransport, **kwargs: object) -> PricesClient:
+def _client(handler: httpx.MockTransport, breaker: CircuitBreaker | None = None) -> PricesClient:
     return PricesClient(
         PricesSettings(),
         transport=handler,
         sleep=lambda _: None,
         clock=lambda: _FIXED_NOW,
-        **kwargs,
+        breaker=breaker,
     )
 
 
@@ -33,10 +33,10 @@ class TestScopedFetch:
     """§8.3, §11.6: only the requested ids are ever put on the wire."""
 
     def test_requests_only_the_given_ids(self) -> None:
-        requested_ids: list[str | None] = []
+        requested_ids: list[str] = []
 
         def handler(request: httpx.Request) -> httpx.Response:
-            item_id = request.url.params.get("id")
+            item_id = str(request.url.params.get("id", ""))
             requested_ids.append(item_id)
             return httpx.Response(
                 200, json={"data": {item_id: {"high": 100, "highTime": 1, "low": 90, "lowTime": 1}}}

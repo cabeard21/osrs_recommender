@@ -13,11 +13,10 @@ The closure is:
 2. every capability transitively reachable from those through a ``capability:`` leaf
    (§10.2 — capabilities compose into a DAG, e.g. ``deep_wildy_nh`` requires
    ``ice_barrage_nh``);
-3. every candidate in that closure, if the corpus has any — Step 2.5 lands the
-   ``Candidate`` content type in a parallel step, so :class:`~tracker.content.loader.Content`
-   may or may not carry a ``candidates`` mapping yet. This module does not hard-depend
-   on that sibling step's schema landing first; it degrades to "no candidates" rather
-   than failing to import;
+3. every candidate that advances a capability in that closure (§10.6). A candidate
+   declaring an **empty** ``advances`` map advances nothing, so it is in no roadmap's
+   scope — ``train_woodcutting`` is the corpus's own example, and §8.3's rule is
+   "referenced by the active roadmap", not "declared anywhere";
 4. every training method for a skill named by a ``skill:`` leaf anywhere in (1)-(3),
    since a method can itself require an item (e.g. a staff needed to use a spell) even
    though the capability leaf that pulled the skill in says nothing about it.
@@ -29,14 +28,12 @@ happens to declare.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import cast
 
 from tracker.content.loader import Content
 from tracker.content.requirements import (
     CapabilityLeaf,
     ItemLeaf,
     Requirement,
-    RequirementNode,
     SkillLeaf,
     iter_leaves,
 )
@@ -109,28 +106,18 @@ def _reachable_capability_ids(content: Content, roadmap_ids: Iterable[str]) -> f
 
 
 def _candidate_trees(content: Content, capability_ids: frozenset[str]) -> list[Requirement]:
-    """Requirement-shaped trees off any authored ``Candidate`` (§10.6, D11).
+    """Requirement trees off every candidate that advances a capability in the closure.
 
-    Guarded with ``getattr``/``hasattr`` throughout: the ``Candidate`` content type is
-    Step 2.5's responsibility, developed in parallel, and this module must not assume
-    its exact shape (or even its existence in ``Content``) has landed.
+    ``requires`` and ``completion`` are walked; ``grants_facts`` is not. The first two
+    name things the player would have to *acquire* — the Voidwaker in
+    ``buy_voidwaker``'s completion is exactly the price this fetch exists to get.
+    ``grants_facts`` describes what becomes true afterwards, which needs no price.
     """
-    candidates = getattr(content, "candidates", None)
-    if not candidates:
-        return []
     trees: list[Requirement] = []
-    for candidate in candidates.values():
-        advances = getattr(candidate, "advances", ())
-        if advances and not (set(advances) & capability_ids):
+    for candidate in content.candidates.values():
+        if not set(candidate.advances) & capability_ids:
             continue
-        for attr in ("requires", "completion"):
-            node = getattr(candidate, attr, None)
-            if isinstance(node, RequirementNode):
-                # `node` is dynamically confirmed to be one of the concrete leaf/
-                # combinator classes that make up the `Requirement` union — mypy just
-                # cannot see that `RequirementNode` (checked here) and `Requirement`
-                # (the discriminated union `iter_leaves` expects) describe the same
-                # set of classes, since Candidate's own schema is Step 2.5's, not
-                # statically known to this module.
-                trees.append(cast(Requirement, node))
+        if candidate.requires is not None:
+            trees.append(candidate.requires)
+        trees.append(candidate.completion)
     return trees

@@ -8,13 +8,12 @@ the corpus-wide item ids a roadmap must exclude.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from types import SimpleNamespace
-from typing import Any
+from pathlib import Path
 
 from tracker.content.loader import Content
 from tracker.content.requirements import parse as parse_requirement
 from tracker.content.schema import (
+    Candidate,
     Capability,
     Item,
     KappaPresets,
@@ -24,6 +23,8 @@ from tracker.content.schema import (
     ScoringWeights,
     TrainingMethod,
 )
+from tracker.content.validate import load_and_validate
+from tracker.domain.types import CandidateKind
 from tracker.integrations.prices.scope import scoped_item_ids
 
 _PROFILE = ScoringProfile(
@@ -183,21 +184,21 @@ class TestTrainingMethods:
         assert scoped_item_ids(content, ["main"]) == frozenset()
 
 
-@dataclass(frozen=True)
-class _ContentWithCandidates(Content):
-    """A stand-in for Step 2.5's `Candidate` content type, landing in parallel.
+def _candidate(candidate_id: str, advances: dict[str, float], item_id: str) -> Candidate:
+    """A real `Candidate`, not a stand-in — its `advances` is a mapping, not a sequence."""
+    return Candidate(
+        id=candidate_id,
+        name=candidate_id,
+        kind=CandidateKind.ACQUISITION,
+        advances=advances,
+        completion=parse_requirement({"item": item_id}),
+    )
 
-    scope.py must tolerate `Content` either lacking a `candidates` mapping entirely
-    (today's reality) or carrying one (once Step 2.5 lands) without a hard dependency
-    on that step's exact schema — this subclass proves both shapes work.
-    """
 
-    candidates: dict[str, Any] = field(default_factory=dict)
+class TestCandidateScope:
+    """§8.3 — "the active roadmap's ... candidates", not every candidate declared."""
 
-
-class TestCandidatesToleratedButOptional:
-    def test_absent_candidates_attribute_does_not_error(self) -> None:
-        """Today's real `Content` has no `candidates` field at all."""
+    def test_a_corpus_with_no_candidates_scopes_from_capabilities_alone(self) -> None:
         content = Content(
             profile=_PROFILE,
             items={"voidwaker": _item("voidwaker", 27690)},
@@ -212,45 +213,91 @@ class TestCandidatesToleratedButOptional:
         assert scoped_item_ids(content, ["main"]) == frozenset({27690})
 
     def test_a_candidate_advancing_a_reachable_capability_contributes_its_items(self) -> None:
-        content = _ContentWithCandidates(
+        content = Content(
             profile=_PROFILE,
-            items={
-                "voidwaker": _item("voidwaker", 27690),
-                "brew": _item("brew", 6685),
-            },
+            items={"voidwaker": _item("voidwaker", 27690), "brew": _item("brew", 6685)},
             capabilities={
                 "cap_a": Capability(
                     id="cap_a", name="A", requires=parse_requirement({"item": "voidwaker"})
                 )
             },
             roadmaps={"main": Roadmap(id="main", name="Main", capabilities={"cap_a": 1.0})},
+            candidates={"buy_brew": _candidate("buy_brew", {"cap_a": 1.0}, "brew")},
+        )
+
+        assert scoped_item_ids(content, ["main"]) == frozenset({27690, 6685})
+
+    def test_a_candidate_advancing_an_unreachable_capability_is_excluded(self) -> None:
+        content = Content(
+            profile=_PROFILE,
+            items={"voidwaker": _item("voidwaker", 27690), "unrelated": _item("unrelated", 999)},
+            capabilities={
+                "cap_a": Capability(
+                    id="cap_a", name="A", requires=parse_requirement({"item": "voidwaker"})
+                )
+            },
+            roadmaps={"main": Roadmap(id="main", name="Main", capabilities={"cap_a": 1.0})},
+            candidates={"buy_unrelated": _candidate("buy_unrelated", {"cap_z": 1.0}, "unrelated")},
+        )
+
+        assert scoped_item_ids(content, ["main"]) == frozenset({27690})
+
+    def test_a_candidate_advancing_nothing_is_excluded(self) -> None:
+        """An empty `advances` map advances nothing, so it is in no roadmap's scope.
+        `train_woodcutting` is the shipped corpus's own example of one."""
+        content = Content(
+            profile=_PROFILE,
+            items={"voidwaker": _item("voidwaker", 27690), "unrelated": _item("unrelated", 999)},
+            capabilities={
+                "cap_a": Capability(
+                    id="cap_a", name="A", requires=parse_requirement({"item": "voidwaker"})
+                )
+            },
+            roadmaps={"main": Roadmap(id="main", name="Main", capabilities={"cap_a": 1.0})},
+            candidates={"buy_nothing": _candidate("buy_nothing", {}, "unrelated")},
+        )
+
+        assert scoped_item_ids(content, ["main"]) == frozenset({27690})
+
+    def test_a_candidate_gate_contributes_items_too(self) -> None:
+        """`requires` names things that must be held before starting, which still cost gp."""
+        content = Content(
+            profile=_PROFILE,
+            items={"voidwaker": _item("voidwaker", 27690), "brew": _item("brew", 6685)},
+            capabilities={
+                "cap_a": Capability(
+                    id="cap_a", name="A", requires=parse_requirement({"skill": {"magic": 94}})
+                )
+            },
+            roadmaps={"main": Roadmap(id="main", name="Main", capabilities={"cap_a": 1.0})},
             candidates={
-                "buy_brew": SimpleNamespace(
-                    advances=("cap_a",), requires=parse_requirement({"item": "brew"})
+                "buy_brew": Candidate(
+                    id="buy_brew",
+                    name="buy_brew",
+                    kind=CandidateKind.ACQUISITION,
+                    advances={"cap_a": 1.0},
+                    requires=parse_requirement({"item": "voidwaker"}),
+                    completion=parse_requirement({"item": "brew"}),
                 )
             },
         )
 
         assert scoped_item_ids(content, ["main"]) == frozenset({27690, 6685})
 
-    def test_a_candidate_advancing_an_unreachable_capability_is_excluded(self) -> None:
-        content = _ContentWithCandidates(
-            profile=_PROFILE,
-            items={
-                "voidwaker": _item("voidwaker", 27690),
-                "unrelated": _item("unrelated", 999),
-            },
-            capabilities={
-                "cap_a": Capability(
-                    id="cap_a", name="A", requires=parse_requirement({"item": "voidwaker"})
-                )
-            },
-            roadmaps={"main": Roadmap(id="main", name="Main", capabilities={"cap_a": 1.0})},
-            candidates={
-                "buy_unrelated": SimpleNamespace(
-                    advances=("cap_z",), requires=parse_requirement({"item": "unrelated"})
-                )
-            },
-        )
 
-        assert scoped_item_ids(content, ["main"]) == frozenset({27690})
+class TestAgainstTheShippedCorpus:
+    """The scoping rules, exercised against real content rather than constructed shapes."""
+
+    def test_main_nh_scope_is_a_strict_subset_of_the_corpus_items(self) -> None:
+        content = load_and_validate(Path(__file__).parents[3] / "content")
+        all_numeric_ids = {
+            item.item_id for item in content.items.values() if item.item_id is not None
+        }
+        scoped = scoped_item_ids(content, ["main_nh"])
+
+        assert scoped
+        assert scoped <= all_numeric_ids
+
+    def test_an_unselected_roadmap_does_not_widen_the_scope(self) -> None:
+        content = load_and_validate(Path(__file__).parents[3] / "content")
+        assert scoped_item_ids(content, []) == frozenset()
