@@ -55,18 +55,37 @@ class EvalOutcome(Protocol):
     ``satisfied_leaves`` and ``total_leaves`` are the two halves of ``unlock_fraction``:
     §6.9 requires unknown leaves to sit in the **denominator** without being credited, so
     the count of satisfied leaves cannot be reconstructed from ``value`` alone.
+
+    **Members are read-only properties, not bare attributes**, and that distinction is
+    load-bearing. A protocol declaring ``value: Tri`` demands read *and write* access, so
+    the frozen dataclass the evaluator actually returns would not satisfy it — mypy
+    rejects a read-only attribute against a mutable protocol member. Since nothing here
+    ever assigns to an outcome, read-only is both what we need and what the
+    implementation can provide.
     """
 
-    value: Tri
-    satisfied_leaves: int
-    total_leaves: int
+    @property
+    def value(self) -> Tri: ...
+
+    @property
+    def satisfied_leaves(self) -> int: ...
+
+    @property
+    def total_leaves(self) -> int: ...
 
 
 class RequirementEvaluator(Protocol):
-    """Three-valued evaluation of one requirement tree against the player's facts."""
+    """Three-valued evaluation of one requirement tree against the player's facts.
+
+    The parameters are **positional-only** (note the ``/``). A protocol whose ``__call__``
+    names its parameters also demands that callers may pass them by keyword, which
+    excludes every plain ``Callable[...]`` — including the stubs these derivations are
+    tested against. Positional-only keeps the contract to what it is actually about: three
+    arguments in this order.
+    """
 
     def __call__(
-        self, requirement: Requirement, state: PlayerState, content: Content
+        self, requirement: Requirement, state: PlayerState, content: Content, /
     ) -> EvalOutcome: ...
 
 

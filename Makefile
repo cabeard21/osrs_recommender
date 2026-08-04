@@ -21,7 +21,10 @@ test:              ; $(PY) -m pytest $(ARGS)
 test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing $(ARGS)
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
-typecheck:         ; $(PY) -m mypy tracker
+# `tests` is checked too, deliberately. A Protocol is only verified where an
+# implementation is assigned to it, so a cross-unit seam that lives in no production
+# module is invisible to `mypy tracker` — see tests/integration/test_evaluator_seam.py.
+typecheck:         ; $(PY) -m mypy tracker tests
 validate-content:  ; $(PY) -m tracker.content.validate $(ARGS)
 migrate:           ; $(PY) -m alembic $(if $(ARGS),$(ARGS),upgrade head)
 run:               ; @echo "stub — implemented in step 9"
