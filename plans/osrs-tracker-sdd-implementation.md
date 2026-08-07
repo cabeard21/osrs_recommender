@@ -7,7 +7,7 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **7** complete and merged to `main` (2026-08-04); 753 tests. Next: **6** (unblocked by 5 + 2.5), then **8a**. Five candidate amendments are open — see the note under §20. |
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); 862 tests. Next: **8a**, with **13** now also unblocked and parallel to 9 → 10 → 11. Seven candidate amendments are open — see the note under §20. |
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
@@ -207,6 +207,16 @@ and in two cases would change behaviour.
 | **A25?** | §7.4 ranks only 3 of the 6 `Source` members. `manual`, `derived` and `osrs_wiki_prices` have no precedence, so a user's manual correction tying a hiscores read resolves arbitrarily. | Unranked sources sort last, deterministically. | Should `manual` outrank every automated source? |
 | **A26?** | §6.6's `achieved` invariant is assigned to the wrong layer. `models.py` says "whoever writes this table" enforces never-set-back-to-false, but §6.6's wording bars it *"by the passage of time"* — the freshness service, not a user fixing a mis-attestation. A repository writer cannot tell the two apart. | No guard in the writer; reasoning documented at `upsert_milestone`. | State that the guard belongs to Step 9's freshness pipeline. |
 | **A27?** | §8.2's *"conservative default rate"* has no authored home. Every other tunable is content (§9.7's profile, §10.4's session hours); this one number is not. | `FALLBACK_XP_PER_HOUR = 15_000` in `methods.py`, with a test asserting it is slower than anything the corpus authors. | Move to a `fallback_xp_per_hour` field on `ScoringProfile`? |
+| **A28?** | **Where §9.8's `group_urgency` enters the §9.4 score is undefined.** §9.8 derives the number in detail and §9.4 lists five factors; nothing joins them, so a refresher could be scored with urgency playing no part at all. | Spent as **`proximity`** — *"closer is better"* read on the decay clock rather than the progress clock. Ruled out folding it into `pvp_value`, because §9.3's worked table pins "Practice vengeance timing" at **0.375**, which is exactly `effective_weight(vengeance_pvp)` and leaves no room for an urgency multiplier. | Confirm `proximity`, or add a sixth factor with its own authored weight. |
+| **A29?** | **§10.6's `leverage` is undefined for refreshers.** It counts capabilities whose `status` would flip to `unlocked`; a refresher grants no facts, so it scores 0 forever — which is not merely harsh but wrong, since restoring decayed practice is exactly what moves a capability from *"unlocked but not today"* back to *"recommended now"* (§4.4). | Refreshers count **`recommended_now` flips** — the readiness-layer twin of the status flip — measured against a state in which the session's members were practiced now, i.e. exactly what §9.8's *"mark session complete"* writes. Normalized against the same maximum as progression candidates so the two kinds stay comparable. | Confirm that a readiness flip and a status flip belong in one normalization. |
+
+**One of the two "fixed in code" findings below is now closed.** `hours is None` has a stated
+rule: §9.4's `effort_decay` charges `profile.unknown_effort_hours` (new §9.7 field, default
+10 = τ, giving `exp(−1) ≈ 0.37`) rather than reading the absence as zero and handing an
+unsizable quest a *perfect* effort mark. The GP half of the same gap needed no field — an
+unknown cost is charged one **κ**, which `kappa_gp` already authors, for the same `exp(−1)`.
+Both are content, per §10.8. **Candidate amendment: fold `unknown_effort_hours` into the
+SDD's §9.7 profile listing.**
 
 Two further findings needed no amendment and were **fixed in code**:
 
@@ -217,12 +227,12 @@ Two further findings needed no amendment and were **fixed in code**:
   boundary. Fixed with `tracker/db/types.py::UtcDateTime`, applied through
   `type_annotation_map` so future columns inherit it. `sa.DateTime(timezone=True)` is
   **not** the fix: on SQLite it is a silent no-op that absorbs the offset into the number.
-- **`hours is None` has no stated meaning for §9.4's `effort_decay`.** A `quest:` candidate
+- **`hours is None` had no stated meaning for §9.4's `effort_decay`.** A `quest:` candidate
   has no skill target and no item, so §8 can estimate neither time nor gp — but
   `exp(−hours/τ)` then scores it as effortless. This is A8's problem one candidate kind
   over; A8 closed it for refreshers by making `suggested_session_hours` mandatory, and
-  quests have no equivalent. **Step 6 must state a rule for `hours is None` rather than
-  letting the floor `ε` decide it by accident.**
+  quests have no equivalent. **Closed in Step 6** by the `unknown_effort_hours` profile
+  field described above, rather than by letting the floor `ε` decide it by accident.
 
 ---
 

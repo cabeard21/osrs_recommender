@@ -10,6 +10,12 @@ scoring_profile:
   tau_hours: 10
   kappa_gp: {high: 8000000, normal: 20000000, low: 50000000}
   observation_aged_days: 14
+  # What effort_decay charges a candidate §8 cannot size — a quest, whose duration the
+  # SDD authors nowhere. Without it, hours=None reads as 0 and exp(0) = 1.0 hands the
+  # least-known candidate a perfect effort mark (A8's defect, one candidate kind over).
+  # Equal to tau_hours by default, so an unsized candidate is charged exactly one effort
+  # scale: exp(−1) ≈ 0.37. The GP half is charged one κ, which kappa_gp already authors.
+  unknown_effort_hours: 10
   weights:
     pvp_value: 1.0
     leverage: 0.8

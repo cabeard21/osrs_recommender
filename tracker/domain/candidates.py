@@ -164,11 +164,24 @@ def pvp_value(candidate: Candidate, effective_weights: Mapping[str, float]) -> f
     the candidate being invalid. Validation (§10.7) is what rejects a target no roadmap
     could ever weight.
     """
-    if not candidate.advances:
+    return advances_value(candidate.advances, effective_weights)
+
+
+def advances_value(advances: Mapping[str, float], effective_weights: Mapping[str, float]) -> float:
+    """:func:`pvp_value` over a bare ``advances`` map.
+
+    Extracted because §9.8's composite refreshers are **not** ``Candidate`` objects — a
+    refresher's completion predicate would evaluate ``satisfied`` on the very run it was
+    most needed, see :mod:`tracker.recommendations.refreshers` — and yet §9.3's worked table
+    scores one: *"Practice vengeance timing"* at 0.375. Two candidate shapes, one relevance
+    rule. A second implementation for the second shape is how the maximum quietly becomes a
+    sum along one of the two paths.
+    """
+    if not advances:
         return 0.0
     return max(
         effective_weights.get(capability_id, 0.0) * contribution
-        for capability_id, contribution in candidate.advances.items()
+        for capability_id, contribution in advances.items()
     )
 
 
