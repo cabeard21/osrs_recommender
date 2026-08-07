@@ -401,6 +401,26 @@ class ScoringProfile(ContentModel):
     kappa_gp: KappaPresets
     observation_aged_days: int = Field(default=14, gt=0)
     """A4 — when a positive observation stops counting as fresh for readiness (§6.9)."""
+    unknown_effort_hours: float = Field(default=10.0, gt=0.0)
+    """What ``effort_decay`` charges a candidate §8 cannot size at all.
+
+    §9.4 defines ``effort_decay = exp(−hours / τ)``, and §8 returns ``hours = None`` for a
+    candidate whose completion names neither a skill target nor a session length — a
+    ``quest:`` candidate is the corpus's example, since the SDD authors no quest duration
+    anywhere. Reading that absence as ``0`` gives ``exp(0) = 1.0``: a *perfect* effort mark
+    for the one candidate kind whose effort is least known. That is A8's defect one
+    candidate kind over, and A8 closed it for refreshers by making
+    ``suggested_session_hours`` mandatory.
+
+    Quests have no equivalent field to make mandatory, so the charge is **authored** here
+    rather than invented in code — the same reasoning §10.8 applies to every other
+    tunable. The default equalling the default ``tau_hours`` is not a coincidence:
+    charging exactly one effort scale yields ``exp(−1) ≈ 0.37``, which says *"assume this
+    costs a full session's worth of effort until something measures it"* instead of either
+    extreme.
+
+    The GP half of the same gap needs no field of its own: an unknown cost is charged one
+    **κ**, which ``kappa_gp`` already authors, for the identical ``exp(−1)``."""
     weights: ScoringWeights
     refresher: RefresherPolicy = RefresherPolicy()
     epsilon: float = Field(default=0.01, gt=0.0, le=1.0)

@@ -421,3 +421,36 @@ class Recommendation:
     blocked: bool = False
     unknown_gate: bool = False
     """``requires`` evaluated ``unknown`` — *"sync this"*, not *"do this"* (§10.6, G3)."""
+    practice_members: tuple[str, ...] = ()
+    """Milestone keys a ``kind: practice`` entry would refresh (§9.8's bullet list).
+
+    Computed rather than authored: the group's *stale* members on this run, not the
+    template's whole membership. §9.8's two completion actions — *"mark session
+    complete"* and *"review individual skills"* — both operate on exactly this set, so it
+    has to reach the UI rather than being recomputed there against a different rule."""
+
+
+@dataclass(frozen=True, slots=True)
+class IncumbentRecommendation:
+    """The previous run's top entry, for §9.9's hysteresis.
+
+    §9.9 and §16.1 both write this parameter as ``RecommendationSnapshot | None``, which
+    is a **database** row (§6.10) — and §16.1's whole purpose is that ``recommend()``
+    never reaches the database. The two reconcile because hysteresis needs exactly two of
+    that row's fields: which candidate held the top slot, and what it scored. Narrowing to
+    those here keeps the signature honest about the dependency and leaves the
+    snapshot-to-incumbent translation with Step 9's pipeline, where the session lives.
+
+    Nothing else from the snapshot belongs here. Any further field would be a fact the
+    engine could branch on without the caller realising it had supplied one.
+
+    **The recorded score is deliberately absent.** §9.9's rule reads
+    ``challenger.score > 1.10 × incumbent.score``, and both sides are scores *in the
+    current ranking*: the snapshot only says which candidate held the top slot. Comparing
+    today's challenger against yesterday's stored number would measure the two under
+    different prices and possibly a different ``scoring_profile_version``, so an incumbent
+    could be displaced — or defended — by drift in its own inputs rather than by any
+    challenger being better.
+    """
+
+    candidate_id: str
