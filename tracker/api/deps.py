@@ -17,11 +17,15 @@ from sqlalchemy.orm import Session, sessionmaker
 from starlette.requests import Request
 
 from tracker.config.settings import Settings
+from tracker.content.loader import Content
+from tracker.integrations.prices.client import PricesClient
 
 #: ``app.state`` attribute names. Written once here so a typo is a failure in one place
 #: rather than a silently missing attribute at request time.
 SETTINGS_ATTR = "settings"
 SESSION_FACTORY_ATTR = "session_factory"
+CONTENT_ATTR = "content"
+PRICES_CLIENT_ATTR = "prices_client"
 
 
 def get_settings(request: Request) -> Settings:
@@ -42,6 +46,35 @@ def get_session_factory(request: Request) -> sessionmaker[Session]:
             "no session factory on app.state; build the app with tracker.api.app.create_app"
         )
     return factory
+
+
+def get_content(request: Request) -> Content:
+    """The corpus, loaded once at startup by :func:`tracker.app.create_app`.
+
+    Authored content changes between deployments, not between requests. Reloading it per
+    request would let a corpus edit take effect halfway through a pipeline run, so that one
+    sync evaluated its capabilities against one corpus and scored its candidates against
+    another.
+    """
+    content: Content | None = getattr(request.app.state, CONTENT_ATTR, None)
+    if content is None:
+        raise RuntimeError(
+            "no Content on app.state; build the app with tracker.app.create_app, which "
+            "loads the corpus at startup"
+        )
+    return content
+
+
+def get_prices_client(request: Request) -> PricesClient | None:
+    """The live price client, or ``None`` when the app was started without one.
+
+    ``None`` is a supported configuration rather than a broken one: §7.5 requires *"no
+    user-visible failure when a cached or static fallback exists"*, so an app with no
+    network still recommends — with its estimates flagged low-confidence by §8.4's own
+    rules.
+    """
+    client: PricesClient | None = getattr(request.app.state, PRICES_CLIENT_ATTR, None)
+    return client
 
 
 def remote_addr(request: Request) -> str | None:

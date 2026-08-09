@@ -27,6 +27,8 @@ format:            ; $(PY) -m ruff format .
 typecheck:         ; $(PY) -m mypy tracker tests
 validate-content:  ; $(PY) -m tracker.content.validate $(ARGS)
 migrate:           ; $(PY) -m alembic $(if $(ARGS),$(ARGS),upgrade head)
-run:               ; @echo "stub — implemented in step 9"
+# One process, one port (§5): UI at /, sync API at /api/sync, health at /healthz.
+# The bind address comes from config.yaml and has no default (§11.1) — see docs/DEPLOYMENT.md.
+run:               ; $(PY) -m tracker.app
 
 clean: ; rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage

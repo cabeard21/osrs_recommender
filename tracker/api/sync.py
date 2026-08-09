@@ -29,9 +29,16 @@ from starlette.requests import Request
 
 from tracker.api.auth import AUTH_SOURCE, record_rejection
 from tracker.api.contract import validate_sync_payload
-from tracker.api.deps import get_session_factory, remote_addr
-from tracker.db.repository import get_player_by_username, record_sync_event
+from tracker.api.deps import (
+    get_content,
+    get_prices_client,
+    get_session_factory,
+    get_settings,
+    remote_addr,
+)
+from tracker.db.repository import record_sync_event
 from tracker.db.session import session_scope
+from tracker.sync.pipeline import run_pipeline
 
 #: §12.2, A14. An explicit *set*, not a minimum: compatibility is not always an interval —
 #: a server may support 1 and 3 while 2 was withdrawn. That is also why the field is a
@@ -57,11 +64,13 @@ class SyncAccepted(BaseModel):
 
     status: str = "accepted"
     payload_version: int
-    #: ``None`` when this username has no ``Player`` row yet. Creating one is Step 8b's
-    #: job (it is a merge, and merges need §7.4); this endpoint only reports whether the
-    #: account is already known, which is exactly the question a plugin author debugging
-    #: a first sync is asking.
+    #: The account the merge resolved this payload to, by username — the only identity the
+    #: server trusts (§6.11). A first sync creates the row, so from Step 9 onwards this is
+    #: always populated on the accepted path.
     player_id: int | None = None
+    #: How many entries the run produced. A receipt, not a report: it answers "did my sync
+    #: actually reach the engine" without the plugin having to parse a recommendation.
+    recommendations: int = 0
 
 
 def _reject(
@@ -141,19 +150,33 @@ async def post_sync(request: Request) -> SyncAccepted:
             payload_version=version,
         )
 
-    username = payload["player"]["username"]
+    # Stages 3-7 of §12 run in one transaction with the audit row (Step 9). One payload is
+    # one observation of one account at one instant, so committing the SyncEvent separately
+    # would let the trail record a sync whose facts were rolled back.
+    now = datetime.now(UTC)
     session_factory = get_session_factory(request)
     with session_scope(session_factory) as session:
-        player = get_player_by_username(session, username)
-        player_id = player.id if player is not None else None
+        result = run_pipeline(
+            session,
+            content=get_content(request),
+            now=now,
+            payload=payload,
+            source=AUTH_SOURCE,
+            prices_client=get_prices_client(request),
+            prices_settings=get_settings(request).integrations.prices,
+        )
         record_sync_event(
             session,
             source=AUTH_SOURCE,
             accepted=True,
-            received_at=datetime.now(UTC),
-            player_id=player_id,
+            received_at=now,
+            player_id=result.player_id,
             payload_version=version,
             remote_addr=remote_addr(request),
         )
 
-    return SyncAccepted(payload_version=version, player_id=player_id)
+    return SyncAccepted(
+        payload_version=version,
+        player_id=result.player_id,
+        recommendations=len(result.recommendations),
+    )
