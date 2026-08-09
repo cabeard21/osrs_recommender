@@ -7,7 +7,13 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b** and **8c** merged 2026-08-09; 954 tests. Next: **9** (its four dependencies — 3b, 6, 7, 8c — are all met), with **13** also unblocked and parallel; **8.5** is blocked on the user gate below. Seven candidate amendments are open — see the note under §20. |
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c** and **9** merged 2026-08-09; 979 tests. The app runs: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations. Next: **10** (UI), with **13** unblocked and parallel; **8.5** is blocked on the user gate below.
+
+> **Step 9 deviation, deliberate.** Tasks 3 and 4 name `tracker/progression/persist.py` and
+> `tracker/recommendations/persist.py`. Both packages sit inside §16.1's purity boundary,
+> which Step 4 enforces by AST — a persist module there cannot both obey it and write a row,
+> and Step 9's own exit criteria require that test to keep passing. The two modules therefore
+> ship as `tracker/db/persist_engine_output.py` and `tracker/db/persist_prices.py`. Seven candidate amendments are open — see the note under §20. |
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
