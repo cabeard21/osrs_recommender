@@ -42,6 +42,7 @@ from tracker.db.models import (
     Player,
     QuestState,
     SkillSnapshot,
+    SyncEvent,
     Unlock,
 )
 from tracker.domain.types import (
@@ -426,3 +427,46 @@ def clear_active_roadmap(session: Session, player_id: int, roadmap_id: str) -> N
     row = session.get(ActiveRoadmap, (player_id, roadmap_id))
     if row is not None:
         session.delete(row)
+
+
+# ---------------------------------------------------------------------------
+# §6.11 SyncEvent
+# ---------------------------------------------------------------------------
+
+
+def record_sync_event(
+    session: Session,
+    *,
+    source: Source,
+    accepted: bool,
+    received_at: datetime,
+    player_id: int | None = None,
+    payload_version: int | None = None,
+    remote_addr: str | None = None,
+    reason: str | None = None,
+    error: str | None = None,
+) -> SyncEvent:
+    """Append one audit row (§6.11, §11.3).
+
+    Append-only by construction: there is no update or delete helper here, because the
+    value of an audit trail is that a later request cannot revise what an earlier one
+    recorded.
+
+    ``player_id`` defaults to ``None`` rather than being required, which is the whole point
+    of A17 — §11.3 demands an audit row for *unauthenticated* writes, and an
+    unauthenticated caller has no trusted identity. Writing an id parsed out of a rejected
+    payload would put attacker-controlled data into the audit trail; leaving it ``NULL`` is
+    the only honest record of "we do not know who this was".
+    """
+    row = SyncEvent(
+        player_id=player_id,
+        source=source,
+        payload_version=payload_version,
+        remote_addr=remote_addr,
+        received_at=received_at,
+        accepted=accepted,
+        reason=reason,
+        error=error,
+    )
+    session.add(row)
+    return row

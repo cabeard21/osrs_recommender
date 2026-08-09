@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/example/osrs-tracker/contracts/sync_payload.schema.json",
+  "title": "RuneLite companion plugin sync payload",
+  "x-status": "provisional",
+  "x-status-note": "Provisional until a real RuneLite snapshot has validated against it (SDD §12.1, D12, plan step 8.5). Quest identity, the varbit-to-unlock-key mapping, diary and combat-achievement representation, and whether a *complete* bank scan is even detectable are facts about the RuneLite API that cannot be settled from the app side. Once reconciled the marker is removed and further changes require a payload_version bump under §12.2.",
+  "description": "The single owner of the Java-to-Python seam (SDD §12.1). Python validates incoming payloads against this file; the Java plugin is written to match it. `additionalProperties: false` is set on every object in this schema, which is what makes §7.6's collection boundary a contract rather than a convention (G8): a payload carrying opponent names, chat, per-tick location, prayer selections or fight-time inventories is rejected by the schema itself.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload_version", "player", "observed_at"],
+
+  "properties": {
+    "payload_version": {
+      "description": "§12.2. A plain integer — there is no major/minor component. The server declares the set it understands (SUPPORTED_PAYLOAD_VERSIONS) and rejects anything outside it with 409.",
+      "type": "integer",
+      "minimum": 1
+    },
+
+    "observed_at": {
+      "description": "When the plugin took this snapshot. §4.5: observation time is not truth, so it is transmitted rather than assumed to be receipt time.",
+      "$ref": "#/$defs/timestamp"
+    },
+
+    "player": {
+      "description": "§6.1. Identity plus the two account-wide scalars §9.1's combat_level / quest_points leaves read.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["username"],
+      "properties": {
+        "username": {
+          "description": "The hiscores/WOM lookup key (§6.1). Also the only identity the server trusts — the payload carries no player_id, because an id supplied by the caller would be attacker-controlled (§6.11).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12
+        },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 12 },
+        "combat_level": { "type": ["integer", "null"], "minimum": 3, "maximum": 126 },
+        "quest_points": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+
+    "skills": {
+      "description": "§6.2. One entry per skill observed. Omitting a skill means 'not observed', which is not the same as level 1.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/skill" }
+    },
+
+    "quests": {
+      "description": "§6.4. `in_progress` is not a positive state — §9.1 evaluates it `unsatisfied` (A5).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/quest" }
+    },
+
+    "unlocks": {
+      "description": "§6.3, A12. Spellbook, achievement diaries and combat achievements ride here under the reserved `spellbook_` / `diary_` / `ca_` key prefixes — they get no field of their own, because a payload field with no table and no way to reference it from content would be a contract with no sink (§7.1).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/unlock" }
+    },
+
+    "observed_items": {
+      "description": "§6.5. Opportunistic sightings, never a continuous truth. Read together with `container_scans`, never alone.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/observed_item" }
+    },
+
+    "container_scans": {
+      "description": "§6.5, the staleness anchor. A container that was scanned and found to hold nothing tracked MUST still appear here — that is the only thing distinguishing 'you do not own it' from 'we have never looked' (§4.5).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/container_scan" }
+    },
+
+    "practice_events": {
+      "description": "§7.6, exactly the summarized shape and nothing more. The four properties below are the whole vocabulary: no opponent names, no attack sequences, no chat, no individual prayer selections, no fight-time inventories, no tick-by-tick location. `additionalProperties: false` on the item schema is what enforces that (G8).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/practice_event" }
+    }
+  },
+
+  "$defs": {
+    "timestamp": {
+      "description": "RFC 3339 instant with an explicit offset. An offset-naive timestamp is rejected: every §4.5 comparison (`now - scanned_at`, `now - ended_at`) needs an aware instant, and guessing the zone is how a naive value becomes a silently wrong age. The pattern carries the constraint because `format` is annotation-only in JSON Schema and is not asserted by default.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt ]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$"
+    },
+
+    "content_key": {
+      "description": "An id authored in `content/` - lowercase snake_case, so a plugin-side key and a content-side key cannot differ by casing alone.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_]*$",
+      "maxLength": 96
+    },
+
+    "container": {
+      "description": "§6.5.",
+      "type": "string",
+      "enum": ["bank", "inventory", "equipment"]
+    },
+
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skill", "level"],
+      "properties": {
+        "skill": { "$ref": "#/$defs/content_key" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 99 },
+        "xp": {
+          "description": "§6.2, G5. `null` means unranked - never 0. A source that reports -1 for unranked normalizes it to null at its own adapter boundary (§7.3); -1 never reaches this contract, which is why `minimum` is 0.",
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    },
+
+    "quest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quest_id", "status"],
+      "properties": {
+        "quest_id": { "$ref": "#/$defs/content_key" },
+        "status": {
+          "description": "§6.4. `unknown` is transmissible: the plugin may see a quest it cannot read state for, and that is a different fact from `not_started`.",
+          "type": "string",
+          "enum": ["not_started", "in_progress", "complete", "unknown"]
+        }
+      }
+    },
+
+    "unlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "state"],
+      "properties": {
+        "key": { "$ref": "#/$defs/content_key" },
+        "state": {
+          "description": "§6.3. `available` means purchasable or attainable but NOT held - Rigour visible in the prayer book is not Rigour unlocked. §9.1 evaluates it `unsatisfied` (A5). The word reads as positive and is the single most likely place for a plugin author to go wrong.",
+          "type": "string",
+          "enum": ["unlocked", "available", "locked", "unknown"]
+        }
+      }
+    },
+
+    "observed_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "quantity", "container"],
+      "properties": {
+        "item_id": { "type": "integer", "minimum": 1 },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "container": { "$ref": "#/$defs/container" }
+      }
+    },
+
+    "container_scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["container", "scanned_at"],
+      "properties": {
+        "container": { "$ref": "#/$defs/container" },
+        "scanned_at": {
+          "description": "When this container was last seen *in full* (§6.5). A partial view is not a scan.",
+          "$ref": "#/$defs/timestamp"
+        }
+      }
+    },
+
+    "practice_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "started_at", "ended_at", "evidence_type"],
+      "properties": {
+        "domain": {
+          "description": "§7.6's six domains. A seventh is a code change, not a payload change (§10.8).",
+          "type": "string",
+          "enum": [
+            "lms",
+            "nh_combat",
+            "wilderness_pvp",
+            "vengeance_pvp",
+            "anti_pking",
+            "general_pvp"
+          ]
+        },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "ended_at": { "$ref": "#/$defs/timestamp" },
+        "evidence_type": {
+          "description": "§6.7. A closed enum, not free text: an open string is where `opponent_dashboard_screenshot` eventually arrives. `lms_score_increased` is derived server-side from WOM (§7.6) and is deliberately absent - the plugin cannot observe it.",
+          "type": "string",
+          "enum": ["lms_match_completed", "lms_player_combat", "wilderness_player_combat"]
+        }
+      }
+    }
+  }
+}
