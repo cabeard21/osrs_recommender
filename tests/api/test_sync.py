@@ -81,13 +81,17 @@ def test_an_accepted_sync_names_the_player_when_the_account_is_already_known(
     assert response.json()["player_id"] is not None
 
 
-def test_an_unknown_username_is_accepted_with_a_null_player_id(
+def test_an_unknown_username_is_created_by_the_merge(
     client: TestClient, auth_header: dict[str, str], build_payload: Callable[..., Any]
 ) -> None:
+    """From Step 9 the accepted path runs §12's pipeline, and stage 3's merge creates the
+    account on a first sync. Before that this endpoint could only report ``null``, because
+    creating a player is a merge and merges need §7.4.
+    """
     response = _post(client, auth_header, build_payload())
 
     assert response.status_code == 202
-    assert response.json()["player_id"] is None
+    assert response.json()["player_id"] is not None
 
 
 # ---------------------------------------------------------------------------

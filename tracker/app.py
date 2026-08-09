@@ -1,0 +1,126 @@
+"""The application entrypoint — one process, one port (§5, §11).
+
+§5 is explicit: *"NiceGUI runs on FastAPI/uvicorn, so the UI and the sync API are one
+process on one port. There is no second service."* So there is exactly one application
+object: :func:`tracker.api.app.create_app` builds it with the ``/api`` router and
+``/healthz``, and NiceGUI is mounted **onto that object** rather than served beside it.
+
+**Startup refuses more than it accepts.** Two settings have no safe default and the app
+will not start without them (§11.1, §11.2):
+
+* ``bind_address`` — the loopback address or the Tailscale interface address, never
+  ``0.0.0.0``. The validator lives in :mod:`tracker.config.settings`; this module's job is
+  to fail at start rather than at the first request.
+* ``api_token`` — there is no unauthenticated mode to degrade into. A tracker that starts
+  without a token and serves ``/api`` anyway is the exact failure §11.2 exists to prevent.
+
+Content is loaded once at startup and held on ``app.state``. It is authored data that
+changes between deployments, not between requests, and reloading it per request would let a
+corpus edit take effect halfway through a pipeline run.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+import uvicorn
+from fastapi import FastAPI
+from sqlalchemy.orm import Session, sessionmaker
+
+from tracker.api.app import create_app as create_api_app
+from tracker.api.deps import CONTENT_ATTR, PRICES_CLIENT_ATTR
+from tracker.config.settings import Settings, load_settings
+from tracker.content.loader import Content, load_content
+from tracker.db.session import build_engine, build_session_factory
+from tracker.integrations.prices.client import PricesClient
+
+
+def create_app(
+    settings: Settings | None = None,
+    *,
+    session_factory: sessionmaker[Session] | None = None,
+    content: Content | None = None,
+    prices_client: PricesClient | None = None,
+    mount_ui: bool = True,
+) -> FastAPI:
+    """Build the whole application: sync API, health endpoint, and the NiceGUI UI.
+
+    Every dependency is injectable so a test can build the real app over a temporary
+    database — the same reasoning as :mod:`tracker.api.deps`. ``mount_ui`` exists because
+    NiceGUI registers global page routes at import time, which makes a second mount inside
+    one process an error; API-level tests do not need it and should not pay for it.
+    """
+    resolved = settings if settings is not None else load_settings()
+
+    if not resolved.api_token:  # pragma: no cover — Settings already requires min_length=1
+        raise RuntimeError("api_token is required (§11.2); there is no unauthenticated mode")
+
+    factory = session_factory
+    if factory is None:
+        factory = build_session_factory(build_engine(resolved.database_url))
+
+    app = create_api_app(resolved, factory)
+    setattr(
+        app.state,
+        CONTENT_ATTR,
+        content
+        if content is not None
+        else load_content(resolved.content_dir, profile_path=resolved.scoring_profile_path),
+    )
+    setattr(app.state, PRICES_CLIENT_ATTR, prices_client)
+
+    if mount_ui:
+        _mount_ui(app, resolved)
+
+    return app
+
+
+def _mount_ui(app: FastAPI, settings: Settings) -> None:
+    """Mount NiceGUI onto the existing FastAPI app (§5).
+
+    The pages are Step 10's. What *this* step owns is the mounting — that the UI and the
+    API share one application object, one port and one auth story, so Step 10 adds views
+    rather than a second service.
+
+    ``storage_secret`` is the API token: NiceGUI signs its per-browser session cookie with
+    it, and the app already treats that value as its one shared secret (§11.2). A second
+    secret would mean either another config field nobody sets, or a random value that
+    invalidates every open tab on restart.
+    """
+    from nicegui import ui
+
+    @ui.page("/")
+    def index() -> None:  # pragma: no cover — replaced wholesale by Step 10
+        ui.label("OSRS PvP Progression Tracker")
+        ui.label("The dashboard lands in step 10. The sync API is live at /api/sync.")
+
+    ui.run_with(app, storage_secret=settings.api_token)
+
+
+def startup_banner(settings: Settings, *, now: datetime | None = None) -> str:
+    """The one line printed at start. It names the bind address, because §11.1 makes that a
+    decision rather than a default and an operator should be able to see which one is in
+    force without reading the config file.
+    """
+    stamp = (now or datetime.now(UTC)).isoformat(timespec="seconds")
+    return (
+        f"[{stamp}] OSRS tracker listening on http://{settings.bind_address}:{settings.port} "
+        "(UI at /, sync API at /api/sync, health at /healthz)"
+    )
+
+
+def main() -> None:
+    """Serve on the configured address and port (``make run``).
+
+    ``uvicorn.run`` takes the app object rather than an import string: the bind address is
+    configuration read at startup, and the reload-friendly string form would re-import this
+    module in a subprocess that re-reads it anyway.
+    """
+    settings = load_settings()
+    app = create_app(settings)
+    print(startup_banner(settings))
+    uvicorn.run(app, host=settings.bind_address, port=settings.port)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()

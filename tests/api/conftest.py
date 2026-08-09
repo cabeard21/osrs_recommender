@@ -25,8 +25,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from tracker.api.app import create_app
+from tracker.app import create_app
 from tracker.config.settings import Settings
+from tracker.content.loader import Content, load_content
 from tracker.db.models import Base, SyncEvent
 from tracker.db.session import build_engine, build_session_factory
 
@@ -114,9 +115,27 @@ def settings() -> Settings:
     return Settings(bind_address="127.0.0.1", api_token=API_TOKEN)
 
 
+@pytest.fixture(scope="session")
+def content() -> Content:
+    """The real seed corpus.
+
+    Loaded once for the whole session: from Step 9 the accepted path runs the full §12
+    pipeline, which needs capabilities, candidates and a scoring profile to produce
+    anything at all. Using the shipped corpus rather than a fixture one means these tests
+    catch a payload that validates against the contract and then breaks the engine — the
+    seam nothing else covers.
+    """
+    return load_content()
+
+
 @pytest.fixture
-def app(settings: Settings, session_factory: sessionmaker[Session]) -> FastAPI:
-    return create_app(settings, session_factory)
+def app(settings: Settings, session_factory: sessionmaker[Session], content: Content) -> FastAPI:
+    """The whole application, minus the UI.
+
+    ``mount_ui=False`` because NiceGUI registers its page routes at import time and a
+    second mount inside one process is an error; these tests are about the API surface.
+    """
+    return create_app(settings, session_factory=session_factory, content=content, mount_ui=False)
 
 
 @pytest.fixture
