@@ -74,27 +74,27 @@ def test_a_hostname_bind_address_is_allowed() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_the_ui_and_the_api_share_one_application(
+def test_the_api_surface_is_one_application(
     settings: Settings, session_factory: sessionmaker[Session], content: Content
 ) -> None:
     """§5: *"the UI and the sync API are one process on one port. There is no second
     service."*
 
-    The UI is mounted onto the API's application object rather than served beside it, so
-    the two cannot drift onto different ports, different auth, or different lifecycles.
-    Step 10 adds views to this object; it does not add a service.
+    The half of that claim testable here is that one application object carries both the
+    ``/api`` router and ``/healthz``. The other half — that NiceGUI's pages answer on the
+    *same* client — is asserted in ``tests/ui/test_pages_browser.py``, against the one
+    mounted application this process is allowed to have.
+
+    That restriction is NiceGUI's, not a testing convenience: ``ui.run_with`` registers page
+    routes on a process-global router and installs middleware, so a second
+    ``create_app(mount_ui=True)`` in one interpreter fails. Mounting here as well would make
+    this file's test order decide whether ``tests/ui`` can run at all.
     """
-    app = create_app(settings, session_factory=session_factory, content=content)
+    app = create_app(settings, session_factory=session_factory, content=content, mount_ui=False)
 
     paths = set(app.openapi()["paths"])
     assert f"{API_PREFIX}/sync" in paths
     assert "/healthz" in paths
-
-    # NiceGUI serves its pages through its own router rather than through FastAPI's
-    # documented routes, so the index is checked by requesting it. That it answers on the
-    # same client — the same application, the same port — is the assertion.
-    with TestClient(app) as client:
-        assert client.get("/").status_code == 200
 
 
 def test_health_is_reachable_without_a_token(

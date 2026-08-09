@@ -78,22 +78,25 @@ def create_app(
 def _mount_ui(app: FastAPI, settings: Settings) -> None:
     """Mount NiceGUI onto the existing FastAPI app (§5).
 
-    The pages are Step 10's. What *this* step owns is the mounting — that the UI and the
-    API share one application object, one port and one auth story, so Step 10 adds views
-    rather than a second service.
+    The UI and the API share one application object, one port and one auth story. The views
+    themselves live in :mod:`tracker.ui`; this function's whole job is that they are mounted
+    onto the app rather than served beside it.
 
     ``storage_secret`` is the API token: NiceGUI signs its per-browser session cookie with
     it, and the app already treats that value as its one shared secret (§11.2). A second
     secret would mean either another config field nobody sets, or a random value that
     invalidates every open tab on restart.
+
+    The imports are function-local because NiceGUI registers page routes globally at
+    decoration time. Importing :mod:`tracker.ui.pages` at module scope would make the route
+    table a side effect of importing ``tracker.app`` — which the API tests do with
+    ``mount_ui=False`` precisely to avoid it.
     """
     from nicegui import ui
 
-    @ui.page("/")
-    def index() -> None:  # pragma: no cover — replaced wholesale by Step 10
-        ui.label("OSRS PvP Progression Tracker")
-        ui.label("The dashboard lands in step 10. The sync API is live at /api/sync.")
+    from tracker.ui.pages import register_pages
 
+    register_pages(app)
     ui.run_with(app, storage_secret=settings.api_token)
 
 

@@ -7,13 +7,22 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c** and **9** merged 2026-08-09; 979 tests. The app runs: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations. Next: **10** (UI), with **13** unblocked and parallel; **8.5** is blocked on the user gate below.
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c**, **9** and **10** merged 2026-08-09; 1045 tests. The app runs end to end: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations, and the dashboard, capabilities, unlocks and skills views render them. Next: **11** (UI part 2), with **13** unblocked and parallel; **8.5** is blocked on the user gate below.
 
 > **Step 9 deviation, deliberate.** Tasks 3 and 4 name `tracker/progression/persist.py` and
 > `tracker/recommendations/persist.py`. Both packages sit inside §16.1's purity boundary,
 > which Step 4 enforces by AST — a persist module there cannot both obey it and write a row,
 > and Step 9's own exit criteria require that test to keep passing. The two modules therefore
 > ship as `tracker/db/persist_engine_output.py` and `tracker/db/persist_prices.py`. Seven candidate amendments are open — see the note under §20. |
+
+> **Step 10 notes.** Two things future steps inherit. (1) **One mounted UI per interpreter:**
+> `ui.run_with` registers page routes on a process-global router, so only one
+> `create_app(mount_ui=True)` may exist in a pytest process — `tests/ui/` owns it, and
+> `tests/test_app.py` now asserts the API half of §5 with `mount_ui=False`. (2) **Browser
+> tests need a browser:** `pip install -e ".[dev]"` installs the Playwright client but not
+> Chromium; run `make browsers` once. Step 10 also added `tracker/ui/{states,view_model,
+> read_model,staleness}.py` — the §15 honesty rules are decided there, as pure data, so
+> Step 11's views inherit them rather than re-deciding them in a `ui.label(...)` call.
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
@@ -1559,12 +1568,12 @@ make test ARGS="tests/ui -v" && make lint
 
 ## Exit criteria
 
-- [ ] `unknown` and `locked` produce disjoint selectors in **both** the unlocks and
+- [x] `unknown` and `locked` produce disjoint selectors in **both** the unlocks and
       capabilities views — the SDD's hardest UI requirement, now mechanically checked
-- [ ] Three status layers render as three fields, never collapsed into one badge
-- [ ] Blockers and Unknowns are separate DOM containers with separate CTAs
-- [ ] Unranked skills never display as level 1
-- [ ] No horizontal scroll at 390 px, asserted by the Playwright test
+- [x] Three status layers render as three fields, never collapsed into one badge
+- [x] Blockers and Unknowns are separate DOM containers with separate CTAs
+- [x] Unranked skills never display as level 1
+- [x] No horizontal scroll at 390 px, asserted by the Playwright test
 
 ## User gate
 

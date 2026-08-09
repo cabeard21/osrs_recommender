@@ -1,0 +1,321 @@
+"""Fixtures for the Step 10 UI tests.
+
+Two tiers, on purpose.
+
+Most of §15's rules are decidable from data — what ``unknown`` renders as, whether an
+unranked skill can show a level, whether blockers and unknowns stay apart — and those are
+tested against :mod:`tracker.ui.view_model` and :mod:`tracker.ui.read_model` with no browser
+at all. What genuinely needs a DOM is narrow: that two states produce **disjoint selectors**,
+that the two lists are **separate nodes**, and that the page does not scroll sideways at
+390 px. Those get a real browser.
+
+The live server is session-scoped and there is exactly one of it. NiceGUI's ``@ui.page``
+registers routes on a process-global router, so a second ``create_app(mount_ui=True)`` in one
+pytest process would register the same paths twice. One app, one database, one seeded
+account — and the seed therefore has to contain every state the tests need to see at once,
+which is why it is deliberately a *worst case* account rather than a tidy one.
+"""
+
+from __future__ import annotations
+
+import socket
+import threading
+from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import pytest
+import uvicorn
+from fastapi import FastAPI
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from tracker.app import create_app
+from tracker.config.settings import Settings
+from tracker.content.loader import Content, load_content
+from tracker.db.enums import RecommendationCandidateKind
+from tracker.db.models import (
+    ActiveRoadmap,
+    Base,
+    CapabilityState,
+    ContainerScan,
+    Player,
+    RecommendationEntry,
+    RecommendationSnapshot,
+    SkillSnapshot,
+    Unlock,
+)
+from tracker.db.session import build_engine, build_session_factory
+from tracker.domain.types import (
+    Confidence,
+    Container,
+    GpSensitivity,
+    Source,
+    Status,
+    UnlockState,
+)
+
+#: A fixed clock, aware UTC. The staleness copy is a function of now (§6.5) and "3 weeks
+#: ago" is not assertable against a moving one.
+NOW = datetime(2026, 8, 9, 12, 0, 0, tzinfo=UTC)
+
+SEED_USERNAME = "zezima"
+
+
+def _free_port() -> int:
+    """An unused localhost port.
+
+    Bound and released rather than hardcoded: a fixed port turns a leftover process from a
+    previous run into a test that passes against the wrong application.
+    """
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
+def seed(session: Session) -> int:
+    """Write the worst-case account and return its id.
+
+    Deliberately covers, in one player:
+
+    * a capability that is ``unlocked`` with ``high`` readiness and recommended;
+    * one ``unlocked`` with ``low`` readiness and **not** recommended — §4.4's middle case,
+      where collapsing the layers would read as either "locked" or "go do it";
+    * one ``unknown`` carrying both a blocker and an unknown leaf, so the two lists are
+      non-empty simultaneously and cannot pass the separation test by both being empty;
+    * one ``locked``, so ``unknown`` and ``locked`` are on screen together;
+    * all four §6.3 unlock states;
+    * a ranked skill and an unranked one (``xp = NULL``, §6.2);
+    * a bank scanned three weeks ago and equipment never scanned at all (§6.5).
+    """
+    player = Player(
+        username=SEED_USERNAME,
+        display_name="Zezima",
+        created_at=NOW - timedelta(days=400),
+        last_sync_at=NOW - timedelta(hours=2),
+        combat_level=126,
+        quest_points=300,
+        gp_sensitivity=GpSensitivity.NORMAL,
+    )
+    session.add(player)
+    session.flush()
+    player_id = int(player.id)
+
+    session.add_all(
+        [
+            SkillSnapshot(
+                player_id=player_id,
+                skill="magic",
+                level=94,
+                xp=7_195_629,
+                source=Source.RUNELITE,
+                observed_at=NOW,
+            ),
+            # xp NULL is the whole point: §6.2 says NULL means unranked, never 0, and the
+            # stored level of 1 is exactly the number §15 forbids rendering.
+            SkillSnapshot(
+                player_id=player_id,
+                skill="construction",
+                level=1,
+                xp=None,
+                source=Source.RUNELITE,
+                observed_at=NOW,
+            ),
+        ]
+    )
+
+    for key, unlock_state in (
+        ("ancient_magicks", UnlockState.UNLOCKED),
+        ("rigour", UnlockState.AVAILABLE),
+        ("augury", UnlockState.LOCKED),
+        ("ca_grandmaster", UnlockState.UNKNOWN),
+    ):
+        session.add(
+            Unlock(
+                player_id=player_id,
+                key=key,
+                state=unlock_state,
+                source=Source.RUNELITE,
+                observed_at=NOW,
+            )
+        )
+
+    session.add(
+        ContainerScan(
+            player_id=player_id,
+            container=Container.BANK,
+            scanned_at=NOW - timedelta(days=21),
+            source=Source.RUNELITE,
+        )
+    )
+
+    states = (
+        ("budget_nh", Status.UNLOCKED, 1.0, Confidence.HIGH, True, None),
+        (
+            "ice_barrage_nh",
+            Status.UNLOCKED,
+            1.0,
+            Confidence.LOW,
+            False,
+            "complete a refresher session first",
+        ),
+        ("deep_wildy_nh", Status.LOCKED, 0.4, None, False, "requirements are not met"),
+        (
+            "vengeance_pvp",
+            Status.UNKNOWN,
+            0.5,
+            None,
+            False,
+            "bank contents have never been observed",
+        ),
+    )
+    for capability_id, status, fraction, readiness, recommended, reason in states:
+        session.add(
+            CapabilityState(
+                player_id=player_id,
+                capability_id=capability_id,
+                status=status,
+                unlock_fraction=fraction,
+                blockers=(
+                    []
+                    if status is Status.UNLOCKED
+                    else [
+                        {
+                            "leaf_type": "skill",
+                            "key": "magic",
+                            "description": "Magic 94",
+                            "target": 94,
+                        }
+                    ]
+                ),
+                unknowns=(
+                    [
+                        {
+                            "leaf_type": "item",
+                            "key": "voidwaker",
+                            "description": "Voidwaker",
+                            "target": None,
+                        }
+                    ]
+                    if status is Status.UNKNOWN
+                    else []
+                ),
+                readiness_confidence=readiness,
+                warnings=["last practised 5 weeks ago"] if readiness is Confidence.LOW else [],
+                recommended_now=recommended,
+                recommended_now_reason=reason,
+                computed_at=NOW,
+            )
+        )
+
+    session.add(ActiveRoadmap(player_id=player_id, roadmap_id="main_nh", selection_weight=1.0))
+    session.add(ActiveRoadmap(player_id=player_id, roadmap_id="anti_pk", selection_weight=0.25))
+
+    snapshot = RecommendationSnapshot(
+        player_id=player_id,
+        run_at=NOW - timedelta(hours=2),
+        roadmap_selection={"main_nh": 1.0, "anti_pk": 0.25},
+        scoring_profile_version=1,
+    )
+    session.add(snapshot)
+    session.flush()
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="train_magic_87_to_94",
+            rank=1,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=1.42,
+            factors={"pvp_value": {"value": 0.9, "weight": 1.0, "log_contribution": 0.61}},
+            reason="high PvP value (+0.61) - unblocks 2 capabilities (+0.44)",
+            estimated_hours=4.5,
+            estimated_gp=1_800_000,
+            estimate_confidence=Confidence.MEDIUM,
+            blocked=False,
+        )
+    )
+
+    session.commit()
+    return player_id
+
+
+@pytest.fixture(scope="session")
+def now() -> datetime:
+    return NOW
+
+
+@pytest.fixture(scope="session")
+def content() -> Content:
+    """The real seed corpus — the capability names and ids the pages render."""
+    return load_content()
+
+
+@pytest.fixture(scope="session")
+def engine(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Engine]:
+    """One file-backed database for the whole session.
+
+    A file rather than ``:memory:``: the live server opens its own connections from another
+    thread, and an in-memory database is per-connection, so the server would find an empty
+    schema.
+    """
+    directory: Path = tmp_path_factory.mktemp("ui")
+    built = build_engine(f"sqlite:///{(directory / 'ui.db').as_posix()}")
+    Base.metadata.create_all(built)
+    yield built
+    built.dispose()
+
+
+@pytest.fixture(scope="session")
+def session_factory(engine: Engine) -> sessionmaker[Session]:
+    return build_session_factory(engine)
+
+
+@pytest.fixture(scope="session")
+def player_id(session_factory: sessionmaker[Session]) -> int:
+    with session_factory() as opened:
+        return seed(opened)
+
+
+@pytest.fixture
+def session(session_factory: sessionmaker[Session], player_id: int) -> Iterator[Session]:
+    with session_factory() as opened:
+        yield opened
+
+
+@pytest.fixture(scope="session")
+def app(session_factory: sessionmaker[Session], content: Content, player_id: int) -> FastAPI:
+    """The real application with the UI mounted. Exactly one per pytest process."""
+    settings = Settings(bind_address="127.0.0.1", api_token="ui-test-token-1234567890")
+    return create_app(settings, session_factory=session_factory, content=content, mount_ui=True)
+
+
+@pytest.fixture(scope="session")
+def ui_base_url(app: FastAPI) -> Iterator[str]:
+    """A live uvicorn serving ``app`` on a free port, for the duration of the session.
+
+    A real server rather than a test client, because the assertions that need a browser need
+    a websocket: NiceGUI delivers the element tree over one, so the HTML a test client
+    receives contains none of the markup under test.
+
+    Named ``ui_base_url`` and **not** ``base_url``: ``pytest-playwright`` ships a fixture of
+    that name and consumes it from an autouse fixture, so overriding it would start this
+    server — database, corpus and all — before every unit test in the package, including the
+    ones that exist precisely so they need neither.
+    """
+    port = _free_port()
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+
+    waited = 0.0
+    while not server.started and waited < 20.0:
+        threading.Event().wait(0.05)
+        waited += 0.05
+    if not server.started:  # pragma: no cover — startup failure, not a test condition
+        raise RuntimeError("the UI test server did not start")
+
+    yield f"http://127.0.0.1:{port}"
+
+    server.should_exit = True
+    thread.join(timeout=10)
