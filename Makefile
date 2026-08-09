@@ -11,11 +11,17 @@ VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: install venv test test-cov lint format typecheck validate-content migrate run clean
+.PHONY: install venv browsers test test-cov lint format typecheck validate-content migrate run clean
 
 venv: ; @test -d $(VENV) || python3 -m venv $(VENV)
 
 install: venv ; $(PIP) install --upgrade pip -q && $(PIP) install -e ".[dev]"
+
+# `pip install pytest-playwright` installs the *client*, not the browser it drives, so a
+# fresh clone runs every UI test in tests/ui/test_pages_browser.py straight into a
+# "browser executable doesn't exist" error. Separate from `install` because it downloads
+# ~150 MB and only the browser-backed tests need it.
+browsers: ; $(PY) -m playwright install chromium
 
 test:              ; $(PY) -m pytest $(ARGS)
 test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing $(ARGS)
