@@ -12,7 +12,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from tracker.domain.types import Confidence, Container, LeafRef, Status, UnlockState
+from tracker.domain.types import Confidence, Container, GpSensitivity, LeafRef, Status, UnlockState
 from tracker.ui.capabilities import sort_rows
 from tracker.ui.staleness import humanize_age, ownership_note, scan_note
 from tracker.ui.states import (
@@ -24,10 +24,15 @@ from tracker.ui.states import (
 )
 from tracker.ui.unlocks import GROUPS, group_rows
 from tracker.ui.view_model import (
+    GP_SENSITIVITY_LABELS,
     NO_READINESS,
     CapabilityRow,
+    RoadmapOptionRow,
+    assert_at_most_one_refresher,
     capability_row,
+    mark_primary,
     readiness_label,
+    recommendation_entry_row,
     skill_row,
     unlock_row,
 )
@@ -272,3 +277,108 @@ def test_the_unknown_group_is_rendered_first() -> None:
 
 def test_an_unlock_key_with_no_content_name_still_reads_as_words() -> None:
     assert unlock_row("diary_varrock_hard", UnlockState.UNKNOWN).name == "Diary Varrock Hard"
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Recommendations: G10, and factor rows read off the persisted JSON (§9.10)
+# ---------------------------------------------------------------------------
+
+
+def _entry(*, candidate_id: str = "train_magic_87_to_94", is_refresher: bool = False):
+    return recommendation_entry_row(
+        candidate_id=candidate_id,
+        rank=1,
+        name="Train Magic 87 -> 94",
+        is_refresher=is_refresher,
+        score=1.42,
+        factors={"pvp_value": {"value": 0.9, "weight": 1.0, "log_contribution": 0.61}},
+        reason="high PvP value (+0.61)",
+        estimated_hours=4.5,
+        estimated_gp=1_800_000,
+        confidence=Confidence.MEDIUM,
+    )
+
+
+def test_factor_rows_read_the_persisted_json_verbatim() -> None:
+    """§9.5: the breakdown drawer's numbers are the same ones the "Why" line came from."""
+    row = _entry()
+    assert len(row.factors) == 1
+    factor = row.factors[0]
+    assert factor.name == "pvp_value"
+    assert factor.value == pytest.approx(0.9)
+    assert factor.log_contribution == pytest.approx(0.61)
+
+
+def test_at_most_one_refresher_passes_with_zero_or_one() -> None:
+    assert_at_most_one_refresher(())
+    assert_at_most_one_refresher((_entry(is_refresher=False),))
+    assert_at_most_one_refresher((_entry(is_refresher=True),))
+
+
+def test_g10_fails_loudly_on_two_refreshers() -> None:
+    """The render-time assertion (belt-and-braces over Step 6's own guarantee, §9.8, D9)."""
+    rows = (
+        _entry(candidate_id="refresh_a", is_refresher=True),
+        _entry(candidate_id="refresh_b", is_refresher=True),
+    )
+    with pytest.raises(AssertionError, match="G10"):
+        assert_at_most_one_refresher(rows)
+
+
+def test_priority_stars_are_clamped_between_one_and_five() -> None:
+    assert _entry().priority_stars.count("★") >= 1
+    low = recommendation_entry_row(
+        candidate_id="x",
+        rank=1,
+        name="x",
+        is_refresher=False,
+        score=0.0,
+        factors={},
+        reason="",
+        estimated_hours=None,
+        estimated_gp=None,
+        confidence=Confidence.LOW,
+    )
+    assert low.priority_stars.count("★") == 1
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Roadmaps: primary is a display rule over the live §6.12 selection
+# ---------------------------------------------------------------------------
+
+
+def test_mark_primary_is_the_highest_selected_weight() -> None:
+    options = (
+        RoadmapOptionRow("anti_pk", "Anti-PKer", selected=True, selection_weight=0.25),
+        RoadmapOptionRow("main_nh", "Main NH", selected=True, selection_weight=1.0),
+    )
+    assert mark_primary(options)[0].roadmap_id == "main_nh"
+
+
+def test_mark_primary_is_empty_when_nothing_is_selected() -> None:
+    options = (RoadmapOptionRow("main_nh", "Main NH", selected=False, selection_weight=0.0),)
+    assert mark_primary(options) == ()
+
+
+def test_ties_break_by_id_so_primary_is_deterministic() -> None:
+    options = (
+        RoadmapOptionRow("b_roadmap", "B", selected=True, selection_weight=1.0),
+        RoadmapOptionRow("a_roadmap", "A", selected=True, selection_weight=1.0),
+    )
+    assert mark_primary(options)[0].roadmap_id == "a_roadmap"
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Settings: user language only (§9.6)
+# ---------------------------------------------------------------------------
+
+
+def test_every_sensitivity_level_has_a_user_facing_label() -> None:
+    assert set(GP_SENSITIVITY_LABELS) == set(GpSensitivity)
+
+
+def test_sensitivity_labels_never_say_kappa_or_gp_sensitivity() -> None:
+    for label in GP_SENSITIVITY_LABELS.values():
+        assert "κ" not in label
+        assert "kappa" not in label.lower()
+        assert "gp sensitivity" not in label.lower()

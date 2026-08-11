@@ -39,6 +39,7 @@ from tracker.db.models import (
     Base,
     CapabilityState,
     ContainerScan,
+    Milestone,
     Player,
     RecommendationEntry,
     RecommendationSnapshot,
@@ -50,6 +51,8 @@ from tracker.domain.types import (
     Confidence,
     Container,
     GpSensitivity,
+    MilestoneClass,
+    MilestoneKind,
     Source,
     Status,
     UnlockState,
@@ -211,6 +214,31 @@ def seed(session: Session) -> int:
     session.add(ActiveRoadmap(player_id=player_id, roadmap_id="main_nh", selection_weight=1.0))
     session.add(ActiveRoadmap(player_id=player_id, roadmap_id="anti_pk", selection_weight=0.25))
 
+    # Step 11: both real corpus practice groups, achieved and stale enough (60d > the
+    # 30d STALE_AFTER boundary) that both refresh templates trigger. Two groups, so the
+    # G10 split is real on screen: one is persisted as the primary list's refresher entry
+    # below, the other has no entry and must appear in the Practice freshness view via
+    # subtraction (§9.8).
+    stale_since = NOW - timedelta(days=60)
+    for key in (
+        "comfortable_4_way_switches",
+        "consistent_overhead_prayers",
+        "freeze_logging_practice",
+        "vengeance_timing",
+    ):
+        session.add(
+            Milestone(
+                player_id=player_id,
+                key=key,
+                kind=MilestoneKind.SELF_ATTESTED,
+                class_=MilestoneClass.EXECUTION,
+                achieved=True,
+                last_practiced_at=stale_since,
+                source=Source.RUNELITE,
+                observed_at=stale_since,
+            )
+        )
+
     snapshot = RecommendationSnapshot(
         player_id=player_id,
         run_at=NOW - timedelta(hours=2),
@@ -232,6 +260,39 @@ def seed(session: Session) -> int:
             estimated_gp=1_800_000,
             estimate_confidence=Confidence.MEDIUM,
             blocked=False,
+        )
+    )
+    # G10: the one refresher §9.8 permits in the primary list. refresh_vengeance_fundamentals
+    # is left unpersisted so it exercises the "rest go to Practice freshness" half of the rule.
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="refresh_nh_fundamentals",
+            rank=2,
+            candidate_kind=RecommendationCandidateKind.REFRESHER,
+            score=0.55,
+            factors={"proximity": {"value": 0.4, "weight": 0.6, "log_contribution": 0.12}},
+            reason="practice has decayed (+0.12)",
+            estimated_hours=0.5,
+            estimated_gp=0,
+            estimate_confidence=Confidence.HIGH,
+            blocked=False,
+        )
+    )
+    # §16.2: a blocked candidate, surfaced separately and never ranked.
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="buy_high_risk_gear",
+            rank=3,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=0.0,
+            factors={},
+            reason="",
+            estimated_hours=None,
+            estimated_gp=None,
+            estimate_confidence=Confidence.LOW,
+            blocked=True,
         )
     )
 
