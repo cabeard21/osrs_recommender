@@ -53,7 +53,12 @@ _PROFILE = ScoringProfile(
     version=1,
     kappa_gp=KappaPresets(high=8_000_000, normal=20_000_000, low=50_000_000),
     weights=ScoringWeights(
-        pvp_value=1.0, leverage=0.8, proximity=0.6, effort_decay=0.7, cost_decay=0.5
+        pvp_value=1.0,
+        leverage=0.8,
+        proximity=0.6,
+        effort_decay=0.7,
+        cost_decay=0.5,
+        method_unlock=0.0,
     ),
 )
 

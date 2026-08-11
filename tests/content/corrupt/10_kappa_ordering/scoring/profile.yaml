@@ -11,3 +11,4 @@ scoring_profile:
     proximity: 0.6
     effort_decay: 0.7
     cost_decay: 0.5
+    method_unlock: 0.0

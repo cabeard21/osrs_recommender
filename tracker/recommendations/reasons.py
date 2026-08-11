@@ -62,6 +62,11 @@ _PHRASES: Mapping[str, tuple[tuple[float, str], ...]] = {
         (0.40, "unblocks several capabilities"),
         (0.0, "unblocks something"),
     ),
+    "method_unlock": (
+        (0.75, "makes later work far faster"),
+        (0.40, "makes later work faster"),
+        (0.0, "speeds up later work"),
+    ),
     "proximity": (
         (0.75, "close to target"),
         (0.40, "part-way there"),

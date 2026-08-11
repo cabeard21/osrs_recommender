@@ -38,7 +38,10 @@ Why the search does not call ``recommend()`` in its inner loop
 
 Every §9.4 factor except ``effort_decay`` and ``cost_decay`` is independent of the profile,
 and those two are closed forms — ``exp(−hours/τ)`` and ``exp(−gp/κ)`` — over an ``Estimate``
-that §8 computes without a profile at all. So the engine runs **once per scenario**, its
+that §8 computes without a profile at all. ``method_unlock`` (A30) joins the cached side
+rather than the closed-form side: it is a ratio of two §8 estimates and §8 takes no profile,
+so it is as fixed across the grid as ``pvp_value`` is. So the engine runs **once per
+scenario**, its
 factor values and estimates are cached, and the inner loop is arithmetic. A full pass over
 the grid re-scores the corpus a few hundred thousand times in under a minute.
 
@@ -87,11 +90,19 @@ KAPPA_MAX = 250_000_000
 #: reported as evidence about how much the pin costs.
 SDD_KAPPA: dict[str, int] = {"high": 8_000_000, "normal": 20_000_000, "low": 50_000_000}
 
-#: The four free weights. ``pvp_value`` is the numeraire — see the module docstring.
-TUNED = ("leverage", "proximity", "effort_decay", "cost_decay")
+#: The five free weights. ``pvp_value`` is the numeraire — see the module docstring.
+TUNED = ("leverage", "method_unlock", "proximity", "effort_decay", "cost_decay")
 
+#: ``method_unlock``'s grid starts finer than the others and starts at **zero**, for two
+#: reasons that are really one. The factor is zero for most candidates in most scenarios —
+#: only a candidate whose ``grants_facts`` change another candidate's §8 estimate scores
+#: above the floor — so its ε-floored term acts as a near-uniform ``0.01 ^ w`` multiplier on
+#: everyone else, and ``100 ^ w`` is 1.26× at w=0.05 but 40× at w=0.8. A coarse grid would
+#: step straight over the useful range. Zero is included because it is a real answer: if the
+#: search prefers it, A30 earns nothing on this corpus and the modelling gap is elsewhere.
 GRID: dict[str, tuple[float, ...]] = {
     "leverage": (0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4),
+    "method_unlock": (0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8),
     "proximity": (0.2, 0.4, 0.6, 0.8, 1.0, 1.2),
     "effort_decay": (0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4),
     "cost_decay": (0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0),
@@ -105,6 +116,7 @@ KAPPA_GRID: dict[str, tuple[int, ...]] = {
 
 QUICK_GRID: dict[str, tuple[float, ...]] = {
     "leverage": (0.4, 0.8, 1.2),
+    "method_unlock": (0.0, 0.1, 0.3),
     "proximity": (0.2, 0.6, 1.0),
     "effort_decay": (0.4, 0.8, 1.2),
     "cost_decay": (0.1, 0.3, 0.7),
@@ -129,6 +141,7 @@ class CandidateFacts:
     candidate_id: str
     pvp_value: float
     leverage: float
+    method_unlock: float
     proximity: float
     hours: float | None
     gp: int | None
@@ -174,6 +187,7 @@ def collect(content: Content, scenarios: Sequence[Scenario]) -> tuple[ScenarioFa
                 candidate_id=entry.candidate_id,
                 pvp_value=entry.factors["pvp_value"].value,
                 leverage=entry.factors["leverage"].value,
+                method_unlock=entry.factors["method_unlock"].value,
                 proximity=entry.factors["proximity"].value,
                 hours=None if entry.estimate is None else entry.estimate.hours,
                 gp=None if entry.estimate is None else entry.estimate.gp,
@@ -214,6 +228,7 @@ def rank(facts: ScenarioFacts, point: Profile, epsilon: float) -> tuple[str, ...
         values = {
             "pvp_value": candidate.pvp_value,
             "leverage": candidate.leverage,
+            "method_unlock": candidate.method_unlock,
             "proximity": candidate.proximity,
             "effort_decay": math.exp(-hours / point.tau_hours),
             "cost_decay": math.exp(-gp / kappa),

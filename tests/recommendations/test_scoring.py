@@ -201,6 +201,7 @@ class TestScorer:
         values = {
             "pvp_value": 0.9,
             "leverage": 0.5,
+            "method_unlock": 0.4,
             "proximity": 0.3,
             "effort_decay": 0.6,
             "cost_decay": 0.8,
@@ -215,6 +216,7 @@ class TestScorer:
         values = {
             "pvp_value": 0.9,
             "leverage": 0.5,
+            "method_unlock": 0.4,
             "proximity": 0.3,
             "effort_decay": 0.6,
             "cost_decay": 0.8,

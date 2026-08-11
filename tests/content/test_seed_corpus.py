@@ -221,6 +221,7 @@ class TestScoringProfile:
         assert profile.weights.proximity == 0.6
         assert profile.weights.effort_decay == 0.7
         assert profile.weights.cost_decay == 0.5
+        assert profile.weights.method_unlock == 0.0  # A30 — authored, and inert in v1
         assert profile.refresher.max_in_primary_list == 1  # G10
         assert profile.refresher.breadth_bonus_cap == 0.10
 

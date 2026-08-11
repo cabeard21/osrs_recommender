@@ -1,29 +1,30 @@
-"""The five candidate factor derivations of §10.6, as pure functions.
+"""The candidate factor derivations of §10.6, as pure functions.
 
 §10.6 and D11: *"Every factor in §9.4 derives from the fields above. **None is authored
 directly**, so no content file can assert its own priority."* This module is where that
-promise is kept — ``pvp_value``, ``leverage``, ``proximity``, ``completed`` and the
-``blocked`` gate are computed here from :class:`~tracker.content.schema.Candidate` fields
-and player facts, and nowhere else.
+promise is kept — ``pvp_value``, ``leverage``, ``method_unlock``, ``proximity``,
+``completed`` and the ``blocked`` gate are computed here from
+:class:`~tracker.content.schema.Candidate` fields and player facts, and nowhere else.
 
 **No scoring lives here.** The §9.4 weighted geometric mean, the ε floor and the ranking
 are Step 6's; this module only produces the factors it multiplies. Keeping the two apart
 is what lets §16.2's invariants ("a completed candidate never ranks") be tested against a
 derivation rather than inferred from a score.
 
-Dependency injection at two seams
----------------------------------
+Dependency injection at three seams
+-----------------------------------
 
-Three of the five derivations need three-valued requirement evaluation (§9.1) and one
-needs capability status, both of which live in ``tracker.progression``. Rather than
-import that package, this module declares the *shape* it needs as protocols and takes the
-implementation as an argument. Two reasons, in order of importance:
+Three of the derivations need three-valued requirement evaluation (§9.1), one needs
+capability status and one needs §8's hours — living in ``tracker.progression`` and
+``tracker.estimation`` respectively. Rather than import those packages, this module
+declares the *shape* it needs as protocols and takes the implementation as an argument.
+Two reasons, in order of importance:
 
 1. The engine is the thing whose behaviour these derivations must not silently depend on.
    Injecting it means every rule below is testable against a stub that makes the
    interesting case — an ``unknown`` gate — trivial to construct.
-2. ``tracker.progression`` builds on this package, so importing it here would close a
-   cycle.
+2. ``tracker.progression`` builds on this package — and ``tracker.estimation`` builds on
+   ``tracker.progression`` — so importing either here would close a cycle.
 
 The concrete evaluator satisfies :class:`EvalOutcome` and :class:`RequirementEvaluator`
 **structurally**; neither package imports the other.
@@ -104,6 +105,18 @@ UnlocksAfterFacts = Callable[[str, Requirement, PlayerState, Content], bool]
 #: taking it as a parameter keeps this module free of a 99-entry constant and lets tests
 #: substitute a small synthetic curve.
 XpForLevel = Callable[[int], int]
+
+#: *"How many hours would this candidate take, if these facts were true?"* — ``None`` where
+#: §8 cannot size it at all, and ``grants=None`` meaning *as things actually stand*.
+#:
+#: A third injected seam, for :func:`method_unlock_fraction`, and injected for a reason the
+#: other two share and then one of their own. Shared: this module must stay a pure function
+#: of its arguments. Its own: sizing a candidate is ``tracker.estimation``'s job, and
+#: ``tracker.estimation`` builds on ``tracker.progression``, which builds on this package —
+#: importing it here would close a cycle that the two existing protocols were introduced to
+#: avoid. The engine passes an oracle that memoizes both halves; see
+#: :class:`tracker.recommendations.facts.EstimateOracle`.
+HoursAfterFacts = Callable[[Candidate, Requirement | None], float | None]
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +257,103 @@ def leverage_map(
     }
     largest = max(counts.values(), default=0)
     return {candidate_id: leverage(count, largest) for candidate_id, count in counts.items()}
+
+
+# ---------------------------------------------------------------------------
+# method_unlock (§9.4, §10.6, A30)
+# ---------------------------------------------------------------------------
+
+
+def method_unlock_fraction(
+    candidate: Candidate,
+    others: Iterable[Candidate],
+    hours_after_facts: HoursAfterFacts,
+) -> float:
+    """The largest share of another candidate's hours this one's facts would remove (A30).
+
+    For each other candidate ``Y``::
+
+        reduction(Y) = (hours(Y | now) − hours(Y | grants_facts)) / hours(Y | now)
+
+    clamped to ``[0, 1]``, and the factor is the **maximum** over ``Y``. Desert Treasure I
+    is the case A30 exists for: with Ancients already unlocked it flips no capability
+    status, so ``leverage`` scores it zero — but §8.1's ``magic_bursting`` needs the quest
+    too, so finishing it takes ``train_magic_87_to_94`` from 113 hours at 35k xp/hr to 16
+    at 250k, a reduction of 0.86.
+
+    **Maximum, never sum**, which is A2's rule for ``pvp_value`` and §9.8's for refresher
+    groups, applied a third time for the third time it would otherwise be violated: summing
+    would let a candidate that shaves 10% off six grinds outrank one that deletes 90% of the
+    grind that matters, making breadth a substitute for depth.
+
+    **Hours, not GP.** §8's cost half moves under a grant for a reason that is not leverage
+    at all: :func:`~tracker.recommendations.facts.apply_facts` hands the player the granted
+    *item*, so any acquisition would "save" every other candidate the price of a thing it
+    just bought — a restatement of its own cost, not an effect on anything else. Hours are
+    where §8.2 step 3's method fallback lives, which is the mechanism A30 is about.
+
+    A candidate granting nothing returns ``0`` — never "unknown", for :func:`leverage`'s
+    reason: this is a relevance factor, not a status. So does one whose grants change no
+    other candidate's estimate, and both are floored at ε by the scorer rather than here, so
+    a genuine zero survives into :attr:`FactorContribution.value` (§6.10).
+
+    ``others`` should be every candidate that could still be worked on — **including the
+    blocked ones**, whose hours are perfectly computable and whose unblocking is exactly
+    what a quest like DT1 buys. Excluding them would hide the effect in the one situation
+    where it is largest.
+    """
+    if candidate.grants_facts is None:
+        return 0.0
+
+    best = 0.0
+    for other in others:
+        if other.id == candidate.id:
+            continue
+        before = hours_after_facts(other, None)
+        if before is None or before <= 0.0:
+            continue  # nothing to reduce, or §8 could not size it either way
+        after = hours_after_facts(other, candidate.grants_facts)
+        if after is None:
+            continue  # sizable now but not afterwards is incoherent; credit nothing
+        best = max(best, min(1.0, max(0.0, (before - after) / before)))
+    return best
+
+
+def method_unlock(reduction: float, max_reduction: float) -> float:
+    """Normalize a reduction by the largest in the current candidate set (§10.6, A30).
+
+    Identical in form and in reasoning to :func:`leverage`: the factor is comparative, so
+    the best available candidate reads ``1.0`` whether it halves one grind or deletes it,
+    and a corpus in which nothing unlocks a faster method scores ``0`` uniformly — which
+    cannot reorder anything, and which the scorer's ε floor then lifts into ``(0,1]``.
+    """
+    if max_reduction <= 0.0:
+        return 0.0
+    return min(1.0, reduction / max_reduction)
+
+
+def method_unlock_map(
+    candidates: Iterable[Candidate],
+    others: Iterable[Candidate],
+    hours_after_facts: HoursAfterFacts,
+) -> Mapping[str, float]:
+    """``method_unlock`` for a whole candidate set, which is the only scale it is defined on.
+
+    ``candidates`` are the ones being scored; ``others`` are the ones whose estimates may
+    improve — a wider set, since a blocked candidate cannot rank but can certainly be made
+    cheaper. Returned keyed by candidate id so no caller can normalize one candidate's
+    reduction against a maximum taken over a different set.
+    """
+    pool = tuple(others)
+    reductions = {
+        candidate.id: method_unlock_fraction(candidate, pool, hours_after_facts)
+        for candidate in candidates
+    }
+    largest = max(reductions.values(), default=0.0)
+    return {
+        candidate_id: method_unlock(reduction, largest)
+        for candidate_id, reduction in reductions.items()
+    }
 
 
 # ---------------------------------------------------------------------------

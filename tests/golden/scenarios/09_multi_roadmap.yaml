@@ -59,11 +59,13 @@ judgments:
       because: >
         Rigour is the anti-PK-flavoured upgrade the blend most flatters (0.40 on anti_pk),
         and it is still 14 Prayer levels away behind a drop the corpus cannot model.
-    - pair: [buy_voidwaker, buy_high_risk_gear]
-      because: >
-        The Voidwaker outranks the gear set on both blended capabilities (0.80/0.60 against
-        0.50/0.35). The blend must not invert an ordering both its roadmaps agree on.
-      pending_review: D1 in docs/TUNING.md — the v1 weights disagree, blend or no blend.
+    # Deleted by Step 13b (§16.3 step 5): the `buy_voidwaker > buy_high_risk_gear`
+    # judgment recorded here was **wrong**, and D1 in docs/TUNING.md is the ruling. An 85M
+    # purchase against a 16.5M one is a five-fold difference and κ = 20M says 20M is where
+    # cost starts to hurt; the six copies of this judgment were one opinion written six
+    # times, and satisfying them all required `cost_decay: 0.1`, which ε caps at 0.63 and
+    # which therefore switches cost off rather than rebalancing it. The scenario is kept —
+    # its other judgments are unaffected.
     - pair: [train_magic_87_to_94, train_woodcutting]
       because: Woodcutting advances nothing.
   must_not_be_top:

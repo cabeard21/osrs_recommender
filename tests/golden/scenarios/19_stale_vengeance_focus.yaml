@@ -52,21 +52,20 @@ player:
 roadmaps: {anti_pk: 0.9, main_nh: 0.1}
 judgments:
   must_rank_above:
-    - pair: [refresh_vengeance_fundamentals, refresh_nh_fundamentals]
-      because: >
-        Under a 0.9/0.1 anti-PK blend, vengeance_pvp is the higher-weighted capability
-        (0.83 against deep_wildy_nh's 0.39). The one-member group must beat the
-        three-member group, which is only possible if member count is genuinely absent from
-        pvp_value — §9.8's "the composite inherits the maximum relevant capability value,
-        never the sum".
-      pending_review: >
-        D3 in docs/TUNING.md. The v1 weights keep nh_fundamentals ahead, and not through
-        `pvp_value` — which does invert exactly as this judgment predicts, 0.83 against 0.64
-        — but through `leverage`: restoring the nh group flips three capabilities'
-        `recommended_now`, the vengeance group one. That is the A29? derivation working as
-        designed, and on review it is a strong argument that **this judgment is the thing
-        that is wrong**: `consistent_overhead_prayers` is an anti_pk requirement too, so the
-        nh session genuinely serves the anti-PK roadmap as well.
+    # Deleted by Step 13b (§16.3 step 5): the `refresh_vengeance_fundamentals >
+    # refresh_nh_fundamentals` judgment recorded here was **wrong**, and D3 in
+    # docs/TUNING.md is the ruling. `pvp_value` does invert under the blend exactly as the
+    # judgment predicted (0.83 against 0.64), so §9.8's "group size never drives rank" is
+    # working; what carries the nh group is `leverage`, because
+    # `consistent_overhead_prayers` is an `anti_pk` requirement and the nh session
+    # therefore serves *this* roadmap too. The judgment assumed it did not.
+    #
+    # The narrower claim it was reaching for — that `pvp_value` *alone* inverts under the
+    # blend — is not one of §16.1's three judgment shapes, because it is a statement about
+    # a factor rather than about a ranking. It is asserted instead by
+    # `test_the_blend_inverts_pvp_value_for_the_one_member_group` in test_judgments.py,
+    # which is why this scenario is kept: it is the only place in the corpus where
+    # `pvp_value` and `leverage` pull in opposite directions.
     - pair: [refresh_vengeance_fundamentals, train_woodcutting]
       because: Woodcutting advances nothing.
   must_not_be_top:

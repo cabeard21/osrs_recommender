@@ -1,4 +1,4 @@
-"""The five §10.6 factor derivations, against a stub evaluator.
+"""The §10.6 factor derivations, against a stub evaluator.
 
 The evaluator itself is step 4's (`tracker/progression/`). These tests inject a stub for
 two reasons: the derivations must be provable independently of it, and the case that
@@ -31,6 +31,9 @@ from tracker.domain.candidates import (
     gate_value,
     leverage,
     leverage_map,
+    method_unlock,
+    method_unlock_fraction,
+    method_unlock_map,
     proximity,
     pvp_value,
     unlock_flip_count,
@@ -346,6 +349,141 @@ class TestLeverageNormalization:
         assert scores["many"] == pytest.approx(1.0)
         assert scores["one"] == pytest.approx(1 / len(content.capabilities))
         assert scores["none"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# method_unlock (§9.4, §10.6, A30)
+# ---------------------------------------------------------------------------
+
+
+def hours_oracle(table: Mapping[str, Mapping[str | None, float | None]]) -> object:
+    """A stub :data:`~tracker.domain.candidates.HoursAfterFacts` keyed by candidate id.
+
+    ``table[candidate_id][None]`` is the baseline; ``table[candidate_id][grantor_id]`` the
+    hours under that grantor's facts, defaulting to the baseline where unstated. Written as
+    a table rather than as a real estimator because A30's arithmetic is what these tests are
+    about — §8's sizing has its own suite, and going through it would make an assertion here
+    fail for reasons that have nothing to do with the factor.
+    """
+
+    def probe(other: Candidate, grants: Requirement | None) -> float | None:
+        row = table[other.id]
+        if grants is None:
+            return row[None]
+        key = getattr(grants, "key", None) or getattr(grants, "quest_id", None)
+        return row.get(str(key), row[None])
+
+    return probe
+
+
+class TestMethodUnlockFraction:
+    """A30 — *"how much of another candidate's grind would this delete?"*"""
+
+    def test_the_reduction_is_the_share_of_hours_removed(self) -> None:
+        """DT1's own numbers: 113 conservative hours become 16 bursting ones."""
+        quest = candidate("quest", grants_facts="unlock: bursting")
+        grind = candidate("grind")
+
+        value = method_unlock_fraction(
+            quest, [grind], hours_oracle({"grind": {None: 113.0, "bursting": 16.0}})
+        )
+
+        assert value == pytest.approx((113 - 16) / 113, abs=1e-3)
+
+    def test_it_takes_the_maximum_never_the_sum(self) -> None:
+        """A2's rule for ``pvp_value`` and §9.8's for refresher groups, a third time.
+
+        Three grinds shaved by 20% each must not beat one grind cut by 90%: summing would
+        make breadth a substitute for depth, which is the failure the design rejects every
+        time it comes up.
+        """
+        broad = candidate("broad", grants_facts="unlock: broad")
+        deep = candidate("deep", grants_facts="unlock: deep")
+        others = [candidate(f"g{n}") for n in range(3)]
+        table = {
+            f"g{n}": {None: 100.0, "broad": 80.0, "deep": 100.0 if n else 10.0} for n in range(3)
+        }
+
+        assert method_unlock_fraction(broad, others, hours_oracle(table)) == pytest.approx(0.2)
+        assert method_unlock_fraction(deep, others, hours_oracle(table)) == pytest.approx(0.9)
+
+    def test_a_candidate_granting_no_facts_unlocks_no_method(self) -> None:
+        """Zero, never unknown — :func:`leverage`'s reason, and the probe is never asked."""
+        value = method_unlock_fraction(
+            candidate("c", grants_facts=None),
+            [candidate("other")],
+            lambda *_args: pytest.fail("the probe must not be consulted"),
+        )
+        assert value == 0.0
+
+    def test_a_candidate_is_never_measured_against_itself(self) -> None:
+        """Its own grants trivially complete it, which would score every candidate 1.0."""
+        alone = candidate("alone", grants_facts="unlock: x")
+        value = method_unlock_fraction(
+            alone, [alone], hours_oracle({"alone": {None: 100.0, "x": 0.0}})
+        )
+        assert value == 0.0
+
+    def test_an_unsizable_candidate_contributes_nothing_either_way(self) -> None:
+        """§8 returns ``None`` for a quest it cannot size; a ratio of absences is not 1.0."""
+        quest = candidate("quest", grants_facts="unlock: x")
+        table = {"unsizable": {None: None, "x": None}, "zero": {None: 0.0, "x": 0.0}}
+
+        assert method_unlock_fraction(
+            quest, [candidate("unsizable"), candidate("zero")], hours_oracle(table)
+        ) == pytest.approx(0.0)
+
+    def test_a_candidate_made_longer_scores_zero_rather_than_negative(self) -> None:
+        """The clamp. A negative factor would be a domain error in ``ln``, not a low score."""
+        quest = candidate("quest", grants_facts="unlock: x")
+        value = method_unlock_fraction(
+            quest, [candidate("other")], hours_oracle({"other": {None: 10.0, "x": 40.0}})
+        )
+        assert value == 0.0
+
+
+class TestMethodUnlockNormalization:
+    """A30 borrows :func:`leverage`'s normalization exactly, and must keep borrowing it."""
+
+    def test_the_best_candidate_scores_one(self) -> None:
+        assert method_unlock(0.86, 0.86) == pytest.approx(1.0)
+
+    def test_the_rest_scale_against_it(self) -> None:
+        assert method_unlock(0.43, 0.86) == pytest.approx(0.5)
+
+    def test_a_candidate_unlocking_no_faster_method_scores_zero(self) -> None:
+        """Floored at ε by the scorer, not here — a genuine zero must survive to §6.10."""
+        assert method_unlock(0.0, 0.86) == 0.0
+
+    def test_when_nothing_unlocks_a_faster_method_the_factor_does_not_discriminate(self) -> None:
+        assert method_unlock(0.0, 0.0) == 0.0
+
+    def test_the_map_normalizes_within_the_set(self) -> None:
+        big = candidate("big", grants_facts="unlock: big")
+        small = candidate("small", grants_facts="unlock: small")
+        inert = candidate("inert", grants_facts="unlock: inert")
+        others = [candidate("grind")]
+        table = {"grind": {None: 100.0, "big": 20.0, "small": 60.0}}
+
+        scores = method_unlock_map([big, small, inert], others, hours_oracle(table))
+
+        assert scores["big"] == pytest.approx(1.0)
+        assert scores["small"] == pytest.approx(0.5)
+        assert scores["inert"] == 0.0
+
+    def test_the_measured_set_may_be_wider_than_the_scored_set(self) -> None:
+        """A blocked candidate cannot rank but can certainly be made cheaper (A30).
+
+        The engine passes every *open* candidate as ``others`` while scoring only the
+        unblocked ones, because unblocking a 113-hour grind *and* making it a 16-hour one is
+        the largest form of the effect the factor exists to see.
+        """
+        quest = candidate("quest", grants_facts="unlock: x")
+        table = {"blocked_grind": {None: 100.0, "x": 10.0}}
+
+        scores = method_unlock_map([quest], [candidate("blocked_grind")], hours_oracle(table))
+
+        assert scores["quest"] == pytest.approx(1.0)
 
 
 # ---------------------------------------------------------------------------

@@ -57,6 +57,7 @@ from tracker.domain.candidates import (
     effective_capability_weights,
     gate_value,
     leverage,
+    method_unlock_map,
     proximity,
     unlock_flip_count,
 )
@@ -71,12 +72,11 @@ from tracker.domain.types import (
     RoadmapSelection,
     Tri,
 )
-from tracker.estimation.estimate import estimate
 from tracker.estimation.prices import PriceRecord
 from tracker.estimation.xp_table import xp_for_level
 from tracker.progression.engine import compute_capability_states
 from tracker.progression.evaluate import EvalResult, Evaluator
-from tracker.recommendations.facts import LeverageOracle
+from tracker.recommendations.facts import EstimateOracle, LeverageOracle
 from tracker.recommendations.hysteresis import apply_hysteresis
 from tracker.recommendations.reasons import reason
 from tracker.recommendations.refreshers import (
@@ -145,6 +145,7 @@ def recommend_run(
         weights=effective_capability_weights(selection, content),
         evaluator=Evaluator(state, content),
         oracle=LeverageOracle(state, content, now),
+        estimates=EstimateOracle(state, content, prices or {}, now),
     )
 
     ranked = sorted(_actionable(run), key=lambda entry: (-entry.recommendation.score, entry.id))
@@ -169,8 +170,10 @@ class _Run:
 
     ``evaluator`` memoizes requirement evaluation across every candidate, so a
     ``capability:`` prerequisite shared by six gates is walked once rather than six times;
-    ``oracle`` does the same for the counterfactual capability states ``leverage`` needs.
-    Both are pinned to ``state`` and ``content`` and must not outlive this run.
+    ``oracle`` does the same for the counterfactual capability states ``leverage`` needs,
+    and ``estimates`` for the §8 sizings ``method_unlock`` compares (A30) — which is where
+    the memo matters most, since that factor asks an O(n²) question. All three are pinned to
+    ``state`` and ``content`` and must not outlive this run.
     """
 
     state: PlayerState
@@ -181,6 +184,7 @@ class _Run:
     weights: Mapping[str, float]
     evaluator: Evaluator
     oracle: LeverageOracle
+    estimates: EstimateOracle
 
     def evaluate(
         self, requirement: Requirement, _state: PlayerState, _content: Content
@@ -216,12 +220,21 @@ def _actionable(run: _Run) -> tuple[_Entry, ...]:
     gathered before anything is scored. Normalizing per kind would let a refresher that
     unblocks one capability score the same 1.0 as a quest that unblocks three, purely
     because refreshers had been counted among themselves.
+
+    ``method_unlock`` (A30) is normalized across the same set, but measured against a
+    **wider** one: ``open`` includes the blocked candidates, because a blocked candidate's
+    hours are perfectly computable and unblocking a 113-hour grind while making it a 16-hour
+    one is precisely the effect the factor exists to see.
     """
-    progression = [
+    open_candidates = [
         candidate
         for candidate in run.content.candidates.values()
         if not completed(candidate, run.state, run.content, run.evaluate)
-        and not blocked(candidate, run.state, run.content, run.evaluate)
+    ]
+    progression = [
+        candidate
+        for candidate in open_candidates
+        if not blocked(candidate, run.state, run.content, run.evaluate)
     ]
     practice = practice_candidates(run.state, run.content, run.profile, run.now)
 
@@ -232,8 +245,13 @@ def _actionable(run: _Run) -> tuple[_Entry, ...]:
     unlock_counts.update({entry.id: _practice_unlocks(entry, run) for entry in practice})
     largest = max(unlock_counts.values(), default=0)
 
+    unlocked_methods = method_unlock_map(progression, open_candidates, run.estimates)
+
     entries = [
-        _Entry(candidate.id, _score_progression(candidate, run, unlock_counts, largest))
+        _Entry(
+            candidate.id,
+            _score_progression(candidate, run, unlock_counts, largest, unlocked_methods),
+        )
         for candidate in progression
     ]
     entries.extend(
@@ -274,15 +292,18 @@ def _blocked_entries(run: _Run) -> tuple[Recommendation, ...]:
 
 
 def _score_progression(
-    candidate: Candidate, run: _Run, unlock_counts: Mapping[str, int], largest: int
+    candidate: Candidate,
+    run: _Run,
+    unlock_counts: Mapping[str, int],
+    largest: int,
+    unlocked_methods: Mapping[str, float],
 ) -> Recommendation:
-    sized = estimate(
-        candidate, run.state, run.content, run.prices, run.now, evaluator=run.evaluator
-    )
+    sized = run.estimates.estimate(candidate)
     kappa = kappa_for(run.state.gp_sensitivity, run.profile)
     values = {
         "pvp_value": advances_value(candidate.advances, run.weights),
         "leverage": leverage(unlock_counts[candidate.id], largest),
+        "method_unlock": unlocked_methods[candidate.id],
         "proximity": proximity(candidate, run.state, run.content, run.evaluate, xp_for_level),
         "effort_decay": effort_decay(sized.hours, run.profile),
         "cost_decay": cost_decay(sized.gp, kappa),
@@ -309,19 +330,27 @@ def _score_progression(
 def _score_practice(
     entry: PracticeCandidate, run: _Run, unlock_counts: Mapping[str, int], largest: int
 ) -> Recommendation:
-    """Score a refresher on the same five factors, with two substitutions.
+    """Score a refresher on the same six factors, with three substitutions.
 
     ``proximity`` carries §9.8's ``group_urgency`` — see
     :mod:`tracker.recommendations.refreshers` for why that is the factor it belongs in — and
     ``cost_decay`` is computed from a real zero rather than from an absent figure, which is
     the distinction A8 turns on: a refresher's cost is *known* to be nothing, while its hours
     are only knowable because §10.4 makes authoring them mandatory.
+
+    ``method_unlock`` is a **real zero** and takes no readiness-layer twin. A30 measures the
+    hours a candidate's ``grants_facts`` would remove from another candidate's estimate; a
+    refresher grants no facts and §8 sizes nothing from practice freshness, so there is
+    nothing to reduce. Unlike ``leverage`` — where A29? had to reinterpret the count, because
+    a permanent zero there would have been *wrong* — zero here is simply the answer, and the
+    ε floor treats it exactly as it treats a quest that unlocks no faster method.
     """
     kappa = kappa_for(run.state.gp_sensitivity, run.profile)
     sized = Estimate(hours=entry.hours, gp=_PRACTICE_GP, confidence=Confidence.HIGH)
     values = {
         "pvp_value": advances_value(entry.advances, run.weights),
         "leverage": leverage(unlock_counts[entry.id], largest),
+        "method_unlock": 0.0,
         "proximity": entry.urgency,
         "effort_decay": effort_decay(entry.hours, run.profile),
         "cost_decay": cost_decay(_PRACTICE_GP, kappa),

@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.5.1 |
-| **Date** | 2026-08-04 |
+| **Version** | 0.5.2 |
+| **Date** | 2026-08-11 |
 | **Status** | Implementation in progress against `plans/osrs-tracker-sdd-implementation.md`. All design questions resolved and all known specification gaps closed (§20). |
 
 ## Changelog
@@ -15,6 +15,7 @@
 | 0.3 | 2026-08-04 | Resolved D1–D5 (§18). Milestones gain class and freshness; staleness decays confidence, never achievement. Live item prices with cached and static fallback layers. Multiple active roadmaps merge into one effective capability-weight map via convex combination. Scoring weights externalized to a versioned profile with a defined tuning method. Side-loading fixed as the v1 plugin distribution path. Separated `unlocked` from `readiness_confidence`; estimate confidence expanded to three levels. |
 | 0.4 | 2026-08-04 | Resolved D6–D10 (§18). **`CapabilityState.unlocked: bool` replaced by tri-valued `status`**, with three-valued requirement evaluation throughout (§9.1). Added `PracticeEvent` and the derived-practice-proxy model. Refresher candidates grouped by practice domain with a one-per-list cap. κ presets retained and relabelled in user terms. Price feed pinned to the OSRS Wiki real-time prices API, with confidence derived from **trade** timestamps rather than fetch time. Added the `recommended_now` status layer. |
 | 0.5 | 2026-08-04 | Closed 21 specification gaps found while planning implementation; each is traced in §20. **Added the missing `Candidate` schema (§10.6)** — a core noun that had a content directory and drove every scoring factor, but no defined fields — together with the derivations for `pvp_value`, `leverage`, `proximity`, `completed` and `blocked` (D11). Completed the three-valued leaf resolution table (§9.1), pinning `unlock: available` and `quest: in_progress` as **unsatisfied**. Fixed the `unlock_fraction` denominator and defined *contributing* and *aged* for `readiness_confidence` (§6.9). Added `Milestone.attested_at` semantics so "never prompted" is representable (§6.6). Added `ActiveRoadmap` (§6.12) and made `SyncEvent.player_id` nullable so §11.3's audit requirement is satisfiable (§6.11). Moved the health endpoint outside `/api` (§11). Added **§4.5**, naming the observation/truth distinction that now recurs three times in the design. Sync contract declared provisional until validated against a real snapshot (D12). |
+| 0.5.2 | 2026-08-11 | Closed **A30**, found by running §16.3's tuning procedure against the golden corpus: §9.4 had no factor for a candidate that makes *another* candidate cheaper or faster, so Desert Treasure I scored zero on `leverage` for an account that already had Ancients while being the one action that turns 113 Magic hours into 16. Added **`method_unlock`** as §9.4's sixth factor with its own authored weight, derived in code from `grants_facts` and §8's estimator (D13). Folded `unknown_effort_hours` into §9.7's printed profile — ratified in code since Step 5 but never transcribed. |
 | 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
 
 ---
@@ -940,11 +941,36 @@ score = Π  fᵢ ^ wᵢ
 | `readiness` | Hard gate, `{0, 1}`. Blocked candidates are excluded and surfaced separately. | — (gate) |
 | `pvp_value` | Candidate relevance under the effective capability-weight map (§9.3). | 1.0 |
 | `leverage` | Normalized count of capabilities this unblocks. | 0.8 |
+| `method_unlock` | Normalized largest reduction this candidate's `grants_facts` would make to **another** candidate's estimated hours. | 0.0 (A30 — see below) |
 | `proximity` | `1 − (remaining / total)` — closer is better. | 0.6 |
 | `effort_decay` | `exp(−hours / τ)` | 0.7 |
 | `cost_decay` | `exp(−gp_cost / κ)` | 0.5 |
 
 Every factor is floored at ε = 0.01 so no single term can annihilate a score.
+
+**`method_unlock` (A30)** exists because the other five factors cannot see a candidate that
+makes *other* work cheaper. `leverage` counts capability **status** flips, and Desert Treasure I
+flips none for an account that already has Ancients — yet completing it swaps §8.1's
+`magic_conservative` (35k xp/hr) for `magic_bursting` (250k xp/hr), turning the same seven Magic
+levels from 113 hours into 16. Quest-gated training methods are common in OSRS, so this is a
+structural blind spot rather than one corpus's quirk. Derivation, per §10.6:
+
+```
+reduction(X, Y) = clamp₀₁( (hours(Y) − hours(Y | grants_facts(X))) / hours(Y) )
+method_unlock(X) = max_Y reduction(X, Y)   normalized by the largest across the candidate set
+```
+
+**Maximum, never sum** — the same rule §9.3 states for `pvp_value` and §9.8 for refresher
+groups, for the same reason: summing would let a candidate that shaves 10% off six grinds
+outrank one that deletes 90% of the grind that matters, making breadth a substitute for depth.
+`Y` ranges over every candidate the player has not completed, **including blocked ones**, whose
+hours are computable and whose unblocking is the largest form of the effect. The comparison is
+on **hours only**; §8's GP half moves under a grant only because the counterfactual hands the
+player the granted *item*, which restates `X`'s own cost rather than measuring an effect on `Y`.
+
+The v1 default weight of `0.0` is authored, not omitted, and makes the factor inert
+(`0 · ln(f) = 0`): A30 was found by §16.3's tuning exercise, after the v1 profile was written.
+See §16.3 and `docs/TUNING.md`.
 
 The default weights encode a defensible priority order — *does this matter for PvP → does it unlock several things → is it close → how long → how much* — but they are **provisional priors, not tuned values**. See §16.3.
 
@@ -1009,12 +1035,14 @@ scoring_profile:
   tau_hours: 10
   kappa_gp: {high: 8000000, normal: 20000000, low: 50000000}
   observation_aged_days: 14         # when a positive observation stops counting as fresh (§6.9)
+  unknown_effort_hours: 10          # what effort_decay charges a candidate §8 cannot size (A8)
   weights:
     pvp_value: 1.0
     leverage: 0.8
     proximity: 0.6
     effort_decay: 0.7
     cost_decay: 0.5
+    method_unlock: 0.0              # A30 — the factor ships inert in v1; §16.3 tunes it
   refresher:
     max_in_primary_list: 1
     breadth_bonus_per_extra_member: 0.03
@@ -1022,6 +1050,14 @@ scoring_profile:
 ```
 
 `RecommendationSnapshot.scoring_profile_version` records which profile produced a given ranking, so history remains interpretable across retunes.
+
+**`unknown_effort_hours`** is what `effort_decay` charges a candidate §8 can size neither by a
+skill target nor by a session length — a `quest:` candidate, whose duration this document
+authors nowhere. Reading that absence as `0` gives `exp(0) = 1.0`: a *perfect* effort mark for
+the candidate kind whose effort is least known, which is A8's defect one candidate kind over.
+The default equals `tau_hours` so an unsized candidate is charged exactly one effort scale,
+`exp(−1) ≈ 0.37`. The GP half of the same gap needs no field of its own: an unknown cost is
+charged one **κ**, which `kappa_gp` already authors, for the identical `exp(−1)`.
 
 ## 9.8 Refresher candidates and grouping
 
@@ -1268,6 +1304,7 @@ file can assert its own priority.
 |---|---|
 | `pvp_value` | §9.3 — blend the capability map, then `max_c effective_weight(c) × advances(c)` |
 | `leverage` | Count of capabilities whose `status` would become `unlocked` if `grants_facts` were applied, normalized by the largest such count across the current candidate set so the factor lands in `(0,1]` |
+| `method_unlock` | Largest fractional reduction in another candidate's estimated **hours** when `grants_facts` is applied — `max_Y (hours(Y) − hours(Y \| grants)) / hours(Y)`, clamped to `[0,1]` — normalized by the largest such value across the candidate set, exactly as `leverage` is. Maximum, never sum. `Y` ranges over every uncompleted candidate, blocked ones included (§9.4, A30) |
 | `proximity` | Skill training: `1 − remaining_xp / span_xp`. Every other kind: the `unlock_fraction` (§6.9) of the `completion` predicate — the same machinery, and it generalizes to candidates with no numeric target |
 | `readiness` | Gate `{0,1}` — `0` when `requires` evaluates `unsatisfied` |
 | `completed` | `completion` evaluates `satisfied` |
@@ -1706,6 +1743,11 @@ Weights are **not** optimized against exact expected ranks. Procedure:
 
 *Rationale:* the schema is the Java↔Python seam and needs a single owner, so it must be written first. But quest identity, the varbit-to-unlock-key mapping, diary and combat-achievement shape, and whether a *complete* bank scan is detectable at all are facts about the RuneLite API that cannot be settled from the app side — they would be guessed, and the guesses would be wrong. Declaring the contract frozen before that discovery would also contradict D5's own reasoning: side-loading was chosen precisely for the "freedom to evolve the payload contract aggressively" because "early development will churn it". A short reconciliation step converts that churn from an ongoing tax into a single scheduled event. §12.1, §12.2, §13.
 
+### D13 — `method_unlock`, §9.4's sixth factor
+> §9.4 gains a sixth factor, `method_unlock`: the largest fractional reduction a candidate's `grants_facts` would make to **another** candidate's estimated hours, normalized across the candidate set exactly as `leverage` is. **Maximum over the other candidates, never the sum.** Measured on hours only, never GP. Derived in code from `grants_facts` and §8's estimator (D11's rule holds — nothing is authored but the weight). The v1 profile authors the weight as `0.0`, making the factor inert, until §16.3's retune sets a measured value.
+
+*Rationale:* §16.3 step 5's review of the golden corpus found one judgment — *"finish Desert Treasure I before grinding Magic 87 → 94"* — that **no weight vector satisfies for the right reason**. `leverage`, the factor whose job is *"this unblocks things"*, counts capability **status** flips; on an account that already has Ancients, DT1 flips none, so it scores zero there. What DT1 actually does is swap §8.1's `magic_conservative` (35k xp/hr) for `magic_bursting` (250k xp/hr), which is a fact about *another candidate's estimate* and appears nowhere in the five factors. Raising `effort_decay` to 0.8 also satisfies the judgment — by making the 113-hour grind expensive enough to fall behind — but that is a coincidence of this corpus: it would not survive a corpus whose blocked method sat behind a *short* grind, and it credits the quest for nothing it does. A sixth factor with its own authored weight was preferred to widening `leverage`'s meaning, because *"what becomes possible"* and *"what becomes cheap"* are different questions a corpus may want weighted differently, and folding them together would make the count and the ratio inseparable in the persisted `factors` (§6.10). Maximum over sum for the third time in this document, and for the reason D11 and D9 give: summation makes breadth a substitute for depth. Hours over GP because the counterfactual state hands the player the granted item, so a GP delta would restate the granting candidate's own price rather than measure an effect on anything else. §9.4, §9.7, §10.6, §16.3, A30.
+
 ---
 
 # 19. Deferred Decisions
@@ -1726,10 +1768,11 @@ Consciously postponed, with the trigger that would reopen each. None blocks impl
 
 Twenty-one gaps (A1–A21) were found in v0.4 by walking the document section-by-section against
 a proposed implementation order — the first time it was read as something to *execute* rather
-than to *agree with*. A22 was found in v0.5 by implementing §10.7. Each is closed above; this
-table exists so a reader of an earlier version can find where each change landed.
+than to *agree with*. A22 was found in v0.5 by implementing §10.7, and **A30 in v0.5.2 by
+running §16.3's tuning procedure**. Each is closed above; this table exists so a reader of an
+earlier version can find where each change landed.
 
-The gaps cluster into four kinds, and the pattern is worth noting for future revisions:
+The gaps cluster into five kinds, and the pattern is worth noting for future revisions:
 
 * **Named but never defined** (A1) — the largest single gap. `Candidate` had a role in four
   sections and a definition in none.
@@ -1741,6 +1784,12 @@ The gaps cluster into four kinds, and the pattern is worth noting for future rev
 * **Rule without a referent** (A20, A22) — a constraint stated over a set the document never
   provides a place to populate. Both were found by writing the thing that had to satisfy the
   rule, which is the only reliable way to find this kind.
+* **Model that cannot express the intent** (A30) — every individual rule is correct and the
+  set of them is still not enough to say the thing the design wanted said. This kind is
+  invisible to review of any single section, because no section is wrong; it surfaces only
+  when the model is asked to reproduce a judgment and cannot. §16.3 step 5 is the procedure
+  that found it, and *"a disagreement is as likely to reveal a bad judgment as a bad weight"*
+  understates the third possibility: it may reveal a missing term.
 
 | # | Gap in v0.4 | Closed in |
 |---|---|---|
@@ -1766,3 +1815,4 @@ The gaps cluster into four kinds, and the pattern is worth noting for future rev
 | A20 | §14's layout omitted the shared domain types and a tools directory | §14 |
 | A21 | Python 3.13 pinned without need | §14.1 |
 | A22 | §10.7 requires referential integrity for quest and skill ids, but §10.1 gave neither a content directory to be declared in; §10.4's refresher templates likewise had no directory | §10.1 |
+| A30 | §9.4 had **no factor for a candidate that makes another candidate cheaper or faster**. `leverage` counts capability *status* flips, so an account with Ancients already unlocked scored Desert Treasure I at zero on the one factor meant to express "this unblocks things" — while the quest is precisely what turns 113 conservative Magic hours into 16 bursting ones. No weight vector over the other five factors can express the reason; the corpus's tuning run found the shape of the gap by finding a judgment nothing on the grid satisfied for the right reason | §9.4, §9.7, §10.6, D13 |
