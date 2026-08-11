@@ -26,8 +26,10 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.content.requirements import iter_leaves
+from tracker.db.enums import RecommendationCandidateKind
 from tracker.db.models import (
     CapabilityState,
     ContainerScan,
@@ -37,23 +39,46 @@ from tracker.db.models import (
     SkillSnapshot,
     Unlock,
 )
+from tracker.db.models import Milestone as MilestoneRow
+from tracker.db.projection import build_player_state
 from tracker.db.repository import (
+    clear_active_roadmap,
     current_skill_snapshots,
     get_active_roadmaps,
     get_container_scans,
     get_player,
     get_unlocks,
+    set_active_roadmap,
 )
-from tracker.domain.types import Container, LeafRef, Status, UnlockState
+from tracker.domain.types import (
+    Container,
+    GpSensitivity,
+    LeafRef,
+    MilestoneKind,
+    Source,
+    Status,
+    UnlockState,
+)
+from tracker.recommendations.refreshers import practice_candidates
 from tracker.ui.staleness import humanize_age, scan_note
 from tracker.ui.view_model import (
+    BlockedRecommendationRow,
     CapabilityRow,
     DashboardView,
+    FactorDiffRow,
+    HistorySnapshotRow,
+    PracticeGroupRow,
+    PracticeMemberRow,
+    RecommendationEntryRow,
     RecommendationRow,
+    RoadmapOptionRow,
     RoadmapProgressRow,
+    SettingsView,
     SkillRow,
+    SkillXpPoint,
     UnlockRow,
     capability_row,
+    recommendation_entry_row,
     skill_row,
     unlock_row,
 )
@@ -331,6 +356,511 @@ def dashboard_view(
         current_goal=current_goal(session, player_id, content),
         staleness_notes=staleness_notes(session, player_id, now),
     )
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Recommendations (§9.10, §15)
+# ---------------------------------------------------------------------------
+
+
+def _candidate_unlocks_and_advances(
+    content: Content, candidate_id: str
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """§9.10's "Unlocks"/"Advances" lines for a progression candidate.
+
+    "Unlocks" is read from ``grants_facts``'s ``unlock:`` leaves (§10.6) — the ``unlock``
+    *keys* the candidate would grant, not the capabilities. "Advances" is the candidate's
+    ``advances`` map (§10.6), sorted by weight so the strongest relationship reads first.
+    Both are read straight off content; neither is composed here.
+    """
+    candidate = content.candidates.get(candidate_id)
+    if candidate is None:
+        return (), ()
+    unlocks: tuple[str, ...] = ()
+    if candidate.grants_facts is not None:
+        unlocks = tuple(
+            leaf.key.replace("_", " ").title()
+            for leaf in iter_leaves(candidate.grants_facts)
+            if leaf.type == "unlock"
+        )
+    advances = tuple(
+        content.capabilities[capability_id].name
+        for capability_id, _weight in sorted(
+            candidate.advances.items(), key=lambda item: (-item[1], item[0])
+        )
+        if capability_id in content.capabilities
+    )
+    return unlocks, advances
+
+
+def _refresher_advances(content: Content, template_id: str) -> tuple[str, ...]:
+    """§9.10's "Advances" line for a refresher, from its authored ``advances`` tuple."""
+    template = content.refreshers.get(template_id)
+    if template is None:
+        return ()
+    return tuple(
+        content.capabilities[capability_id].name
+        for capability_id in template.advances
+        if capability_id in content.capabilities
+    )
+
+
+def _live_practice_group(
+    session: Session, player_id: int, content: Content, template_id: str, now: datetime
+) -> tuple[str, ...]:
+    """The stale members a refresher entry would refresh, recomputed live (§9.8).
+
+    Not persisted on ``RecommendationEntry`` (§6.10 stores the score's inputs, not the
+    membership) — recomputed through the same pure
+    :func:`~tracker.recommendations.refreshers.practice_candidates` the engine scored, so
+    the bullet list can never name a milestone the engine did not actually consider stale.
+    """
+    state = build_player_state(session, player_id)
+    for candidate in practice_candidates(state, content, content.profile, now):
+        if candidate.id == template_id:
+            return tuple(
+                content.milestones[key].name if key in content.milestones else key
+                for key in candidate.members
+            )
+    return ()
+
+
+def recommendation_rows(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> tuple[RecommendationEntryRow, ...]:
+    """§15's primary ranked list: the latest snapshot's unblocked entries, in rank order.
+
+    This is the persisted ranking, not a recomputation (§9.9's hysteresis and §9.8's list
+    policy already ran when the snapshot was written) — reading it back is what keeps the
+    displayed order identical to the one the engine actually produced.
+    """
+    snapshot = latest_snapshot(session, player_id)
+    if snapshot is None:
+        return ()
+    entries = session.scalars(
+        select(RecommendationEntry)
+        .where(
+            RecommendationEntry.snapshot_id == snapshot.id, RecommendationEntry.blocked.is_(False)
+        )
+        .order_by(RecommendationEntry.rank.asc())
+    ).all()
+
+    rows: list[RecommendationEntryRow] = []
+    for entry in entries:
+        is_refresher = entry.candidate_kind is RecommendationCandidateKind.REFRESHER
+        candidate = content.candidates.get(entry.candidate_id)
+        template = content.refreshers.get(entry.candidate_id)
+        name = (
+            candidate.name
+            if candidate is not None
+            else (template.name if template is not None else entry.candidate_id)
+        )
+        if is_refresher:
+            unlocks: tuple[str, ...] = ()
+            advances = _refresher_advances(content, entry.candidate_id)
+            members = _live_practice_group(session, player_id, content, entry.candidate_id, now)
+            suggested_session = template.suggested_session if template is not None else None
+        else:
+            unlocks, advances = _candidate_unlocks_and_advances(content, entry.candidate_id)
+            members = ()
+            suggested_session = None
+
+        rows.append(
+            recommendation_entry_row(
+                candidate_id=entry.candidate_id,
+                rank=entry.rank,
+                name=name,
+                is_refresher=is_refresher,
+                score=entry.score,
+                factors=entry.factors,
+                reason=entry.reason,
+                estimated_hours=entry.estimated_hours,
+                estimated_gp=entry.estimated_gp,
+                confidence=entry.estimate_confidence,
+                unlocks=unlocks,
+                advances=advances,
+                practice_members=members,
+                suggested_session=suggested_session,
+            )
+        )
+    return tuple(rows)
+
+
+def blocked_recommendation_rows(
+    session: Session, player_id: int, content: Content
+) -> tuple[BlockedRecommendationRow, ...]:
+    """§15's collapsed "blocked" section — every entry the latest snapshot marked ``blocked``."""
+    snapshot = latest_snapshot(session, player_id)
+    if snapshot is None:
+        return ()
+    entries = session.scalars(
+        select(RecommendationEntry)
+        .where(
+            RecommendationEntry.snapshot_id == snapshot.id, RecommendationEntry.blocked.is_(True)
+        )
+        .order_by(RecommendationEntry.candidate_id.asc())
+    ).all()
+    return tuple(
+        BlockedRecommendationRow(
+            candidate_id=entry.candidate_id,
+            name=(
+                content.candidates[entry.candidate_id].name
+                if entry.candidate_id in content.candidates
+                else entry.candidate_id
+            ),
+        )
+        for entry in entries
+    )
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Practice freshness (§9.8, §15)
+# ---------------------------------------------------------------------------
+
+
+def stale_practice_groups(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> tuple[PracticeGroupRow, ...]:
+    """Every practice group whose decay has crossed its trigger, most urgent first (§9.8).
+
+    All of them — not just the ones the primary list excluded. §15 routes refreshers
+    *beyond the first* here; :func:`primary_refresher_id` is what a caller subtracts to get
+    "the rest". Keeping this function total over every triggered group (rather than
+    pre-filtering) is what makes it independently testable against §9.8's grouping rules,
+    without also depending on which one last happened to rank first.
+
+    **Members are narrowed to the self-attested set.** A milestone whose freshness a
+    plugin-derived signal can restore (``kind: derived``) refreshes with *no prompt at
+    all* the moment matching evidence arrives (§9.8, §7.6) — that write happens earlier in
+    the pipeline, in :mod:`tracker.freshness.service`, before this view ever renders. A
+    derived milestone appearing here promptable would invite a manual tap to stand in for
+    evidence nobody actually observed, which is the exact confirmation-for-derived-evidence
+    §9.8 rules out.
+    """
+    state = build_player_state(session, player_id)
+    candidates = practice_candidates(state, content, content.profile, now)
+    return tuple(
+        PracticeGroupRow(
+            template_id=candidate.id,
+            name=candidate.name,
+            suggested_session=candidate.suggested_session,
+            suggested_session_hours=candidate.hours,
+            urgency=candidate.urgency,
+            members=tuple(
+                PracticeMemberRow(
+                    key=key,
+                    name=content.milestones[key].name if key in content.milestones else key,
+                )
+                for key in candidate.members
+                if key in state.milestones
+                and state.milestones[key].kind is MilestoneKind.SELF_ATTESTED
+            ),
+        )
+        for candidate in candidates
+    )
+
+
+def primary_refresher_id(session: Session, player_id: int) -> str | None:
+    """The one refresher (if any) currently shown in the primary list (G10).
+
+    Read from the persisted snapshot rather than recomputed, so "the rest" in the Practice
+    freshness view is defined against the same ranking the primary list is actually
+    showing right now.
+    """
+    snapshot = latest_snapshot(session, player_id)
+    if snapshot is None:
+        return None
+    entry = session.scalar(
+        select(RecommendationEntry).where(
+            RecommendationEntry.snapshot_id == snapshot.id,
+            RecommendationEntry.blocked.is_(False),
+            RecommendationEntry.candidate_kind == RecommendationCandidateKind.REFRESHER,
+        )
+    )
+    return entry.candidate_id if entry is not None else None
+
+
+def practice_freshness_rows(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> tuple[PracticeGroupRow, ...]:
+    """§15's Practice freshness view: every stale group *except* the primary list's one.
+
+    "So freshness never crowds out objective progression" (§9.8) is a statement about the
+    primary list; it says nothing about hiding a group from view entirely, so this is a
+    subtraction, not a second cap. A corpus with only one triggered group at a time will
+    show it here as empty, which is correct — that group is already visible above.
+    """
+    primary_id = primary_refresher_id(session, player_id)
+    return tuple(
+        group
+        for group in stale_practice_groups(session, player_id, content, now)
+        if group.template_id != primary_id
+    )
+
+
+def refresh_milestones(
+    session: Session,
+    player_id: int,
+    keys: Sequence[str],
+    *,
+    now: datetime,
+    source: Source = Source.MANUAL,
+) -> int:
+    """Self-attested practice completion (§9.8's two actions), written here directly.
+
+    Moves ``last_practiced_at`` forward only, mirroring
+    :func:`tracker.freshness.service.apply_practice_events`'s own forward-only rule — a
+    later confirmation must not roll a fresher observation backwards. Never touches
+    ``achieved`` (G7): this refreshes *freshness*, not competence, and a milestone with no
+    row yet is skipped rather than created, since a session cannot "complete" a milestone
+    the player has never been asked about (§4.5 — that gap is A7's, not this button's, to
+    close).
+
+    ``keys`` is exactly the set the caller passes: "Mark session complete" passes every
+    member of one group, "Review individual skills" passes whichever subset the user
+    checked. Both call this one function, so the two actions can never diverge in what
+    "refreshed" means — only in which keys reach it.
+    """
+    refreshed = 0
+    for key in keys:
+        row = session.get(MilestoneRow, (player_id, key))
+        if row is None:
+            continue
+        if row.last_practiced_at is not None and row.last_practiced_at >= now:
+            continue
+        row.last_practiced_at = now
+        row.source = source
+        row.observed_at = now
+        refreshed += 1
+    session.commit()
+    return refreshed
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Roadmaps (§4.3, §6.12, §15)
+# ---------------------------------------------------------------------------
+
+#: §4.3's defaults: one primary at full weight, secondaries at a quarter.
+DEFAULT_PRIMARY_WEIGHT = 1.00
+DEFAULT_SECONDARY_WEIGHT = 0.25
+
+
+def roadmap_options(
+    session: Session, player_id: int, content: Content
+) -> tuple[RoadmapOptionRow, ...]:
+    """Every authored roadmap, with the player's live §6.12 selection joined in."""
+    selected = {
+        row.roadmap_id: row.selection_weight for row in get_active_roadmaps(session, player_id)
+    }
+    return tuple(
+        RoadmapOptionRow(
+            roadmap_id=roadmap_id,
+            name=roadmap.name,
+            selected=roadmap_id in selected,
+            selection_weight=selected.get(roadmap_id, 0.0),
+        )
+        for roadmap_id, roadmap in sorted(content.roadmaps.items())
+    )
+
+
+def select_primary_roadmap(session: Session, player_id: int, roadmap_id: str) -> None:
+    """Choose the one primary roadmap (§4.3's ``1.00``).
+
+    Demotes every other roadmap currently at the primary weight down to the secondary
+    default rather than deselecting it — switching primaries is a common re-prioritization,
+    not a reason to drop a roadmap the player is still progressing.
+    """
+    for row in get_active_roadmaps(session, player_id):
+        if row.roadmap_id != roadmap_id and row.selection_weight >= DEFAULT_PRIMARY_WEIGHT:
+            set_active_roadmap(
+                session, player_id, row.roadmap_id, selection_weight=DEFAULT_SECONDARY_WEIGHT
+            )
+    set_active_roadmap(session, player_id, roadmap_id, selection_weight=DEFAULT_PRIMARY_WEIGHT)
+    session.commit()
+
+
+def set_secondary_roadmap(
+    session: Session, player_id: int, roadmap_id: str, *, enabled: bool
+) -> None:
+    """Toggle a secondary roadmap on (at §4.3's default weight) or off entirely."""
+    if enabled:
+        set_active_roadmap(
+            session, player_id, roadmap_id, selection_weight=DEFAULT_SECONDARY_WEIGHT
+        )
+    else:
+        clear_active_roadmap(session, player_id, roadmap_id)
+    session.commit()
+
+
+def set_roadmap_weight(session: Session, player_id: int, roadmap_id: str, weight: float) -> None:
+    """The advanced-settings path (§4.3): an explicit raw weight, normalized at read time."""
+    set_active_roadmap(session, player_id, roadmap_id, selection_weight=weight)
+    session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Settings (§9.6, §15)
+# ---------------------------------------------------------------------------
+
+
+def settings_view(session: Session, player_id: int, settings: Settings) -> SettingsView:
+    """The settings page's whole state: the player's live preference plus app config.
+
+    ``api_token_present`` reads only whether the configured token is non-empty — Settings
+    requires ``min_length=1`` so this is always ``True`` in practice, but the field exists
+    so the page can say "configured" without the token value ever reaching a template
+    (§15: *"token presence, never the token value"*).
+    """
+    player = get_player(session, player_id)
+    prices = settings.integrations.prices
+    return SettingsView(
+        gp_sensitivity=player.gp_sensitivity if player is not None else GpSensitivity.NORMAL,
+        bind_address=settings.bind_address,
+        port=settings.port,
+        api_token_present=bool(settings.api_token),
+        price_provider=prices.provider,
+        price_base_url=prices.base_url,
+    )
+
+
+def set_gp_sensitivity(session: Session, player_id: int, sensitivity: GpSensitivity) -> None:
+    """Write the player's §9.6 preference, asked in user language on the page."""
+    player = get_player(session, player_id)
+    if player is not None:
+        player.gp_sensitivity = sensitivity
+        session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — History (§6.10, §15)
+# ---------------------------------------------------------------------------
+
+
+def history_snapshots(
+    session: Session, player_id: int, content: Content, *, limit: int = 20
+) -> tuple[HistorySnapshotRow, ...]:
+    """Recent §6.10 snapshots, newest first, each with its own ``scoring_profile_version``.
+
+    The version is carried per row rather than assumed constant: §9.7 says a retune bumps
+    it, and a history list that dropped the column would make an old run's ranking look
+    like it disagreed with today's profile for no visible reason.
+    """
+    snapshots = session.scalars(
+        select(RecommendationSnapshot)
+        .where(RecommendationSnapshot.player_id == player_id)
+        .order_by(RecommendationSnapshot.run_at.desc(), RecommendationSnapshot.id.desc())
+        .limit(limit)
+    ).all()
+
+    rows: list[HistorySnapshotRow] = []
+    for snapshot in snapshots:
+        top = session.scalar(
+            select(RecommendationEntry)
+            .where(
+                RecommendationEntry.snapshot_id == snapshot.id,
+                RecommendationEntry.blocked.is_(False),
+            )
+            .order_by(RecommendationEntry.rank.asc())
+            .limit(1)
+        )
+        top_name = None
+        if top is not None:
+            candidate = content.candidates.get(top.candidate_id)
+            template = content.refreshers.get(top.candidate_id)
+            top_name = (
+                candidate.name
+                if candidate is not None
+                else (template.name if template is not None else top.candidate_id)
+            )
+        rows.append(
+            HistorySnapshotRow(
+                snapshot_id=snapshot.id,
+                run_at=snapshot.run_at,
+                scoring_profile_version=snapshot.scoring_profile_version,
+                top_candidate_id=top.candidate_id if top is not None else None,
+                top_candidate_name=top_name,
+                top_reason=top.reason if top is not None else None,
+            )
+        )
+    return tuple(rows)
+
+
+def xp_series(session: Session, player_id: int) -> Mapping[str, tuple[SkillXpPoint, ...]]:
+    """Every ranked skill's XP history, oldest first, for the §15 Plotly chart (§6.2).
+
+    Unranked snapshots (``xp IS NULL``) are excluded — a chart has no honest way to plot
+    "no experience figure exists yet" as a point on a numeric axis, and a ``0`` would be
+    the level-1 claim §6.2 forbids, drawn as a line instead of a label.
+    """
+    snapshots = session.scalars(
+        select(SkillSnapshot)
+        .where(SkillSnapshot.player_id == player_id, SkillSnapshot.xp.is_not(None))
+        .order_by(SkillSnapshot.skill.asc(), SkillSnapshot.observed_at.asc())
+    ).all()
+
+    by_skill: dict[str, list[SkillXpPoint]] = {}
+    for snapshot in snapshots:
+        if snapshot.xp is None:  # pragma: no cover — excluded by the query above
+            continue
+        by_skill.setdefault(snapshot.skill, []).append(
+            SkillXpPoint(observed_at=snapshot.observed_at, xp=snapshot.xp)
+        )
+    return {skill: tuple(points) for skill, points in by_skill.items()}
+
+
+def snapshot_diff(
+    session: Session, player_id: int, before_id: int, after_id: int
+) -> tuple[FactorDiffRow, ...]:
+    """Which factor moved between two runs (§6.10: *"two runs can be diffed"*).
+
+    Compared candidate-by-candidate, factor-by-factor, over the **union** of candidates
+    either run scored. A candidate present in only one run still produces rows — with the
+    missing side ``None`` — because "this stopped being scored" and "this newly started
+    being scored" are themselves the kind of movement a diff exists to surface, not a case
+    to drop silently.
+    """
+
+    def _entries(snapshot_id: int) -> dict[str, RecommendationEntry]:
+        return {
+            entry.candidate_id: entry
+            for entry in session.scalars(
+                select(RecommendationEntry).where(RecommendationEntry.snapshot_id == snapshot_id)
+            )
+        }
+
+    before = _entries(before_id)
+    after = _entries(after_id)
+
+    rows: list[FactorDiffRow] = []
+    for candidate_id in sorted(set(before) | set(after)):
+        before_entry = before.get(candidate_id)
+        after_entry = after.get(candidate_id)
+        factor_names = sorted(
+            {
+                *(before_entry.factors if before_entry is not None else {}),
+                *(after_entry.factors if after_entry is not None else {}),
+            }
+        )
+        for factor_name in factor_names:
+            before_value = (
+                before_entry.factors.get(factor_name, {}).get("log_contribution")
+                if before_entry is not None
+                else None
+            )
+            after_value = (
+                after_entry.factors.get(factor_name, {}).get("log_contribution")
+                if after_entry is not None
+                else None
+            )
+            rows.append(
+                FactorDiffRow(
+                    candidate_id=candidate_id,
+                    factor=factor_name,
+                    before=before_value,
+                    after=after_value,
+                )
+            )
+    return tuple(rows)
 
 
 def first_player_id(session: Session) -> int | None:

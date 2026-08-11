@@ -33,13 +33,18 @@ class NavItem:
     label: str
 
 
-#: Step 10's four views. Step 11's are added to this tuple rather than to a second nav, so
-#: there is one answer to "what can this app show me".
+#: Step 10's four views, plus Step 11's five. Added to this one tuple rather than to a
+#: second nav, so there is one answer to "what can this app show me".
 NAV: tuple[NavItem, ...] = (
     NavItem("/", "Dashboard"),
     NavItem("/capabilities", "Capabilities"),
     NavItem("/unlocks", "Unlocks"),
     NavItem("/skills", "Skills"),
+    NavItem("/recommendations", "Recommendations"),
+    NavItem("/practice", "Practice"),
+    NavItem("/roadmaps", "Roadmaps"),
+    NavItem("/settings", "Settings"),
+    NavItem("/history", "History"),
 )
 
 #: Layout rules that Quasar's utility classes do not cover. The ``overflow-wrap`` rule is

@@ -19,8 +19,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
-from tracker.domain.types import Confidence, LeafRef, Status, UnlockState
+from tracker.domain.types import Confidence, GpSensitivity, LeafRef, Status, UnlockState
 from tracker.ui.states import UiState, ui_state_for_status, ui_state_for_unlock
 
 #: What ``readiness_confidence`` renders as when there is none. §4.4's own worked example
@@ -284,3 +285,299 @@ def skill_row(
         level=level if ranked else None,
         xp=xp if ranked else None,
     )
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Recommendations (§9.10, §15)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class FactorRow:
+    """One §9.5 factor: its raw value and what it contributed to the score.
+
+    Both numbers are read off :class:`~tracker.db.models.RecommendationEntry.factors`
+    verbatim — §9.5 generated the "Why" line from exactly these contributions, and a
+    breakdown drawer computed separately from the same source would risk disagreeing with
+    the sentence sitting next to it.
+    """
+
+    name: str
+    value: float
+    weight: float
+    log_contribution: float
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationEntryRow:
+    """One ranked entry of §9.10's output shape.
+
+    ``unlocks`` and ``advances`` are read from **content**, not authored here: a candidate's
+    ``grants_facts`` names the ``unlock:`` keys it grants, and ``advances`` names the
+    capabilities it partly moves. Neither is stored on the entry itself (§6.10 stores only
+    the score's inputs), so this row is assembled by joining the persisted entry back to the
+    candidate or refresher template that produced it — never by composing new prose.
+    """
+
+    candidate_id: str
+    rank: int
+    name: str
+    is_refresher: bool
+    score: float
+    factors: tuple[FactorRow, ...]
+    reason: str
+    estimated_hours: float | None
+    estimated_gp: int | None
+    confidence: Confidence
+    unlocks: tuple[str, ...] = ()
+    advances: tuple[str, ...] = ()
+    practice_members: tuple[str, ...] = ()
+    suggested_session: str | None = None
+
+    @property
+    def kind_label(self) -> str:
+        return "refresher" if self.is_refresher else "progression"
+
+    @property
+    def priority_stars(self) -> str:
+        """§9.10's ``★★★★★`` line, five stars scaled from the raw score.
+
+        The score is unbounded above (§9.4's geometric mean has no ceiling), so this is a
+        deliberately coarse read — a relative sense of "how good", not a number anyone
+        should subtract. Clamped at both ends so an outlier score cannot render six stars
+        or minus one.
+        """
+        filled = min(5, max(1, round(self.score * 5)))
+        return "★" * filled + "☆" * (5 - filled)
+
+
+@dataclass(frozen=True, slots=True)
+class BlockedRecommendationRow:
+    """One collapsed-section entry (§15): a candidate that cannot rank at all.
+
+    Carries no score and no factors — §16.2 leaves a blocked candidate unscored precisely
+    so it is never sorted against actionable work (see
+    ``tracker.recommendations.engine._blocked_entries``), and a row type that offered a
+    score field would invite one to be shown anyway.
+    """
+
+    candidate_id: str
+    name: str
+
+
+def recommendation_entry_row(
+    *,
+    candidate_id: str,
+    rank: int,
+    name: str,
+    is_refresher: bool,
+    score: float,
+    factors: Mapping[str, Mapping[str, float]],
+    reason: str,
+    estimated_hours: float | None,
+    estimated_gp: int | None,
+    confidence: Confidence,
+    unlocks: Sequence[str] = (),
+    advances: Sequence[str] = (),
+    practice_members: Sequence[str] = (),
+    suggested_session: str | None = None,
+) -> RecommendationEntryRow:
+    """Assemble one row from a persisted entry's factors JSON (§6.10)."""
+    factor_rows = tuple(
+        FactorRow(
+            name=factor_name,
+            value=float(values.get("value", 0.0)),
+            weight=float(values.get("weight", 0.0)),
+            log_contribution=float(values.get("log_contribution", 0.0)),
+        )
+        for factor_name, values in factors.items()
+    )
+    return RecommendationEntryRow(
+        candidate_id=candidate_id,
+        rank=rank,
+        name=name,
+        is_refresher=is_refresher,
+        score=score,
+        factors=factor_rows,
+        reason=reason,
+        estimated_hours=estimated_hours,
+        estimated_gp=estimated_gp,
+        confidence=confidence,
+        unlocks=tuple(unlocks),
+        advances=tuple(advances),
+        practice_members=tuple(practice_members),
+        suggested_session=suggested_session,
+    )
+
+
+def assert_at_most_one_refresher(rows: Sequence[RecommendationEntryRow]) -> None:
+    """G10, belt-and-braces (§9.8, D9).
+
+    Step 6's engine already enforces this before anything is persisted
+    (:func:`tracker.recommendations.refreshers.enforce_list_policy`). This assertion does
+    not re-derive the policy — it only refuses to *render* a violation, so a future bug
+    upstream fails loudly on the page that would otherwise quietly show two refreshers
+    instead of failing where the policy lives.
+    """
+    refreshers = [row for row in rows if row.is_refresher]
+    assert len(refreshers) <= 1, (
+        f"G10 violated: {len(refreshers)} refreshers in the primary list "
+        f"({[row.candidate_id for row in refreshers]}); at most one is allowed (§9.8)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Practice freshness (§9.8, §15)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class PracticeMemberRow:
+    """One stale milestone inside a practice group (§9.8's "Practice:" bullets)."""
+
+    key: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class PracticeGroupRow:
+    """One composite refresher, as the Practice freshness view shows it (§9.8, §15).
+
+    ``members`` holds only the milestones that actually triggered this run — the same set
+    :class:`~tracker.recommendations.refreshers.PracticeCandidate.members` carries, so
+    "mark session complete" refreshes exactly what is listed and nothing else.
+    """
+
+    template_id: str
+    name: str
+    suggested_session: str
+    suggested_session_hours: float
+    urgency: float
+    members: tuple[PracticeMemberRow, ...]
+
+    @property
+    def member_keys(self) -> tuple[str, ...]:
+        return tuple(member.key for member in self.members)
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Roadmaps (§4.3, §6.12, §15)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class RoadmapOptionRow:
+    """One roadmap as the selector shows it: content plus the live §6.12 selection.
+
+    ``is_primary`` is a **display** convention, not a stored fact — §6.12's table has no
+    primary/secondary column, only a weight. The highest selected weight renders as
+    primary; ties break on id so the page is stable across renders. Rendering rather than
+    storing the distinction means the schema still matches the SDD's own table exactly.
+    """
+
+    roadmap_id: str
+    name: str
+    selected: bool
+    selection_weight: float
+
+    @property
+    def weight_label(self) -> str:
+        return f"{self.selection_weight:g}" if self.selected else "not selected"
+
+
+def mark_primary(rows: Sequence[RoadmapOptionRow]) -> tuple[RoadmapOptionRow, ...]:
+    """Which selected roadmap is *shown* as primary: the highest weight, ties by id.
+
+    Pure and separate from the row itself so the "which one is primary" rule is
+    testable without a database — the same reason :func:`~tracker.ui.capabilities.sort_rows`
+    lives beside its row type rather than inside a page function.
+    """
+    selected = [row for row in rows if row.selected]
+    if not selected:
+        return ()
+    best = sorted(selected, key=lambda row: (-row.selection_weight, row.roadmap_id))[0]
+    return (best,)
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Settings (§9.6, §15)
+# ---------------------------------------------------------------------------
+
+#: The three-way question §9.6 mandates, in the user's language. The UI must never say "κ"
+#: or "GP sensitivity" — this table is the one place the two vocabularies meet, and every
+#: other module reaches the word through it rather than repeating the mapping.
+GP_SENSITIVITY_LABELS: Mapping[GpSensitivity, str] = {
+    GpSensitivity.HIGH: "Strongly",
+    GpSensitivity.NORMAL: "Normally",
+    GpSensitivity.LOW: "Barely",
+}
+
+SENSITIVITY_QUESTION = "How strongly should expensive upgrades be deprioritized?"
+
+
+@dataclass(frozen=True, slots=True)
+class SettingsView:
+    """Everything the settings page shows.
+
+    ``api_token_present`` is a boolean, never the token itself (§11.2, §15) — the field name
+    says so as loudly as the type does, so a future call site cannot pass the token through
+    by accident and have it read as a boolean.
+    """
+
+    gp_sensitivity: GpSensitivity
+    bind_address: str
+    port: int
+    api_token_present: bool
+    price_provider: str
+    price_base_url: str
+
+    @property
+    def sensitivity_label(self) -> str:
+        return GP_SENSITIVITY_LABELS[self.gp_sensitivity]
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — History (§6.10, §15)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class HistorySnapshotRow:
+    """One §6.10 ``RecommendationSnapshot``, as the History list shows it."""
+
+    snapshot_id: int
+    run_at: datetime
+    scoring_profile_version: int
+    top_candidate_id: str | None
+    top_candidate_name: str | None
+    top_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SkillXpPoint:
+    """One §6.2 observation, for the Plotly XP chart."""
+
+    observed_at: datetime
+    xp: int
+
+
+@dataclass(frozen=True, slots=True)
+class FactorDiffRow:
+    """One factor's movement between two snapshots (§6.10: *"two runs can be diffed to see
+    which factor moved"*).
+
+    ``before``/``after`` are ``None`` when the factor (or the candidate) is absent from one
+    side — a candidate that only entered the ranking on the later run has nothing to diff
+    against, and that absence is itself the information, not an error to hide.
+    """
+
+    candidate_id: str
+    factor: str
+    before: float | None
+    after: float | None
+
+    @property
+    def delta(self) -> float | None:
+        if self.before is None or self.after is None:
+            return None
+        return self.after - self.before

@@ -164,7 +164,20 @@ def test_a_ranked_skill_still_shows_its_level(phone: Page, ui_base_url: str) -> 
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("path", ["/", "/capabilities", "/unlocks", "/skills"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/",
+        "/capabilities",
+        "/unlocks",
+        "/skills",
+        "/recommendations",
+        "/practice",
+        "/roadmaps",
+        "/settings",
+        "/history",
+    ],
+)
 def test_no_horizontal_scroll_at_390px(phone: Page, ui_base_url: str, path: str) -> None:
     """Every view, not a sample: the layout is shared but the content that overflows is not.
 
@@ -183,6 +196,115 @@ def test_the_dashboard_shows_the_persisted_reason(phone: Page, ui_base_url: str)
     _open(phone, ui_base_url, "/")
     text = phone.locator("[data-testid=goal-reason]").inner_text()
     assert "high PvP value (+0.61)" in text
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Recommendations: G10 and the confidence marker (§8.4, §9.8)
+# ---------------------------------------------------------------------------
+
+
+def test_the_recommendations_page_shows_the_persisted_reason_and_confidence(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/recommendations")
+    text = phone.locator("[data-testid=recommendation-reason]").first.inner_text()
+    assert "high PvP value (+0.61)" in text
+    # §8.4: the seeded top entry is `medium` confidence, which must carry the marker.
+    assert phone.locator('[data-confidence="medium"]').count() > 0
+
+
+def test_at_most_one_refresher_renders_in_the_primary_list(phone: Page, ui_base_url: str) -> None:
+    """G10, on the actual DOM: the seed triggers two practice groups (§9.8)."""
+    _open(phone, ui_base_url, "/recommendations")
+    assert phone.locator('[data-testid=recommendation][data-kind="refresher"]').count() == 1
+
+
+def test_blocked_candidates_render_in_their_own_collapsed_section(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/recommendations")
+    assert phone.locator("[data-testid=blocked-section]").count() == 1
+    # Never mixed into the ranked list (§16.2).
+    assert (
+        phone.locator("[data-testid=recommendation] [data-testid=blocked-candidate]").count() == 0
+    )
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Practice freshness: the rest of G10's split (§9.8)
+# ---------------------------------------------------------------------------
+
+
+def test_the_seed_accounts_second_stale_group_lives_in_practice_freshness(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The seed triggers two groups; one is the primary list's refresher, the other lands
+    here — never both places at once."""
+    _open(phone, ui_base_url, "/practice")
+    groups = phone.locator('[data-testid="practice-group"]')
+    assert groups.count() >= 1
+    ids = {groups.nth(i).get_attribute("data-group") for i in range(groups.count())}
+    assert "refresh_nh_fundamentals" not in ids
+    assert "refresh_vengeance_fundamentals" in ids
+
+
+def test_mark_session_complete_and_review_individual_skills_are_distinct_controls(
+    phone: Page, ui_base_url: str
+) -> None:
+    """§9.8: two separate actions, never one tap standing in for both."""
+    _open(phone, ui_base_url, "/practice")
+    assert phone.locator("[data-testid=mark-session-complete]").count() >= 1
+    assert phone.locator("[data-testid=review-individual]").count() >= 1
+    assert phone.locator("[data-testid=review-skill-checkbox]").count() >= 1
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Settings: user language only (§9.6)
+# ---------------------------------------------------------------------------
+
+
+def test_settings_never_says_kappa_or_gp_sensitivity(phone: Page, ui_base_url: str) -> None:
+    _open(phone, ui_base_url, "/settings")
+    text = phone.locator("body").inner_text()
+    assert "κ" not in text
+    assert "kappa" not in text.lower()
+    assert "gp sensitivity" not in text.lower()
+    assert "How strongly should expensive upgrades be deprioritized?" in text
+
+
+def test_settings_shows_token_presence_never_its_value(phone: Page, ui_base_url: str) -> None:
+    _open(phone, ui_base_url, "/settings")
+    presence = phone.locator("[data-testid=token-presence]")
+    assert presence.get_attribute("data-present") == "true"
+    assert "ui-test-token-1234567890" not in phone.locator("body").inner_text()
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — Roadmaps: writes to ActiveRoadmap, never a hardcoded selection (A13)
+# ---------------------------------------------------------------------------
+
+
+def test_the_roadmap_selector_shows_the_players_live_selection(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/roadmaps")
+    assert phone.locator("[data-testid=primary-roadmap-radio]").count() == 1
+    assert phone.locator("[data-testid=secondary-roadmap-checkbox]").count() >= 1
+
+
+# ---------------------------------------------------------------------------
+# Step 11 — History: scoring_profile_version alongside every snapshot (§6.10)
+# ---------------------------------------------------------------------------
+
+
+def test_history_shows_the_scoring_profile_version_with_each_snapshot(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/history")
+    snapshot = phone.locator("[data-testid=history-snapshot]").first
+    assert snapshot.count() == 1
+    assert snapshot.get_attribute("data-profile-version") == "1"
+    assert "scoring profile v1" in snapshot.inner_text()
 
 
 # ---------------------------------------------------------------------------

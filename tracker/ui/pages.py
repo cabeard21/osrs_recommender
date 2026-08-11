@@ -20,21 +20,29 @@ the UI has exactly one source for its session factory and corpus.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from nicegui import ui
 from sqlalchemy.orm import Session, sessionmaker
 
-from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR
+from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR, SETTINGS_ATTR
+from tracker.config.settings import Settings
 from tracker.content.loader import Content
+from tracker.domain.types import GpSensitivity
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
+from tracker.ui import history as history_view
+from tracker.ui import practice as practice_view
 from tracker.ui import read_model
+from tracker.ui import recommendations as recommendations_view
+from tracker.ui import roadmaps as roadmaps_view
+from tracker.ui import settings as settings_view
 from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
 from tracker.ui.shell import empty_state, page
+from tracker.ui.view_model import PracticeGroupRow
 
 #: Shown by every view when no player row exists. §15's views all answer questions about an
 #: account, and before the first sync there is no account — which is a state to explain, not
@@ -64,6 +72,12 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
         loaded: Content | None = getattr(app.state, CONTENT_ATTR, None)
         if loaded is None:  # pragma: no cover — see above
             raise RuntimeError("no Content on app.state; build with tracker.app.create_app")
+        return loaded
+
+    def settings() -> Settings:
+        loaded: Settings | None = getattr(app.state, SETTINGS_ATTR, None)
+        if loaded is None:  # pragma: no cover — see above
+            raise RuntimeError("no Settings on app.state; build with tracker.app.create_app")
         return loaded
 
     @ui.page("/")
@@ -125,3 +139,109 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                 empty_state(NO_PLAYER)
                 return
             skills_view.render(skill_rows)
+
+    @ui.page("/recommendations")
+    def recommendations_page() -> None:
+        with page("Recommendations", path="/recommendations"):
+            with session_factory()() as session:
+                player_id = read_model.first_player_id(session)
+                if player_id is None:
+                    empty_state(NO_PLAYER)
+                    return
+                rows = read_model.recommendation_rows(session, player_id, content(), now())
+                blocked = read_model.blocked_recommendation_rows(session, player_id, content())
+            recommendations_view.render(rows, blocked)
+
+    @ui.page("/practice")
+    def practice_page() -> None:
+        with page("Practice", path="/practice"):
+            with session_factory()() as session:
+                player_id = read_model.first_player_id(session)
+                groups = (
+                    read_model.practice_freshness_rows(session, player_id, content(), now())
+                    if player_id is not None
+                    else ()
+                )
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
+
+            def mark_complete(group: PracticeGroupRow, keys: Sequence[str]) -> None:
+                with session_factory()() as write_session:
+                    read_model.refresh_milestones(write_session, player_id, keys, now=now())
+                ui.notify(f"Marked {group.name} complete")
+                ui.navigate.reload()
+
+            def review(group: PracticeGroupRow, keys: Sequence[str]) -> None:
+                with session_factory()() as write_session:
+                    read_model.refresh_milestones(write_session, player_id, keys, now=now())
+                ui.notify(f"Refreshed {len(keys)} skill(s)")
+                ui.navigate.reload()
+
+            practice_view.render(groups, on_mark_complete=mark_complete, on_review=review)
+
+    @ui.page("/roadmaps")
+    def roadmaps_page() -> None:
+        with page("Roadmaps", path="/roadmaps"):
+            with session_factory()() as session:
+                player_id = read_model.first_player_id(session)
+                options = (
+                    read_model.roadmap_options(session, player_id, content())
+                    if player_id is not None
+                    else ()
+                )
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
+
+            def select_primary(roadmap_id: str) -> None:
+                with session_factory()() as write_session:
+                    read_model.select_primary_roadmap(write_session, player_id, roadmap_id)
+                ui.navigate.reload()
+
+            def toggle_secondary(roadmap_id: str, enabled: bool) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_secondary_roadmap(
+                        write_session, player_id, roadmap_id, enabled=enabled
+                    )
+                ui.navigate.reload()
+
+            def set_weight(roadmap_id: str, weight: float) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_roadmap_weight(write_session, player_id, roadmap_id, weight)
+
+            roadmaps_view.render(
+                options,
+                on_select_primary=select_primary,
+                on_toggle_secondary=toggle_secondary,
+                on_set_weight=set_weight,
+            )
+
+    @ui.page("/settings")
+    def settings_page() -> None:
+        with page("Settings", path="/settings"):
+            with session_factory()() as session:
+                player_id = read_model.first_player_id(session)
+                if player_id is None:
+                    empty_state(NO_PLAYER)
+                    return
+                view = read_model.settings_view(session, player_id, settings())
+
+            def set_sensitivity(sensitivity: GpSensitivity) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_gp_sensitivity(write_session, player_id, sensitivity)
+                ui.navigate.reload()
+
+            settings_view.render(view, on_set_sensitivity=set_sensitivity)
+
+    @ui.page("/history")
+    def history_page() -> None:
+        with page("History", path="/history"):
+            with session_factory()() as session:
+                player_id = read_model.first_player_id(session)
+                if player_id is None:
+                    empty_state(NO_PLAYER)
+                    return
+                snapshots = read_model.history_snapshots(session, player_id, content())
+                xp = read_model.xp_series(session, player_id)
+            history_view.render(snapshots, xp)
