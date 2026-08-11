@@ -1,0 +1,75 @@
+# §9.3's worked blend, exactly: main_nh 0.75 / anti_pk 0.25, which the roadmap files were
+# authored to reproduce —
+#
+#   ice_barrage_nh: 0.75(1.00) + 0.25(0.60) = 0.90
+#   vengeance_pvp:  0.75(0.20) + 0.25(0.90) = 0.375
+#
+# A capability in two roadmaps blends; it never accumulates (D3). anti_pk's own capability
+# rises from 0.60 to 0.675 under the blend, which is what should pull the melee-facing
+# candidates up — and the judgments below say by how much is *not* enough to overtake the
+# Barrage path.
+id: multi_roadmap
+title: Two active roadmaps, §9.3's worked blend
+notes: >
+  The multi-roadmap scenario the plan names. Its value is negative: it pins how far the
+  anti-PK weighting may move the ranking without inverting the pairs that main_nh alone
+  decides. A scorer that summed the two roadmaps instead of blending them (D3) would push
+  every dual-roadmap capability past 1.0 and invert the first pair below.
+player:
+  synced: true
+  combat_level: 118
+  quest_points: 150
+  gp_sensitivity: normal
+  skills:
+    attack: 85
+    strength: 90
+    defence: 78
+    magic: 87
+    prayer: 60
+    ranged: 88
+    hitpoints: 94
+    thieving: 65
+    firemaking: 58
+    slayer: 70
+    woodcutting: 62
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: first_anti_pk, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 5}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 5}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 5}
+roadmaps: {main_nh: 0.75, anti_pk: 0.25}
+judgments:
+  must_rank_above:
+    - pair: [train_magic_87_to_94, train_strength_to_99]
+      because: >
+        Even with a quarter of the selection on anti_pk — where Strength's 0.25 advance
+        lands — 94 Magic advances the blended ice_barrage_nh at 0.90 and is a fraction of
+        the work.
+    - pair: [train_magic_87_to_94, unlock_rigour]
+      because: >
+        Rigour is the anti-PK-flavoured upgrade the blend most flatters (0.40 on anti_pk),
+        and it is still 14 Prayer levels away behind a drop the corpus cannot model.
+    - pair: [buy_voidwaker, buy_high_risk_gear]
+      because: >
+        The Voidwaker outranks the gear set on both blended capabilities (0.80/0.60 against
+        0.50/0.35). The blend must not invert an ordering both its roadmaps agree on.
+      pending_review: D1 in docs/TUNING.md — the v1 weights disagree, blend or no blend.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Woodcutting advances nothing.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
+    - id: train_strength_to_99
+      because: >
+        A quarter-weight anti-PK roadmap is not a reason to start the corpus's longest
+        grind.

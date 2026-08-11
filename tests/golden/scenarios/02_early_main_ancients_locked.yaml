@@ -1,0 +1,57 @@
+# **§16.2's first named pairwise judgment lives here.**
+#
+#   "DT1 outranks buying a Voidwaker while Ancients are still locked."
+#
+# The account clears DT1's skill requirements, so the quest is actionable rather than
+# blocked, and Ancients are *definitively* locked rather than unobserved — the judgment is
+# about a known-locked spellbook, not about missing data.
+id: early_main_ancients_locked
+title: Early main, DT1 available, Ancients locked
+notes: >
+  The scenario §16.2's first judgment is written about. DT1 is what makes both
+  ice_barrage_nh and train_magic_87_to_94 stop being blocked; a Voidwaker is 85M of spec
+  weapon the account cannot yet build a setup around.
+player:
+  synced: true
+  combat_level: 76
+  quest_points: 32
+  gp_sensitivity: normal
+  skills:
+    attack: 70
+    strength: 75
+    defence: 60
+    magic: 55
+    prayer: 43
+    ranged: 61
+    hitpoints: 72
+    thieving: 55
+    firemaking: 52
+    slayer: 22
+    woodcutting: 45
+  unlocks: {ancient_magicks: locked, protect_item: unlocked, rigour: locked, spellbook_lunar: locked}
+  quests: {desert_treasure_i: not_started, lunar_diplomacy: not_started}
+  scanned: all
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [complete_desert_treasure_i, buy_voidwaker]
+      because: >
+        §16.2, judgment 1. Ancients are locked, so the Voidwaker buys nothing the account can
+        use; DT1 unlocks the spellbook every downstream capability gates on. Carried by
+        `leverage`, not by any authored priority.
+    - pair: [complete_desert_treasure_i, train_strength_to_99]
+      because: >
+        99 Strength is the largest grind in the corpus and advances only the melee-facing
+        capabilities weakly. The quest is both closer and worth more.
+    - pair: [complete_desert_treasure_i, train_woodcutting]
+      because: Woodcutting advances nothing.
+  top_3_contains:
+    - id: complete_desert_treasure_i
+      because: With Ancients locked, this is the account's critical path.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
+    - id: buy_high_risk_gear
+      because: >
+        A 16M gear set for an account that cannot yet barrage is premature; the setup only
+        pays off once ice_barrage_nh is close.

@@ -1,0 +1,80 @@
+# **The tri-state scenario.** Identical to `04_barrage_target` in every skill, unlock and
+# quest — and `scanned: none`, so no container has ever been observed.
+#
+# That one line is §6.5 and §4.5 in the corpus: with no ContainerScan, "no ObservedItem row"
+# means *nobody has looked*, not *you do not own it*. Every `item:` leaf evaluates
+# `unknown`, which means:
+#
+#   * `buy_voidwaker` and `buy_high_risk_gear` are neither complete nor blocked — an unknown
+#     completion is not completion (G3), and an unknown gate is "sync this", not "blocked"
+#     (§16.2's last invariant);
+#   * `ice_barrage_nh` and `deep_wildy_nh` carry `status: unknown`, so no readiness layer is
+#     computed for them at all (G3, the CapabilityView contract);
+#   * `unlock_fraction` still counts the unknown leaves in its denominator without ever
+#     crediting them (A3).
+#
+# The diff against 04 is the whole point: the judgments below are the same judgments, and
+# the ranking must not collapse just because ownership went from "no" to "not observed".
+id: unknown_bank
+title: Nothing has ever been scanned — every item leaf is unknown
+notes: >
+  The most valuable scenario in the corpus. It exercises the entire three-valued path from
+  leaf resolution through capability status to candidate gating, and it is the one where a
+  `bool | None` collapse anywhere in the engine changes the answer rather than crashing.
+player:
+  synced: true
+  combat_level: 112
+  quest_points: 124
+  gp_sensitivity: normal
+  skills:
+    attack: 80
+    strength: 88
+    defence: 75
+    magic: 87
+    prayer: 52
+    ranged: 85
+    hitpoints: 92
+    thieving: 60
+    firemaking: 55
+    slayer: 62
+    woodcutting: 60
+  unlocks: {ancient_magicks: unlocked, protect_item: unlocked, rigour: locked, spellbook_lunar: locked}
+  quests: {desert_treasure_i: complete, lunar_diplomacy: not_started}
+  scanned: none
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 3}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 3}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 3}
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [train_magic_87_to_94, train_strength_to_99]
+      because: >
+        §16.2's second judgment, restated under uncertainty. Neither candidate touches an
+        `item:` leaf, so an unknown bank must not disturb this pair at all — if it does, an
+        unknown somewhere is leaking into a comparison it has no bearing on.
+    - pair: [train_magic_87_to_94, buy_voidwaker]
+      because: >
+        A candidate the app cannot even confirm is incomplete must not outrank the known
+        last gate on the top-weighted capability. This is the ordering that would invert if
+        an unknown item leaf were read as "unsatisfied, therefore maximum progress
+        available".
+    - pair: [buy_voidwaker, buy_high_risk_gear]
+      because: >
+        The acquisition pair holds under uncertainty for the same reason it holds under
+        knowledge: relevance and cost are both known even when ownership is not.
+      pending_review: >
+        D1 in docs/TUNING.md — the v1 weights disagree, and they disagree *identically* to
+        the way they disagree in 03 and 15, which is itself informative: the inversion is
+        caused by the cost/relevance balance and not by anything the unknown bank did.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Woodcutting advances nothing, known or unknown.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
+    - id: buy_high_risk_gear
+      because: >
+        Coaching a 16M purchase off a bank nobody has looked in is precisely the advice
+        §4.5 exists to prevent.

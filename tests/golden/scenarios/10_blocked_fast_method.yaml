@@ -1,0 +1,77 @@
+# The blocked-fast-method account the plan names.
+#
+# Ancients are unlocked but Desert Treasure I is *not complete* — an unusual but entirely
+# representable state, and one the corpus's training methods care about. §8.1's
+# `magic_bursting` (250k xp/hr) requires **both** `unlock: ancient_magicks` and
+# `quest: desert_treasure_i`; with the quest outstanding, §8.2 step 3 falls back to
+# `magic_conservative` at 35k/hr. The same seven Magic levels therefore cost roughly seven
+# times as many hours as they do in `04_barrage_target`.
+#
+# `train_magic_87_to_94` is **not** blocked — its own gate is only `unlock: ancient_magicks`,
+# which is satisfied. The candidate is available and merely slow, which is exactly the
+# situation §8.2 step 3 exists to price.
+id: blocked_fast_method
+title: Ancients unlocked, DT1 outstanding — the fast method is unavailable
+notes: >
+  The scenario that tests whether effort_decay is doing any work at all. Everything else is
+  held equal against 04; only the method available to size the Magic grind changes. If the
+  ordering below does not flip relative to 04, effort is not being priced.
+player:
+  synced: true
+  combat_level: 112
+  quest_points: 121
+  gp_sensitivity: normal
+  skills:
+    attack: 80
+    strength: 88
+    defence: 75
+    magic: 87
+    prayer: 52
+    ranged: 85
+    hitpoints: 92
+    thieving: 60
+    firemaking: 55
+    slayer: 62
+    woodcutting: 60
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: in_progress, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 3}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 3}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 3}
+judgments:
+  must_rank_above:
+    - pair: [complete_desert_treasure_i, train_magic_87_to_94]
+      because: >
+        Finishing the quest unlocks bursting, turning the same seven Magic levels from a
+        multi-day conservative grind into a few hours — and DT1 is itself a hard requirement
+        of ice_barrage_nh. Grinding first is strictly dominated. `quest: in_progress`
+        evaluates `unsatisfied` (A5), so the quest candidate is genuinely still open.
+      pending_review: >
+        D2 in docs/TUNING.md, and the corpus's most interesting disagreement. §9.4 has no
+        factor for *"this candidate makes another candidate cheaper"*: `leverage` counts
+        capability status flips, and DT1 flips none here because Ancients are already
+        unlocked and 94 Magic is still missing. The engine cannot see the 250k/hr method
+        waiting behind the quest, so no weight vector expresses the reason this judgment is
+        right. Almost certainly a modelling gap rather than a tuning one.
+    - pair: [complete_desert_treasure_i, buy_voidwaker]
+      because: >
+        §16.2's first judgment survives the spellbook being unlocked: DT1 is still a
+        requirement of ice_barrage_nh, and the Voidwaker still buys nothing usable yet.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Woodcutting advances nothing even at 35k xp/hr.
+  top_3_contains:
+    - id: complete_desert_treasure_i
+      because: The action that makes every other Magic hour seven times more productive.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
+roadmaps: {main_nh: 1.0}
