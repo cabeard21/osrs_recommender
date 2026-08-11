@@ -1821,6 +1821,28 @@ Python file (`tests/contracts/test_plugin_fixture.py`) — remove it too.
 **Tier:** ⚑ **strongest** · **Depends on:** 6 · **Unblocks:** — · **Size:** large
 · **Parallel with:** 9, 10, 11, 12
 
+> **Status (2026-08-11): first commit landed; second commit blocked on the user gate.**
+> `tests/golden/` (20 scenarios, 100 judgments, 59 pairwise), `tools/tune_weights.py` and
+> `docs/TUNING.md` are complete on `step-13-tuning`. The search runs and reports:
+> **86.4% → 96.6%** pairwise agreement, three disagreements documented as D1/D2/D3 in
+> `docs/TUNING.md`. `content/scoring/profile.yaml` is **untouched** — still `version: 1`,
+> `tuned_against_corpus: null`, which D4 names a valid shipping state. §16.3 step 5 is the
+> user gate below and has not been performed.
+>
+> Three findings the plan did not anticipate, all recorded in `docs/TUNING.md`:
+>
+> 1. **κ is not tunable after all.** §9.6's validation block permits `κ_normal = 30M` (and
+>    the free search proposes it, for +1 pair), but §9.6 also *prints a worked table* that
+>    8M/20M/50M is the unique solution to, and Step 6 asserts it. The plan's own rule —
+>    *if tuning breaks a Step 4–6 invariant, the invariant wins* — settles it. The tool
+>    searches both ways and reports the κ-free result as evidence, never as a proposal.
+> 2. **Exit criterion 5 understates the second commit.** `tuned_against_corpus` and
+>    `version: 2` are pinned by three assertions in `tests/content/test_seed_corpus.py` —
+>    Step 2c's directory. The profile write is a cross-unit change, not a one-file edit.
+> 3. **A new amendment candidate (see D2).** §9.4 has no factor for a candidate that makes
+>    *another* candidate cheaper. `magic_bursting` sitting behind DT1 is the corpus's
+>    example and quest-gated training methods are common; nearest kin is A28?.
+
 ## Context brief
 
 **Read before starting:** SDD §9.4, §9.6, §9.7, §16 (all), D4.
@@ -1899,15 +1921,23 @@ make test                      # all Step 4–6 invariants must still pass
 
 ## Exit criteria
 
-- [ ] ≥20 scenarios with recorded pairwise preferences
-- [ ] Judgment tests assert relative order, never exact full rankings
-- [ ] All three stability tests pass
-- [ ] Tuned profile satisfies §9.6's κ min/max/ordering constraints
+- [x] ≥20 scenarios with recorded pairwise preferences — 20 scenarios, 59 pairwise
+- [x] Judgment tests assert relative order, never exact full rankings — the loader rejects
+      any judgment key outside §16.1's three, and a test states the rule
+- [x] All three stability tests pass — each paired with its negative, so none is satisfied
+      by an engine that ignores its input
+- [x] Tuned profile satisfies §9.6's κ min/max/ordering constraints — and the stricter
+      constraint the plan missed, that §9.6's *printed table* pins the three presets
 - [ ] `profile.yaml` has `version: 2` and a non-null `tuned_against_corpus` naming the
-      corpus commit
-- [ ] Every disagreement documented with a resolution in `docs/TUNING.md`
-- [ ] **All Step 4–6 invariant tests still pass under the tuned weights — if tuning breaks an
-      invariant, the invariant wins**
+      corpus commit — **blocked on the user gate**, per the plan's own two-commit rule
+- [x] Every disagreement documented with a resolution in `docs/TUNING.md` — D1 (six
+      occurrences, unresolved, recommendation recorded), D2 (modelling gap), D3 (bad
+      judgment). Each is also a `pending_review:` note in the corpus, strictly xfailed
+- [x] **All Step 4–6 invariant tests still pass** — 1156 pass, 8 xfail, under the shipped
+      v1 weights. Checked under the *proposed* weights too: they break
+      `test_but_a_forty_fold_price_move_does_reorder_them`, which is D1's ε-ceiling finding
+      and the reason `docs/TUNING.md` does not recommend adopting the search's output as
+      printed
 
 ## User gate
 

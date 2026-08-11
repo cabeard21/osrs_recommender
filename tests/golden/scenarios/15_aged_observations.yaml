@@ -1,0 +1,62 @@
+# The bank was scanned 40 days ago and the other containers never. That is A4's "aged"
+# case — past `observation_aged_days` (14) — so the contributing observations are stale
+# enough to pull `readiness_confidence` down to `medium` and raise §6.9's warnings.
+#
+# **It must not touch `status`, and it must not touch the ranking's objective factors**
+# (G2, D8). The judgments below are the same ones `03_midgame_main` records, unchanged, and
+# that is the assertion: freshness moves the readiness layer and nothing above it.
+id: aged_observations
+title: Bank scanned 40 days ago — aged, not absent
+notes: >
+  Age is not absence. The scan happened, so `item:` leaves resolve definitely; they are
+  merely old. An implementation that let staleness leak into `status` would change the
+  capability layer here, and an implementation that treated an aged scan as no scan would
+  change every acquisition to `unknown`. Neither may alter the pairs below.
+player:
+  synced: true
+  combat_level: 108
+  quest_points: 121
+  gp_sensitivity: normal
+  skills:
+    attack: 80
+    strength: 88
+    defence: 75
+    magic: 87
+    prayer: 52
+    ranged: 85
+    hitpoints: 90
+    thieving: 60
+    firemaking: 55
+    slayer: 62
+    woodcutting: 60
+  unlocks:
+    ancient_magicks: locked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: not_started, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: {bank: 40}
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 4}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 4}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 4}
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [complete_desert_treasure_i, buy_voidwaker]
+      because: >
+        §16.2's first judgment, unaffected by the age of the observation that says the
+        Voidwaker is not owned.
+    - pair: [buy_voidwaker, buy_high_risk_gear]
+      because: The acquisition pair, unaffected for the same reason.
+      pending_review: >
+        D1 in docs/TUNING.md — the v1 weights disagree, and disagree by the same margin as
+        in 03, which confirms the aged scan is not what caused it.
+    - pair: [complete_desert_treasure_i, train_woodcutting]
+      because: Woodcutting advances nothing.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.

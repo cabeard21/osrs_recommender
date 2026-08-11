@@ -1,0 +1,37 @@
+# An account row that exists and has never synced: `last_sync_at IS NULL` (A6). Nothing is
+# known about it — not skills, not unlocks, not quests, not the bank.
+#
+# Every leaf in the corpus therefore evaluates `unknown`, every capability carries
+# `status: unknown`, and — per §16.2's last invariant and G3 — **no candidate is blocked**.
+# The whole corpus is actionable with `unknown_gate` set, which is the engine saying "sync
+# this", not "do this".
+#
+# The judgments are deliberately thin. With no facts there is very little an expert can
+# defensibly prefer, and asserting more would be inventing preferences the data cannot
+# support. What must still hold is the one thing that never depends on facts: a candidate
+# advancing no capability cannot be the answer.
+id: never_synced
+title: Never synced — every leaf is unknown
+notes: >
+  The complement of `07_unknown_bank`: that scenario makes one leaf type unknown against a
+  fully known account, this one makes everything unknown at once. Together they cover both
+  ends of the tri-state path, and this one is where an `if not satisfied` anywhere in the
+  evaluator would turn "we know nothing" into "you have nothing" and produce a confident
+  ranking out of no data at all.
+player:
+  synced: false
+  scanned: none
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [complete_desert_treasure_i, train_woodcutting]
+      because: >
+        Woodcutting's `advances` map is empty regardless of what is known about the account,
+        so this pair is decidable when nothing else is.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Same — relevance is a property of content, not of the player.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: >
+        The failure this scenario is most likely to catch: with every factor pushed to its
+        unknown default, the candidate with nothing to lose can float to the top.

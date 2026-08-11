@@ -1,0 +1,67 @@
+# `16_near_barrage` with an incumbent: the previous run's top entry was `buy_voidwaker`.
+#
+# §9.9 displaces an incumbent only when `challenger.score > 1.10 × incumbent.score`, on raw
+# scores. At 93 Magic the Magic candidate should clear that margin comfortably — one level
+# of bursting against an 85M purchase is not a near-tie — so hysteresis must *not* protect
+# the incumbent here.
+#
+# That is the judgment worth recording. The boundary case (exactly 1.10×, displacement
+# requires strictly more) is a unit test and lives in `tests/recommendations/`; a golden
+# scenario asserting it would be asserting an exact score, which §16.1 forbids. What belongs
+# in the corpus is the coaching consequence: anti-thrash must not become anti-progress.
+id: incumbent_hysteresis
+title: A stale incumbent must not survive a decisively better challenger
+notes: >
+  The only scenario in the corpus with an `incumbent`. Its judgments are the same as 16's —
+  which is the assertion: supplying the previous top entry changes nothing when the
+  challenger is clearly better. A hysteresis implementation that defended the incumbent
+  unconditionally, or that compared log scores instead of raw ones (A15), would pass 16 and
+  fail here.
+player:
+  synced: true
+  combat_level: 114
+  quest_points: 124
+  gp_sensitivity: normal
+  skills:
+    attack: 80
+    strength: 88
+    defence: 75
+    magic: 93
+    prayer: 52
+    ranged: 85
+    hitpoints: 92
+    thieving: 60
+    firemaking: 55
+    slayer: 62
+    woodcutting: 60
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: successfully_freeze_log, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 3}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 3}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 3}
+roadmaps: {main_nh: 1.0}
+incumbent: buy_voidwaker
+judgments:
+  must_rank_above:
+    - pair: [train_magic_87_to_94, buy_voidwaker]
+      because: >
+        §9.9's margin is a tie-breaker, not a veto. One level of bursting beats an 85M
+        purchase by far more than 10%, so the incumbent must yield.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Woodcutting advances nothing.
+  top_3_contains:
+    - id: train_magic_87_to_94
+      because: The challenger that clears §9.9's margin.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.

@@ -1,0 +1,52 @@
+# A brand-new account. Nothing is unlocked, nothing is owned, and every container has been
+# scanned — so "you do not own a Voidwaker" is a fact here, not an absence (§6.5).
+#
+# Desert Treasure I is *blocked* on this account (53 Thieving, 50 Firemaking, 50 Magic,
+# 10 Slayer), which is why §16.2's DT1-over-Voidwaker judgment is not recorded here: a
+# blocked candidate is excluded from the actionable list entirely (§16.2), so the pair
+# would be vacuously true rather than satisfied.
+id: fresh_account
+title: Fresh account, nothing unlocked
+notes: >
+  The floor case. Everything is definitively absent rather than unobserved, so every
+  judgment here is about relevance and cost alone.
+player:
+  synced: true
+  combat_level: 3
+  quest_points: 0
+  gp_sensitivity: normal
+  skills:
+    attack: 1
+    strength: 1
+    defence: 1
+    magic: 1
+    prayer: 1
+    ranged: 1
+    hitpoints: 10
+    thieving: 1
+    firemaking: 1
+    slayer: 1
+    woodcutting: 1
+  unlocks: {ancient_magicks: locked, protect_item: locked, rigour: locked}
+  quests: {desert_treasure_i: not_started, lunar_diplomacy: not_started}
+  scanned: all
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [unlock_protect_item, train_woodcutting]
+      because: >
+        Woodcutting advances no PvP capability at all — its `advances` map is empty — so
+        anything the roadmap weights must beat it. If this inverts, the derivation is wrong
+        rather than the judgment.
+    - pair: [unlock_protect_item, unlock_rigour]
+      because: >
+        At 1 Prayer both are far away, but Protect Item is the cheap early unlock that makes
+        Wilderness practice affordable and Rigour is a late damage upgrade. §16.2's third
+        pairwise judgment, stated for an account below 25 Prayer.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: A candidate that advances nothing must never be the coached next action.
+    - id: buy_high_risk_gear
+      because: >
+        Telling a level-3 account to buy an AGS and an Ahrim's top is the failure mode
+        §9.4's cost_decay exists to prevent.

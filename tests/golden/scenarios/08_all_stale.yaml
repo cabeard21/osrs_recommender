@@ -1,0 +1,75 @@
+# Every execution milestone last practiced 200 days ago — deep in `very_stale` (>90d), with
+# both practice groups triggered at once. The account is otherwise complete: 94 Magic,
+# Ancients, DT1, a Voidwaker and the robe top, so the progression list is thin and the
+# refreshers have the best chance they will ever have of taking the top slot.
+#
+# That is the point. G10 and §9.8's list policy are invariant-tested in
+# `tests/recommendations/`; what this scenario adds is the *judgment* that a refresher
+# winning here is correct — the account really has nothing better to do — while still
+# ordering the two groups by relevance rather than by member count.
+id: all_stale
+title: Everything practiced 200 days ago
+notes: >
+  Both practice groups fire. nh_fundamentals has three stale members, vengeance_fundamentals
+  has one, and under main_nh the nh group advances the two highest-weighted capabilities —
+  so the ordering must come out the same way that group size would suggest, for entirely
+  different reasons. The vengeance-focused blend in `19_stale_vengeance_focus` is the
+  control that shows breadth is not what is doing the work.
+player:
+  synced: true
+  combat_level: 126
+  quest_points: 180
+  gp_sensitivity: normal
+  skills:
+    attack: 99
+    strength: 99
+    defence: 82
+    magic: 94
+    prayer: 70
+    ranged: 92
+    hitpoints: 99
+    thieving: 70
+    firemaking: 60
+    slayer: 80
+    woodcutting: 70
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: unlocked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: complete}
+  items: [mystic_robe_top, voidwaker]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: first_anti_pk, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: successfully_freeze_log, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 200}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 200}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 200}
+    - {id: vengeance_timing, achieved: true, practiced_days_ago: 200}
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [refresh_nh_fundamentals, refresh_vengeance_fundamentals]
+      because: >
+        Both groups are equally decayed, so urgency cannot separate them. Under main_nh the
+        nh group advances ice_barrage_nh (1.00) and deep_wildy_nh (0.90) while the vengeance
+        group advances vengeance_pvp (0.20) — relevance is what must order them, which is
+        §9.8's "never group size".
+    - pair: [refresh_nh_fundamentals, train_woodcutting]
+      because: >
+        Nine months of no practice is a real gap; cutting trees is not an answer to it.
+    - pair: [refresh_nh_fundamentals, unlock_rigour]
+      because: >
+        Rigour is 4 Prayer levels and a raid drop away. Half an hour of LMS restores three
+        decayed mechanics on an account that already has everything else.
+  top_3_contains:
+    - id: refresh_nh_fundamentals
+      because: >
+        The account's binding constraint is decayed execution, and §4.4's third layer is how
+        the design says so.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.

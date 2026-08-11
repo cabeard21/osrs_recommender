@@ -1,0 +1,68 @@
+# The other half of the κ pair. Same account as 06 and 12; `gp_sensitivity: low` (κ = 50M).
+#
+# §9.6: "Under *Barely*, a 25M purchase stays viable when its PvP value is high." The
+# Voidwaker's 85M is above even that scale, but relevance should now carry the pair
+# comfortably rather than narrowly — and it must not invert.
+id: gp_sensitivity_low
+title: Same maxed pure, "barely deprioritize expensive upgrades"
+notes: >
+  Read together with 12: the pair fixes the *direction* of κ's effect, which is what §9.6's
+  `high < normal < low` ordering constraint means behaviourally. A tuner that satisfied one
+  and not the other would have found a κ set that does not respond to the preference at all.
+player:
+  synced: true
+  combat_level: 90
+  quest_points: 40
+  gp_sensitivity: low
+  skills:
+    attack: 60
+    strength: 99
+    defence: 1
+    magic: 94
+    prayer: 52
+    ranged: 99
+    hitpoints: 99
+    thieving: 60
+    firemaking: 55
+    slayer: 40
+    woodcutting: 70
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: successfully_freeze_log, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 2}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 2}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 2}
+roadmaps: {main_nh: 1.0}
+prices:
+  voidwaker: {high_gp: 85000000, low_gp: 84000000, traded_hours_ago: 3}
+  armadyl_godsword: {high_gp: 15000000, low_gp: 14800000, traded_hours_ago: 3}
+  ahrims_robetop: {high_gp: 1500000, low_gp: 1480000, traded_hours_ago: 3}
+judgments:
+  must_rank_above:
+    - pair: [buy_voidwaker, buy_high_risk_gear]
+      because: >
+        The user has said cost barely matters. What remains is relevance, and the Voidwaker
+        advances deep_wildy_nh 0.80 against the gear set's 0.50 while satisfying the same
+        `any_of` on its own.
+      pending_review: >
+        D1 in docs/TUNING.md. This is the narrowest failure of the six: at κ = 50M the gear
+        set wins by roughly 1.24×, against 3.5× at κ = 20M. Any weight vector that fixes D1
+        at normal sensitivity fixes it here by a wide margin, which makes this instance the
+        least informative of the six and the one most likely to be a bad weight.
+    - pair: [buy_voidwaker, train_woodcutting]
+      because: Woodcutting advances nothing.
+  top_3_contains:
+    - id: buy_voidwaker
+      because: The best remaining action for this build when price is not the constraint.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.

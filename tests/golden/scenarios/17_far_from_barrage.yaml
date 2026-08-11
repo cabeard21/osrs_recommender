@@ -1,0 +1,72 @@
+# 75 Magic — the far end of the proximity probe begun in `16_near_barrage`. Everything else
+# is byte-identical to 16 except the Magic level.
+#
+# The candidate id still reads `train_magic_87_to_94`, and the band it prices is the one its
+# `completion` names against the *current* level: §8.2 sizes 75 → 94, not 87 → 94. Nineteen
+# levels of bursting is a real session rather than a coffee break, and `proximity` drops
+# accordingly.
+#
+# The judgment that must survive is relevance: Magic is still the roadmap's priority. The
+# judgment that must *not* be asserted is that it stays top — at 19 levels out, a cheap
+# unlock legitimately competes, and pretending otherwise would be fitting the corpus to a
+# preferred answer.
+id: far_from_barrage
+title: Nineteen Magic levels from Ice Barrage
+notes: >
+  Deliberately fewer judgments than 16. §16.1's whole argument is that near-ties must not be
+  asserted; this is the account where several candidates genuinely are near-tied, and the
+  honest corpus entry says only what remains clear.
+player:
+  synced: true
+  combat_level: 106
+  quest_points: 124
+  gp_sensitivity: normal
+  skills:
+    attack: 80
+    strength: 88
+    defence: 75
+    magic: 75
+    prayer: 52
+    ranged: 85
+    hitpoints: 92
+    thieving: 60
+    firemaking: 55
+    slayer: 62
+    woodcutting: 60
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: locked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: not_started}
+  items: [mystic_robe_top]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: successfully_freeze_log, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 3}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 3}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 3}
+roadmaps: {main_nh: 1.0}
+judgments:
+  must_rank_above:
+    - pair: [train_magic_87_to_94, train_strength_to_99]
+      because: >
+        §16.2's second judgment at its narrowest: both are now long grinds, and only
+        relevance separates them. This is the pair most likely to invert under a weight
+        vector that over-values effort_decay, which is exactly why it is recorded here.
+    - pair: [train_magic_87_to_94, train_woodcutting]
+      because: Woodcutting advances nothing.
+    - pair: [unlock_rigour, train_woodcutting]
+      because: >
+        Even the corpus's most distant unlock advances three capabilities; Woodcutting
+        advances none. (`unlock_protect_item` cannot be used for this pair here — the
+        account already has Protect Item, so that candidate is complete and never ranks.)
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
+    - id: train_strength_to_99
+      because: >
+        Whatever the account should do at 75 Magic, it is not the corpus's longest grind for
+        its smallest relevance.

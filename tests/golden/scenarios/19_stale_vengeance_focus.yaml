@@ -1,0 +1,74 @@
+# The control for `08_all_stale`, and the corpus's sharpest statement of §9.8's "group size
+# never drives rank".
+#
+# Both practice groups are equally decayed (200 days). nh_fundamentals has **three** stale
+# members and gets the full +0.10 breadth bonus; vengeance_fundamentals has **one** and gets
+# none. If member count were driving the score, nh would win here exactly as it does in 08.
+#
+# But the roadmap is anti_pk-heavy, so the blended weights invert: vengeance_pvp rises to
+# 0.83 while deep_wildy_nh falls to 0.39 and ice_barrage_nh to 0.66. Relevance now favours
+# the *smaller* group — and §9.8 says relevance is what must decide.
+id: stale_vengeance_focus
+title: Both groups 200 days stale, anti-PK-weighted roadmap
+notes: >
+  The judgment below is the one most likely to reveal a real defect rather than a tuning
+  preference: it inverts 08's refresher ordering using only the roadmap blend, with member
+  counts, urgencies and session lengths held constant. If it fails while 08 passes, breadth
+  is reaching rank through a door §9.8 closed.
+player:
+  synced: true
+  combat_level: 126
+  quest_points: 180
+  gp_sensitivity: normal
+  skills:
+    attack: 99
+    strength: 99
+    defence: 82
+    magic: 94
+    prayer: 70
+    ranged: 92
+    hitpoints: 99
+    thieving: 70
+    firemaking: 60
+    slayer: 80
+    woodcutting: 70
+  unlocks:
+    ancient_magicks: unlocked
+    protect_item: unlocked
+    rigour: locked
+    spellbook_lunar: unlocked
+  quests: {desert_treasure_i: complete, lunar_diplomacy: complete}
+  items: [mystic_robe_top, voidwaker]
+  scanned: all
+  milestones:
+    - {id: first_wilderness_kill, achieved: true}
+    - {id: first_anti_pk, achieved: true}
+    - {id: teleblock_understanding, achieved: true}
+    - {id: successfully_freeze_log, achieved: true}
+    - {id: comfortable_4_way_switches, achieved: true, practiced_days_ago: 200}
+    - {id: consistent_overhead_prayers, achieved: true, practiced_days_ago: 200}
+    - {id: freeze_logging_practice, achieved: true, practiced_days_ago: 200}
+    - {id: vengeance_timing, achieved: true, practiced_days_ago: 200}
+roadmaps: {anti_pk: 0.9, main_nh: 0.1}
+judgments:
+  must_rank_above:
+    - pair: [refresh_vengeance_fundamentals, refresh_nh_fundamentals]
+      because: >
+        Under a 0.9/0.1 anti-PK blend, vengeance_pvp is the higher-weighted capability
+        (0.83 against deep_wildy_nh's 0.39). The one-member group must beat the
+        three-member group, which is only possible if member count is genuinely absent from
+        pvp_value — §9.8's "the composite inherits the maximum relevant capability value,
+        never the sum".
+      pending_review: >
+        D3 in docs/TUNING.md. The v1 weights keep nh_fundamentals ahead, and not through
+        `pvp_value` — which does invert exactly as this judgment predicts, 0.83 against 0.64
+        — but through `leverage`: restoring the nh group flips three capabilities'
+        `recommended_now`, the vengeance group one. That is the A29? derivation working as
+        designed, and on review it is a strong argument that **this judgment is the thing
+        that is wrong**: `consistent_overhead_prayers` is an anti_pk requirement too, so the
+        nh session genuinely serves the anti-PK roadmap as well.
+    - pair: [refresh_vengeance_fundamentals, train_woodcutting]
+      because: Woodcutting advances nothing.
+  must_not_be_top:
+    - id: train_woodcutting
+      because: Advances nothing.
