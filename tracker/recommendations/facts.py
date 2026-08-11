@@ -20,6 +20,7 @@ which is the same number for all of them and therefore no signal at all.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, datetime
 
 from tracker.content.loader import Content
@@ -38,8 +39,10 @@ from tracker.content.requirements import (
     SkillLeaf,
     UnlockLeaf,
 )
+from tracker.content.schema import Candidate
 from tracker.domain.types import (
     Container,
+    Estimate,
     ItemObservation,
     MilestoneClass,
     MilestoneKind,
@@ -52,8 +55,11 @@ from tracker.domain.types import (
     Tri,
     UnlockState,
 )
+from tracker.estimation.estimate import estimate
+from tracker.estimation.prices import PriceRecord
 from tracker.estimation.xp_table import xp_for_level
 from tracker.progression.engine import compute_capability_states
+from tracker.progression.evaluate import Evaluator
 
 #: Where a granted item is imagined to appear. Bank rather than inventory or equipment
 #: because acquisition is what ``grants_facts`` models: you buy a Voidwaker and it lands
@@ -307,6 +313,89 @@ class LeverageOracle:
         )
         self._counterfactuals[key] = statuses
         return statuses
+
+
+class EstimateOracle:
+    """Answers A30's *"how long would Y take, if X were done?"* without re-deriving the world.
+
+    :func:`~tracker.domain.candidates.method_unlock_fraction` asks this once per (candidate,
+    other candidate) pair, which is O(n²) **questions** — but not O(n²) work, because the
+    expensive parts are shared. Two memo layers:
+
+    * one hypothetical :class:`PlayerState` and one :class:`Evaluator` per distinct
+      ``grants_facts`` tree, so a candidate's counterfactual world is built once rather than
+      once per other candidate examined against it;
+    * one :class:`~tracker.domain.types.Estimate` per (world, candidate), so the baseline
+      hours the engine already needed are computed once and every counterfactual sizing is
+      computed at most once.
+
+    That leaves ``(n + 1)`` worlds and at most ``n·(n + 1)`` sizings, with each sizing a
+    walk over one candidate's own requirement leaves rather than over the corpus.
+
+    Pinned to the state, content, prices and clock it was built with, for
+    :class:`LeverageOracle`'s reason: the memo table is only sound for one account.
+    """
+
+    def __init__(
+        self,
+        state: PlayerState,
+        content: Content,
+        prices: Mapping[int, PriceRecord],
+        now: datetime,
+    ) -> None:
+        self._state = state
+        self._content = content
+        self._prices = prices
+        self._now = now
+        self._worlds: dict[int | None, tuple[PlayerState, Evaluator]] = {
+            None: (state, Evaluator(state, content))
+        }
+        self._estimates: dict[tuple[int | None, str], Estimate] = {}
+
+    def __call__(self, candidate: Candidate, grants: Requirement | None) -> float | None:
+        """``candidate``'s §8 hours in the world where ``grants`` is true (``None`` = now).
+
+        Satisfies :data:`~tracker.domain.candidates.HoursAfterFacts` structurally, so the
+        derivation stays free of any import from ``tracker.estimation``.
+        """
+        return self.estimate(candidate, grants).hours
+
+    def estimate(self, candidate: Candidate, grants: Requirement | None = None) -> Estimate:
+        """The full §8 estimate, memoized. The engine reads the ``grants=None`` one anyway.
+
+        Exposed rather than kept private so the baseline sizing every candidate needs for
+        ``effort_decay`` and ``cost_decay`` is the *same* computation A30's before-half
+        reads. Two call sites estimating the same candidate independently is how the factor
+        would come to disagree with the estimate shown beside it.
+        """
+        key = (None if grants is None else id(grants), candidate.id)
+        cached = self._estimates.get(key)
+        if cached is not None:
+            return cached
+        state, evaluator = self._world(grants)
+        sized = estimate(
+            candidate, state, self._content, self._prices, self._now, evaluator=evaluator
+        )
+        self._estimates[key] = sized
+        return sized
+
+    def _world(self, grants: Requirement | None) -> tuple[PlayerState, Evaluator]:
+        """The state and memoized evaluator for one grants tree, built at most once.
+
+        Keyed on ``id(grants)`` for :meth:`LeverageOracle._after`'s reason: requirement nodes
+        are frozen models owned by ``content``, so the same object comes back for every
+        question about a given candidate and hashing the tree would walk the very structure
+        the memo exists to stop walking.
+        """
+        key = None if grants is None else id(grants)
+        cached = self._worlds.get(key)
+        if cached is not None:
+            return cached
+        assert grants is not None  # the None key is seeded in __init__
+        hypothetical = apply_facts(self._state, grants, self._content)
+        world = (hypothetical, Evaluator(hypothetical, self._content))
+        self._worlds[key] = world
+        return world
 
 
 def _statuses(state: PlayerState, content: Content, now: datetime) -> dict[str, Status]:

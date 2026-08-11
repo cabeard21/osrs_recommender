@@ -38,6 +38,7 @@ from tracker.domain.types import FactorContribution, GpSensitivity
 FACTOR_NAMES: tuple[str, ...] = (
     "pvp_value",
     "leverage",
+    "method_unlock",
     "proximity",
     "effort_decay",
     "cost_decay",
@@ -103,7 +104,7 @@ def score(
       the ranking, and the one §9.10's reason line reads.
 
     A factor missing from ``values`` is an error, not a default. Scoring a candidate on
-    four factors would produce a *higher* score than scoring it on five, since every term
+    five factors would produce a *higher* score than scoring it on six, since every term
     is ≤ 0 in log space — so an omission would look like a strength.
     """
     missing = [name for name in FACTOR_NAMES if name not in values]

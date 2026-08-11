@@ -194,6 +194,43 @@ def test_never_synced_blocks_nothing_at_all() -> None:
 
 
 @pytest.mark.golden
+def test_the_blend_inverts_pvp_value_for_the_one_member_group() -> None:
+    """What ``19_stale_vengeance_focus``'s deleted judgment was reaching for (D3, §9.8).
+
+    The judgment as recorded said the one-member vengeance refresher must **outrank** the
+    three-member nh refresher under a ``anti_pk 0.9 / main_nh 0.1`` blend. Step 13b deleted
+    it: the engine keeps the nh group ahead on ``leverage``, and it is right to, because
+    ``consistent_overhead_prayers`` is an ``anti_pk`` requirement — the nh session serves
+    this roadmap too, which the judgment did not notice.
+
+    What survives is the claim §9.8 actually makes, and it is a claim about a **factor**,
+    not about a ranking: *"the composite inherits the maximum relevant capability value,
+    never the sum"*. Group size must be absent from ``pvp_value``, so the one-member group
+    must lead there — and does, which is why nothing about §9.8 needed changing. The two
+    factors pulling in opposite directions in one scenario is the reason this scenario is
+    kept.
+    """
+    scenario = _scenario("stale_vengeance_focus")
+    outcome = evaluate(scenario, CONTENT, PROFILE)
+    factors = {entry.candidate_id: entry.factors for entry in outcome.ranked}
+
+    vengeance = factors["refresh_vengeance_fundamentals"]["pvp_value"].value
+    nh = factors["refresh_nh_fundamentals"]["pvp_value"].value
+    assert vengeance > nh, (
+        "§9.8: group size must not reach pvp_value. The one-member vengeance group is "
+        f"weighted 0.9 by the blend and reads {vengeance:.2f}; the three-member nh group "
+        f"reads {nh:.2f}"
+    )
+
+    vengeance_leverage = factors["refresh_vengeance_fundamentals"]["leverage"].value
+    nh_leverage = factors["refresh_nh_fundamentals"]["leverage"].value
+    assert nh_leverage > vengeance_leverage, (
+        "and the reason the nh group still wins the pair is A29?'s readiness flip, not "
+        "its member count — if this ever inverts, D3's resolution needs re-reading"
+    )
+
+
+@pytest.mark.golden
 def test_at_most_one_refresher_reaches_the_primary_list_in_every_scenario() -> None:
     """**G10**, swept across the whole corpus rather than in one constructed state.
 

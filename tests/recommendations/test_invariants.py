@@ -565,6 +565,7 @@ class TestGoldenScenariosPulledForward:
             assert set(entry.factors) == {
                 "pvp_value",
                 "leverage",
+                "method_unlock",
                 "proximity",
                 "effort_decay",
                 "cost_decay",

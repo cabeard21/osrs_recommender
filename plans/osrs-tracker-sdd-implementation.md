@@ -225,6 +225,7 @@ recurring pattern behind A7, `ContainerScan` (§6.5) and the price trade timesta
 | **A19** | `ItemPrice.selected_price_gp` / `selection_policy` / `selection_reason` (§6.8) have no writer. | Step 5 computes them purely; Step 9's pipeline persists them. | §6.8 |
 | **A20** | §14's repository layout omits `tracker/domain/` (where `Tri` is defined) and `tools/`. | Add both. | §14 |
 | **A21** | Python 3.13 specified (§14.1); machine has 3.12.4 and no `uv`. | **Decided: `Python 3.12+`, 3.13 preferred but not required.** Nothing in the design needs a 3.13-only feature; the real floor is Pydantic v2 and modern typing syntax. Step 1 targets 3.12. | §14.1 |
+| **A30** | **§9.4 had no factor for a candidate that makes another candidate cheaper or faster.** `leverage` counts capability *status* flips, so DT1 scored zero on it for an account that already had Ancients — while being the one action that turns 113 conservative Magic hours into 16 bursting ones. Found by running §16.3's procedure (Step 13's D2); ratified and implemented in **Step 13b**. | **Added `method_unlock` as §9.4's sixth factor** — the largest fractional reduction a candidate's `grants_facts` makes to another candidate's estimated hours, maximum-never-sum, normalized like `leverage`, hours-only. Derived in code (D11 holds); only the weight is authored, and v1 authors it at `0.0` so the factor ships inert. | §9.4, §9.7, §10.6, D13, SDD v0.5.2 |
 
 ### Open amendment candidates — surfaced by implementation, not yet ratified
 
@@ -241,6 +242,7 @@ and in two cases would change behaviour.
 | **A26?** | §6.6's `achieved` invariant is assigned to the wrong layer. `models.py` says "whoever writes this table" enforces never-set-back-to-false, but §6.6's wording bars it *"by the passage of time"* — the freshness service, not a user fixing a mis-attestation. A repository writer cannot tell the two apart. | No guard in the writer; reasoning documented at `upsert_milestone`. | State that the guard belongs to Step 9's freshness pipeline. |
 | **A27?** | §8.2's *"conservative default rate"* has no authored home. Every other tunable is content (§9.7's profile, §10.4's session hours); this one number is not. | `FALLBACK_XP_PER_HOUR = 15_000` in `methods.py`, with a test asserting it is slower than anything the corpus authors. | Move to a `fallback_xp_per_hour` field on `ScoringProfile`? |
 | **A28?** | **Where §9.8's `group_urgency` enters the §9.4 score is undefined.** §9.8 derives the number in detail and §9.4 lists five factors; nothing joins them, so a refresher could be scored with urgency playing no part at all. | Spent as **`proximity`** — *"closer is better"* read on the decay clock rather than the progress clock. Ruled out folding it into `pvp_value`, because §9.3's worked table pins "Practice vengeance timing" at **0.375**, which is exactly `effective_weight(vengeance_pvp)` and leaves no room for an urgency multiplier. | Confirm `proximity`, or add a sixth factor with its own authored weight. |
+| **A29?** ✅ | **RATIFIED as written (Step 13b, on D3's evidence).** The one corpus judgment A29? "loses" — scenario 19's `refresh_vengeance_fundamentals > refresh_nh_fundamentals` — is itself wrong, and A29? is the reason it is wrong: `consistent_overhead_prayers` is an `anti_pk` requirement, so the nh session serves the anti-PK roadmap too and its readiness flips are real. The judgment is deleted; see `docs/TUNING.md` D3. Original entry below. |
 | **A29?** | **§10.6's `leverage` is undefined for refreshers.** It counts capabilities whose `status` would flip to `unlocked`; a refresher grants no facts, so it scores 0 forever — which is not merely harsh but wrong, since restoring decayed practice is exactly what moves a capability from *"unlocked but not today"* back to *"recommended now"* (§4.4). | Refreshers count **`recommended_now` flips** — the readiness-layer twin of the status flip — measured against a state in which the session's members were practiced now, i.e. exactly what §9.8's *"mark session complete"* writes. Normalized against the same maximum as progression candidates so the two kinds stay comparable. | Confirm that a readiness flip and a status flip belong in one normalization. |
 
 **One of the two "fixed in code" findings below is now closed.** `hours is None` has a stated
@@ -1860,6 +1862,29 @@ Python file (`tests/contracts/test_plugin_fixture.py`) — remove it too.
 **Tier:** ⚑ **strongest** · **Depends on:** 6 · **Unblocks:** — · **Size:** large
 · **Parallel with:** 9, 10, 11, 12
 
+> **Status (2026-08-11, after Step 13b): D1/D2/D3 reviewed and resolved; the profile write is
+> still blocked, now on a *new* disagreement, D4.**
+>
+> Step 13b implemented the three rulings. **D1** — the six `buy_voidwaker >
+> buy_high_risk_gear` judgments were wrong and are deleted; `cost_decay` stays at **0.5**,
+> because ε caps the cost penalty at `ε ^ w` and `w = 0.1` means 0.63, i.e. cost switched off.
+> **D2** — a real modelling gap, closed by **A30 / `method_unlock`**, §9.4's sixth factor
+> (SDD v0.5.2, D13). **D3** — the judgment was wrong and is deleted; scenario 19 is kept and
+> **A29? is ratified as written**, its narrower claim now asserted by a targeted factor test.
+>
+> The corrected corpus is 93 judgments / 52 pairwise, and v1 scores **51/52 = 98.1%**. One
+> judgment separates it from 100%, D2's, and **two** single-knob changes close it:
+> `method_unlock: 0.1` (a plateau, 0.1 → 1.0) or `effort_decay: 0.8` (a knife-edge — 0.7 and
+> 0.9 both fail, in different scenarios). They are the same distance from the shipped profile,
+> so §4's tie-break separates them by enumeration order and reports `method_unlock: 0.0`.
+>
+> **D4 is that tie-break.** *"Break ties toward the shipped profile"* was written for a fixed
+> factor set; a newly added factor sits at `0` in the shipped profile by construction, so the
+> metric systematically prefers not to use it. That is a defect in `tools/tune_weights.py`
+> which will recur for every factor added after this one, and fixing it in the same edit that
+> decides which profile to ship would be putting a thumb on the scale. `docs/TUNING.md` D4
+> states the three options and recommends `method_unlock: 0.1`.
+>
 > **Status (2026-08-11): first commit landed; second commit blocked on the user gate.**
 > `tests/golden/` (20 scenarios, 100 judgments, 59 pairwise), `tools/tune_weights.py` and
 > `docs/TUNING.md` are complete on `step-13-tuning`. The search runs and reports:
@@ -2063,8 +2088,12 @@ to prevent*, which makes them the ones most likely to creep back in:
 3. **Step 12 needs Gradle and RuneLite.** Neither `gradle` nor a RuneLite install is present.
    Either install Gradle or commit a `gradle-wrapper.jar` + `gradle-wrapper.properties` by
    hand. Side-load verification is a human gate.
-4. **Step 13 needs you.** The tuning disagreement review (§16.3 step 5) is explicitly a human
-   judgment. An agent runs the search and produces the report; it should not accept the
-   result unsupervised.
+4. **Step 13 still needs you — one question, not three.** D1, D2 and D3 are resolved and
+   implemented (Step 13b). What remains is **D4** in `docs/TUNING.md`: two profiles reach
+   100% agreement and the search's tie-break cannot choose between them, because a factor
+   added after the profile was written is at `0` in that profile by construction. Pick
+   `method_unlock: 0.1` (recommended), `method_unlock: 0.2`, or `effort_decay: 0.8` with the
+   factor left inert — then the second commit writes `version: 2` and `tuned_against_corpus`
+   and removes scenario 10's last `pending_review:`.
 5. **No git remote.** This plan assumes local branches. If you want PRs and CI, install `gh`
    and create a remote — the per-unit workflow gains `gh pr create` and nothing else changes.

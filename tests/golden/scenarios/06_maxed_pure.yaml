@@ -41,12 +41,13 @@ player:
 roadmaps: {main_nh: 1.0}
 judgments:
   must_rank_above:
-    - pair: [buy_voidwaker, buy_high_risk_gear]
-      because: >
-        The Voidwaker advances deep_wildy_nh 0.80 against the gear set's 0.50 and satisfies
-        the same `any_of` on its own. At normal GP sensitivity relevance should win the pair
-        despite the Voidwaker costing five times as much.
-      pending_review: D1 in docs/TUNING.md — the v1 weights disagree.
+    # Deleted by Step 13b (§16.3 step 5): the `buy_voidwaker > buy_high_risk_gear`
+    # judgment recorded here was **wrong**, and D1 in docs/TUNING.md is the ruling. An 85M
+    # purchase against a 16.5M one is a five-fold difference and κ = 20M says 20M is where
+    # cost starts to hurt; the six copies of this judgment were one opinion written six
+    # times, and satisfying them all required `cost_decay: 0.1`, which ε caps at 0.63 and
+    # which therefore switches cost off rather than rebalancing it. The scenario is kept —
+    # its other judgments are unaffected.
     - pair: [buy_voidwaker, unlock_rigour]
       because: >
         Rigour needs 73 more Prayer and 69 more Defence on a build that will never train

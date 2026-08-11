@@ -382,6 +382,26 @@ class ScoringWeights(ContentModel):
     proximity: float = Field(ge=0.0, le=1.0)
     effort_decay: float = Field(ge=0.0, le=1.0)
     cost_decay: float = Field(ge=0.0, le=1.0)
+    method_unlock: float = Field(ge=0.0, le=1.0)
+    """§9.4's sixth factor (A30) — *"this makes another candidate faster"*.
+
+    ``leverage`` counts capability **status** flips, so a candidate that unblocks no
+    capability scores zero on it however much it changes the rest of the plan. Desert
+    Treasure I is the corpus's example: with Ancients already unlocked it flips nothing,
+    and yet completing it swaps §8.1's ``magic_conservative`` (35k xp/hr) for
+    ``magic_bursting`` (250k xp/hr) and makes the *same seven Magic levels* seven times
+    cheaper. No weight over the other five factors can express that, because none of them
+    is a function of what another candidate would cost afterwards.
+
+    Weighted separately rather than folded into ``leverage`` because the two answer
+    different questions — *"what becomes possible"* against *"what becomes cheap"* — and a
+    corpus may want either to dominate. **Authored, like every other exponent**: the
+    derivation is code (§10.6, D11) and only its weight is content (§10.8).
+
+    A weight of ``0.0`` is a legitimate authored value and means the factor is inert:
+    ``0 · ln(f) = 0`` for every candidate, so a profile predating A30 scores exactly as it
+    did. That is what the shipped v1 profile carries until §16.3's retune authors a
+    measured value."""
 
 
 class RefresherPolicy(ContentModel):

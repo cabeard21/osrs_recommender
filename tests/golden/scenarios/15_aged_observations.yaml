@@ -50,11 +50,13 @@ judgments:
       because: >
         §16.2's first judgment, unaffected by the age of the observation that says the
         Voidwaker is not owned.
-    - pair: [buy_voidwaker, buy_high_risk_gear]
-      because: The acquisition pair, unaffected for the same reason.
-      pending_review: >
-        D1 in docs/TUNING.md — the v1 weights disagree, and disagree by the same margin as
-        in 03, which confirms the aged scan is not what caused it.
+    # Deleted by Step 13b (§16.3 step 5): the `buy_voidwaker > buy_high_risk_gear`
+    # judgment recorded here was **wrong**, and D1 in docs/TUNING.md is the ruling. An 85M
+    # purchase against a 16.5M one is a five-fold difference and κ = 20M says 20M is where
+    # cost starts to hurt; the six copies of this judgment were one opinion written six
+    # times, and satisfying them all required `cost_decay: 0.1`, which ε caps at 0.63 and
+    # which therefore switches cost off rather than rebalancing it. The scenario is kept —
+    # its other judgments are unaffected.
     - pair: [complete_desert_treasure_i, train_woodcutting]
       because: Woodcutting advances nothing.
   must_not_be_top:

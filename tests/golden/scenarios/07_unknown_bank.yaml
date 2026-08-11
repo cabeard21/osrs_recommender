@@ -61,14 +61,13 @@ judgments:
         last gate on the top-weighted capability. This is the ordering that would invert if
         an unknown item leaf were read as "unsatisfied, therefore maximum progress
         available".
-    - pair: [buy_voidwaker, buy_high_risk_gear]
-      because: >
-        The acquisition pair holds under uncertainty for the same reason it holds under
-        knowledge: relevance and cost are both known even when ownership is not.
-      pending_review: >
-        D1 in docs/TUNING.md — the v1 weights disagree, and they disagree *identically* to
-        the way they disagree in 03 and 15, which is itself informative: the inversion is
-        caused by the cost/relevance balance and not by anything the unknown bank did.
+    # Deleted by Step 13b (§16.3 step 5): the `buy_voidwaker > buy_high_risk_gear`
+    # judgment recorded here was **wrong**, and D1 in docs/TUNING.md is the ruling. An 85M
+    # purchase against a 16.5M one is a five-fold difference and κ = 20M says 20M is where
+    # cost starts to hurt; the six copies of this judgment were one opinion written six
+    # times, and satisfying them all required `cost_decay: 0.1`, which ε caps at 0.63 and
+    # which therefore switches cost off rather than rebalancing it. The scenario is kept —
+    # its other judgments are unaffected.
     - pair: [train_magic_87_to_94, train_woodcutting]
       because: Woodcutting advances nothing, known or unknown.
   must_not_be_top:

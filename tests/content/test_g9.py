@@ -131,7 +131,8 @@ def test_retuning_the_profile_needs_no_code_change(tmp_path: Path) -> None:
         "    leverage: 0.9\n"
         "    proximity: 0.5\n"
         "    effort_decay: 0.6\n"
-        "    cost_decay: 0.4\n",
+        "    cost_decay: 0.4\n"
+        "    method_unlock: 0.3\n",
         encoding="utf-8",
     )
 
