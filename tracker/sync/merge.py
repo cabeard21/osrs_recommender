@@ -535,6 +535,49 @@ def _merge_practice_events(
 # ---------------------------------------------------------------------------
 
 
+def merge_wom_skills(
+    session: Session,
+    player_id: int,
+    entries: Sequence[Mapping[str, Any]],
+    *,
+    observed_at: datetime,
+) -> MergeOutcome:
+    """Merge a Wise Old Man skill read into §6.2, as the lower-precedence source (§7.4).
+
+    This is the writer rule 3 was written against. WOM derives from the hiscores, which only
+    update on logout (§7.2), so during a session its numbers are *behind* RuneLite's and a
+    naive append would roll the projection back. :func:`_merge_skills` already refuses that,
+    and it refuses it here for free — the guard is about relative precedence, not about which
+    caller invoked it, which is why this function is a wrapper and not a reimplementation.
+
+    **It deliberately does not touch the player's scalars, and above all not**
+    ``last_sync_at``. A6 gives that column a specific meaning — *"the account's own scalars
+    have been observed"* — and makes ``last_sync_at IS NULL`` the reason ``combat_level`` and
+    ``quest_points`` resolve ``unknown``. WOM supplies neither scalar, so advancing the column
+    would assert that they had been observed when they had not: precisely the "observation
+    time is not truth" defect §4.5 names, one column over. A WOM-only account therefore keeps
+    reporting those two leaves as ``unknown``, which is the honest answer.
+
+    ``observed_at`` must be WOM's snapshot timestamp, never the moment of the fetch — §4.5
+    again, and the same rule D10 applies to prices.
+    """
+    notes: list[str] = []
+    written, ignored = _merge_skills(
+        session,
+        player_id,
+        entries,
+        source=Source.WISE_OLD_MAN,
+        observed_at=observed_at,
+        notes=notes,
+    )
+    return MergeOutcome(
+        player_id=player_id,
+        skills_written=written,
+        skills_ignored=ignored,
+        notes=tuple(notes),
+    )
+
+
 def merge_sync_payload(
     session: Session,
     payload: Mapping[str, Any],

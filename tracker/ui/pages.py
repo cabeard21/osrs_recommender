@@ -220,19 +220,32 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
     @ui.page("/settings")
     def settings_page() -> None:
         with page("Settings", path="/settings"):
+            # Deliberately **not** gated on ``NO_PLAYER`` like every other page. Naming the
+            # character is what a fresh install does *before* it has a player row, so the one
+            # page that can create one must render without it — otherwise a user with no
+            # RuneLite plugin has no way in at all, which is the §7.2 bootstrap gap.
             with session_factory()() as session:
                 player_id = read_model.first_player_id(session)
-                if player_id is None:
-                    empty_state(NO_PLAYER)
-                    return
                 view = read_model.settings_view(session, player_id, settings())
 
             def set_sensitivity(sensitivity: GpSensitivity) -> None:
+                if player_id is None:
+                    return
                 with session_factory()() as write_session:
                     read_model.set_gp_sensitivity(write_session, player_id, sensitivity)
                 ui.navigate.reload()
 
-            settings_view.render(view, on_set_sensitivity=set_sensitivity)
+            def set_username(username: str) -> None:
+                if not username.strip():
+                    return
+                with session_factory()() as write_session:
+                    read_model.set_tracked_username(write_session, player_id, username)
+                    write_session.commit()
+                ui.navigate.reload()
+
+            settings_view.render(
+                view, on_set_sensitivity=set_sensitivity, on_set_username=set_username
+            )
 
     @ui.page("/history")
     def history_page() -> None:

@@ -21,7 +21,7 @@ estimation,domain}/`` and deliberately not this package.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -47,6 +47,7 @@ from tracker.db.repository import (
     get_active_roadmaps,
     get_container_scans,
     get_player,
+    get_player_by_username,
     get_unlocks,
     set_active_roadmap,
 )
@@ -703,7 +704,7 @@ def set_roadmap_weight(session: Session, player_id: int, roadmap_id: str, weight
 # ---------------------------------------------------------------------------
 
 
-def settings_view(session: Session, player_id: int, settings: Settings) -> SettingsView:
+def settings_view(session: Session, player_id: int | None, settings: Settings) -> SettingsView:
     """The settings page's whole state: the player's live preference plus app config.
 
     ``api_token_present`` reads only whether the configured token is non-empty — Settings
@@ -711,16 +712,54 @@ def settings_view(session: Session, player_id: int, settings: Settings) -> Setti
     so the page can say "configured" without the token value ever reaching a template
     (§15: *"token presence, never the token value"*).
     """
-    player = get_player(session, player_id)
+    player = get_player(session, player_id) if player_id is not None else None
     prices = settings.integrations.prices
     return SettingsView(
         gp_sensitivity=player.gp_sensitivity if player is not None else GpSensitivity.NORMAL,
+        tracked_username=player.username if player is not None else None,
         bind_address=settings.bind_address,
         port=settings.port,
         api_token_present=bool(settings.api_token),
         price_provider=prices.provider,
         price_base_url=prices.base_url,
+        wom_base_url=settings.integrations.wise_old_man.base_url,
     )
+
+
+def set_tracked_username(session: Session, player_id: int | None, username: str) -> int:
+    """Name the account WOM should follow, creating the ``Player`` row if there is none.
+
+    **This is the bootstrap §7.2 otherwise cannot have.** WOM exists to advance skill data
+    while RuneLite is closed, but until now the only writer of ``Player.username`` was a sync
+    payload — so the app could not learn a username without the very plugin WOM covers for.
+    A user who has not installed the plugin could never use WOM at all.
+
+    §6.11 is not weakened by this. Identity still comes from a username and never from a
+    caller-supplied id, and this path sits behind the same bearer auth as everything else on
+    ``/api``; what changes is only that a human at the settings page is now an accepted
+    source of that username alongside the plugin.
+
+    ``last_sync_at`` is deliberately left ``NULL`` on a row created here. A6 makes that column
+    mean *"the account's own scalars have been observed"*, and naming an account observes
+    nothing — so ``combat_level`` and ``quest_points`` keep resolving ``unknown`` until a real
+    sync, which is the honest answer and the one G3 requires.
+    """
+    cleaned = username.strip()
+    if not cleaned:
+        raise ValueError("username must not be blank — it is WOM's only lookup key (§6.1)")
+
+    player = get_player(session, player_id) if player_id is not None else None
+    if player is None:
+        existing = get_player_by_username(session, cleaned)
+        if existing is not None:
+            return existing.id
+        created = Player(username=cleaned, display_name=cleaned, created_at=datetime.now(UTC))
+        session.add(created)
+        session.flush()
+        return created.id
+
+    player.username = cleaned
+    return player.id
 
 
 def set_gp_sensitivity(session: Session, player_id: int, sensitivity: GpSensitivity) -> None:

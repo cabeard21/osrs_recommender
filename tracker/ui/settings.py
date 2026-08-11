@@ -26,6 +26,7 @@ from tracker.ui.shell import section
 from tracker.ui.view_model import GP_SENSITIVITY_LABELS, SENSITIVITY_QUESTION, SettingsView
 
 SensitivityHandler = Callable[[GpSensitivity], None]
+UsernameHandler = Callable[[str], None]
 
 #: Display order for the three-way question — strongest deprioritization first, since that
 #: is the more common PvP-progression choice (§9.6's own table orders it this way too).
@@ -36,8 +37,32 @@ _SENSITIVITY_ORDER: tuple[GpSensitivity, ...] = (
 )
 
 
-def render(view: SettingsView, *, on_set_sensitivity: SensitivityHandler) -> None:
-    """The whole page: the sensitivity question, roadmap-adjacent config, and attribution."""
+def render(
+    view: SettingsView,
+    *,
+    on_set_sensitivity: SensitivityHandler,
+    on_set_username: UsernameHandler,
+) -> None:
+    """The whole page: the tracked character, the sensitivity question, config, attribution."""
+    with section("Character", testid="settings-character"):
+        ui.html(
+            "The account Wise Old Man follows. Set this to keep skills current while "
+            "RuneLite is closed — it is also filled in automatically by your first sync."
+        ).classes("text-sm block mb-1")
+        field = ui.input(
+            label="RuneScape username",
+            value=view.tracked_username or "",
+            on_change=lambda event: on_set_username(str(event.value)),
+        )
+        field.props(
+            "data-testid=tracked-username "
+            f"data-configured={str(view.tracked_username is not None).lower()}"
+        )
+        if view.tracked_username is None:
+            note = ui.html("No character set — Wise Old Man cannot look anything up yet.")
+            note.classes("text-xs opacity-60")
+            note.props("data-testid=no-username-note")
+
     with section("Upgrade cost", testid="settings-sensitivity"):
         ui.html(SENSITIVITY_QUESTION).classes("text-sm block mb-1")
         group = ui.radio(
@@ -65,4 +90,7 @@ def render(view: SettingsView, *, on_set_sensitivity: SensitivityHandler) -> Non
     footer = ui.element("p").classes("text-xs opacity-60 mt-2")
     footer.props("data-testid=price-attribution")
     with footer:
-        ui.html(f"Prices from {view.price_provider} ({view.price_base_url}).")
+        ui.html(
+            f"Prices from {view.price_provider} ({view.price_base_url}). "
+            f"Skill data from Wise Old Man ({view.wom_base_url})."
+        )

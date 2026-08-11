@@ -33,6 +33,9 @@ from tracker.config.settings import Settings, load_settings
 from tracker.content.loader import Content, load_content
 from tracker.db.session import build_engine, build_session_factory
 from tracker.integrations.prices.client import PricesClient
+from tracker.integrations.wise_old_man.client import WiseOldManClient
+from tracker.sync.scheduler import RefreshScheduler
+from tracker.sync.worker import SingleFlightRefresher
 
 
 def create_app(
@@ -42,6 +45,7 @@ def create_app(
     content: Content | None = None,
     prices_client: PricesClient | None = None,
     mount_ui: bool = True,
+    start_scheduler: bool = False,
 ) -> FastAPI:
     """Build the whole application: sync API, health endpoint, and the NiceGUI UI.
 
@@ -72,7 +76,44 @@ def create_app(
     if mount_ui:
         _mount_ui(app, resolved)
 
+    if start_scheduler:
+        _attach_scheduler(app, resolved, factory, getattr(app.state, CONTENT_ATTR))
+
     return app
+
+
+def _attach_scheduler(
+    app: FastAPI,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+    content: Content,
+) -> None:
+    """Start the periodic price + WOM refresh with the app, and stop it with the app.
+
+    ``start_scheduler`` defaults to off so that importing or building the app in a test does
+    not start a thread that outlives it and issues real outbound requests. ``main`` turns it
+    on; that asymmetry is the point, and it mirrors ``mount_ui``.
+
+    The client factories are passed rather than clients: each refresh opens and closes its
+    own HTTP client, so a connection idle for an hour between ticks is never reused after the
+    peer has forgotten it.
+    """
+    refresher = SingleFlightRefresher(
+        session_factory,
+        content,
+        settings,
+        client_factory=lambda: PricesClient(settings.integrations.prices),
+        wom_client_factory=lambda: WiseOldManClient(settings.integrations.wise_old_man),
+    )
+    scheduler = RefreshScheduler(refresher, session_factory)
+
+    @app.on_event("startup")
+    async def _start_scheduler() -> None:  # pragma: no cover — exercised by the app run
+        scheduler.start()
+
+    @app.on_event("shutdown")
+    async def _stop_scheduler() -> None:  # pragma: no cover — exercised by the app run
+        await scheduler.stop()
 
 
 def _mount_ui(app: FastAPI, settings: Settings) -> None:
@@ -120,7 +161,7 @@ def main() -> None:
     module in a subprocess that re-reads it anyway.
     """
     settings = load_settings()
-    app = create_app(settings)
+    app = create_app(settings, start_scheduler=True)
     print(startup_banner(settings))
     uvicorn.run(app, host=settings.bind_address, port=settings.port)
 

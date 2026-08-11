@@ -35,7 +35,9 @@ from tracker.content.loader import Content
 from tracker.db.persist_prices import DatabasePriceCache
 from tracker.db.session import session_scope
 from tracker.integrations.prices.client import PricesClient
+from tracker.integrations.wise_old_man.client import WiseOldManClient
 from tracker.sync.pipeline import PipelineResult, run_pipeline
+from tracker.sync.wom_import import WomImportOutcome, import_wom_skills
 
 #: How often the scheduled refresh fires. Deliberately well under the 12-hour price TTL and
 #: well over any plausible WOM update rate: the poll costs nothing when nothing has expired
@@ -56,6 +58,10 @@ class RefreshOutcome:
     ran: bool
     skipped_reason: str | None = None
     result: PipelineResult | None = None
+    #: What the WOM import did, when one was attempted. ``None`` means no WOM client was
+    #: configured; a ``WomImportOutcome`` with ``ran=False`` means one was tried and WOM was
+    #: unreachable — a distinction the UI needs, since only the second is worth reporting.
+    wom: WomImportOutcome | None = None
 
 
 class SingleFlightRefresher:
@@ -78,12 +84,14 @@ class SingleFlightRefresher:
         settings: Settings,
         *,
         client_factory: Callable[[], PricesClient] | None = None,
+        wom_client_factory: Callable[[], WiseOldManClient] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._content = content
         self._settings = settings
         self._client_factory = client_factory
+        self._wom_client_factory = wom_client_factory
         self._clock = clock or (lambda: datetime.now(UTC))
         self._lock = threading.Lock()
         self._last_manual_refresh_at: datetime | None = None
@@ -106,6 +114,7 @@ class SingleFlightRefresher:
             client = self._client_factory() if self._client_factory is not None else None
 
             with session_scope(self._session_factory) as session:
+                wom = self._import_wom(session, player_id)
                 cache = DatabasePriceCache(
                     session, last_manual_refresh_at=self._last_manual_refresh_at
                 )
@@ -121,6 +130,24 @@ class SingleFlightRefresher:
                 )
                 self._last_manual_refresh_at = cache.last_manual_refresh_at()
 
-            return RefreshOutcome(ran=True, result=result)
+            return RefreshOutcome(ran=True, result=result, wom=wom)
         finally:
             self._lock.release()
+
+    def _import_wom(self, session: Session, player_id: int) -> WomImportOutcome | None:
+        """Pull WOM's skill read in, before the pipeline projects ``PlayerState``.
+
+        **Order is the whole point.** ``run_pipeline`` builds ``PlayerState`` from the
+        database at stage 4, so a WOM merge that landed after it would be invisible until the
+        *next* refresh an hour later. Merging first means one refresh incorporates one WOM
+        read, which is what §5's "background sync worker" is for.
+
+        It runs inside the same transaction and the same single-flight lock as the rest of
+        the refresh. That is deliberate: two concurrent refreshes would otherwise issue two
+        WOM fetches for one account, which is the sustained-volume pattern §7.5 exists to
+        keep the app clear of.
+        """
+        if self._wom_client_factory is None:
+            return None
+        with self._wom_client_factory() as client:
+            return import_wom_skills(session, player_id, client=client)

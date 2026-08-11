@@ -525,11 +525,16 @@ class SettingsView:
     """
 
     gp_sensitivity: GpSensitivity
+    #: The account WOM follows (§7.2), or ``None`` when no character has been named yet.
+    #: ``None`` is the state a fresh install is in before either a sync or a settings entry,
+    #: and the page must offer to fix it rather than render an empty box.
+    tracked_username: str | None
     bind_address: str
     port: int
     api_token_present: bool
     price_provider: str
     price_base_url: str
+    wom_base_url: str
 
     @property
     def sensitivity_label(self) -> str:

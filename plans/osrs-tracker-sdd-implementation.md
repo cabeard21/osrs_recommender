@@ -1513,6 +1513,25 @@ kill %1
 - [ ] Hysteresis demonstrably prevents churn across two near-identical runs
 - [ ] App refuses to start with `bind_address: 0.0.0.0` or a missing token
 - [ ] `docs/DEPLOYMENT.md` covers §11.4 and §11.5
+- [x] **The background worker is actually started by the running app**, not merely defined —
+      task 6 shipped `SingleFlightRefresher` with no production caller, so neither the price
+      TTL refresh nor the WOM poll ever fired. `tests/sync/test_scheduler.py` owns this.
+- [x] **The periodic WOM poll exists and runs** (§7.2). Task 6 named it; these criteria did
+      not, which is why it went unbuilt through Steps 9–13 while its client sat fully tested
+      and unwired. `tests/sync/test_wom_import.py` owns it, including **G4** for the WOM
+      writer specifically — the source §7.4 rule 3 was written against.
+- [x] A username can be set **without a sync** (settings page), or §7.2's whole premise —
+      *"keep skills current while RuneLite is closed"* — is unreachable on an install that
+      has never run the plugin. `tests/ui/test_tracked_username.py` owns it.
+- [x] A WOM import never advances `last_sync_at` (A6), so a WOM-only account keeps reporting
+      `combat_level` and `quest_points` as `unknown` rather than asserting an observation
+      that never happened.
+
+> **Retrospective — why these four were missing.** Task 6 read *"Background worker: periodic
+> WOM poll + price TTL refresh"* and the exit criteria checked neither half. Every invariant
+> G1–G10 has a named owning step **and** a test; this task had neither, so nothing was
+> watching it. The lesson is not "write more tasks" but that a task without a matching exit
+> criterion is a task nobody verifies. Closed 2026-08-11.
 
 ## Rollback
 
