@@ -7,7 +7,7 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c**, **9** and **10** merged 2026-08-09; 1045 tests. The app runs end to end: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations, and the dashboard, capabilities, unlocks and skills views render them. Next: **11** (UI part 2), with **13** unblocked and parallel; **8.5** is blocked on the user gate below.
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c**, **9**, **10** and **11** merged 2026-08-11; 1086 tests. The app runs end to end: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations, and the full nine-view UI (dashboard, capabilities, unlocks, skills, recommendations, practice freshness, roadmaps, settings, history) renders them. Next: **13** (unblocked, parallel with 12); **8.5** and **12** are blocked on the user gates below.
 
 > **Step 9 deviation, deliberate.** Tasks 3 and 4 name `tracker/progression/persist.py` and
 > `tracker/recommendations/persist.py`. Both packages sit inside §16.1's purity boundary,
@@ -23,6 +23,24 @@
 > Chromium; run `make browsers` once. Step 10 also added `tracker/ui/{states,view_model,
 > read_model,staleness}.py` — the §15 honesty rules are decided there, as pure data, so
 > Step 11's views inherit them rather than re-deciding them in a `ui.label(...)` call.
+
+> **Step 11 notes.** Three judgment calls the plan and SDD left open. (1) **Deferred
+> refreshers are not persisted.** §6.10's `RecommendationEntry` has no column for a
+> refresher's stale membership or for the refreshers §9.8's list policy pushed out of the
+> primary list — `RecommendationRun.deferred_refreshers` is computed and discarded by the
+> pipeline. The Practice freshness view therefore recomputes *every* triggered group live,
+> through the same pure `tracker.recommendations.refreshers.practice_candidates`, and
+> subtracts whichever candidate id the latest snapshot persisted as the primary list's one
+> `REFRESHER` entry (`read_model.primary_refresher_id`) — never a second scoring pass, only
+> the same primitive read twice. (2) **"Unlocks"/"Advances" are read from content, not
+> stored.** Neither line is a `RecommendationEntry` column; they are read off
+> `Candidate.grants_facts`' `unlock:` leaves and `Candidate.advances`/`RefresherTemplate.
+> advances` at render time, joined back to the persisted entry by `candidate_id`. (3)
+> **Practice prompts are narrowed to `kind: self_attested` milestones.** No content
+> currently declares a `kind: derived` execution milestone, but §9.8's "no prompt at all
+> for derived evidence" rule is enforced structurally in `read_model.stale_practice_groups`
+> rather than left to hold only by the corpus's current shape. All three are candidate
+> amendments — see the note under §20.
 
 > **Read this first if you are a fresh agent.** Every step is self-contained: it restates the
 > design context it needs. You do **not** need to read prior steps or the whole SDD to execute
@@ -1668,12 +1686,33 @@ make test ARGS="tests/ui -v" && make lint && make test
 
 ## Exit criteria
 
-- [ ] Every estimate below `high` carries a `data-confidence` marker (§8.4)
-- [ ] At most one refresher in the primary list; the rest in Practice freshness (G10)
-- [ ] Both completion actions present and behaviourally distinct
-- [ ] Settings uses user language — no "κ", "kappa" or "GP sensitivity" in the rendered page
-- [ ] History shows `scoring_profile_version` alongside each snapshot
-- [ ] "Why" strings come from persisted `reason`, not new UI prose
+- [x] Every estimate below `high` carries a `data-confidence` marker (§8.4) — every
+      confidence chip carries the attribute unconditionally (`components/badges.py`,
+      inherited from Step 10); `test_the_recommendations_page_shows_the_persisted_reason_
+      and_confidence` asserts `[data-confidence="medium"]` against the seeded entry.
+- [x] At most one refresher in the primary list; the rest in Practice freshness (G10) —
+      `view_model.assert_at_most_one_refresher` runs at render time;
+      `test_at_most_one_refresher_renders_in_the_primary_list` (browser) and
+      `test_three_stale_groups_yield_exactly_one_primary_refresher_and_two_deferred`
+      (synthetic three-group scenario, since the real corpus only declares two) both check
+      the split end to end.
+- [x] Both completion actions present and behaviourally distinct — `mark-session-complete`
+      (no selection step) vs. `review-individual`/`review-skill-checkbox` (explicit,
+      unchecked-by-default selection), both wired to the same
+      `read_model.refresh_milestones` with different key sets;
+      `test_refresh_milestones_moves_only_the_requested_keys` and the matching browser test
+      assert the two never collapse into one control.
+- [x] Settings uses user language — no "κ", "kappa" or "GP sensitivity" in the rendered page
+      — `test_settings_never_says_kappa_or_gp_sensitivity` reads the rendered page's body
+      text and asserts the absence of all three, plus the presence of the exact §9.6
+      question.
+- [x] History shows `scoring_profile_version` alongside each snapshot —
+      `test_history_shows_the_scoring_profile_version_with_each_snapshot` reads the
+      `data-profile-version` attribute and the rendered "scoring profile vN" text.
+- [x] "Why" strings come from persisted `reason`, not new UI prose —
+      `test_the_recommendations_page_shows_the_persisted_reason_and_confidence` and
+      `test_the_why_line_on_a_progression_entry_is_the_persisted_reason` assert the
+      rendered/read text equals the stored `RecommendationEntry.reason` verbatim.
 
 ## Rollback
 
