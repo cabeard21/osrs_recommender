@@ -55,13 +55,16 @@ judgments:
         multi-day conservative grind into a few hours — and DT1 is itself a hard requirement
         of ice_barrage_nh. Grinding first is strictly dominated. `quest: in_progress`
         evaluates `unsatisfied` (A5), so the quest candidate is genuinely still open.
-      pending_review: >
-        D2 in docs/TUNING.md, and the corpus's most interesting disagreement. §9.4 has no
-        factor for *"this candidate makes another candidate cheaper"*: `leverage` counts
-        capability status flips, and DT1 flips none here because Ancients are already
-        unlocked and 94 Magic is still missing. The engine cannot see the 250k/hr method
-        waiting behind the quest, so no weight vector expresses the reason this judgment is
-        right. Almost certainly a modelling gap rather than a tuning one.
+      resolved_by: >
+        D2 in docs/TUNING.md — the corpus's most interesting disagreement, and the one that
+        changed the specification rather than the weights. §9.4 had no factor for *"this
+        candidate makes another candidate cheaper"*: `leverage` counts capability status
+        flips, and DT1 flips none here because Ancients are already unlocked and 94 Magic is
+        still missing. The engine could not see the 250k/hr method waiting behind the quest,
+        so no weight vector expressed the reason this judgment is right — it was a modelling
+        gap, not a tuning one. Closed by A30's `method_unlock` factor, live at 0.1 in
+        profile v2. This judgment now passes because the engine can finally see the reason,
+        not because a weight was bent until the answer came out right.
     - pair: [complete_desert_treasure_i, buy_voidwaker]
       because: >
         §16.2's first judgment survives the spellbook being unlocked: DT1 is still a

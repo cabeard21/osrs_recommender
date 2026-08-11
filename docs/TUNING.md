@@ -457,7 +457,19 @@ in the corpus where the two factors pull in opposite directions.
 
 ---
 
-### D4 — the tie-break cannot choose between two 100% profiles · **OPEN, and it blocks the profile write**
+### D4 — the tie-break cannot choose between two 100% profiles · **RESOLVED — option 1**
+
+> **Ruling (§16.3 step 5, human review).** Ship **`method_unlock: 0.1`**, leave `effort_decay`
+> at `0.7`. Persisted in `content/scoring/profile.yaml` v2, tuned against `b978d44`. The
+> reasoning below stands as recorded — the plateau/knife-edge asymmetry is what decided it:
+> a value that works across `[0.1, 1.0]` is a mechanism, and a value that works only at `0.8`
+> is a coincidence.
+>
+> **The fourth item is deliberately deferred.** §4's tie-break bias is *not* being fixed now.
+> It is documented, it is understood, and it costs nothing until a seventh factor is proposed
+> — at which point it will misreport that factor as worthless in exactly the way it misreported
+> this one. Whoever adds that factor should read this entry **before** trusting the search's
+> output. Deferring is the reviewer's call, not an oversight.
 
 **Scenario:** 10 `blocked_fast_method` again — the same pair D2 is about, now closeable two
 different ways.

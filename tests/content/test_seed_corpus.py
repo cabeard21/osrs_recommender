@@ -27,7 +27,7 @@ def content() -> Content:
 
 class TestShape:
     def test_the_shipped_corpus_validates(self, content: Content) -> None:
-        assert content.profile.version == 1
+        assert content.profile.version == 2
 
     def test_capabilities(self, content: Content) -> None:
         assert set(content.capabilities) == {
@@ -221,10 +221,15 @@ class TestScoringProfile:
         assert profile.weights.proximity == 0.6
         assert profile.weights.effort_decay == 0.7
         assert profile.weights.cost_decay == 0.5
-        assert profile.weights.method_unlock == 0.0  # A30 — authored, and inert in v1
+        assert profile.weights.method_unlock == 0.1  # A30 — live in v2 (D4)
         assert profile.refresher.max_in_primary_list == 1  # G10
         assert profile.refresher.breadth_bonus_cap == 0.10
 
-    def test_is_declared_untuned(self, content: Content) -> None:
-        """§9.4 — the shipped weights are provisional priors, not measured values."""
-        assert content.profile.tuned_against_corpus is None
+    def test_is_declared_tuned_against_a_named_corpus(self, content: Content) -> None:
+        """§16.3 step 7 — a tuned profile must name the corpus it was tuned against.
+
+        The point is traceability, not the specific hash: a weight vector with no corpus
+        behind it is indistinguishable from a guess, which is exactly what ``version: 1``
+        declared by leaving this ``None``.
+        """
+        assert content.profile.tuned_against_corpus == "b978d44"

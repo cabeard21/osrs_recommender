@@ -7,7 +7,13 @@
 | **Mode** | Direct mode → git mode after Step 1 (`git init -b main` is a Step 1 task; no remote, no `gh`) |
 | **Steps** | 15 numbered, 24 executable units (several steps split into sub-steps) |
 | **Repo root** | `/mnt/linux-fast/Repo/osrs_recommender` |
-| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c**, **9**, **10** and **11** merged 2026-08-11; 1086 tests. The app runs end to end: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations, and the full nine-view UI (dashboard, capabilities, unlocks, skills, recommendations, practice freshness, roadmaps, settings, history) renders them. Next: **13** (unblocked, parallel with 12); **8.5** and **12** are blocked on the user gates below.
+| **Status** | In progress — **1**, **2a**, **2b**, **2c**, **2.5**, **3a**, **3b**, **4**, **5**, **6**, **7** complete and merged to `main` (2026-08-06); **8a**, **8b**, **8c**, **9**, **10** and **11** merged 2026-08-11; 1086 tests. The app runs end to end: a live authenticated `POST /api/sync` merges, refreshes and returns ranked recommendations, and the full nine-view UI (dashboard, capabilities, unlocks, skills, recommendations, practice freshness, roadmaps, settings, history) renders them. **13** and **13b** merged 2026-08-11; 1211 tests, no xfails. The scoring profile is now
+**tuned**: `version: 2`, `tuned_against_corpus: b978d44`, agreeing with 52/52 pairwise
+judgments. §16.3 step 5's review is complete — its four rulings (D1–D4) are recorded in
+`docs/TUNING.md`, and one of them, D2, closed by amending the specification (A30's
+`method_unlock` factor) rather than by moving a weight. **Every agent-executable unit of this
+plan is now done.** Remaining: **8.5** and **12a/12b/12c**, both blocked on the user gates
+below — they need a local RuneLite install, a human at the keyboard, and Gradle.
 
 > **Step 9 deviation, deliberate.** Tasks 3 and 4 name `tracker/progression/persist.py` and
 > `tracker/recommendations/persist.py`. Both packages sit inside §16.1's purity boundary,

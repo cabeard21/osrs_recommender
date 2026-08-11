@@ -1,12 +1,14 @@
 # §9.7. These are tuning knobs, not game facts, and §10.8 puts them in content so a
 # retune is not a code change.
 #
-# The weights are **provisional priors, not tuned values** (§9.4). Step 13 tunes them
-# against the golden corpus and sets tuned_against_corpus; until then it stays null so
-# nobody mistakes these for measured numbers.
+# These weights are **tuned**, not provisional (§16.3). They agree with 52/52 of the
+# pairwise judgments in the corpus named by tuned_against_corpus. Every disagreement the
+# search surfaced was reviewed by hand (§16.3 step 5) and its ruling recorded in
+# docs/TUNING.md — seven judgments were withdrawn as wrong, and one modelling gap became
+# A30's method_unlock factor rather than being absorbed into a weight.
 scoring_profile:
-  version: 1
-  tuned_against_corpus: null
+  version: 2
+  tuned_against_corpus: b978d44
   tau_hours: 10
   kappa_gp: {high: 8000000, normal: 20000000, low: 50000000}
   observation_aged_days: 14
@@ -22,11 +24,14 @@ scoring_profile:
     proximity: 0.6
     effort_decay: 0.7
     cost_decay: 0.5
-    # A30's sixth factor ships **inert** in v1: 0 · ln(f) = 0 for every candidate, so this
-    # profile scores exactly what it scored before the factor existed. The weight is
-    # authored rather than defaulted because §10.8 will not have a factor's influence
-    # decided in code — and a measured value is what §16.3's retune sets in v2.
-    method_unlock: 0.0
+    # A30's sixth factor, live in v2. 0.1 is the low end of a broad plateau — every value
+    # in [0.1, 1.0] agrees with all 52 judgments — which is why it is preferred over the
+    # knife-edge effort_decay: 0.8 that reaches the same 52/52 (0.9 breaks scenario 18).
+    # Deliberately small: the factor only needs to break the scenario-10 tie it was built
+    # to explain, not to outweigh the relevance factors. See D4 in docs/TUNING.md, which
+    # also records why the search proposes 0.0 here — its tie-break prefers the shipped
+    # profile, and a newly added factor is 0.0 in the shipped profile by construction.
+    method_unlock: 0.1
   refresher:
     max_in_primary_list: 1
     breadth_bonus_per_extra_member: 0.03
