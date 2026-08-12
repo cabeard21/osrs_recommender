@@ -27,8 +27,42 @@ cd spike/snapshot-spike
 ./gradlew runClient      # launches RuneLite in developer mode with the spike loaded
 ```
 
-`runClient` starts a normal RuneLite client. Nothing is copied into
-`~/.runelite/sideloaded-plugins` — real side-loading is Step 12's human gate, not this one.
+`runClient` starts a normal RuneLite client with `-ea` (which `ExternalPluginManager.loadBuiltin`
+asserts on) and `--developer-mode`.
+
+### If you use a Jagex account
+
+You cannot side-load into a launcher-started client, and this is by design — verified against
+`client-1.12.35`:
+
+```
+developerMode = options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null
+```
+
+The RuneLite launcher sets `runelite.launcher.version`, so a launcher-started client forces
+developer mode **off**, and `PluginManager.loadSideLoadPlugins()` returns immediately without it.
+Putting a jar in `~/.runelite/sideloaded-plugins` and launching through the Jagex Launcher does
+nothing at all. Setting `--developer-mode` as a launcher client argument does not help either:
+the launcher-version check defeats it.
+
+The supported route is to borrow the launcher's credentials. `injected-client-1.12.35.jar` reads
+`JX_SESSION_ID` / `JX_ACCESS_TOKEN` / `JX_REFRESH_TOKEN` / `JX_CHARACTER_ID` / `JX_DISPLAY_NAME`
+from the Jagex Launcher, and under the client's `--insecure-write-credentials` flag it dumps them
+to `credentials.properties`, which the Gradle-run client then reuses:
+
+1. `G:\RuneLite\RuneLite.exe --configure` — set **Client arguments** to
+   `--insecure-write-credentials`. The launcher persists this to `~/.runelite/settings.json`.
+2. Launch RuneLite from the Jagex Launcher as usual and log in. No PIN prompt: the launcher
+   holds the session. This writes `credentials.properties` (look in `~/.runelite/`; the client
+   also honours `-Drunelite.credentials.path`).
+3. Close that client, then run `./gradlew runClient`. It picks up the dumped credentials and
+   logs in as the same account.
+4. Capture, then **clean up**: clear the client argument in `--configure` and delete
+   `credentials.properties`. That file holds live access and refresh tokens for your account —
+   treat it exactly like a password, and never let it near a commit.
+
+The flag is named `insecure` for a reason; it is a development-only detour, and Step 12's real
+plugin needs none of it (it side-loads into a developer-mode client, or is run the same way).
 
 Then, in the client:
 

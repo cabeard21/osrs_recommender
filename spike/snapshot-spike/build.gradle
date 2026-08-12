@@ -48,3 +48,10 @@ tasks.register('runClient', JavaExec) {
     jvmArgs = ['-ea']
     args = ['--developer-mode']
 }
+
+// There is deliberately no `installSideload` task. Checked against client-1.12.35:
+// RuneLite.main computes developerMode as `has("developer-mode") && launcherVersion == null`,
+// and PluginManager.loadSideLoadPlugins() returns immediately unless developerMode. A client
+// started by the RuneLite/Jagex launcher always has a launcher version, so it can never load a
+// side-loaded plugin. Dropping a jar into ~/.runelite/sideloaded-plugins does nothing there.
+// Jagex-account logins therefore go through credentials.properties — see spike/README.md.
