@@ -18,3 +18,4 @@ spike/*/build/
 htmlcov/
 *.egg-info/
 credentials.properties
+snapshot.json

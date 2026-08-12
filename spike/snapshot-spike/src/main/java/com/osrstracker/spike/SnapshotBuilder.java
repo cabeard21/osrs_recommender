@@ -3,6 +3,7 @@ package com.osrstracker.spike;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.runelite.api.Client;
+import net.runelite.api.HashTable;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Player;
@@ -73,6 +74,7 @@ final class SnapshotBuilder
 		collectBank(client, bankWatch, observedItems, containerScans, raw);
 		root.add("observed_items", observedItems);
 		root.add("container_scans", containerScans);
+		raw.add("item_containers_present", presentContainers(client));
 
 		// No practice_events: the spike does no detection (plan step 8.5 task 1). Step 12c owns it.
 
@@ -242,8 +244,10 @@ final class SnapshotBuilder
 	private static void collectContainer(Client client, int inventoryId, String container, Instant now,
 		JsonArray observedItems, JsonArray containerScans, JsonObject raw)
 	{
-		final ItemContainer itemContainer = client.getItemContainer(inventoryId);
+		final ItemContainer itemContainer = findContainer(client, inventoryId);
 		final JsonObject diagnostics = new JsonObject();
+		diagnostics.addProperty("requested_id", inventoryId);
+		diagnostics.addProperty("resolved_by", resolutionPath(client, inventoryId));
 		diagnostics.addProperty("container_null", itemContainer == null);
 		if (itemContainer == null)
 		{
@@ -271,8 +275,9 @@ final class SnapshotBuilder
 	private static void collectBank(Client client, BankWatch bankWatch, JsonArray observedItems,
 		JsonArray containerScans, JsonObject raw)
 	{
-		final ItemContainer bank = client.getItemContainer(InventoryID.BANK);
+		final ItemContainer bank = findContainer(client, InventoryID.BANK);
 		final JsonObject diagnostics = new JsonObject();
+		diagnostics.addProperty("resolved_by", resolutionPath(client, InventoryID.BANK));
 		diagnostics.addProperty("ever_opened_this_session", bankWatch.everOpened());
 		diagnostics.addProperty("container_null", bank == null);
 		diagnostics.addProperty("last_opened_at", bankWatch.openedAt() == null ? null : rfc3339(bankWatch.openedAt()));
@@ -295,6 +300,67 @@ final class SnapshotBuilder
 			diagnostics.addProperty("scan_emitted", false);
 		}
 		raw.add("bank", diagnostics);
+	}
+
+	/**
+	 * The first capture came back with every container null — inventory, equipment and bank
+	 * alike, on a LOGGED_IN client whose bank had been opened and closed. The gameval ids are
+	 * right (INV=93, WORN=94, BANK=95, identical to the deprecated enum's), so the id-keyed
+	 * lookup itself is what failed. {@link Client#getItemContainers()} is an iterable hash table
+	 * of everything the client currently holds, so fall back to scanning it rather than
+	 * concluding the account owns nothing.
+	 */
+	private static ItemContainer findContainer(Client client, int inventoryId)
+	{
+		final ItemContainer direct = client.getItemContainer(inventoryId);
+		if (direct != null)
+		{
+			return direct;
+		}
+
+		final HashTable<ItemContainer> table = client.getItemContainers();
+		if (table == null)
+		{
+			return null;
+		}
+		for (ItemContainer candidate : table)
+		{
+			if (candidate.getId() == inventoryId || candidate.getHash() == inventoryId)
+			{
+				return candidate;
+			}
+		}
+		return null;
+	}
+
+	/** Which path produced the container — the finding itself, recorded per container. */
+	private static String resolutionPath(Client client, int inventoryId)
+	{
+		if (client.getItemContainer(inventoryId) != null)
+		{
+			return "direct";
+		}
+		return findContainer(client, inventoryId) != null ? "hash_table_scan" : "none";
+	}
+
+	/** Every container the client currently holds. Evidence, not guesswork, for the next diff. */
+	private static JsonArray presentContainers(Client client)
+	{
+		final JsonArray out = new JsonArray();
+		final HashTable<ItemContainer> table = client.getItemContainers();
+		if (table == null)
+		{
+			return out;
+		}
+		for (ItemContainer container : table)
+		{
+			final JsonObject entry = new JsonObject();
+			entry.addProperty("id", container.getId());
+			entry.addProperty("hash", container.getHash());
+			entry.addProperty("size", container.size());
+			out.add(entry);
+		}
+		return out;
 	}
 
 	/** @return how many placeholder/empty slots were skipped — schema requires quantity ≥ 1. */
