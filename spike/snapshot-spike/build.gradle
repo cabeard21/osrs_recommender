@@ -1,0 +1,47 @@
+// Step 8.5 spike — throwaway. Nothing here ships; the whole `spike/` tree is deleted once
+// `docs/CONTRACT_RECONCILIATION.md` is written and the schema is frozen. Step 12a builds the
+// real plugin in `plugin/`, against the frozen contract.
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenLocal()
+    maven { url = 'https://repo.runelite.net' }
+    mavenCentral()
+}
+
+// Pin to the client this machine actually runs (~/.runelite/repository2 holds
+// client-1.12.35.jar). §13.1 stage 1 is "manually matched app/plugin versions".
+def runeLiteVersion = '1.12.35'
+
+dependencies {
+    compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+    testImplementation 'junit:junit:4.13.2'
+}
+
+java {
+    // RuneLite 1.12.x targets Java 11; the machine has Temurin 17, which can target 11.
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // Deprecations matter here: `Varbits`/`VarPlayer` are being superseded by `gameval`, and
+    // which one Step 12a should target is itself a reconciliation finding.
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
+// `gradlew runClient` launches RuneLite in developer mode with this plugin loaded — no jar
+// copying into ~/.runelite/sideloaded-plugins, which is the Step 12 concern, not this one.
+tasks.register('runClient', JavaExec) {
+    group = 'application'
+    description = 'Launch RuneLite with the snapshot spike loaded (developer mode).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.osrstracker.spike.SnapshotSpikeLauncher'
+}
