@@ -61,6 +61,20 @@ only `spellbook_*`, `diary_*` and `ca_*`. Step 12b must author the varbit mappin
 prayer and spellbook unlocks. **This is a collection gap, not a contract gap** — the schema
 already carries arbitrary `content_key` unlock rows, so no version bump is implied.
 
+> **Closed in Step 12b, except one.** `rigour` and `augury` come from
+> `gameval.VarbitID.PRAYER_RIGOUR_UNLOCKED` / `PRAYER_AUGURY_UNLOCKED` — which exist *only* in
+> `gameval`, not in the deprecated `Varbits`. Note `Varbits.PRAYER_RIGOUR` is the **active**
+> prayer, the same trap as `SPELLBOOK`: using it would report Rigour locked whenever it happened
+> to be switched off. `ancient_magicks` and `spellbook_*` are derived from the granting quest,
+> per §3 below. So the plugin depends on both classes deliberately — the deprecated one for its
+> *named* diary and CA constants, `gameval` for the unlock flags only it exposes.
+>
+> **`protect_item` cannot be collected, because it is not an unlock.** Protect Item is a
+> Prayer-25 level gate; no varbit witnesses it and inventing one in Java would be game content
+> in code (G9). **This is a content bug, not a plugin gap:** `content/` should express it as
+> `skill: {prayer: 25}` rather than `unlock: protect_item`. Left as authored, that leaf will
+> evaluate `unknown` forever — which is honest, and visible, but wrong.
+
 ### 3. Spellbook — **the spike's reading is wrong, and the schema must not inherit it**
 
 `Varbits.SPELLBOOK` reports the **currently active** spellbook (0 standard / 1 ancient /
