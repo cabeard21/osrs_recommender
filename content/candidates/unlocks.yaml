@@ -9,6 +9,10 @@
 # looks equally distant at 24 Prayer and at 1. Naming the levels the unlock actually
 # depends on is not padding: it is what gives a non-numeric candidate a progress signal,
 # and it stays true as a completion predicate — you are not done until both hold.
+#
+# `unlock_protect_item` is the exception, and for a reason worth reading before copying
+# this shape: an `unlock:` leaf is only legitimate when some source can actually observe
+# that fact. Protect Item has no such fact, so its completion is the level gate alone.
 
 # §16.2's third pairwise judgment pairs this against unlock_rigour for an account below
 # 25 Prayer. Protect Item is what makes early Wilderness practice affordable, so it
@@ -20,12 +24,16 @@
     budget_nh: 0.60
     deep_wildy_nh: 0.35
     anti_pk: 0.30
+  # Protect Item is a *level gate*, not an unlock: reaching 25 Prayer is the whole of it.
+  # There is no `protect_item` fact for anything to set — no varbit witnesses one, and the
+  # plugin cannot invent one without putting game content in Java (G9, and step 12b's finding
+  # in docs/CONTRACT_RECONCILIATION.md). Authored as an `unlock:` leaf it evaluated `unknown`
+  # forever, which made `completion` unknown, which meant the candidate was never `completed`
+  # — so a 99 Prayer account would be told to unlock Protect Item for the rest of its life.
   completion:
-    all_of:
-      - skill: {prayer: 25}
-      - unlock: protect_item
+    skill: {prayer: 25}
   grants_facts:
-    unlock: protect_item
+    skill: {prayer: 25}
 
 # No `requires` gate. Rigour's real gate is a Dexterous prayer scroll, which is an item
 # this corpus does not declare and a raid this app does not model; the 74 Prayer and 70
