@@ -2,8 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/example/osrs-tracker/contracts/sync_payload.schema.json",
   "title": "RuneLite companion plugin sync payload",
-  "x-status": "provisional",
-  "x-status-note": "Provisional until a real RuneLite snapshot has validated against it (SDD §12.1, D12, plan step 8.5). Quest identity, the varbit-to-unlock-key mapping, diary and combat-achievement representation, and whether a *complete* bank scan is even detectable are facts about the RuneLite API that cannot be settled from the app side. Once reconciled the marker is removed and further changes require a payload_version bump under §12.2.",
+  "x-frozen": "2026-08-11",
+  "x-frozen-note": "FROZEN. Reconciled against a real RuneLite 1.12.35 snapshot — 24 skills, 211 quests, 48 diary and 6 combat-achievement varbits, 216 observed items and three container scans — which validated against this schema with zero errors and no shape change, so payload_version stays 1. The four open questions are settled and recorded in docs/CONTRACT_RECONCILIATION.md: quest identity is a slug of RuneLite's Quest constant (independently matching the ids content/ already authors); diaries and combat achievements ride as diary_*/ca_* unlock rows; a container scan is witnessed by ItemContainerChanged, which fires on change — an observed-empty container does emit a scan, an untouched one is honestly unknown. Any change that breaks the committed fixture requires a payload_version bump under §12.2.",
   "description": "The single owner of the Java-to-Python seam (SDD §12.1). Python validates incoming payloads against this file; the Java plugin is written to match it. `additionalProperties: false` is set on every object in this schema, which is what makes §7.6's collection boundary a contract rather than a convention (G8): a payload carrying opponent names, chat, per-tick location, prayer selections or fight-time inventories is rejected by the schema itself.",
 
   "type": "object",

@@ -1,0 +1,2296 @@
+{
+  "payload_version": 1,
+  "observed_at": "2026-08-12T04:25:32Z",
+  "player": {
+    "username": "redacted",
+    "display_name": "redacted",
+    "combat_level": 63,
+    "quest_points": 96
+  },
+  "skills": [
+    {
+      "skill": "attack",
+      "level": 54,
+      "xp": 161878
+    },
+    {
+      "skill": "defence",
+      "level": 51,
+      "xp": 116684
+    },
+    {
+      "skill": "strength",
+      "level": 51,
+      "xp": 118098
+    },
+    {
+      "skill": "hitpoints",
+      "level": 50,
+      "xp": 104462
+    },
+    {
+      "skill": "ranged",
+      "level": 28,
+      "xp": 10850
+    },
+    {
+      "skill": "prayer",
+      "level": 30,
+      "xp": 13760
+    },
+    {
+      "skill": "magic",
+      "level": 35,
+      "xp": 24369
+    },
+    {
+      "skill": "cooking",
+      "level": 40,
+      "xp": 38000
+    },
+    {
+      "skill": "woodcutting",
+      "level": 47,
+      "xp": 82350
+    },
+    {
+      "skill": "fletching",
+      "level": 11,
+      "xp": 1360
+    },
+    {
+      "skill": "fishing",
+      "level": 41,
+      "xp": 44559
+    },
+    {
+      "skill": "firemaking",
+      "level": 50,
+      "xp": 101430
+    },
+    {
+      "skill": "crafting",
+      "level": 34,
+      "xp": 21196
+    },
+    {
+      "skill": "smithing",
+      "level": 33,
+      "xp": 19034
+    },
+    {
+      "skill": "mining",
+      "level": 38,
+      "xp": 32722
+    },
+    {
+      "skill": "herblore",
+      "level": 15,
+      "xp": 2632
+    },
+    {
+      "skill": "agility",
+      "level": 32,
+      "xp": 18208
+    },
+    {
+      "skill": "thieving",
+      "level": 26,
+      "xp": 8916
+    },
+    {
+      "skill": "slayer",
+      "level": 9,
+      "xp": 1000
+    },
+    {
+      "skill": "farming",
+      "level": 9,
+      "xp": 1000
+    },
+    {
+      "skill": "runecraft",
+      "level": 20,
+      "xp": 4474
+    },
+    {
+      "skill": "hunter",
+      "level": 25,
+      "xp": 7922
+    },
+    {
+      "skill": "construction",
+      "level": 20,
+      "xp": 4520
+    },
+    {
+      "skill": "sailing",
+      "level": 1,
+      "xp": 0
+    }
+  ],
+  "quests": [
+    {
+      "quest_id": "animal_magnetism",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "another_slice_of_ham",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_ascent_of_arceuus",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "alfred_grimhands_barcrawl",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "bear_your_soul",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "below_ice_mountain",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "between_a_rock",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "big_chompy_bird_hunting",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "biohazard",
+      "status": "complete"
+    },
+    {
+      "quest_id": "black_knights_fortress",
+      "status": "complete"
+    },
+    {
+      "quest_id": "bone_voyage",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "cabin_fever",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "client_of_kourend",
+      "status": "complete"
+    },
+    {
+      "quest_id": "clock_tower",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "cold_war",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "contact",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "cooks_assistant",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_corsair_curse",
+      "status": "complete"
+    },
+    {
+      "quest_id": "creature_of_fenkenstrain",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "curse_of_the_empty_lord",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "daddys_home",
+      "status": "complete"
+    },
+    {
+      "quest_id": "darkness_of_hallowvale",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "death_plateau",
+      "status": "complete"
+    },
+    {
+      "quest_id": "death_to_the_dorgeshuun",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "demon_slayer",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_depths_of_despair",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "desert_treasure_i",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "devious_minds",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_dig_site",
+      "status": "complete"
+    },
+    {
+      "quest_id": "dorics_quest",
+      "status": "complete"
+    },
+    {
+      "quest_id": "dragon_slayer_i",
+      "status": "complete"
+    },
+    {
+      "quest_id": "dragon_slayer_ii",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "dream_mentor",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "druidic_ritual",
+      "status": "complete"
+    },
+    {
+      "quest_id": "dwarf_cannon",
+      "status": "complete"
+    },
+    {
+      "quest_id": "eadgars_ruse",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "eagles_peak",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "elemental_workshop_i",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "elemental_workshop_ii",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "enakhras_lament",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_enchanted_key",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "enlightened_journey",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "enter_the_abyss",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "ernest_the_chicken",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_eyes_of_glouphrie",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "fairytale_i_growing_pains",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "fairytale_ii_cure_a_queen",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "family_crest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "family_pest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_feud",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "fight_arena",
+      "status": "complete"
+    },
+    {
+      "quest_id": "fishing_contest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "forgettable_tale",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_forsaken_tower",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_fremennik_exiles",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_fremennik_isles",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_fremennik_trials",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "garden_of_tranquillity",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_generals_shadow",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "gertrudes_cat",
+      "status": "complete"
+    },
+    {
+      "quest_id": "getting_ahead",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "ghosts_ahoy",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_giant_dwarf",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "goblin_diplomacy",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_golem",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_grand_tree",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_great_brain_robbery",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "grim_tales",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_hand_in_the_sand",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "haunted_mine",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "hazeel_cult",
+      "status": "complete"
+    },
+    {
+      "quest_id": "heroes_quest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "holy_grail",
+      "status": "complete"
+    },
+    {
+      "quest_id": "horror_from_the_deep",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "icthlarins_little_helper",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "imp_catcher",
+      "status": "complete"
+    },
+    {
+      "quest_id": "in_aid_of_the_myreque",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "in_search_of_knowledge",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "in_search_of_the_myreque",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "jungle_potion",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "a_kingdom_divided",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "kings_ransom",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_knights_sword",
+      "status": "complete"
+    },
+    {
+      "quest_id": "lair_of_tarn_razorlor",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "legends_quest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "lost_city",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_lost_tribe",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "lunar_diplomacy",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "mage_arena_i",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "mage_arena_ii",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "making_friends_with_my_arm",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "making_history",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "merlins_crystal",
+      "status": "complete"
+    },
+    {
+      "quest_id": "misthalin_mystery",
+      "status": "complete"
+    },
+    {
+      "quest_id": "monkey_madness_i",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "monkey_madness_ii",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "monks_friend",
+      "status": "complete"
+    },
+    {
+      "quest_id": "mountain_daughter",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "mournings_end_part_i",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "mournings_end_part_ii",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "murder_mystery",
+      "status": "complete"
+    },
+    {
+      "quest_id": "my_arms_big_adventure",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "nature_spirit",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "a_night_at_the_theatre",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "observatory_quest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "olafs_quest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "one_small_favour",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "pirates_treasure",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "plague_city",
+      "status": "complete"
+    },
+    {
+      "quest_id": "a_porcine_of_interest",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "priest_in_peril",
+      "status": "in_progress"
+    },
+    {
+      "quest_id": "prince_ali_rescue",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_queen_of_thieves",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "rag_and_bone_man_i",
+      "status": "complete"
+    },
+    {
+      "quest_id": "rag_and_bone_man_ii",
+      "status": "in_progress"
+    },
+    {
+      "quest_id": "ratcatchers",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster",
+      "status": "in_progress"
+    },
+    {
+      "quest_id": "recruitment_drive",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "regicide",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_restless_ghost",
+      "status": "complete"
+    },
+    {
+      "quest_id": "romeo_juliet",
+      "status": "complete"
+    },
+    {
+      "quest_id": "roving_elves",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "royal_trouble",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "rum_deal",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "rune_mysteries",
+      "status": "complete"
+    },
+    {
+      "quest_id": "scorpion_catcher",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "sea_slug",
+      "status": "complete"
+    },
+    {
+      "quest_id": "shades_of_mortton",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "shadow_of_the_storm",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "sheep_herder",
+      "status": "complete"
+    },
+    {
+      "quest_id": "sheep_shearer",
+      "status": "complete"
+    },
+    {
+      "quest_id": "shield_of_arrav",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "shilo_village",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "sins_of_the_father",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "skippy_and_the_mogres",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_slug_menace",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "song_of_the_elves",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "a_souls_bane",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "spirits_of_the_elid",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "swan_song",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "tai_bwo_wannai_trio",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "a_tail_of_two_cats",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "tale_of_the_righteous",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "a_taste_of_hope",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "tears_of_guthix",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "temple_of_ikov",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "throne_of_miscellania",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_tourist_trap",
+      "status": "complete"
+    },
+    {
+      "quest_id": "tower_of_life",
+      "status": "complete"
+    },
+    {
+      "quest_id": "tree_gnome_village",
+      "status": "complete"
+    },
+    {
+      "quest_id": "tribal_totem",
+      "status": "complete"
+    },
+    {
+      "quest_id": "troll_romance",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "troll_stronghold",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "underground_pass",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "vampyre_slayer",
+      "status": "complete"
+    },
+    {
+      "quest_id": "wanted",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "watchtower",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "waterfall_quest",
+      "status": "complete"
+    },
+    {
+      "quest_id": "what_lies_below",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "witchs_house",
+      "status": "complete"
+    },
+    {
+      "quest_id": "witchs_potion",
+      "status": "complete"
+    },
+    {
+      "quest_id": "x_marks_the_spot",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "zogre_flesh_eaters",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_frozen_door",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "land_of_the_goblins",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "hopespears_will",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "temple_of_the_eye",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "beneath_cursed_sands",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "sleeping_giants",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_garden_of_death",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "into_the_tombs",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_another_cooks_quest",
+      "status": "complete"
+    },
+    {
+      "quest_id": "recipe_for_disaster_mountain_dwarf",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_wartface_bentnoze",
+      "status": "complete"
+    },
+    {
+      "quest_id": "recipe_for_disaster_pirate_pete",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_lumbridge_guide",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_evil_dave",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_skrach_uglogwee",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_sir_amik_varze",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_king_awowogei",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "recipe_for_disaster_culinaromancer",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "secrets_of_the_north",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "desert_treasure_ii_the_fallen_empire",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "his_faithful_servants",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_path_of_glouphrie",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "children_of_the_sun",
+      "status": "complete"
+    },
+    {
+      "quest_id": "barbarian_training",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "defender_of_varrock",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "while_guthix_sleeps",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "twilights_promise",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "at_first_light",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "perilous_moons",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_ribbiting_tale_of_a_lily_pad_labour_dispute",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_heart_of_darkness",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "death_on_the_isle",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "meat_and_greet",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "ethically_acquired_antiquities",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_curse_of_arrav",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_final_dawn",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "shadows_of_custodia",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "scrambled",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "vale_totems",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "pandemonium",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "prying_times",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "current_affairs",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "troubled_tortugans",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_red_reef",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "fallen_from_grace",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "learning_the_ropes",
+      "status": "complete"
+    },
+    {
+      "quest_id": "the_ides_of_milk",
+      "status": "not_started"
+    },
+    {
+      "quest_id": "the_blood_moon_rises",
+      "status": "not_started"
+    }
+  ],
+  "unlocks": [
+    {
+      "key": "spellbook_standard",
+      "state": "unlocked"
+    },
+    {
+      "key": "diary_ardougne_easy",
+      "state": "unlocked"
+    },
+    {
+      "key": "diary_ardougne_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_ardougne_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_ardougne_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_desert_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_desert_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_desert_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_desert_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_falador_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_falador_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_falador_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_falador_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_fremennik_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_fremennik_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_fremennik_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_fremennik_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kandarin_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kandarin_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kandarin_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kandarin_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_karamja_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_karamja_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_karamja_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_karamja_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kourend_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kourend_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kourend_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_kourend_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_lumbridge_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_lumbridge_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_lumbridge_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_lumbridge_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_morytania_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_morytania_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_morytania_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_morytania_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_varrock_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_varrock_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_varrock_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_varrock_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_western_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_western_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_western_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_western_elite",
+      "state": "locked"
+    },
+    {
+      "key": "diary_wilderness_easy",
+      "state": "locked"
+    },
+    {
+      "key": "diary_wilderness_medium",
+      "state": "locked"
+    },
+    {
+      "key": "diary_wilderness_hard",
+      "state": "locked"
+    },
+    {
+      "key": "diary_wilderness_elite",
+      "state": "locked"
+    },
+    {
+      "key": "ca_easy",
+      "state": "locked"
+    },
+    {
+      "key": "ca_medium",
+      "state": "locked"
+    },
+    {
+      "key": "ca_hard",
+      "state": "locked"
+    },
+    {
+      "key": "ca_elite",
+      "state": "locked"
+    },
+    {
+      "key": "ca_master",
+      "state": "locked"
+    },
+    {
+      "key": "ca_grandmaster",
+      "state": "locked"
+    }
+  ],
+  "observed_items": [
+    {
+      "item_id": 1333,
+      "quantity": 1,
+      "container": "equipment"
+    },
+    {
+      "item_id": 303,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 309,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 314,
+      "quantity": 70,
+      "container": "bank"
+    },
+    {
+      "item_id": 590,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 311,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2347,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 946,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 952,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1359,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1271,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1351,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1353,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1349,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1755,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1269,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1265,
+      "quantity": 5,
+      "container": "bank"
+    },
+    {
+      "item_id": 1267,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 8794,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 14297,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1931,
+      "quantity": 8,
+      "container": "bank"
+    },
+    {
+      "item_id": 1595,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1592,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1597,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2349,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 2357,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 2353,
+      "quantity": 5,
+      "container": "bank"
+    },
+    {
+      "item_id": 8790,
+      "quantity": 8,
+      "container": "bank"
+    },
+    {
+      "item_id": 1739,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1734,
+      "quantity": 9,
+      "container": "bank"
+    },
+    {
+      "item_id": 1733,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 8778,
+      "quantity": 176,
+      "container": "bank"
+    },
+    {
+      "item_id": 960,
+      "quantity": 9,
+      "container": "bank"
+    },
+    {
+      "item_id": 1511,
+      "quantity": 81,
+      "container": "bank"
+    },
+    {
+      "item_id": 13986,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 16309,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 4822,
+      "quantity": 50,
+      "container": "bank"
+    },
+    {
+      "item_id": 526,
+      "quantity": 6,
+      "container": "bank"
+    },
+    {
+      "item_id": 16855,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1539,
+      "quantity": 94,
+      "container": "bank"
+    },
+    {
+      "item_id": 1925,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1929,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1942,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2007,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2138,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 321,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 453,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1627,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1625,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1623,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 5283,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1761,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 4537,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2132,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2136,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1621,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2134,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 15241,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 15215,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 15244,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 677,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 676,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 233,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 594,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1468,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 9978,
+      "quantity": 20,
+      "container": "bank"
+    },
+    {
+      "item_id": 10091,
+      "quantity": 164,
+      "container": "bank"
+    },
+    {
+      "item_id": 10089,
+      "quantity": 176,
+      "container": "bank"
+    },
+    {
+      "item_id": 10087,
+      "quantity": 292,
+      "container": "bank"
+    },
+    {
+      "item_id": 10006,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1127,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1163,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1017,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1727,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 21452,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1201,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1079,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 14199,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 9006,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 577,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 3202,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 589,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1725,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1731,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1033,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 14758,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1387,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1381,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1540,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 806,
+      "quantity": 6,
+      "container": "bank"
+    },
+    {
+      "item_id": 1203,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 1207,
+      "quantity": 3,
+      "container": "bank"
+    },
+    {
+      "item_id": 882,
+      "quantity": 14,
+      "container": "bank"
+    },
+    {
+      "item_id": 1205,
+      "quantity": 5,
+      "container": "bank"
+    },
+    {
+      "item_id": 1293,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 3097,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 29084,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 3008,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 15276,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 19371,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 19372,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 19373,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 229,
+      "quantity": 11,
+      "container": "bank"
+    },
+    {
+      "item_id": 2446,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 379,
+      "quantity": 10,
+      "container": "bank"
+    },
+    {
+      "item_id": 15446,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 361,
+      "quantity": 97,
+      "container": "bank"
+    },
+    {
+      "item_id": 327,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 3142,
+      "quantity": 10,
+      "container": "bank"
+    },
+    {
+      "item_id": 373,
+      "quantity": 5,
+      "container": "bank"
+    },
+    {
+      "item_id": 333,
+      "quantity": 9,
+      "container": "bank"
+    },
+    {
+      "item_id": 2003,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1897,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1825,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1823,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 19158,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1971,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1891,
+      "quantity": 5,
+      "container": "bank"
+    },
+    {
+      "item_id": 1901,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 18919,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1985,
+      "quantity": 3,
+      "container": "bank"
+    },
+    {
+      "item_id": 1965,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 9739,
+      "quantity": 20,
+      "container": "bank"
+    },
+    {
+      "item_id": 121,
+      "quantity": 15,
+      "container": "bank"
+    },
+    {
+      "item_id": 19659,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 983,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 9007,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 9011,
+      "quantity": 20,
+      "container": "bank"
+    },
+    {
+      "item_id": 20754,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 552,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2402,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 1542,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 21760,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 294,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 35,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 38,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1556,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1506,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1843,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1839,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1845,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1846,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1844,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 284,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 285,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 278,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 425,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 430,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 426,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 428,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 14296,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 697,
+      "quantity": 2,
+      "container": "bank"
+    },
+    {
+      "item_id": 4306,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 686,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 4302,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 4304,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 4298,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1635,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1773,
+      "quantity": 3,
+      "container": "bank"
+    },
+    {
+      "item_id": 223,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 10862,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 10863,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 10864,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 10865,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1061,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1059,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2409,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2411,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 15,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 16,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 17,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 18,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 787,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 785,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 788,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 784,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 786,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 11171,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 680,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 692,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 691,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 693,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 670,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 669,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1469,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 413,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 995,
+      "quantity": 12497849,
+      "container": "bank"
+    },
+    {
+      "item_id": 554,
+      "quantity": 70,
+      "container": "bank"
+    },
+    {
+      "item_id": 557,
+      "quantity": 100,
+      "container": "bank"
+    },
+    {
+      "item_id": 558,
+      "quantity": 38,
+      "container": "bank"
+    },
+    {
+      "item_id": 555,
+      "quantity": 52,
+      "container": "bank"
+    },
+    {
+      "item_id": 563,
+      "quantity": 25,
+      "container": "bank"
+    },
+    {
+      "item_id": 556,
+      "quantity": 251,
+      "container": "bank"
+    },
+    {
+      "item_id": 7936,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1436,
+      "quantity": 49,
+      "container": "bank"
+    },
+    {
+      "item_id": 8009,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 8010,
+      "quantity": 3,
+      "container": "bank"
+    },
+    {
+      "item_id": 8007,
+      "quantity": 4,
+      "container": "bank"
+    },
+    {
+      "item_id": 14888,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 8008,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 8013,
+      "quantity": 9,
+      "container": "bank"
+    },
+    {
+      "item_id": 12642,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 5527,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 5535,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 11107,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 21151,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 3867,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 16358,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2558,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 11978,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 21453,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 13121,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 1704,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 11126,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 2944,
+      "quantity": 1,
+      "container": "bank"
+    },
+    {
+      "item_id": 11982,
+      "quantity": 1,
+      "container": "bank"
+    }
+  ],
+  "container_scans": [
+    {
+      "container": "inventory",
+      "scanned_at": "2026-08-12T04:25:28Z"
+    },
+    {
+      "container": "equipment",
+      "scanned_at": "2026-08-12T04:25:28Z"
+    },
+    {
+      "container": "bank",
+      "scanned_at": "2026-08-12T04:25:25Z"
+    }
+  ]
+}
