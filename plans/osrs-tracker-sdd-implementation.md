@@ -2076,6 +2076,8 @@ Plans decay on contact with implementation. When a step turns out wrong:
 | 2026-08-04 | Correction | 6 → 7, 8c | G1 and G6 reassigned; `recommend()` is pure and structurally cannot test either |
 | 2026-08-04 | Correction | all | `make test -- tests/x` replaced with `make test ARGS=tests/x`; the former exits 2 under GNU make |
 | 2026-08-04 | Correction | 4 | `unlock_fraction` denominator corrected to *all* leaves per §6.9 (was: exclude unknowns from both sides) |
+| 2026-08-12 | Completed | **12a/12b/12c** | Plugin built against the frozen contract. Field names generated from the schema; cross-language contract test with both halves on one file; collectors implementing §6.5's trichotomy; §7.6 detector as pure policy with its rejections written as inert named methods. 64 Java tests. **Agent-verifiable criteria are met; the human side-load gate is not** — nothing has run in a real client. |
+| 2026-08-12 | Correction | **content** | `unlock_protect_item` completed on a fact nothing can set (Protect Item is a Prayer-25 level gate, not an unlock), so it was never `completed` at any level. Fixed to the level gate alone. Two larger instances of the same class found and **left open** — see the note below. |
 | 2026-08-11 | Completed | **8.5** | Contract frozen against four real RuneLite 1.12.35 captures. No shape change, so `payload_version` stays 1. Rulings in `docs/CONTRACT_RECONCILIATION.md`; redacted fixture and nine guarding assertions in `tests/contracts/`. Spike deleted, `plugin/` still empty. **12a/12b/12c are now unblocked** — they are all that remains of the plan. |
 | 2026-08-04 | Ratified | all | All 21 amendments folded into `docs/SDD.md` **v0.5**; traced in SDD §20. `Candidate` landed at **§10.6** (not §10.8), validation renumbered to §10.7, `ActiveRoadmap` at §6.12, Migrations to §6.13. D11/D12 and §4.5 added. A21 settled as Python 3.12+. **The SDD is now authoritative over this plan.** |
 
@@ -2112,6 +2114,39 @@ to prevent*, which makes them the ones most likely to creep back in:
     regression test. (§9.4)
 
 ---
+
+## Open: milestones cannot be set at all
+
+Found 2026-08-12 by sweeping the corpus for leaves no source can witness — the generalization of
+the `protect_item` bug. **Not fixed; it is a unit of work, not an edit.** Evaluated against a
+maximal account (every skill 99, every unlock held, every quest complete):
+
+```
+anti_pk        -> UNSATISFIED   (milestone: first_anti_pk, consistent_overhead_prayers)
+budget_nh      -> UNKNOWN       (milestone: comfortable_4_way_switches)
+deep_wildy_nh  -> UNKNOWN       (milestone: successfully_freeze_log, teleblock_understanding)
+vengeance_pvp  -> UNKNOWN       (milestone: vengeance_timing)
+```
+
+1. **Self-attested milestones have no attestation path.** `repository.upsert_milestone` is the only
+   writer of `achieved` / `attested_at` and has **zero production callers**. The UI marks practice
+   (`last_practiced_at`, §9.8) and picks roadmaps, but nothing can answer a prompt — so `attested`
+   is permanently `UNKNOWN`, the state A7 introduced to mean *"never asked"*.
+2. **Derived milestones have no deriver.** `first_wilderness_kill`, `first_anti_pk`, `lms_wins_10`,
+   `lms_wins_100` are `kind: derived` and nothing computes them; `Milestone.threshold` is authored
+   and read by no code. Since §9.1 says a derived milestone is never unknown for want of a prompt,
+   `first_anti_pk` resolves **unsatisfied** — `anti_pk` is permanently *locked*, and the UI will
+   tell a maxed PKer they have not done their first anti-PK.
+
+Fixing it needs an attestation control (Step 11's surface) plus derived-milestone computation in
+Step 9's pipeline — including a ruling on what evidence may set `first_anti_pk` at all, given G7
+forbids practice proxies from setting `achieved`. The golden corpus did not catch this because it
+scores candidates, and these leaves sit in capabilities.
+
+**Also noted:** no signal in §7.6's table produces the `vengeance_pvp` practice domain.
+`vengeance_timing` survives because it also lists `wilderness_pvp`, so nothing breaks — but the
+domain is unreachable, and `general_pvp` is its mirror (the detector emits it; no milestone wants
+it).
 
 ## Open items for the user
 
