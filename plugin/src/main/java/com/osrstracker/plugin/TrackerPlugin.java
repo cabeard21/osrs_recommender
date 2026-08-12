@@ -4,11 +4,19 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.osrstracker.plugin.collect.ContainerObserver;
 import com.osrstracker.plugin.collect.SnapshotFactory;
+import com.osrstracker.plugin.practice.PracticeDetector;
+import com.osrstracker.plugin.practice.PracticeDetector.Arena;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Player;
+import net.runelite.api.Varbits;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
@@ -71,6 +79,12 @@ public class TrackerPlugin extends Plugin
 	/** Session evidence for §6.5. Written by events, read when a snapshot is built. */
 	private final ContainerObserver containers = new ContainerObserver();
 
+	/** §7.6's policy. This class only feeds it signals; it decides what counts. */
+	private final PracticeDetector practice = new PracticeDetector();
+
+	/** Last known arena, so a varbit change can be read as entering or leaving. */
+	private Arena arena = Arena.ELSEWHERE;
+
 	/** Guards against a login burst queueing several syncs for the same arrival. */
 	private volatile boolean syncedThisSession;
 
@@ -112,8 +126,11 @@ public class TrackerPlugin extends Plugin
 		{
 			syncedThisSession = false;
 			// A different account may be about to log in, and container evidence is per-session
-			// (§6.5). Carrying it across would attribute one account's bank to another's.
+			// (§6.5). Carrying it across would attribute one account's bank to another's — and
+			// the same argument applies to an unfinished fight.
 			containers.reset();
+			practice.reset();
+			arena = Arena.ELSEWHERE;
 			return;
 		}
 		if (event.getGameState() != GameState.LOGGED_IN || syncedThisSession || !config.syncOnLogin())
@@ -149,6 +166,100 @@ public class TrackerPlugin extends Plugin
 	}
 
 	/**
+	 * Arena tracking. Entering the Wilderness is fed to the detector as the rejected signal it
+	 * is — §7.6 counts fighting, not walking north.
+	 */
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (!config.practiceDetection())
+		{
+			return;
+		}
+		final Arena previous = arena;
+		arena = currentArena();
+		if (previous == arena)
+		{
+			return;
+		}
+
+		final Instant now = Instant.now();
+		if (arena == Arena.LMS)
+		{
+			practice.lmsMatchStarted(now);
+		}
+		else if (previous == Arena.LMS)
+		{
+			practice.lmsMatchEnded(now);
+		}
+		if (arena == Arena.WILDERNESS)
+		{
+			practice.observeWildernessEntry(now);
+		}
+	}
+
+	/**
+	 * The local player attacked someone, or is engaged with them.
+	 *
+	 * <p><b>Best effort, deliberately.</b> Interaction is a coarse proxy for "attacked": it also
+	 * fires for following. The precision that matters lives in the detector's threshold — two
+	 * attacks or ten seconds — which is what stops a single misread interaction from refreshing
+	 * anything.
+	 */
+	@Subscribe
+	public void onInteractingChanged(InteractingChanged event)
+	{
+		if (!config.practiceDetection() || arena == Arena.ELSEWHERE)
+		{
+			return;
+		}
+		final Player local = client.getLocalPlayer();
+		if (local == null)
+		{
+			return;
+		}
+
+		final Instant now = Instant.now();
+		if (event.getSource() == local && event.getTarget() instanceof Player)
+		{
+			practice.observePlayerCombat(arena, now, true, false);
+		}
+		else if (event.getTarget() == local && event.getSource() instanceof Player)
+		{
+			// Someone has engaged us. Whether we fight back is what the detector decides on.
+			practice.observePlayerCombat(arena, now, false, true);
+		}
+	}
+
+	/** A hitsplat on the local player from a player fight keeps the engagement alive. */
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (!config.practiceDetection() || arena == Arena.ELSEWHERE)
+		{
+			return;
+		}
+		final Actor actor = event.getActor();
+		final Player local = client.getLocalPlayer();
+		if (local == null || (actor != local && !(actor instanceof Player)))
+		{
+			return;
+		}
+		// Not counted as an attack — a hitsplat cannot say who threw it. It only witnesses that
+		// the player is *in* combat, which is the ten-second arm of the threshold.
+		practice.observeCombatState(arena, Instant.now());
+	}
+
+	private Arena currentArena()
+	{
+		if (client.getVarbitValue(Varbits.IN_LMS) > 0)
+		{
+			return Arena.LMS;
+		}
+		return client.getVarbitValue(Varbits.IN_WILDERNESS) > 0 ? Arena.WILDERNESS : Arena.ELSEWHERE;
+	}
+
+	/**
 	 * Build on the client thread, send off it.
 	 *
 	 * <p>Both halves matter. Reading {@code getLocalPlayer()} off the client thread races the
@@ -159,7 +270,12 @@ public class TrackerPlugin extends Plugin
 	private void syncNow()
 	{
 		clientThread.invoke(() -> {
-			final AccountSnapshot snapshot = SnapshotFactory.build(client, containers, Instant.now());
+			final Instant now = Instant.now();
+			// Practice evidence is drained here rather than collected inside the factory: the
+			// drain is destructive (§6.7 — the server owns the history), so it must happen only
+			// when a snapshot is genuinely being sent.
+			final AccountSnapshot snapshot = SnapshotFactory.build(
+				client, containers, config.practiceDetection() ? practice.drain(now) : null, now);
 			if (snapshot == null)
 			{
 				panel.update(SyncStatus.notConfigured("Log in first — there is no account to sync."));

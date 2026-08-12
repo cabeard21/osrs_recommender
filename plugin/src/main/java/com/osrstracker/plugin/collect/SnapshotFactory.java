@@ -7,6 +7,7 @@ import net.runelite.api.Player;
 import net.runelite.api.VarPlayer;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Assembles one {@link AccountSnapshot} from the collectors. <b>Client thread only</b> — every
@@ -22,8 +23,14 @@ public final class SnapshotFactory
 	{
 	}
 
-	/** @return null when there is no logged-in account to describe. */
-	public static AccountSnapshot build(Client client, ContainerObserver containers, Instant now)
+	/**
+	 * @param practiceEvents evidence drained from the §7.6 detector, or null when practice
+	 *                       detection is switched off — which is a different fact from "no
+	 *                       practice happened" and so contributes no events either way.
+	 * @return null when there is no logged-in account to describe.
+	 */
+	public static AccountSnapshot build(Client client, ContainerObserver containers,
+		List<AccountSnapshot.PracticeEvent> practiceEvents, Instant now)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{
@@ -46,8 +53,12 @@ public final class SnapshotFactory
 		containers.items().forEach(builder::item);
 		containers.scans().forEach(builder::containerScan);
 
-		// practice_events stay empty here: Step 12c owns the detector, and until it exists the
-		// honest payload carries no practice claims at all (G7 — participation is not competence).
+		if (practiceEvents != null)
+		{
+			// G7: these refresh freshness only. Nothing here can set `achieved` — participation
+			// is not competence, and the server enforces that too.
+			practiceEvents.forEach(builder::practiceEvent);
+		}
 		return builder.build();
 	}
 }
