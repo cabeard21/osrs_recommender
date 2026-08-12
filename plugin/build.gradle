@@ -1,0 +1,153 @@
+import groovy.json.JsonSlurper
+
+// The RuneLite companion plugin (SDD §12, §13; plan step 12). Side-loaded from a local build —
+// §13/D5 makes that the only supported distribution path for v1, and no Plugin Hub work belongs
+// here.
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenLocal()
+    maven { url = 'https://repo.runelite.net' }
+    mavenCentral()
+}
+
+// §13.1 stage 1 is "manually matched app/plugin versions". This is the client the contract was
+// reconciled against (docs/CONTRACT_RECONCILIATION.md); bumping it means re-checking that doc's
+// findings, not just the number.
+def runeLiteVersion = '1.12.35'
+
+dependencies {
+    compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+    testImplementation 'junit:junit:4.13.2'
+    // Same OkHttp the client ships, so the transport under test is the transport in production.
+    testImplementation 'com.squareup.okhttp3:mockwebserver:3.14.9'
+    // The Java half of the cross-language contract test: validates a serialized snapshot against
+    // the *same* frozen schema file the Python half validates against.
+    testImplementation 'com.networknt:json-schema-validator:1.5.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
+// ---------------------------------------------------------------------------------------------
+// Field names come from the contract, not from memory.
+//
+// Step 12a's exit criterion is that field names are *read* from the schema rather than
+// hand-transcribed. A convention would decay the first time someone was in a hurry, so this
+// generates them: rename a property in contracts/sync_payload.schema.json and the plugin stops
+// compiling. That is the §12.1 seam behaving like a seam.
+// ---------------------------------------------------------------------------------------------
+def contractFile = file('../contracts/sync_payload.schema.json')
+def generatedContractDir = layout.buildDirectory.dir('generated/contract')
+
+def toConstant = { String name -> name.toUpperCase(Locale.ROOT).replaceAll('[^A-Z0-9]', '_') }
+def toClassName = { String name ->
+    name.split('_').collect { it.substring(0, 1).toUpperCase(Locale.ROOT) + it.substring(1) }.join('')
+}
+
+tasks.register('generateContractFields') {
+    group = 'build'
+    description = 'Generate SyncPayloadFields from the frozen sync payload schema.'
+    inputs.file contractFile
+    outputs.dir generatedContractDir
+
+    doLast {
+        def schema = new JsonSlurper().parse(contractFile)
+        def target = new File(generatedContractDir.get().asFile, 'com/osrstracker/plugin/contract')
+        target.mkdirs()
+
+        // ASCII only, written as UTF-8. javac reads this with -encoding UTF-8, and the default
+        // platform encoding on Windows would otherwise mangle any non-ASCII on the way out.
+        def out = new StringBuilder()
+        out << 'package com.osrstracker.plugin.contract;\n\n'
+        out << '/**\n'
+        out << ' * GENERATED from {@code contracts/sync_payload.schema.json} - do not edit.\n'
+        out << ' *\n'
+        out << ' * <p>Every key the plugin writes comes from here, so a schema rename is a compile\n'
+        out << ' * error rather than a payload the server silently rejects (plan step 12a).\n'
+        out << ' */\n'
+        out << 'public final class SyncPayloadFields\n{\n'
+        out << '\tprivate SyncPayloadFields()\n\t{\n\t}\n\n'
+
+        schema.properties.each { name, ignored ->
+            out << "\tpublic static final String ${toConstant(name)} = \"${name}\";\n"
+        }
+
+        // `player` is an inline object rather than a $def, and its fields need constants just as
+        // much as the referenced ones do.
+        schema.properties.each { name, propertySchema ->
+            if (propertySchema instanceof Map && propertySchema.properties)
+            {
+                out << "\n\tpublic static final class ${toClassName(name)}\n\t{\n"
+                out << "\t\tprivate ${toClassName(name)}()\n\t\t{\n\t\t}\n\n"
+                propertySchema.properties.each { fieldName, ignored ->
+                    out << "\t\tpublic static final String ${toConstant(fieldName)} = \"${fieldName}\";\n"
+                }
+                out << '\t}\n'
+            }
+        }
+
+        schema['$defs'].each { defName, defSchema ->
+            if (defSchema.properties)
+            {
+                out << "\n\tpublic static final class ${toClassName(defName)}\n\t{\n"
+                out << "\t\tprivate ${toClassName(defName)}()\n\t\t{\n\t\t}\n\n"
+                defSchema.properties.each { propertyName, ignored ->
+                    out << "\t\tpublic static final String ${toConstant(propertyName)} = \"${propertyName}\";\n"
+                }
+                out << '\t}\n'
+            }
+            else if (defSchema.enum)
+            {
+                // Closed vocabularies (containers, quest states, unlock states, practice domains,
+                // evidence types). G8 depends on these staying closed, so they are generated too.
+                out << "\n\tpublic static final class ${toClassName(defName)}\n\t{\n"
+                out << "\t\tprivate ${toClassName(defName)}()\n\t\t{\n\t\t}\n\n"
+                defSchema.enum.each { value ->
+                    out << "\t\tpublic static final String ${toConstant(value as String)} = \"${value}\";\n"
+                }
+                out << '\t}\n'
+            }
+        }
+
+        out << '}\n'
+        new File(target, 'SyncPayloadFields.java').setText(out.toString(), 'UTF-8')
+        logger.lifecycle("generated SyncPayloadFields from ${contractFile.name}")
+    }
+}
+
+sourceSets.main.java.srcDir generatedContractDir
+tasks.named('compileJava').configure { dependsOn 'generateContractFields' }
+
+// The contract file is an input to the tests too — the Java half validates against it directly.
+tasks.named('test').configure {
+    inputs.file contractFile
+    systemProperty 'tracker.contract', contractFile.absolutePath
+    systemProperty 'tracker.fixture', file('../tests/contracts/fixtures/plugin_sample.json').absolutePath
+    testLogging { exceptionFormat = 'full' }
+}
+
+// Developer-mode launcher. `-ea` is mandatory: ExternalPluginManager.loadBuiltin asserts on it.
+// Note this is the only way to run the plugin from source — a launcher-started client forces
+// developer mode off, so it can never side-load. See docs/PLUGIN_SIDELOAD.md (step 12c).
+tasks.register('runClient', JavaExec) {
+    group = 'application'
+    description = 'Launch RuneLite with the tracker plugin loaded (developer mode).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.osrstracker.plugin.TrackerPluginLauncher'
+    jvmArgs = ['-ea']
+    args = ['--developer-mode']
+}
