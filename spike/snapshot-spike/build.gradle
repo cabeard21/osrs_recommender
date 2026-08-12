@@ -44,4 +44,7 @@ tasks.register('runClient', JavaExec) {
     description = 'Launch RuneLite with the snapshot spike loaded (developer mode).'
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'com.osrstracker.spike.SnapshotSpikeLauncher'
+    // ExternalPluginManager.loadBuiltin refuses to run without assertions enabled.
+    jvmArgs = ['-ea']
+    args = ['--developer-mode']
 }
