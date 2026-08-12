@@ -2,11 +2,15 @@ package com.osrstracker.plugin;
 
 import com.google.gson.Gson;
 import com.google.inject.Provides;
+import com.osrstracker.plugin.collect.ContainerObserver;
+import com.osrstracker.plugin.collect.SnapshotFactory;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.WidgetClosed;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -64,6 +68,9 @@ public class TrackerPlugin extends Plugin
 	private NavigationButton navButton;
 	private TrackerSyncClient syncClient;
 
+	/** Session evidence for §6.5. Written by events, read when a snapshot is built. */
+	private final ContainerObserver containers = new ContainerObserver();
+
 	/** Guards against a login burst queueing several syncs for the same arrival. */
 	private volatile boolean syncedThisSession;
 
@@ -104,6 +111,9 @@ public class TrackerPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
 			syncedThisSession = false;
+			// A different account may be about to log in, and container evidence is per-session
+			// (§6.5). Carrying it across would attribute one account's bank to another's.
+			containers.reset();
 			return;
 		}
 		if (event.getGameState() != GameState.LOGGED_IN || syncedThisSession || !config.syncOnLogin())
@@ -112,6 +122,30 @@ public class TrackerPlugin extends Plugin
 		}
 		syncedThisSession = true;
 		syncNow();
+	}
+
+	/**
+	 * The only working source of container contents in 1.12.35 — the direct lookups return null.
+	 * Fires on change, so silence means "not observed", never "empty"
+	 * (docs/CONTRACT_RECONCILIATION.md).
+	 */
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		containers.onContainerChanged(event.getContainerId(), event.getItemContainer(), Instant.now());
+	}
+
+	/**
+	 * A closed bank interface is a sighting of the <em>whole</em> bank, which is the only way an
+	 * empty bank can be told apart from one nobody has opened (§6.5, plan step 12b task 2).
+	 */
+	@Subscribe
+	public void onWidgetClosed(WidgetClosed event)
+	{
+		if (event.getGroupId() == InterfaceID.BANKMAIN)
+		{
+			containers.onBankClosed(Instant.now());
+		}
 	}
 
 	/**
@@ -125,7 +159,7 @@ public class TrackerPlugin extends Plugin
 	private void syncNow()
 	{
 		clientThread.invoke(() -> {
-			final AccountSnapshot snapshot = buildSnapshot();
+			final AccountSnapshot snapshot = SnapshotFactory.build(client, containers, Instant.now());
 			if (snapshot == null)
 			{
 				panel.update(SyncStatus.notConfigured("Log in first — there is no account to sync."));
@@ -135,25 +169,4 @@ public class TrackerPlugin extends Plugin
 		});
 	}
 
-	/** @return null when there is no logged-in account to describe. */
-	private AccountSnapshot buildSnapshot()
-	{
-		if (client.getGameState() != GameState.LOGGED_IN)
-		{
-			return null;
-		}
-		final Player local = client.getLocalPlayer();
-		if (local == null || local.getName() == null)
-		{
-			return null;
-		}
-
-		// Step 12b replaces this with the collectors. Quest points read from the varp the
-		// reconciliation confirmed; nothing else is claimed yet.
-		return AccountSnapshot.builder(local.getName(), Instant.now())
-			.displayName(local.getName())
-			.combatLevel(local.getCombatLevel())
-			.questPoints(client.getVarpValue(net.runelite.api.VarPlayer.QUEST_POINTS))
-			.build();
-	}
 }
