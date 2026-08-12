@@ -12,8 +12,10 @@
 judgments. §16.3 step 5's review is complete — its four rulings (D1–D4) are recorded in
 `docs/TUNING.md`, and one of them, D2, closed by amending the specification (A30's
 `method_unlock` factor) rather than by moving a weight. **Every agent-executable unit of this
-plan is now done.** Remaining: **8.5** and **12a/12b/12c**, both blocked on the user gates
-below — they need a local RuneLite install, a human at the keyboard, and Gradle.
+plan is now done.** **8.5 closed 2026-08-11**: the sync contract is **frozen** against four real
+RuneLite 1.12.35 captures, with no shape change (`payload_version` stays 1) — see
+`docs/CONTRACT_RECONCILIATION.md`. 1237 tests. Remaining: **12a/12b/12c**, the RuneLite plugin
+itself, now unblocked.
 
 > **Step 9 deviation, deliberate.** Tasks 3 and 4 name `tracker/progression/persist.py` and
 > `tracker/recommendations/persist.py`. Both packages sit inside §16.1's purity boundary,
@@ -1418,11 +1420,19 @@ python -c "import json,jsonschema; s=json.load(open('contracts/sync_payload.sche
       require a `payload_version` bump and a coordinated Step 12 update
 - [ ] Spike code deleted; `plugin/` still empty
 
-## User gate
+## User gate — ✅ satisfied 2026-08-11
 
-This step needs a **local RuneLite install and a human to launch the game and press the
-hotkey**. An agent can write the spike; it cannot capture the snapshot. See
-[Open items](#open-items-for-the-user).
+Four captures on a live account (RuneLite 1.12.35). The contract is **frozen**; every exit
+criterion above is met, and `docs/CONTRACT_RECONCILIATION.md` records the rulings. The payload
+needed **no shape change** — `payload_version` stays `1`.
+
+> **The surprise worth carrying forward.** Three of the four captures failed, and each failure
+> was the finding: `client.getItemContainer(93|94|95)` returns null and
+> `client.getItemContainers()` enumerates zero entries, so containers must come from
+> `ItemContainerChanged` — which fires **on change**. An observed-empty container does emit a
+> scan; an untouched one is silent and honestly `unknown`. **Step 12b cannot force a read**, and
+> faking a scan the client never witnessed is the one failure mode that silently destroys the
+> §6.5 unknown-state design.
 
 ## Rollback
 
@@ -2066,6 +2076,7 @@ Plans decay on contact with implementation. When a step turns out wrong:
 | 2026-08-04 | Correction | 6 → 7, 8c | G1 and G6 reassigned; `recommend()` is pure and structurally cannot test either |
 | 2026-08-04 | Correction | all | `make test -- tests/x` replaced with `make test ARGS=tests/x`; the former exits 2 under GNU make |
 | 2026-08-04 | Correction | 4 | `unlock_fraction` denominator corrected to *all* leaves per §6.9 (was: exclude unknowns from both sides) |
+| 2026-08-11 | Completed | **8.5** | Contract frozen against four real RuneLite 1.12.35 captures. No shape change, so `payload_version` stays 1. Rulings in `docs/CONTRACT_RECONCILIATION.md`; redacted fixture and nine guarding assertions in `tests/contracts/`. Spike deleted, `plugin/` still empty. **12a/12b/12c are now unblocked** — they are all that remains of the plan. |
 | 2026-08-04 | Ratified | all | All 21 amendments folded into `docs/SDD.md` **v0.5**; traced in SDD §20. `Candidate` landed at **§10.6** (not §10.8), validation renumbered to §10.7, `ActiveRoadmap` at §6.12, Migrations to §6.13. D11/D12 and §4.5 added. A21 settled as Python 3.12+. **The SDD is now authoritative over this plan.** |
 
 ---
@@ -2108,17 +2119,15 @@ to prevent*, which makes them the ones most likely to creep back in:
    traced in its §20. One judgment call inside that worth knowing you can reverse: **A21 was
    settled as `Python 3.12+`** rather than installing 3.13, since nothing in the design needs
    3.13. Flip §14.1 and Step 1 if you'd rather pin 3.13.
-2. **Step 8.5 needs you.** Capturing a real RuneLite snapshot requires a local RuneLite
-   install and a human to launch the game. An agent writes the spike; it cannot run it.
+2. ~~**Step 8.5 needs you.**~~ **Done 2026-08-11** — four captures on a live account froze the
+   contract with no shape change. See `docs/CONTRACT_RECONCILIATION.md`. The one thing to know
+   without reading it: containers come from `ItemContainerChanged` and it fires on *change*, so
+   an untouched container yields no evidence at all and stays `unknown`.
 3. **Step 12 needs Gradle and RuneLite.** Neither `gradle` nor a RuneLite install is present.
    Either install Gradle or commit a `gradle-wrapper.jar` + `gradle-wrapper.properties` by
    hand. Side-load verification is a human gate.
-4. **Step 13 still needs you — one question, not three.** D1, D2 and D3 are resolved and
-   implemented (Step 13b). What remains is **D4** in `docs/TUNING.md`: two profiles reach
-   100% agreement and the search's tie-break cannot choose between them, because a factor
-   added after the profile was written is at `0` in that profile by construction. Pick
-   `method_unlock: 0.1` (recommended), `method_unlock: 0.2`, or `effort_decay: 0.8` with the
-   factor left inert — then the second commit writes `version: 2` and `tuned_against_corpus`
-   and removes scenario 10's last `pending_review:`.
+4. ~~**Step 13 still needs you.**~~ **Done** — D4 was resolved in favour of
+   `method_unlock: 0.1`; `content/scoring/profile.yaml` ships `version: 2` with
+   `tuned_against_corpus: b978d44` (commit `b43cae1`).
 5. **No git remote.** This plan assumes local branches. If you want PRs and CI, install `gh`
    and create a remote — the per-unit workflow gains `gh pr create` and nothing else changes.

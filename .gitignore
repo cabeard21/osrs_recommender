@@ -9,6 +9,7 @@ config.yaml
 # letting the linters walk into them would mix another unit's work into this one's.
 .claude/
 plugin/build/
+spike/*/build/
 .gradle/
 .pytest_cache/
 .mypy_cache/
@@ -16,3 +17,5 @@ plugin/build/
 .coverage
 htmlcov/
 *.egg-info/
+credentials.properties
+snapshot.json

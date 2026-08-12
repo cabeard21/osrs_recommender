@@ -28,14 +28,18 @@ def test_the_contract_lives_where_both_languages_look_for_it() -> None:
     assert CONTRACT_PATH.parts[-2:] == ("contracts", "sync_payload.schema.json")
 
 
-def test_the_contract_is_still_marked_provisional() -> None:
-    """D12 / §12.1 — provisional until a real RuneLite snapshot has validated against it.
+def test_the_contract_is_frozen() -> None:
+    """D12 / §12.1 — frozen at Step 8.5, once a real RuneLite snapshot validated against it.
 
-    This test is meant to *fail* at Step 8.5, which is when the marker is removed and the
-    schema freezes. Failing then is the point: it makes the freeze a deliberate edit
-    rather than something that happens when nobody is looking.
+    This test used to assert the opposite and was written to fail here, so that the freeze
+    would be a deliberate edit rather than something that happened when nobody was looking.
+    It failed as designed; the marker is now gone and the reasoning lives in
+    `docs/CONTRACT_RECONCILIATION.md`. Further changes cost a `payload_version` bump (§12.2),
+    which `tests/contracts/test_real_snapshot.py` enforces against a committed real capture.
     """
-    assert load_sync_payload_schema()["x-status"] == "provisional"
+    schema = load_sync_payload_schema()
+    assert "x-status" not in schema
+    assert schema["x-frozen"] == "2026-08-11"
 
 
 def _objects(node: Any, path: str = "<root>") -> list[tuple[str, dict[str, Any]]]:
