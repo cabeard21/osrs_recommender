@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
@@ -61,6 +62,7 @@ public class SnapshotSpikePlugin extends Plugin
 	private SnapshotSpikeConfig config;
 
 	private final BankWatch bankWatch = new BankWatch();
+	private final ContainerCache containers = new ContainerCache();
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
 	private final HotkeyListener captureHotkey = new HotkeyListener(() -> config.captureHotkey())
@@ -92,6 +94,17 @@ public class SnapshotSpikePlugin extends Plugin
 		keyManager.unregisterKeyListener(captureHotkey);
 	}
 
+	/**
+	 * The only reliable source of container contents in 1.12.35 — see {@link ContainerCache} for
+	 * what the direct lookups returned. Fires on login for inventory and equipment, and on bank
+	 * open, so a session that logs in and opens the bank has all three.
+	 */
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		containers.record(event.getContainerId(), event.getItemContainer(), Instant.now());
+	}
+
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
@@ -121,7 +134,7 @@ public class SnapshotSpikePlugin extends Plugin
 		final JsonObject snapshot;
 		try
 		{
-			snapshot = SnapshotBuilder.build(client, bankWatch);
+			snapshot = SnapshotBuilder.build(client, bankWatch, containers);
 		}
 		catch (RuntimeException e)
 		{

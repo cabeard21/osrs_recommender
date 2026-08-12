@@ -46,7 +46,7 @@ final class SnapshotBuilder
 	{
 	}
 
-	static JsonObject build(Client client, BankWatch bankWatch)
+	static JsonObject build(Client client, BankWatch bankWatch, ContainerCache containers)
 	{
 		final Instant now = Instant.now();
 		final JsonObject root = new JsonObject();
@@ -69,12 +69,13 @@ final class SnapshotBuilder
 
 		final JsonArray observedItems = new JsonArray();
 		final JsonArray containerScans = new JsonArray();
-		collectContainer(client, InventoryID.INV, "inventory", now, observedItems, containerScans, raw);
-		collectContainer(client, InventoryID.WORN, "equipment", now, observedItems, containerScans, raw);
-		collectBank(client, bankWatch, observedItems, containerScans, raw);
+		collectContainer(client, containers, InventoryID.INV, "inventory", observedItems, containerScans, raw);
+		collectContainer(client, containers, InventoryID.WORN, "equipment", observedItems, containerScans, raw);
+		collectContainer(client, containers, InventoryID.BANK, "bank", observedItems, containerScans, raw);
 		root.add("observed_items", observedItems);
 		root.add("container_scans", containerScans);
 		raw.add("item_containers_present", presentContainers(client));
+		raw.add("bank_widget_edges", bankWidgetEdges(bankWatch));
 
 		// No practice_events: the spike does no detection (plan step 8.5 task 1). Step 12c owns it.
 
@@ -241,65 +242,68 @@ final class SnapshotBuilder
 		return out;
 	}
 
-	private static void collectContainer(Client client, int inventoryId, String container, Instant now,
-		JsonArray observedItems, JsonArray containerScans, JsonObject raw)
+	/**
+	 * One container, sourced from the {@code ItemContainerChanged} cache and falling back to the
+	 * (so far always-null) direct lookup. A container never observed emits <b>no</b> scan row:
+	 * §6.5's "never looked" must stay distinguishable from "looked, found nothing".
+	 */
+	private static void collectContainer(Client client, ContainerCache containers, int inventoryId,
+		String container, JsonArray observedItems, JsonArray containerScans, JsonObject raw)
 	{
-		final ItemContainer itemContainer = findContainer(client, inventoryId);
 		final JsonObject diagnostics = new JsonObject();
 		diagnostics.addProperty("requested_id", inventoryId);
-		diagnostics.addProperty("resolved_by", resolutionPath(client, inventoryId));
-		diagnostics.addProperty("container_null", itemContainer == null);
-		if (itemContainer == null)
+
+		final ContainerCache.Observation observed = containers.get(inventoryId);
+		final Item[] items;
+		final Instant seenAt;
+		if (observed != null)
 		{
-			// §6.5: no scan row. "Never looked" must stay distinguishable from "empty".
-			raw.add(container, diagnostics);
-			return;
+			diagnostics.addProperty("resolved_by", "item_container_changed_event");
+			diagnostics.addProperty("size", observed.size);
+			items = observed.items;
+			seenAt = observed.observedAt;
+		}
+		else
+		{
+			final ItemContainer direct = findContainer(client, inventoryId);
+			diagnostics.addProperty("resolved_by", direct == null ? "none" : resolutionPath(client, inventoryId));
+			if (direct == null)
+			{
+				diagnostics.addProperty("scan_emitted", false);
+				raw.add(container, diagnostics);
+				return;
+			}
+			diagnostics.addProperty("size", direct.size());
+			items = direct.getItems();
+			// No event time available, so the best available answer is "now" — recorded as such
+			// rather than passed off as an observation time (§4.5).
+			seenAt = Instant.now();
+			diagnostics.addProperty("scan_time_is_capture_time", true);
 		}
 
-		diagnostics.addProperty("size", itemContainer.size());
-		diagnostics.addProperty("placeholders_skipped", addItems(itemContainer, container, observedItems));
+		diagnostics.addProperty("placeholders_skipped", addItems(items, container, observedItems));
+		diagnostics.addProperty("scan_emitted", true);
 		raw.add(container, diagnostics);
 
 		final JsonObject scan = new JsonObject();
 		scan.addProperty("container", container);
-		scan.addProperty("scanned_at", rfc3339(now));
+		// §4.5: stamped when the contents were seen, not when the hotkey was pressed.
+		scan.addProperty("scanned_at", rfc3339(seenAt));
 		containerScans.add(scan);
 	}
 
 	/**
-	 * §6.5's hard case. A bank container only exists once the bank has been opened this session,
-	 * and the plan calls out that an empty bank must still emit a scan. Whether the container is
-	 * ever <em>complete</em> — i.e. whether tab filtering or a search leaves it partial — is
-	 * exactly what {@link BankWatch} records evidence for.
+	 * The bank interface's open/close edges. No longer the scan anchor — the event cache carries
+	 * a truer observation time — but kept as evidence for the reconciliation doc's question of
+	 * whether a <em>complete</em> bank scan is detectable at all.
 	 */
-	private static void collectBank(Client client, BankWatch bankWatch, JsonArray observedItems,
-		JsonArray containerScans, JsonObject raw)
+	private static JsonObject bankWidgetEdges(BankWatch bankWatch)
 	{
-		final ItemContainer bank = findContainer(client, InventoryID.BANK);
-		final JsonObject diagnostics = new JsonObject();
-		diagnostics.addProperty("resolved_by", resolutionPath(client, InventoryID.BANK));
-		diagnostics.addProperty("ever_opened_this_session", bankWatch.everOpened());
-		diagnostics.addProperty("container_null", bank == null);
-		diagnostics.addProperty("last_opened_at", bankWatch.openedAt() == null ? null : rfc3339(bankWatch.openedAt()));
-		diagnostics.addProperty("last_closed_at", bankWatch.closedAt() == null ? null : rfc3339(bankWatch.closedAt()));
-
-		if (bank != null && bankWatch.closedAt() != null)
-		{
-			diagnostics.addProperty("size", bank.size());
-			diagnostics.addProperty("placeholders_skipped", addItems(bank, "bank", observedItems));
-
-			final JsonObject scan = new JsonObject();
-			scan.addProperty("container", "bank");
-			// §4.5: the scan is stamped when the bank was seen in full, not when the hotkey was
-			// pressed. Stamping it "now" would be the observation-time-is-not-truth defect.
-			scan.addProperty("scanned_at", rfc3339(bankWatch.closedAt()));
-			containerScans.add(scan);
-		}
-		else
-		{
-			diagnostics.addProperty("scan_emitted", false);
-		}
-		raw.add("bank", diagnostics);
+		final JsonObject edges = new JsonObject();
+		edges.addProperty("ever_opened_this_session", bankWatch.everOpened());
+		edges.addProperty("last_opened_at", bankWatch.openedAt() == null ? null : rfc3339(bankWatch.openedAt()));
+		edges.addProperty("last_closed_at", bankWatch.closedAt() == null ? null : rfc3339(bankWatch.closedAt()));
+		return edges;
 	}
 
 	/**
@@ -364,11 +368,11 @@ final class SnapshotBuilder
 	}
 
 	/** @return how many placeholder/empty slots were skipped — schema requires quantity ≥ 1. */
-	private static int addItems(ItemContainer container, String containerName, JsonArray observedItems)
+	private static int addItems(Item[] items, String containerName, JsonArray observedItems)
 	{
 		final Map<Integer, Integer> totals = new LinkedHashMap<>();
 		int skipped = 0;
-		for (Item item : container.getItems())
+		for (Item item : items)
 		{
 			if (item.getId() <= 0 || item.getQuantity() <= 0)
 			{
