@@ -76,6 +76,7 @@ final class SnapshotBuilder
 		root.add("container_scans", containerScans);
 		raw.add("item_containers_present", presentContainers(client));
 		raw.add("bank_widget_edges", bankWidgetEdges(bankWatch));
+		raw.add("container_events", containerEvents(containers));
 
 		// No practice_events: the spike does no detection (plan step 8.5 task 1). Step 12c owns it.
 
@@ -345,6 +346,26 @@ final class SnapshotBuilder
 			return "direct";
 		}
 		return findContainer(client, inventoryId) != null ? "hash_table_scan" : "none";
+	}
+
+	/**
+	 * Every container id that ever fired an {@code ItemContainerChanged}, whether or not the
+	 * snapshot maps it. The third capture saw <b>only</b> id 95 (bank) on an account whose
+	 * inventory and equipment were empty in game — evidence that an empty container may never
+	 * fire at all, which would mean events alone cannot witness "looked, found nothing" (§6.5).
+	 */
+	private static JsonArray containerEvents(ContainerCache containers)
+	{
+		final JsonArray out = new JsonArray();
+		for (Map.Entry<Integer, ContainerCache.Observation> entry : containers.all().entrySet())
+		{
+			final JsonObject event = new JsonObject();
+			event.addProperty("id", entry.getKey());
+			event.addProperty("observed_at", rfc3339(entry.getValue().observedAt));
+			event.addProperty("size", entry.getValue().size);
+			out.add(event);
+		}
+		return out;
 	}
 
 	/** Every container the client currently holds. Evidence, not guesswork, for the next diff. */
