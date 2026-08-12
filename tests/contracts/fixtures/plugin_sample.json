@@ -1,0 +1,67 @@
+{
+  "payload_version": 1,
+  "observed_at": "2026-08-11T20:15:00Z",
+  "player": {
+    "username": "redacted",
+    "display_name": "redacted",
+    "combat_level": 126,
+    "quest_points": 300
+  },
+  "skills": [
+    {
+      "skill": "magic",
+      "level": 94,
+      "xp": 7195629
+    },
+    {
+      "skill": "construction",
+      "level": 1,
+      "xp": null
+    }
+  ],
+  "quests": [
+    {
+      "quest_id": "desert_treasure_i",
+      "status": "complete"
+    },
+    {
+      "quest_id": "lunar_diplomacy",
+      "status": "in_progress"
+    }
+  ],
+  "unlocks": [
+    {
+      "key": "ancient_magicks",
+      "state": "unlocked"
+    },
+    {
+      "key": "rigour",
+      "state": "available"
+    },
+    {
+      "key": "diary_wilderness_hard",
+      "state": "locked"
+    }
+  ],
+  "observed_items": [
+    {
+      "item_id": 27690,
+      "quantity": 1,
+      "container": "bank"
+    }
+  ],
+  "container_scans": [
+    {
+      "container": "bank",
+      "scanned_at": "2026-08-11T20:12:30Z"
+    }
+  ],
+  "practice_events": [
+    {
+      "domain": "lms",
+      "started_at": "2026-08-11T19:45:00Z",
+      "ended_at": "2026-08-11T20:05:00Z",
+      "evidence_type": "lms_match_completed"
+    }
+  ]
+}
