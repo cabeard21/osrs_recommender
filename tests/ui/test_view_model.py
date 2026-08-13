@@ -27,13 +27,18 @@ from tracker.ui.view_model import (
     GP_SENSITIVITY_LABELS,
     NO_READINESS,
     CapabilityRow,
+    GoalProgressRow,
     LeafRow,
+    NeededForRow,
     RoadmapOptionRow,
+    SpeedUpRow,
+    UnblockRow,
     assert_at_most_one_refresher,
     capability_row,
     mark_primary,
     readiness_label,
     recommendation_entry_row,
+    roadmap_selector_model,
     skill_row,
     unlock_row,
 )
@@ -400,6 +405,53 @@ def test_ties_break_by_id_so_primary_is_deterministic() -> None:
 
 
 # ---------------------------------------------------------------------------
+# The global selector — a model, so "is there a dropdown" needs no browser
+# ---------------------------------------------------------------------------
+
+
+def _noop(_roadmap_id: str) -> None:  # pragma: no cover — never called by these tests
+    return None
+
+
+def test_no_selector_when_there_is_nothing_to_choose_between() -> None:
+    """No player and no corpus roadmaps are the same answer: draw no control at all."""
+    assert roadmap_selector_model((), _noop) is None
+
+
+def test_the_selector_shows_mark_primarys_answer() -> None:
+    options = (
+        RoadmapOptionRow("anti_pk", "Anti-PKer", selected=True, selection_weight=0.25),
+        RoadmapOptionRow("main_nh", "Main NH", selected=True, selection_weight=1.0),
+    )
+    model = roadmap_selector_model(options, _noop)
+    assert model is not None
+    assert model.value == mark_primary(options)[0].roadmap_id == "main_nh"
+
+
+def test_the_selector_inherits_the_tie_break_rather_than_inventing_one() -> None:
+    options = (
+        RoadmapOptionRow("b_roadmap", "B", selected=True, selection_weight=1.0),
+        RoadmapOptionRow("a_roadmap", "A", selected=True, selection_weight=1.0),
+    )
+    model = roadmap_selector_model(options, _noop)
+    assert model is not None
+    assert model.value == "a_roadmap"
+
+
+def test_the_selector_has_no_value_when_nothing_is_selected_yet() -> None:
+    """A fresh player row with no ``ActiveRoadmap``: the options exist, the choice does not.
+
+    ``value`` must be ``None`` rather than the first option — preselecting one would be the
+    UI asserting a roadmap the player never chose.
+    """
+    options = (RoadmapOptionRow("main_nh", "Main NH", selected=False, selection_weight=0.0),)
+    model = roadmap_selector_model(options, _noop)
+    assert model is not None
+    assert model.value is None
+    assert model.options == options
+
+
+# ---------------------------------------------------------------------------
 # Step 11 — Settings: user language only (§9.6)
 # ---------------------------------------------------------------------------
 
@@ -413,3 +465,101 @@ def test_sensitivity_labels_never_say_kappa_or_gp_sensitivity() -> None:
         assert "κ" not in label
         assert "kappa" not in label.lower()
         assert "gp sensitivity" not in label.lower()
+
+
+# ---------------------------------------------------------------------------
+# Step 12 — §9.10's consequences: what a recommendation is *for*
+# ---------------------------------------------------------------------------
+
+
+def test_a_needed_for_row_says_how_much_of_the_gate_it_clears() -> None:
+    """A bare "Desert Treasure I" is a goal with no sense of distance. The point of the row
+    is that the reader can tell a one-step prerequisite from a ten-step one."""
+    row = NeededForRow(name="Complete Desert Treasure I", remaining_before=3, remaining_after=2)
+
+    assert row.label == "Complete Desert Treasure I (1 of 3 remaining)"
+
+
+def test_a_gate_fully_cleared_reads_as_an_unblock_rather_than_as_zero() -> None:
+    """ "0 of 3 remaining" reads as a broken template, and the whole point of the case is
+    that the counting has stopped."""
+    row = NeededForRow(name="Complete Desert Treasure I", remaining_before=3, remaining_after=0)
+
+    assert row.label == "Complete Desert Treasure I (unblocks it)"
+    assert "0 of" not in row.label
+
+
+def test_a_needed_for_row_never_calls_the_count_the_requirements() -> None:
+    """G3, in the one place a reader would be misled by the shorter word.
+
+    The counts are over leaves the account is *known* to fail; a gate also holds leaves
+    nobody has been asked about. Saying "1 of 3 requirements" would quietly promise that
+    the three are all of them, when the corpus may name eleven.
+    """
+    label = NeededForRow(name="Q", remaining_before=3, remaining_after=2).label
+
+    assert "requirement" not in label
+    assert "remaining" in label
+
+
+def test_a_needed_for_row_carries_the_goal_one_hop_further() -> None:
+    """The sentence the user asked for, end to end: the chore, the task it unlocks, and the
+    point of that task."""
+    row = NeededForRow(
+        name="Complete Desert Treasure I",
+        remaining_before=3,
+        remaining_after=2,
+        goal_name="Ice Barrage NH",
+        goal_on_roadmap=False,
+    )
+
+    assert row.label == (
+        "Complete Desert Treasure I (1 of 3 remaining) → Ice Barrage NH (not on your roadmap)"
+    )
+
+
+def test_an_off_roadmap_goal_says_so_in_words_a_player_would_use() -> None:
+    """The flag is about the player's *selection*, so it is phrased about their roadmap and
+    not about the corpus — and it is words, because a colour cannot be read aloud."""
+    row = GoalProgressRow(name="Anti-PK", remaining_before=4, remaining_after=2, on_roadmap=False)
+
+    assert row.label == "Anti-PK (2 of 4 remaining) (not on your roadmap)"
+
+
+def test_an_on_roadmap_goal_carries_no_flag_at_all() -> None:
+    """Silence is the unmarked case. Flagging both would make the distinction invisible,
+    which is the only thing the flag is for."""
+    row = GoalProgressRow(
+        name="Boss fundamentals", remaining_before=5, remaining_after=4, on_roadmap=True
+    )
+
+    assert row.label == "Boss fundamentals (1 of 5 remaining)"
+    assert "roadmap" not in row.label
+
+
+def test_a_speed_up_row_quotes_both_sizings_rather_than_a_saving() -> None:
+    """ "97 hours saved" is a fact about the arithmetic; "113h → 16h" is a fact about the
+    player's evening, and only one of them answers "should I do this first?"."""
+    row = SpeedUpRow(name="Train Magic 87 → 94", hours_before=113.0, hours_after=16.0)
+
+    assert row.label == "Train Magic 87 → 94: 113h → 16h"
+
+
+def test_a_short_grind_keeps_the_decimal_a_long_one_drops() -> None:
+    """Below ten hours the decimal separates two different evenings; above it, it would
+    imply a precision §8's sizing does not have."""
+    assert SpeedUpRow(name="X", hours_before=7.5, hours_after=2.25).label == "X: 7.5h → 2.2h"
+
+
+def test_the_renderer_is_handed_labels_it_does_not_have_to_compose() -> None:
+    """§15's split, applied to the newest rows. A sentence assembled inside a `ui.html(...)`
+    call can only be checked by driving a browser, and a rule that expensive to check stops
+    being checked — so every one of these types answers for its own words here."""
+    rows = (
+        UnblockRow(name="Ice Barrage NH"),
+        NeededForRow(name="Q", remaining_before=2, remaining_after=1),
+        GoalProgressRow(name="C", remaining_before=2, remaining_after=1),
+        SpeedUpRow(name="G", hours_before=10.0, hours_after=1.0),
+    )
+
+    assert all(row.label for row in rows)

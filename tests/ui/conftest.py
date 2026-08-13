@@ -280,6 +280,54 @@ def seed(session: Session) -> int:
                     "fallback": True,
                 },
             ],
+            # Step 12: §9.10's consequences, one of each kind, so the browser test sees every
+            # heading the renderer can draw. Written as the engine serializes them — ids
+            # beside names — including one goal deliberately marked off-roadmap, which is the
+            # case the whole feature turns on.
+            consequences={
+                "unblocks_capabilities": [
+                    {"capability_id": "ice_barrage_nh", "name": "Ice Barrage NH"}
+                ],
+                "gate_progress": [
+                    {
+                        "candidate_id": "complete_desert_treasure_i",
+                        "name": "Complete Desert Treasure I",
+                        "remaining_before": 3,
+                        "remaining_after": 2,
+                        "satisfied": [],
+                    }
+                ],
+                "goal_progress": [
+                    {
+                        "capability_id": "boss_fundamentals",
+                        "name": "Boss fundamentals",
+                        "weight": 0.5,
+                        "remaining_before": 5,
+                        "remaining_after": 4,
+                        "on_roadmap": True,
+                        "satisfied": [],
+                    }
+                ],
+                "speeds_up": [
+                    {
+                        "candidate_id": "train_magic_94_to_99",
+                        "name": "Train Magic 94 → 99",
+                        "hours_before": 113.0,
+                        "hours_after": 16.0,
+                    }
+                ],
+                "goal_links": [
+                    {
+                        "capability_id": "deep_wildy_nh",
+                        "name": "Deep Wilderness NH",
+                        "weight": 0.0,
+                        "on_roadmap": False,
+                        "via_candidate_id": "complete_desert_treasure_i",
+                        "via_name": "Complete Desert Treasure I",
+                        "contribution": 0.6,
+                    }
+                ],
+            },
             blocked=False,
         )
     )

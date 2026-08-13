@@ -692,3 +692,136 @@ def test_snapshot_diff_reports_the_same_snapshot_as_unchanged(
     diff = read_model.snapshot_diff(session, player_id, snapshot_id, snapshot_id)
     assert diff
     assert all(row.delta == 0.0 or row.delta is None for row in diff)
+
+
+def test_consequences_are_read_from_the_snapshot_rather_than_recomputed(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> None:
+    """§6.10's whole point, applied to the newest column.
+
+    A consequence is a fact about the account *when the run happened*: "unblocks Desert
+    Treasure I" stops being true the moment the quest is finished. Re-deriving it on read
+    would relabel a historical entry with today's facts, which is what a snapshot exists to
+    prevent — the same argument that already makes ``reason`` a stored string and ``bands`` a
+    stored breakdown.
+
+    The blob below names a capability the corpus does not declare, so nothing here could
+    have been re-derived: if the row renders it, the row came from storage.
+    """
+    from tracker.db.enums import RecommendationCandidateKind
+    from tracker.db.models import RecommendationEntry, RecommendationSnapshot
+
+    snapshot = RecommendationSnapshot(
+        player_id=player_id, run_at=now, roadmap_selection={}, scoring_profile_version=1
+    )
+    session.add(snapshot)
+    session.flush()
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="train_magic_87_to_94",
+            rank=1,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=1.0,
+            factors={},
+            reason="",
+            estimate_confidence=Confidence.HIGH,
+            consequences={
+                "unblocks_capabilities": [
+                    {"capability_id": "retired_capability", "name": "A Capability Since Retired"}
+                ],
+                "gate_progress": [],
+                "goal_progress": [],
+                "speeds_up": [],
+                "goal_links": [],
+            },
+            blocked=False,
+        )
+    )
+    session.commit()
+
+    row = read_model.recommendation_rows(session, player_id, content, now)[0]
+
+    assert [entry.label for entry in row.unblocks] == ["A Capability Since Retired"]
+
+
+def test_a_consequence_whose_capability_left_the_corpus_renders_the_stored_name(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> None:
+    """``_band_rows``' degradation rule, applied to a second join.
+
+    Content changes between runs. Renaming or dropping a capability must not turn a History
+    page into a stack trace, and the name the run recorded is still the most truthful thing
+    available about what that row described.
+    """
+    from tracker.db.enums import RecommendationCandidateKind
+    from tracker.db.models import RecommendationEntry, RecommendationSnapshot
+
+    snapshot = RecommendationSnapshot(
+        player_id=player_id, run_at=now, roadmap_selection={}, scoring_profile_version=1
+    )
+    session.add(snapshot)
+    session.flush()
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="train_magic_87_to_94",
+            rank=1,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=1.0,
+            factors={},
+            reason="",
+            estimate_confidence=Confidence.HIGH,
+            consequences={
+                "gate_progress": [
+                    {
+                        "candidate_id": "a_candidate_since_deleted",
+                        "name": "A Candidate Since Deleted",
+                        "remaining_before": 2,
+                        "remaining_after": 1,
+                        "satisfied": [],
+                    }
+                ]
+            },
+            blocked=False,
+        )
+    )
+    session.commit()
+
+    row = read_model.recommendation_rows(session, player_id, content, now)[0]
+
+    assert row.needed_for[0].label == "A Candidate Since Deleted (1 of 2 remaining)"
+
+
+def test_an_entry_written_before_the_column_existed_reports_no_consequences(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> None:
+    """The migration's ``server_default="{}"`` means *nothing was recorded*, and the read
+    path must render that as silence rather than raising or inventing a row."""
+    from tracker.db.enums import RecommendationCandidateKind
+    from tracker.db.models import RecommendationEntry, RecommendationSnapshot
+
+    snapshot = RecommendationSnapshot(
+        player_id=player_id, run_at=now, roadmap_selection={}, scoring_profile_version=1
+    )
+    session.add(snapshot)
+    session.flush()
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="train_magic_87_to_94",
+            rank=1,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=1.0,
+            factors={},
+            reason="",
+            estimate_confidence=Confidence.HIGH,
+            consequences={},
+            blocked=False,
+        )
+    )
+    session.commit()
+
+    row = read_model.recommendation_rows(session, player_id, content, now)[0]
+
+    assert (row.unblocks, row.needed_for, row.works_toward, row.speeds_up) == ((), (), (), ())

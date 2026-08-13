@@ -17,7 +17,7 @@ states is disjoint, and that the layout does not overflow a phone.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -390,6 +390,109 @@ class BandRow:
 
 
 @dataclass(frozen=True, slots=True)
+class UnblockRow:
+    """A capability this entry's completion would unlock outright (§9.10)."""
+
+    name: str
+
+    @property
+    def label(self) -> str:
+        return self.name
+
+
+@dataclass(frozen=True, slots=True)
+class NeededForRow:
+    """Another task this entry is a prerequisite of, and how much of its gate it clears.
+
+    The row that answers the user's actual question about a generated skill band: *"Train
+    Slayer to 10"* is on the list because Desert Treasure I cannot start without it.
+
+    ``goal_name`` carries the goal one hop further on, where the engine found one, so the
+    label can read all the way from the chore to the point of it.
+    """
+
+    name: str
+    remaining_before: int
+    remaining_after: int
+    goal_name: str | None = None
+    goal_on_roadmap: bool = True
+
+    @property
+    def label(self) -> str:
+        """ "Desert Treasure I (1 of 3 remaining) → Ice Barrage NH (not on your roadmap)".
+
+        *"unblocks it"* rather than *"0 of 3 remaining"* when the gate comes fully clear:
+        zero-of-anything reads as a broken template, and the whole point of that case is that
+        the counting stops.
+
+        "remaining", never "requirements" — the counts are over leaves the account is *known*
+        to fail, and a gate also holds leaves nobody has been asked about (G3). Calling four
+        of eleven "the requirements" would quietly promise that the other seven are met.
+        """
+        if self.remaining_after == 0:
+            progress = "unblocks it"
+        else:
+            cleared = self.remaining_before - self.remaining_after
+            progress = f"{cleared} of {self.remaining_before} remaining"
+        label = f"{self.name} ({progress})"
+        if self.goal_name is None:
+            return label
+        return f"{label} → {self.goal_name}{_off_roadmap(self.goal_on_roadmap)}"
+
+
+@dataclass(frozen=True, slots=True)
+class GoalProgressRow:
+    """A capability whose own requirements this entry directly reduces (§9.10)."""
+
+    name: str
+    remaining_before: int
+    remaining_after: int
+    on_roadmap: bool = True
+
+    @property
+    def label(self) -> str:
+        cleared = self.remaining_before - self.remaining_after
+        return (
+            f"{self.name} ({cleared} of {self.remaining_before} remaining)"
+            f"{_off_roadmap(self.on_roadmap)}"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SpeedUpRow:
+    """A grind this entry's completion would shorten, with both sizings (A30)."""
+
+    name: str
+    hours_before: float
+    hours_after: float
+
+    @property
+    def label(self) -> str:
+        return f"{self.name}: {_hours(self.hours_before)} → {_hours(self.hours_after)}"
+
+
+def _off_roadmap(on_roadmap: bool) -> str:
+    """The flag that turns a baffling recommendation into a legible one.
+
+    Said in the player's own terms — *"your roadmap"* — because the fact being reported is
+    about their selection and not about the corpus. The same capability is unflagged the
+    moment they select a roadmap that weights it.
+    """
+    return "" if on_roadmap else " (not on your roadmap)"
+
+
+def _hours(hours: float) -> str:
+    """``113h``, or ``7.5h`` below ten — :func:`tracker.recommendations.details._hours`'s rule.
+
+    Duplicated rather than imported because the two are the same *convention* and not the same
+    *call*: one renders into a reason string the engine persists, the other into a row the
+    browser draws, and a UI module importing from the ranking engine to format an hour would
+    be a dependency nobody wants to explain later.
+    """
+    return f"{hours:.1f}h" if hours < 10.0 else f"{hours:.0f}h"
+
+
+@dataclass(frozen=True, slots=True)
 class RecommendationEntryRow:
     """One ranked entry of §9.10's output shape.
 
@@ -412,6 +515,20 @@ class RecommendationEntryRow:
     confidence: Confidence
     unlocks: tuple[str, ...] = ()
     advances: tuple[str, ...] = ()
+    unblocks: tuple[UnblockRow, ...] = ()
+    """Capabilities this entry would unlock outright (§9.10).
+
+    Kept separate from ``unlocks`` rather than merged into it, because the two are different
+    facts: ``unlocks`` names the ``unlock:`` *keys* a candidate's ``grants_facts`` declares —
+    "Ancient Magicks" — while this names the **capabilities** whose status those facts would
+    flip — "Ice Barrage NH". Merging them would put a spellbook and a fighting style in one
+    list under one verb, and no reader could tell which was which."""
+    needed_for: tuple[NeededForRow, ...] = ()
+    """Tasks this entry is a prerequisite of (§9.10) — the chain, read off the snapshot."""
+    works_toward: tuple[GoalProgressRow, ...] = ()
+    """Capabilities whose own requirements this entry directly reduces (§9.10)."""
+    speeds_up: tuple[SpeedUpRow, ...] = ()
+    """Grinds this entry would shorten, with both sizings (A30)."""
     practice_members: tuple[str, ...] = ()
     suggested_session: str | None = None
     bands: tuple[BandRow, ...] = ()
@@ -497,6 +614,10 @@ def recommendation_entry_row(
     confidence: Confidence,
     unlocks: Sequence[str] = (),
     advances: Sequence[str] = (),
+    unblocks: Sequence[UnblockRow] = (),
+    needed_for: Sequence[NeededForRow] = (),
+    works_toward: Sequence[GoalProgressRow] = (),
+    speeds_up: Sequence[SpeedUpRow] = (),
     practice_members: Sequence[str] = (),
     suggested_session: str | None = None,
     bands: Sequence[BandRow] = (),
@@ -525,6 +646,10 @@ def recommendation_entry_row(
         confidence=confidence,
         unlocks=tuple(unlocks),
         advances=tuple(advances),
+        unblocks=tuple(unblocks),
+        needed_for=tuple(needed_for),
+        works_toward=tuple(works_toward),
+        speeds_up=tuple(speeds_up),
         practice_members=tuple(practice_members),
         suggested_session=suggested_session,
         bands=tuple(bands),
@@ -619,6 +744,46 @@ def mark_primary(rows: Sequence[RoadmapOptionRow]) -> tuple[RoadmapOptionRow, ..
         return ()
     best = sorted(selected, key=lambda row: (-row.selection_weight, row.roadmap_id))[0]
     return (best,)
+
+
+@dataclass(frozen=True, slots=True)
+class RoadmapSelectorModel:
+    """Everything the shell needs to draw the header roadmap selector.
+
+    Rows plus one already-bound write, because :mod:`tracker.ui.shell` opens no session and
+    knows no read model — the same contract every view function already has
+    (``capabilities_view.render(rows, on_attest=...)``). The model is built in
+    :mod:`tracker.ui.pages`, which is the only module allowed to bind the callback.
+
+    ``value`` is :func:`mark_primary`'s answer, and is therefore a *display* rule rather
+    than a stored field, exactly as :class:`RoadmapOptionRow` documents. The selector
+    switches the primary only; secondaries and raw weights stay on ``/roadmaps`` (§4.3:
+    first-run is *"a simple choice of playstyle rather than an abstract weighting
+    exercise"*, and a one-value dropdown is that choice).
+    """
+
+    options: tuple[RoadmapOptionRow, ...]
+    value: str | None
+    on_select: Callable[[str], None]
+
+
+def roadmap_selector_model(
+    rows: Sequence[RoadmapOptionRow], on_select: Callable[[str], None]
+) -> RoadmapSelectorModel | None:
+    """``None`` when there is nothing to choose between — no player, or no roadmaps.
+
+    Returning ``None`` rather than an empty or disabled model is the §4.5 rule applied to a
+    control: a dropdown on a page with no account would imply a choice exists when it does
+    not. Pure, so "is there a selector at all" is assertable without a browser.
+    """
+    if not rows:
+        return None
+    primary = mark_primary(rows)
+    return RoadmapSelectorModel(
+        options=tuple(rows),
+        value=primary[0].roadmap_id if primary else None,
+        on_select=on_select,
+    )
 
 
 # ---------------------------------------------------------------------------

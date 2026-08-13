@@ -129,7 +129,19 @@ class Capability(ContentModel):
     pvp_value: float | None = Field(default=None, ge=0.0, le=1.0)
     """An authoring hint only. The §9.4 *scoring* factor of the same name is derived
     from candidates (§10.6) — *"none is authored directly, so no content file can
-    assert its own priority."*"""
+    assert its own priority."*
+
+    **Read it as "goal value", not literally as "PvP value".** The corpus has carried a
+    non-PvP roadmap since the bossing ladder (``content/roadmaps/pvm_ladder.yaml``), whose
+    five rung capabilities declare this field like any other. The name is kept because it
+    is load-bearing in five places at once — this schema, :class:`ScoringWeights`, the
+    tuned ``content/scoring/profile.yaml``, the factor JSON persisted on every
+    ``RecommendationEntry``, and every golden fixture — and renaming it would rewrite all
+    of them to change nothing the engine computes.
+
+    Worth stating plainly for whoever reads a rung file next: **no scoring factor reads
+    this field**, so tuning it moves nothing. What gives a PvM capability weight is a
+    candidate's ``advances`` map plus the roadmap's own capability weight (§9.3)."""
     recommended_readiness: Confidence = Confidence.MEDIUM
 
     _parse_requires = _requirement_field("requires")

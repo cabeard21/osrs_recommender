@@ -33,6 +33,7 @@ from tracker.domain.types import (
     CandidateKind,
     CapabilityView,
     Confidence,
+    Consequences,
     Estimate,
     IncumbentRecommendation,
     Recommendation,
@@ -123,6 +124,27 @@ def _factors_json(recommendation: Recommendation) -> dict[str, dict[str, float]]
     }
 
 
+def _consequences_json(consequences: Consequences) -> dict[str, Any]:
+    """§9.10's consequences, written straight off the frozen dataclasses the engine returned.
+
+    ``asdict`` rather than a hand-written mapping, for ``blockers``' reason: the stored shape
+    then cannot drift from :class:`~tracker.domain.types.Consequences` without the
+    serialization changing with it, and a field added to the derivation reaches the database
+    without anyone remembering to widen a dict literal here.
+
+    **Every id is stored beside its name**, which ``asdict`` gives for free because the
+    dataclasses carry both. That is what lets the read path degrade gracefully: a capability
+    the corpus has since renamed or dropped still has something truthful to render, and
+    §6.10's stored ranking never depends on today's content to be legible.
+
+    An empty :class:`Consequences` serializes to five empty lists rather than to ``{}``. Both
+    read back as *nothing recorded*; the explicit shape is preferable because it distinguishes
+    an entry the engine explained and found nothing for from a row written before the column
+    existed.
+    """
+    return asdict(consequences)
+
+
 def _bands_json(estimate: Estimate | None) -> list[dict[str, Any]]:
     """§8.2's per-band breakdown, for §15's "How" line.
 
@@ -200,6 +222,7 @@ def persist_recommendation_run(
                 estimate_confidence=estimate.confidence if estimate is not None else Confidence.LOW,
                 bands=_bands_json(estimate),
                 blockers=[asdict(leaf) for leaf in recommendation.blockers],
+                consequences=_consequences_json(recommendation.consequences),
                 blocked=recommendation.blocked,
             )
         )

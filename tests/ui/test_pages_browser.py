@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from playwright.sync_api import Page, ViewportSize
 
 from tracker.api.router import API_PREFIX
+from tracker.ui.shell import NAV
 from tracker.ui.view_model import BLOCKERS_CTA
 
 #: The viewport the plan names. A common small-phone width, and narrow enough that a single
@@ -291,6 +292,68 @@ def test_the_roadmap_selector_shows_the_players_live_selection(
     _open(phone, ui_base_url, "/roadmaps")
     assert phone.locator("[data-testid=primary-roadmap-radio]").count() == 1
     assert phone.locator("[data-testid=secondary-roadmap-checkbox]").count() >= 1
+    # The page's own control and the header selector coexist: the header offers §4.3's one
+    # choice, the page offers the weighting exercise. Both write through the same handler.
+    assert phone.locator("[data-testid=global-roadmap-select]").count() == 1
+
+
+@pytest.mark.parametrize("path", [item.path for item in NAV])
+def test_the_roadmap_selector_is_on_every_page(phone: Page, ui_base_url: str, path: str) -> None:
+    """The roadmap reframes every view, so it is reachable from every view.
+
+    Parametrized over :data:`~tracker.ui.shell.NAV` rather than over a copied list of paths,
+    so a tenth page added to the nav is covered the day it is added — the same argument the
+    nav's own docstring makes about there being one tuple.
+    """
+    _open(phone, ui_base_url, path)
+    selector = phone.locator("[data-testid=global-roadmap-select]")
+
+    assert selector.count() == 1, f"{path} has no roadmap selector"
+    # *Which* roadmap is primary belongs to the test below, which is also the test that can
+    # change it. Asserting a specific name here would make every page's coverage depend on
+    # the order the suite happens to run in.
+    assert selector.inner_text().strip() in {"Main NH", "Anti-PKer"}, f"{path} shows no selection"
+
+
+def test_switching_the_primary_roadmap_from_the_header_persists(
+    phone: Page, ui_base_url: str
+) -> None:
+    """A13: the header writes to ``ActiveRoadmap``, and ``/roadmaps`` agrees afterwards.
+
+    The options are asserted through the accessibility role rather than through a scoped
+    locator on purpose — NiceGUI's ``ui.select`` is a Quasar ``QSelect`` and renders its
+    popup into a ``.q-menu`` portal appended to ``<body>``, outside the element carrying the
+    testid. A locator scoped to the select finds zero options and the test would fail for a
+    reason that has nothing to do with the feature.
+    """
+    _open(phone, ui_base_url, "/")
+    phone.locator("[data-testid=global-roadmap-select]").click()
+    phone.get_by_role("option", name="Anti-PKer").click()
+
+    # The handler reloads, so wait for the shell to come back rather than for a timeout.
+    phone.wait_for_selector("[data-testid=nav]", timeout=15_000)
+    # ...and then wait for the reload to *finish*. The nav selector reappears as soon as
+    # NiceGUI has re-rendered over the websocket, which is before the reload's own document
+    # navigation has necessarily settled. Navigating away inside that window makes Chromium
+    # abort the new request in favour of the one already in flight — `net::ERR_ABORTED`, on a
+    # page that is perfectly healthy. The failure is timing-dependent, so it surfaces only
+    # when something unrelated changes how long the preceding tests take.
+    phone.wait_for_load_state("networkidle")
+
+    _open(phone, ui_base_url, "/roadmaps")
+    # ``roadmaps.py`` omits the primary from the secondary list, so which roadmap is primary
+    # is assertable by which checkbox exists — a stronger claim than the radio group's text,
+    # which names every option whichever one is selected.
+    secondary = "[data-testid=secondary-roadmap-checkbox]"
+    assert phone.locator(f"{secondary}[data-roadmap=main_nh]").count() == 1
+    assert phone.locator(f"{secondary}[data-roadmap=anti_pk]").count() == 0
+    assert "Anti-PKer" in phone.locator("[data-testid=global-roadmap-select]").inner_text()
+
+    # Restore the seeded primary. The database is shared across this module, and a test that
+    # leaves the account on a different roadmap makes every later assertion order-dependent.
+    phone.locator("[data-testid=global-roadmap-select]").click()
+    phone.get_by_role("option", name="Main NH").click()
+    phone.wait_for_selector("[data-testid=nav]", timeout=15_000)
 
 
 # ---------------------------------------------------------------------------
@@ -475,3 +538,51 @@ def test_the_blocked_list_asks_for_the_same_thing_as_the_capabilities_page(
     text = phone.locator("[data-testid=blocked-candidate] [data-testid=blocked-by]").inner_text()
 
     assert BLOCKERS_CTA in text
+
+
+def test_the_recommendations_page_names_what_an_entry_unblocks(
+    phone: Page, ui_base_url: str
+) -> None:
+    """§9.10's consequences reach the DOM as their own labelled row, not folded into the
+    Why line. A reader scanning the list must be able to find "what is this for" in the same
+    place on every card."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert "Ice Barrage NH" in phone.locator("[data-testid=unblocks]").first.inner_text()
+
+
+def test_the_recommendations_page_shows_what_an_entry_is_needed_for(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The user's own complaint, asserted where they would have seen it: a task that looks
+    pointless on its own, shown with the task it is a prerequisite of and how far along that
+    gate it gets them."""
+    _open(phone, ui_base_url, "/recommendations")
+    text = phone.locator("[data-testid=needed-for]").first.inner_text()
+
+    assert "Complete Desert Treasure I" in text
+    assert "1 of 3 remaining" in text
+
+
+def test_a_goal_outside_the_selected_roadmap_is_labelled_as_such(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The diagnostic half of the feature. An entry serving a goal the player did not pick
+    must say so on the card, because that is the fact that explains an otherwise baffling
+    recommendation."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert "not on your roadmap" in phone.locator("[data-testid=needed-for]").first.inner_text()
+
+
+def test_the_consequence_rows_are_separate_nodes_from_the_reason(
+    phone: Page, ui_base_url: str
+) -> None:
+    """They answer different questions — "how did this score" against "what is it for" —
+    and a single merged node would leave the page no way to style or hide one of them."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert (
+        phone.locator("[data-testid=recommendation-reason] [data-testid=works-toward]").count() == 0
+    )
+    assert phone.locator("[data-testid=works-toward]").count() >= 1

@@ -44,6 +44,7 @@ from tracker.domain.types import (
     Container,
     Estimate,
     ItemObservation,
+    LeafRef,
     MilestoneClass,
     MilestoneKind,
     MilestoneState,
@@ -315,6 +316,117 @@ class LeverageOracle:
         return statuses
 
 
+class _Worlds:
+    """One hypothetical :class:`PlayerState` and :class:`Evaluator` per ``grants_facts`` tree.
+
+    Factored out of :class:`EstimateOracle` because A30's sizing pass and §9.10's
+    explanation pass ask questions *of the same worlds*: "how long would Y take once X is
+    done" and "what would still be blocking Y once X is done" differ only in which field of
+    that world they read. Sharing one instance is what makes the explanation pass cost
+    nothing extra — every world it needs was already built to size something.
+
+    Keyed on ``id(grants)`` for :meth:`LeverageOracle._after`'s reason: requirement nodes are
+    frozen models owned by ``content``, so the same object comes back for every question
+    about a given candidate, and hashing the tree would walk the very structure the memo
+    exists to stop walking. The trees outlive the memo, so no id can be recycled under it.
+
+    Pinned to one ``(state, content)`` pair — like both oracles, and for the same reason.
+    """
+
+    __slots__ = ("_content", "_state", "_worlds")
+
+    def __init__(self, state: PlayerState, content: Content) -> None:
+        self._state = state
+        self._content = content
+        self._worlds: dict[int | None, tuple[PlayerState, Evaluator]] = {
+            None: (state, Evaluator(state, content))
+        }
+
+    def get(self, grants: Requirement | None) -> tuple[PlayerState, Evaluator]:
+        """The state and memoized evaluator where ``grants`` is true (``None`` = as things
+        stand)."""
+        key = None if grants is None else id(grants)
+        cached = self._worlds.get(key)
+        if cached is not None:
+            return cached
+        assert grants is not None  # the None key is seeded in __init__
+        hypothetical = apply_facts(self._state, grants, self._content)
+        world = (hypothetical, Evaluator(hypothetical, self._content))
+        self._worlds[key] = world
+        return world
+
+    def __len__(self) -> int:
+        """How many worlds have been built. Read by the cost test, not by the engine."""
+        return len(self._worlds)
+
+
+class GateOracle:
+    """*"What would still be standing in the way of Y, once X is done?"* (§9.10)
+
+    The explanation half of the same counterfactual :class:`EstimateOracle` sizes. Where
+    that one asks a world for *hours*, this asks it for the ``blockers`` the evaluator
+    already produced on the way — a tuple of :class:`~tracker.domain.types.LeafRef`, each
+    carrying the human ``description`` §6.9 rendered. Nothing here composes prose; the words
+    were written where the leaf was understood.
+
+    **It builds no worlds of its own.** Handed the :class:`_Worlds` its sibling oracle
+    already filled during the A30 pass, every counterfactual it asks about is a cache read.
+    That is what keeps §9.10's explanation off the critical path of a run.
+
+    Pinned to one ``(state, content)`` pair through the shared :class:`_Worlds`.
+    """
+
+    __slots__ = ("_capability_gates", "_gates", "_worlds")
+
+    def __init__(self, worlds: _Worlds) -> None:
+        self._worlds = worlds
+        self._gates: dict[tuple[int | None, str], tuple[LeafRef, ...]] = {}
+        self._capability_gates: dict[tuple[int | None, str], tuple[LeafRef, ...]] = {}
+
+    def __call__(
+        self, candidate: Candidate, grants: Requirement | None = None
+    ) -> tuple[LeafRef, ...]:
+        """``candidate``'s outstanding gate leaves in the world where ``grants`` is true.
+
+        A candidate with no ``requires`` is gated by nothing and reports an empty tuple —
+        the same answer as *"gated, but nothing outstanding"*, and correctly so: both mean
+        there is nothing left to do first.
+
+        **Unknown leaves are not outstanding.** ``blockers`` is §9.1's *unsatisfied* set, and
+        G3 is explicit that an unknown is *"sync this"* rather than a blocker. Counting one
+        here would make a candidate look further away for the sole reason that nobody has
+        looked at the player's bank.
+        """
+        if candidate.requires is None:
+            return ()
+        key = (None if grants is None else id(grants), candidate.id)
+        cached = self._gates.get(key)
+        if cached is not None:
+            return cached
+        _state, evaluator = self._worlds.get(grants)
+        outstanding = evaluator.evaluate(candidate.requires).blockers
+        self._gates[key] = outstanding
+        return outstanding
+
+    def capability(
+        self, capability_id: str, grants: Requirement | None = None
+    ) -> tuple[LeafRef, ...]:
+        """The same question for a capability's own ``requires`` tree (§4.1).
+
+        Routed through :meth:`Evaluator.capability` rather than through the tree directly, so
+        a ``capability:`` prerequisite resolves transitively and a capability the corpus
+        never declared answers *unknown* instead of raising (§10.7).
+        """
+        key = (None if grants is None else id(grants), capability_id)
+        cached = self._capability_gates.get(key)
+        if cached is not None:
+            return cached
+        _state, evaluator = self._worlds.get(grants)
+        outstanding = evaluator.capability(capability_id).blockers
+        self._capability_gates[key] = outstanding
+        return outstanding
+
+
 class EstimateOracle:
     """Answers A30's *"how long would Y take, if X were done?"* without re-deriving the world.
 
@@ -342,14 +454,16 @@ class EstimateOracle:
         content: Content,
         prices: Mapping[int, PriceRecord],
         now: datetime,
+        *,
+        worlds: _Worlds | None = None,
     ) -> None:
         self._state = state
         self._content = content
         self._prices = prices
         self._now = now
-        self._worlds: dict[int | None, tuple[PlayerState, Evaluator]] = {
-            None: (state, Evaluator(state, content))
-        }
+        #: Shared with :class:`GateOracle` when the caller passes one, so §9.10's
+        #: explanation reads the worlds this sizing pass built rather than building its own.
+        self._worlds = worlds if worlds is not None else _Worlds(state, content)
         self._estimates: dict[tuple[int | None, str], Estimate] = {}
 
     def __call__(self, candidate: Candidate, grants: Requirement | None) -> float | None:
@@ -372,30 +486,12 @@ class EstimateOracle:
         cached = self._estimates.get(key)
         if cached is not None:
             return cached
-        state, evaluator = self._world(grants)
+        state, evaluator = self._worlds.get(grants)
         sized = estimate(
             candidate, state, self._content, self._prices, self._now, evaluator=evaluator
         )
         self._estimates[key] = sized
         return sized
-
-    def _world(self, grants: Requirement | None) -> tuple[PlayerState, Evaluator]:
-        """The state and memoized evaluator for one grants tree, built at most once.
-
-        Keyed on ``id(grants)`` for :meth:`LeverageOracle._after`'s reason: requirement nodes
-        are frozen models owned by ``content``, so the same object comes back for every
-        question about a given candidate and hashing the tree would walk the very structure
-        the memo exists to stop walking.
-        """
-        key = None if grants is None else id(grants)
-        cached = self._worlds.get(key)
-        if cached is not None:
-            return cached
-        assert grants is not None  # the None key is seeded in __init__
-        hypothetical = apply_facts(self._state, grants, self._content)
-        world = (hypothetical, Evaluator(hypothetical, self._content))
-        self._worlds[key] = world
-        return world
 
 
 def _statuses(state: PlayerState, content: Content, now: datetime) -> dict[str, Status]:

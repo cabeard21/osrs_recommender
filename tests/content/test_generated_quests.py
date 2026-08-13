@@ -260,7 +260,18 @@ def test_the_generated_corpus_does_not_displace_hand_weighted_candidates(
         now=NOW,
     )
     ranked = [entry.candidate_id for entry in entries]
-    weighted = {c.id for c in corpus.candidates.values() if c.advances}
+    # Weighted **for the roadmap being run**, not weighted in the abstract. ``pvp_value`` is
+    # ``effective_capability_weight × advances`` (§9.4), so a candidate advancing only
+    # capabilities ``main_nh`` does not weight contributes nothing here and belongs in the
+    # tail with the generated batch — which is the corpus working, not failing. Before the
+    # PvM ladder every authored weight pointed at a capability every roadmap shared, so the
+    # distinction had nothing to bite on; a third roadmap is what made it visible.
+    scored_capabilities = set(corpus.roadmaps["main_nh"].capabilities)
+    weighted = {
+        candidate.id
+        for candidate in corpus.candidates.values()
+        if scored_capabilities & set(candidate.advances)
+    }
     generated = {c.id for c in corpus.candidates.values() if c.source == "generated"}
     first_unweighted = next(
         (index for index, candidate_id in enumerate(ranked) if candidate_id not in weighted),
@@ -347,6 +358,10 @@ def test_only_skills_the_corpus_references_get_bands(generated_bands: list[dict]
     banded = {band["id"].split("_")[1] for band in generated_bands}
 
     assert "magic" in banded and "defence" in banded
+    # The PvM ladder's gates, which is the whole mechanism: a rung gating on Slayer 55 and
+    # Herblore 78 is what makes bands ending at those levels exist. Without them the ladder
+    # would be five goals with no path between them.
+    assert "slayer" in banded and "herblore" in banded and "prayer" in banded
     assert "farming" not in banded and "cooking" not in banded
 
 

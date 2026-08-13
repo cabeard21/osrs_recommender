@@ -417,53 +417,6 @@
     quest: dorics_quest
   grants_facts:
     quest: dorics_quest
-- id: complete_dragon_slayer_i
-  name: Complete Dragon Slayer I
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    quest_points: 32
-  completion:
-    quest: dragon_slayer_i
-  grants_facts:
-    quest: dragon_slayer_i
-- id: complete_dragon_slayer_ii
-  name: Complete Dragon Slayer II
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 60
-    - skill:
-        construction: 50
-    - skill:
-        crafting: 62
-    - skill:
-        hitpoints: 50
-    - skill:
-        magic: 75
-    - skill:
-        mining: 68
-    - skill:
-        smithing: 70
-    - skill:
-        thieving: 60
-    - quest_points: 200
-    - quest: legends_quest
-    - quest: dream_mentor
-    - quest: a_tail_of_two_cats
-    - quest: animal_magnetism
-    - quest: ghosts_ahoy
-    - quest: bone_voyage
-    - quest: client_of_kourend
-    - quest: barbarian_training
-  completion:
-    quest: dragon_slayer_ii
-  grants_facts:
-    quest: dragon_slayer_ii
 - id: complete_dream_mentor
   name: Complete Dream Mentor
   kind: quest

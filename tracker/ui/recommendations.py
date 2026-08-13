@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import html
 from collections.abc import Sequence
+from typing import Protocol
 
 from nicegui import ui
 
@@ -121,6 +122,33 @@ def _factor_breakdown(row: RecommendationEntryRow) -> None:
                 )
 
 
+class _Labelled(Protocol):
+    """Anything carrying a rendered ``label`` — the four §9.10 consequence row types.
+
+    A protocol rather than a union so this module never has to name them one by one, and so
+    adding a fifth kind of consequence is a change in ``view_model`` alone. The contract is
+    exactly what the renderer needs and nothing more: *the row knows its own words.*
+    """
+
+    @property
+    def label(self) -> str: ...
+
+
+def _consequence_row(heading: str, rows: Sequence[_Labelled], testid: str) -> None:
+    """One §9.10 consequence line, or nothing at all when there is nothing to report.
+
+    ``html.escape`` because these labels carry **content names** — a capability or candidate
+    title straight out of the corpus — where the two lines above render ids and engine prose.
+    A corpus is authored, so an ampersand in a quest name is a matter of time.
+    """
+    if not rows:
+        return
+    with ui.element("div").classes("layer-row"):
+        ui.html(heading).classes("layer-label")
+        line = ui.html(html.escape(", ".join(row.label for row in rows))).classes("text-sm")
+        line.props(f"data-testid={testid}")
+
+
 def render_entry(row: RecommendationEntryRow) -> None:
     """One §9.10 entry, refresher or progression, through the same markup either way."""
     card = section(row.name, testid="recommendation")
@@ -138,6 +166,21 @@ def render_entry(row: RecommendationEntryRow) -> None:
             with ui.element("div").classes("layer-row"):
                 ui.html("Advances").classes("layer-label")
                 ui.html(", ".join(row.advances)).classes("text-sm")
+
+        # §9.10's consequences. Each label is composed on its row type in `view_model`, for
+        # this module's standing rule: a sentence assembled inside a `ui.html(...)` call can
+        # only be tested by driving a browser, and a rule that expensive to check stops being
+        # checked. Here they are joined and drawn, and nothing else.
+        #
+        # Every block is conditional and several are routinely empty. That is the honest
+        # rendering of an engine that found nothing to say — an entry showing no consequence
+        # rows at all earned its place on cheapness alone, and the blank space says so more
+        # usefully than a filler line would.
+        _consequence_row("Unblocks", row.unblocks, "unblocks")
+        _consequence_row("Needed for", row.needed_for, "needed-for")
+        _consequence_row("Works toward", row.works_toward, "works-toward")
+        _consequence_row("Speeds up", row.speeds_up, "speeds-up")
+
         if row.is_refresher and row.practice_members:
             with ui.element("div").classes("layer-row"):
                 ui.html("Practice").classes("layer-label")

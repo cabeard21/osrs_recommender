@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Version** | 0.5.2 |
-| **Date** | 2026-08-11 |
+| **Version** | 0.5.3 |
+| **Date** | 2026-08-13 |
 | **Status** | Implementation in progress against `plans/osrs-tracker-sdd-implementation.md`. All design questions resolved and all known specification gaps closed (§20). |
 
 ## Changelog
@@ -15,6 +15,7 @@
 | 0.3 | 2026-08-04 | Resolved D1–D5 (§18). Milestones gain class and freshness; staleness decays confidence, never achievement. Live item prices with cached and static fallback layers. Multiple active roadmaps merge into one effective capability-weight map via convex combination. Scoring weights externalized to a versioned profile with a defined tuning method. Side-loading fixed as the v1 plugin distribution path. Separated `unlocked` from `readiness_confidence`; estimate confidence expanded to three levels. |
 | 0.4 | 2026-08-04 | Resolved D6–D10 (§18). **`CapabilityState.unlocked: bool` replaced by tri-valued `status`**, with three-valued requirement evaluation throughout (§9.1). Added `PracticeEvent` and the derived-practice-proxy model. Refresher candidates grouped by practice domain with a one-per-list cap. κ presets retained and relabelled in user terms. Price feed pinned to the OSRS Wiki real-time prices API, with confidence derived from **trade** timestamps rather than fetch time. Added the `recommended_now` status layer. |
 | 0.5 | 2026-08-04 | Closed 21 specification gaps found while planning implementation; each is traced in §20. **Added the missing `Candidate` schema (§10.6)** — a core noun that had a content directory and drove every scoring factor, but no defined fields — together with the derivations for `pvp_value`, `leverage`, `proximity`, `completed` and `blocked` (D11). Completed the three-valued leaf resolution table (§9.1), pinning `unlock: available` and `quest: in_progress` as **unsatisfied**. Fixed the `unlock_fraction` denominator and defined *contributing* and *aged* for `readiness_confidence` (§6.9). Added `Milestone.attested_at` semantics so "never prompted" is representable (§6.6). Added `ActiveRoadmap` (§6.12) and made `SyncEvent.player_id` nullable so §11.3's audit requirement is satisfiable (§6.11). Moved the health endpoint outside `/api` (§11). Added **§4.5**, naming the observation/truth distinction that now recurs three times in the design. Sync contract declared provisional until validated against a real snapshot (D12). |
+| 0.5.3 | 2026-08-13 | Closed **A31**, found by reading the shipped output: §9.10's card said how a candidate *scored* and never what it was *for*, and for the generated skill bands it could not — `tools/generate_candidates.py` authors them with `advances: {}` (§10.6), so no §9.4 factor carries a goal and *"Train Slayer to 10"* reached the top of a PvM list explaining itself as *"quick to finish"*. Added **consequences** (§9.10): what a candidate unblocks, what it is a prerequisite of, which goals it measurably moves, and which grind it shortens — derived after the ranking is fixed, read by no factor, and persisted on `RecommendationEntry` (§6.10). The two identities §9.4 already computed and discarded — *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated — are retained rather than recomputed. Rankings are unchanged by construction. |
 | 0.5.2 | 2026-08-11 | Closed **A30**, found by running §16.3's tuning procedure against the golden corpus: §9.4 had no factor for a candidate that makes *another* candidate cheaper or faster, so Desert Treasure I scored zero on `leverage` for an account that already had Ancients while being the one action that turns 113 Magic hours into 16. Added **`method_unlock`** as §9.4's sixth factor with its own authored weight, derived in code from `grants_facts` and §8's estimator (D13). Folded `unknown_effort_hours` into §9.7's printed profile — ratified in code since Step 5 but never transcribed. |
 | 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
 
@@ -560,10 +561,25 @@ Required by the History UI (§15) and, more importantly, by engine debuggability
 | `score` | float | |
 | `factors` | JSON | per-factor values **and** log-contributions (§9.5) |
 | `reason` | str | generated from `factors` |
+| `consequences` | JSON | what this entry is *for* (§9.10) — see below |
+| `bands` | JSON | §8.2's per-band breakdown, including the `method_id` step 3 selected |
+| `blockers` | JSON | the `unsatisfied` leaves of this entry's own gate, when `blocked` (§15) |
 | `estimated_hours` | float | nullable |
 | `estimated_gp` | int | nullable |
 | `estimate_confidence` | enum | `high \| medium \| low` (§8.4) |
 | `blocked` | bool | |
+
+**Why these four are stored rather than re-derived on read.** `reason`, `consequences`, `bands`
+and `blockers` are all functions of the account's facts *at the time of the run*. Recomputing
+any of them when a page is rendered would relabel a historical entry with today's facts, which
+is the one thing a snapshot exists to prevent — *"unblocks Desert Treasure I"* stops being true
+the moment the quest is finished, and a method re-selected on read could name one the quoted
+hours did not come from. Content moves too, so every id inside `consequences` is stored beside
+the human name the run recorded: a capability since renamed or deleted degrades to that name
+rather than raising.
+
+The contrast is a refresher's practice membership, which **is** recomputed (§9.8). It drives a
+button, so it must be true *now*; these describe a past ranking, so they must be true *then*.
 
 ## 6.11 SyncEvent
 
@@ -984,6 +1000,11 @@ ln(score) = Σ  wᵢ · ln(fᵢ)
 
 Mathematically identical, but each factor's contribution becomes an **additive term in shared units**. Persist these contributions in `RecommendationEntry.factors`; the "Reason" line in the UI is then generated by reading off the largest terms, rather than being separately authored prose that can drift from the actual ranking.
 
+The generator sees factor values and nothing else — not a candidate's id, kind or name — so the
+sentence and the ranking stay one calculation rendered twice. Where the engine knows a name the
+generator cannot, it may substitute the **phrase** and never the number; §9.10 sets out what may
+be borrowed, and why `pvp_value` is excluded from it.
+
 ## 9.6 Scale constants τ and κ
 
 **τ (effort scale) — default 10 hours.**
@@ -1151,8 +1172,78 @@ Next Recommendation
   Estimate     ~4.5 hours  ·  ~1.8M gp    [medium — price from a 3-day-old trade]
   Priority     ★★★★★
 
-  Why: high PvP value (+0.61) · unblocks 2 capabilities (+0.44) · close to target (+0.30)
+  Why: unblocks Ice Barrage NH (+0.61) · cuts Complete Desert Treasure I from 113h to 16h (+0.44)
 ```
+
+### Consequences (A31)
+
+The line above says how a candidate *scored*. It does not say what the candidate is **for**,
+and for a large part of the corpus the six factors cannot: `tools/generate_candidates.py`
+authors every skill band with `advances: {}`, because §10.6 reserves the judgment of which
+capability a level advances for a human. So *"Train Slayer to 10"* carries no goal in any field
+it owns, floors its `pvp_value` at ε, and reaches the top of a PvM list explaining itself as
+*"quick to finish"*.
+
+The chain that explains it exists one hop away: Slayer 10 is a `requires` leaf of
+`complete_desert_treasure_i`, which advances `ice_barrage_nh`. An entry therefore carries four
+further lines, each derived and none authored:
+
+| Line | What it reports |
+|---|---|
+| **Unblocks** | Capabilities whose `status` this entry's `grants_facts` would flip to `unlocked` — the identities behind `leverage`'s count |
+| **Needed for** | Other candidates whose gate this one clears or shortens, with the goal one hop beyond where there is one |
+| **Works toward** | Capabilities whose own `requires` this entry measurably reduces |
+| **Speeds up** | The grind A30's maximum landed on, quoted as both sizings |
+
+```
+Train Slayer to 10
+  Why: quick to finish (+3.04) · early progress (+2.46) · cheap (+2.30)
+  Needed for: Complete Desert Treasure I (1 of 3 remaining) → Ice Barrage NH (not on your roadmap)
+```
+
+Four rules govern this, and each exists to stop the feature from inventing a reason.
+
+**It describes the ranking; it never takes part in it.** Consequences are derived *after* the
+order is fixed and are read by no §9.4 factor. Letting one back into the decision would make
+the explanation self-justifying. They are also derived only for the entries a run returns — a
+blocked entry carries `blockers`, which answer *"why not yet"*, and the question *"what is this
+for"* does not arise until that answer is *"nothing"*.
+
+**Counts are over `unsatisfied` leaves, never `unknown` ones.** Desert Treasure I names eleven
+leaves; against a freshly-synced mid-level account four are skills observed to be too low and
+seven are quests nobody has been asked about. *"1 of 3 remaining"* is a claim about the corpus
+and the account; *"1 of 11"* would be a claim about how much has been *looked at*, dressed up as
+progress. G3 makes the remedy for an unknown a sync, not a grind, so the wording is
+**"remaining"** and never "requirements".
+
+**A goal outside the active roadmaps is reported and flagged, not hidden.** The player always
+learns what a task feeds, and an entry serving a goal they did not select becomes visible as
+exactly that. The flag is about the *selection*: the same capability is unflagged the moment a
+roadmap weighting it is chosen. The indirect hop is walked **once** — the capability DAG's
+closure from a low rung is most of the corpus, so a transitive walk would name the top of the
+ladder for every band in the game and thereby mean nothing.
+
+**Silence is a legitimate output and is never back-filled.** An entry that unblocks nothing,
+dents no goal and accelerates nothing shows no consequence lines at all — which is the honest
+report that it ranked on `effort_decay` and `cost_decay` alone, and more use to a player than
+generic prose would be.
+
+### What the *Why* line may borrow
+
+§9.5's generator sees a normalized factor value and nothing else, and must continue to: the
+sentence and the ranking are one calculation rendered twice. The sanctioned seam is a
+**phrase substitution** — the engine, which has the names, may replace *"unblocks several
+capabilities"* with *"unblocks Ice Barrage NH"*. Only the words are substituted; the credit
+beside them is the computed one in every case, so a more specific phrase cannot flatter the
+factor it labels.
+
+**`pvp_value` is deliberately never substituted.** It is the tempting one and the one that
+would lie: a generated band's `pvp_value` sits at the ε floor with a credit near zero, while
+its consequences may well name a capability it measurably advances. *"works toward Boss
+fundamentals (+0.02)"* would attach a goal to a factor that earned nothing, in the one place a
+reader most reasonably trusts the number. *Works toward* is a **display line**, not a reason
+phrase — the card says it because it is true, and the sentence that decomposes the ranking does
+not, because the ranking did not.
 
 ---
 
@@ -1473,7 +1564,8 @@ osrs-tracker/
         sync/
         progression/        # three-valued evaluation, capability status
         freshness/          # PracticeEvent → milestone mapping
-        recommendations/    # scoring, roadmap blending, refresher grouping, hysteresis
+        recommendations/    # scoring, roadmap blending, refresher grouping, hysteresis,
+                            # and §9.10's explanation (consequences, reason phrasing)
         estimation/         # time and GP estimates
         integrations/
             wise_old_man/
@@ -1525,6 +1617,14 @@ Primary roadmap selector plus optional secondaries. Selection weights hidden beh
 
 ## Recommendations
 Sortable ranked list with per-item factor breakdown, estimate, and a confidence marker for anything below `high`. Blocked candidates in a separate collapsed section. **At most one refresher** appears here (§9.8).
+
+Each entry also carries §9.10's consequence lines — *Unblocks*, *Needed for*, *Works toward*,
+*Speeds up* — which is where a reader finds out what an item is **for** rather than how it
+scored. They are rendered from the persisted `consequences` (§6.10) and are **never composed in
+the UI**: a sentence assembled inside a render call can only be checked by driving a browser,
+and a rule that expensive to check stops being checked. Lines are omitted where the engine had
+nothing to report; an entry showing none earned its rank on cost and effort alone, and the
+absence says so more usefully than a filler line would.
 
 ## Practice freshness
 Dedicated view for all stale practice groups, with **Mark session complete** and **Review individual skills** actions. This is where refreshers beyond the first live, so freshness never crowds out objective progression.
@@ -1594,6 +1694,12 @@ def recommend(
 `incumbent` is a parameter for exactly this reason. Hysteresis (§9.9) needs the previous
 ranking, and letting the engine fetch it would reintroduce the database dependency this
 signature exists to remove.
+
+These judgments constrain **order**, and nothing here reads a sentence. That is what makes
+§9.10's explanation safe to add and also what makes it invisible to this suite: consequences
+are derived after the ordering is fixed, so no judgment can change when the prose does. The
+guarantee is asserted directly instead — the same run with the explanation pass disabled must
+produce identical scores and identical factors.
 
 ## 16.2 Three test types
 
@@ -1768,9 +1874,10 @@ Consciously postponed, with the trigger that would reopen each. None blocks impl
 
 Twenty-one gaps (A1–A21) were found in v0.4 by walking the document section-by-section against
 a proposed implementation order — the first time it was read as something to *execute* rather
-than to *agree with*. A22 was found in v0.5 by implementing §10.7, and **A30 in v0.5.2 by
-running §16.3's tuning procedure**. Each is closed above; this table exists so a reader of an
-earlier version can find where each change landed.
+than to *agree with*. A22 was found in v0.5 by implementing §10.7, **A30 in v0.5.2 by running
+§16.3's tuning procedure**, and **A31 in v0.5.3 by reading the shipped output** — the first
+gap found by using the application rather than by working on it. Each is closed above; this
+table exists so a reader of an earlier version can find where each change landed.
 
 The gaps cluster into five kinds, and the pattern is worth noting for future revisions:
 
@@ -1790,6 +1897,13 @@ The gaps cluster into five kinds, and the pattern is worth noting for future rev
   when the model is asked to reproduce a judgment and cannot. §16.3 step 5 is the procedure
   that found it, and *"a disagreement is as likely to reveal a bad judgment as a bad weight"*
   understates the third possibility: it may reveal a missing term.
+* **Right answer, unusable explanation** (A31) — the ranking is correct and the account of it
+  is useless. §9.10 specified an output that could only restate the arithmetic, which reads as
+  complete until the corpus contains candidates whose goal lives entirely in *other* content —
+  as every generated skill band's does. No section was wrong and no judgment was violated; the
+  design had simply never been asked to justify a recommendation to the person receiving it.
+  This kind is invisible to every procedure above, because §16.3 checks *order* and §16.2
+  checks *rules*, and neither reads a sentence. It surfaces only from use.
 
 | # | Gap in v0.4 | Closed in |
 |---|---|---|
@@ -1815,4 +1929,5 @@ The gaps cluster into five kinds, and the pattern is worth noting for future rev
 | A20 | §14's layout omitted the shared domain types and a tools directory | §14 |
 | A21 | Python 3.13 pinned without need | §14.1 |
 | A22 | §10.7 requires referential integrity for quest and skill ids, but §10.1 gave neither a content directory to be declared in; §10.4's refresher templates likewise had no directory | §10.1 |
+| A31 | §9.10's output could say how a candidate **scored** but not what it was **for**, and for the generated skill bands it could not: §10.6 reserves `advances` for human judgment, so `tools/generate_candidates.py` authors every band with `advances: {}` and no §9.4 factor carries a goal for one. *"Train Slayer to 10"* therefore topped a PvM list explaining itself as *"quick to finish"*, while the chain that justifies it — Slayer 10 gates Desert Treasure I, which advances Ice Barrage NH — was computed nowhere. Two identities the engine already had were also being discarded: *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated | §6.10, §9.10, §15 |
 | A30 | §9.4 had **no factor for a candidate that makes another candidate cheaper or faster**. `leverage` counts capability *status* flips, so an account with Ancients already unlocked scored Desert Treasure I at zero on the one factor meant to express "this unblocks things" — while the quest is precisely what turns 113 conservative Magic hours into 16 bursting ones. No weight vector over the other five factors can express the reason; the corpus's tuning run found the shape of the gap by finding a judgment nothing on the grid satisfied for the right reason | §9.4, §9.7, §10.6, D13 |

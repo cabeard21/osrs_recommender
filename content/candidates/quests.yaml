@@ -81,3 +81,74 @@
     all_of:
       - quest: lunar_diplomacy
       - unlock: spellbook_lunar
+
+# ---------------------------------------------------------------------------
+# The PvM ladder's two weighted quests
+# ---------------------------------------------------------------------------
+#
+# Both were generated until the ladder existed, and both are promoted here for the one
+# reason `docs/proposals/advances-weights.md` allows: **a quest may carry an `advances`
+# weight only where some capability gates on it.** The ladder gates on five quests; three of
+# them — Priest in Peril, Troll Stronghold, Death Plateau — stay generated and unweighted,
+# because weighting a prerequisite is §5's option (a), "inventing an ordering the derivations
+# should produce".
+#
+# The entries below are copied verbatim out of `content/candidates/generated/quests.yaml`
+# with `source` flipped and `advances` added. The `completion` blocks are byte-identical on
+# purpose: `generate_candidates.py` skips an authored quest by matching
+# `completion: {quest: <id>}`, not by matching the candidate id, so an edit here would
+# resurrect a generated twin. Nothing was added under `content/quests/` either — the registry
+# stays wholly generated, and an authored file there would drop the row every `quest:` leaf
+# naming these ids resolves against.
+
+# Rung 1's only quest gate, and the smaller of the two weights. `boss_fundamentals` is mostly
+# combat levels, so the quest is a genuinely smaller fraction of that rung than DT1 is of
+# `ice_barrage_nh` — the leaf-count intuition and the DT1 anchor agree here, which is why
+# this one is not also 0.90.
+- id: complete_dragon_slayer_i
+  name: Complete Dragon Slayer I
+  kind: quest
+  source: authored
+  advances:
+    boss_fundamentals: 0.60
+  requires:
+    quest_points: 32
+  completion:
+    quest: dragon_slayer_i
+  grants_facts:
+    quest: dragon_slayer_i
+
+# Structurally the DT1 case: the sole quest gate on its rung, with a small residual left
+# afterwards. 0.85 rather than DT1's 0.90 because `dragon_bossing`'s residual is larger — a
+# Dragon hunter crossbow and Ranged 80, against DT1's one item and one skill. 0.40 on
+# `raid_ready` because that rung is two steps further on and DS2 clears only its floor.
+- id: complete_dragon_slayer_ii
+  name: Complete Dragon Slayer II
+  kind: quest
+  source: authored
+  advances:
+    dragon_bossing: 0.85
+    raid_ready: 0.40
+  requires:
+    all_of:
+      - skill: {agility: 60}
+      - skill: {construction: 50}
+      - skill: {crafting: 62}
+      - skill: {hitpoints: 50}
+      - skill: {magic: 75}
+      - skill: {mining: 68}
+      - skill: {smithing: 70}
+      - skill: {thieving: 60}
+      - quest_points: 200
+      - quest: legends_quest
+      - quest: dream_mentor
+      - quest: a_tail_of_two_cats
+      - quest: animal_magnetism
+      - quest: ghosts_ahoy
+      - quest: bone_voyage
+      - quest: client_of_kourend
+      - quest: barbarian_training
+  completion:
+    quest: dragon_slayer_ii
+  grants_facts:
+    quest: dragon_slayer_ii

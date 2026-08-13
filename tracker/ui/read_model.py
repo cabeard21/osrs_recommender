@@ -72,8 +72,10 @@ from tracker.ui.view_model import (
     CapabilityRow,
     DashboardView,
     FactorDiffRow,
+    GoalProgressRow,
     HistorySnapshotRow,
     LeafRow,
+    NeededForRow,
     PracticeGroupRow,
     PracticeMemberRow,
     RecommendationEntryRow,
@@ -83,6 +85,8 @@ from tracker.ui.view_model import (
     SettingsView,
     SkillRow,
     SkillXpPoint,
+    SpeedUpRow,
+    UnblockRow,
     UnlockRow,
     capability_row,
     recommendation_entry_row,
@@ -400,6 +404,83 @@ def _candidate_unlocks_and_advances(
     return unlocks, advances
 
 
+def _consequence_name(stored: Mapping[str, Any], lookup: Mapping[str, Any], id_key: str) -> str:
+    """The freshest truthful name for a stored consequence.
+
+    Prefers what content says today and falls back to the name the run recorded, which is
+    ``_band_rows``' rule applied to a second join. Content changes between runs: renaming a
+    capability must not turn a History page into a stack trace, and the stored name is still
+    the most truthful thing available about what that row described when it was written.
+    """
+    entity = lookup.get(str(stored.get(id_key, "")))
+    if entity is not None:
+        return str(entity.name)
+    return str(stored.get("name", stored.get(id_key, "")))
+
+
+def _consequence_rows(
+    stored: Mapping[str, Any] | None, content: Content
+) -> tuple[
+    tuple[UnblockRow, ...],
+    tuple[NeededForRow, ...],
+    tuple[GoalProgressRow, ...],
+    tuple[SpeedUpRow, ...],
+]:
+    """§9.10's consequence rows, read from the snapshot rather than recomputed.
+
+    **The stored blob is rendered; nothing is re-derived here.** A consequence is a fact
+    about the account at the time of the run — "unblocks Desert Treasure I" stops being true
+    the moment the quest is done — so re-deriving on read would relabel a historical entry
+    with today's facts. Same argument as ``_band_rows``, and the reason the column exists.
+
+    ``goal_links`` is folded into the *"needed for"* rows rather than shown as a list of its
+    own: an indirect goal is only meaningful attached to the hop that reached it, and a bare
+    "Ice Barrage NH" under its own heading would claim a directness the engine was careful
+    not to claim. The first link is used, which is the strongest one the engine ordered.
+    """
+    blob = stored or {}
+    links = list(blob.get("goal_links") or ())
+    link = links[0] if links else None
+
+    unblocks = tuple(
+        UnblockRow(name=_consequence_name(entry, content.capabilities, "capability_id"))
+        for entry in blob.get("unblocks_capabilities") or ()
+    )
+    needed_for = tuple(
+        NeededForRow(
+            name=_consequence_name(entry, content.candidates, "candidate_id"),
+            remaining_before=int(entry.get("remaining_before", 0)),
+            remaining_after=int(entry.get("remaining_after", 0)),
+            # The link hangs off the hop the engine reached it through, and off no other.
+            goal_name=(
+                _consequence_name(link, content.capabilities, "capability_id")
+                if link is not None and link.get("via_candidate_id") == entry.get("candidate_id")
+                else None
+            ),
+            goal_on_roadmap=bool(link.get("on_roadmap", True)) if link is not None else True,
+        )
+        for entry in blob.get("gate_progress") or ()
+    )
+    works_toward = tuple(
+        GoalProgressRow(
+            name=_consequence_name(entry, content.capabilities, "capability_id"),
+            remaining_before=int(entry.get("remaining_before", 0)),
+            remaining_after=int(entry.get("remaining_after", 0)),
+            on_roadmap=bool(entry.get("on_roadmap", True)),
+        )
+        for entry in blob.get("goal_progress") or ()
+    )
+    speeds_up = tuple(
+        SpeedUpRow(
+            name=_consequence_name(entry, content.candidates, "candidate_id"),
+            hours_before=float(entry.get("hours_before", 0.0)),
+            hours_after=float(entry.get("hours_after", 0.0)),
+        )
+        for entry in blob.get("speeds_up") or ()
+    )
+    return unblocks, needed_for, works_toward, speeds_up
+
+
 def _refresher_advances(content: Content, template_id: str) -> tuple[str, ...]:
     """§9.10's "Advances" line for a refresher, from its authored ``advances`` tuple."""
     template = content.refreshers.get(template_id)
@@ -504,6 +585,9 @@ def recommendation_rows(
             if candidate is not None
             else (template.name if template is not None else entry.candidate_id)
         )
+        unblocks, needed_for, works_toward, speeds_up = _consequence_rows(
+            entry.consequences, content
+        )
         if is_refresher:
             unlocks: tuple[str, ...] = ()
             advances = _refresher_advances(content, entry.candidate_id)
@@ -528,6 +612,10 @@ def recommendation_rows(
                 confidence=entry.estimate_confidence,
                 unlocks=unlocks,
                 advances=advances,
+                unblocks=unblocks,
+                needed_for=needed_for,
+                works_toward=works_toward,
+                speeds_up=speeds_up,
                 practice_members=members,
                 suggested_session=suggested_session,
                 bands=_band_rows(entry.bands, content),

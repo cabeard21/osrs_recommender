@@ -38,6 +38,7 @@ dependency stays one-way. A candidate derivation cannot be expressed without the
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass
 from typing import Protocol
 
 from tracker.content.loader import Content
@@ -203,6 +204,31 @@ def advances_value(advances: Mapping[str, float], effective_weights: Mapping[str
 # ---------------------------------------------------------------------------
 
 
+def unlock_flips(
+    candidate: Candidate,
+    state: PlayerState,
+    content: Content,
+    unlocks_after_facts: UnlocksAfterFacts,
+) -> tuple[str, ...]:
+    """*Which* capabilities ``grants_facts`` would flip to ``unlocked`` (§10.6).
+
+    The factor needs only the count, but §9.10's *"Why"* line wants the names — *"unblocks
+    Ice Barrage NH"* rather than *"unblocks 2 capabilities"*. Both come from **this one
+    walk**, and :func:`unlock_flip_count` is its length. Counting in a second loop is how
+    the sentence and the number come to disagree about the same candidate.
+
+    Returned in ``content.capabilities`` order, which is the corpus's own order, so two
+    runs over one corpus name the same capabilities in the same sequence.
+    """
+    if candidate.grants_facts is None:
+        return ()
+    return tuple(
+        capability_id
+        for capability_id in content.capabilities
+        if unlocks_after_facts(capability_id, candidate.grants_facts, state, content)
+    )
+
+
 def unlock_flip_count(
     candidate: Candidate,
     state: PlayerState,
@@ -214,13 +240,7 @@ def unlock_flip_count(
     A candidate declaring no ``grants_facts`` changes nothing objective, so it unlocks
     nothing — zero, never "unknown". ``leverage`` is a relevance factor, not a status.
     """
-    if candidate.grants_facts is None:
-        return 0
-    return sum(
-        1
-        for capability_id in content.capabilities
-        if unlocks_after_facts(capability_id, candidate.grants_facts, state, content)
-    )
+    return len(unlock_flips(candidate, state, content, unlocks_after_facts))
 
 
 def leverage(unlock_count: int, max_unlock_count: int) -> float:
@@ -321,14 +341,53 @@ def method_unlock_fraction(
     lets any high-level band claim a perfect ``method_unlock`` for subsuming the bands
     beneath it, which is not what A30 measures and which flipped a recorded §16.3 judgment.
     """
+    winner = method_unlock_detail(candidate, others, hours_after_facts)
+    return winner.reduction if winner is not None else 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class MethodUnlockWinner:
+    """The one ``other`` candidate that :func:`method_unlock_fraction`'s maximum came from.
+
+    §9.10's *"Why"* line can say *"cuts Train Magic 87→94 from 113h to 16h"* only because
+    the argmax kept the identity and the two sizings the fraction was computed from. The
+    fraction alone can say no more than *"makes later work faster"*, which is the same
+    sentence for every candidate that makes anything faster at all.
+    """
+
+    other_id: str
+    hours_before: float
+    hours_after: float
+    reduction: float
+
+
+def method_unlock_detail(
+    candidate: Candidate,
+    others: Iterable[Candidate],
+    hours_after_facts: HoursAfterFacts,
+) -> MethodUnlockWinner | None:
+    """The largest single reduction and where it landed — :func:`method_unlock_fraction`'s
+    argmax (A30).
+
+    ``None`` when nothing is reduced, which covers the two cases the fraction reports as
+    ``0.0``: a candidate granting no facts, and one whose grants change no other estimate.
+
+    **The comparison is strictly greater against a ``0.0`` floor**, which is what makes
+    ``winner.reduction`` the *same float* the old ``max(0.0, …)`` accumulation produced
+    rather than an equal-looking one — and what fixes the tie-break to the first ``other``
+    in iteration order. Both matter more than they look: this function feeds a scoring
+    factor, so a non-strict comparison here would change which candidate wins a tie and,
+    through it, a ranking. The identity being retained is a display concern; the number
+    beside it must not notice that anyone started retaining it.
+    """
     if candidate.grants_facts is None:
-        return 0.0
+        return None
 
     granted_skills = {
         leaf.skill for leaf in iter_leaves(candidate.grants_facts) if isinstance(leaf, SkillLeaf)
     }
 
-    best = 0.0
+    best: MethodUnlockWinner | None = None
     for other in others:
         if other.id == candidate.id:
             continue
@@ -340,7 +399,14 @@ def method_unlock_fraction(
         after = hours_after_facts(other, candidate.grants_facts)
         if after is None:
             continue  # sizable now but not afterwards is incoherent; credit nothing
-        best = max(best, min(1.0, max(0.0, (before - after) / before)))
+        reduction = min(1.0, max(0.0, (before - after) / before))
+        if reduction > (best.reduction if best is not None else 0.0):
+            best = MethodUnlockWinner(
+                other_id=other.id,
+                hours_before=before,
+                hours_after=after,
+                reduction=reduction,
+            )
     return best
 
 
@@ -357,6 +423,50 @@ def method_unlock(reduction: float, max_reduction: float) -> float:
     return min(1.0, reduction / max_reduction)
 
 
+@dataclass(frozen=True, slots=True)
+class MethodUnlockResult:
+    """One pass's normalized factors *and* the argmax each was normalized from.
+
+    Two mappings rather than two functions because the pass behind them is the O(n²) one
+    (A30) — asking for the names afterwards would run it a second time, and a second run
+    against a mutated estimate cache could disagree with the first about which candidate
+    won. ``winners`` is keyed by the same ids as ``normalized`` and holds ``None`` wherever
+    the reduction was zero.
+    """
+
+    normalized: Mapping[str, float]
+    winners: Mapping[str, MethodUnlockWinner | None]
+
+
+def method_unlock_scores(
+    candidates: Iterable[Candidate],
+    others: Iterable[Candidate],
+    hours_after_facts: HoursAfterFacts,
+) -> MethodUnlockResult:
+    """:func:`method_unlock_map`, keeping each candidate's argmax as well as its factor.
+
+    See :func:`method_unlock_map` for what the two candidate sets mean; this is the same
+    computation, retaining what that one discards.
+    """
+    pool = tuple(others)
+    winners = {
+        candidate.id: method_unlock_detail(candidate, pool, hours_after_facts)
+        for candidate in candidates
+    }
+    reductions = {
+        candidate_id: winner.reduction if winner is not None else 0.0
+        for candidate_id, winner in winners.items()
+    }
+    largest = max(reductions.values(), default=0.0)
+    return MethodUnlockResult(
+        normalized={
+            candidate_id: method_unlock(reduction, largest)
+            for candidate_id, reduction in reductions.items()
+        },
+        winners=winners,
+    )
+
+
 def method_unlock_map(
     candidates: Iterable[Candidate],
     others: Iterable[Candidate],
@@ -369,16 +479,7 @@ def method_unlock_map(
     cheaper. Returned keyed by candidate id so no caller can normalize one candidate's
     reduction against a maximum taken over a different set.
     """
-    pool = tuple(others)
-    reductions = {
-        candidate.id: method_unlock_fraction(candidate, pool, hours_after_facts)
-        for candidate in candidates
-    }
-    largest = max(reductions.values(), default=0.0)
-    return {
-        candidate_id: method_unlock(reduction, largest)
-        for candidate_id, reduction in reductions.items()
-    }
+    return method_unlock_scores(candidates, others, hours_after_facts).normalized
 
 
 # ---------------------------------------------------------------------------

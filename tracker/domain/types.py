@@ -467,6 +467,133 @@ class FactorContribution:
 
 
 @dataclass(frozen=True, slots=True)
+class UnblockedCapability:
+    """A capability whose status a candidate's facts would flip to ``unlocked`` (§10.6).
+
+    The identity behind the ``leverage`` factor's count, so §9.10's *"Why"* line can say
+    *"unblocks Ice Barrage NH"* where it could previously say only *"unblocks 2
+    capabilities"*.
+    """
+
+    capability_id: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class GateProgress:
+    """A *candidate* whose gate another candidate's facts would clear, or shorten.
+
+    ``remaining_after == 0`` is the unblock; anything else is a dent. Both are worth saying
+    and they are not the same sentence, which is why one type carries both rather than two
+    types splitting them — the ordering that decides which to show has to compare them.
+
+    Counts are over **unsatisfied** leaves only. Unknown leaves are excluded, and the
+    distinction is the difference between a true sentence and a false one: Desert Treasure I
+    names eleven leaves, of which a freshly-synced mid-level account is *known* to fail four
+    and has simply never been asked about seven. G3 makes the remedy for an unknown a sync,
+    not a grind, so counting one here would report distance that nobody has measured.
+    """
+
+    candidate_id: str
+    name: str
+    remaining_before: int
+    remaining_after: int
+    satisfied: tuple[LeafRef, ...] = ()
+
+    @property
+    def unblocks(self) -> bool:
+        return self.remaining_after == 0
+
+
+@dataclass(frozen=True, slots=True)
+class GoalProgress:
+    """A *capability* whose own requirements a candidate's facts would directly reduce.
+
+    Directly: the candidate grants a leaf the capability itself names — *"Train Attack to
+    60"* against ``boss_fundamentals``'s ``skill: {attack: 60}``. Measured, not inferred,
+    and the strongest thing that can be said about a generated band.
+
+    ``on_roadmap`` is ``False`` for a capability no active roadmap weights. Those are
+    reported rather than hidden, and flagged rather than reported silently: the player always
+    learns what a task feeds, and an entry serving a goal they did not pick becomes visible
+    as exactly that.
+    """
+
+    capability_id: str
+    name: str
+    weight: float
+    remaining_before: int
+    remaining_after: int
+    on_roadmap: bool
+    satisfied: tuple[LeafRef, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Acceleration:
+    """The grind a candidate's facts would shorten, and by how much (A30).
+
+    Names the accelerated **candidate**, never the training method that got faster.
+    ``MethodDetail`` is descriptive content that no ranking may read, and a consequence
+    quoting a method name would put it one join away from doing so.
+    """
+
+    candidate_id: str
+    name: str
+    hours_before: float
+    hours_after: float
+
+
+@dataclass(frozen=True, slots=True)
+class GoalLink:
+    """A goal reached *through* something else — the indirect hop, when nothing is direct.
+
+    *"Needed for Desert Treasure I → Ice Barrage NH"*. Walked exactly **one** hop: the
+    capability graph is a DAG whose closure from a low rung is most of the corpus, so a
+    transitive walk would name the top of the ladder for every band in the game and thereby
+    mean nothing.
+    """
+
+    capability_id: str
+    name: str
+    weight: float
+    on_roadmap: bool
+    via_candidate_id: str
+    via_name: str
+    contribution: float = 0.0
+    """``via``'s own ``advances`` contribution — the editorial judgment §10.6 reserves for a
+    human, used as the tie-break the roadmap weight cannot supply when every link is
+    off-roadmap."""
+
+
+@dataclass(frozen=True, slots=True)
+class Consequences:
+    """Everything §9.10 can say about one candidate beyond its score.
+
+    The record type only; :mod:`tracker.domain.consequences` is where these are derived.
+    Every field defaults to empty and an all-empty instance is a legitimate, meaningful
+    result — an entry with nothing to say ranked on cheapness alone, and back-filling prose
+    for it is precisely the authored justification §9.5 forbids.
+    """
+
+    unblocks_capabilities: tuple[UnblockedCapability, ...] = ()
+    gate_progress: tuple[GateProgress, ...] = ()
+    goal_progress: tuple[GoalProgress, ...] = ()
+    speeds_up: tuple[Acceleration, ...] = ()
+    goal_links: tuple[GoalLink, ...] = ()
+
+    @property
+    def is_empty(self) -> bool:
+        """True when the engine found nothing to say. Not an error; see above."""
+        return not (
+            self.unblocks_capabilities
+            or self.gate_progress
+            or self.goal_progress
+            or self.speeds_up
+            or self.goal_links
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class Recommendation:
     """One ranked entry (§6.10, §9.10)."""
 
@@ -493,6 +620,18 @@ class Recommendation:
     a gate evaluating ``unknown`` is not blocked (G3), so by construction every entry that
     reaches this field failed on evidence rather than for want of it — one list, one verb
     (§15)."""
+    consequences: Consequences = field(default_factory=Consequences)
+    """What this entry is *for* (§9.10) — what it unblocks, is needed for, and speeds up.
+
+    Derived **after** the ranking is fixed and read by no scoring factor, so a consequence
+    can describe a decision without taking part in it. An empty instance is a legitimate
+    result and is not back-filled: an entry with nothing to say ranked on cheapness alone,
+    and saying so plainly is more use than invented prose. See
+    :mod:`tracker.domain.consequences`.
+
+    Populated only for the entries a run actually returns. Blocked entries carry the empty
+    default — §16.2 surfaces those with their ``blockers``, which answer *"why not yet"*,
+    and the question this field answers does not arise until the answer is *"yes"*."""
     practice_members: tuple[str, ...] = ()
     """Milestone keys a ``kind: practice`` entry would refresh (§9.8's bullet list).
 

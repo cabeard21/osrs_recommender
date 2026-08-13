@@ -513,6 +513,25 @@ class RecommendationEntry(Base):
     #: Persisted rather than re-derived for ``bands``' reason: a snapshot accumulates, and
     #: re-evaluating on read would relabel a historical entry with today's facts.
     blockers: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
+    #: §9.10's consequences — what this entry unblocks, is needed for, advances and speeds
+    #: up. The structured form of the same run the ``reason`` string above summarizes.
+    #:
+    #: Persisted rather than recomputed on read, for ``bands``' and ``blockers``' reason and
+    #: one sharper than either. A consequence is true of the account **at run time**:
+    #: "unblocks Desert Treasure I" stops being true the moment the quest is finished, and
+    #: re-deriving it would relabel a historical entry with today's facts — exactly what a
+    #: snapshot exists to prevent. Content moves too, so a capability whose ``requires`` was
+    #: edited between runs could make a live recompute claim an unblock that never happened.
+    #:
+    #: Contrast ``_live_practice_group``, which *is* recomputed: practice membership drives a
+    #: button, so it must be true **now**. This explains a past ranking, so it must be true
+    #: **then**.
+    #:
+    #: Names are stored beside ids so a renamed or deleted capability degrades to the stored
+    #: name rather than raising. An empty object means *nothing was recorded* — either a
+    #: pre-migration row or an entry that genuinely had nothing to say — and never invented
+    #: consequences.
+    consequences: Mapped[dict[str, Any]] = mapped_column(sa.JSON, default=dict)
     blocked: Mapped[bool] = mapped_column(default=False)
 
 

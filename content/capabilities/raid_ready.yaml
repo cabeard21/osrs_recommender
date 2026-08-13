@@ -1,0 +1,25 @@
+# Rung 5, the top of the PvM bossing ladder — see boss_fundamentals.yaml for the design note.
+#
+# Herblore 78 is the one non-combat gate on the ladder and it is not decoration: it is the
+# level that makes a raid's own supplies brewable, and a raid is the first content where
+# supply cost rather than gear decides whether an attempt is viable.
+#
+# Magic 85 sits *below* `ice_barrage_nh`'s 94 and that is fine — it inserts an 85 boundary
+# into the Magic band ladder the generator already emits, rather than competing with it. The
+# two capabilities want the same skill for different reasons, which is what the DAG is for.
+#
+# No `ca_master`/`ca_grandmaster` rung above this one. Combat achievement points are not in
+# the frozen sync payload (§12), so the tiers above Elite would gate on facts arriving only
+# for an account that has already finished them — a rung nobody can be *approaching*.
+id: raid_ready
+name: Raid ready (Chambers of Xeric)
+recommended_readiness: high
+pvp_value: 1.00
+requires:
+  all_of:
+    - capability: dragon_bossing
+    - skill: {ranged: 85}
+    - skill: {magic: 85}
+    - skill: {defence: 80}
+    - skill: {herblore: 78}
+    - unlock: ca_elite

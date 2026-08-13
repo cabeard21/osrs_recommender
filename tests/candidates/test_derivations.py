@@ -32,11 +32,14 @@ from tracker.domain.candidates import (
     leverage,
     leverage_map,
     method_unlock,
+    method_unlock_detail,
     method_unlock_fraction,
     method_unlock_map,
+    method_unlock_scores,
     proximity,
     pvp_value,
     unlock_flip_count,
+    unlock_flips,
 )
 from tracker.domain.types import (
     CandidateKind,
@@ -317,6 +320,53 @@ class TestUnlockFlipCount:
         assert count == 0
 
 
+class TestUnlockFlipsNamesWhatTheCountCounted:
+    """§9.10 wants the names; §9.4 wants the count. One walk must produce both."""
+
+    def test_the_names_are_exactly_the_capabilities_the_probe_flipped(
+        self, content: Content
+    ) -> None:
+        flips = {"ice_barrage_nh", "budget_nh"}
+        names = unlock_flips(
+            candidate(grants_facts="unlock: ancient_magicks"),
+            PlayerState(player_id=1),
+            content,
+            lambda capability_id, _facts, _state, _content: capability_id in flips,
+        )
+        assert set(names) == flips
+
+    def test_the_count_and_the_names_cannot_disagree_over_the_whole_corpus(
+        self, content: Content
+    ) -> None:
+        """Two loops is how the *Why* line comes to claim what the factor did not credit.
+
+        Run over every shipped candidate rather than one, because the failure this guards
+        is a later edit splitting the walk in two for a candidate shape nobody tested.
+        """
+        state = PlayerState(player_id=1)
+
+        def probe(capability_id: str, _facts: Requirement, *_rest: object) -> bool:
+            # Deterministic and non-uniform: a probe answering the same way for every
+            # capability would let a count-of-all and a names-of-none implementation agree.
+            return capability_id.startswith(("i", "b", "r"))
+
+        for entry in content.candidates.values():
+            names = unlock_flips(entry, state, content, probe)
+            assert len(names) == unlock_flip_count(entry, state, content, probe), entry.id
+
+    def test_a_candidate_granting_no_facts_names_nothing(self, content: Content) -> None:
+        """The empty tuple, not a one-element tuple of nothing — the *Why* line joins these."""
+        assert (
+            unlock_flips(
+                candidate(grants_facts=None),
+                PlayerState(player_id=1),
+                content,
+                lambda *_args: pytest.fail("the probe must not be consulted"),
+            )
+            == ()
+        )
+
+
 class TestLeverageNormalization:
     """§10.6 — normalized by the largest count *across the current candidate set*."""
 
@@ -493,6 +543,104 @@ class TestMethodUnlockFraction:
             quest, [candidate("other")], hours_oracle({"other": {None: 10.0, "x": 40.0}})
         )
         assert value == 0.0
+
+
+class TestMethodUnlockDetailKeepsTheArgmax:
+    """A30's maximum, with the identity and the two sizings it was computed from (§9.10).
+
+    Every assertion here is really about one thing: retaining the identity must not disturb
+    the number. This is the only place in the explanation work that touches a scoring
+    factor, so a change of tie-break or of floor behaviour here reorders the ranked list.
+    """
+
+    def test_the_winner_is_the_candidate_the_maximum_came_from(self) -> None:
+        quest = candidate("quest", grants_facts="unlock: bursting")
+        table = {
+            "shallow": {None: 100.0, "bursting": 80.0},
+            "deep": {None: 113.0, "bursting": 16.0},
+        }
+        others = [candidate("shallow"), candidate("deep")]
+
+        winner = method_unlock_detail(quest, others, hours_oracle(table))
+
+        assert winner is not None
+        assert winner.other_id == "deep"
+
+    def test_the_winner_carries_the_two_sizings_the_reduction_was_computed_from(self) -> None:
+        """*"cuts X from 113h to 16h"* is only sayable if both numbers survive the argmax."""
+        quest = candidate("quest", grants_facts="unlock: bursting")
+        winner = method_unlock_detail(
+            quest, [candidate("grind")], hours_oracle({"grind": {None: 113.0, "bursting": 16.0}})
+        )
+
+        assert winner is not None
+        assert (winner.hours_before, winner.hours_after) == (113.0, 16.0)
+
+    def test_the_reduction_is_the_same_float_the_fraction_reports(self) -> None:
+        """Not ``approx``. The fraction feeds ``ln`` in §9.4; an equal-looking float is not
+        the same score, and a score that moves reorders §16.2's judgments."""
+        quest = candidate("quest", grants_facts="unlock: bursting")
+        others = [candidate("a"), candidate("b"), candidate("c")]
+        table = {
+            "a": {None: 113.0, "bursting": 16.0},
+            "b": {None: 7.0, "bursting": 3.0},
+            "c": {None: 100.0, "bursting": 99.0},
+        }
+
+        winner = method_unlock_detail(quest, others, hours_oracle(table))
+        fraction = method_unlock_fraction(quest, others, hours_oracle(table))
+
+        assert winner is not None
+        assert winner.reduction == fraction
+
+    def test_a_tie_is_won_by_the_first_candidate_in_iteration_order(self) -> None:
+        """The strict ``>`` fixes this, and ``others`` arrives in the corpus's own order.
+
+        A non-strict comparison would hand the tie to the *last* equal candidate instead.
+        The factor value is identical either way, which is exactly why this needs its own
+        test: the bug would be invisible in the ranking and visible only as a *Why* line
+        naming a different grind on an unrelated content edit.
+        """
+        quest = candidate("quest", grants_facts="unlock: x")
+        others = [candidate("first"), candidate("second")]
+        table = {"first": {None: 100.0, "x": 50.0}, "second": {None: 40.0, "x": 20.0}}
+
+        winner = method_unlock_detail(quest, others, hours_oracle(table))
+
+        assert winner is not None
+        assert winner.other_id == "first"
+
+    def test_a_candidate_that_reduces_nothing_has_no_winner(self) -> None:
+        """``None``, not a winner holding ``0.0`` — the *Why* line must have nothing to say
+        rather than something to say about nothing."""
+        quest = candidate("quest", grants_facts="unlock: x")
+        table = {"other": {None: 100.0, "x": 100.0}}
+
+        assert method_unlock_detail(quest, [candidate("other")], hours_oracle(table)) is None
+        assert method_unlock_fraction(quest, [candidate("other")], hours_oracle(table)) == 0.0
+
+    def test_a_candidate_granting_no_facts_has_no_winner(self) -> None:
+        assert (
+            method_unlock_detail(
+                candidate("c", grants_facts=None),
+                [candidate("other")],
+                lambda *_args: pytest.fail("the probe must not be consulted"),
+            )
+            is None
+        )
+
+    def test_the_scores_pass_normalizes_exactly_as_the_map_does(self) -> None:
+        """``method_unlock_map`` is now a view onto this; the two must not drift apart."""
+        big = candidate("big", grants_facts="unlock: big")
+        small = candidate("small", grants_facts="unlock: small")
+        others = [candidate("grind")]
+        table = {"grind": {None: 100.0, "big": 20.0, "small": 60.0}}
+
+        result = method_unlock_scores([big, small], others, hours_oracle(table))
+
+        assert result.normalized == method_unlock_map([big, small], others, hours_oracle(table))
+        assert result.winners["big"] is not None
+        assert result.winners["big"].other_id == "grind"
 
 
 class TestMethodUnlockNormalization:

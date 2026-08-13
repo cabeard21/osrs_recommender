@@ -1,0 +1,61 @@
+# One conservative default per skill the PvM ladder banded and nothing else covered.
+#
+# Same argument as melee.yaml, and the same deliberately unambitious rates: an estimate that
+# is pessimistic and right beats one that is optimistic and wrong, because §9.4 ranks on
+# effort_decay and an understated cost cannot flatter a candidate.
+#
+# Without these, §8.2 has no method to select for a Prayer or Herblore band and the estimator
+# falls back to an invented rate, which §8.4 marks `low` confidence and the UI qualifies as an
+# upper bound. That is honest but weak, and these five skills are now on the critical path of
+# an entire roadmap — a ladder whose every rung is sized by a number nobody authored is not
+# much of a ladder.
+#
+# Hitpoints is deliberately absent. It is trained *by* Attack, Strength, Defence and Ranged
+# rather than on its own, so a separate rate would double-count hours the melee methods have
+# already charged.
+
+- id: prayer_conservative
+  name: Prayer — conservative default
+  skill: prayer
+  xp_per_hour: 120000
+  # Prayer is bought, not trained: the cost dominates the hours, which is why this is the
+  # one entry here whose cost_per_hour_gp is larger than any melee method's.
+  cost_per_hour_gp: 900000
+  level_range: {min: 1, max: 99}
+  detail:
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
+
+- id: agility_conservative
+  name: Agility — conservative default
+  skill: agility
+  xp_per_hour: 40000
+  cost_per_hour_gp: 0
+  level_range: {min: 1, max: 99}
+  detail:
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
+
+- id: slayer_conservative
+  name: Slayer — conservative default
+  skill: slayer
+  xp_per_hour: 25000
+  cost_per_hour_gp: 50000
+  level_range: {min: 1, max: 99}
+  detail:
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
+
+- id: herblore_conservative
+  name: Herblore — conservative default
+  skill: herblore
+  xp_per_hour: 200000
+  cost_per_hour_gp: 1500000
+  level_range: {min: 1, max: 99}
+  detail:
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.

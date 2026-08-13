@@ -617,3 +617,106 @@ def test_the_engine_scores_the_shipped_corpus_without_prices(
 
     assert entries
     assert all(entry.estimate is not None for entry in entries)
+
+
+class TestExplanationDoesNotDecideAnything:
+    """§9.10 describes a ranking it must not take part in.
+
+    The whole design of the explanation pass rests on one claim: it runs *after* the order
+    is fixed and returns copies. These assertions are that claim, checked rather than
+    trusted — because the failure mode is silent. A consequence that leaked into a factor
+    would produce a plausible list whose reasons justified themselves.
+    """
+
+    def _state(self, player: Callable[..., PlayerState]) -> PlayerState:
+        return player(
+            skills={
+                "attack": 40,
+                "strength": 40,
+                "defence": 40,
+                "hitpoints": 45,
+                "prayer": 30,
+                "magic": 50,
+                "slayer": 1,
+                "agility": 40,
+                "ranged": 50,
+            }
+        )
+
+    def test_explaining_changes_neither_the_score_nor_the_factors(
+        self,
+        player: Callable[..., PlayerState],
+        seed_content: Content,
+        now: datetime,
+        monkeypatch: object,
+    ) -> None:
+        """The same run with the explanation pass disabled must rank identically and carry
+        identical arithmetic. Only the words and the new field may differ."""
+        import tracker.recommendations.engine as engine
+
+        state = self._state(player)
+        selection = RoadmapSelection({"pvm_ladder": 1.0})
+
+        explained = recommend_run(state, selection, seed_content, seed_content.profile, now=now)
+        monkeypatch.setattr(  # type: ignore[attr-defined]
+            engine, "_explain", lambda entry, _run, _context: entry
+        )
+        bare = recommend_run(state, selection, seed_content, seed_content.profile, now=now)
+
+        assert ids(explained.primary) == ids(bare.primary)
+        for left, right in zip(explained.primary, bare.primary, strict=True):
+            assert left.score == right.score
+            assert left.factors == right.factors
+
+    def test_every_shipped_entry_carries_a_reason(
+        self, player: Callable[..., PlayerState], seed_content: Content, now: datetime
+    ) -> None:
+        """Silence is reserved for a candidate at the floor on every axis. An entry that
+        reached a list the player sees and says nothing at all is a bug in the pass, not an
+        honest quietness."""
+        run = recommend_run(
+            self._state(player),
+            RoadmapSelection({"pvm_ladder": 1.0}),
+            seed_content,
+            seed_content.profile,
+            now=now,
+        )
+
+        assert run.primary
+        assert all(entry.reason for entry in run.primary)
+
+    def test_a_reason_names_a_capability_wherever_the_engine_knows_one(
+        self, player: Callable[..., PlayerState], seed_content: Content, now: datetime
+    ) -> None:
+        """The guard on the whole feature. An entry that unblocked something specific must
+        say what, rather than falling back to *"unblocks several capabilities"* — which is
+        the sentence this work exists to stop printing."""
+        run = recommend_run(
+            self._state(player),
+            RoadmapSelection({"pvm_ladder": 1.0}),
+            seed_content,
+            seed_content.profile,
+            now=now,
+        )
+
+        for entry in run.primary:
+            if entry.consequences.unblocks_capabilities:
+                assert "unblocks several" not in entry.reason
+                assert entry.consequences.unblocks_capabilities[0].name in entry.reason
+
+    def test_a_blocked_entry_is_not_explained(
+        self, player: Callable[..., PlayerState], seed_content: Content, now: datetime
+    ) -> None:
+        """§16.2 surfaces blocked candidates with their ``blockers``, which answer *"why not
+        yet"*. *"What is this for"* is a question that does not arise until the answer to the
+        first one is *"nothing"* — and explaining all 365 would cost the run its budget."""
+        run = recommend_run(
+            self._state(player),
+            RoadmapSelection({"pvm_ladder": 1.0}),
+            seed_content,
+            seed_content.profile,
+            now=now,
+        )
+
+        assert run.blocked
+        assert all(entry.consequences.is_empty for entry in run.blocked)

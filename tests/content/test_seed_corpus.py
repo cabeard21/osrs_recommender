@@ -14,6 +14,7 @@ from typing import ClassVar
 import pytest
 
 from tracker.content.loader import Content
+from tracker.content.requirements import CapabilityLeaf
 from tracker.content.validate import load_and_validate
 from tracker.domain.types import Confidence, MilestoneClass, MilestoneKind
 
@@ -31,15 +32,22 @@ class TestShape:
 
     def test_capabilities(self, content: Content) -> None:
         assert set(content.capabilities) == {
+            # §4.2's PvP set
             "ice_barrage_nh",
             "deep_wildy_nh",
             "budget_nh",
             "anti_pk",
             "vengeance_pvp",
+            # The PvM bossing ladder, rung by rung — see TestPvmLadder for the shape claim
+            "boss_fundamentals",
+            "mid_tier_bossing",
+            "gwd_bossing",
+            "dragon_bossing",
+            "raid_ready",
         }
 
     def test_roadmaps(self, content: Content) -> None:
-        assert set(content.roadmaps) == {"main_nh", "anti_pk"}
+        assert set(content.roadmaps) == {"main_nh", "anti_pk", "pvm_ladder"}
 
     def test_a_capability_and_a_roadmap_share_the_id_anti_pk(self, content: Content) -> None:
         """As §4.2 (capability) and §9.3 (roadmap) both use it."""
@@ -52,6 +60,67 @@ class TestShape:
         """§6.9 — this is what makes decayed practice show as 'not today'."""
         assert content.capabilities["deep_wildy_nh"].recommended_readiness is Confidence.HIGH
         assert content.capabilities["budget_nh"].recommended_readiness is Confidence.MEDIUM
+
+
+class TestPvmLadder:
+    """The ladder is a chain in the capability DAG, and that must stay true.
+
+    §4.2 forbids a roadmap having a dependency graph of its own, so the *only* thing making
+    the bossing ladder ordered is that each rung's ``requires`` names the rung below. That
+    is a property nothing else in the corpus checks: every rung would still load, validate
+    and score if the ``capability:`` leaves were deleted — it would simply stop being a
+    ladder and become five unrelated goals, silently, with the roadmap file unchanged.
+    """
+
+    #: Bottom to top. The order is the assertion.
+    RUNGS: ClassVar[tuple[str, ...]] = (
+        "boss_fundamentals",
+        "mid_tier_bossing",
+        "gwd_bossing",
+        "dragon_bossing",
+        "raid_ready",
+    )
+
+    @staticmethod
+    def _capability_leaves(node: object) -> list[str]:
+        """Every ``capability:`` id anywhere in a requirement tree."""
+        if isinstance(node, CapabilityLeaf):
+            return [node.capability_id]
+        # The combinators name their children differently — ``children`` on all_of/any_of,
+        # ``child`` on not, ``of`` on at_least — so all three are walked rather than the one
+        # this corpus happens to use today.
+        nested = [
+            found
+            for attribute in ("children", "child", "of")
+            if (found := getattr(node, attribute, None)) is not None
+        ]
+        return [
+            leaf
+            for group in nested
+            for child in (group if isinstance(group, tuple | list) else [group])
+            for leaf in TestPvmLadder._capability_leaves(child)
+        ]
+
+    def test_each_rung_requires_exactly_the_rung_below_it(self, content: Content) -> None:
+        for lower, upper in zip(self.RUNGS, self.RUNGS[1:], strict=False):
+            requires = content.capabilities[upper].requires
+            assert self._capability_leaves(requires) == [lower], (
+                f"{upper} must name {lower} and nothing else — the chain *is* the ordering"
+            )
+
+    def test_the_bottom_rung_depends_on_no_capability(self, content: Content) -> None:
+        """Otherwise the ladder has a step below its first one, or a cycle."""
+        assert self._capability_leaves(content.capabilities[self.RUNGS[0]].requires) == []
+
+    def test_the_roadmap_weights_every_rung_and_only_the_rungs(self, content: Content) -> None:
+        """A rung the roadmap does not weight contributes nothing to ``pvp_value`` (§9.4),
+        so it would sit in the DAG being required by the rung above and rewarding nothing."""
+        assert set(content.roadmaps["pvm_ladder"].capabilities) == set(self.RUNGS)
+
+    def test_weights_rise_toward_the_goal(self, content: Content) -> None:
+        weights = content.roadmaps["pvm_ladder"].capabilities
+        ordered = [weights[rung] for rung in self.RUNGS]
+        assert ordered == sorted(ordered), "a later rung must not be worth less than an earlier"
 
 
 class TestMilestones:
