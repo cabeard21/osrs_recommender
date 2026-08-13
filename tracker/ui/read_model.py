@@ -22,8 +22,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from tracker.config.settings import Settings
@@ -33,6 +34,7 @@ from tracker.db.enums import RecommendationCandidateKind
 from tracker.db.models import (
     CapabilityState,
     ContainerScan,
+    ItemPrice,
     Player,
     RecommendationEntry,
     RecommendationSnapshot,
@@ -50,8 +52,10 @@ from tracker.db.repository import (
     get_player_by_username,
     get_unlocks,
     set_active_roadmap,
+    upsert_milestone,
 )
 from tracker.domain.types import (
+    AccountType,
     Container,
     GpSensitivity,
     LeafRef,
@@ -63,11 +67,15 @@ from tracker.domain.types import (
 from tracker.recommendations.refreshers import practice_candidates
 from tracker.ui.staleness import humanize_age, scan_note
 from tracker.ui.view_model import (
+    BandRow,
     BlockedRecommendationRow,
     CapabilityRow,
     DashboardView,
     FactorDiffRow,
+    GoalProgressRow,
     HistorySnapshotRow,
+    LeafRow,
+    NeededForRow,
     PracticeGroupRow,
     PracticeMemberRow,
     RecommendationEntryRow,
@@ -77,6 +85,8 @@ from tracker.ui.view_model import (
     SettingsView,
     SkillRow,
     SkillXpPoint,
+    SpeedUpRow,
+    UnblockRow,
     UnlockRow,
     capability_row,
     recommendation_entry_row,
@@ -394,6 +404,83 @@ def _candidate_unlocks_and_advances(
     return unlocks, advances
 
 
+def _consequence_name(stored: Mapping[str, Any], lookup: Mapping[str, Any], id_key: str) -> str:
+    """The freshest truthful name for a stored consequence.
+
+    Prefers what content says today and falls back to the name the run recorded, which is
+    ``_band_rows``' rule applied to a second join. Content changes between runs: renaming a
+    capability must not turn a History page into a stack trace, and the stored name is still
+    the most truthful thing available about what that row described when it was written.
+    """
+    entity = lookup.get(str(stored.get(id_key, "")))
+    if entity is not None:
+        return str(entity.name)
+    return str(stored.get("name", stored.get(id_key, "")))
+
+
+def _consequence_rows(
+    stored: Mapping[str, Any] | None, content: Content
+) -> tuple[
+    tuple[UnblockRow, ...],
+    tuple[NeededForRow, ...],
+    tuple[GoalProgressRow, ...],
+    tuple[SpeedUpRow, ...],
+]:
+    """§9.10's consequence rows, read from the snapshot rather than recomputed.
+
+    **The stored blob is rendered; nothing is re-derived here.** A consequence is a fact
+    about the account at the time of the run — "unblocks Desert Treasure I" stops being true
+    the moment the quest is done — so re-deriving on read would relabel a historical entry
+    with today's facts. Same argument as ``_band_rows``, and the reason the column exists.
+
+    ``goal_links`` is folded into the *"needed for"* rows rather than shown as a list of its
+    own: an indirect goal is only meaningful attached to the hop that reached it, and a bare
+    "Ice Barrage NH" under its own heading would claim a directness the engine was careful
+    not to claim. The first link is used, which is the strongest one the engine ordered.
+    """
+    blob = stored or {}
+    links = list(blob.get("goal_links") or ())
+    link = links[0] if links else None
+
+    unblocks = tuple(
+        UnblockRow(name=_consequence_name(entry, content.capabilities, "capability_id"))
+        for entry in blob.get("unblocks_capabilities") or ()
+    )
+    needed_for = tuple(
+        NeededForRow(
+            name=_consequence_name(entry, content.candidates, "candidate_id"),
+            remaining_before=int(entry.get("remaining_before", 0)),
+            remaining_after=int(entry.get("remaining_after", 0)),
+            # The link hangs off the hop the engine reached it through, and off no other.
+            goal_name=(
+                _consequence_name(link, content.capabilities, "capability_id")
+                if link is not None and link.get("via_candidate_id") == entry.get("candidate_id")
+                else None
+            ),
+            goal_on_roadmap=bool(link.get("on_roadmap", True)) if link is not None else True,
+        )
+        for entry in blob.get("gate_progress") or ()
+    )
+    works_toward = tuple(
+        GoalProgressRow(
+            name=_consequence_name(entry, content.capabilities, "capability_id"),
+            remaining_before=int(entry.get("remaining_before", 0)),
+            remaining_after=int(entry.get("remaining_after", 0)),
+            on_roadmap=bool(entry.get("on_roadmap", True)),
+        )
+        for entry in blob.get("goal_progress") or ()
+    )
+    speeds_up = tuple(
+        SpeedUpRow(
+            name=_consequence_name(entry, content.candidates, "candidate_id"),
+            hours_before=float(entry.get("hours_before", 0.0)),
+            hours_after=float(entry.get("hours_after", 0.0)),
+        )
+        for entry in blob.get("speeds_up") or ()
+    )
+    return unblocks, needed_for, works_toward, speeds_up
+
+
 def _refresher_advances(content: Content, template_id: str) -> tuple[str, ...]:
     """§9.10's "Advances" line for a refresher, from its authored ``advances`` tuple."""
     template = content.refreshers.get(template_id)
@@ -426,6 +513,44 @@ def _live_practice_group(
     return ()
 
 
+def _band_rows(stored: Sequence[Mapping[str, Any]] | None, content: Content) -> tuple[BandRow, ...]:
+    """Join §8.2's persisted bands back to content for the method's name and description.
+
+    **The stored ``method_id`` is rendered; a method is never re-selected here.** §8.2
+    step 3 chooses among the methods the account satisfied *at run time*, so re-deriving
+    the choice on read could name a method the quoted hours did not come from — the same
+    drift argument that makes ``reason`` a stored string rather than a regenerated one.
+
+    A ``method_id`` content no longer declares degrades to the raw id and never raises.
+    Content changes between runs: renaming a method must not turn every History page into
+    a stack trace, and the id is still the most truthful thing available about what that
+    number was computed from.
+    """
+    rows: list[BandRow] = []
+    for band in stored or ():
+        method_id = band.get("method_id")
+        method = content.training_methods.get(method_id) if method_id else None
+        detail = method.detail if method is not None else None
+        rows.append(
+            BandRow(
+                from_level=int(band["from_level"]),
+                to_level=int(band["to_level"]),
+                method_id=method_id,
+                method_name=method.name if method is not None else method_id,
+                hours=float(band.get("hours", 0.0)),
+                gp=int(band.get("gp", 0)),
+                fallback=bool(band.get("fallback", False)),
+                location=detail.location if detail is not None else None,
+                target=detail.target if detail is not None else None,
+                gear=tuple(detail.gear) if detail is not None else (),
+                inventory=tuple(detail.inventory) if detail is not None else (),
+                notes=detail.notes if detail is not None else None,
+                wiki_url=detail.wiki_url if detail is not None else None,
+            )
+        )
+    return tuple(rows)
+
+
 def recommendation_rows(
     session: Session, player_id: int, content: Content, now: datetime
 ) -> tuple[RecommendationEntryRow, ...]:
@@ -438,6 +563,10 @@ def recommendation_rows(
     snapshot = latest_snapshot(session, player_id)
     if snapshot is None:
         return ()
+    # Read live rather than from the snapshot: coins move between runs, and a purchasing
+    # note quoting a balance from last week's snapshot would be worse than none at all.
+    # The *ranking* stays the persisted one — this is display, and it feeds no factor.
+    liquid_gp = build_player_state(session, player_id).liquid_gp
     entries = session.scalars(
         select(RecommendationEntry)
         .where(
@@ -455,6 +584,9 @@ def recommendation_rows(
             candidate.name
             if candidate is not None
             else (template.name if template is not None else entry.candidate_id)
+        )
+        unblocks, needed_for, works_toward, speeds_up = _consequence_rows(
+            entry.consequences, content
         )
         if is_refresher:
             unlocks: tuple[str, ...] = ()
@@ -480,8 +612,14 @@ def recommendation_rows(
                 confidence=entry.estimate_confidence,
                 unlocks=unlocks,
                 advances=advances,
+                unblocks=unblocks,
+                needed_for=needed_for,
+                works_toward=works_toward,
+                speeds_up=speeds_up,
                 practice_members=members,
                 suggested_session=suggested_session,
+                bands=_band_rows(entry.bands, content),
+                liquid_gp=liquid_gp,
             )
         )
     return tuple(rows)
@@ -508,6 +646,15 @@ def blocked_recommendation_rows(
                 content.candidates[entry.candidate_id].name
                 if entry.candidate_id in content.candidates
                 else entry.candidate_id
+            ),
+            blockers=tuple(
+                LeafRow(
+                    leaf_type=str(leaf.get("leaf_type", "")),
+                    key=str(leaf.get("key", "")),
+                    description=str(leaf.get("description", "")),
+                    target=leaf.get("target"),
+                )
+                for leaf in (entry.blockers or ())
             ),
         )
         for entry in entries
@@ -637,6 +784,61 @@ def refresh_milestones(
     return refreshed
 
 
+def attest_milestone(
+    session: Session,
+    player_id: int,
+    key: str,
+    *,
+    achieved: bool,
+    content: Content,
+    now: datetime,
+    source: Source = Source.MANUAL,
+) -> bool:
+    """A7's missing half: record the user's answer to a self-attested milestone (§6.6).
+
+    :func:`refresh_milestones` deliberately skips a milestone with no row, on the grounds
+    that *"a session cannot complete a milestone the player has never been asked about"* —
+    and names this function's job as the one that closes that gap. So this one **creates**
+    the row: the whole point is that the question has now been put.
+
+    Writing ``attested_at`` is what makes the answer legible. ``achieved=False`` with a
+    timestamp is *"asked, and they said no"* — an honest ``unsatisfied`` — while the absent
+    row it replaces was ``unknown``. Those two must not collapse (§4.5, A7), which is why
+    declining is a write rather than a no-op.
+
+    ``last_practiced_at`` is carried over rather than set. Attesting is a claim about
+    competence, and freshness is a claim about recency; §6.6 keeps them in separate columns
+    precisely so answering *"yes, I can do 4-way switches"* cannot silently pass for having
+    practised them today. The reverse guard is G7's, in
+    :func:`refresh_milestones`, and both directions have to hold for the pair to mean
+    anything.
+
+    :returns: False when ``key`` names no authored milestone, or one measured rather than
+        asked. A ``derived`` milestone is computed from counters (§6.6), so accepting a
+        user's answer for one would let an opinion overwrite a measurement.
+    """
+    authored = content.milestones.get(key)
+    if authored is None or authored.kind is not MilestoneKind.SELF_ATTESTED:
+        return False
+
+    existing = session.get(MilestoneRow, (player_id, key))
+    upsert_milestone(
+        session,
+        player_id,
+        key,
+        kind=authored.kind,
+        class_=authored.class_,
+        achieved=achieved,
+        source=source,
+        observed_at=now,
+        value=existing.value if existing is not None else None,
+        attested_at=now,
+        last_practiced_at=existing.last_practiced_at if existing is not None else None,
+    )
+    session.commit()
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Step 11 — Roadmaps (§4.3, §6.12, §15)
 # ---------------------------------------------------------------------------
@@ -723,7 +925,38 @@ def settings_view(session: Session, player_id: int | None, settings: Settings) -
         price_provider=prices.provider,
         price_base_url=prices.base_url,
         wom_base_url=settings.integrations.wise_old_man.base_url,
+        account_type=(
+            AccountType(player.account_type) if player is not None and player.account_type else None
+        ),
+        members=player.members if player is not None else None,
+        price_rows=session.scalar(select(func.count()).select_from(ItemPrice)) or 0,
+        price_last_fetched_at=session.scalar(select(func.max(ItemPrice.fetched_at))),
     )
+
+
+def set_account_type(
+    session: Session, player_id: int | None, account_type: AccountType | None
+) -> None:
+    """Record §4.2's account mode, or clear it back to "nobody has said".
+
+    Clearing is a real operation, not an oversight: a user who picked Ironman by mistake
+    must be able to get back to *unknown* rather than being forced to assert "main"
+    instead. §4.5 makes those two different states, so the UI has to be able to reach both.
+    """
+    player = get_player(session, player_id) if player_id is not None else None
+    if player is None:
+        return
+    player.account_type = account_type.value if account_type is not None else None
+    session.commit()
+
+
+def set_members(session: Session, player_id: int | None, members: bool | None) -> None:
+    """Record membership, or clear it back to unknown — :func:`set_account_type`'s rule."""
+    player = get_player(session, player_id) if player_id is not None else None
+    if player is None:
+        return
+    player.members = members
+    session.commit()
 
 
 def set_tracked_username(session: Session, player_id: int | None, username: str) -> int:

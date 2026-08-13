@@ -28,3 +28,39 @@
   price_mode: live
   fallback_price_gp: 1500000
   price_staleness_days: 30
+
+# The PvM ladder's gear. Every `item_id` below came from `tools/lookup_item_ids.py`, which
+# reads the price API's own `/mapping` catalog and refuses to choose between near-identical
+# names — the "(empty)", "(uncharged)" and "(c)" variants are how a plausible-looking wrong
+# id gets committed, and a wrong id here is a silently wrong GP estimate rather than an error.
+#
+# There is no Toxic blowpipe entry for exactly that reason: only `Toxic blowpipe (empty)` has
+# a catalog row, since the charged form is untradeable, and an `item:` leaf naming the empty
+# id would miss every player who owns a charged one.
+- id: rune_crossbow
+  name: Rune crossbow
+  item_id: 9185
+  price_mode: live
+  fallback_price_gp: 30000
+  price_staleness_days: 30
+
+- id: dragon_hunter_crossbow
+  name: Dragon hunter crossbow
+  item_id: 21012
+  price_mode: live
+  fallback_price_gp: 60000000
+  price_staleness_days: 7
+
+- id: bandos_chestplate
+  name: Bandos chestplate
+  item_id: 11832
+  price_mode: live
+  fallback_price_gp: 17000000
+  price_staleness_days: 7
+
+- id: armadyl_chestplate
+  name: Armadyl chestplate
+  item_id: 11828
+  price_mode: live
+  fallback_price_gp: 30000000
+  price_staleness_days: 7

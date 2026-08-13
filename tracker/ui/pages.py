@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR, SETTINGS_ATTR
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
-from tracker.domain.types import GpSensitivity
+from tracker.domain.types import AccountType, GpSensitivity
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
 from tracker.ui import history as history_view
@@ -42,7 +42,12 @@ from tracker.ui import settings as settings_view
 from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
 from tracker.ui.shell import empty_state, page
-from tracker.ui.view_model import PracticeGroupRow
+from tracker.ui.view_model import (
+    LeafRow,
+    PracticeGroupRow,
+    RoadmapSelectorModel,
+    roadmap_selector_model,
+)
 
 #: Shown by every view when no player row exists. §15's views all answer questions about an
 #: account, and before the first sync there is no account — which is a state to explain, not
@@ -80,16 +85,40 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             raise RuntimeError("no Settings on app.state; build with tracker.app.create_app")
         return loaded
 
+    def selector(session: Session, player_id: int | None) -> RoadmapSelectorModel | None:
+        """The header roadmap selector's model, read on the page's own session.
+
+        Built here rather than in :mod:`tracker.ui.shell` because binding the write needs a
+        session factory, and this is the only module that has one. The write takes its own
+        session, as every other handler on this page does — the read session is closed
+        before anything renders, so a handler firing later cannot use it.
+
+        Every page passes this, which is why it is a helper rather than nine copies: a page
+        that forgot it would silently lose the selector, and nothing but a browser test
+        would notice.
+        """
+        if player_id is None:
+            return None
+        options = read_model.roadmap_options(session, player_id, content())
+
+        def choose(roadmap_id: str) -> None:
+            with session_factory()() as write_session:
+                read_model.select_primary_roadmap(write_session, player_id, roadmap_id)
+            ui.navigate.reload()
+
+        return roadmap_selector_model(options, choose)
+
     @ui.page("/")
     def dashboard_page() -> None:
-        with page("Dashboard", path="/"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                view = (
-                    read_model.dashboard_view(session, player_id, content(), now())
-                    if player_id is not None
-                    else None
-                )
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            view = (
+                read_model.dashboard_view(session, player_id, content(), now())
+                if player_id is not None
+                else None
+            )
+        with page("Dashboard", path="/", roadmap=roadmap):
             if view is None:
                 empty_state(NO_PLAYER)
                 return
@@ -97,29 +126,45 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
 
     @ui.page("/capabilities")
     def capabilities_page() -> None:
-        with page("Capabilities", path="/capabilities"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                rows = (
-                    read_model.capability_rows(session, player_id, content())
-                    if player_id is not None
-                    else ()
-                )
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            rows = (
+                read_model.capability_rows(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+        with page("Capabilities", path="/capabilities", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
-            capabilities_view.render(rows)
+
+            def attest(leaf: LeafRow, achieved: bool) -> None:
+                with session_factory()() as write_session:
+                    read_model.attest_milestone(
+                        write_session,
+                        player_id,
+                        leaf.key,
+                        achieved=achieved,
+                        content=content(),
+                        now=now(),
+                    )
+                ui.notify(f"Recorded: {leaf.description or leaf.key}")
+                ui.navigate.reload()
+
+            capabilities_view.render(rows, on_attest=attest)
 
     @ui.page("/unlocks")
     def unlocks_page() -> None:
-        with page("Unlocks", path="/unlocks"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                unlock_rows = (
-                    read_model.unlock_rows(session, player_id, content())
-                    if player_id is not None
-                    else ()
-                )
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            unlock_rows = (
+                read_model.unlock_rows(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+        with page("Unlocks", path="/unlocks", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
@@ -127,14 +172,15 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
 
     @ui.page("/skills")
     def skills_page() -> None:
-        with page("Skills", path="/skills"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                skill_rows = (
-                    read_model.skill_rows(session, player_id, content())
-                    if player_id is not None
-                    else ()
-                )
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            skill_rows = (
+                read_model.skill_rows(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+        with page("Skills", path="/skills", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
@@ -142,26 +188,40 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
 
     @ui.page("/recommendations")
     def recommendations_page() -> None:
-        with page("Recommendations", path="/recommendations"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                if player_id is None:
-                    empty_state(NO_PLAYER)
-                    return
-                rows = read_model.recommendation_rows(session, player_id, content(), now())
-                blocked = read_model.blocked_recommendation_rows(session, player_id, content())
+        # The early return lives below ``with page(...)``, not inside the session block. A
+        # ``return`` taken before the frame opens renders an empty document, so the one
+        # case that most needs an explanation — no account yet — would be the one case that
+        # gets a blank screen.
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            rows = (
+                read_model.recommendation_rows(session, player_id, content(), now())
+                if player_id is not None
+                else ()
+            )
+            blocked = (
+                read_model.blocked_recommendation_rows(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+        with page("Recommendations", path="/recommendations", roadmap=roadmap):
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
             recommendations_view.render(rows, blocked)
 
     @ui.page("/practice")
     def practice_page() -> None:
-        with page("Practice", path="/practice"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                groups = (
-                    read_model.practice_freshness_rows(session, player_id, content(), now())
-                    if player_id is not None
-                    else ()
-                )
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            groups = (
+                read_model.practice_freshness_rows(session, player_id, content(), now())
+                if player_id is not None
+                else ()
+            )
+        with page("Practice", path="/practice", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
@@ -182,14 +242,19 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
 
     @ui.page("/roadmaps")
     def roadmaps_page() -> None:
-        with page("Roadmaps", path="/roadmaps"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                options = (
-                    read_model.roadmap_options(session, player_id, content())
-                    if player_id is not None
-                    else ()
-                )
+        # This page keeps its radio group as well as gaining the header selector. Both
+        # write through ``select_primary_roadmap`` and both reload, so the two controls
+        # cannot disagree; what the page adds is the secondaries and the raw weights, which
+        # §4.3 deliberately keeps out of the one-choice surface.
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            options = (
+                read_model.roadmap_options(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+        with page("Roadmaps", path="/roadmaps", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
@@ -219,14 +284,18 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
 
     @ui.page("/settings")
     def settings_page() -> None:
-        with page("Settings", path="/settings"):
-            # Deliberately **not** gated on ``NO_PLAYER`` like every other page. Naming the
-            # character is what a fresh install does *before* it has a player row, so the one
-            # page that can create one must render without it — otherwise a user with no
-            # RuneLite plugin has no way in at all, which is the §7.2 bootstrap gap.
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                view = read_model.settings_view(session, player_id, settings())
+        # Deliberately **not** gated on ``NO_PLAYER`` like every other page. Naming the
+        # character is what a fresh install does *before* it has a player row, so the one
+        # page that can create one must render without it — otherwise a user with no
+        # RuneLite plugin has no way in at all, which is the §7.2 bootstrap gap. It is also
+        # the page that makes ``roadmap=None`` necessary rather than defensive: before the
+        # first sync there is no account, so there is no roadmap to choose for.
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            view = read_model.settings_view(session, player_id, settings())
+
+        with page("Settings", path="/settings", roadmap=roadmap):
 
             def set_sensitivity(sensitivity: GpSensitivity) -> None:
                 if player_id is None:
@@ -243,18 +312,38 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                     write_session.commit()
                 ui.navigate.reload()
 
+            def set_account_type(account_type: AccountType | None) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_account_type(write_session, player_id, account_type)
+                ui.navigate.reload()
+
+            def set_members(members: bool | None) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_members(write_session, player_id, members)
+                ui.navigate.reload()
+
             settings_view.render(
-                view, on_set_sensitivity=set_sensitivity, on_set_username=set_username
+                view,
+                on_set_sensitivity=set_sensitivity,
+                on_set_username=set_username,
+                on_set_account_type=set_account_type,
+                on_set_members=set_members,
             )
 
     @ui.page("/history")
     def history_page() -> None:
-        with page("History", path="/history"):
-            with session_factory()() as session:
-                player_id = read_model.first_player_id(session)
-                if player_id is None:
-                    empty_state(NO_PLAYER)
-                    return
-                snapshots = read_model.history_snapshots(session, player_id, content())
-                xp = read_model.xp_series(session, player_id)
+        # Early return below the frame, for the reason ``/recommendations`` states.
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            snapshots = (
+                read_model.history_snapshots(session, player_id, content())
+                if player_id is not None
+                else ()
+            )
+            xp = read_model.xp_series(session, player_id) if player_id is not None else {}
+        with page("History", path="/history", roadmap=roadmap):
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
             history_view.render(snapshots, xp)

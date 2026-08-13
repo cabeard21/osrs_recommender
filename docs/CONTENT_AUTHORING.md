@@ -96,6 +96,40 @@ decayed, **without** losing their unlocked status.
 Capabilities compose into a DAG. `make validate-content` reports the actual cycle path if
 you create one.
 
+**`pvp_value` means "goal value", and nothing reads it.** The corpus is no longer PvP-only —
+`content/roadmaps/pvm_ladder.yaml` is a bossing ladder — and its five rung capabilities
+declare this field like any other. The name is kept because it is load-bearing in the schema,
+the tuned scoring profile, the factor JSON persisted on every recommendation entry and every
+golden fixture at once, and renaming it would rewrite all of them to change nothing the
+engine computes. Tuning it moves nothing: what gives a capability weight in the ranking is a
+*candidate's* `advances` map times the roadmap's capability weight (§9.3).
+
+### Ordered progressions
+
+If a roadmap needs an **order** — a bossing ladder, a quest chain, a gear progression — build
+it as a chain of capabilities, each rung's `requires` naming the rung below:
+
+```yaml
+# content/capabilities/dragon_bossing.yaml
+requires:
+  all_of:
+    - capability: gwd_bossing     # <- the rung below
+    - skill: {ranged: 80}
+    - quest: dragon_slayer_ii
+```
+
+Do **not** add an ordering field to the roadmap. §4.2 keeps roadmaps free of a dependency
+graph of their own precisely so there is only one graph to keep consistent with the facts,
+and the DAG already produces the ordering — a rung whose predecessor is unmet is blocked, so
+only the reachable rung is ever offered.
+
+The chain pays a second dividend that is easy to miss. `tools/generate_candidates.py` reads
+every `skill:` level the corpus references and emits training bands ending **exactly** at
+those levels, so a rung gating on Slayer 55 and Prayer 43 causes bands ending at 55 and 43 to
+exist. The path up the ladder appears by construction. That makes the rungs' `skill:` leaves
+the most consequential thing you author — pick them as the levels you actually want the
+player told to train to.
+
 ## Adding a roadmap
 
 ```yaml
@@ -168,6 +202,13 @@ A few rules worth knowing before you author one:
   way to author a genuinely irrelevant action — it then ranks last because the content
   says so, not because code recognises its name. `train_woodcutting` is the corpus's
   example. It also puts the candidate outside every roadmap's price-fetch scope.
+- **`advances` is also what a candidate's *prerequisites* advertise (§9.10).** A generated
+  skill band carries no `advances` of its own, so the card for *"Train Slayer to 10"* names
+  its goal by looking one hop on — to Desert Treasure I, which the band gates, and then to
+  that quest's `advances` map. The heaviest entry wins, which is why DT1's
+  `ice_barrage_nh: 0.90` and not its `deep_wildy_nh: 0.60` is the goal a player is shown.
+  The weights you set here are read as *"what is this mostly for"* by every band that feeds
+  the candidate, so a padded map now misleads in two places rather than one.
 - **An `unsatisfied` gate blocks; an `unknown` gate does not.** A candidate whose
   `requires` cannot be evaluated because nothing has been synced reads *"sync this"*, not
   *"do this"*, and must stay rankable.

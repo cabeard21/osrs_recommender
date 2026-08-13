@@ -1,0 +1,31 @@
+# Rung 1 of the PvM bossing ladder.
+#
+# **The ladder is the capability DAG, not a second graph.** Each rung above this one names
+# the rung below through a `capability:` leaf, so the order the player sees comes from §10.2's
+# existing dependency graph plus current facts — exactly as §4.2 requires. `pvm_ladder` stays
+# what every roadmap is: a weighted set with no ordering of its own.
+#
+# **`pvp_value` is read here as *goal value*.** The field is an authoring hint and nothing
+# else — no §9.4 scoring factor reads it (see `Capability.pvp_value` in
+# tracker/content/schema.py) — so a PvM capability declaring one asserts no priority. It is
+# left unrenamed deliberately: the name is baked into the schema, the tuned profile, the
+# persisted factor JSON and every golden fixture, and renaming it would change nothing about
+# what the engine computes.
+#
+# Gates are skills, quests, items and the `ca_*` combat-achievement unlocks the plugin
+# already collects (`UnlockCollector`, `"ca_" + slug(tier)`). Boss kill counts are
+# deliberately absent: nothing stores them today, and inventing a leaf type for a fact no
+# source supplies would gate the whole ladder on `unknown`.
+id: boss_fundamentals
+name: Boss fundamentals
+recommended_readiness: medium
+pvp_value: 0.55
+requires:
+  all_of:
+    - skill: {prayer: 43}      # Protect from Melee/Missiles — the floor for every boss above
+    - skill: {attack: 60}
+    - skill: {strength: 60}
+    - skill: {defence: 60}
+    - skill: {hitpoints: 60}
+    - quest: dragon_slayer_i
+    - unlock: ca_easy

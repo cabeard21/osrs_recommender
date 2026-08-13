@@ -12,8 +12,21 @@ from hypothesis import strategies as st
 from tracker.content.loader import Content
 from tracker.content.schema import ScoringProfile
 from tracker.domain.candidates import advances_value, pvp_value
-from tracker.domain.types import FactorContribution, GpSensitivity, RoadmapSelection
+from tracker.domain.types import (
+    Acceleration,
+    Consequences,
+    FactorContribution,
+    GoalProgress,
+    GpSensitivity,
+    RoadmapSelection,
+    UnblockedCapability,
+)
 from tracker.recommendations.blending import effective_capability_weights
+from tracker.recommendations.details import (
+    leverage_detail,
+    method_unlock_detail,
+    progression_details,
+)
 from tracker.recommendations.reasons import headroom, reason
 from tracker.recommendations.scoring import (
     FACTOR_NAMES,
@@ -332,3 +345,75 @@ class TestReasonGeneration:
         factors = self._factors(profile, pvp_value=0.95, cost_decay=1.0, leverage=0.02)
 
         assert reason(factors, profile).startswith("high PvP value")
+
+
+class TestTheDetailPhrases:
+    """§9.10's overrides. Every one replaces words and never the number beside them."""
+
+    def test_a_named_capability_replaces_the_bare_count(self) -> None:
+        detail = leverage_detail((UnblockedCapability("ice_barrage_nh", "Ice Barrage NH"),), 1)
+
+        assert detail == {"leverage": "unblocks Ice Barrage NH"}
+
+    def test_extra_capabilities_are_summarized_rather_than_listed(self) -> None:
+        """A line naming four capabilities stops being read. The leading one is the
+        strongest, so what is dropped is what mattered least."""
+        detail = leverage_detail(
+            (
+                UnblockedCapability("ice_barrage_nh", "Ice Barrage NH"),
+                UnblockedCapability("deep_wildy_nh", "Deep Wilderness NH"),
+                UnblockedCapability("anti_pk", "Anti-PK"),
+            ),
+            3,
+        )
+
+        assert detail == {"leverage": "unblocks Ice Barrage NH and 2 more"}
+
+    def test_it_falls_back_to_the_count_when_no_name_resolves(self) -> None:
+        """The factor counted something, so the count is still true — and a capability the
+        corpus has since dropped must not turn the sentence into a raw id."""
+        assert leverage_detail((), 2) == {"leverage": "unblocks 2 capabilities"}
+
+    def test_a_candidate_that_unblocks_nothing_overrides_nothing(self) -> None:
+        assert leverage_detail((), 0) == {}
+
+    def test_the_acceleration_quotes_hours_rather_than_a_percentage(self) -> None:
+        """*"an 86% reduction"* is a fact about the factor; *"113h to 16h"* is a fact about
+        the player's evening, and only one of them answers *"should I do this first?"*."""
+        detail = method_unlock_detail(
+            (Acceleration("train_magic_87_to_94", "Train Magic 87 → 94", 113.0, 16.0),)
+        )
+
+        assert detail == {"method_unlock": "cuts Train Magic 87 → 94 from 113h to 16h"}
+
+    def test_a_short_grind_keeps_its_decimal(self) -> None:
+        """Below ten hours the decimal is the difference between two different evenings;
+        above it, it would imply a precision §8's sizing does not have."""
+        detail = method_unlock_detail((Acceleration("c", "Some grind", 7.5, 2.25),))
+
+        assert detail == {"method_unlock": "cuts Some grind from 7.5h to 2.2h"}
+
+    def test_a_goal_never_becomes_a_pvp_value_phrase(self) -> None:
+        """The tempting override, and the one that would lie.
+
+        A generated band has ``advances: {}``, so its ``pvp_value`` sits at the ε floor and
+        its credit is nearly zero — while its consequences may name a capability it
+        measurably advances. *"works toward Boss fundamentals (+0.02)"* would attach a goal
+        to a factor that earned nothing, in the one place a reader most trusts the number.
+        *Works toward* is a display row; it is not a reason phrase.
+        """
+        consequences = Consequences(
+            goal_progress=(
+                GoalProgress(
+                    capability_id="boss_fundamentals",
+                    name="Boss fundamentals",
+                    weight=0.5,
+                    remaining_before=5,
+                    remaining_after=4,
+                    on_roadmap=True,
+                ),
+            )
+        )
+
+        assert "pvp_value" not in progression_details(consequences, 0)
+        assert progression_details(consequences, 0) == {}

@@ -39,6 +39,8 @@ CORRUPT_CORPORA: list[tuple[str, str]] = [
     ("11_unknown_advances_target", "advances 'not_a_capability'"),
     ("12_advances_weight_out_of_range", "advances weight for 'ice_barrage_nh' is 1.5"),
     ("13_candidate_without_completion", "no non-empty completion predicate"),
+    # Step 5: generated skill bands made a duplicate target reachable by accident.
+    ("14_duplicate_skill_target", "completes on magic 94"),
 ]
 
 
@@ -170,7 +172,7 @@ class TestEveryRule:
         """A fixture nobody asserts against is a rule nobody is checking."""
         on_disk = {p.name for p in CORRUPT.iterdir() if p.is_dir()}
         assert on_disk == {directory for directory, _ in CORRUPT_CORPORA}
-        assert len(CORRUPT_CORPORA) == 13
+        assert len(CORRUPT_CORPORA) == 14
 
 
 class TestCycleReporting:

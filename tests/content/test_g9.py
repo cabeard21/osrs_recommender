@@ -82,8 +82,13 @@ def test_a_new_milestone_and_practice_group_need_no_code_change(tmp_path: Path) 
 
 def test_a_new_quest_item_and_training_method_need_no_code_change(tmp_path: Path) -> None:
     corpus = clone_corpus(tmp_path)
+    # Deliberately fictional. Every quest RuneLite reports is already declared by the
+    # generated registry, so a real id would collide (§10.7) — but an id no code has ever
+    # seen is the stronger test of G9's claim anyway: the loader must accept it because it
+    # is *content*, not because it recognises the name.
     (corpus / "quests" / "extra.yaml").write_text(
-        "- id: monkey_madness_i\n  name: Monkey Madness I\n  quest_points: 3\n", encoding="utf-8"
+        "- id: the_hypothetical_quest\n  name: The Hypothetical Quest\n  quest_points: 3\n",
+        encoding="utf-8",
     )
     (corpus / "items" / "extra.yaml").write_text(
         "- id: dragon_claws\n"
@@ -101,13 +106,13 @@ def test_a_new_quest_item_and_training_method_need_no_code_change(tmp_path: Path
         "  level_range: {min: 60, max: 99}\n"
         "  cost_per_hour_gp: 900000\n"
         "  requires:\n"
-        "    quest: monkey_madness_i\n",
+        "    quest: the_hypothetical_quest\n",
         encoding="utf-8",
     )
 
     content = load_and_validate(corpus)
 
-    assert "monkey_madness_i" in content.quests
+    assert "the_hypothetical_quest" in content.quests
     assert content.item_by_numeric_id(13652) is not None
     # Fastest first — this is the order §8.2 step 3 walks.
     assert [m.id for m in content.methods_for_skill("attack")] == [

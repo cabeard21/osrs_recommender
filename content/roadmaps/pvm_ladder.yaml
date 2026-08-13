@@ -1,0 +1,20 @@
+# The third roadmap, and the first that is not about PvP.
+#
+# Still just a weighted capability set (§4.2). **The ladder is in the capability graph, not
+# here** — each rung's `requires` names the rung below, so this file needs no ordering of its
+# own and the SDD's "roadmaps have no dependency graph" rule holds unchanged.
+#
+# Weights rise toward the top rung because the top rung is the goal. That is safe rather than
+# reckless: `pvp_value` is only one of §9.4's six factors, and `proximity` and `effort_decay`
+# are what keep the *nearest* rung's actions at the top of the ranked list. Weighting the far
+# goal highest expresses where the player is going without putting an unreachable item on
+# screen — and a candidate that is genuinely out of reach is filtered as blocked (§16.2)
+# rather than ranked at all.
+id: pvm_ladder
+name: PvM bossing ladder
+capabilities:
+  boss_fundamentals: 0.50
+  mid_tier_bossing: 0.70
+  gwd_bossing: 0.85
+  dragon_bossing: 0.95
+  raid_ready: 1.00

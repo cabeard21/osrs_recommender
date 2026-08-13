@@ -21,8 +21,10 @@ from dataclasses import dataclass
 
 from nicegui import ui
 
+from tracker.ui.components import roadmap_selector
 from tracker.ui.components.badges import CONFIDENCE_CSS
 from tracker.ui.states import STATE_CSS
+from tracker.ui.view_model import RoadmapSelectorModel
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,18 +93,26 @@ def _nav_bar(current: str) -> None:
 
 
 @contextmanager
-def page(title: str, *, path: str) -> Iterator[None]:
+def page(title: str, *, path: str, roadmap: RoadmapSelectorModel | None = None) -> Iterator[None]:
     """Wrap a page body in the shared frame.
 
     A context manager rather than a decorator taking a render callable, so a page function
     reads top-to-bottom as the markup it produces. ``path`` is passed explicitly instead of
     being read from the request, because the nav highlight is a property of the page being
     built and NiceGUI rebuilds pages outside any request scope on reconnect.
+
+    ``roadmap`` arrives as an already-read model with an already-bound callback, because
+    this module opens no session and knows no read model — :mod:`tracker.ui.pages` builds
+    it. ``None`` draws no selector, which is what a page with no player row gets: a
+    dropdown before the first sync would imply a choice that has nothing to choose for
+    (§4.5).
     """
     inject_styles()
     ui.page_title(f"{title} - OSRS tracker")
     with ui.element("div").classes("tracker-page"):
         _nav_bar(path)
+        if roadmap is not None:
+            roadmap_selector.render(roadmap)
         ui.html(title).classes("text-xl font-semibold mt-1 mb-2 block")
         yield
 

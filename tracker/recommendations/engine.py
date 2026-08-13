@@ -22,7 +22,12 @@ The pipeline
    blocked (§16.2).
 3. **Synthesize** one composite refresher per decayed practice group (§9.8).
 4. **Score** everything through the same weighted geometric mean (§9.4, §9.5).
-5. **Rank**, then apply §9.9's hysteresis, then §9.8's list policy.
+5. **Rank**, then apply §9.9's hysteresis, then §9.8's list policy, then cut the primary
+   list to ``max_primary_entries`` (§9.7).
+
+The cut is last for the same reason the list policy is late: it operates on an ordering it
+cannot influence. Truncating earlier — or filtering candidates before scoring — would let
+list length decide what gets ranked, which is the one thing §10.6 keeps content from doing.
 
 Steps 4 and 5 treat progression candidates and refreshers identically, which is what keeps
 G10 from needing a special case: a refresher competes on its merits and is *then* capped at
@@ -44,23 +49,25 @@ not say, and the code ships a documented choice rather than an invention.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 from tracker.content.loader import Content
 from tracker.content.requirements import Requirement
 from tracker.content.schema import Candidate, ScoringProfile
 from tracker.domain.candidates import (
+    MethodUnlockWinner,
     advances_value,
     blocked,
     completed,
     effective_capability_weights,
     gate_value,
     leverage,
-    method_unlock_map,
+    method_unlock_scores,
     proximity,
-    unlock_flip_count,
+    unlock_flips,
 )
+from tracker.domain.consequences import consequences_for
 from tracker.domain.types import (
     CandidateKind,
     Confidence,
@@ -76,7 +83,8 @@ from tracker.estimation.prices import PriceRecord
 from tracker.estimation.xp_table import xp_for_level
 from tracker.progression.engine import compute_capability_states
 from tracker.progression.evaluate import EvalResult, Evaluator
-from tracker.recommendations.facts import EstimateOracle, LeverageOracle
+from tracker.recommendations.details import leverage_detail, progression_details
+from tracker.recommendations.facts import EstimateOracle, GateOracle, LeverageOracle, _Worlds
 from tracker.recommendations.hysteresis import apply_hysteresis
 from tracker.recommendations.reasons import reason
 from tracker.recommendations.refreshers import (
@@ -136,6 +144,10 @@ def recommend_run(
     now: datetime,
 ) -> RecommendationRun:
     """The full result of one scoring pass. See :class:`RecommendationRun`."""
+    # One set of counterfactual worlds, shared by the pass that sizes them and the pass that
+    # explains them. §9.10's explanation therefore builds none of its own — every world it
+    # asks about was already built to answer A30.
+    worlds = _Worlds(state, content)
     run = _Run(
         state=state,
         content=content,
@@ -145,16 +157,25 @@ def recommend_run(
         weights=effective_capability_weights(selection, content),
         evaluator=Evaluator(state, content),
         oracle=LeverageOracle(state, content, now),
-        estimates=EstimateOracle(state, content, prices or {}, now),
+        estimates=EstimateOracle(state, content, prices or {}, now, worlds=worlds),
+        gates=GateOracle(worlds),
     )
 
-    ranked = sorted(_actionable(run), key=lambda entry: (-entry.recommendation.score, entry.id))
+    entries, context = _actionable(run)
+    ranked = sorted(entries, key=lambda entry: (-entry.recommendation.score, entry.id))
     ordered = apply_hysteresis([entry.recommendation for entry in ranked], incumbent)
     primary, deferred = enforce_list_policy(ordered, profile)
+    primary = primary[: profile.max_primary_entries]
 
+    # §9.10's explanation, derived **after** the ranking is fixed and applied only to the
+    # entries that ship. Two consequences of that placement, both deliberate. It cannot
+    # influence what it describes: `_explain` reads the factors and returns a copy, so no
+    # ordering input exists for it to touch. And it costs what the visible list costs rather
+    # than what the corpus costs — 365 candidates are scored, a dozen are explained, and the
+    # counterfactual worlds it asks about were all built by the A30 pass above.
     return RecommendationRun(
-        primary=primary,
-        deferred_refreshers=deferred,
+        primary=tuple(_explain(entry, run, context) for entry in primary),
+        deferred_refreshers=tuple(_explain(entry, run, context) for entry in deferred),
         blocked=_blocked_entries(run),
     )
 
@@ -185,6 +206,8 @@ class _Run:
     evaluator: Evaluator
     oracle: LeverageOracle
     estimates: EstimateOracle
+    gates: GateOracle
+    """§9.10's *"what is still in the way"*, sharing ``estimates``' counterfactual worlds."""
 
     def evaluate(
         self, requirement: Requirement, _state: PlayerState, _content: Content
@@ -208,12 +231,32 @@ class _Entry:
     recommendation: Recommendation
 
 
+@dataclass(frozen=True, slots=True)
+class _ScoringContext:
+    """What the scoring pass learned that §9.10's explanation would otherwise recompute.
+
+    ``unlock_names`` and ``winners`` are the identities :func:`unlock_flips` and
+    :func:`method_unlock_detail` retained on the way to the two factors that discard them.
+    Carrying them forward is not an optimization so much as a correctness rule: A30's pass is
+    O(n²), and running it a second time against a warmed estimate cache could disagree with
+    the first about which candidate won a tie — leaving the *"Why"* line naming a grind the
+    factor beside it was not computed from.
+
+    ``open_candidates`` is likewise the pool ``method_unlock`` measured against, blocked
+    entries included, so *"unblocks Y"* and *"speeds up Y"* cannot disagree about what exists.
+    """
+
+    open_candidates: tuple[Candidate, ...]
+    unlock_names: Mapping[str, tuple[str, ...]]
+    winners: Mapping[str, MethodUnlockWinner | None]
+
+
 # ---------------------------------------------------------------------------
 # Candidate selection (§16.2)
 # ---------------------------------------------------------------------------
 
 
-def _actionable(run: _Run) -> tuple[_Entry, ...]:
+def _actionable(run: _Run) -> tuple[tuple[_Entry, ...], _ScoringContext]:
     """Score every candidate that may rank: not complete, not blocked (§16.2).
 
     ``leverage`` is normalized across this set and no other (§10.6), so both kinds are
@@ -238,14 +281,20 @@ def _actionable(run: _Run) -> tuple[_Entry, ...]:
     ]
     practice = practice_candidates(run.state, run.content, run.profile, run.now)
 
-    unlock_counts: dict[str, int] = {
-        candidate.id: unlock_flip_count(candidate, run.state, run.content, run.oracle)
+    # The names come from the same walk as the count (§9.10); see :func:`unlock_flips` on
+    # why counting in a second loop is how the two come to disagree.
+    unlock_names = {
+        candidate.id: unlock_flips(candidate, run.state, run.content, run.oracle)
         for candidate in progression
+    }
+    unlock_counts: dict[str, int] = {
+        candidate_id: len(names) for candidate_id, names in unlock_names.items()
     }
     unlock_counts.update({entry.id: _practice_unlocks(entry, run) for entry in practice})
     largest = max(unlock_counts.values(), default=0)
 
-    unlocked_methods = method_unlock_map(progression, open_candidates, run.estimates)
+    methods = method_unlock_scores(progression, open_candidates, run.estimates)
+    unlocked_methods = methods.normalized
 
     entries = [
         _Entry(
@@ -257,7 +306,12 @@ def _actionable(run: _Run) -> tuple[_Entry, ...]:
     entries.extend(
         _Entry(entry.id, _score_practice(entry, run, unlock_counts, largest)) for entry in practice
     )
-    return tuple(entries)
+    context = _ScoringContext(
+        open_candidates=tuple(open_candidates),
+        unlock_names=unlock_names,
+        winners=methods.winners,
+    )
+    return tuple(entries), context
 
 
 def _blocked_entries(run: _Run) -> tuple[Recommendation, ...]:
@@ -266,24 +320,40 @@ def _blocked_entries(run: _Run) -> tuple[Recommendation, ...]:
     Deliberately unscored. A blocked candidate's ``readiness`` gate is 0, so §9.4 would
     return the ε-floored score of something nobody can act on — a number that invites
     ranking blocked work against actionable work, the exact comparison the gate exists to
-    refuse. What the UI needs from these is the name and the blocker, and the capability
-    views already carry the latter.
+    refuse.
+
+    It does carry ``blockers``. An earlier version of this docstring said the UI could take
+    them from the capability views instead; that was wrong once the corpus grew past the
+    handful of candidates whose gates a capability also named. ``complete_lunar_diplomacy``
+    is blocked by four ``quest:`` leaves no capability mentions, so without this the page
+    could name the goal and nothing about how to reach it.
 
     A candidate whose gate is **unknown** is not here: G3 and §16.2 both say an unknown gate
     is *"sync this"*, not blocked, so it stays in the actionable list carrying
     ``unknown_gate``.
     """
-    return tuple(
-        Recommendation(
-            candidate_id=candidate.id,
-            name=candidate.name,
-            kind=candidate.kind,
-            score=0.0,
-            blocked=True,
+    entries: list[Recommendation] = []
+    for candidate in sorted(run.content.candidates.values(), key=lambda entry: entry.id):
+        if candidate.requires is None:
+            # No gate, so nothing to be blocked by — `blocked` agrees, and the explicit
+            # check is what lets the evaluate call below take a non-optional tree.
+            continue
+        if not blocked(candidate, run.state, run.content, run.evaluate):
+            continue
+        # `blocked` already evaluated this tree; the evaluator memoizes per run, so asking
+        # again is a cache read rather than a second walk.
+        gate = run.evaluate(candidate.requires, run.state, run.content)
+        entries.append(
+            Recommendation(
+                candidate_id=candidate.id,
+                name=candidate.name,
+                kind=candidate.kind,
+                score=0.0,
+                blocked=True,
+                blockers=gate.blockers,
+            )
         )
-        for candidate in sorted(run.content.candidates.values(), key=lambda entry: entry.id)
-        if blocked(candidate, run.state, run.content, run.evaluate)
-    )
+    return tuple(entries)
 
 
 # ---------------------------------------------------------------------------
@@ -316,7 +386,12 @@ def _score_progression(
         kind=candidate.kind,
         score=raw,
         factors=factors,
-        reason=reason(factors, run.profile, details=_leverage_detail(unlock_counts[candidate.id])),
+        # A generic reason, replaced by `_explain` for the entries that ship. Every scored
+        # entry carries one so that nothing downstream has to cope with an unexplained
+        # recommendation, and so the fallback is visible rather than implied.
+        reason=reason(
+            factors, run.profile, details=leverage_detail((), unlock_counts[candidate.id])
+        ),
         estimate=sized,
         unknown_gate=gate_value(candidate, run.state, run.content, run.evaluate) is Tri.UNKNOWN,
     )
@@ -367,7 +442,7 @@ def _score_practice(
             factors,
             run.profile,
             details={
-                **_leverage_detail(unlock_counts[entry.id]),
+                **leverage_detail((), unlock_counts[entry.id]),
                 "proximity": _urgency_phrase(entry.urgency),
             },
         ),
@@ -439,17 +514,48 @@ def _practiced_now(state: PlayerState, members: Sequence[str], now: datetime) ->
 # ---------------------------------------------------------------------------
 
 
-def _leverage_detail(unlock_count: int) -> dict[str, str]:
-    """§9.10's *"unblocks 2 capabilities"* — the count, where the count is known.
+def _explain(recommendation: Recommendation, run: _Run, context: _ScoringContext) -> Recommendation:
+    """Attach §9.10's consequences, and re-render the *"Why"* line now that names are known.
 
-    :mod:`tracker.recommendations.reasons` sees only a normalized factor and could say no
-    more than *"unblocks several"*. Overriding the phrase leaves the credit beside it
-    untouched, so the more specific wording cannot flatter the factor.
+    **Nothing here can change a ranking.** It receives an entry whose score, factors and
+    position are already decided, and returns a copy differing only in ``consequences`` and
+    ``reason``. The re-rendered reason is :func:`reason` over the *same* ``factors`` mapping
+    the scorer produced — only the words are substituted, never the credits — so the sentence
+    stays a decomposition of the ranking rather than a commentary beside it.
+
+    A refresher is explained differently and less. It grants no facts, so it unblocks no
+    candidate, dents no capability's requirements and accelerates nothing: every consequence
+    would be empty by construction. What it does have is §9.8's urgency, which is already the
+    ``proximity`` phrase it has always carried.
     """
-    if unlock_count <= 0:
-        return {}
-    noun = "capability" if unlock_count == 1 else "capabilities"
-    return {"leverage": f"unblocks {unlock_count} {noun}"}
+    if recommendation.kind is CandidateKind.PRACTICE:
+        return recommendation
+
+    candidate = run.content.candidates.get(recommendation.candidate_id)
+    if candidate is None:  # pragma: no cover — every scored entry came from this corpus
+        return recommendation
+
+    consequences = consequences_for(
+        candidate,
+        content=run.content,
+        weights=run.weights,
+        unlocked_capability_ids=context.unlock_names.get(candidate.id, ()),
+        accelerated=context.winners.get(candidate.id),
+        others=context.open_candidates,
+        outstanding_gate=run.gates,
+        outstanding_capability_gate=run.gates.capability,
+    )
+    return replace(
+        recommendation,
+        consequences=consequences,
+        reason=reason(
+            recommendation.factors,
+            run.profile,
+            details=progression_details(
+                consequences, len(context.unlock_names.get(candidate.id, ()))
+            ),
+        ),
+    )
 
 
 def _urgency_phrase(urgency: float) -> str:

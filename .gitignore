@@ -1,6 +1,12 @@
 __pycache__/
 *.py[cod]
 *.db
+# SQLite's write-ahead log and shared-memory sidecars. `*.db` does not cover them —
+# the suffix comes after the extension — so they were tracked, and a file the engine
+# rewrites on every run turned each test run into a dirty working tree.
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite3
 .venv/
 .env

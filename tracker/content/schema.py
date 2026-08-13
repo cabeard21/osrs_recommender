@@ -129,7 +129,19 @@ class Capability(ContentModel):
     pvp_value: float | None = Field(default=None, ge=0.0, le=1.0)
     """An authoring hint only. The §9.4 *scoring* factor of the same name is derived
     from candidates (§10.6) — *"none is authored directly, so no content file can
-    assert its own priority."*"""
+    assert its own priority."*
+
+    **Read it as "goal value", not literally as "PvP value".** The corpus has carried a
+    non-PvP roadmap since the bossing ladder (``content/roadmaps/pvm_ladder.yaml``), whose
+    five rung capabilities declare this field like any other. The name is kept because it
+    is load-bearing in five places at once — this schema, :class:`ScoringWeights`, the
+    tuned ``content/scoring/profile.yaml``, the factor JSON persisted on every
+    ``RecommendationEntry``, and every golden fixture — and renaming it would rewrite all
+    of them to change nothing the engine computes.
+
+    Worth stating plainly for whoever reads a rung file next: **no scoring factor reads
+    this field**, so tuning it moves nothing. What gives a PvM capability weight is a
+    candidate's ``advances`` map plus the roadmap's own capability weight (§9.3)."""
     recommended_readiness: Confidence = Confidence.MEDIUM
 
     _parse_requires = _requirement_field("requires")
@@ -245,6 +257,16 @@ class Candidate(ContentModel):
     id: str
     name: str
     kind: CandidateKind
+    source: Literal["authored", "generated"] = "authored"
+    """Provenance, and nothing else.
+
+    Declared because :class:`ContentModel` forbids extra keys, so a generated file could
+    not otherwise say where it came from. It is read by ``tools/generate_candidates.py``
+    and by nothing under ``tracker/`` — a generated candidate is scored by exactly the
+    same derivations as a hand-authored one (§10.6). Were this ever consulted by
+    :mod:`tracker.domain.candidates` or :mod:`tracker.recommendations.scoring`, it would
+    become a way for a file to assert its own priority, which is the one thing §10.6
+    forbids."""
     advances: dict[str, float] = Field(default_factory=dict)
     """Capability id → marginal contribution ∈ [0,1]. §10.7 checks each id is declared.
 
@@ -315,6 +337,34 @@ class LevelRange(ContentModel):
         return self
 
 
+class MethodDetail(ContentModel):
+    """*Where, on what, and with what* — §15's "How" line. **Descriptive only.**
+
+    Read by :mod:`tracker.ui` and by nothing else. It is never consulted by
+    :mod:`tracker.domain.candidates` or :mod:`tracker.recommendations.scoring`, and
+    ``tests/content/test_method_detail.py`` asserts that two corpora differing only here
+    produce byte-identical recommendations. §10.6's rule that no content file may assert
+    its own priority extends to *how* a thing is done: a method does not become more
+    urgent because someone wrote a better description of it.
+
+    **``gear`` and ``inventory`` are free text, deliberately, and this is the one field
+    where the type matters more than it looks.** An ``item:`` leaf would be resolved by
+    the evaluator and would flow into ``_acquisition_charges``, silently changing every GP
+    estimate for anyone who happens not to own a listed item — so naming a Kodai wand as
+    *display* would quietly reprice the candidate. Where gear must genuinely gate a
+    method, :attr:`TrainingMethod.requires` already does that, and it is checked.
+    """
+
+    location: str | None = None
+    target: str | None = None
+    """The monster or activity. Separate from ``location`` because the same target is
+    trained in several places and the same place hosts several targets."""
+    gear: tuple[str, ...] = ()
+    inventory: tuple[str, ...] = ()
+    notes: str | None = None
+    wiki_url: str | None = None
+
+
 class TrainingMethod(ContentModel):
     """§8.1. Methods carry their own requirement trees.
 
@@ -330,6 +380,8 @@ class TrainingMethod(ContentModel):
     level_range: LevelRange
     cost_per_hour_gp: int = 0
     requires: Requirement | None = None
+    detail: MethodDetail = MethodDetail()
+    """§15's "How" line. Descriptive; see :class:`MethodDetail`."""
 
     _parse_requires = _requirement_field("requires")
 
@@ -443,5 +495,17 @@ class ScoringProfile(ContentModel):
     **κ**, which ``kappa_gp`` already authors, for the identical ``exp(−1)``."""
     weights: ScoringWeights
     refresher: RefresherPolicy = RefresherPolicy()
+    max_primary_entries: int = Field(default=12, ge=1)
+    """How many entries §9.8's primary list shows. Authored, for §10.8's reason.
+
+    §9.8 describes a *list*, and nothing in the SDD caps its length — which was harmless
+    while the corpus held eight candidates and stops being harmless the moment it holds
+    four hundred. An uncapped ranking renders every open candidate onto one page and
+    persists a row per entry per run.
+
+    This is **not** a scoring input, and the distinction is what keeps it honest: the cut
+    is applied to an already-ordered list, after §9.9's hysteresis and §9.8's refresher
+    policy, so it can only remove entries from the bottom. It cannot promote, demote or
+    reorder anything, and a candidate the cut drops was put there by its own score."""
     epsilon: float = Field(default=0.01, gt=0.0, le=1.0)
     """§9.4's factor floor, so no single term can annihilate a score."""

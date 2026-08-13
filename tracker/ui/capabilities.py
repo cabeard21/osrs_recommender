@@ -13,15 +13,21 @@ any two of these produces either backward progress or false confidence."* It is 
 page has no filter that hides "not recommended" capabilities — a reader may collapse the
 layers in their head, but only if all three were shown to them first.
 
-Blockers and unknowns are two calls to :func:`~tracker.ui.components.badges.leaf_list` with
-different ``data-testid``s and different CTAs, per §15's *"separate lists with separate calls
-to action"*. They are never concatenated and never merged into one severity-sorted list:
-"do this" and "sync this" are different requests, and a merged list can only carry one verb.
+Blockers and unknowns are separate lists with different ``data-testid``s and different CTAs,
+per §15's *"separate lists with separate calls to action"*. They are never concatenated and
+never merged into one severity-sorted list: "do this" and "sync this" are different requests,
+and a merged list can only carry one verb.
+
+**That same rule is what produces a third list.** A self-attested milestone is unknown for
+want of a *prompt*, not for want of a sync (§6.6, A7) — so "Sync RuneLite to find out" is an
+instruction that cannot succeed however many times it is followed. The unknowns list was
+carrying two verbs, and :func:`split_unknowns` separates them rather than rewording the CTA
+into something vague enough to cover both.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from nicegui import ui
 
@@ -31,10 +37,17 @@ from tracker.ui.states import UiState
 from tracker.ui.view_model import (
     BLOCKERS_CTA,
     NO_BLOCKERS,
+    NO_QUESTIONS,
     NO_UNKNOWNS,
+    QUESTIONS_CTA,
     UNKNOWNS_CTA,
     CapabilityRow,
+    LeafRow,
 )
+
+#: Bound by the caller to a write that opens its own session, as on the Practice view: the
+#: page's read session has closed by the time a button is clicked.
+AttestHandler = Callable[[LeafRow, bool], None]
 
 #: The order capabilities are listed in. Unknown first, deliberately: §15 treats unknown as
 #: a call to action ("sync RuneLite"), and an actionable item at the bottom of a list is an
@@ -54,8 +67,57 @@ def sort_rows(rows: Sequence[CapabilityRow]) -> tuple[CapabilityRow, ...]:
     )
 
 
-def render_capability(row: CapabilityRow) -> None:
-    """One capability card: name, progress, three layers, then the two lists."""
+def split_unknowns(leaves: Sequence[LeafRow]) -> tuple[tuple[LeafRow, ...], tuple[LeafRow, ...]]:
+    """Unknowns a sync can resolve, and unknowns only the user can (§6.6, A7).
+
+    Splitting on ``leaf_type == "milestone"`` alone is sufficient, and the reason is worth
+    recording because it looks incomplete: a *derived* milestone never resolves ``unknown``.
+    :meth:`tracker.progression.evaluate.Evaluator._milestone` returns ``unsatisfied`` for a
+    missing derived row — a counter that has not reached its threshold is a measurement, not
+    an unanswered question. So every milestone leaf that reaches an unknowns list is one the
+    user can be asked about, and no content lookup is needed here to prove it.
+
+    Pure, for :func:`sort_rows`'s reason: which verb a leaf gets is a policy worth testing
+    without a browser.
+    """
+    questions = tuple(leaf for leaf in leaves if leaf.leaf_type == "milestone")
+    sync = tuple(leaf for leaf in leaves if leaf.leaf_type != "milestone")
+    return sync, questions
+
+
+def _question_list(leaves: Sequence[LeafRow], on_attest: AttestHandler) -> None:
+    """§15's third list: each unanswered milestone with Yes and No beside it.
+
+    Both answers are buttons, and neither is preselected. "No" is a real write, not a
+    dismissal — it moves the leaf from ``unknown`` to ``unsatisfied``, which is the
+    difference between *"we should ask"* and *"you cannot do this yet"* (§4.5). Offering
+    only "Yes" would leave the honest negative answer unsayable, and the leaf would keep
+    asking forever.
+    """
+    container = ui.element("div").classes("w-full")
+    container.props(f"data-testid=questions data-count={len(leaves)}")
+    with container:
+        ui.html(QUESTIONS_CTA).classes("cta")
+        if not leaves:
+            ui.html(NO_QUESTIONS).classes("text-xs opacity-60")
+            return
+        with ui.element("ul").classes("leaf-list"):
+            for leaf in leaves:
+                with ui.element("li").props(f"data-milestone={leaf.key}"):
+                    ui.html(leaf.description or leaf.key)
+                    with ui.element("span").classes("flex gap-1 ml-2"):
+                        ui.button("Yes", on_click=lambda leaf=leaf: on_attest(leaf, True)).props(
+                            f"data-testid=attest-yes data-milestone={leaf.key}"
+                        ).classes("text-xs")
+                        ui.button(
+                            "Not yet", on_click=lambda leaf=leaf: on_attest(leaf, False)
+                        ).props(f"data-testid=attest-no data-milestone={leaf.key}").classes(
+                            "text-xs"
+                        )
+
+
+def render_capability(row: CapabilityRow, *, on_attest: AttestHandler) -> None:
+    """One capability card: name, progress, three layers, then the three lists."""
     card = section(row.name, testid="capability")
     card.props(f"data-capability={row.capability_id}")
     with card:
@@ -73,12 +135,14 @@ def render_capability(row: CapabilityRow) -> None:
             # five warnings cannot push the third layer off a phone screen.
             ui.html(warning).classes("text-xs opacity-70 block")
 
+        sync_unknowns, questions = split_unknowns(row.unknowns)
         with ui.element("div").classes("tracker-grid mt-2"):
             leaf_list(row.blockers, testid="blockers", cta=BLOCKERS_CTA, empty=NO_BLOCKERS)
-            leaf_list(row.unknowns, testid="unknowns", cta=UNKNOWNS_CTA, empty=NO_UNKNOWNS)
+            leaf_list(sync_unknowns, testid="unknowns", cta=UNKNOWNS_CTA, empty=NO_UNKNOWNS)
+            _question_list(questions, on_attest)
 
 
-def render(rows: Sequence[CapabilityRow]) -> None:
+def render(rows: Sequence[CapabilityRow], *, on_attest: AttestHandler) -> None:
     """The whole view.
 
     Takes rows rather than a session: the page function opens the session, and this stays a
@@ -86,4 +150,4 @@ def render(rows: Sequence[CapabilityRow]) -> None:
     a database.
     """
     for row in sort_rows(rows):
-        render_capability(row)
+        render_capability(row, on_attest=on_attest)

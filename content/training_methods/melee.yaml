@@ -7,6 +7,12 @@
   xp_per_hour: 45000
   level_range: {min: 1, max: 99}
   cost_per_hour_gp: 30000
+  detail:
+    # A rate floor, not a place to go — see magic.yaml's magic_conservative for why this
+    # deliberately carries no location, target or gear.
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
 
 - id: strength_conservative
   name: Strength — conservative default
@@ -14,6 +20,12 @@
   xp_per_hour: 45000
   level_range: {min: 1, max: 99}
   cost_per_hour_gp: 30000
+  detail:
+    # A rate floor, not a place to go — see magic.yaml's magic_conservative for why this
+    # deliberately carries no location, target or gear.
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
 
 - id: defence_conservative
   name: Defence — conservative default
@@ -21,6 +33,12 @@
   xp_per_hour: 45000
   level_range: {min: 1, max: 99}
   cost_per_hour_gp: 30000
+  detail:
+    # A rate floor, not a place to go — see magic.yaml's magic_conservative for why this
+    # deliberately carries no location, target or gear.
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.
 
 - id: ranged_conservative
   name: Ranged — conservative default
@@ -28,3 +46,9 @@
   xp_per_hour: 55000
   level_range: {min: 1, max: 99}
   cost_per_hour_gp: 120000
+  detail:
+    # A rate floor, not a place to go — see magic.yaml's magic_conservative for why this
+    # deliberately carries no location, target or gear.
+    notes: >-
+      No specific method — a deliberately pessimistic rate that any reasonable training
+      choice should beat. Treat the hours as an upper bound.

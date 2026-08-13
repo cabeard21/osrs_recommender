@@ -3,6 +3,7 @@ package com.osrstracker.plugin;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.osrstracker.plugin.collect.ContainerObserver;
+import com.osrstracker.plugin.collect.LoginSyncTrigger;
 import com.osrstracker.plugin.collect.SnapshotFactory;
 import com.osrstracker.plugin.practice.PracticeDetector;
 import com.osrstracker.plugin.practice.PracticeDetector.Arena;
@@ -13,6 +14,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.ItemContainerChanged;
@@ -85,8 +87,11 @@ public class TrackerPlugin extends Plugin
 	/** Last known arena, so a varbit change can be read as entering or leaving. */
 	private Arena arena = Arena.ELSEWHERE;
 
-	/** Guards against a login burst queueing several syncs for the same arrival. */
-	private volatile boolean syncedThisSession;
+	/**
+	 * When the login sync fires, and the guard against a login burst queueing several for one
+	 * arrival. Deliberately not the {@code LOGGED_IN} edge — see {@link LoginSyncTrigger}.
+	 */
+	private final LoginSyncTrigger loginSync = new LoginSyncTrigger();
 
 	@Provides
 	TrackerConfig provideConfig(ConfigManager configManager)
@@ -116,7 +121,7 @@ public class TrackerPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 		panel = null;
 		syncClient = null;
-		syncedThisSession = false;
+		loginSync.reset();
 	}
 
 	@Subscribe
@@ -124,21 +129,32 @@ public class TrackerPlugin extends Plugin
 	{
 		if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			syncedThisSession = false;
 			// A different account may be about to log in, and container evidence is per-session
 			// (§6.5). Carrying it across would attribute one account's bank to another's — and
-			// the same argument applies to an unfinished fight.
+			// the same argument applies to an unfinished fight and to a pending login sync.
+			loginSync.reset();
 			containers.reset();
 			practice.reset();
 			arena = Arena.ELSEWHERE;
 			return;
 		}
-		if (event.getGameState() != GameState.LOGGED_IN || syncedThisSession || !config.syncOnLogin())
+		if (event.getGameState() != GameState.LOGGED_IN || !config.syncOnLogin())
 		{
 			return;
 		}
-		syncedThisSession = true;
-		syncNow();
+		// Armed, not sent. The containers this snapshot exists to carry have not been announced
+		// yet — see LoginSyncTrigger for why that is a silent failure rather than a loud one.
+		loginSync.onLogin();
+	}
+
+	/** Drives {@link LoginSyncTrigger}'s countdown; fires the armed login sync when it elapses. */
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		if (loginSync.onTick())
+		{
+			syncNow();
+		}
 	}
 
 	/**

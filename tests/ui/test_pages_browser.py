@@ -23,6 +23,8 @@ from fastapi import FastAPI
 from playwright.sync_api import Page, ViewportSize
 
 from tracker.api.router import API_PREFIX
+from tracker.ui.shell import NAV
+from tracker.ui.view_model import BLOCKERS_CTA
 
 #: The viewport the plan names. A common small-phone width, and narrow enough that a single
 #: unbroken capability id or generated reason will overflow it if nothing wraps.
@@ -290,6 +292,68 @@ def test_the_roadmap_selector_shows_the_players_live_selection(
     _open(phone, ui_base_url, "/roadmaps")
     assert phone.locator("[data-testid=primary-roadmap-radio]").count() == 1
     assert phone.locator("[data-testid=secondary-roadmap-checkbox]").count() >= 1
+    # The page's own control and the header selector coexist: the header offers §4.3's one
+    # choice, the page offers the weighting exercise. Both write through the same handler.
+    assert phone.locator("[data-testid=global-roadmap-select]").count() == 1
+
+
+@pytest.mark.parametrize("path", [item.path for item in NAV])
+def test_the_roadmap_selector_is_on_every_page(phone: Page, ui_base_url: str, path: str) -> None:
+    """The roadmap reframes every view, so it is reachable from every view.
+
+    Parametrized over :data:`~tracker.ui.shell.NAV` rather than over a copied list of paths,
+    so a tenth page added to the nav is covered the day it is added — the same argument the
+    nav's own docstring makes about there being one tuple.
+    """
+    _open(phone, ui_base_url, path)
+    selector = phone.locator("[data-testid=global-roadmap-select]")
+
+    assert selector.count() == 1, f"{path} has no roadmap selector"
+    # *Which* roadmap is primary belongs to the test below, which is also the test that can
+    # change it. Asserting a specific name here would make every page's coverage depend on
+    # the order the suite happens to run in.
+    assert selector.inner_text().strip() in {"Main NH", "Anti-PKer"}, f"{path} shows no selection"
+
+
+def test_switching_the_primary_roadmap_from_the_header_persists(
+    phone: Page, ui_base_url: str
+) -> None:
+    """A13: the header writes to ``ActiveRoadmap``, and ``/roadmaps`` agrees afterwards.
+
+    The options are asserted through the accessibility role rather than through a scoped
+    locator on purpose — NiceGUI's ``ui.select`` is a Quasar ``QSelect`` and renders its
+    popup into a ``.q-menu`` portal appended to ``<body>``, outside the element carrying the
+    testid. A locator scoped to the select finds zero options and the test would fail for a
+    reason that has nothing to do with the feature.
+    """
+    _open(phone, ui_base_url, "/")
+    phone.locator("[data-testid=global-roadmap-select]").click()
+    phone.get_by_role("option", name="Anti-PKer").click()
+
+    # The handler reloads, so wait for the shell to come back rather than for a timeout.
+    phone.wait_for_selector("[data-testid=nav]", timeout=15_000)
+    # ...and then wait for the reload to *finish*. The nav selector reappears as soon as
+    # NiceGUI has re-rendered over the websocket, which is before the reload's own document
+    # navigation has necessarily settled. Navigating away inside that window makes Chromium
+    # abort the new request in favour of the one already in flight — `net::ERR_ABORTED`, on a
+    # page that is perfectly healthy. The failure is timing-dependent, so it surfaces only
+    # when something unrelated changes how long the preceding tests take.
+    phone.wait_for_load_state("networkidle")
+
+    _open(phone, ui_base_url, "/roadmaps")
+    # ``roadmaps.py`` omits the primary from the secondary list, so which roadmap is primary
+    # is assertable by which checkbox exists — a stronger claim than the radio group's text,
+    # which names every option whichever one is selected.
+    secondary = "[data-testid=secondary-roadmap-checkbox]"
+    assert phone.locator(f"{secondary}[data-roadmap=main_nh]").count() == 1
+    assert phone.locator(f"{secondary}[data-roadmap=anti_pk]").count() == 0
+    assert "Anti-PKer" in phone.locator("[data-testid=global-roadmap-select]").inner_text()
+
+    # Restore the seeded primary. The database is shared across this module, and a test that
+    # leaves the account on a different roadmap makes every later assertion order-dependent.
+    phone.locator("[data-testid=global-roadmap-select]").click()
+    phone.get_by_role("option", name="Main NH").click()
+    phone.wait_for_selector("[data-testid=nav]", timeout=15_000)
 
 
 # ---------------------------------------------------------------------------
@@ -328,3 +392,197 @@ def test_the_ui_and_the_api_answer_on_one_port(page: Page, ui_base_url: str, app
     assert page.request.post(f"{ui_base_url}{API_PREFIX}/sync", data={}).status == 401
     _open(page, ui_base_url, "/")
     assert page.locator("[data-testid=character-summary]").count() == 1
+
+
+# ---------------------------------------------------------------------------
+# Step 8 — the "How" line (§8.2, §15)
+# ---------------------------------------------------------------------------
+
+
+def test_a_skill_training_entry_names_the_method_its_hours_came_from(
+    phone: Page, ui_base_url: str
+) -> None:
+    """§15's "How" line. The estimator has always chosen a method; now the page says which.
+
+    Asserted on the DOM rather than only on the row, because the whole failure this closes
+    was a value that existed in memory and never reached a template.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    detail = phone.locator('[data-candidate="train_magic_87_to_94"] [data-testid=method-detail]')
+
+    assert detail.count() == 1
+    assert detail.locator('[data-method="magic_bursting"]').count() == 1
+    assert "Magic bursting" in detail.inner_text()
+    # MethodDetail's descriptive half, which is why the type exists at all.
+    assert "Catacombs of Kourend" in detail.inner_text()
+
+
+def test_a_fallback_band_is_qualified_rather_than_left_blank(phone: Page, ui_base_url: str) -> None:
+    """§8.4 — the conservative default is a claim the UI is required to qualify.
+
+    An empty cell reads as "no information"; the truth is "a number we invented".
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    fallback = phone.locator('[data-candidate="train_magic_87_to_94"] [data-fallback="true"]')
+
+    assert fallback.count() == 1
+    assert "upper bound" in fallback.inner_text()
+
+
+def test_an_entry_with_no_bands_renders_no_how_block(phone: Page, ui_base_url: str) -> None:
+    """A refresher has no level bands, and an empty "How" row would be noise.
+
+    The seeded refresher is the case: §9.8 sizes it in hours, but there is no skill being
+    trained through a level range, so there is nothing for this block to say.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    refresher = phone.locator('[data-candidate="refresh_nh_fundamentals"]')
+
+    assert refresher.count() == 1
+    assert refresher.locator("[data-testid=method-detail]").count() == 0
+
+
+# ---------------------------------------------------------------------------
+# Step 9 — account type and membership (§4.2, §4.5)
+# ---------------------------------------------------------------------------
+
+
+def test_account_mode_defaults_to_unset_rather_than_to_main(phone: Page, ui_base_url: str) -> None:
+    """§4.5 on the page itself: "nobody has said" is an option, and it is the one selected.
+
+    A radio group without it would force an assertion the moment the page renders, and the
+    assertion it would force — "main" — is exactly the one that makes the app recommend
+    purchases to an ironman.
+    """
+    _open(phone, ui_base_url, "/settings")
+    group = phone.locator("[data-testid=account-type-radio]")
+
+    assert group.count() == 1
+    assert group.get_attribute("data-configured") == "false"
+    assert "Not set" in group.inner_text()
+
+
+def test_the_account_section_explains_what_leaving_it_unset_costs(
+    phone: Page, ui_base_url: str
+) -> None:
+    """An honest default needs an explanation, or it reads as the app ignoring the answer."""
+    _open(phone, ui_base_url, "/settings")
+    text = phone.locator("[data-testid=settings-account]").inner_text()
+
+    assert "purchases are still suggested" in text
+    assert "does not guess" in text
+
+
+def test_membership_is_asked_separately_from_account_mode(phone: Page, ui_base_url: str) -> None:
+    """Two questions, two answers: an ironman may be free-to-play and a main may not be."""
+    _open(phone, ui_base_url, "/settings")
+    members = phone.locator("[data-testid=members-radio]")
+
+    assert members.count() == 1
+    assert members.get_attribute("data-configured") == "false"
+
+
+# ---------------------------------------------------------------------------
+# Step 10 — the price cache, made visible (§8.3, §4.5)
+# ---------------------------------------------------------------------------
+
+
+def test_settings_says_whether_prices_have_ever_been_fetched(phone: Page, ui_base_url: str) -> None:
+    """ "Never fetched" and "0 items priced" are different sentences (§4.5).
+
+    Until this line existed there was no way to tell a price feed that had never run from
+    one that ran and found nothing: both showed as estimates falling back to the authored
+    hint, which §8.4 marks ``low`` either way. That is how a scheduler whose first tick was
+    an hour away went unnoticed.
+    """
+    _open(phone, ui_base_url, "/settings")
+    cache = phone.locator("[data-testid=price-cache]")
+
+    assert cache.count() == 1
+    assert cache.get_attribute("data-fetched") == "false"
+    assert "never fetched" in cache.inner_text()
+
+
+# ---------------------------------------------------------------------------
+# Blocked rows say why (§15)
+# ---------------------------------------------------------------------------
+
+
+def test_a_blocked_entry_names_what_blocks_it(phone: Page, ui_base_url: str) -> None:
+    """A bare name is a goal with no path.
+
+    "Complete Lunar Diplomacy — blocked" tells a reader nothing they can act on, and the
+    Capabilities page has answered the same question since it was built. This closes the
+    gap the earlier design missed by assuming the capability views already carried these —
+    which stopped being true once a candidate could be gated on quests no capability names.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    entry = phone.locator('[data-testid=blocked-candidate][data-candidate="buy_high_risk_gear"]')
+
+    assert entry.count() == 1
+    blockers = entry.locator("[data-testid=blocked-by]")
+    assert blockers.count() == 1
+    assert "Magic 94" in blockers.inner_text()
+    assert "Desert Treasure I" in blockers.inner_text()
+
+
+def test_the_blocked_list_asks_for_the_same_thing_as_the_capabilities_page(
+    phone: Page, ui_base_url: str
+) -> None:
+    """One verb, one wording (§15).
+
+    A reader who learns what "Do these to unlock it" means on Capabilities should not have
+    to learn it again here, so the CTA constant is shared rather than reworded.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    text = phone.locator("[data-testid=blocked-candidate] [data-testid=blocked-by]").inner_text()
+
+    assert BLOCKERS_CTA in text
+
+
+def test_the_recommendations_page_names_what_an_entry_unblocks(
+    phone: Page, ui_base_url: str
+) -> None:
+    """§9.10's consequences reach the DOM as their own labelled row, not folded into the
+    Why line. A reader scanning the list must be able to find "what is this for" in the same
+    place on every card."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert "Ice Barrage NH" in phone.locator("[data-testid=unblocks]").first.inner_text()
+
+
+def test_the_recommendations_page_shows_what_an_entry_is_needed_for(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The user's own complaint, asserted where they would have seen it: a task that looks
+    pointless on its own, shown with the task it is a prerequisite of and how far along that
+    gate it gets them."""
+    _open(phone, ui_base_url, "/recommendations")
+    text = phone.locator("[data-testid=needed-for]").first.inner_text()
+
+    assert "Complete Desert Treasure I" in text
+    assert "1 of 3 remaining" in text
+
+
+def test_a_goal_outside_the_selected_roadmap_is_labelled_as_such(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The diagnostic half of the feature. An entry serving a goal the player did not pick
+    must say so on the card, because that is the fact that explains an otherwise baffling
+    recommendation."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert "not on your roadmap" in phone.locator("[data-testid=needed-for]").first.inner_text()
+
+
+def test_the_consequence_rows_are_separate_nodes_from_the_reason(
+    phone: Page, ui_base_url: str
+) -> None:
+    """They answer different questions — "how did this score" against "what is it for" —
+    and a single merged node would leave the page no way to style or hide one of them."""
+    _open(phone, ui_base_url, "/recommendations")
+
+    assert (
+        phone.locator("[data-testid=recommendation-reason] [data-testid=works-toward]").count() == 0
+    )
+    assert phone.locator("[data-testid=works-toward]").count() >= 1

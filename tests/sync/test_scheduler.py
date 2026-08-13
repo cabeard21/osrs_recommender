@@ -109,3 +109,36 @@ class TestOneFailureDoesNotStopTheSchedule:
     @pytest.fixture
     def anyio_backend(self) -> str:
         return "asyncio"
+
+
+class TestTheFirstTickIsImmediate:
+    """The Step 10a bug: the loop slept *before* its first refresh.
+
+    With the shipped one-hour interval that meant an app opened to check recommendations
+    and closed again fetched no prices at all — which is why ``item_price`` was empty on an
+    install whose fetch worked perfectly when called directly. The symptom looks like a
+    broken integration and is a scheduling order.
+    """
+
+    @pytest.mark.anyio
+    async def test_a_refresh_happens_before_the_first_sleep(
+        self, sessions: sessionmaker[Session]
+    ) -> None:
+        """An interval far longer than the test: if the sleep came first, nothing would run."""
+        expected = _add_players(sessions, "zezima")
+        refresher = _RecordingRefresher()
+        scheduler = RefreshScheduler(
+            refresher,  # type: ignore[arg-type]
+            sessions,
+            interval=timedelta(hours=1),
+        )
+
+        scheduler.start()
+        await asyncio.sleep(0.05)
+        await scheduler.stop()
+
+        assert refresher.calls == expected
+
+    @pytest.fixture
+    def anyio_backend(self) -> str:
+        return "asyncio"

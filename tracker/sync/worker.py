@@ -24,7 +24,7 @@ a queue would let repeated clicking schedule exactly the work the throttle exist
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -32,6 +32,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
+from tracker.db.models import Player
 from tracker.db.persist_prices import DatabasePriceCache
 from tracker.db.session import session_scope
 from tracker.integrations.prices.client import PricesClient
@@ -151,3 +152,79 @@ class SingleFlightRefresher:
             return None
         with self._wom_client_factory() as client:
             return import_wom_skills(session, player_id, client=client)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """One-shot refresh from the command line — ``python -m tracker.sync.worker``.
+
+    Exists because the scheduler's first tick used to be an hour away (Step 10a), and
+    because "did the price fetch work?" was until now a question nobody could answer
+    without leaving the app running and then reading SQLite by hand. A command that runs
+    the refresh once and prints what it wrote turns a silent integration into a checkable
+    one.
+
+    It shares the real :class:`SingleFlightRefresher`, so it takes the same lock as the
+    scheduler: running this while the app is up is safe and reports "already refreshing"
+    rather than issuing a second fetch for the same ids (§7.5).
+    """
+    import argparse
+
+    from sqlalchemy import func, select
+
+    from tracker.config.settings import load_settings
+    from tracker.content.validate import load_and_validate
+    from tracker.db.models import ItemPrice
+    from tracker.db.session import build_engine, build_session_factory
+
+    parser = argparse.ArgumentParser(
+        prog="python -m tracker.sync.worker",
+        description="Run one refresh now and report what it wrote.",
+    )
+    parser.add_argument(
+        "--prices",
+        action="store_true",
+        help="report the price cache afterwards (the refresh always includes prices)",
+    )
+    args = parser.parse_args(argv)
+
+    settings = load_settings()
+    content = load_and_validate()
+    engine = build_engine(settings.database_url)
+    session_factory = build_session_factory(engine)
+
+    refresher = SingleFlightRefresher(
+        session_factory,
+        content,
+        settings,
+        client_factory=lambda: PricesClient(settings.integrations.prices),
+        wom_client_factory=lambda: WiseOldManClient(settings.integrations.wise_old_man),
+    )
+
+    with session_factory() as session:
+        player_ids = list(session.scalars(select(Player.id).order_by(Player.id)))
+
+    if not player_ids:
+        print("no players yet — sync RuneLite or set a username in Settings first")
+        return 1
+
+    failures = 0
+    for player_id in player_ids:
+        outcome = refresher.refresh(player_id, manual=True)
+        if not outcome.ran:
+            print(f"player {player_id}: skipped — {outcome.skipped_reason}")
+            failures += 1
+            continue
+        written = outcome.result.prices_written if outcome.result is not None else 0
+        print(f"player {player_id}: refreshed, {written} price rows written")
+
+    if args.prices:
+        with session_factory() as session:
+            rows = session.scalar(select(func.count()).select_from(ItemPrice)) or 0
+            latest = session.scalar(select(func.max(ItemPrice.fetched_at)))
+        print(f"price cache: {rows} rows, last fetched {latest or 'never'}")
+
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

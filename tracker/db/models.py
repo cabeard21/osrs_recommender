@@ -156,6 +156,15 @@ class Player(Base):
     #: Nullable for the same reason as ``last_sync_at`` — unobserved before first sync.
     combat_level: Mapped[int | None] = mapped_column(default=None)
     quest_points: Mapped[int | None] = mapped_column(default=None)
+    #: §4.2's account mode, and §6.6's ``members`` flag. Both nullable with **no default**:
+    #: ``NULL`` means nobody has been asked, which the evaluator resolves to ``unknown``
+    #: (§4.5). Defaulting ``account_type`` to ``"main"`` would assert the very fact whose
+    #: absence makes the app recommend a Voidwaker to an ironman.
+    #:
+    #: Neither arrives from the plugin — payload v1 has no field for them, and the frozen
+    #: contract is deliberately not bumped for this. The Settings page writes both.
+    account_type: Mapped[str | None] = mapped_column(default=None)
+    members: Mapped[bool | None] = mapped_column(default=None)
     gp_sensitivity: Mapped[GpSensitivity] = mapped_column(
         _enum_column(GpSensitivity), default=GpSensitivity.NORMAL
     )
@@ -491,6 +500,38 @@ class RecommendationEntry(Base):
     estimated_hours: Mapped[float | None] = mapped_column(default=None)
     estimated_gp: Mapped[int | None] = mapped_column(default=None)
     estimate_confidence: Mapped[Confidence] = mapped_column(_enum_column(Confidence))
+    #: §8.2's per-band breakdown, including the ``method_id`` §8.2 step 3 selected — the
+    #: input to §15's "How" line. JSON for ``factors``' reason: a candidate has a variable
+    #: number of bands, and nothing queries across them.
+    #:
+    #: **The stored method is rendered; it is never re-selected at read time.** Method
+    #: choice depends on what the account satisfied *when the run happened* (§8.2 step 3),
+    #: so re-deriving it later could name a method the quoted hours did not come from.
+    #: That is the same drift argument that makes ``reason`` a stored string.
+    bands: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
+    #: The ``unsatisfied`` leaves of this entry's own gate, when ``blocked`` (§15).
+    #: Persisted rather than re-derived for ``bands``' reason: a snapshot accumulates, and
+    #: re-evaluating on read would relabel a historical entry with today's facts.
+    blockers: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
+    #: §9.10's consequences — what this entry unblocks, is needed for, advances and speeds
+    #: up. The structured form of the same run the ``reason`` string above summarizes.
+    #:
+    #: Persisted rather than recomputed on read, for ``bands``' and ``blockers``' reason and
+    #: one sharper than either. A consequence is true of the account **at run time**:
+    #: "unblocks Desert Treasure I" stops being true the moment the quest is finished, and
+    #: re-deriving it would relabel a historical entry with today's facts — exactly what a
+    #: snapshot exists to prevent. Content moves too, so a capability whose ``requires`` was
+    #: edited between runs could make a live recompute claim an unblock that never happened.
+    #:
+    #: Contrast ``_live_practice_group``, which *is* recomputed: practice membership drives a
+    #: button, so it must be true **now**. This explains a past ranking, so it must be true
+    #: **then**.
+    #:
+    #: Names are stored beside ids so a renamed or deleted capability degrades to the stored
+    #: name rather than raising. An empty object means *nothing was recorded* — either a
+    #: pre-migration row or an entry that genuinely had nothing to say — and never invented
+    #: consequences.
+    consequences: Mapped[dict[str, Any]] = mapped_column(sa.JSON, default=dict)
     blocked: Mapped[bool] = mapped_column(default=False)
 
 

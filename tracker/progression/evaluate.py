@@ -34,12 +34,14 @@ from dataclasses import dataclass, field
 
 from tracker.content.loader import Content
 from tracker.content.requirements import (
+    AccountTypeLeaf,
     AllOf,
     AnyOf,
     AtLeast,
     CapabilityLeaf,
     CombatLevelLeaf,
     ItemLeaf,
+    MembersLeaf,
     MilestoneLeaf,
     Not,
     QuestLeaf,
@@ -49,6 +51,7 @@ from tracker.content.requirements import (
     UnlockLeaf,
 )
 from tracker.domain.types import (
+    AccountType,
     Container,
     LeafRef,
     MilestoneKind,
@@ -210,6 +213,10 @@ class Evaluator:
                 return self._combat_level(requirement)
             case QuestPointsLeaf():
                 return self._quest_points(requirement)
+            case AccountTypeLeaf():
+                return self._account_type(requirement)
+            case MembersLeaf():
+                return self._members(requirement)
             case AllOf():
                 children = self._children(requirement.children)
                 return _combine(children, and_all(child.value for child in children))
@@ -385,6 +392,33 @@ class Evaluator:
         if self._state.last_sync_at is None or self._state.quest_points is None:
             return _leaf(ref, Tri.UNKNOWN)
         return _leaf(ref, Tri.from_bool(self._state.quest_points >= leaf.points))
+
+    def _account_type(self, leaf: AccountTypeLeaf) -> EvalResult:
+        """satisfied: matches · unsatisfied: differs · unknown: **nobody has said** (§4.5).
+
+        ``unknown`` is not gated on ``last_sync_at`` the way ``combat_level`` is, and the
+        difference matters: account mode does not arrive from a sync at all (payload v1 has
+        no field for it), so a fully-synced account can still have never been asked. The
+        state that resolves this is a Settings answer, which is why §15 puts the control
+        there rather than showing a "sync RuneLite" call to action nothing would satisfy.
+
+        An unknown value **does not block** (§10.6, G3) — a main who never opened Settings
+        keeps seeing acquisitions, while an ironman who answers once stops being told to buy
+        things. Defaulting to ``main`` instead would assert the very fact whose absence is
+        the bug.
+        """
+        ref = LeafRef("account_type", leaf.account_type, f"{leaf.account_type} account")
+        if self._state.account_type is None:
+            return _leaf(ref, Tri.UNKNOWN)
+        return _leaf(ref, Tri.from_bool(self._state.account_type is AccountType(leaf.account_type)))
+
+    def _members(self, leaf: MembersLeaf) -> EvalResult:
+        """satisfied: matches · unsatisfied: differs · unknown: nobody has said (§4.5)."""
+        wanted = "members" if leaf.members else "free-to-play"
+        ref = LeafRef("members", str(leaf.members).lower(), f"{wanted} account")
+        if self._state.members is None:
+            return _leaf(ref, Tri.UNKNOWN)
+        return _leaf(ref, Tri.from_bool(self._state.members is leaf.members))
 
 
 # ---------------------------------------------------------------------------

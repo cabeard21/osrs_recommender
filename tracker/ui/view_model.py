@@ -17,11 +17,18 @@ states is disjoint, and that the layout does not overflow a phone.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from tracker.domain.types import Confidence, GpSensitivity, LeafRef, Status, UnlockState
+from tracker.domain.types import (
+    AccountType,
+    Confidence,
+    GpSensitivity,
+    LeafRef,
+    Status,
+    UnlockState,
+)
 from tracker.ui.states import UiState, ui_state_for_status, ui_state_for_unlock
 
 #: What ``readiness_confidence`` renders as when there is none. §4.4's own worked example
@@ -41,12 +48,25 @@ READINESS_LABELS: Mapping[Confidence, str] = {
 #: to action*, so their empty states must differ too — otherwise the two containers look
 #: interchangeable in exactly the case a user sees most often.
 NO_UNKNOWNS = "Nothing unobserved — everything this needs has been seen."
+NO_QUESTIONS = "Nothing to answer — you have been asked about everything this needs."
 NO_BLOCKERS = "Nothing blocking — the objective requirements are met."
 
 #: The two calls to action §15 requires. "Do this" against "sync this": one is work in the
 #: game, the other is work in RuneLite, and a merged list could only carry one of them.
+#: What a band with no authored method shows where the method name would go. §8.4 makes
+#: §8.2's conservative default a claim the UI is *required* to qualify, and a blank cell
+#: reads as "no information" when the truth is "a number we invented".
+FALLBACK_METHOD_LABEL = "no method authored — conservative default, treat hours as an upper bound"
+
 BLOCKERS_CTA = "Do these to unlock it"
 UNKNOWNS_CTA = "Sync RuneLite to find out"
+QUESTIONS_CTA = "Only you can answer these"
+"""§15's third call to action, for unknowns no sync will ever resolve (§6.6, A7).
+
+A self-attested milestone is unknown because nobody has been *asked*, not because nobody
+has *looked*. Leaving it under ``UNKNOWNS_CTA`` tells the reader to sync RuneLite, which
+cannot work however many times they try it — and the instruction to do an impossible thing
+is worse than no instruction, because it looks like the app is broken rather than waiting."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -308,6 +328,170 @@ class FactorRow:
     log_contribution: float
 
 
+def _gp(amount: int) -> str:
+    """Compact gp, because "1,800,000" and "85,000,000" do not compare at a glance."""
+    if amount >= 1_000_000:
+        return f"{amount / 1_000_000:.1f}M".replace(".0M", "M")
+    if amount >= 1_000:
+        return f"{amount // 1_000}K"
+    return str(amount)
+
+
+@dataclass(frozen=True, slots=True)
+class BandRow:
+    """One §8.2 level band, resolved for display — §15's "How" line.
+
+    Built from the band **as it was persisted**, joined to content for the method's name
+    and description. The method is never re-selected at read time: §8.2 step 3 picks among
+    methods the account satisfied *when the run happened*, so re-deriving it later could
+    name a method the quoted hours did not come from. Same drift argument that makes
+    ``reason`` a stored string.
+
+    ``method_name`` degrades to the raw ``method_id`` when content no longer declares it,
+    and to ``None`` only when the band genuinely had no method. Content changes between
+    runs — a renamed or deleted method must not raise on a History page.
+    """
+
+    from_level: int
+    to_level: int
+    method_id: str | None
+    method_name: str | None
+    hours: float
+    gp: int
+    fallback: bool
+    location: str | None = None
+    target: str | None = None
+    gear: tuple[str, ...] = ()
+    inventory: tuple[str, ...] = ()
+    notes: str | None = None
+    wiki_url: str | None = None
+
+    @property
+    def level_label(self) -> str:
+        return f"{self.from_level}→{self.to_level}"
+
+    @property
+    def method_label(self) -> str:
+        """What to show where the method goes.
+
+        A fallback band says so in words rather than showing a blank: §8.4 makes the
+        conservative default a claim the UI is *required* to qualify, and an empty cell
+        reads as "no information" when the truth is "a number we invented".
+        """
+        if self.fallback or self.method_id is None:
+            return FALLBACK_METHOD_LABEL
+        return self.method_name or self.method_id
+
+    @property
+    def place_label(self) -> str:
+        """Location and target joined, or empty when the corpus describes neither."""
+        parts = [part for part in (self.target, self.location) if part]
+        return " · ".join(parts)
+
+
+@dataclass(frozen=True, slots=True)
+class UnblockRow:
+    """A capability this entry's completion would unlock outright (§9.10)."""
+
+    name: str
+
+    @property
+    def label(self) -> str:
+        return self.name
+
+
+@dataclass(frozen=True, slots=True)
+class NeededForRow:
+    """Another task this entry is a prerequisite of, and how much of its gate it clears.
+
+    The row that answers the user's actual question about a generated skill band: *"Train
+    Slayer to 10"* is on the list because Desert Treasure I cannot start without it.
+
+    ``goal_name`` carries the goal one hop further on, where the engine found one, so the
+    label can read all the way from the chore to the point of it.
+    """
+
+    name: str
+    remaining_before: int
+    remaining_after: int
+    goal_name: str | None = None
+    goal_on_roadmap: bool = True
+
+    @property
+    def label(self) -> str:
+        """ "Desert Treasure I (1 of 3 remaining) → Ice Barrage NH (not on your roadmap)".
+
+        *"unblocks it"* rather than *"0 of 3 remaining"* when the gate comes fully clear:
+        zero-of-anything reads as a broken template, and the whole point of that case is that
+        the counting stops.
+
+        "remaining", never "requirements" — the counts are over leaves the account is *known*
+        to fail, and a gate also holds leaves nobody has been asked about (G3). Calling four
+        of eleven "the requirements" would quietly promise that the other seven are met.
+        """
+        if self.remaining_after == 0:
+            progress = "unblocks it"
+        else:
+            cleared = self.remaining_before - self.remaining_after
+            progress = f"{cleared} of {self.remaining_before} remaining"
+        label = f"{self.name} ({progress})"
+        if self.goal_name is None:
+            return label
+        return f"{label} → {self.goal_name}{_off_roadmap(self.goal_on_roadmap)}"
+
+
+@dataclass(frozen=True, slots=True)
+class GoalProgressRow:
+    """A capability whose own requirements this entry directly reduces (§9.10)."""
+
+    name: str
+    remaining_before: int
+    remaining_after: int
+    on_roadmap: bool = True
+
+    @property
+    def label(self) -> str:
+        cleared = self.remaining_before - self.remaining_after
+        return (
+            f"{self.name} ({cleared} of {self.remaining_before} remaining)"
+            f"{_off_roadmap(self.on_roadmap)}"
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SpeedUpRow:
+    """A grind this entry's completion would shorten, with both sizings (A30)."""
+
+    name: str
+    hours_before: float
+    hours_after: float
+
+    @property
+    def label(self) -> str:
+        return f"{self.name}: {_hours(self.hours_before)} → {_hours(self.hours_after)}"
+
+
+def _off_roadmap(on_roadmap: bool) -> str:
+    """The flag that turns a baffling recommendation into a legible one.
+
+    Said in the player's own terms — *"your roadmap"* — because the fact being reported is
+    about their selection and not about the corpus. The same capability is unflagged the
+    moment they select a roadmap that weights it.
+    """
+    return "" if on_roadmap else " (not on your roadmap)"
+
+
+def _hours(hours: float) -> str:
+    """``113h``, or ``7.5h`` below ten — :func:`tracker.recommendations.details._hours`'s rule.
+
+    Duplicated rather than imported because the two are the same *convention* and not the same
+    *call*: one renders into a reason string the engine persists, the other into a row the
+    browser draws, and a UI module importing from the ranking engine to format an hour would
+    be a dependency nobody wants to explain later.
+    """
+    return f"{hours:.1f}h" if hours < 10.0 else f"{hours:.0f}h"
+
+
 @dataclass(frozen=True, slots=True)
 class RecommendationEntryRow:
     """One ranked entry of §9.10's output shape.
@@ -331,8 +515,55 @@ class RecommendationEntryRow:
     confidence: Confidence
     unlocks: tuple[str, ...] = ()
     advances: tuple[str, ...] = ()
+    unblocks: tuple[UnblockRow, ...] = ()
+    """Capabilities this entry would unlock outright (§9.10).
+
+    Kept separate from ``unlocks`` rather than merged into it, because the two are different
+    facts: ``unlocks`` names the ``unlock:`` *keys* a candidate's ``grants_facts`` declares —
+    "Ancient Magicks" — while this names the **capabilities** whose status those facts would
+    flip — "Ice Barrage NH". Merging them would put a spellbook and a fighting style in one
+    list under one verb, and no reader could tell which was which."""
+    needed_for: tuple[NeededForRow, ...] = ()
+    """Tasks this entry is a prerequisite of (§9.10) — the chain, read off the snapshot."""
+    works_toward: tuple[GoalProgressRow, ...] = ()
+    """Capabilities whose own requirements this entry directly reduces (§9.10)."""
+    speeds_up: tuple[SpeedUpRow, ...] = ()
+    """Grinds this entry would shorten, with both sizings (A30)."""
     practice_members: tuple[str, ...] = ()
     suggested_session: str | None = None
+    bands: tuple[BandRow, ...] = ()
+    """§8.2's breakdown, empty for anything that is not skill training."""
+    liquid_gp: int | None = None
+    """Coins the account is known to hold, or ``None`` when no container has been scanned.
+
+    **Display only.** It is deliberately not a scoring input: an ``affordable`` factor
+    means a seventh exponent in ``ScoringWeights``, which §16.3 step 5 requires be re-tuned
+    against the golden corpus with a human reviewing every disagreement."""
+
+    @property
+    def affordability_note(self) -> str | None:
+        """ "you have 12M; this costs 85M" — or nothing at all when either side is unknown.
+
+        Silence when ``liquid_gp is None`` is the §4.5 rule showing through: with no
+        container ever scanned we do not know the account is poor, we know we have not
+        looked, and "you cannot afford this" would be a claim about the player rather than
+        about the evidence.
+        """
+        if self.liquid_gp is None or self.estimated_gp is None or self.estimated_gp <= 0:
+            return None
+        verb = "covers" if self.liquid_gp >= self.estimated_gp else "short of"
+        return f"you have {_gp(self.liquid_gp)} — {verb} the {_gp(self.estimated_gp)} this needs"
+
+    @property
+    def has_method_detail(self) -> bool:
+        """Whether the "How" block has anything to say beyond the hours.
+
+        A quest or an acquisition has no bands at all, and a band whose method fell back
+        has only the qualification to show — both are still worth rendering, because
+        "we do not know how" is information. What is *not* worth a block is an entry with
+        no bands whatsoever.
+        """
+        return bool(self.bands)
 
     @property
     def kind_label(self) -> str:
@@ -363,6 +594,10 @@ class BlockedRecommendationRow:
 
     candidate_id: str
     name: str
+    blockers: tuple[LeafRow, ...] = ()
+    """Why it is blocked. Empty renders as nothing rather than as a reassurance — an empty
+    blockers list on a *blocked* entry means the snapshot predates the column, and inventing
+    "nothing is blocking this" for it would contradict the row it sits on."""
 
 
 def recommendation_entry_row(
@@ -379,8 +614,14 @@ def recommendation_entry_row(
     confidence: Confidence,
     unlocks: Sequence[str] = (),
     advances: Sequence[str] = (),
+    unblocks: Sequence[UnblockRow] = (),
+    needed_for: Sequence[NeededForRow] = (),
+    works_toward: Sequence[GoalProgressRow] = (),
+    speeds_up: Sequence[SpeedUpRow] = (),
     practice_members: Sequence[str] = (),
     suggested_session: str | None = None,
+    bands: Sequence[BandRow] = (),
+    liquid_gp: int | None = None,
 ) -> RecommendationEntryRow:
     """Assemble one row from a persisted entry's factors JSON (§6.10)."""
     factor_rows = tuple(
@@ -405,8 +646,14 @@ def recommendation_entry_row(
         confidence=confidence,
         unlocks=tuple(unlocks),
         advances=tuple(advances),
+        unblocks=tuple(unblocks),
+        needed_for=tuple(needed_for),
+        works_toward=tuple(works_toward),
+        speeds_up=tuple(speeds_up),
         practice_members=tuple(practice_members),
         suggested_session=suggested_session,
+        bands=tuple(bands),
+        liquid_gp=liquid_gp,
     )
 
 
@@ -499,6 +746,46 @@ def mark_primary(rows: Sequence[RoadmapOptionRow]) -> tuple[RoadmapOptionRow, ..
     return (best,)
 
 
+@dataclass(frozen=True, slots=True)
+class RoadmapSelectorModel:
+    """Everything the shell needs to draw the header roadmap selector.
+
+    Rows plus one already-bound write, because :mod:`tracker.ui.shell` opens no session and
+    knows no read model — the same contract every view function already has
+    (``capabilities_view.render(rows, on_attest=...)``). The model is built in
+    :mod:`tracker.ui.pages`, which is the only module allowed to bind the callback.
+
+    ``value`` is :func:`mark_primary`'s answer, and is therefore a *display* rule rather
+    than a stored field, exactly as :class:`RoadmapOptionRow` documents. The selector
+    switches the primary only; secondaries and raw weights stay on ``/roadmaps`` (§4.3:
+    first-run is *"a simple choice of playstyle rather than an abstract weighting
+    exercise"*, and a one-value dropdown is that choice).
+    """
+
+    options: tuple[RoadmapOptionRow, ...]
+    value: str | None
+    on_select: Callable[[str], None]
+
+
+def roadmap_selector_model(
+    rows: Sequence[RoadmapOptionRow], on_select: Callable[[str], None]
+) -> RoadmapSelectorModel | None:
+    """``None`` when there is nothing to choose between — no player, or no roadmaps.
+
+    Returning ``None`` rather than an empty or disabled model is the §4.5 rule applied to a
+    control: a dropdown on a page with no account would imply a choice exists when it does
+    not. Pure, so "is there a selector at all" is assertable without a browser.
+    """
+    if not rows:
+        return None
+    primary = mark_primary(rows)
+    return RoadmapSelectorModel(
+        options=tuple(rows),
+        value=primary[0].roadmap_id if primary else None,
+        on_select=on_select,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Step 11 — Settings (§9.6, §15)
 # ---------------------------------------------------------------------------
@@ -513,6 +800,28 @@ GP_SENSITIVITY_LABELS: Mapping[GpSensitivity, str] = {
 }
 
 SENSITIVITY_QUESTION = "How strongly should expensive upgrades be deprioritized?"
+
+
+#: §15's account-mode question. Phrased as a question with an explicit "not set" option,
+#: because ``None`` is a real state here and a radio group with no unselected choice would
+#: force the user to assert something the moment they open the page (§4.5).
+ACCOUNT_TYPE_QUESTION = "What kind of account is this?"
+ACCOUNT_TYPE_UNSET = "Not set — nothing is assumed"
+ACCOUNT_TYPE_LABELS: Mapping[AccountType, str] = {
+    AccountType.MAIN: "Main",
+    AccountType.IRONMAN: "Ironman",
+    AccountType.HARDCORE: "Hardcore ironman",
+    AccountType.ULTIMATE: "Ultimate ironman",
+    AccountType.GROUP: "Group ironman",
+}
+ACCOUNT_TYPE_NOTE = (
+    "Until this is set, purchases are still suggested — the app does not guess. "
+    "An ironman cannot buy from the Grand Exchange at any price, so saying so here "
+    "removes those suggestions rather than merely ranking them lower."
+)
+
+MEMBERS_QUESTION = "Is this a members account?"
+MEMBERS_UNSET = "Not set"
 
 
 @dataclass(frozen=True, slots=True)
@@ -535,6 +844,26 @@ class SettingsView:
     price_provider: str
     price_base_url: str
     wom_base_url: str
+    #: ``None`` means nobody has been asked, and the page renders that as its own option
+    #: rather than preselecting "Main" (§4.5).
+    account_type: AccountType | None = None
+    members: bool | None = None
+    #: §8.3's cache, made visible. Until Step 10a there was no way to tell a price feed
+    #: that had never run from one that ran and found nothing — both showed as estimates
+    #: falling back to the authored hint, which §8.4 marks ``low`` either way.
+    price_rows: int = 0
+    price_last_fetched_at: datetime | None = None
+
+    @property
+    def price_cache_label(self) -> str:
+        """ "never fetched" is a different sentence from "0 items priced" (§4.5)."""
+        if self.price_last_fetched_at is None:
+            return (
+                "never fetched — leave the app running, or run "
+                "`python -m tracker.sync.worker --prices`"
+            )
+        noun = "item" if self.price_rows == 1 else "items"
+        return f"{self.price_rows} {noun} priced"
 
     @property
     def sensitivity_label(self) -> str:

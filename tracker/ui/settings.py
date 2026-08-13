@@ -21,12 +21,30 @@ from collections.abc import Callable
 
 from nicegui import ui
 
-from tracker.domain.types import GpSensitivity
+from tracker.domain.types import AccountType, GpSensitivity
 from tracker.ui.shell import section
-from tracker.ui.view_model import GP_SENSITIVITY_LABELS, SENSITIVITY_QUESTION, SettingsView
+from tracker.ui.view_model import (
+    ACCOUNT_TYPE_LABELS,
+    ACCOUNT_TYPE_NOTE,
+    ACCOUNT_TYPE_QUESTION,
+    ACCOUNT_TYPE_UNSET,
+    GP_SENSITIVITY_LABELS,
+    MEMBERS_QUESTION,
+    MEMBERS_UNSET,
+    SENSITIVITY_QUESTION,
+    SettingsView,
+)
 
 SensitivityHandler = Callable[[GpSensitivity], None]
 UsernameHandler = Callable[[str], None]
+AccountTypeHandler = Callable[[AccountType | None], None]
+MembersHandler = Callable[[bool | None], None]
+
+#: The radio value standing for "nobody has said". A sentinel string rather than ``None``
+#: because NiceGUI's radio keys its options by value, and ``None`` as a key is
+#: indistinguishable from "no option selected" — which would make the *unset* state
+#: unselectable rather than merely unselected.
+UNSET = "__unset__"
 
 #: Display order for the three-way question — strongest deprioritization first, since that
 #: is the more common PvP-progression choice (§9.6's own table orders it this way too).
@@ -42,6 +60,8 @@ def render(
     *,
     on_set_sensitivity: SensitivityHandler,
     on_set_username: UsernameHandler,
+    on_set_account_type: AccountTypeHandler,
+    on_set_members: MembersHandler,
 ) -> None:
     """The whole page: the tracked character, the sensitivity question, config, attribution."""
     with section("Character", testid="settings-character"):
@@ -72,6 +92,40 @@ def render(
         )
         group.props("data-testid=gp-sensitivity-radio")
 
+    with section("Account", testid="settings-account"):
+        # An explicit "not set" option, and it is selected by default. §4.5 makes "nobody
+        # has said" a real state, and a radio group without it would force the user to
+        # assert something the moment the page renders — which is exactly how a wrong
+        # default gets into the data looking like an answer.
+        ui.html(ACCOUNT_TYPE_QUESTION).classes("text-sm block mb-1")
+        options = {UNSET: ACCOUNT_TYPE_UNSET} | {
+            account_type.value: ACCOUNT_TYPE_LABELS[account_type] for account_type in AccountType
+        }
+        account_group = ui.radio(
+            options,
+            value=view.account_type.value if view.account_type is not None else UNSET,
+            on_change=lambda event: on_set_account_type(
+                None if event.value == UNSET else AccountType(event.value)
+            ),
+        )
+        account_group.props(
+            "data-testid=account-type-radio "
+            f"data-configured={str(view.account_type is not None).lower()}"
+        )
+        ui.html(ACCOUNT_TYPE_NOTE).classes("text-xs opacity-60 block")
+
+        ui.html(MEMBERS_QUESTION).classes("text-sm block mb-1 mt-3")
+        members_group = ui.radio(
+            {UNSET: MEMBERS_UNSET, "true": "Members", "false": "Free-to-play"},
+            value=UNSET if view.members is None else str(view.members).lower(),
+            on_change=lambda event: on_set_members(
+                None if event.value == UNSET else event.value == "true"
+            ),
+        )
+        members_group.props(
+            f"data-testid=members-radio data-configured={str(view.members is not None).lower()}"
+        )
+
     with section("Connection", testid="settings-connection"):
         with ui.element("div").classes("layer-row"):
             ui.html("Bind address").classes("layer-label")
@@ -80,6 +134,14 @@ def render(
         with ui.element("div").classes("layer-row"):
             ui.html("Port").classes("layer-label")
             ui.html(str(view.port))
+        with ui.element("div").classes("layer-row"):
+            ui.html("Price cache").classes("layer-label")
+            cache = ui.html(view.price_cache_label)
+            cache.props(
+                "data-testid=price-cache "
+                f"data-rows={view.price_rows} "
+                f"data-fetched={str(view.price_last_fetched_at is not None).lower()}"
+            )
         with ui.element("div").classes("layer-row"):
             ui.html("Sync token").classes("layer-label")
             token = ui.html("configured" if view.api_token_present else "not configured")

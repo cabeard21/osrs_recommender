@@ -259,6 +259,75 @@ def seed(session: Session) -> int:
             estimated_hours=4.5,
             estimated_gp=1_800_000,
             estimate_confidence=Confidence.MEDIUM,
+            # Step 8: two bands, one with an authored method and one that fell back, so the
+            # browser test sees both halves of §15's "How" line. The fallback band is the
+            # one §8.4 requires the UI to qualify rather than render blank.
+            bands=[
+                {
+                    "from_level": 87,
+                    "to_level": 94,
+                    "method_id": "magic_bursting",
+                    "hours": 4.0,
+                    "gp": 1_600_000,
+                    "fallback": False,
+                },
+                {
+                    "from_level": 94,
+                    "to_level": 95,
+                    "method_id": None,
+                    "hours": 0.5,
+                    "gp": 0,
+                    "fallback": True,
+                },
+            ],
+            # Step 12: §9.10's consequences, one of each kind, so the browser test sees every
+            # heading the renderer can draw. Written as the engine serializes them — ids
+            # beside names — including one goal deliberately marked off-roadmap, which is the
+            # case the whole feature turns on.
+            consequences={
+                "unblocks_capabilities": [
+                    {"capability_id": "ice_barrage_nh", "name": "Ice Barrage NH"}
+                ],
+                "gate_progress": [
+                    {
+                        "candidate_id": "complete_desert_treasure_i",
+                        "name": "Complete Desert Treasure I",
+                        "remaining_before": 3,
+                        "remaining_after": 2,
+                        "satisfied": [],
+                    }
+                ],
+                "goal_progress": [
+                    {
+                        "capability_id": "boss_fundamentals",
+                        "name": "Boss fundamentals",
+                        "weight": 0.5,
+                        "remaining_before": 5,
+                        "remaining_after": 4,
+                        "on_roadmap": True,
+                        "satisfied": [],
+                    }
+                ],
+                "speeds_up": [
+                    {
+                        "candidate_id": "train_magic_94_to_99",
+                        "name": "Train Magic 94 → 99",
+                        "hours_before": 113.0,
+                        "hours_after": 16.0,
+                    }
+                ],
+                "goal_links": [
+                    {
+                        "capability_id": "deep_wildy_nh",
+                        "name": "Deep Wilderness NH",
+                        "weight": 0.0,
+                        "on_roadmap": False,
+                        "via_candidate_id": "complete_desert_treasure_i",
+                        "via_name": "Complete Desert Treasure I",
+                        "contribution": 0.6,
+                    }
+                ],
+            },
             blocked=False,
         )
     )
@@ -292,6 +361,22 @@ def seed(session: Session) -> int:
             estimated_hours=None,
             estimated_gp=None,
             estimate_confidence=Confidence.LOW,
+            # Step (c): a blocked entry now says *why*. Two leaf kinds, because the
+            # rendering has to cope with a numeric target and with one that has none.
+            blockers=[
+                {
+                    "leaf_type": "skill",
+                    "key": "magic",
+                    "description": "Magic 94",
+                    "target": 94,
+                },
+                {
+                    "leaf_type": "quest",
+                    "key": "desert_treasure_i",
+                    "description": "Desert Treasure I",
+                    "target": None,
+                },
+            ],
             blocked=True,
         )
     )

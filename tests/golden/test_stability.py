@@ -251,9 +251,19 @@ class TestFreshnessStability:
         return _with_state(scenario, replace(scenario.state, milestones=milestones))
 
     def _progression(self, days: float) -> tuple[str, ...]:
+        """Every objective candidate in score order — the *whole* ordering, not one page.
+
+        Read off ``ranked`` rather than ``primary`` because the claim below is about
+        ordering and ``primary`` is capped at ``max_primary_entries``. A refresher
+        appearing at 31 days legitimately consumes one of those slots, which drops the
+        last progression entry off the end; comparing capped lists would report that
+        truncation as a reorder and fail a test whose subject is decay leaking into the
+        status layer. The cap can only cut a tail, so nothing this test is about is hidden
+        by looking past it.
+        """
         return tuple(
             entry.candidate_id
-            for entry in _primary(self._at(days))
+            for entry in evaluate(self._at(days), CONTENT, PROFILE).ranked
             if entry.kind is not CandidateKind.PRACTICE
         )
 
