@@ -500,9 +500,19 @@ class TestGoldenScenariosPulledForward:
         now: datetime,
     ) -> None:
         """Woodcutting advances nothing, and the corpus says so with an empty ``advances``
-        map — so this must fall out of the derivation, not out of code recognising a name."""
+        map — so this must fall out of the derivation, not out of code recognising a name.
+
+        The display cap is lifted for this one assertion. §10.6's claim is that a candidate
+        advancing nothing ranks *last*, and last is exactly the position ``max_primary_entries``
+        removes from the page: read off the capped list, "ranks last" and "was truncated" are
+        indistinguishable, and the invariant would pass for the wrong reason.
+        """
         entries = recommend(
-            self._mid_account(player, milestone_state), MAIN_NH, seed_content, profile, now=now
+            self._mid_account(player, milestone_state),
+            MAIN_NH,
+            seed_content,
+            profile.model_copy(update={"max_primary_entries": 10_000}),
+            now=now,
         )
 
         assert rank_of(entries, "complete_desert_treasure_i") < rank_of(

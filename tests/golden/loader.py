@@ -78,6 +78,10 @@ from tracker.domain.types import (
 from tracker.recommendations.engine import recommend_run
 
 SCENARIO_DIR = Path(__file__).parent / "scenarios"
+#: Effectively no cap. §9.8's display cut is a policy about a page, not about the engine,
+#: and the golden harness judges the engine — see :class:`Outcome`.
+_NO_CAP = 10_000
+
 CONTENT_ROOT = Path(__file__).parent.parent.parent / "content"
 
 #: The corpus's fixed clock. §16.1 requires the engine to take ``now`` as an argument, so
@@ -201,6 +205,13 @@ class Outcome:
     would report a second refresher as *unranked* when the engine had in fact ranked it
     second. ``top_3_contains`` and ``must_not_be_top``, by contrast, are statements about
     what the user is shown, and the user is shown ``primary``.
+
+    ``max_primary_entries`` is a display rule of exactly that kind, and :func:`evaluate`
+    opts out of it for the same reason. Once the corpus grew past a page of candidates the
+    cut started removing the deliberately-worst entries — ``train_woodcutting`` above all,
+    which §10.6 keeps in the corpus precisely so that *"advances nothing ⇒ ranks last"* is
+    an assertable claim rather than an absence. Reading judgments off the capped list would
+    have silently converted twenty recorded preferences into "could not be evaluated".
     """
 
     ranked: tuple[Recommendation, ...]
@@ -238,12 +249,19 @@ class Outcome:
 
 
 def evaluate(scenario: Scenario, content: Content, profile: ScoringProfile) -> Outcome:
-    """Run the engine over one scenario. The single call site both consumers share."""
+    """Run the engine over one scenario. The single call site both consumers share.
+
+    The run is made with the display cap lifted and the real cap re-applied here, so that
+    ``ranked`` sees the whole ordering while ``primary`` stays exactly what the user is
+    shown. Re-applying it here rather than raising the cap and forgetting it keeps the two
+    kinds of judgment reading the two different lists they are each about.
+    """
+    uncapped = profile.model_copy(update={"max_primary_entries": _NO_CAP})
     run = recommend_run(
         scenario.state,
         scenario.selection,
         content,
-        profile,
+        uncapped,
         scenario.incumbent,
         prices=scenario.prices,
         now=scenario.now,
@@ -252,7 +270,11 @@ def evaluate(scenario: Scenario, content: Content, profile: ScoringProfile) -> O
         [*run.primary, *run.deferred_refreshers],
         key=lambda entry: (-entry.score, entry.candidate_id),
     )
-    return Outcome(ranked=tuple(ranked), primary=run.primary, blocked=run.blocked)
+    return Outcome(
+        ranked=tuple(ranked),
+        primary=run.primary[: profile.max_primary_entries],
+        blocked=run.blocked,
+    )
 
 
 # ---------------------------------------------------------------------------

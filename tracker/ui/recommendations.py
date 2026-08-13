@@ -27,13 +27,16 @@ otherwise quietly show two refreshers, rather than silently rendering a policy v
 
 from __future__ import annotations
 
+import html
 from collections.abc import Sequence
 
 from nicegui import ui
 
-from tracker.ui.components.badges import confidence_chip
+from tracker.ui.components.badges import confidence_chip, leaf_list
 from tracker.ui.shell import empty_state, section
 from tracker.ui.view_model import (
+    BLOCKERS_CTA,
+    NO_BLOCKERS,
     BlockedRecommendationRow,
     RecommendationEntryRow,
     assert_at_most_one_refresher,
@@ -49,6 +52,49 @@ def _estimate_line(row: RecommendationEntryRow) -> None:
     with ui.element("div").classes("flex flex-wrap items-baseline gap-2"):
         ui.html("  -  ".join(parts) if parts else "no estimate").classes("text-sm")
         confidence_chip(row.confidence)
+
+
+def _method_lines(row: RecommendationEntryRow) -> None:
+    """§15's "How" line: for each §8.2 band, the method and where it is trained.
+
+    Rendered from the **persisted** band, never a re-selection — see
+    :func:`tracker.ui.read_model._band_rows` for why that distinction is load-bearing.
+
+    A band whose method fell back still renders, saying so in words. §8.4 requires the
+    conservative default to be qualified rather than presented as a measurement, and
+    hiding the row entirely would leave the reader with an hours figure and no way to know
+    it was invented — which is worse than an ugly line.
+    """
+    container = ui.element("div").classes("flex flex-col gap-1")
+    container.props(f"data-testid=method-detail data-bands={len(row.bands)}")
+    with container:
+        for band in row.bands:
+            entry = ui.element("div").classes("flex flex-wrap items-baseline gap-2 text-sm")
+            entry.props(
+                f"data-band={band.level_label} data-method={band.method_id or ''} "
+                f"data-fallback={str(band.fallback).lower()}"
+            )
+            with entry:
+                ui.html(band.level_label).classes("opacity-60 text-xs")
+                classes = "text-sm opacity-70 italic" if band.fallback else "text-sm"
+                ui.html(html.escape(band.method_label)).classes(classes)
+                if band.place_label:
+                    ui.html(html.escape(band.place_label)).classes("text-xs opacity-70")
+            if band.gear or band.inventory:
+                # Free text, never `item:` leaves — see MethodDetail. Escaped for the same
+                # reason every other authored string here is: content is trusted, but a
+                # stray ampersand in a gear name should render as an ampersand.
+                kit = " · ".join(
+                    part
+                    for part in (
+                        ", ".join(band.gear),
+                        "runes/supplies: " + ", ".join(band.inventory) if band.inventory else "",
+                    )
+                    if part
+                )
+                ui.html(html.escape(kit)).classes("text-xs opacity-60 block pl-6")
+            if band.notes:
+                ui.html(html.escape(band.notes)).classes("text-xs opacity-60 block pl-6")
 
 
 def _factor_breakdown(row: RecommendationEntryRow) -> None:
@@ -100,6 +146,14 @@ def render_entry(row: RecommendationEntryRow) -> None:
         with ui.element("div").classes("layer-row"):
             ui.html("Estimate").classes("layer-label")
             _estimate_line(row)
+        if row.affordability_note:
+            note = ui.html(html.escape(row.affordability_note))
+            note.classes("text-xs opacity-70 block")
+            note.props("data-testid=affordability")
+        if row.has_method_detail:
+            with ui.element("div").classes("layer-row"):
+                ui.html("How").classes("layer-label")
+                _method_lines(row)
         with ui.element("div").classes("layer-row"):
             ui.html("Priority").classes("layer-label")
             ui.html(row.priority_stars).classes("text-sm")
@@ -113,7 +167,16 @@ def render_entry(row: RecommendationEntryRow) -> None:
 
 
 def render_blocked(rows: Sequence[BlockedRecommendationRow]) -> None:
-    """§15's collapsed section — never mixed into the ranked list (§16.2)."""
+    """§15's collapsed section — never mixed into the ranked list (§16.2).
+
+    Each entry names **what** blocks it, not just that something does. A bare name is a
+    goal with no path: "Complete Lunar Diplomacy — blocked" tells a reader nothing they can
+    act on, and the Capabilities page has answered the same question since it was built.
+
+    ``BLOCKERS_CTA`` is reused verbatim rather than reworded, so the two pages ask for the
+    same thing in the same words — a reader who learns what "Do these to unlock it" means
+    on one page should not have to learn it again on the other.
+    """
     with ui.expansion(f"Blocked ({len(rows)})", icon="block").props("data-testid=blocked-section"):
         if not rows:
             ui.html("Nothing is blocked right now.").classes("text-xs opacity-60")
@@ -123,6 +186,13 @@ def render_blocked(rows: Sequence[BlockedRecommendationRow]) -> None:
             element.props(f"data-testid=blocked-candidate data-candidate={row.candidate_id}")
             with element:
                 ui.html(row.name).classes("text-sm")
+                if row.blockers:
+                    leaf_list(
+                        row.blockers,
+                        testid="blocked-by",
+                        cta=BLOCKERS_CTA,
+                        empty=NO_BLOCKERS,
+                    )
 
 
 def render(

@@ -22,6 +22,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -32,6 +33,7 @@ from tracker.domain.types import (
     CandidateKind,
     CapabilityView,
     Confidence,
+    Estimate,
     IncumbentRecommendation,
     Recommendation,
     RoadmapSelection,
@@ -121,6 +123,33 @@ def _factors_json(recommendation: Recommendation) -> dict[str, dict[str, float]]
     }
 
 
+def _bands_json(estimate: Estimate | None) -> list[dict[str, Any]]:
+    """§8.2's per-band breakdown, for §15's "How" line.
+
+    ``method_id`` is the field this exists for: §8.2 step 3 selects a method per band and
+    every earlier version of this function discarded the answer, leaving the UI able to
+    say *how long* but never *how*.
+
+    ``fallback`` is stored beside it rather than inferred from ``method_id is None``.
+    They mean the same thing today, and keeping the flag explicit is what stops a reader
+    from having to know that — §8.2's conservative default is a claim the UI is required
+    to qualify (§8.4), so it travels as its own field.
+    """
+    if estimate is None:
+        return []
+    return [
+        {
+            "from_level": band.from_level,
+            "to_level": band.to_level,
+            "method_id": band.method_id,
+            "hours": band.hours,
+            "gp": band.gp,
+            "fallback": band.fallback,
+        }
+        for band in estimate.bands
+    ]
+
+
 def persist_recommendation_run(
     session: Session,
     player_id: int,
@@ -169,6 +198,8 @@ def persist_recommendation_run(
                 # with no estimate at all is the least certain thing the table can hold,
                 # not the most.
                 estimate_confidence=estimate.confidence if estimate is not None else Confidence.LOW,
+                bands=_bands_json(estimate),
+                blockers=[asdict(leaf) for leaf in recommendation.blockers],
                 blocked=recommendation.blocked,
             )
         )

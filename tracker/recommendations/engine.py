@@ -22,7 +22,12 @@ The pipeline
    blocked (§16.2).
 3. **Synthesize** one composite refresher per decayed practice group (§9.8).
 4. **Score** everything through the same weighted geometric mean (§9.4, §9.5).
-5. **Rank**, then apply §9.9's hysteresis, then §9.8's list policy.
+5. **Rank**, then apply §9.9's hysteresis, then §9.8's list policy, then cut the primary
+   list to ``max_primary_entries`` (§9.7).
+
+The cut is last for the same reason the list policy is late: it operates on an ordering it
+cannot influence. Truncating earlier — or filtering candidates before scoring — would let
+list length decide what gets ranked, which is the one thing §10.6 keeps content from doing.
 
 Steps 4 and 5 treat progression candidates and refreshers identically, which is what keeps
 G10 from needing a special case: a refresher competes on its merits and is *then* capped at
@@ -153,7 +158,7 @@ def recommend_run(
     primary, deferred = enforce_list_policy(ordered, profile)
 
     return RecommendationRun(
-        primary=primary,
+        primary=primary[: profile.max_primary_entries],
         deferred_refreshers=deferred,
         blocked=_blocked_entries(run),
     )
@@ -266,24 +271,40 @@ def _blocked_entries(run: _Run) -> tuple[Recommendation, ...]:
     Deliberately unscored. A blocked candidate's ``readiness`` gate is 0, so §9.4 would
     return the ε-floored score of something nobody can act on — a number that invites
     ranking blocked work against actionable work, the exact comparison the gate exists to
-    refuse. What the UI needs from these is the name and the blocker, and the capability
-    views already carry the latter.
+    refuse.
+
+    It does carry ``blockers``. An earlier version of this docstring said the UI could take
+    them from the capability views instead; that was wrong once the corpus grew past the
+    handful of candidates whose gates a capability also named. ``complete_lunar_diplomacy``
+    is blocked by four ``quest:`` leaves no capability mentions, so without this the page
+    could name the goal and nothing about how to reach it.
 
     A candidate whose gate is **unknown** is not here: G3 and §16.2 both say an unknown gate
     is *"sync this"*, not blocked, so it stays in the actionable list carrying
     ``unknown_gate``.
     """
-    return tuple(
-        Recommendation(
-            candidate_id=candidate.id,
-            name=candidate.name,
-            kind=candidate.kind,
-            score=0.0,
-            blocked=True,
+    entries: list[Recommendation] = []
+    for candidate in sorted(run.content.candidates.values(), key=lambda entry: entry.id):
+        if candidate.requires is None:
+            # No gate, so nothing to be blocked by — `blocked` agrees, and the explicit
+            # check is what lets the evaluate call below take a non-optional tree.
+            continue
+        if not blocked(candidate, run.state, run.content, run.evaluate):
+            continue
+        # `blocked` already evaluated this tree; the evaluator memoizes per run, so asking
+        # again is a cache read rather than a second walk.
+        gate = run.evaluate(candidate.requires, run.state, run.content)
+        entries.append(
+            Recommendation(
+                candidate_id=candidate.id,
+                name=candidate.name,
+                kind=candidate.kind,
+                score=0.0,
+                blocked=True,
+                blockers=gate.blockers,
+            )
         )
-        for candidate in sorted(run.content.candidates.values(), key=lambda entry: entry.id)
-        if blocked(candidate, run.state, run.content, run.evaluate)
-    )
+    return tuple(entries)
 
 
 # ---------------------------------------------------------------------------

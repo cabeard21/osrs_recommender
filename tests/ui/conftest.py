@@ -259,6 +259,27 @@ def seed(session: Session) -> int:
             estimated_hours=4.5,
             estimated_gp=1_800_000,
             estimate_confidence=Confidence.MEDIUM,
+            # Step 8: two bands, one with an authored method and one that fell back, so the
+            # browser test sees both halves of §15's "How" line. The fallback band is the
+            # one §8.4 requires the UI to qualify rather than render blank.
+            bands=[
+                {
+                    "from_level": 87,
+                    "to_level": 94,
+                    "method_id": "magic_bursting",
+                    "hours": 4.0,
+                    "gp": 1_600_000,
+                    "fallback": False,
+                },
+                {
+                    "from_level": 94,
+                    "to_level": 95,
+                    "method_id": None,
+                    "hours": 0.5,
+                    "gp": 0,
+                    "fallback": True,
+                },
+            ],
             blocked=False,
         )
     )
@@ -292,6 +313,22 @@ def seed(session: Session) -> int:
             estimated_hours=None,
             estimated_gp=None,
             estimate_confidence=Confidence.LOW,
+            # Step (c): a blocked entry now says *why*. Two leaf kinds, because the
+            # rendering has to cope with a numeric target and with one that has none.
+            blockers=[
+                {
+                    "leaf_type": "skill",
+                    "key": "magic",
+                    "description": "Magic 94",
+                    "target": 94,
+                },
+                {
+                    "leaf_type": "quest",
+                    "key": "desert_treasure_i",
+                    "description": "Desert Treasure I",
+                    "target": None,
+                },
+            ],
             blocked=True,
         )
     )

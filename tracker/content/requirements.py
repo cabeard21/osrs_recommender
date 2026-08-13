@@ -125,6 +125,33 @@ class QuestPointsLeaf(RequirementNode):
         return {"quest_points": self.points}
 
 
+class AccountTypeLeaf(RequirementNode):
+    """``account_type: main``
+
+    A new leaf type rather than a reused ``unlock:`` key, and §10.8 explicitly allows a
+    new leaf type as a legitimate code change. Reusing ``unlock:`` would be wrong twice:
+    §6.3's unlock keys are plugin-sourced facts with reserved prefixes, and an ironman is
+    not something an account *unlocked* — it is a constraint it was created under, and one
+    that removes options rather than granting them.
+    """
+
+    type: Literal["account_type"] = "account_type"
+    account_type: str
+
+    def to_yaml(self) -> dict[str, Any]:
+        return {"account_type": self.account_type}
+
+
+class MembersLeaf(RequirementNode):
+    """``members: true``"""
+
+    type: Literal["members"] = "members"
+    members: bool
+
+    def to_yaml(self) -> dict[str, Any]:
+        return {"members": self.members}
+
+
 # ---------------------------------------------------------------------------
 # Combinators
 # ---------------------------------------------------------------------------
@@ -189,6 +216,8 @@ Requirement = Annotated[
     | CapabilityLeaf
     | CombatLevelLeaf
     | QuestPointsLeaf
+    | AccountTypeLeaf
+    | MembersLeaf
     | AllOf
     | AnyOf
     | Not
@@ -200,7 +229,18 @@ for _model in (AllOf, AnyOf, Not, AtLeast):
     _model.model_rebuild()
 
 LEAF_TYPES: frozenset[str] = frozenset(
-    {"skill", "unlock", "quest", "item", "milestone", "capability", "combat_level", "quest_points"}
+    {
+        "skill",
+        "unlock",
+        "quest",
+        "item",
+        "milestone",
+        "capability",
+        "combat_level",
+        "quest_points",
+        "account_type",
+        "members",
+    }
 )
 COMBINATOR_TYPES: frozenset[str] = frozenset({"all_of", "any_of", "not", "at_least"})
 REQUIREMENT_TYPES: frozenset[str] = LEAF_TYPES | COMBINATOR_TYPES
@@ -335,6 +375,26 @@ def _integer_leaf(label: str, build: Callable[[int], Requirement]) -> _NodeParse
     return parser
 
 
+def _bool_leaf(label: str, build: Callable[[bool], Requirement]) -> _NodeParser:
+    """A leaf whose target is a literal ``true``/``false``.
+
+    Strict about the type for :func:`_integer_leaf`'s reason inverted: YAML happily reads
+    ``members: yes`` as ``True`` but ``members: 1`` as an integer, and silently accepting
+    the latter would make ``members: 0`` a requirement that the account *not* be a member
+    rather than a syntax error.
+    """
+
+    def parser(value: Any, _file: Path | None, path: str, location: ContentLocation) -> Requirement:
+        where = location.with_path(path)
+        if not isinstance(value, bool):
+            raise RequirementSyntaxError(
+                f"a {label} leaf needs true or false, found {value!r}", where
+            )
+        return _construct(where, lambda: build(value))
+
+    return parser
+
+
 def _child_list(build: Callable[[tuple[Requirement, ...]], Requirement]) -> _NodeParser:
     def parser(value: Any, file: Path | None, path: str, location: ContentLocation) -> Requirement:
         where = location.with_path(path)
@@ -394,6 +454,8 @@ _PARSERS: dict[str, _NodeParser] = {
     "capability": _string_leaf("capability", lambda value: CapabilityLeaf(capability_id=value)),
     "combat_level": _integer_leaf("combat_level", lambda value: CombatLevelLeaf(level=value)),
     "quest_points": _integer_leaf("quest_points", lambda value: QuestPointsLeaf(points=value)),
+    "account_type": _string_leaf("account_type", lambda value: AccountTypeLeaf(account_type=value)),
+    "members": _bool_leaf("members", lambda value: MembersLeaf(members=value)),
     "all_of": _child_list(lambda children: AllOf(children=children)),
     "any_of": _child_list(lambda children: AnyOf(children=children)),
     "not": _parse_not,

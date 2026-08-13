@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from tracker.domain.types import Confidence, Container, GpSensitivity, LeafRef, Status, UnlockState
-from tracker.ui.capabilities import sort_rows
+from tracker.ui.capabilities import sort_rows, split_unknowns
 from tracker.ui.staleness import humanize_age, ownership_note, scan_note
 from tracker.ui.states import (
     STATE_CLASSES,
@@ -27,6 +27,7 @@ from tracker.ui.view_model import (
     GP_SENSITIVITY_LABELS,
     NO_READINESS,
     CapabilityRow,
+    LeafRow,
     RoadmapOptionRow,
     assert_at_most_one_refresher,
     capability_row,
@@ -157,6 +158,36 @@ def test_blockers_and_unknowns_stay_separate_collections() -> None:
     )
     assert [leaf.key for leaf in row.blockers] == ["magic"]
     assert [leaf.key for leaf in row.unknowns] == ["voidwaker"]
+
+
+def test_a_milestone_unknown_is_a_question_not_a_sync() -> None:
+    """§6.6/A7: no amount of syncing resolves "can you freeze-log?" — only being asked does.
+
+    Left in the sync list, the leaf tells the reader to do something that cannot work, which
+    reads as a broken app rather than a waiting one.
+    """
+    unknowns = (
+        LeafRow.of(LeafRef("item", "voidwaker", "Voidwaker")),
+        LeafRow.of(LeafRef("milestone", "teleblock_understanding", "Teleblock understanding")),
+    )
+
+    sync, questions = split_unknowns(unknowns)
+
+    assert [leaf.key for leaf in sync] == ["voidwaker"]
+    assert [leaf.key for leaf in questions] == ["teleblock_understanding"]
+
+
+def test_splitting_unknowns_keeps_every_leaf() -> None:
+    """The split partitions; it never drops. A leaf in neither list is a leaf nobody acts on."""
+    unknowns = tuple(
+        LeafRow.of(LeafRef(leaf_type, f"k_{leaf_type}", leaf_type))
+        for leaf_type in ("item", "milestone", "skill", "quest", "unlock")
+    )
+
+    sync, questions = split_unknowns(unknowns)
+
+    assert len(sync) + len(questions) == len(unknowns)
+    assert set(sync).isdisjoint(questions)
 
 
 def test_unknown_capabilities_sort_first() -> None:

@@ -60,8 +60,16 @@ class RefreshScheduler:
         self._task: asyncio.Task[None] | None = None
 
     async def _run(self) -> None:
+        # Refresh **first**, then sleep. The reverse order — which this loop had — meant a
+        # price was never fetched until the app had been running for a whole interval, so
+        # an app opened to check recommendations and closed again fetched nothing, ever.
+        # That is why `item_price` was empty on a working install: not a broken fetch, a
+        # first tick an hour away.
+        #
+        # An immediate first tick is close to free by construction. §7.5 makes a refresh a
+        # no-op while valid cached data exists ("no request at all"), so a warm cache costs
+        # one TTL comparison; a cold one is exactly the case that needs filling.
         while True:
-            await asyncio.sleep(self._interval.total_seconds())
             try:
                 await asyncio.to_thread(self._refresh_all)
             except asyncio.CancelledError:
@@ -71,6 +79,7 @@ class RefreshScheduler:
                 # a free retry, and an app that stopped refreshing because one WOM call threw
                 # would look identical to one that was simply idle.
                 _log.exception("scheduled refresh failed; continuing")
+            await asyncio.sleep(self._interval.total_seconds())
 
     def _refresh_all(self) -> None:
         with self._session_factory() as session:

@@ -8,6 +8,15 @@
 #
 # No price is authored here. §8.3 prices these from the `item:` leaves through the OSRS
 # Wiki feed, with items/items.yaml's fallback_price_gp as the last layer of the cascade.
+#
+# Every acquisition gates on `account_type`. Buying is not merely expensive for an ironman,
+# it is impossible — the Grand Exchange is closed to them — so this is a `requires`, not a
+# cost. `any_of` over main and group because a GIM can trade within their group.
+#
+# Until the account answers in Settings the leaf is `unknown`, which does **not** block
+# (§10.6, G3): a main who never visited Settings keeps seeing these, and an ironman who
+# answers once stops being told to buy things. Defaulting to "main" instead would assert
+# the very fact whose absence is the bug.
 
 # The single best spec weapon for the capabilities this corpus weights: it satisfies the
 # `any_of` in both deep_wildy_nh and anti_pk. Note the two `advances` entries are a
@@ -19,6 +28,10 @@
   advances:
     deep_wildy_nh: 0.80
     anti_pk: 0.60
+  requires:
+    any_of:
+      - account_type: main
+      - account_type: group
   completion:
     item: voidwaker
   grants_facts:
@@ -35,6 +48,10 @@
   advances:
     deep_wildy_nh: 0.50
     anti_pk: 0.35
+  requires:
+    any_of:
+      - account_type: main
+      - account_type: group
   completion:
     all_of:
       - item: armadyl_godsword

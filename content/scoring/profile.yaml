@@ -32,6 +32,10 @@ scoring_profile:
     # also records why the search proposes 0.0 here — its tie-break prefers the shipped
     # profile, and a newly added factor is 0.0 in the shipped profile by construction.
     method_unlock: 0.1
+  # §9.8's list is a list, not a dump. Uncapped was harmless at eight candidates and stops
+  # being harmless once generated content puts hundreds in the corpus. Applied after
+  # hysteresis and the refresher policy, so it only ever cuts the tail.
+  max_primary_entries: 12
   refresher:
     max_in_primary_list: 1
     breadth_bonus_per_extra_member: 0.03

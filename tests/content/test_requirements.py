@@ -10,12 +10,14 @@ import pytest
 from tracker.content.errors import RequirementSyntaxError
 from tracker.content.requirements import (
     LEAF_TYPES,
+    AccountTypeLeaf,
     AllOf,
     AnyOf,
     AtLeast,
     CapabilityLeaf,
     CombatLevelLeaf,
     ItemLeaf,
+    MembersLeaf,
     MilestoneLeaf,
     Not,
     QuestLeaf,
@@ -57,13 +59,22 @@ class TestLeaves:
             ({"capability": "ice_barrage_nh"}, CapabilityLeaf(capability_id="ice_barrage_nh")),
             ({"combat_level": 100}, CombatLevelLeaf(level=100)),
             ({"quest_points": 150}, QuestPointsLeaf(points=150)),
+            ({"account_type": "ironman"}, AccountTypeLeaf(account_type="ironman")),
+            ({"members": True}, MembersLeaf(members=True)),
         ],
     )
     def test_every_leaf_type_parses(self, raw: dict[str, Any], expected: Any) -> None:
         assert parse(raw) == expected
 
-    def test_all_eight_leaf_types_are_covered(self) -> None:
-        """§9.1 requires all eight to resolve; none may be silently unimplemented."""
+    def test_every_declared_leaf_type_is_covered(self) -> None:
+        """§9.1 requires every leaf to resolve; none may be silently unimplemented.
+
+        Pinned as an exact set rather than a subset, so adding a leaf is a decision someone
+        has to make here on purpose. §10.8 allows a new leaf type as a legitimate code
+        change — ``account_type`` and ``members`` are Step 9's, and they are listed because
+        an ironman is a constraint an account was created under, not an ``unlock:`` key it
+        gained (§6.3).
+        """
         assert LEAF_TYPES == {
             "skill",
             "unlock",
@@ -73,6 +84,8 @@ class TestLeaves:
             "capability",
             "combat_level",
             "quest_points",
+            "account_type",
+            "members",
         }
 
     def test_nodes_are_frozen(self) -> None:

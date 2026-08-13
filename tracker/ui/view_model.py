@@ -21,7 +21,14 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from tracker.domain.types import Confidence, GpSensitivity, LeafRef, Status, UnlockState
+from tracker.domain.types import (
+    AccountType,
+    Confidence,
+    GpSensitivity,
+    LeafRef,
+    Status,
+    UnlockState,
+)
 from tracker.ui.states import UiState, ui_state_for_status, ui_state_for_unlock
 
 #: What ``readiness_confidence`` renders as when there is none. §4.4's own worked example
@@ -41,12 +48,25 @@ READINESS_LABELS: Mapping[Confidence, str] = {
 #: to action*, so their empty states must differ too — otherwise the two containers look
 #: interchangeable in exactly the case a user sees most often.
 NO_UNKNOWNS = "Nothing unobserved — everything this needs has been seen."
+NO_QUESTIONS = "Nothing to answer — you have been asked about everything this needs."
 NO_BLOCKERS = "Nothing blocking — the objective requirements are met."
 
 #: The two calls to action §15 requires. "Do this" against "sync this": one is work in the
 #: game, the other is work in RuneLite, and a merged list could only carry one of them.
+#: What a band with no authored method shows where the method name would go. §8.4 makes
+#: §8.2's conservative default a claim the UI is *required* to qualify, and a blank cell
+#: reads as "no information" when the truth is "a number we invented".
+FALLBACK_METHOD_LABEL = "no method authored — conservative default, treat hours as an upper bound"
+
 BLOCKERS_CTA = "Do these to unlock it"
 UNKNOWNS_CTA = "Sync RuneLite to find out"
+QUESTIONS_CTA = "Only you can answer these"
+"""§15's third call to action, for unknowns no sync will ever resolve (§6.6, A7).
+
+A self-attested milestone is unknown because nobody has been *asked*, not because nobody
+has *looked*. Leaving it under ``UNKNOWNS_CTA`` tells the reader to sync RuneLite, which
+cannot work however many times they try it — and the instruction to do an impossible thing
+is worse than no instruction, because it looks like the app is broken rather than waiting."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -308,6 +328,67 @@ class FactorRow:
     log_contribution: float
 
 
+def _gp(amount: int) -> str:
+    """Compact gp, because "1,800,000" and "85,000,000" do not compare at a glance."""
+    if amount >= 1_000_000:
+        return f"{amount / 1_000_000:.1f}M".replace(".0M", "M")
+    if amount >= 1_000:
+        return f"{amount // 1_000}K"
+    return str(amount)
+
+
+@dataclass(frozen=True, slots=True)
+class BandRow:
+    """One §8.2 level band, resolved for display — §15's "How" line.
+
+    Built from the band **as it was persisted**, joined to content for the method's name
+    and description. The method is never re-selected at read time: §8.2 step 3 picks among
+    methods the account satisfied *when the run happened*, so re-deriving it later could
+    name a method the quoted hours did not come from. Same drift argument that makes
+    ``reason`` a stored string.
+
+    ``method_name`` degrades to the raw ``method_id`` when content no longer declares it,
+    and to ``None`` only when the band genuinely had no method. Content changes between
+    runs — a renamed or deleted method must not raise on a History page.
+    """
+
+    from_level: int
+    to_level: int
+    method_id: str | None
+    method_name: str | None
+    hours: float
+    gp: int
+    fallback: bool
+    location: str | None = None
+    target: str | None = None
+    gear: tuple[str, ...] = ()
+    inventory: tuple[str, ...] = ()
+    notes: str | None = None
+    wiki_url: str | None = None
+
+    @property
+    def level_label(self) -> str:
+        return f"{self.from_level}→{self.to_level}"
+
+    @property
+    def method_label(self) -> str:
+        """What to show where the method goes.
+
+        A fallback band says so in words rather than showing a blank: §8.4 makes the
+        conservative default a claim the UI is *required* to qualify, and an empty cell
+        reads as "no information" when the truth is "a number we invented".
+        """
+        if self.fallback or self.method_id is None:
+            return FALLBACK_METHOD_LABEL
+        return self.method_name or self.method_id
+
+    @property
+    def place_label(self) -> str:
+        """Location and target joined, or empty when the corpus describes neither."""
+        parts = [part for part in (self.target, self.location) if part]
+        return " · ".join(parts)
+
+
 @dataclass(frozen=True, slots=True)
 class RecommendationEntryRow:
     """One ranked entry of §9.10's output shape.
@@ -333,6 +414,39 @@ class RecommendationEntryRow:
     advances: tuple[str, ...] = ()
     practice_members: tuple[str, ...] = ()
     suggested_session: str | None = None
+    bands: tuple[BandRow, ...] = ()
+    """§8.2's breakdown, empty for anything that is not skill training."""
+    liquid_gp: int | None = None
+    """Coins the account is known to hold, or ``None`` when no container has been scanned.
+
+    **Display only.** It is deliberately not a scoring input: an ``affordable`` factor
+    means a seventh exponent in ``ScoringWeights``, which §16.3 step 5 requires be re-tuned
+    against the golden corpus with a human reviewing every disagreement."""
+
+    @property
+    def affordability_note(self) -> str | None:
+        """ "you have 12M; this costs 85M" — or nothing at all when either side is unknown.
+
+        Silence when ``liquid_gp is None`` is the §4.5 rule showing through: with no
+        container ever scanned we do not know the account is poor, we know we have not
+        looked, and "you cannot afford this" would be a claim about the player rather than
+        about the evidence.
+        """
+        if self.liquid_gp is None or self.estimated_gp is None or self.estimated_gp <= 0:
+            return None
+        verb = "covers" if self.liquid_gp >= self.estimated_gp else "short of"
+        return f"you have {_gp(self.liquid_gp)} — {verb} the {_gp(self.estimated_gp)} this needs"
+
+    @property
+    def has_method_detail(self) -> bool:
+        """Whether the "How" block has anything to say beyond the hours.
+
+        A quest or an acquisition has no bands at all, and a band whose method fell back
+        has only the qualification to show — both are still worth rendering, because
+        "we do not know how" is information. What is *not* worth a block is an entry with
+        no bands whatsoever.
+        """
+        return bool(self.bands)
 
     @property
     def kind_label(self) -> str:
@@ -363,6 +477,10 @@ class BlockedRecommendationRow:
 
     candidate_id: str
     name: str
+    blockers: tuple[LeafRow, ...] = ()
+    """Why it is blocked. Empty renders as nothing rather than as a reassurance — an empty
+    blockers list on a *blocked* entry means the snapshot predates the column, and inventing
+    "nothing is blocking this" for it would contradict the row it sits on."""
 
 
 def recommendation_entry_row(
@@ -381,6 +499,8 @@ def recommendation_entry_row(
     advances: Sequence[str] = (),
     practice_members: Sequence[str] = (),
     suggested_session: str | None = None,
+    bands: Sequence[BandRow] = (),
+    liquid_gp: int | None = None,
 ) -> RecommendationEntryRow:
     """Assemble one row from a persisted entry's factors JSON (§6.10)."""
     factor_rows = tuple(
@@ -407,6 +527,8 @@ def recommendation_entry_row(
         advances=tuple(advances),
         practice_members=tuple(practice_members),
         suggested_session=suggested_session,
+        bands=tuple(bands),
+        liquid_gp=liquid_gp,
     )
 
 
@@ -515,6 +637,28 @@ GP_SENSITIVITY_LABELS: Mapping[GpSensitivity, str] = {
 SENSITIVITY_QUESTION = "How strongly should expensive upgrades be deprioritized?"
 
 
+#: §15's account-mode question. Phrased as a question with an explicit "not set" option,
+#: because ``None`` is a real state here and a radio group with no unselected choice would
+#: force the user to assert something the moment they open the page (§4.5).
+ACCOUNT_TYPE_QUESTION = "What kind of account is this?"
+ACCOUNT_TYPE_UNSET = "Not set — nothing is assumed"
+ACCOUNT_TYPE_LABELS: Mapping[AccountType, str] = {
+    AccountType.MAIN: "Main",
+    AccountType.IRONMAN: "Ironman",
+    AccountType.HARDCORE: "Hardcore ironman",
+    AccountType.ULTIMATE: "Ultimate ironman",
+    AccountType.GROUP: "Group ironman",
+}
+ACCOUNT_TYPE_NOTE = (
+    "Until this is set, purchases are still suggested — the app does not guess. "
+    "An ironman cannot buy from the Grand Exchange at any price, so saying so here "
+    "removes those suggestions rather than merely ranking them lower."
+)
+
+MEMBERS_QUESTION = "Is this a members account?"
+MEMBERS_UNSET = "Not set"
+
+
 @dataclass(frozen=True, slots=True)
 class SettingsView:
     """Everything the settings page shows.
@@ -535,6 +679,26 @@ class SettingsView:
     price_provider: str
     price_base_url: str
     wom_base_url: str
+    #: ``None`` means nobody has been asked, and the page renders that as its own option
+    #: rather than preselecting "Main" (§4.5).
+    account_type: AccountType | None = None
+    members: bool | None = None
+    #: §8.3's cache, made visible. Until Step 10a there was no way to tell a price feed
+    #: that had never run from one that ran and found nothing — both showed as estimates
+    #: falling back to the authored hint, which §8.4 marks ``low`` either way.
+    price_rows: int = 0
+    price_last_fetched_at: datetime | None = None
+
+    @property
+    def price_cache_label(self) -> str:
+        """ "never fetched" is a different sentence from "0 items priced" (§4.5)."""
+        if self.price_last_fetched_at is None:
+            return (
+                "never fetched — leave the app running, or run "
+                "`python -m tracker.sync.worker --prices`"
+            )
+        noun = "item" if self.price_rows == 1 else "items"
+        return f"{self.price_rows} {noun} priced"
 
     @property
     def sensitivity_label(self) -> str:

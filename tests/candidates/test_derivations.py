@@ -370,7 +370,14 @@ def hours_oracle(table: Mapping[str, Mapping[str | None, float | None]]) -> obje
         row = table[other.id]
         if grants is None:
             return row[None]
-        key = getattr(grants, "key", None) or getattr(grants, "quest_id", None)
+        key = (
+            getattr(grants, "key", None)
+            or getattr(grants, "quest_id", None)
+            # A skill grant keys on the skill name. Without this the stub would report *no*
+            # reduction for every skill-granting candidate, which would make the Step 5
+            # work-overlap tests below pass whether or not the rule they check exists.
+            or getattr(grants, "skill", None)
+        )
         return row.get(str(key), row[None])
 
     return probe
@@ -406,6 +413,52 @@ class TestMethodUnlockFraction:
 
         assert method_unlock_fraction(broad, others, hours_oracle(table)) == pytest.approx(0.2)
         assert method_unlock_fraction(deep, others, hours_oracle(table)) == pytest.approx(0.9)
+
+    def test_finishing_part_of_another_grind_is_not_a_method_unlock(self) -> None:
+        """The Step 5 regression: work-overlap must not be priced as acceleration.
+
+        Once skill training was decomposed into bands, a candidate granting Magic 94 took
+        ``train_magic_85_to_90`` from 39.3 hours to zero and ``train_magic_94_to_99`` from
+        258.9 to 145.4. Both are real reductions and neither is a *method*: the two
+        candidates measure overlapping XP in the same skill, so the grind did not get
+        faster, it was already done. Crediting it let any high-level band claim a perfect
+        score for subsuming the bands beneath it, and flipped a recorded §16.3 judgment.
+        """
+        band = candidate(
+            "train_magic_87_to_94",
+            completion="skill: {magic: 94}",
+            grants_facts="skill: {magic: 94}",
+        )
+        lower = candidate("train_magic_85_to_90", completion="skill: {magic: 90}")
+        higher = candidate("train_magic_94_to_99", completion="skill: {magic: 99}")
+        table = {
+            "train_magic_85_to_90": {None: 39.3, "magic": 0.0},
+            "train_magic_94_to_99": {None: 258.9, "magic": 145.4},
+        }
+
+        value = method_unlock_fraction(band, [lower, higher], hours_oracle(table))
+
+        assert value == 0.0
+
+    def test_a_grant_still_accelerates_a_grind_in_a_different_skill(self) -> None:
+        """The other half of the rule — the skip is by skill, not a blanket exemption.
+
+        Without this, "skip anything I overlap with" would quietly become "skip
+        everything a skill-training candidate could ever accelerate", and A30's own worked
+        example is a quest accelerating exactly such a grind.
+        """
+        band = candidate(
+            "train_slayer",
+            completion="skill: {slayer: 70}",
+            grants_facts="skill: {slayer: 70}",
+        )
+        other = candidate("train_ranged", completion="skill: {ranged: 90}")
+
+        value = method_unlock_fraction(
+            band, [other], hours_oracle({"train_ranged": {None: 100.0, "slayer": 40.0}})
+        )
+
+        assert value == pytest.approx(0.6)
 
     def test_a_candidate_granting_no_facts_unlocks_no_method(self) -> None:
         """Zero, never unknown — :func:`leverage`'s reason, and the probe is never asked."""

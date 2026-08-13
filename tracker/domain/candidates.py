@@ -264,6 +264,16 @@ def leverage_map(
 # ---------------------------------------------------------------------------
 
 
+def _completion_skills(candidate: Candidate) -> set[str]:
+    """The skills a candidate's ``completion`` predicate trains toward.
+
+    Skill *names* only, never levels: a grant of Magic 94 overlaps the work of a band
+    targeting Magic 99 just as surely as one targeting Magic 90, because both measure XP
+    in the same skill.
+    """
+    return {leaf.skill for leaf in iter_leaves(candidate.completion) if isinstance(leaf, SkillLeaf)}
+
+
 def method_unlock_fraction(
     candidate: Candidate,
     others: Iterable[Candidate],
@@ -301,14 +311,29 @@ def method_unlock_fraction(
     blocked ones**, whose hours are perfectly computable and whose unblocking is exactly
     what a quest like DT1 buys. Excluding them would hide the effect in the one situation
     where it is largest.
+
+    **A candidate sharing a trained skill with ``other`` is skipped**, and the distinction
+    is the whole meaning of the factor. Once the corpus decomposed skill training into
+    bands (Step 5), granting Magic 94 dropped ``train_magic_85_to_90`` from 39.3 hours to
+    zero and ``train_magic_94_to_99`` from 258.9 to 145.4 — reductions of 1.00 and 0.44
+    that have nothing to do with a method. The work did not get faster; it was *already
+    done*, because two candidates in the same skill measure overlapping XP. Crediting that
+    lets any high-level band claim a perfect ``method_unlock`` for subsuming the bands
+    beneath it, which is not what A30 measures and which flipped a recorded §16.3 judgment.
     """
     if candidate.grants_facts is None:
         return 0.0
+
+    granted_skills = {
+        leaf.skill for leaf in iter_leaves(candidate.grants_facts) if isinstance(leaf, SkillLeaf)
+    }
 
     best = 0.0
     for other in others:
         if other.id == candidate.id:
             continue
+        if granted_skills & _completion_skills(other):
+            continue  # work-overlap, not method acceleration — see above
         before = hours_after_facts(other, None)
         if before is None or before <= 0.0:
             continue  # nothing to reduce, or §8 could not size it either way

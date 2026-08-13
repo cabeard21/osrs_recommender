@@ -119,6 +119,22 @@ class QuestStatus(Enum):
     UNKNOWN = "unknown"
 
 
+class AccountType(Enum):
+    """§4.2's account mode. Not a skill and not an unlock — a property that *removes* options.
+
+    An ironman cannot buy a Voidwaker at any price, so an ``acquisition`` candidate is not
+    merely expensive for them, it is impossible. That is why this is its own field rather
+    than an ``unlock:`` key: §6.3's unlock space is plugin-sourced facts about what an
+    account has *gained*, and account mode is a constraint it was created under.
+    """
+
+    MAIN = "main"
+    IRONMAN = "ironman"
+    HARDCORE = "hardcore"
+    ULTIMATE = "ultimate"
+    GROUP = "group"
+
+
 class Source(Enum):
     """Observation provenance (§6). Precedence: runelite > wise_old_man > hiscores."""
 
@@ -168,6 +184,12 @@ class PriceSourceLayer(Enum):
     CACHED = "cached"
     STATIC_HINT = "static_hint"
     UNKNOWN = "unknown"
+
+
+#: Coins. The one numeric item id the domain names, because "how much money is there" is
+#: not answerable without it and it is a game constant rather than authored content —
+#: an ``Item`` row for coins would imply the corpus could rename or reprice them.
+COINS_ITEM_ID = 995
 
 
 class Container(Enum):
@@ -292,10 +314,47 @@ class PlayerState:
     milestones: Mapping[str, MilestoneState] = field(default_factory=dict)
     combat_level: int | None = None
     quest_points: int | None = None
+    account_type: AccountType | None = None
+    """``None`` means nobody has said, which is **not** "main" (§4.5).
+
+    Defaulting to main would assert a fact we do not have, and the fact it would assert is
+    exactly the one that makes the app recommend a Voidwaker to an ironman. ``None``
+    evaluates ``unknown``, and an unknown gate does not block (§10.6, G3) — so a main who
+    never opened Settings loses nothing, while an ironman who answers once stops being told
+    to buy things."""
+    members: bool | None = None
+    """``None`` means nobody has said — same rule as :attr:`account_type`."""
     gp_sensitivity: GpSensitivity = GpSensitivity.NORMAL
     #: ``None`` means the account has never been synced — makes ``combat_level`` and
     #: ``quest_points`` leaves resolve ``unknown`` rather than ``unsatisfied`` (A6).
     last_sync_at: datetime | None = None
+
+    @property
+    def liquid_gp(self) -> int | None:
+        """Coins the account is *known* to hold, or ``None`` when nobody has looked (§6.5).
+
+        Derived rather than stored, so it cannot drift from the observations it summarises.
+
+        **Three states, and the middle one is the whole reason this is not an ``int``:**
+
+        * no container has ever been scanned ⇒ ``None``. Not ``0``: an unscanned bank is
+          not an empty one, and G3 forbids the collapse.
+        * a container was scanned and held no coins ⇒ ``0``. That *is* a fact — someone
+          looked, and there were none.
+        * coins observed ⇒ their quantity.
+
+        Coins are item 995 and stack, so the observation's quantity is the amount; §6.5
+        already merged containers, so this does not re-add bank and inventory separately.
+
+        **Display only.** No scoring factor reads this. Making affordability a §9.4 factor
+        means a seventh exponent in ``ScoringWeights``, which §16.3 step 5 requires be
+        re-tuned against the golden corpus with a human reviewing every disagreement —
+        that is its own step, not a side effect of being able to see the number.
+        """
+        if not self.container_scans:
+            return None
+        observation = self.observed_items.get(COINS_ITEM_ID)
+        return observation.quantity if observation is not None else 0
 
 
 # ---------------------------------------------------------------------------
@@ -421,6 +480,19 @@ class Recommendation:
     blocked: bool = False
     unknown_gate: bool = False
     """``requires`` evaluated ``unknown`` — *"sync this"*, not *"do this"* (§10.6, G3)."""
+    blockers: tuple[LeafRef, ...] = ()
+    """Why a blocked entry is blocked — the ``unsatisfied`` leaves of its own gate (§15).
+
+    A *candidate's* gate is not a capability's requirement tree, which is what the
+    original design assumed when it left this off: ``complete_lunar_diplomacy`` is blocked
+    by four quest leaves that appear in no capability at all, so "the capability views
+    already carry the latter" was true only while every blocked candidate happened to be
+    gated on something a capability also named.
+
+    Empty for anything that is not blocked. Unknown leaves are deliberately **not** here:
+    a gate evaluating ``unknown`` is not blocked (G3), so by construction every entry that
+    reaches this field failed on evidence rather than for want of it — one list, one verb
+    (§15)."""
     practice_members: tuple[str, ...] = ()
     """Milestone keys a ``kind: practice`` entry would refresh (§9.8's bullet list).
 

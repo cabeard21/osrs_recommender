@@ -66,6 +66,7 @@ def validate_content(content: Content) -> list[ContentError]:
     errors.extend(_check_references(content))
     errors.extend(_check_grants(content))
     errors.extend(_check_candidate_advances(content))
+    errors.extend(_check_unique_skill_targets(content))
     errors.extend(_check_practice_groups(content))
     errors.extend(_check_live_prices(content))
     errors.extend(_check_acyclic(content))
@@ -185,6 +186,39 @@ def _check_candidate_advances(content: Content) -> list[ContentError]:
         for capability_id in candidate.advances
         if capability_id not in content.capabilities
     ]
+
+
+def _check_unique_skill_targets(content: Content) -> list[ContentError]:
+    """No two candidates complete on the same ``(skill, level)`` target.
+
+    Two candidates whose ``completion`` names the same skill level are the same action
+    written twice: they become satisfied on the same sync, they are estimated over the
+    same band, and until then they occupy two slots on a list that holds
+    ``max_primary_entries``. The failure is silent without this check — nothing raises,
+    the user simply sees "Train Magic to 94" twice.
+
+    Introduced with generated skill bands (Step 5). The generator skips any target an
+    authored candidate already claims, and this is the rule that makes that skip
+    load-bearing rather than merely polite: a hand-authored duplicate fails here too.
+    """
+    seen: dict[tuple[str, int], str] = {}
+    errors: list[ContentError] = []
+    for candidate in sorted(content.candidates.values(), key=lambda c: c.id):
+        for leaf in iter_leaves(candidate.completion):
+            if not isinstance(leaf, SkillLeaf):
+                continue
+            key = (leaf.skill, leaf.level)
+            first = seen.setdefault(key, candidate.id)
+            if first != candidate.id:
+                errors.append(
+                    ContentError(
+                        f"completes on {leaf.skill} {leaf.level}, which {first!r} already "
+                        "completes on. Two candidates finishing on the same fact are the "
+                        "same action listed twice (§10.7)",
+                        content.location_of("candidate", candidate.id).with_path(candidate.id),
+                    )
+                )
+    return errors
 
 
 # ---------------------------------------------------------------------------

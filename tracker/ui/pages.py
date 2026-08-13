@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR, SETTINGS_ATTR
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
-from tracker.domain.types import GpSensitivity
+from tracker.domain.types import AccountType, GpSensitivity
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
 from tracker.ui import history as history_view
@@ -42,7 +42,7 @@ from tracker.ui import settings as settings_view
 from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
 from tracker.ui.shell import empty_state, page
-from tracker.ui.view_model import PracticeGroupRow
+from tracker.ui.view_model import LeafRow, PracticeGroupRow
 
 #: Shown by every view when no player row exists. §15's views all answer questions about an
 #: account, and before the first sync there is no account — which is a state to explain, not
@@ -108,7 +108,21 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
-            capabilities_view.render(rows)
+
+            def attest(leaf: LeafRow, achieved: bool) -> None:
+                with session_factory()() as write_session:
+                    read_model.attest_milestone(
+                        write_session,
+                        player_id,
+                        leaf.key,
+                        achieved=achieved,
+                        content=content(),
+                        now=now(),
+                    )
+                ui.notify(f"Recorded: {leaf.description or leaf.key}")
+                ui.navigate.reload()
+
+            capabilities_view.render(rows, on_attest=attest)
 
     @ui.page("/unlocks")
     def unlocks_page() -> None:
@@ -243,8 +257,22 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                     write_session.commit()
                 ui.navigate.reload()
 
+            def set_account_type(account_type: AccountType | None) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_account_type(write_session, player_id, account_type)
+                ui.navigate.reload()
+
+            def set_members(members: bool | None) -> None:
+                with session_factory()() as write_session:
+                    read_model.set_members(write_session, player_id, members)
+                ui.navigate.reload()
+
             settings_view.render(
-                view, on_set_sensitivity=set_sensitivity, on_set_username=set_username
+                view,
+                on_set_sensitivity=set_sensitivity,
+                on_set_username=set_username,
+                on_set_account_type=set_account_type,
+                on_set_members=set_members,
             )
 
     @ui.page("/history")

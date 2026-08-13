@@ -16,17 +16,25 @@
     ice_barrage_nh: 0.90
     deep_wildy_nh: 0.60
     budget_nh: 0.50
-  # DT1's skill requirements. Its quest prerequisites (The Dig Site, Temple of Ikov, The
-  # Tourist Trap, Troll Stronghold, Priest in Peril, Waterfall Quest) are deliberately
-  # not listed: quests/ declares only the quests this corpus's capabilities gate on, and
-  # §10.7 rejects a `quest:` leaf naming an undeclared id. Declare them there first if
-  # you want the chain modelled.
+  # Skill *and* quest requirements. The quest half was omitted until Step 4 because
+  # quests/ declared only the two quests the capabilities gate on, and §10.7 rejects a
+  # `quest:` leaf naming an undeclared id. The generated registry now declares all 211,
+  # so the constraint is gone — and while it stood, DT1 read as *available* to an account
+  # that could not start it, which is the §4.5 error in the direction that costs a user
+  # an afternoon.
   requires:
     all_of:
       - skill: {thieving: 53}
       - skill: {firemaking: 50}
       - skill: {magic: 50}
       - skill: {slayer: 10}
+      - quest: the_dig_site
+      - quest: temple_of_ikov
+      - quest: the_tourist_trap
+      - quest: troll_stronghold
+      - quest: priest_in_peril
+      - quest: waterfall_quest
+      - quest: plague_city
   completion:
     quest: desert_treasure_i
   # Two facts, because the quest reward is the point: the unlock is what other content
@@ -35,3 +43,41 @@
     all_of:
       - quest: desert_treasure_i
       - unlock: ancient_magicks
+
+# Authored rather than generated, and the reason is the second fact it grants. Lunar
+# Diplomacy gives the lunar spellbook, which `vengeance_pvp` gates on — but the
+# quest→unlock mapping lives in the plugin's `QUEST_GRANTED_UNLOCKS` table, not in the
+# wiki dump the generator reads, so no generated entry could ever know about it. A bare
+# `quest:` leaf would leave `leverage` unable to see the unlock, exactly as noted on DT1.
+#
+# The weight is calibrated against DT1 above rather than a rule invented for it. A
+# "fraction of leaves satisfied" rule would give 0.50 here — and 0.50 for DT1, where this
+# corpus authored 0.90 — so leaf-counting is demonstrably not the convention: the enabling
+# unlock counts for more than its share. The two cases are the same shape (four leaves;
+# quest and enabling unlock satisfied; one skill level and one other thing left), so they
+# carry the same number. If 0.90 is wrong here it is wrong there too.
+- id: complete_lunar_diplomacy
+  name: Complete Lunar Diplomacy
+  kind: quest
+  source: authored
+  advances:
+    vengeance_pvp: 0.90
+  requires:
+    all_of:
+      - skill: {crafting: 61}
+      - skill: {defence: 40}
+      - skill: {firemaking: 49}
+      - skill: {herblore: 5}
+      - skill: {magic: 65}
+      - skill: {mining: 60}
+      - skill: {woodcutting: 55}
+      - quest: the_fremennik_trials
+      - quest: lost_city
+      - quest: rune_mysteries
+      - quest: shilo_village
+  completion:
+    quest: lunar_diplomacy
+  grants_facts:
+    all_of:
+      - quest: lunar_diplomacy
+      - unlock: spellbook_lunar

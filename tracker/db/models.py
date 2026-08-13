@@ -156,6 +156,15 @@ class Player(Base):
     #: Nullable for the same reason as ``last_sync_at`` — unobserved before first sync.
     combat_level: Mapped[int | None] = mapped_column(default=None)
     quest_points: Mapped[int | None] = mapped_column(default=None)
+    #: §4.2's account mode, and §6.6's ``members`` flag. Both nullable with **no default**:
+    #: ``NULL`` means nobody has been asked, which the evaluator resolves to ``unknown``
+    #: (§4.5). Defaulting ``account_type`` to ``"main"`` would assert the very fact whose
+    #: absence makes the app recommend a Voidwaker to an ironman.
+    #:
+    #: Neither arrives from the plugin — payload v1 has no field for them, and the frozen
+    #: contract is deliberately not bumped for this. The Settings page writes both.
+    account_type: Mapped[str | None] = mapped_column(default=None)
+    members: Mapped[bool | None] = mapped_column(default=None)
     gp_sensitivity: Mapped[GpSensitivity] = mapped_column(
         _enum_column(GpSensitivity), default=GpSensitivity.NORMAL
     )
@@ -491,6 +500,19 @@ class RecommendationEntry(Base):
     estimated_hours: Mapped[float | None] = mapped_column(default=None)
     estimated_gp: Mapped[int | None] = mapped_column(default=None)
     estimate_confidence: Mapped[Confidence] = mapped_column(_enum_column(Confidence))
+    #: §8.2's per-band breakdown, including the ``method_id`` §8.2 step 3 selected — the
+    #: input to §15's "How" line. JSON for ``factors``' reason: a candidate has a variable
+    #: number of bands, and nothing queries across them.
+    #:
+    #: **The stored method is rendered; it is never re-selected at read time.** Method
+    #: choice depends on what the account satisfied *when the run happened* (§8.2 step 3),
+    #: so re-deriving it later could name a method the quoted hours did not come from.
+    #: That is the same drift argument that makes ``reason`` a stored string.
+    bands: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
+    #: The ``unsatisfied`` leaves of this entry's own gate, when ``blocked`` (§15).
+    #: Persisted rather than re-derived for ``bands``' reason: a snapshot accumulates, and
+    #: re-evaluating on read would relabel a historical entry with today's facts.
+    blockers: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
     blocked: Mapped[bool] = mapped_column(default=False)
 
 

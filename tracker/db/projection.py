@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 from tracker.db import repository
 from tracker.db.models import ContainerScan, Milestone, ObservedItem, SkillSnapshot
 from tracker.domain.types import (
+    AccountType,
     Container,
     ItemObservation,
     MilestoneState,
@@ -80,6 +81,11 @@ def build_player_state(session: Session, player_id: int) -> PlayerState:
         milestones=_milestones(repository.get_milestones(session, player_id)),
         combat_level=player.combat_level,
         quest_points=player.quest_points,
+        # Pass-throughs, with no interpretation: a stored NULL stays None so the evaluator
+        # can resolve it `unknown` (§4.5). Coercing to a default here would put the guess
+        # somewhere no leaf could tell it apart from an answer.
+        account_type=AccountType(player.account_type) if player.account_type else None,
+        members=player.members,
         gp_sensitivity=player.gp_sensitivity,
         last_sync_at=player.last_sync_at,
     )
