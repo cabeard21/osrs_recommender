@@ -65,6 +65,7 @@ from tracker.domain.types import (
     UnlockState,
 )
 from tracker.recommendations.refreshers import practice_candidates
+from tracker.sync.guidance import StoredGuidance
 from tracker.ui.staleness import humanize_age, scan_note
 from tracker.ui.view_model import (
     BandRow,
@@ -73,6 +74,8 @@ from tracker.ui.view_model import (
     DashboardView,
     FactorDiffRow,
     GoalProgressRow,
+    GuidanceStepRow,
+    GuidanceView,
     HistorySnapshotRow,
     LeafRow,
     NeededForRow,
@@ -1144,3 +1147,29 @@ def first_player_id(session: Session) -> int | None:
     answer for it rather than every page.
     """
     return session.scalar(select(Player.id).order_by(Player.id).limit(1))
+
+
+def guidance_view_of(stored: StoredGuidance, candidate_id: str) -> GuidanceView:
+    """§21's answer, as a row (§15's `read_model -> view_model -> renderer` layering).
+
+    ``cached`` is carried through rather than dropped because it is the one thing the reader
+    cannot infer from the text: identical prose means something different when it was written
+    just now and when it was written a week ago against the same levels.
+    """
+    dto = stored.dto
+    return GuidanceView(
+        candidate_id=candidate_id,
+        task_name=stored.task_name,
+        summary=dto.summary,
+        prerequisites=dto.prerequisites,
+        steps=tuple(
+            GuidanceStepRow(order=step.order, title=step.title, detail=step.detail)
+            for step in dto.steps
+        ),
+        warnings=dto.warnings,
+        uncertain=dto.uncertain,
+        estimated_session_minutes=dto.estimated_session_minutes,
+        model=dto.model,
+        generated_at=dto.generated_at,
+        cached=stored.cached,
+    )

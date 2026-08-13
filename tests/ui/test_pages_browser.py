@@ -586,3 +586,53 @@ def test_the_consequence_rows_are_separate_nodes_from_the_reason(
         phone.locator("[data-testid=recommendation-reason] [data-testid=works-toward]").count() == 0
     )
     assert phone.locator("[data-testid=works-toward]").count() >= 1
+
+
+def test_every_recommendation_offers_guidance(phone: Page, ui_base_url: str) -> None:
+    """§21's affordance sits on each entry, keyed to the candidate it explains.
+
+    Asserted in the browser because the pairing is what matters: a button that renders but
+    carries the wrong candidate would ask about the wrong task, and only the DOM says which
+    button belongs to which card.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+
+    cards = phone.locator('[data-testid="recommendation"]')
+    buttons = phone.locator('[data-testid="guidance-button"]')
+
+    assert cards.count() > 0
+    assert buttons.count() == cards.count()
+
+
+def test_the_guidance_button_does_not_shadow_the_candidate_selector(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The button carries ``data-guidance-for``, never a second ``data-candidate``.
+
+    Its own test because the failure is invisible in the rendered page and shows up only as
+    every pre-existing ``[data-candidate=...]`` locator quietly matching twice.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    first = phone.locator('[data-testid="guidance-button"]').first
+    candidate = first.get_attribute("data-guidance-for")
+
+    assert candidate
+    assert phone.locator(f'[data-candidate="{candidate}"]').count() == 1
+
+
+def test_guidance_reports_itself_unconfigured_rather_than_failing(
+    phone: Page, ui_base_url: str
+) -> None:
+    """D14 — with no provider the feature explains itself and nothing else changes.
+
+    The seeded app has no API key, which is the state most installs are in. The button still
+    appears, because a feature the user cannot discover is a feature they cannot switch on.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    phone.locator('[data-testid="guidance-button"]').first.click()
+
+    error = phone.locator('[data-testid="guidance-error"]')
+    error.first.wait_for(state="visible")
+
+    assert "not configured" in (error.first.inner_text() or "")
+    assert phone.locator('[data-testid="recommendation"]').count() > 0

@@ -21,6 +21,9 @@ dependencies = [
     "pyyaml",
     "jsonschema",
     "plotly",
+    # §21.4 — task guidance provider. Imported only by tracker/integrations/llm/, and only
+    # constructed when integrations.llm.enabled and a key resolves (D14: off changes nothing).
+    "anthropic",
 ]
 
 [project.optional-dependencies]
@@ -110,6 +113,9 @@ module = [
     "tracker.progression.*",
     "tracker.recommendations.*",
     "tracker.estimation.*",
+    # §21.2 — context assembly is pure by the same rule and held to the same bar. Nothing here
+    # reaches a ranking (D14), but everything here feeds a hash the cache depends on.
+    "tracker.guidance.*",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true
@@ -138,6 +144,10 @@ addopts = "--strict-markers --strict-config --import-mode=importlib"
 markers = [
     "golden: golden-corpus ranking judgments (§16.2)",
     "contract: cross-language payload fixtures (§12.1)",
+    # §21.4 — reserved for a manual smoke test against a real provider. Deliberately not
+    # excluded in `addopts`: no such test exists, and `--strict-markers` plus the structural
+    # guards (no provider is built without a transport or a key) keep the suite offline.
+    "llm_live: hits a real guidance provider; never run by `make test` (§21.4)",
 ]
 # `tests/golden/` is the one place a test imports another test module: the corpus loader is
 # shared with `tools/tune_weights.py`, and §16.3's whole point is that the tuner optimizes

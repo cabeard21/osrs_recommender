@@ -1854,6 +1854,11 @@ Weights are **not** optimized against exact expected ranks. Procedure:
 
 *Rationale:* §16.3 step 5's review of the golden corpus found one judgment — *"finish Desert Treasure I before grinding Magic 87 → 94"* — that **no weight vector satisfies for the right reason**. `leverage`, the factor whose job is *"this unblocks things"*, counts capability **status** flips; on an account that already has Ancients, DT1 flips none, so it scores zero there. What DT1 actually does is swap §8.1's `magic_conservative` (35k xp/hr) for `magic_bursting` (250k xp/hr), which is a fact about *another candidate's estimate* and appears nowhere in the five factors. Raising `effort_decay` to 0.8 also satisfies the judgment — by making the 113-hour grind expensive enough to fall behind — but that is a coincidence of this corpus: it would not survive a corpus whose blocked method sat behind a *short* grind, and it credits the quest for nothing it does. A sixth factor with its own authored weight was preferred to widening `leverage`'s meaning, because *"what becomes possible"* and *"what becomes cheap"* are different questions a corpus may want weighted differently, and folding them together would make the count and the ratio inseparable in the persisted `factors` (§6.10). Maximum over sum for the third time in this document, and for the reason D11 and D9 give: summation makes breadth a substitute for depth. Hours over GP because the counterfactual state hands the player the granted item, so a GP delta would restate the granting candidate's own price rather than measure an effect on anything else. §9.4, §9.7, §10.6, §16.3, A30.
 
+### D14 — Guidance is an artifact, not an input
+> §21's generated task guidance is a **terminal output**. No model-authored text or number may reach `Recommendation`, `Estimate`, `RecommendationEntry.reason`, `CapabilityState`, or any §9.4 factor. Guidance lives in its own table, is rendered by its own view, and is labelled in the UI with the model that wrote it. The engine decides *whether* and *in what order*; the model explains *how*. A guidance failure — provider down, refusal, throttle — degrades to an unavailable button and changes no ranking, no estimate and no capability state.
+
+*Rationale:* every number this application shows is traceable to authored content and a pure function over observed facts, which is what makes §9.10's "Why" line and §8.4's confidence bands mean anything. A generative model is the first component that can produce a confident, plausible, unsourced sentence, and the failure mode is not that it is occasionally wrong but that a wrong sentence is indistinguishable from a right one at the point of reading. Containing it to a leaf of the output graph keeps that risk bounded to the one paragraph the user asked for, rather than letting it silently reorder a list or move an estimate. The same reasoning forbids merging §21's `estimated_session_minutes` into §8's hours: two numbers of different provenance printed in the same place become one number of unknown provenance. §10.8's "content declares what a thing is, never how important the engine should consider it" is the same boundary drawn one layer lower, and this is its extension to a source that can author prose. §21, §15.
+
 ---
 
 # 19. Deferred Decisions
@@ -1931,3 +1936,137 @@ The gaps cluster into five kinds, and the pattern is worth noting for future rev
 | A22 | §10.7 requires referential integrity for quest and skill ids, but §10.1 gave neither a content directory to be declared in; §10.4's refresher templates likewise had no directory | §10.1 |
 | A31 | §9.10's output could say how a candidate **scored** but not what it was **for**, and for the generated skill bands it could not: §10.6 reserves `advances` for human judgment, so `tools/generate_candidates.py` authors every band with `advances: {}` and no §9.4 factor carries a goal for one. *"Train Slayer to 10"* therefore topped a PvM list explaining itself as *"quick to finish"*, while the chain that justifies it — Slayer 10 gates Desert Treasure I, which advances Ice Barrage NH — was computed nowhere. Two identities the engine already had were also being discarded: *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated | §6.10, §9.10, §15 |
 | A30 | §9.4 had **no factor for a candidate that makes another candidate cheaper or faster**. `leverage` counts capability *status* flips, so an account with Ancients already unlocked scored Desert Treasure I at zero on the one factor meant to express "this unblocks things" — while the quest is precisely what turns 113 conservative Magic hours into 16 bursting ones. No weight vector over the other five factors can express the reason; the corpus's tuning run found the shape of the gap by finding a judgment nothing on the grid satisfied for the right reason | §9.4, §9.7, §10.6, D13 |
+
+---
+
+# 21. Task Guidance
+
+## 21.1 Scope
+
+§9.10 says *what* to do next and *why* it was chosen. It does not say **how**. *"Train Slayer to
+10"* names an outcome; it does not name a master, a task list, a location, a gear setup, or the
+thing that will kill you on the way. The content corpus already carries that knowledge for skill
+training (§10, `TrainingMethod` + `MethodDetail`) and the database already carries the account
+state, so the material for a good answer is in the process — it is simply never assembled or
+addressed to the player.
+
+Task guidance closes that gap by assembling a task-scoped view of the account and asking a language
+model to write execution steps for **one already-chosen candidate**.
+
+Guidance is strictly downstream. It never ranks, never estimates, never writes §9.5's "Why" line,
+and never touches capability state — see **D14**. Concretely, the feature owns exactly one
+question: *given that the engine has chosen this task and given what we know about this account,
+what do I actually do?*
+
+The feature is **optional and off by default**. An install with no provider configured must start,
+sync, rank and render exactly as one without the feature; the only visible difference is that the
+guidance affordance reports itself unavailable. This is not a graceful-degradation nicety but a
+consequence of D14: if a missing provider could change anything else, guidance would be an input.
+
+## 21.2 Context assembly
+
+Context assembly is a **pure function** in the sense of §16.1 — no database, no network, no
+`datetime.now()` — taking a `PlayerState` (§6), the chosen `Recommendation` (§9.10), the content
+corpus (§10) and the active roadmap selection (§6.12), and returning a frozen `TaskContext`. It
+lives in its own package for the reason §14 gives for `tracker/domain/`: it belongs to neither the
+engine nor the database, and it must not be reachable from the ranking path, because §10.5's rule
+that `MethodDetail` cannot influence a recommendation would otherwise acquire a new way to break.
+
+**Relevance, not completeness.** The context is a *slice*, selected by walking the candidate's
+`requires`, `completion` and `grants_facts` trees (§10.2) and collecting the leaves:
+
+* **Skills** named by a `skill` leaf, or trained by an included method — never all twenty-three. Each
+  carries both the observed level and the leaf's target, because *87 → 94* is the shape of the task
+  and *87* alone is not.
+* **Quests and unlocks** named by those trees, plus every entry in the recommendation's blocker list.
+* **Training methods** from the corpus, filtered to the trained skill and to level ranges
+  overlapping §8's estimate bands, bounded in number, with the band-selected method marked as such.
+  This is the grounding: the model is asked to prefer methods it was given, by the names it was
+  given, and to mark anything else as uncertain.
+* **The engine's own output**, carried verbatim: §9.5's reason, §9.10's consequences, §8's estimate
+  and confidence, and the blocker list.
+
+**Three-valued facts stay three-valued.** §4.5's rule and D8's reasoning apply unchanged at the
+prompt boundary: an unobserved `account_type` renders as *unknown*, never as *main*; an unobserved
+`members` renders as *unknown*, never as *no*; and unobserved liquid GP renders as *nobody has
+looked*, never as *zero*. A prompt that collapses these is how an ironman gets told to buy a
+Voidwaker — the same class of error D8 removed from capability state, reintroduced one layer out.
+
+The rendered context is **deterministic**: fixed ordering, fixed formatting, no clock reads beyond
+the explicitly-passed observation timestamps. §21.5's cache key depends on this.
+
+## 21.3 Prompt contract
+
+The prompt has exactly two parts, and the split is load-bearing.
+
+1. A **stable** instruction block: the advisor's role and scope, the shape of the answer, and the
+   grounding rules — prefer supplied methods and name them as supplied; do not invent items, rates,
+   drop chances or prices; anything drawn from outside the supplied context is declared uncertain;
+   *unknown* means nobody looked, so say so rather than assuming either way; do not restate the
+   engine's hours or GP as though independently measured; the engine chose this task, so answer
+   *how*, not *whether*.
+2. The **volatile** rendered `TaskContext` from §21.2.
+
+Stable first, volatile second, with the cache breakpoint between them. Provider prompt caches are
+prefix matches, so a single interpolated timestamp or player name in part 1 silently defeats
+caching for every request the feature will ever make. Part 1 is a module constant for that reason,
+and it is tested to contain nothing account-specific.
+
+The response is **structured**, not free prose: a summary, prerequisites, ordered steps, warnings,
+an optional session-length suggestion, and an explicit list of things the model was unsure about.
+Structure is what lets §15's honesty discipline survive contact with generated text — the interface
+can mark a hedge *as* a hedge instead of burying it in a paragraph, and *"this will get you killed
+in the Wilderness"* and *"this method may no longer exist"* stay the different sentences they are.
+
+## 21.4 Provider integration
+
+The provider is addressed through a narrow interface — one method, taking a prompt and returning a
+guidance object, plus provider-neutral failure types — so the concrete vendor is one module and one
+configuration value, not an assumption spread through the application. Anthropic is the only
+implementation at v1.
+
+Failures are classified into three kinds the rest of the system can act on: **unavailable**
+(network, server error, breaker open), **rate-limited**, and **refused** (the provider answered and
+declined). §7.5's `CircuitBreaker` is reused so a sustained outage degrades to *stop asking*;
+§7.5's retry schedule is **not** layered on top, because provider SDKs already retry and doubling
+the schedules would turn one click into nine requests. A refusal counts as a successful call for
+breaker purposes — the provider was reachable.
+
+Credentials are configuration (§11), resolved from `config.yaml` or the environment. The client is
+constructed only when the feature is enabled *and* a key resolves; otherwise the application holds
+no client at all, which is what makes "off by default" a structural property rather than a flag
+check.
+
+## 21.5 Persistence
+
+Guidance is stored, keyed by a hash of the exact prompt that produced it, alongside the schema
+version and the model identity.
+
+**The hash is the invalidator; the TTL is only a backstop.** Advice stops being right when the
+account moves, not when a clock says so — a level-up can invalidate it in a minute, and an
+untouched account's advice is still good in a month. Since §21.2's rendering is deterministic and
+covers precisely the facts the advice depends on, a hash mismatch *is* the event "something the
+advice depended on changed". The TTL exists only for the case the hash cannot see: an edit to the
+instruction block or the corpus that leaves the rendered context identical.
+
+Storing rather than caching in memory follows §6.10's precedent, where `reason`, `factors` and
+`bands` are persisted so a rendered claim cannot drift from the run that produced it. It also
+means a restart does not silently re-bill the user for an answer they already have.
+
+Retention is bounded per task, in the same manner as §6.10's snapshot retention: pruned on write,
+no background job.
+
+## 21.6 Cost control
+
+Every guidance request costs real money, and the trigger is a button a user can press repeatedly.
+Four bounds, in the order they are checked:
+
+1. **Cache first, before any throttle.** A page reload or a second look at the same advice must
+   never be rate-limited; it is not a new request.
+2. **Single-flight**, as §7.4's refresher does — a request while one is in flight is refused, not
+   queued.
+3. **Minimum interval** between calls, mirroring §7.5's manual-refresh interval.
+4. **A daily ceiling**, counted from the stored notes themselves so it survives a restart.
+
+Exceeding a bound is an ordinary, explainable refusal surfaced in the UI — never a silent wait and
+never a partial answer.

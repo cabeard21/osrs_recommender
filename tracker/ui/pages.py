@@ -24,15 +24,23 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
 from fastapi import FastAPI
-from nicegui import ui
+from nicegui import run, ui
 from sqlalchemy.orm import Session, sessionmaker
 
-from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR, SETTINGS_ATTR
+from tracker.api.deps import (
+    CONTENT_ATTR,
+    GUIDANCE_SERVICE_ATTR,
+    SESSION_FACTORY_ATTR,
+    SETTINGS_ATTR,
+)
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.domain.types import AccountType, GpSensitivity
+from tracker.integrations.llm import LlmRefused, LlmUnavailable
+from tracker.sync.guidance import GuidanceNotFound, GuidanceThrottled
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
+from tracker.ui import guidance as guidance_view
 from tracker.ui import history as history_view
 from tracker.ui import practice as practice_view
 from tracker.ui import read_model
@@ -43,6 +51,8 @@ from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
 from tracker.ui.shell import empty_state, page
 from tracker.ui.view_model import (
+    GUIDANCE_DISABLED,
+    GUIDANCE_UNAVAILABLE,
     LeafRow,
     PracticeGroupRow,
     RoadmapSelectorModel,
@@ -52,6 +62,13 @@ from tracker.ui.view_model import (
 #: Shown by every view when no player row exists. §15's views all answer questions about an
 #: account, and before the first sync there is no account — which is a state to explain, not
 #: an empty list to render.
+#: Shown when the provider answered and declined. Its own message rather than the
+#: unavailable one: a retry cannot fix a refusal, and saying "try again" would be false.
+GUIDANCE_REFUSED = (
+    "The guidance provider declined to answer this one. The recommendation and its "
+    "estimate are unaffected."
+)
+
 NO_PLAYER = (
     "No account yet. Start RuneLite with the companion plugin and open your bank; "
     "the first sync creates it."
@@ -187,7 +204,7 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             skills_view.render(skill_rows)
 
     @ui.page("/recommendations")
-    def recommendations_page() -> None:
+    async def recommendations_page() -> None:
         # The early return lives below ``with page(...)``, not inside the session block. A
         # ``return`` taken before the frame opens renders an empty document, so the one
         # case that most needs an explanation — no account yet — would be the one case that
@@ -209,7 +226,54 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
-            recommendations_view.render(rows, blocked)
+
+            async def show_guidance(candidate_id: str, *, player_id: int = player_id) -> None:
+                """§21's affordance: ask how, in a dialog, without leaving the list.
+
+                Opens its own session by way of the service, exactly as ``attest`` and
+                ``choose`` do — the page's read-close-render pass is finished by the time
+                anything here runs, and holding that session open across a network call
+                would be a transaction held open for the length of a model's answer.
+                """
+                service = getattr(app.state, GUIDANCE_SERVICE_ATTR, None)
+                with ui.dialog() as dialog, ui.card().classes("max-w-xl"):
+                    if service is None or not service.enabled:
+                        guidance_view.render_error(GUIDANCE_DISABLED)
+                        dialog.open()
+                        return
+                    spinner = ui.spinner()
+                    dialog.open()
+                    try:
+                        # `run.io_bound` keeps the blocking provider call off the event loop
+                        # that is also serving /api/sync in this same process (§5). Without
+                        # it, one click freezes every other tab and the RuneLite plugin.
+                        stored = await run.io_bound(service.guidance_for, player_id, candidate_id)
+                    except GuidanceThrottled as declined:
+                        spinner.delete()
+                        guidance_view.render_error(str(declined))
+                        return
+                    except LlmRefused:
+                        spinner.delete()
+                        guidance_view.render_error(GUIDANCE_REFUSED)
+                        return
+                    except LlmUnavailable:
+                        spinner.delete()
+                        guidance_view.render_error(GUIDANCE_UNAVAILABLE)
+                        return
+                    except GuidanceNotFound as missing:
+                        spinner.delete()
+                        guidance_view.render_error(str(missing))
+                        return
+                    spinner.delete()
+                    if stored is None:
+                        # NiceGUI hands back `None` when the browser disconnected while the
+                        # call was in flight. The note is already stored either way, so the
+                        # next click is a cache hit — there is nothing to draw and nothing
+                        # to apologise for.
+                        return
+                    guidance_view.render_dialog(read_model.guidance_view_of(stored, candidate_id))
+
+            recommendations_view.render(rows, blocked, on_guidance=show_guidance)
 
     @ui.page("/practice")
     def practice_page() -> None:

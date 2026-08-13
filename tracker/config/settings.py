@@ -23,10 +23,10 @@ from __future__ import annotations
 import ipaddress
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -74,9 +74,64 @@ class WiseOldManSettings(BaseModel):
     user_agent: str = "osrs-pvp-progression-tracker/0.1 (private local progression app)"
 
 
+class LlmSettings(BaseModel):
+    """Task guidance provider configuration (§21.4).
+
+    Disabled by default, and the default is load-bearing rather than polite: D14 makes
+    guidance a terminal output, so an install that has never been given a key must start,
+    sync, rank and render exactly as one that has. Nothing here can reach a ranking.
+
+    ``provider`` is the vendor seam. The application talks to a narrow protocol
+    (``tracker.integrations.llm.types.GuidanceProvider``); this field selects which
+    implementation satisfies it. Widening the ``Literal`` and adding a branch to
+    ``build_provider`` is the whole cost of a second vendor.
+    """
+
+    enabled: bool = False
+
+    provider: Literal["anthropic"] = "anthropic"
+
+    model: str = "claude-opus-5"
+    base_url: str | None = None
+    """Override the provider's own default endpoint. ``None`` uses the SDK default."""
+
+    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    """How hard the model works. Not every provider has this knob; those that don't ignore it."""
+
+    max_tokens: int = Field(default=8000, gt=0)
+    """Caps reasoning *and* answer together, which is why this is thousands, not hundreds."""
+
+    timeout_seconds: float = Field(default=120.0, gt=0)
+    max_retries: int = Field(default=2, ge=0)
+    """Retries are the provider SDK's job. §7.5's schedule is deliberately **not** layered
+    on top — doubling the two would turn one button press into nine requests."""
+
+    api_key: SecretStr | None = None
+    """Read from ``config.yaml``, which already holds ``api_token`` (§11.2) and is gitignored.
+    ``SecretStr`` so a stray repr or log line cannot print it. Unset falls back to
+    ``api_key_env_var``; unset *and* unset in the environment leaves the provider unbuilt."""
+
+    api_key_env_var: str = "ANTHROPIC_API_KEY"
+
+    guidance_ttl_hours: int = Field(default=168, gt=0)
+    """Backstop only. §21.5: the context hash is the real invalidator — advice goes wrong when
+    the account moves, not when a clock says so. This catches the case the hash cannot see,
+    where the corpus or the instruction block changed but the rendered context did not."""
+
+    min_interval_seconds: int = Field(default=30, ge=0)
+    """Mirrors ``PricesSettings.manual_refresh_min_interval_seconds`` (§21.6)."""
+
+    max_calls_per_day: int = Field(default=50, ge=0)
+    """Counted from the stored notes themselves, so a restart does not reset the ceiling."""
+
+    keep_notes_per_candidate: int = Field(default=3, ge=1)
+    """Retention per task, pruned on write — §6.10's snapshot-retention shape, no background job."""
+
+
 class IntegrationsSettings(BaseModel):
     prices: PricesSettings = Field(default_factory=PricesSettings)
     wise_old_man: WiseOldManSettings = Field(default_factory=WiseOldManSettings)
+    llm: LlmSettings = Field(default_factory=LlmSettings)
 
 
 class _YamlSettingsSource(PydanticBaseSettingsSource):

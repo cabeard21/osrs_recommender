@@ -27,7 +27,13 @@ import pytest
 import tracker
 
 #: The packages §16.1 requires to be pure.
-PURE_PACKAGES = frozenset({"progression", "recommendations", "estimation", "domain"})
+#:
+#: ``guidance`` joins them for a reason §16.1 does not itself give. §21.2's context assembly
+#: is not on the ranking path and could in principle read anything; the rule it must not
+#: break is §10.5's — ``MethodDetail`` is descriptive content no recommendation may consult —
+#: and the cheapest way to keep that true is to make the module that consults it heavily
+#: incapable of reaching a session. D14 is the same boundary named from the output side.
+PURE_PACKAGES = frozenset({"progression", "recommendations", "estimation", "domain", "guidance"})
 
 #: Persistence, transport, and the two libraries that provide them. A module reaching for
 #: any of these is either querying or fetching, and neither belongs in a pure function.

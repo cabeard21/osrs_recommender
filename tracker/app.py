@@ -21,6 +21,7 @@ corpus edit take effect halfway through a pipeline run.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 
 import uvicorn
@@ -28,12 +29,19 @@ from fastapi import FastAPI
 from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.api.app import create_app as create_api_app
-from tracker.api.deps import CONTENT_ATTR, PRICES_CLIENT_ATTR
+from tracker.api.deps import (
+    CONTENT_ATTR,
+    GUIDANCE_SERVICE_ATTR,
+    LLM_PROVIDER_ATTR,
+    PRICES_CLIENT_ATTR,
+)
 from tracker.config.settings import Settings, load_settings
 from tracker.content.loader import Content, load_content
 from tracker.db.session import build_engine, build_session_factory
+from tracker.integrations.llm import GuidanceProvider, build_provider
 from tracker.integrations.prices.client import PricesClient
 from tracker.integrations.wise_old_man.client import WiseOldManClient
+from tracker.sync.guidance import GuidanceService
 from tracker.sync.scheduler import RefreshScheduler
 from tracker.sync.worker import SingleFlightRefresher
 
@@ -44,6 +52,7 @@ def create_app(
     session_factory: sessionmaker[Session] | None = None,
     content: Content | None = None,
     prices_client: PricesClient | None = None,
+    guidance_provider: GuidanceProvider | None = None,
     mount_ui: bool = True,
     start_scheduler: bool = False,
 ) -> FastAPI:
@@ -72,6 +81,7 @@ def create_app(
         else load_content(resolved.content_dir, profile_path=resolved.scoring_profile_path),
     )
     setattr(app.state, PRICES_CLIENT_ATTR, prices_client)
+    _attach_guidance(app, resolved, factory, getattr(app.state, CONTENT_ATTR), guidance_provider)
 
     if mount_ui:
         _mount_ui(app, resolved)
@@ -80,6 +90,51 @@ def create_app(
         _attach_scheduler(app, resolved, factory, getattr(app.state, CONTENT_ATTR))
 
     return app
+
+
+def _resolve_api_key(settings: Settings) -> str | None:
+    """§21.4's credential, from ``config.yaml`` or the environment.
+
+    Resolved here rather than inside :class:`~tracker.config.settings.Settings` so that
+    ``Settings`` stays a pure data object with no ambient reads. The precedence is
+    config-then-environment because ``config.yaml`` already holds the app's one other secret
+    (§11.2) and someone who put the key there meant it.
+
+    ``None`` is a supported outcome, not a failure: the provider simply is not built, and
+    D14 makes that indistinguishable from the feature being switched off.
+    """
+    llm = settings.integrations.llm
+    if llm.api_key is not None:
+        secret = llm.api_key.get_secret_value()
+        if secret:
+            return secret
+    return os.environ.get(llm.api_key_env_var) or None
+
+
+def _attach_guidance(
+    app: FastAPI,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+    content: Content,
+    provider: GuidanceProvider | None,
+) -> None:
+    """Put §21's provider and service on ``app.state`` — or leave them ``None``.
+
+    An injected ``provider`` is used as given, which is how a test drives the whole feature
+    over a mock transport. Otherwise one is built only when the feature is enabled *and* a
+    key resolves, so **no test can construct a live client by accident**: the default is
+    disabled, and a disabled feature has no object to call.
+    """
+    resolved = provider
+    if resolved is None:
+        resolved = build_provider(settings.integrations.llm, api_key=_resolve_api_key(settings))
+
+    setattr(app.state, LLM_PROVIDER_ATTR, resolved)
+    setattr(
+        app.state,
+        GUIDANCE_SERVICE_ATTR,
+        GuidanceService(session_factory, content, settings, provider=resolved),
+    )
 
 
 def _attach_scheduler(

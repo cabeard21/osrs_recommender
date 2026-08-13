@@ -36,3 +36,19 @@ integrations:
     user_agent: >-
       osrs-pvp-progression-tracker/0.1
       (private local progression app; contact: github.com/example/osrs-tracker)
+
+  # §21 — task guidance ("How do I do this?" on a recommendation). Off by default, and D14
+  # means off changes nothing else: no ranking, estimate or capability state depends on it.
+  llm:
+    enabled: false
+    provider: anthropic
+    model: claude-opus-5
+    effort: medium
+    max_tokens: 8000
+    # §21.6 — every press costs money and the button is right there.
+    guidance_ttl_hours: 168
+    min_interval_seconds: 30
+    max_calls_per_day: 50
+    # The key is left unset on purpose. Export ANTHROPIC_API_KEY instead and this file stays
+    # single-secret; set it here only if you would rather keep both in one gitignored place.
+    # api_key: sk-ant-REPLACE_ME
