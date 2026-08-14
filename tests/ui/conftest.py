@@ -18,6 +18,7 @@ which is why it is deliberately a *worst case* account rather than a tidy one.
 
 from __future__ import annotations
 
+import os
 import socket
 import threading
 from collections.abc import Iterator
@@ -31,7 +32,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.app import create_app
-from tracker.config.settings import Settings
+from tracker.config.settings import CONFIG_FILE_ENV_VAR, Settings
 from tracker.content.loader import Content, load_content
 from tracker.db.enums import RecommendationCandidateKind
 from tracker.db.models import (
@@ -57,6 +58,7 @@ from tracker.domain.types import (
     Status,
     UnlockState,
 )
+from tracker.integrations.llm.types import AdvisorTurn, ToolTraceEntry
 
 #: A fixed clock, aware UTC. The staleness copy is a function of now (§6.5) and "3 weeks
 #: ago" is not assertable against a moving one.
@@ -385,6 +387,33 @@ def seed(session: Session) -> int:
     return player_id
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _ignore_the_developers_config(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[None]:
+    """Point ``Settings`` at a file that does not exist, for the whole UI session.
+
+    ``Settings()`` layers ``config.yaml`` from the working directory beneath its constructor
+    arguments, so on a machine that has actually configured §21 or §22 — which is to say, on
+    the machine of anyone working on those features — the app under test comes up with a live
+    provider. The "reports itself unconfigured" assertions then fail, and they fail *only*
+    there: in CI, where no ``config.yaml`` exists, they pass.
+
+    Session-scoped and autouse because the ``app`` fixture builds ``Settings`` once, before any
+    individual test runs; a function-scoped fixture would be too late to matter.
+    """
+    absent = tmp_path_factory.mktemp("config") / "absent.yaml"
+    previous = os.environ.get(CONFIG_FILE_ENV_VAR)
+    os.environ[CONFIG_FILE_ENV_VAR] = str(absent)
+    try:
+        yield
+    finally:
+        if previous is None:
+            del os.environ[CONFIG_FILE_ENV_VAR]
+        else:
+            os.environ[CONFIG_FILE_ENV_VAR] = previous
+
+
 @pytest.fixture(scope="session")
 def now() -> datetime:
     return NOW
@@ -428,11 +457,75 @@ def session(session_factory: sessionmaker[Session], player_id: int) -> Iterator[
         yield opened
 
 
+class ScriptedAdvisor:
+    """A §22.5 provider that answers without a network.
+
+    Injected rather than mocked at the transport, because what the browser tests are about is
+    the *page* — that a question renders, that a hedge is drawn apart from the prose, that a
+    failure lands in the conversation. Driving those through a scripted HTTP layer would add a
+    second thing that can break without adding a second thing worth asserting.
+
+    ``failure`` makes the next turn raise, which is how the error paths are reached: each of
+    §21.4's three kinds renders its own sentence, and a page that collapsed them would be
+    telling someone to retry something that will never succeed.
+    """
+
+    def __init__(self) -> None:
+        self.failure: Exception | None = None
+        self.answer = "Bring a whip and food."
+        self.uncertain: tuple[str, ...] = ("crocodile spawns are from my own knowledge",)
+        self.tool_trace: tuple[ToolTraceEntry, ...] = (
+            ToolTraceEntry(name="list_training_methods", arguments={}, result_chars=120),
+        )
+
+    @property
+    def model(self) -> str:
+        return "scripted-advisor"
+
+    def converse(self, prompt, tools, execute, *, max_iterations, max_tool_calls):  # type: ignore[no-untyped-def]
+        if self.failure is not None:
+            failure, self.failure = self.failure, None
+            raise failure
+        return AdvisorTurn(
+            answer=self.answer,
+            uncertain=self.uncertain,
+            tool_trace=self.tool_trace,
+            model=self.model,
+            generated_at=NOW,
+            stop_reason="end_turn",
+        )
+
+    def close(self) -> None:
+        return None
+
+
 @pytest.fixture(scope="session")
-def app(session_factory: sessionmaker[Session], content: Content, player_id: int) -> FastAPI:
+def advisor() -> ScriptedAdvisor:
+    return ScriptedAdvisor()
+
+
+@pytest.fixture(scope="session")
+def app(
+    session_factory: sessionmaker[Session],
+    content: Content,
+    player_id: int,
+    advisor: ScriptedAdvisor,
+) -> FastAPI:
     """The real application with the UI mounted. Exactly one per pytest process."""
-    settings = Settings(bind_address="127.0.0.1", api_token="ui-test-token-1234567890")
-    return create_app(settings, session_factory=session_factory, content=content, mount_ui=True)
+    settings = Settings(
+        bind_address="127.0.0.1",
+        api_token="ui-test-token-1234567890",
+        # The advisor's own throttles would otherwise refuse the second browser test to ask a
+        # question — §22.7's interval is measured against a real clock this fixture does not own.
+        integrations={"llm": {"advisor": {"min_interval_seconds": 0}}},
+    )
+    return create_app(
+        settings,
+        session_factory=session_factory,
+        content=content,
+        advisor_provider=advisor,  # type: ignore[arg-type]
+        mount_ui=True,
+    )
 
 
 @pytest.fixture(scope="session")

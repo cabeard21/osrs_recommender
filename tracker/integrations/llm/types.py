@@ -17,10 +17,12 @@ that will never succeed, which is worse than the failure itself.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
+from tracker.advisor.prompt import AdvisorPrompt
 from tracker.guidance.prompt import GuidancePrompt
 
 
@@ -111,6 +113,127 @@ class GuidanceProvider(Protocol):
 
     def generate(self, prompt: GuidancePrompt) -> GuidanceDTO:
         """Ask for guidance, or raise one of the three failures above."""
+
+    def close(self) -> None:
+        """Release the underlying connection pool."""
+
+
+# ---------------------------------------------------------------------------
+# §22.5 — the advisor's protocol, sharing this module's failure taxonomy
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ToolSpec:
+    """One tool, described in terms no vendor owns (§22.4).
+
+    ``input_schema`` is plain JSON Schema, which every plausible provider accepts in some
+    wrapper; the adapter is the only thing that knows the wire key names. Keeping it a
+    ``Mapping`` rather than a Pydantic model is deliberate — these are declarations, not
+    validated payloads, and the validation that matters happens on the *call* in
+    :mod:`tracker.advisor.dispatch`.
+    """
+
+    name: str
+    description: str
+    input_schema: Mapping[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class ToolCall:
+    """One request from the model. ``call_id`` is the provider's, and is echoed back verbatim."""
+
+    call_id: str
+    name: str
+    arguments: Mapping[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class ToolResult:
+    """One answer to a :class:`ToolCall`.
+
+    ``is_error`` is not an exception channel — it is a *conversational* one. A malformed
+    argument or an unknown id is something the model can see and correct on the next iteration,
+    and raising instead would convert a recoverable mistake into a failed turn (§22.4).
+    """
+
+    call_id: str
+    content: str
+    is_error: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ToolTraceEntry:
+    """What is remembered about a tool call once the turn is over.
+
+    The result itself is deliberately absent — **D16**. What survives is enough to tell the user
+    which lookups an answer rests on (§22.8) and enough to audit cost, and nothing that could be
+    re-sent as though it were still true.
+    """
+
+    name: str
+    arguments: Mapping[str, Any]
+    result_chars: int
+    is_error: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class AdvisorTurn:
+    """One completed answer, however many model round trips it took.
+
+    ``uncertain`` is separate from ``answer`` for the reason :class:`GuidanceDTO` separates
+    ``uncertain`` from ``warnings``: §15 requires the interface to mark a hedge *as* a hedge,
+    which it cannot do if the hedge arrives as a sentence inside a paragraph.
+
+    ``iterations`` and ``tool_trace`` are carried because a turn's cost is not visible from the
+    token counts alone — six iterations at one tool each is a different bill from one iteration,
+    and only this DTO knows which happened.
+    """
+
+    answer: str
+    uncertain: tuple[str, ...] = ()
+    tool_trace: tuple[ToolTraceEntry, ...] = ()
+    model: str = ""
+    generated_at: datetime | None = None
+    stop_reason: str = ""
+    iterations: int = 1
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
+
+    @property
+    def truncated(self) -> bool:
+        """The provider stopped on its output ceiling rather than because it was finished."""
+        return self.stop_reason == "max_tokens"
+
+
+@runtime_checkable
+class AdvisorProvider(Protocol):
+    """What §22.5 requires of a vendor adapter.
+
+    ``execute`` is passed in rather than being a method on the provider, and the loop runs
+    inside the implementation rather than in the caller. Both follow from the same fact: the
+    transcript a tool loop maintains is vendor-shaped, and hoisting it into
+    :mod:`tracker.sync.advisor` would make the orchestration layer aware of provider message
+    blocks — the exact coupling this module exists to prevent. The bounds come in as arguments
+    and the whole trace comes back in the DTO, so the *policy* still belongs to the service.
+    """
+
+    @property
+    def model(self) -> str:
+        """The model identity to record on the message, for provenance (§15, §22.8)."""
+
+    def converse(
+        self,
+        prompt: AdvisorPrompt,
+        tools: Sequence[ToolSpec],
+        execute: Callable[[ToolCall], ToolResult],
+        *,
+        max_iterations: int,
+        max_tool_calls: int,
+    ) -> AdvisorTurn:
+        """Answer one question, or raise one of this module's three failures."""
 
     def close(self) -> None:
         """Release the underlying connection pool."""

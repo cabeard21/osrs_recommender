@@ -30,8 +30,10 @@ from sqlalchemy.orm import Session
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.content.requirements import iter_leaves
-from tracker.db.enums import RecommendationCandidateKind
+from tracker.db import advisor as advisor_repo
+from tracker.db.enums import AdvisorRole, RecommendationCandidateKind
 from tracker.db.models import (
+    AdvisorMessage,
     CapabilityState,
     ContainerScan,
     ItemPrice,
@@ -65,9 +67,13 @@ from tracker.domain.types import (
     UnlockState,
 )
 from tracker.recommendations.refreshers import practice_candidates
+from tracker.sync.advisor import AdvisorReply
 from tracker.sync.guidance import StoredGuidance
 from tracker.ui.staleness import humanize_age, scan_note
 from tracker.ui.view_model import (
+    AdvisorConversationRow,
+    AdvisorMessageRow,
+    AdvisorThreadView,
     BandRow,
     BlockedRecommendationRow,
     CapabilityRow,
@@ -1172,4 +1178,96 @@ def guidance_view_of(stored: StoredGuidance, candidate_id: str) -> GuidanceView:
         model=dto.model,
         generated_at=dto.generated_at,
         cached=stored.cached,
+    )
+
+
+# ---------------------------------------------------------------------------
+# §22 — the general advisor
+# ---------------------------------------------------------------------------
+
+
+def advisor_thread(
+    session: Session,
+    player_id: int,
+    conversation_id: int | None = None,
+    *,
+    limit: int = 20,
+) -> AdvisorThreadView:
+    """The conversation to show, plus the threads beside it.
+
+    An explicit ``conversation_id`` that does not exist falls back to the latest rather than
+    raising: this is the *read* path, reached by a page load, and a stale bookmark should show
+    a conversation rather than an error. The write path in :mod:`tracker.sync.advisor` is
+    stricter for the opposite reason — there, silently answering into a different thread would
+    put the user's words somewhere they did not intend.
+    """
+    conversation = None
+    if conversation_id is not None:
+        conversation = advisor_repo.get_conversation(session, player_id, conversation_id)
+    if conversation is None:
+        conversation = advisor_repo.latest_conversation(session, player_id)
+
+    rows = tuple(
+        AdvisorConversationRow(
+            conversation_id=row.id,
+            title=row.title,
+            updated_at=row.updated_at,
+            current=conversation is not None and row.id == conversation.id,
+        )
+        for row in advisor_repo.list_conversations(session, player_id, limit=limit)
+    )
+    if conversation is None:
+        return AdvisorThreadView(conversation_id=None, title="", conversations=rows)
+
+    return AdvisorThreadView(
+        conversation_id=conversation.id,
+        title=conversation.title,
+        messages=tuple(
+            _advisor_message_row(message, current_hash=conversation.digest_hash)
+            for message in advisor_repo.thread(session, conversation.id)
+        ),
+        conversations=rows,
+    )
+
+
+def _advisor_message_row(message: AdvisorMessage, *, current_hash: str) -> AdvisorMessageRow:
+    """One stored row, as a view row.
+
+    ``stale_digest`` compares the message's own hash against the conversation's current one, so
+    the interface marks *the answers that predate a sync* rather than the whole thread — §15's
+    staleness discipline at the resolution the fact actually has.
+    """
+    return AdvisorMessageRow(
+        role="advisor" if message.role is AdvisorRole.ASSISTANT else "you",
+        text=message.content,
+        uncertain=tuple(message.uncertain or ()),
+        model=message.model or "",
+        generated_at=message.created_at,
+        tool_names=tuple(
+            str(entry.get("name", "")) for entry in (message.tool_trace or ()) if entry.get("name")
+        ),
+        truncated=message.stop_reason == "max_tokens",
+        stale_digest=(
+            message.role is AdvisorRole.ASSISTANT
+            and message.digest_hash is not None
+            and message.digest_hash != current_hash
+        ),
+    )
+
+
+def advisor_reply_row(reply: AdvisorReply) -> AdvisorMessageRow:
+    """The answer just produced, without a second read of the database.
+
+    A freshly written answer is never stale by construction — it was written against the
+    snapshot the conversation now stores — so ``stale_digest`` is false rather than recomputed.
+    """
+    turn = reply.turn
+    return AdvisorMessageRow(
+        role="advisor",
+        text=turn.answer,
+        uncertain=turn.uncertain,
+        model=turn.model,
+        generated_at=turn.generated_at,
+        tool_names=tuple(entry.name for entry in turn.tool_trace),
+        truncated=turn.truncated,
     )

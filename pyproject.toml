@@ -116,6 +116,10 @@ module = [
     # §21.2 — context assembly is pure by the same rule and held to the same bar. Nothing here
     # reaches a ranking (D14), but everything here feeds a hash the cache depends on.
     "tracker.guidance.*",
+    # §22.2 — the advisor's digest and tool dispatch are pure for a stronger reason than the
+    # rest: D15 makes purity the *enforcement* of "tools cannot write", not merely its style.
+    # A session reaching this package would be a bug the type checker should catch first.
+    "tracker.advisor.*",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true

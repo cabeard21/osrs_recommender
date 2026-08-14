@@ -30,6 +30,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.api.app import create_app as create_api_app
 from tracker.api.deps import (
+    ADVISOR_PROVIDER_ATTR,
+    ADVISOR_SERVICE_ATTR,
     CONTENT_ATTR,
     GUIDANCE_SERVICE_ATTR,
     LLM_PROVIDER_ATTR,
@@ -38,9 +40,11 @@ from tracker.api.deps import (
 from tracker.config.settings import Settings, load_settings
 from tracker.content.loader import Content, load_content
 from tracker.db.session import build_engine, build_session_factory
-from tracker.integrations.llm import GuidanceProvider, build_provider
+from tracker.integrations.llm.factory import build_advisor_provider, build_provider
+from tracker.integrations.llm.types import AdvisorProvider, GuidanceProvider
 from tracker.integrations.prices.client import PricesClient
 from tracker.integrations.wise_old_man.client import WiseOldManClient
+from tracker.sync.advisor import AdvisorService
 from tracker.sync.guidance import GuidanceService
 from tracker.sync.scheduler import RefreshScheduler
 from tracker.sync.worker import SingleFlightRefresher
@@ -53,6 +57,7 @@ def create_app(
     content: Content | None = None,
     prices_client: PricesClient | None = None,
     guidance_provider: GuidanceProvider | None = None,
+    advisor_provider: AdvisorProvider | None = None,
     mount_ui: bool = True,
     start_scheduler: bool = False,
 ) -> FastAPI:
@@ -82,6 +87,7 @@ def create_app(
     )
     setattr(app.state, PRICES_CLIENT_ATTR, prices_client)
     _attach_guidance(app, resolved, factory, getattr(app.state, CONTENT_ATTR), guidance_provider)
+    _attach_advisor(app, resolved, factory, getattr(app.state, CONTENT_ATTR), advisor_provider)
 
     if mount_ui:
         _mount_ui(app, resolved)
@@ -134,6 +140,39 @@ def _attach_guidance(
         app.state,
         GUIDANCE_SERVICE_ATTR,
         GuidanceService(session_factory, content, settings, provider=resolved),
+    )
+
+
+def _attach_advisor(
+    app: FastAPI,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+    content: Content,
+    provider: AdvisorProvider | None,
+) -> None:
+    """Put §22's provider and service on ``app.state`` — or leave them ``None``.
+
+    Mirrors :func:`_attach_guidance`, with one difference that matters: the credential is
+    shared but the *switch* is not. :func:`build_advisor_provider` requires ``llm.enabled``,
+    ``llm.advisor.enabled`` and a key, so an install running task guidance does not silently
+    acquire a chat surface with a different cost profile (§22.1).
+
+    The two features deliberately do **not** share a circuit breaker instance here, because
+    each provider defaults its own; passing one through would be a small optimisation and a
+    larger coupling, and §22.5 permits either. What they must not share is a budget, and they
+    do not — §22.7's ceilings are counted from the advisor's own table.
+    """
+    resolved = provider
+    if resolved is None:
+        resolved = build_advisor_provider(
+            settings.integrations.llm, api_key=_resolve_api_key(settings)
+        )
+
+    setattr(app.state, ADVISOR_PROVIDER_ATTR, resolved)
+    setattr(
+        app.state,
+        ADVISOR_SERVICE_ATTR,
+        AdvisorService(session_factory, content, settings, provider=resolved),
     )
 
 

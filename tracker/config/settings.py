@@ -74,6 +74,51 @@ class WiseOldManSettings(BaseModel):
     user_agent: str = "osrs-pvp-progression-tracker/0.1 (private local progression app)"
 
 
+class AdvisorSettings(BaseModel):
+    """§22's general advisor. Off by default **even when** ``llm.enabled`` is true.
+
+    Two switches rather than one, and the second is not redundant: enabling §21's task guidance
+    is not consent to a chat surface with a different cost profile. A guidance note is one model
+    call; an advisor turn is one call per tool round trip plus the answer, so the same button
+    press costs several times as much. Someone who turned guidance on should not discover the
+    advisor by finding it on their bill.
+
+    Nothing here can reach a ranking — D14 and D15 both hold regardless of these values.
+    """
+
+    enabled: bool = False
+
+    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    max_tokens: int = Field(default=8000, gt=0)
+    """Caps reasoning *and* answer together, as ``LlmSettings.max_tokens`` does."""
+
+    timeout_seconds: float = Field(default=180.0, gt=0)
+    """Higher than guidance's 120: a tool-using turn is several sequential round trips."""
+
+    max_model_iterations: int = Field(default=6, ge=1)
+    """Model calls per turn (§22.4). Exhausting this returns whatever text exists."""
+
+    max_tool_calls: int = Field(default=10, ge=0)
+    """Tool calls per turn, across all iterations. Exceeding it yields error results telling
+    the model to answer with what it has — cheaper than a truncated turn, and honest."""
+
+    max_history_turns: int = Field(default=12, ge=1)
+    """Question/answer pairs replayed. The prefix is cached; the history is not, so this is
+    the term that actually grows a long conversation's cost."""
+
+    min_interval_seconds: int = Field(default=10, ge=0)
+    """Lower than §21.6's 30 because conversation is inherently interactive (§22.7)."""
+
+    max_calls_per_day: int = Field(default=60, ge=0)
+    """The advisor's **own** ceiling, counted from its own stored answers. Deliberately not
+    shared with guidance: a shared ceiling would let one conversation silently consume the
+    day's guidance budget, which the user would experience as guidance mysteriously refusing."""
+
+    keep_conversations: int = Field(default=20, ge=1)
+    keep_messages_per_conversation: int = Field(default=60, ge=2)
+    """Pruned on write in pairs, so a thread never begins with an orphaned answer (§22.6)."""
+
+
 class LlmSettings(BaseModel):
     """Task guidance provider configuration (§21.4).
 
@@ -126,6 +171,10 @@ class LlmSettings(BaseModel):
 
     keep_notes_per_candidate: int = Field(default=3, ge=1)
     """Retention per task, pruned on write — §6.10's snapshot-retention shape, no background job."""
+
+    advisor: AdvisorSettings = Field(default_factory=AdvisorSettings)
+    """§22. Shares ``model``, ``provider``, ``base_url``, the credentials and ``max_retries``
+    with guidance above; everything cost-shaped is its own (§22.7)."""
 
 
 class IntegrationsSettings(BaseModel):

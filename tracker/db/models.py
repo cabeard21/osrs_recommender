@@ -65,6 +65,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from tracker.db.enums import (
+    AdvisorRole,
     PracticeEventConfidence,
     PriceSelectionPolicy,
     PriceSourceLayer,
@@ -655,3 +656,89 @@ class GuidanceNote(Base):
     input_tokens: Mapped[int] = mapped_column(default=0)
     output_tokens: Mapped[int] = mapped_column(default=0)
     cache_read_input_tokens: Mapped[int] = mapped_column(default=0)
+
+
+# ---------------------------------------------------------------------------
+# §22.6 Advisor conversations
+# ---------------------------------------------------------------------------
+
+
+class AdvisorConversation(Base):
+    """§22.6. One thread of questions and answers.
+
+    ``digest_hash`` is the snapshot the thread was **last answered against**, not the one it
+    began with. §22.3 compares it at the start of every turn; a mismatch means a sync landed
+    between questions, and the turn sends the refreshed digest plus an operator note saying so.
+    Storing the latest rather than the original is what makes that a one-turn cost instead of a
+    permanent one.
+
+    ``model`` is stored for :class:`GuidanceNote`'s reason, one level up: a thread can outlive a
+    configuration change, and relabelling old answers with today's model would be a false claim
+    about who wrote them.
+
+    Nothing here is ever read by the engine (D14), and no tool may write to it (D15).
+    """
+
+    __tablename__ = "advisor_conversation"
+    __table_args__ = (
+        sa.Index("ix_advisor_conversation_player_updated", "player_id", "updated_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    player_id: Mapped[int] = mapped_column(sa.ForeignKey("player.id", ondelete="CASCADE"))
+    #: The first question, truncated. A thread needs a name in a list before it has a summary,
+    #: and asking a model to title it would be a second paid call for one line of chrome.
+    title: Mapped[str]
+    schema_version: Mapped[int]
+    digest_hash: Mapped[str]
+    model: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime)
+
+
+class AdvisorMessage(Base):
+    """§22.6. One question or one answer.
+
+    **``tool_trace`` holds names, arguments and result sizes — never results.** That is D16, and
+    the reason is worth restating where the column is declared: a stored tool result would grow
+    the table without bound behind a cached prefix, and would sit there inviting a future edit
+    to re-send it as though it were still true. What is kept is exactly enough to tell the user
+    which lookups an answer rests on (§22.8) and to audit what a turn cost.
+
+    ``digest_hash`` is per-message as well as per-conversation, so the interface can mark an
+    individual answer as written against a superseded snapshot rather than marking the whole
+    thread.
+
+    ``ordinal`` is unique per conversation and monotonic. A question and its answer are written
+    together or not at all (§22.6): a stored question with no answer is not a turn, and a thread
+    that begins with an orphaned answer cannot be replayed into a prompt.
+    """
+
+    __tablename__ = "advisor_message"
+    __table_args__ = (
+        sa.UniqueConstraint("conversation_id", "ordinal", name="uq_advisor_message_ordinal"),
+        sa.Index("ix_advisor_message_conversation", "conversation_id", "ordinal"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("advisor_conversation.id", ondelete="CASCADE")
+    )
+    ordinal: Mapped[int]
+    role: Mapped[AdvisorRole] = mapped_column(_enum_column(AdvisorRole))
+    content: Mapped[str]
+    #: The model's own hedges, kept apart from the prose so §15's interface can mark a hedge
+    #: *as* a hedge. ``None`` on a user message, where the concept does not apply.
+    uncertain: Mapped[list[str] | None] = mapped_column(sa.JSON, default=None)
+    tool_trace: Mapped[list[dict[str, Any]] | None] = mapped_column(sa.JSON, default=None)
+    model: Mapped[str | None] = mapped_column(default=None)
+    stop_reason: Mapped[str | None] = mapped_column(default=None)
+    digest_hash: Mapped[str | None] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    #: ``cache_read_input_tokens`` is the diagnostic one, as on :class:`GuidanceNote`: if it
+    #: stays zero across a conversation's turns, §22.3's three-layer prefix is not being reused
+    #: and every question is paying to re-send the whole account.
+    input_tokens: Mapped[int] = mapped_column(default=0)
+    output_tokens: Mapped[int] = mapped_column(default=0)
+    cache_read_input_tokens: Mapped[int] = mapped_column(default=0)
+    cache_creation_input_tokens: Mapped[int] = mapped_column(default=0)

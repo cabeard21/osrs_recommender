@@ -31,6 +31,11 @@ PRICES_CLIENT_ATTR = "prices_client"
 #: :func:`get_guidance_service`.
 LLM_PROVIDER_ATTR = "llm_provider"
 GUIDANCE_SERVICE_ATTR = "guidance_service"
+#: §22.5's provider and §22's orchestration. Separate names rather than reusing the two above,
+#: because the two features are independently switchable (§22.1): an install may legitimately
+#: hold a guidance provider and no advisor, and one pair of attributes could not express that.
+ADVISOR_PROVIDER_ATTR = "advisor_provider"
+ADVISOR_SERVICE_ATTR = "advisor_service"
 
 
 def get_settings(request: Request) -> Settings:
