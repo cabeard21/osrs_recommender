@@ -29,11 +29,28 @@ from enum import Enum
 from tracker.domain.types import PriceSelectionPolicy, PriceSourceLayer
 
 __all__ = [
+    "AdvisorRole",
     "PracticeEventConfidence",
     "PriceSelectionPolicy",
     "PriceSourceLayer",
     "RecommendationCandidateKind",
 ]
+
+
+class AdvisorRole(Enum):
+    """§22.6 — who wrote one stored conversation message.
+
+    **Two values, and the absence of a third is D16.** A tool call and a tool result are not
+    messages in a thread: they are discarded at the end of the turn that produced them and are
+    never replayed, so there is deliberately no member here to store one as. What survives of a
+    tool call is ``AdvisorMessage.tool_trace``, which is provenance rather than transcript.
+
+    Adding a ``TOOL`` member would not merely widen a type — it would make D16 expressible to
+    violate, which is the reason the enum is worth declaring rather than storing a bare string.
+    """
+
+    USER = "user"
+    ASSISTANT = "assistant"
 
 
 class PracticeEventConfidence(Enum):

@@ -19,6 +19,7 @@ from starlette.requests import Request
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.integrations.prices.client import PricesClient
+from tracker.sync.guidance import GuidanceService
 
 #: ``app.state`` attribute names. Written once here so a typo is a failure in one place
 #: rather than a silently missing attribute at request time.
@@ -26,6 +27,15 @@ SETTINGS_ATTR = "settings"
 SESSION_FACTORY_ATTR = "session_factory"
 CONTENT_ATTR = "content"
 PRICES_CLIENT_ATTR = "prices_client"
+#: §21.4's provider and §21's orchestration. Both may legitimately be absent — see
+#: :func:`get_guidance_service`.
+LLM_PROVIDER_ATTR = "llm_provider"
+GUIDANCE_SERVICE_ATTR = "guidance_service"
+#: §22.5's provider and §22's orchestration. Separate names rather than reusing the two above,
+#: because the two features are independently switchable (§22.1): an install may legitimately
+#: hold a guidance provider and no advisor, and one pair of attributes could not express that.
+ADVISOR_PROVIDER_ATTR = "advisor_provider"
+ADVISOR_SERVICE_ATTR = "advisor_service"
 
 
 def get_settings(request: Request) -> Settings:
@@ -75,6 +85,18 @@ def get_prices_client(request: Request) -> PricesClient | None:
     """
     client: PricesClient | None = getattr(request.app.state, PRICES_CLIENT_ATTR, None)
     return client
+
+
+def get_guidance_service(request: Request) -> GuidanceService | None:
+    """§21's guidance orchestration, or ``None`` when the feature is not configured.
+
+    ``None`` for the same reason :func:`get_prices_client` returns one, and with a stronger
+    guarantee behind it: D14 makes guidance a terminal output, so an app without a provider
+    ranks, estimates and renders identically to one with a provider. Callers surface the
+    absence as an unavailable affordance, never as an error.
+    """
+    service: GuidanceService | None = getattr(request.app.state, GUIDANCE_SERVICE_ATTR, None)
+    return service
 
 
 def remote_addr(request: Request) -> str | None:

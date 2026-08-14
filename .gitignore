@@ -25,3 +25,6 @@ htmlcov/
 *.egg-info/
 credentials.properties
 snapshot.json
+# Cygwin/MSYS crash dumps. A crashed shell drops these into the repo root; they are
+# machine-local debris, not a record of anything the project needs.
+*.stackdump

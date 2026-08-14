@@ -28,6 +28,8 @@ from tracker.ui.view_model import (
     NO_READINESS,
     CapabilityRow,
     GoalProgressRow,
+    GuidanceStepRow,
+    GuidanceView,
     LeafRow,
     NeededForRow,
     RoadmapOptionRow,
@@ -563,3 +565,61 @@ def test_the_renderer_is_handed_labels_it_does_not_have_to_compose() -> None:
     )
 
     assert all(row.label for row in rows)
+
+
+class TestGuidanceView:
+    """§21's rows. Each property here exists because §15 forbids composing prose in a
+    renderer — a sentence built inside a ``ui.html(...)`` call can only be checked by
+    driving a browser, which is why these are plain properties on a frozen row."""
+
+    @staticmethod
+    def _view(**overrides: object) -> GuidanceView:
+        base: dict[str, object] = {
+            "candidate_id": "train_slayer_1_to_10",
+            "task_name": "Train Slayer to 10",
+            "summary": "Take short tasks from Turael.",
+        }
+        return GuidanceView(**{**base, **overrides})  # type: ignore[arg-type]
+
+    def test_a_step_numbers_itself(self) -> None:
+        row = GuidanceStepRow(order=2, title="Ask for a task", detail="Talk to Turael.")
+
+        assert row.label == "2. Ask for a task"
+
+    def test_the_provenance_line_names_the_model(self) -> None:
+        """§15's honesty rule applied to prose the engine did not produce."""
+        view = self._view(model="claude-opus-5")
+
+        assert view.provenance_label == "Written by claude-opus-5"
+
+    def test_the_provenance_line_survives_a_missing_model_name(self) -> None:
+        """A note from a schema that predates the column still has to attribute itself."""
+        assert self._view().provenance_label == "Written by a language model"
+
+    def test_the_session_suggestion_is_labelled_as_a_suggestion(self) -> None:
+        """D14 — §8 owns the hours, so this number must not read like one of them."""
+        view = self._view(estimated_session_minutes=25)
+
+        assert view.session_label == "Suggested session: about 25 minutes"
+
+    def test_no_session_suggestion_renders_nothing(self) -> None:
+        assert self._view().session_label is None
+
+    def test_uncertainty_is_absent_rather_than_empty(self) -> None:
+        """An empty heading claims there was nothing to be unsure about."""
+        assert self._view().uncertainty_label is None
+
+    def test_uncertainty_asks_the_reader_to_verify(self) -> None:
+        view = self._view(uncertain=("Turael's task list may have changed.",))
+
+        assert view.uncertainty_label is not None
+        assert "verify" in view.uncertainty_label
+
+    def test_warnings_and_uncertainty_are_separate_fields(self) -> None:
+        """A hazard and a hedge have different remedies and must stay distinguishable."""
+        view = self._view(
+            warnings=("The Wilderness leg is dangerous.",),
+            uncertain=("This method may have been reworked.",),
+        )
+
+        assert view.warnings != view.uncertain

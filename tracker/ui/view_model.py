@@ -915,3 +915,243 @@ class FactorDiffRow:
         if self.before is None or self.after is None:
             return None
         return self.after - self.before
+
+
+# ---------------------------------------------------------------------------
+# §21 — generated task guidance
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class GuidanceStepRow:
+    """One step of §21.3's answer, with its number already composed into a label.
+
+    Composed here rather than in the renderer for this layer's standing rule: a sentence
+    assembled inside a ``ui.html(...)`` call can only be checked by driving a browser.
+    """
+
+    order: int
+    title: str
+    detail: str
+
+    @property
+    def label(self) -> str:
+        return f"{self.order}. {self.title}"
+
+
+@dataclass(frozen=True, slots=True)
+class GuidanceView:
+    """One generated explanation, ready to draw (§21, §15).
+
+    ``warnings`` and ``uncertain`` stay separate all the way to the screen. *"This will get
+    you killed in the Wilderness"* and *"this method may no longer exist"* are different
+    sentences with different remedies, and merging them would leave the reader unable to tell
+    which of the two they were being told.
+    """
+
+    candidate_id: str
+    task_name: str
+    summary: str
+    prerequisites: tuple[str, ...] = ()
+    steps: tuple[GuidanceStepRow, ...] = ()
+    warnings: tuple[str, ...] = ()
+    uncertain: tuple[str, ...] = ()
+    estimated_session_minutes: int | None = None
+    model: str = ""
+    generated_at: datetime | None = None
+    cached: bool = False
+
+    @property
+    def provenance_label(self) -> str:
+        """Who wrote this. §15's honesty rule applied to a new source of prose.
+
+        Every other number and sentence on the Recommendations page came from authored
+        content and a pure function. This paragraph did not, and the reader is entitled to
+        know which they are looking at without having to guess from the tone.
+        """
+        return f"Written by {self.model}" if self.model else "Written by a language model"
+
+    @property
+    def session_label(self) -> str | None:
+        """The model's suggested sitting length — never merged with §8's hours (D14).
+
+        Two numbers of different provenance printed in the same place become one number of
+        unknown provenance, so this is labelled as a suggestion and kept apart from the
+        estimate the ranked list already shows.
+        """
+        if self.estimated_session_minutes is None:
+            return None
+        return f"Suggested session: about {self.estimated_session_minutes} minutes"
+
+    @property
+    def uncertainty_label(self) -> str | None:
+        """A heading for the model's own hedges, or ``None`` when it had none.
+
+        ``None`` rather than an empty section: an empty heading reads as *"there is nothing
+        to be unsure about"*, which is a stronger claim than the model actually made.
+        """
+        if not self.uncertain:
+            return None
+        return "The model was unsure about the following — verify before relying on it"
+
+
+#: Shown in place of guidance when no provider is configured (§21.4, D14).
+GUIDANCE_DISABLED = (
+    "Task guidance is not configured on this install. Set integrations.llm.enabled and "
+    "supply an API key to switch it on; nothing else on this page depends on it."
+)
+
+#: Shown when the provider could not be reached. Names what is *unaffected*, because the
+#: ranked list and its estimates are computed locally and a provider outage cannot touch them.
+GUIDANCE_UNAVAILABLE = (
+    "Could not reach the guidance provider. The recommendation and its estimate are "
+    "unaffected — try again in a moment."
+)
+
+
+# ---------------------------------------------------------------------------
+# §22 — the general advisor
+# ---------------------------------------------------------------------------
+
+#: Tool ids to reader-facing words. Kept here rather than on the tool definitions, because the
+#: catalogue's descriptions are written for the model and these are written for a person; one
+#: string cannot serve both without serving neither well.
+_TOOL_WORDS: dict[str, str] = {
+    "search_candidates": "the task corpus",
+    "get_candidate_detail": "a task's requirements",
+    "get_capability_detail": "a capability's requirements",
+    "list_training_methods": "training methods",
+    "get_quest_status": "quest status",
+    "get_skill_detail": "a skill's detail",
+    "get_item_price": "item prices",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class AdvisorMessageRow:
+    """One question or one answer, ready to draw (§22.8, §15).
+
+    Three of §15's requirements get sharper on a chat surface, and all three are properties
+    here rather than decisions in the renderer:
+
+    * **Provenance is per message.** ``model`` comes from the stored row, never from current
+      configuration — a thread outlives a model change, and relabelling old answers would be a
+      false claim about who wrote them.
+    * **A hedge is marked as a hedge**, which is why ``uncertain`` survives as its own field
+      all the way to the screen rather than being folded into the prose.
+    * **Lookups are visible.** ``tool_names`` lets a reader tell which parts of an answer rest
+      on the application's own data and which on the model's knowledge of the game.
+    """
+
+    role: str
+    """``you`` or ``advisor`` — the reader's words, not the wire's."""
+
+    text: str
+    uncertain: tuple[str, ...] = ()
+    model: str = ""
+    generated_at: datetime | None = None
+    tool_names: tuple[str, ...] = ()
+    truncated: bool = False
+    stale_digest: bool = False
+
+    @property
+    def is_answer(self) -> bool:
+        return self.role == "advisor"
+
+    @property
+    def provenance_label(self) -> str | None:
+        """Who wrote this, or ``None`` for the reader's own question."""
+        if not self.is_answer:
+            return None
+        return f"Written by {self.model}" if self.model else "Written by a language model"
+
+    @property
+    def uncertainty_label(self) -> str | None:
+        """``None`` when the model hedged nothing — an empty heading would overclaim."""
+        if not self.uncertain:
+            return None
+        return "The advisor was unsure about the following — verify before relying on it"
+
+    @property
+    def sources_label(self) -> str | None:
+        """Which lookups this answer rests on, in human words.
+
+        Names are rewritten because ``get_candidate_detail`` is an implementation detail and
+        *"looked up a task's requirements"* is the fact the reader wants. ``None`` when the
+        answer used no tool, which is itself informative: it came from the account summary and
+        the model's own knowledge.
+        """
+        if not self.tool_names:
+            return None
+        described = sorted({_TOOL_WORDS.get(name, name) for name in self.tool_names})
+        return "Looked up: " + ", ".join(described)
+
+    @property
+    def staleness_note(self) -> str | None:
+        """§15's staleness discipline applied to a conversation.
+
+        An answer written before the last sync may rest on levels that have since moved. That
+        does not make it wrong, so it is a note rather than a warning.
+        """
+        if not self.stale_digest:
+            return None
+        return "Written before your most recent sync — your account may have moved since."
+
+    @property
+    def truncation_note(self) -> str | None:
+        if not self.truncated:
+            return None
+        return "This answer was cut short by the length limit."
+
+
+@dataclass(frozen=True, slots=True)
+class AdvisorConversationRow:
+    """One thread in the list beside the current one."""
+
+    conversation_id: int
+    title: str
+    updated_at: datetime | None = None
+    current: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class AdvisorThreadView:
+    """The conversation on screen, and the threads beside it."""
+
+    conversation_id: int | None
+    title: str
+    messages: tuple[AdvisorMessageRow, ...] = ()
+    conversations: tuple[AdvisorConversationRow, ...] = ()
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.messages
+
+
+#: Shown when the feature is not configured (§22.1, D14). Names both switches, because the
+#: common mistake is enabling §21's guidance and expecting this to follow.
+ADVISOR_DISABLED = (
+    "The advisor is not configured on this install. Set integrations.llm.enabled and "
+    "integrations.llm.advisor.enabled and supply an API key; nothing else in this app "
+    "depends on it."
+)
+
+#: Names what is *unaffected*, because rankings and estimates are computed locally and a
+#: provider outage cannot touch them (D14).
+ADVISOR_UNAVAILABLE = (
+    "Could not reach the advisor. Your recommendations and estimates are unaffected — they "
+    "are computed locally."
+)
+
+#: A refusal is not an outage, and telling someone to retry something that will never succeed
+#: is worse than the refusal itself (§21.4's three-way taxonomy, applied here).
+ADVISOR_REFUSED = (
+    "The advisor declined to answer that one. Rephrasing may help; nothing else is affected."
+)
+
+#: The empty state. Says what it can see, so the first question is an informed one.
+ADVISOR_EMPTY = (
+    "Ask anything about your account or about the game. The advisor can see your skills, "
+    "capabilities, roadmaps and ranked tasks, and can look up quests, tasks, training "
+    "methods and cached item prices."
+)

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.5.3 |
+| **Version** | 0.6 |
 | **Date** | 2026-08-13 |
 | **Status** | Implementation in progress against `plans/osrs-tracker-sdd-implementation.md`. All design questions resolved and all known specification gaps closed (§20). |
 
@@ -15,6 +15,7 @@
 | 0.3 | 2026-08-04 | Resolved D1–D5 (§18). Milestones gain class and freshness; staleness decays confidence, never achievement. Live item prices with cached and static fallback layers. Multiple active roadmaps merge into one effective capability-weight map via convex combination. Scoring weights externalized to a versioned profile with a defined tuning method. Side-loading fixed as the v1 plugin distribution path. Separated `unlocked` from `readiness_confidence`; estimate confidence expanded to three levels. |
 | 0.4 | 2026-08-04 | Resolved D6–D10 (§18). **`CapabilityState.unlocked: bool` replaced by tri-valued `status`**, with three-valued requirement evaluation throughout (§9.1). Added `PracticeEvent` and the derived-practice-proxy model. Refresher candidates grouped by practice domain with a one-per-list cap. κ presets retained and relabelled in user terms. Price feed pinned to the OSRS Wiki real-time prices API, with confidence derived from **trade** timestamps rather than fetch time. Added the `recommended_now` status layer. |
 | 0.5 | 2026-08-04 | Closed 21 specification gaps found while planning implementation; each is traced in §20. **Added the missing `Candidate` schema (§10.6)** — a core noun that had a content directory and drove every scoring factor, but no defined fields — together with the derivations for `pvp_value`, `leverage`, `proximity`, `completed` and `blocked` (D11). Completed the three-valued leaf resolution table (§9.1), pinning `unlock: available` and `quest: in_progress` as **unsatisfied**. Fixed the `unlock_fraction` denominator and defined *contributing* and *aged* for `readiness_confidence` (§6.9). Added `Milestone.attested_at` semantics so "never prompted" is representable (§6.6). Added `ActiveRoadmap` (§6.12) and made `SyncEvent.player_id` nullable so §11.3's audit requirement is satisfiable (§6.11). Moved the health endpoint outside `/api` (§11). Added **§4.5**, naming the observation/truth distinction that now recurs three times in the design. Sync contract declared provisional until validated against a real snapshot (D12). |
+| 0.6 | 2026-08-13 | Added **§22, the general advisor** — a conversational surface with the whole account pinned as context and a read-only tool catalogue for everything the digest cannot hold. §21 answers *how do I do this one chosen task*; §22 answers everything else, and may draw on the model's own knowledge of the game where §21 may not, without relaxing §21.3's honesty rules. Two new decisions follow from that widening. **D15** extends D14 to the input side: tools project already-computed state and never rank, estimate, evaluate a hypothetical, fetch or write, enforced by dispatch being a pure function of a frozen snapshot. **D16** keeps conversation history to questions and answers, discarding tool traffic at the end of each turn — the cached prefix must not grow, and a stale tool result is worse than a re-derivable one. §22.7 removes §21.6's cache-first rule explicitly rather than silently, since every question is new, and gives the advisor its own interval and daily ceiling because a turn costs several model calls where a guidance note costs one. Rankings, estimates and capability states are unchanged by construction. |
 | 0.5.3 | 2026-08-13 | Closed **A31**, found by reading the shipped output: §9.10's card said how a candidate *scored* and never what it was *for*, and for the generated skill bands it could not — `tools/generate_candidates.py` authors them with `advances: {}` (§10.6), so no §9.4 factor carries a goal and *"Train Slayer to 10"* reached the top of a PvM list explaining itself as *"quick to finish"*. Added **consequences** (§9.10): what a candidate unblocks, what it is a prerequisite of, which goals it measurably moves, and which grind it shortens — derived after the ranking is fixed, read by no factor, and persisted on `RecommendationEntry` (§6.10). The two identities §9.4 already computed and discarded — *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated — are retained rather than recomputed. Rankings are unchanged by construction. |
 | 0.5.2 | 2026-08-11 | Closed **A30**, found by running §16.3's tuning procedure against the golden corpus: §9.4 had no factor for a candidate that makes *another* candidate cheaper or faster, so Desert Treasure I scored zero on `leverage` for an account that already had Ancients while being the one action that turns 113 Magic hours into 16. Added **`method_unlock`** as §9.4's sixth factor with its own authored weight, derived in code from `grants_facts` and §8's estimator (D13). Folded `unknown_effort_hours` into §9.7's printed profile — ratified in code since Step 5 but never transcribed. |
 | 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
@@ -1854,6 +1855,21 @@ Weights are **not** optimized against exact expected ranks. Procedure:
 
 *Rationale:* §16.3 step 5's review of the golden corpus found one judgment — *"finish Desert Treasure I before grinding Magic 87 → 94"* — that **no weight vector satisfies for the right reason**. `leverage`, the factor whose job is *"this unblocks things"*, counts capability **status** flips; on an account that already has Ancients, DT1 flips none, so it scores zero there. What DT1 actually does is swap §8.1's `magic_conservative` (35k xp/hr) for `magic_bursting` (250k xp/hr), which is a fact about *another candidate's estimate* and appears nowhere in the five factors. Raising `effort_decay` to 0.8 also satisfies the judgment — by making the 113-hour grind expensive enough to fall behind — but that is a coincidence of this corpus: it would not survive a corpus whose blocked method sat behind a *short* grind, and it credits the quest for nothing it does. A sixth factor with its own authored weight was preferred to widening `leverage`'s meaning, because *"what becomes possible"* and *"what becomes cheap"* are different questions a corpus may want weighted differently, and folding them together would make the count and the ratio inseparable in the persisted `factors` (§6.10). Maximum over sum for the third time in this document, and for the reason D11 and D9 give: summation makes breadth a substitute for depth. Hours over GP because the counterfactual state hands the player the granted item, so a GP delta would restate the granting candidate's own price rather than measure an effect on anything else. §9.4, §9.7, §10.6, §16.3, A30.
 
+### D14 — Guidance is an artifact, not an input
+> §21's generated task guidance is a **terminal output**. No model-authored text or number may reach `Recommendation`, `Estimate`, `RecommendationEntry.reason`, `CapabilityState`, or any §9.4 factor. Guidance lives in its own table, is rendered by its own view, and is labelled in the UI with the model that wrote it. The engine decides *whether* and *in what order*; the model explains *how*. A guidance failure — provider down, refusal, throttle — degrades to an unavailable button and changes no ranking, no estimate and no capability state.
+
+*Rationale:* every number this application shows is traceable to authored content and a pure function over observed facts, which is what makes §9.10's "Why" line and §8.4's confidence bands mean anything. A generative model is the first component that can produce a confident, plausible, unsourced sentence, and the failure mode is not that it is occasionally wrong but that a wrong sentence is indistinguishable from a right one at the point of reading. Containing it to a leaf of the output graph keeps that risk bounded to the one paragraph the user asked for, rather than letting it silently reorder a list or move an estimate. The same reasoning forbids merging §21's `estimated_session_minutes` into §8's hours: two numbers of different provenance printed in the same place become one number of unknown provenance. §10.8's "content declares what a thing is, never how important the engine should consider it" is the same boundary drawn one layer lower, and this is its extension to a source that can author prose. §21, §15.
+
+### D15 — Advisor tools are read-only projections
+> §22's tools may only **project already-computed state**: the projected `PlayerState` (§6), computed `CapabilityState` (§9.1), the persisted `RecommendationEntry` of the latest run (§6.10), the authored content corpus (§10), and the cached `ItemPrice` rows (§6.8). No tool ranks, scores, estimates on demand, evaluates a hypothetical account, fetches over the network, or writes. Tool execution is a pure function of a frozen snapshot and the call, and the advisor package holds no database session at all.
+
+*Rationale:* D14 contains model **output**. Tools point the other way, and the containment is not symmetric by default. The moment a tool can invoke §9's `recommend()` or §8's estimator with model-chosen arguments, the model is choosing what the engine computes — and although no returned value would be written anywhere, the number the user reads would have been produced under parameters a language model selected. That is the same category of claim D14 exists to prevent, arriving through the input side rather than the output side. Purity is also what makes the guarantee checkable rather than aspirational: a function handed a frozen dataclass has no session to write through, so the rule is enforced by the type rather than by review. The network exclusion is separate and simpler — a model-chosen price refresh is an outbound request the user did not ask for, and §7.5's scheduler already owns when the app talks to the wiki. §22.4, §16.1, D14.
+
+### D16 — Conversation history is Q&A only
+> Tool calls and tool results are discarded at the end of the turn that produced them. They are never persisted into the conversation thread and never re-sent on a later turn. Only the question and the answer accumulate. What is retained about a tool call is a **trace** — its name, its arguments and the size of its result — for provenance and cost accounting, never the result itself.
+
+*Rationale:* three reasons, and each alone would be sufficient. The cached prefix is `tools + instructions + digest` (§22.3), and a transcript that accumulates tool traffic grows without bound behind that prefix, so every turn re-bills a conversation for lookups it already paid for. A tool result is re-derivable at zero model cost, so storing it buys nothing; but a *stale* tool result is worse than nothing, because it asserts as current a fact the account may have moved past — the same failure §6.8 addresses for prices and §21.5 addresses with the context hash. And a thread that mixes prose with machine traffic cannot be rendered by §15's `read_model -> frozen rows -> renderer` layering without inventing a row type for something the user never asked to see. The consequence constrains the prompt rather than the storage, and §22.3 states it: a model that learns a load-bearing fact from a tool must restate it in its answer, because it will not see the tool result again.
+
 ---
 
 # 19. Deferred Decisions
@@ -1867,6 +1883,10 @@ Consciously postponed, with the trigger that would reopen each. None blocks impl
 | Plugin Hub submission | The §13.1 stage-3 gate is met |
 | Direct hiscores integration | WOM proves unreliable in practice |
 | Additional practice domains beyond the six in §7.6 | A milestone needs evidence none of the six can supply |
+| Streaming advisor responses (§22.5) | A turn regularly approaches the request timeout — a tool loop is several round trips, and the bound grows with the tool budget |
+| Cross-conversation advisor memory | A user repeats the same preference to the advisor often enough that restating it is the friction, rather than the account digest being the friction |
+| A `get_snapshot_history` advisor tool (*"what changed since last week"*) | The ranked list moves often enough that explaining a change is a question people actually ask |
+| A shared daily ceiling across §21 and §22 | The two independent caps in §21.6 and §22.7 prove too loose in combination |
 
 ---
 
@@ -1931,3 +1951,368 @@ The gaps cluster into five kinds, and the pattern is worth noting for future rev
 | A22 | §10.7 requires referential integrity for quest and skill ids, but §10.1 gave neither a content directory to be declared in; §10.4's refresher templates likewise had no directory | §10.1 |
 | A31 | §9.10's output could say how a candidate **scored** but not what it was **for**, and for the generated skill bands it could not: §10.6 reserves `advances` for human judgment, so `tools/generate_candidates.py` authors every band with `advances: {}` and no §9.4 factor carries a goal for one. *"Train Slayer to 10"* therefore topped a PvM list explaining itself as *"quick to finish"*, while the chain that justifies it — Slayer 10 gates Desert Treasure I, which advances Ice Barrage NH — was computed nowhere. Two identities the engine already had were also being discarded: *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated | §6.10, §9.10, §15 |
 | A30 | §9.4 had **no factor for a candidate that makes another candidate cheaper or faster**. `leverage` counts capability *status* flips, so an account with Ancients already unlocked scored Desert Treasure I at zero on the one factor meant to express "this unblocks things" — while the quest is precisely what turns 113 conservative Magic hours into 16 bursting ones. No weight vector over the other five factors can express the reason; the corpus's tuning run found the shape of the gap by finding a judgment nothing on the grid satisfied for the right reason | §9.4, §9.7, §10.6, D13 |
+
+---
+
+# 21. Task Guidance
+
+## 21.1 Scope
+
+§9.10 says *what* to do next and *why* it was chosen. It does not say **how**. *"Train Slayer to
+10"* names an outcome; it does not name a master, a task list, a location, a gear setup, or the
+thing that will kill you on the way. The content corpus already carries that knowledge for skill
+training (§10, `TrainingMethod` + `MethodDetail`) and the database already carries the account
+state, so the material for a good answer is in the process — it is simply never assembled or
+addressed to the player.
+
+Task guidance closes that gap by assembling a task-scoped view of the account and asking a language
+model to write execution steps for **one already-chosen candidate**.
+
+Guidance is strictly downstream. It never ranks, never estimates, never writes §9.5's "Why" line,
+and never touches capability state — see **D14**. Concretely, the feature owns exactly one
+question: *given that the engine has chosen this task and given what we know about this account,
+what do I actually do?*
+
+The feature is **optional and off by default**. An install with no provider configured must start,
+sync, rank and render exactly as one without the feature; the only visible difference is that the
+guidance affordance reports itself unavailable. This is not a graceful-degradation nicety but a
+consequence of D14: if a missing provider could change anything else, guidance would be an input.
+
+## 21.2 Context assembly
+
+Context assembly is a **pure function** in the sense of §16.1 — no database, no network, no
+`datetime.now()` — taking a `PlayerState` (§6), the chosen `Recommendation` (§9.10), the content
+corpus (§10) and the active roadmap selection (§6.12), and returning a frozen `TaskContext`. It
+lives in its own package for the reason §14 gives for `tracker/domain/`: it belongs to neither the
+engine nor the database, and it must not be reachable from the ranking path, because §10.5's rule
+that `MethodDetail` cannot influence a recommendation would otherwise acquire a new way to break.
+
+**Relevance, not completeness.** The context is a *slice*, selected by walking the candidate's
+`requires`, `completion` and `grants_facts` trees (§10.2) and collecting the leaves:
+
+* **Skills** named by a `skill` leaf, or trained by an included method — never all twenty-three. Each
+  carries both the observed level and the leaf's target, because *87 → 94* is the shape of the task
+  and *87* alone is not.
+* **Quests and unlocks** named by those trees, plus every entry in the recommendation's blocker list.
+* **Training methods** from the corpus, filtered to the trained skill and to level ranges
+  overlapping §8's estimate bands, bounded in number, with the band-selected method marked as such.
+  This is the grounding: the model is asked to prefer methods it was given, by the names it was
+  given, and to mark anything else as uncertain.
+* **The engine's own output**, carried verbatim: §9.5's reason, §9.10's consequences, §8's estimate
+  and confidence, and the blocker list.
+
+**Three-valued facts stay three-valued.** §4.5's rule and D8's reasoning apply unchanged at the
+prompt boundary: an unobserved `account_type` renders as *unknown*, never as *main*; an unobserved
+`members` renders as *unknown*, never as *no*; and unobserved liquid GP renders as *nobody has
+looked*, never as *zero*. A prompt that collapses these is how an ironman gets told to buy a
+Voidwaker — the same class of error D8 removed from capability state, reintroduced one layer out.
+
+The rendered context is **deterministic**: fixed ordering, fixed formatting, no clock reads beyond
+the explicitly-passed observation timestamps. §21.5's cache key depends on this.
+
+## 21.3 Prompt contract
+
+The prompt has exactly two parts, and the split is load-bearing.
+
+1. A **stable** instruction block: the advisor's role and scope, the shape of the answer, and the
+   grounding rules — prefer supplied methods and name them as supplied; do not invent items, rates,
+   drop chances or prices; anything drawn from outside the supplied context is declared uncertain;
+   *unknown* means nobody looked, so say so rather than assuming either way; do not restate the
+   engine's hours or GP as though independently measured; the engine chose this task, so answer
+   *how*, not *whether*.
+2. The **volatile** rendered `TaskContext` from §21.2.
+
+Stable first, volatile second, with the cache breakpoint between them. Provider prompt caches are
+prefix matches, so a single interpolated timestamp or player name in part 1 silently defeats
+caching for every request the feature will ever make. Part 1 is a module constant for that reason,
+and it is tested to contain nothing account-specific.
+
+The response is **structured**, not free prose: a summary, prerequisites, ordered steps, warnings,
+an optional session-length suggestion, and an explicit list of things the model was unsure about.
+Structure is what lets §15's honesty discipline survive contact with generated text — the interface
+can mark a hedge *as* a hedge instead of burying it in a paragraph, and *"this will get you killed
+in the Wilderness"* and *"this method may no longer exist"* stay the different sentences they are.
+
+## 21.4 Provider integration
+
+The provider is addressed through a narrow interface — one method, taking a prompt and returning a
+guidance object, plus provider-neutral failure types — so the concrete vendor is one module and one
+configuration value, not an assumption spread through the application. Anthropic is the only
+implementation at v1.
+
+Failures are classified into three kinds the rest of the system can act on: **unavailable**
+(network, server error, breaker open), **rate-limited**, and **refused** (the provider answered and
+declined). §7.5's `CircuitBreaker` is reused so a sustained outage degrades to *stop asking*;
+§7.5's retry schedule is **not** layered on top, because provider SDKs already retry and doubling
+the schedules would turn one click into nine requests. A refusal counts as a successful call for
+breaker purposes — the provider was reachable.
+
+Credentials are configuration (§11), resolved from `config.yaml` or the environment. The client is
+constructed only when the feature is enabled *and* a key resolves; otherwise the application holds
+no client at all, which is what makes "off by default" a structural property rather than a flag
+check.
+
+## 21.5 Persistence
+
+Guidance is stored, keyed by a hash of the exact prompt that produced it, alongside the schema
+version and the model identity.
+
+**The hash is the invalidator; the TTL is only a backstop.** Advice stops being right when the
+account moves, not when a clock says so — a level-up can invalidate it in a minute, and an
+untouched account's advice is still good in a month. Since §21.2's rendering is deterministic and
+covers precisely the facts the advice depends on, a hash mismatch *is* the event "something the
+advice depended on changed". The TTL exists only for the case the hash cannot see: an edit to the
+instruction block or the corpus that leaves the rendered context identical.
+
+Storing rather than caching in memory follows §6.10's precedent, where `reason`, `factors` and
+`bands` are persisted so a rendered claim cannot drift from the run that produced it. It also
+means a restart does not silently re-bill the user for an answer they already have.
+
+Retention is bounded per task, in the same manner as §6.10's snapshot retention: pruned on write,
+no background job.
+
+## 21.6 Cost control
+
+Every guidance request costs real money, and the trigger is a button a user can press repeatedly.
+Four bounds, in the order they are checked:
+
+1. **Cache first, before any throttle.** A page reload or a second look at the same advice must
+   never be rate-limited; it is not a new request.
+2. **Single-flight**, as §7.4's refresher does — a request while one is in flight is refused, not
+   queued.
+3. **Minimum interval** between calls, mirroring §7.5's manual-refresh interval.
+4. **A daily ceiling**, counted from the stored notes themselves so it survives a restart.
+
+Exceeding a bound is an ordinary, explainable refusal surfaced in the UI — never a silent wait and
+never a partial answer.
+
+---
+
+# 22. General Advisor
+
+## 22.1 Scope
+
+§21 answers *how do I carry out this one chosen task*. It is scoped to a single ranked candidate,
+and everything about it — the slice of the account it assembles, the cache keyed on that slice, the
+single-shot request — follows from that scope. It is the right shape for the question it answers and
+the wrong shape for every other question a player has.
+
+The general advisor answers **anything else**, with the account as pinned context: *is Desert Treasure
+II worth doing before Barrows for me? what should I bring to crocodiles? why is this ranked above
+that? I have two hours, what should I do?* The material for those answers already exists — twenty-three
+skills, ten capabilities, a 365-entry candidate corpus with requirement trees, an authored method
+catalogue, a cached price feed, and the engine's own ranked output with its reasons — and none of it is
+reachable by a question.
+
+**Scope is deliberately open.** Unlike §21, the advisor may answer from its own knowledge of the game.
+This is the point of the feature: a tracker that can only discuss what it has authored is a search
+interface, and the questions a player actually asks range past the corpus on the first turn. §21's
+honesty discipline is **not** relaxed to pay for that — every rule in §21.3 carries over in substance,
+and §22.3 adds the ones a conversational surface needs. What changes is the permitted subject matter,
+not the standard of care.
+
+The advisor is strictly downstream, exactly as §21 is: **D14** applies unchanged, and **D15** extends
+it to the input side. The feature is **off by default and off within `llm.enabled`** — two switches,
+because enabling task guidance is not consent to a chat surface with a different cost profile.
+
+## 22.2 Account digest
+
+Where §21.2 selects a *slice* by relevance, §22 cannot: the question is not known until it is asked, so
+there is no candidate whose requirement trees can do the selecting. The advisor is therefore given a
+**digest** — a whole-account summary, bounded by construction — and a set of tools (§22.4) for
+everything the digest omits.
+
+The digest is assembled from a frozen snapshot built once per turn, and the snapshot is what tool
+dispatch reads too, so there is one source of truth per turn and no second read that could disagree
+with the first.
+
+The digest carries, in full: the account facts (type, members, combat level, quest points, liquid GP),
+**all twenty-three skills**, **all capability states** with unlock fraction, readiness confidence and
+blockers, and the active roadmap selection. It carries, bounded: the top ranked entries with the
+engine's own `reason` verbatim, the nearest blocked entries with their blockers, incomplete quests
+named by a capability tree or a highly-ranked gate, the unlock keys the corpus references, and stale
+practice domains. It carries **nothing else** — and each bounded section says so in the rendered text,
+naming the tool that reaches the rest, because a truncated list that does not announce its truncation
+reads as a complete one.
+
+The ranked entries are **read back from the latest persisted run** (§6.10), never re-ranked, for
+§21.5's reason: the persisted entry is what the user is looking at, and re-deriving it here could show
+the model a reason or an estimate the list never displayed.
+
+**Three-valued facts stay three-valued**, exactly as §21.2 requires and for the same reason — an
+unobserved `account_type` is *unknown* and never *main*, unobserved `members` is *unknown* and never
+*no*, unobserved liquid GP is *nobody has looked* and never *zero*, and a skill that has never been
+observed is *never observed* and not *level 1*. The failure this prevents is larger here than in §21,
+because a conversation invites the question directly: *"can I afford this?"* answered from an assumed
+zero is a worse answer than *"I do not know what you have."*
+
+The rendering is **deterministic** — fixed ordering everywhere, no set iteration reaching the output —
+because §22.3 hashes it.
+
+**One departure from §21.2, stated because it is a departure.** §21.2 excludes clock reads entirely,
+since a timestamp in the rendered context would invalidate every stored note on every sync regardless
+of whether anything the advice depended on moved. The digest includes a **coarse observation-age
+bucket** — today, this week, this month, older, never. The hash here keys a *conversation*, not a
+cached answer, so the cost is one prefix re-cache per bucket transition rather than a re-billed note;
+and the fact bought is the one the advisor most needs in order to hedge honestly, since advice given
+on month-old levels should say so.
+
+## 22.3 Prompt contract and caching
+
+The prompt has **three layers**, and the ordering is load-bearing in the same way §21.3's two-part
+split is:
+
+1. The **tool catalogue** (§22.4), which providers render ahead of everything else.
+2. The **stable instruction block** — a module constant, nothing interpolated, tested to contain
+   nothing account-specific.
+3. The **account digest** from §22.2.
+
+Then the conversation's questions and answers.
+
+Cache breakpoints sit after layer 2 and after layer 3, and roll forward onto the newest question.
+The instruction block is a *separate* block from the digest rather than concatenated with it, so that
+a digest change — a sync landed, a new conversation started — still reads the tool-and-instruction
+prefix instead of invalidating it. The tool catalogue must be **fixed in content and order**: it
+renders at position zero, so a catalogue assembled per-request from an unordered collection would
+silently reduce every request to a cold prefix, and the symptom would be a bill rather than an error.
+
+The instruction block carries §21.3's grounding rules in substance — prefer supplied methods and name
+them as supplied, invent no rates or prices, *unknown* means nobody looked, do not restate the engine's
+numbers as independently measured, stay inside the game — and adds four that a conversational,
+tool-using surface needs:
+
+* **When the digest does not settle a question, call a tool.** Do not guess, and do not ask the user
+  for something the application already knows.
+* **Tool results are visible for one answer only** (D16). A fact that matters must be restated in the
+  answer, because it will not survive into the next turn.
+* **The ranking belongs to the engine.** Disagreement is permitted and is worth one sentence; the
+  hours and GP shown were computed from authored content and are never to be repeated as the model's
+  own measurement; and nothing said here changes the list.
+* **Answer the question asked** — no re-summarizing the account back at someone who is looking at it.
+
+The answer is **structured** for §21.3's reason: an `answer` and a separate `uncertain` list, so §15's
+interface can mark a hedge *as* a hedge. Two fields rather than §21.3's six, because a conversational
+answer is prose and a richer schema would manufacture filler.
+
+**Digest invalidation mid-conversation.** The conversation stores the hash of the digest it was last
+answered against. When a turn finds a different hash — a sync landed between questions — the new
+digest is sent, the stored hash updated, and an operator note appended to the turn telling the model
+that the snapshot has been refreshed and that earlier answers in the thread were written against the
+previous one. The interface shows the user the same fact. One turn's caching is lost; a thread
+silently mixing two accounts' worth of facts would be worse.
+
+## 22.4 Tool use
+
+Tools are declared vendor-neutrally as a name, a description and a JSON Schema, and are dispatched by
+a **pure function of the frozen snapshot and the call** — see **D15**, which is the constraint that
+makes this safe rather than merely careful.
+
+The catalogue reaches exactly what §22.2 left out: candidate search and candidate detail (the way into
+the corpus the digest cannot hold), capability detail with its full requirement tree, the authored
+training methods for a skill and level range, quest status, skill detail, and cached item prices.
+Every result is markdown, bounded in size, and truncated with an explicit marker rather than silently.
+
+Two things are deliberately absent. **Nothing that computes**: no ranking, no scoring, no estimation on
+demand, no hypothetical evaluation — D15. And **nothing that fetches**: the price tool reads the cache
+§7.5's scheduler fills and never triggers a request, because an outbound call chosen by a model is a
+call the user did not ask for.
+
+A malformed call, an unknown tool, or an unknown identifier returns an **error result**, not an
+exception. The model is capable of correcting itself given the error, and a raised exception would
+convert a recoverable mistake into a failed turn.
+
+The loop is bounded twice over: a maximum number of model iterations per turn, and a maximum number of
+tool calls across the whole turn. Exhausting the tool budget yields error results that tell the model
+to answer with what it has, rather than truncating it mid-turn; exhausting the iteration budget
+returns whatever text exists, or fails as unavailable if there is none.
+
+Requirement leaves reached through a tool render with their **current three-valued state**, for §22.2's
+reason. The `gear` and `inventory` fields of a training method are free text by §10.5's deliberate
+design — an item requirement would be resolved by the evaluator and would flow into the candidate's GP
+estimate — so gear named by a tool is **advisory and moves no number**, and the instruction block must
+not invite the model to read it as a requirement.
+
+## 22.5 Provider integration
+
+The advisor addresses a second narrow protocol beside §21.4's — one method taking a prompt, a tool
+catalogue and a dispatcher, returning an answer and a trace — with the **same three failure kinds**
+(unavailable, rate-limited, refused) and the **same `CircuitBreaker` instance** as the guidance
+provider, since a provider that is down is down for both.
+
+The vendor-shaped part of a tool loop is the transcript it maintains, so the loop lives in the vendor
+adapter rather than in the service. Hoisting it would make the orchestration layer aware of provider
+message-block shapes, which is precisely what §21.4's protocol seam exists to prevent. The bounds are
+passed in and the full trace comes back, so policy and persistence stay with the service.
+
+Responses are **not streamed**, for §21.4's reason and one more: a turn's answer is a few thousand
+tokens, far below the size at which a non-streaming request risks a timeout, and streaming would cost
+the test suite its simplest possible double.
+
+The provider is constructed only when `llm.enabled`, `llm.advisor.enabled` **and** a resolved key all
+hold — three conditions where §21.4 has two, and structural for the same reason: with no object there
+is nothing to call.
+
+## 22.6 Persistence
+
+A conversation holds its player, a title, the schema version, the hash of the digest it was last
+answered against, and timestamps. A message holds its ordinal, role, text, the model's hedges, the
+model identity, the stop reason, the digest hash it was written against, token counts, and a **tool
+trace** — names, arguments and result sizes, never results (D16).
+
+A question and its answer are written **together or not at all**: a stored question with no answer is
+not a turn, and a thread that begins with an orphaned answer cannot be re-sent. Thread pruning removes
+from the oldest end **in pairs**, for the same reason.
+
+The per-message digest hash is what allows the interface to mark an answer as written against an older
+snapshot of the account — §15's honesty discipline applied to the thing that changed underneath a
+conversation.
+
+Retention is bounded per conversation and across conversations, pruned on write, no background job —
+§6.10's shape, as §21.5 also follows.
+
+## 22.7 Cost control
+
+§21.6's four bounds, with **one deliberate removal** and independent limits.
+
+The removal is the cache. §21.6's first rule — *cache first, before any throttle* — has no analogue
+here, because every question is new and there is nothing to re-read. The property that rule protected
+still holds by other means: re-reading an existing thread is a database read that never reaches the
+service, so a page reload is never rate-limited. The rule is absent because it does not apply, not
+because it was forgotten, and this paragraph exists so that a later reader can tell the difference.
+
+The remaining three apply in order: **single-flight** (a question asked while one is in flight is
+refused, not queued — §5 is one process, so a lock is the whole of it), a **minimum interval**, and a
+**daily ceiling** counted from the stored answers so a restart does not hand out a fresh allowance.
+
+The interval and the ceiling are the **advisor's own**, not shared with §21.6's. A guidance note costs
+one model call; an advisor turn costs several, since each tool round trip is a call. A shared ceiling
+would let one conversation silently consume the day's guidance budget, and the user would experience
+that as task guidance mysteriously refusing. The circuit breaker is shared; nothing else is.
+
+Exceeding a bound is an ordinary, explainable refusal, exactly as §21.6 requires.
+
+## 22.8 Interface
+
+§15 applies unchanged, and a chat surface makes three of its requirements sharper.
+
+**Provenance is per message, not per page.** Each answer is labelled with the model that wrote it, read
+from the stored message rather than from current configuration — a thread can outlive a model change,
+and relabelling old answers with today's model would be a false claim.
+
+**Hedges are marked as hedges.** The `uncertain` list renders as its own block, visually distinct from
+the answer, which is what §22.3's structured response exists to make possible.
+
+**Lookups are visible.** An answer that consulted tools names them in human words, so a reader can tell
+which parts rest on the application's own data and which on the model's knowledge of the game.
+
+Staleness is surfaced twice: an answer written against a superseded digest is marked as such, and the
+thread offers to start fresh.
+
+Every failure — unavailable, rate-limited, refused, throttled, or simply not configured — renders as
+ordinary text in the conversation, where the user is already looking. Never a toast, and never
+anywhere else on the page: **D14** requires that an advisor failure change nothing else, and the
+interface is where that promise is either kept or quietly broken.
+
+The request is issued off the event loop. §5 runs the interface and `/api/sync` in one process, and a
+tool-using turn can run for a minute; a blocking call on the shared loop would freeze the RuneLite
+plugin's sync for the duration of a question.

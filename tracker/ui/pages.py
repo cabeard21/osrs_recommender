@@ -24,15 +24,27 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
 from fastapi import FastAPI
-from nicegui import ui
+from nicegui import run, ui
+from nicegui.element import Element
 from sqlalchemy.orm import Session, sessionmaker
 
-from tracker.api.deps import CONTENT_ATTR, SESSION_FACTORY_ATTR, SETTINGS_ATTR
+from tracker.api.deps import (
+    ADVISOR_SERVICE_ATTR,
+    CONTENT_ATTR,
+    GUIDANCE_SERVICE_ATTR,
+    SESSION_FACTORY_ATTR,
+    SETTINGS_ATTR,
+)
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.domain.types import AccountType, GpSensitivity
+from tracker.integrations.llm import LlmRefused, LlmUnavailable
+from tracker.sync.advisor import AdvisorNotFound, AdvisorThrottled
+from tracker.sync.guidance import GuidanceNotFound, GuidanceThrottled
+from tracker.ui import advisor as advisor_view
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
+from tracker.ui import guidance as guidance_view
 from tracker.ui import history as history_view
 from tracker.ui import practice as practice_view
 from tracker.ui import read_model
@@ -43,6 +55,11 @@ from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
 from tracker.ui.shell import empty_state, page
 from tracker.ui.view_model import (
+    ADVISOR_DISABLED,
+    ADVISOR_REFUSED,
+    ADVISOR_UNAVAILABLE,
+    GUIDANCE_DISABLED,
+    GUIDANCE_UNAVAILABLE,
     LeafRow,
     PracticeGroupRow,
     RoadmapSelectorModel,
@@ -52,10 +69,30 @@ from tracker.ui.view_model import (
 #: Shown by every view when no player row exists. §15's views all answer questions about an
 #: account, and before the first sync there is no account — which is a state to explain, not
 #: an empty list to render.
+#: Shown when the provider answered and declined. Its own message rather than the
+#: unavailable one: a retry cannot fix a refusal, and saying "try again" would be false.
+GUIDANCE_REFUSED = (
+    "The guidance provider declined to answer this one. The recommendation and its "
+    "estimate are unaffected."
+)
+
 NO_PLAYER = (
     "No account yet. Start RuneLite with the companion plugin and open your bank; "
     "the first sync creates it."
 )
+
+
+def _advisor_failure(pending: Element, transcript: Element, message: str) -> None:
+    """Replace the pending row with an explanation, in the conversation.
+
+    The pending row goes because its spinner promises an answer that is not coming. The message
+    lands in the transcript rather than in a toast because D14 says an advisor failure changes
+    nothing else on the page, and an interruption that covers the screen would contradict that
+    while the code underneath still honoured it.
+    """
+    pending.delete()
+    with transcript:
+        advisor_view.render_error(message)
 
 
 def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None) -> None:
@@ -187,7 +224,7 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             skills_view.render(skill_rows)
 
     @ui.page("/recommendations")
-    def recommendations_page() -> None:
+    async def recommendations_page() -> None:
         # The early return lives below ``with page(...)``, not inside the session block. A
         # ``return`` taken before the frame opens renders an empty document, so the one
         # case that most needs an explanation — no account yet — would be the one case that
@@ -209,7 +246,142 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
-            recommendations_view.render(rows, blocked)
+
+            async def show_guidance(candidate_id: str, *, player_id: int = player_id) -> None:
+                """§21's affordance: ask how, in a dialog, without leaving the list.
+
+                Opens its own session by way of the service, exactly as ``attest`` and
+                ``choose`` do — the page's read-close-render pass is finished by the time
+                anything here runs, and holding that session open across a network call
+                would be a transaction held open for the length of a model's answer.
+                """
+                service = getattr(app.state, GUIDANCE_SERVICE_ATTR, None)
+                with ui.dialog() as dialog, ui.card().classes("max-w-xl"):
+                    if service is None or not service.enabled:
+                        guidance_view.render_error(GUIDANCE_DISABLED)
+                        dialog.open()
+                        return
+                    spinner = ui.spinner()
+                    dialog.open()
+                    try:
+                        # `run.io_bound` keeps the blocking provider call off the event loop
+                        # that is also serving /api/sync in this same process (§5). Without
+                        # it, one click freezes every other tab and the RuneLite plugin.
+                        stored = await run.io_bound(service.guidance_for, player_id, candidate_id)
+                    except GuidanceThrottled as declined:
+                        spinner.delete()
+                        guidance_view.render_error(str(declined))
+                        return
+                    except LlmRefused:
+                        spinner.delete()
+                        guidance_view.render_error(GUIDANCE_REFUSED)
+                        return
+                    except LlmUnavailable:
+                        spinner.delete()
+                        guidance_view.render_error(GUIDANCE_UNAVAILABLE)
+                        return
+                    except GuidanceNotFound as missing:
+                        spinner.delete()
+                        guidance_view.render_error(str(missing))
+                        return
+                    spinner.delete()
+                    if stored is None:
+                        # NiceGUI hands back `None` when the browser disconnected while the
+                        # call was in flight. The note is already stored either way, so the
+                        # next click is a cache hit — there is nothing to draw and nothing
+                        # to apologise for.
+                        return
+                    guidance_view.render_dialog(read_model.guidance_view_of(stored, candidate_id))
+
+            recommendations_view.render(rows, blocked, on_guidance=show_guidance)
+
+    @ui.page("/advisor")
+    async def advisor_page(conversation: int | None = None) -> None:
+        """§22's surface: a thread, and a box to ask into.
+
+        The conversation id lives in the query string rather than in tab storage so a reload
+        returns to the same thread — a conversation that vanishes on refresh is worse than no
+        conversation, because the user has already spent money on it.
+        """
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            view = (
+                read_model.advisor_thread(session, player_id, conversation)
+                if player_id is not None
+                else None
+            )
+
+        with page("Advisor", path="/advisor", roadmap=roadmap):
+            if player_id is None or view is None:
+                empty_state(NO_PLAYER)
+                return
+
+            service = getattr(app.state, ADVISOR_SERVICE_ATTR, None)
+            if service is None or not service.enabled:
+                advisor_view.render_error(ADVISOR_DISABLED)
+                return
+
+            current_id = view.conversation_id
+            advisor_view.render_conversation_list(
+                view,
+                on_select=lambda identifier: ui.navigate.to(f"/advisor?conversation={identifier}"),
+                on_new=lambda: ui.navigate.to("/advisor?conversation=0"),
+            )
+
+            transcript = ui.element("div").classes("flex flex-col gap-4")
+            transcript.props("data-testid=advisor-thread")
+            with transcript:
+                advisor_view.render_thread(view)
+
+            async def ask(*, player_id: int = player_id) -> None:
+                question = str(box.value or "").strip()
+                if not question:
+                    return
+                box.value = ""
+                box.disable()
+                with transcript:
+                    pending = ui.element("div").classes("flex flex-col gap-1")
+                    with pending:
+                        advisor_view.render_pending(question)
+                try:
+                    # `run.io_bound` keeps the blocking turn off the event loop that is also
+                    # serving /api/sync in this process (§5). A tool-using turn is several
+                    # round trips; without this, one question freezes the RuneLite plugin.
+                    reply = await run.io_bound(
+                        service.ask,
+                        player_id,
+                        question,
+                        conversation_id=current_id or None,
+                    )
+                except (AdvisorThrottled, AdvisorNotFound) as declined:
+                    _advisor_failure(pending, transcript, str(declined))
+                    return
+                except LlmRefused:
+                    _advisor_failure(pending, transcript, ADVISOR_REFUSED)
+                    return
+                except LlmUnavailable:
+                    _advisor_failure(pending, transcript, ADVISOR_UNAVAILABLE)
+                    return
+                finally:
+                    box.enable()
+
+                pending.delete()
+                if reply is None:
+                    # NiceGUI hands back `None` when the browser disconnected mid-call. The
+                    # turn is already stored, so the next page load shows it; there is nothing
+                    # to draw and nothing to apologise for.
+                    return
+                with transcript:
+                    advisor_view.render_message(read_model.advisor_reply_row(reply))
+                if not current_id:
+                    ui.navigate.to(f"/advisor?conversation={reply.conversation_id}")
+
+            with ui.row().classes("w-full items-end gap-2"):
+                box = ui.textarea(placeholder="Ask about your account, or about the game…")
+                box.classes("grow").props("autogrow outlined data-testid=advisor-input")
+                send = ui.button("Ask", on_click=ask)
+                send.props("data-testid=advisor-send")
 
     @ui.page("/practice")
     def practice_page() -> None:

@@ -1,0 +1,1787 @@
+{
+  "catalog": {
+    "Abyssal whip": 4151,
+    "Adamant full helm": 1161,
+    "Adamant platebody": 1123,
+    "Adamant platelegs": 1073,
+    "Adamant scimitar": 1331,
+    "Ahrim's hood": 4708,
+    "Ahrim's robeskirt": 4714,
+    "Ahrim's robetop": 4712,
+    "Amulet of fury": 6585,
+    "Amulet of glory": 1704,
+    "Amulet of magic": 1727,
+    "Amulet of power": 1731,
+    "Amulet of rancour": 29801,
+    "Amulet of strength": 1725,
+    "Amulet of torture": 19553,
+    "Ancestral hat": 21018,
+    "Ancestral robe bottom": 21024,
+    "Ancestral robe top": 21021,
+    "Ancient staff": 4675,
+    "Archer helm": 3749,
+    "Armadyl crossbow": 11785,
+    "Avernic treads": 31088,
+    "Bellator ring": 28316,
+    "Berserker helm": 3751,
+    "Berserker ring": 6737,
+    "Black cape": 1019,
+    "Black d'hide body": 2503,
+    "Black d'hide chaps": 2497,
+    "Blood moon tassets": 29025,
+    "Bloodbark body": 25404,
+    "Bloodbark boots": 25410,
+    "Bloodbark helm": 25413,
+    "Bloodbark legs": 25416,
+    "Blue d'hide body": 2499,
+    "Blue d'hide chaps": 2493,
+    "Blue wizard hat": 579,
+    "Blue wizard robe": 577,
+    "Coif": 1169,
+    "Combat bracelet": 11126,
+    "Confliction gauntlets": 31106,
+    "Dinh's bulwark": 21015,
+    "Dorgeshuun crossbow": 8880,
+    "Dragon boots": 11840,
+    "Dragon crossbow": 21902,
+    "Dragon hunter crossbow": 21012,
+    "Dragon hunter wand": 30070,
+    "Dragon platelegs": 4087,
+    "Dragon scimitar": 4587,
+    "Dragonfire ward": 22003,
+    "Eclipse atlatl": 29000,
+    "Elidinis' ward": 25985,
+    "Eternal boots": 13235,
+    "Ghrazi rapier": 22324,
+    "Green d'hide body": 1135,
+    "Green d'hide chaps": 1099,
+    "Green d'hide shield": 22275,
+    "Green d'hide vambraces": 1065,
+    "Helm of neitiznot": 10828,
+    "Hunters' sunlight crossbow": 28869,
+    "Infinity boots": 6920,
+    "Inquisitor's great helm": 24419,
+    "Inquisitor's hauberk": 24420,
+    "Inquisitor's mace": 24417,
+    "Inquisitor's plateskirt": 24421,
+    "Iron full helm": 1153,
+    "Iron platebody": 1115,
+    "Iron platelegs": 1067,
+    "Iron scimitar": 1323,
+    "Justiciar chestguard": 22327,
+    "Justiciar faceguard": 22326,
+    "Justiciar legguards": 22328,
+    "Kodai wand": 21006,
+    "Leather body": 1129,
+    "Leather boots": 1061,
+    "Leather chaps": 1095,
+    "Leather cowl": 1167,
+    "Leather gloves": 1059,
+    "Leather vambraces": 1063,
+    "Lightbearer": 25975,
+    "Magic shortbow": 861,
+    "Magus ring": 28313,
+    "Malediction ward": 11924,
+    "Maple shortbow": 853,
+    "Masori body": 27229,
+    "Masori body (f)": 27238,
+    "Masori chaps": 27232,
+    "Masori chaps (f)": 27241,
+    "Masori mask": 27226,
+    "Masori mask (f)": 27235,
+    "Mithril full helm": 1159,
+    "Mithril platebody": 1121,
+    "Mithril platelegs": 1071,
+    "Mithril scimitar": 1329,
+    "Mystic boots": 4097,
+    "Mystic hat": 4089,
+    "Mystic robe bottom": 4093,
+    "Mystic robe top": 4091,
+    "Necklace of anguish": 19547,
+    "Necklace of rupture": 33639,
+    "Nightmare staff": 24422,
+    "Oak shortbow": 843,
+    "Occult necklace": 12002,
+    "Odium ward": 11926,
+    "Pegasian boots": 13237,
+    "Primordial boots": 13239,
+    "Ring of suffering": 19550,
+    "Rune boots": 4131,
+    "Rune crossbow": 9185,
+    "Rune full helm": 1163,
+    "Rune platebody": 1127,
+    "Rune platelegs": 1079,
+    "Rune scimitar": 1333,
+    "Seers ring": 6731,
+    "Shortbow": 841,
+    "Snakeskin bandana": 6326,
+    "Snakeskin boots": 6328,
+    "Staff of air": 1381,
+    "Steel full helm": 1157,
+    "Steel platebody": 1119,
+    "Steel platelegs": 1069,
+    "Steel scimitar": 1325,
+    "Studded body": 1133,
+    "Studded chaps": 1097,
+    "Torag's platelegs": 4751,
+    "Tormented bracelet": 19544,
+    "Torva full helm": 26382,
+    "Torva platebody": 26384,
+    "Torva platelegs": 26386,
+    "Twinflame staff": 30634,
+    "Twisted bow": 20997,
+    "Twisted buckler": 21000,
+    "Ultor ring": 28307,
+    "Venator ring": 28310,
+    "Virtus mask": 26241,
+    "Virtus robe bottom": 26245,
+    "Virtus robe top": 26243,
+    "Willow shortbow": 849,
+    "Xerician hat": 13385,
+    "Xerician robe": 13389,
+    "Xerician top": 13387,
+    "Zamorak monk bottom": 1033,
+    "Zaryte crossbow": 26374,
+    "Zaryte vambraces": 26235
+  },
+  "wiki": {
+    "Abyssal tentacle": [
+      [
+        "",
+        12006
+      ]
+    ],
+    "Abyssal whip": [
+      [
+        "",
+        4151
+      ]
+    ],
+    "Adamant full helm": [
+      [
+        "",
+        1161
+      ]
+    ],
+    "Adamant platebody": [
+      [
+        "",
+        1123
+      ]
+    ],
+    "Adamant platelegs": [
+      [
+        "",
+        1073
+      ]
+    ],
+    "Adamant scimitar": [
+      [
+        "",
+        1331
+      ]
+    ],
+    "Ahrim's hood": [
+      [
+        "Undamaged",
+        4708
+      ],
+      [
+        "100",
+        4856
+      ],
+      [
+        "75",
+        4857
+      ],
+      [
+        "50",
+        4858
+      ],
+      [
+        "25",
+        4859
+      ],
+      [
+        "0",
+        4860
+      ]
+    ],
+    "Ahrim's robeskirt": [
+      [
+        "[[File:Ahrim's robeskirt.png|center]]",
+        4714
+      ],
+      [
+        "[[File:Ahrim's robeskirt.png|center]]",
+        4874
+      ],
+      [
+        "[[File:Ahrim's robeskirt.png|center]]",
+        4875
+      ],
+      [
+        "[[File:Ahrim's robeskirt.png|center]]",
+        4876
+      ],
+      [
+        "[[File:Ahrim's robeskirt.png|center]]",
+        4877
+      ],
+      [
+        "[[File:Ahrim's robeskirt 0.png|center]]",
+        4878
+      ]
+    ],
+    "Ahrim's robetop": [
+      [
+        "[[File:Ahrim's robetop.png|center]]",
+        4712
+      ],
+      [
+        "[[File:Ahrim's robetop.png|center]]",
+        4868
+      ],
+      [
+        "[[File:Ahrim's robetop.png|center]]",
+        4869
+      ],
+      [
+        "[[File:Ahrim's robetop.png|center]]",
+        4870
+      ],
+      [
+        "[[File:Ahrim's robetop.png|center]]",
+        4871
+      ],
+      [
+        "[[File:Ahrim's robetop 0.png|center]]",
+        4872
+      ]
+    ],
+    "Amulet of blood fury": [
+      [
+        "",
+        24780
+      ]
+    ],
+    "Amulet of fury": [
+      [
+        "",
+        6585
+      ]
+    ],
+    "Amulet of glory": [
+      [
+        "Uncharged",
+        1704
+      ],
+      [
+        "1",
+        1706
+      ],
+      [
+        "2",
+        1708
+      ],
+      [
+        "3",
+        1710
+      ],
+      [
+        "4",
+        1712
+      ],
+      [
+        "5",
+        11976
+      ],
+      [
+        "6",
+        11978
+      ]
+    ],
+    "Amulet of magic": [
+      [
+        "",
+        1727
+      ]
+    ],
+    "Amulet of power": [
+      [
+        "",
+        1731
+      ]
+    ],
+    "Amulet of rancour": [
+      [
+        "",
+        29801
+      ]
+    ],
+    "Amulet of strength": [
+      [
+        "",
+        1725
+      ]
+    ],
+    "Amulet of torture": [
+      [
+        "",
+        19553
+      ]
+    ],
+    "Ancestral hat": [
+      [
+        "",
+        21018
+      ]
+    ],
+    "Ancestral robe bottom": [
+      [
+        "",
+        21024
+      ]
+    ],
+    "Ancestral robe top": [
+      [
+        "",
+        21021
+      ]
+    ],
+    "Ancient sceptre": [
+      [
+        "Normal",
+        27624
+      ],
+      [
+        "Locked",
+        27626
+      ],
+      [
+        "[[File:Ancient sceptre (l) (broken) detail.png|left|150px]]",
+        33827
+      ],
+      [
+        "[[File:Ancient sceptre (l) (mangled) detail.png|left|150px]]",
+        33829
+      ]
+    ],
+    "Ancient staff": [
+      [
+        "",
+        4675
+      ]
+    ],
+    "Archer helm": [
+      [
+        "",
+        3749
+      ]
+    ],
+    "Ardougne cloak 1": [
+      [
+        "",
+        13121
+      ]
+    ],
+    "Ardougne cloak 2": [
+      [
+        "",
+        13122
+      ]
+    ],
+    "Armadyl crossbow": [
+      [
+        "",
+        11785
+      ]
+    ],
+    "Ava's accumulator": [
+      [
+        "",
+        10499
+      ]
+    ],
+    "Ava's assembler": [
+      [
+        "Normal",
+        22109
+      ],
+      [
+        "Broken",
+        21914
+      ],
+      [
+        "Locked",
+        24222
+      ]
+    ],
+    "Ava's attractor": [
+      [
+        "",
+        10498
+      ]
+    ],
+    "Avernic defender": [
+      [
+        "Normal",
+        22322
+      ],
+      [
+        "Broken",
+        22441
+      ],
+      [
+        "Locked",
+        24186
+      ]
+    ],
+    "Avernic treads": [
+      [
+        "",
+        31088
+      ]
+    ],
+    "Barrows gloves": [
+      [
+        "",
+        7462
+      ]
+    ],
+    "Bellator ring": [
+      [
+        "",
+        28316
+      ]
+    ],
+    "Berserker helm": [
+      [
+        "",
+        3751
+      ]
+    ],
+    "Berserker ring": [
+      [
+        "",
+        6737
+      ]
+    ],
+    "Berserker ring (i)": [
+      [
+        "Nightmare Zone",
+        11773
+      ],
+      [
+        "Soul Wars",
+        25264
+      ],
+      [
+        "Emir's Arena",
+        26770
+      ]
+    ],
+    "Black cape": [
+      [
+        "",
+        1019
+      ]
+    ],
+    "Black d'hide body": [
+      [
+        "",
+        2503
+      ]
+    ],
+    "Black d'hide chaps": [
+      [
+        "",
+        2497
+      ]
+    ],
+    "Blade of saeldor": [
+      [
+        "Inactive",
+        23997
+      ],
+      [
+        "Charged",
+        23995
+      ]
+    ],
+    "Blood moon tassets": [
+      [
+        "New",
+        29025
+      ],
+      [
+        "Used",
+        29045
+      ],
+      [
+        "Broken",
+        29070
+      ]
+    ],
+    "Bloodbark body": [
+      [
+        "",
+        25404
+      ]
+    ],
+    "Bloodbark boots": [
+      [
+        "",
+        25410
+      ]
+    ],
+    "Bloodbark helm": [
+      [
+        "",
+        25413
+      ]
+    ],
+    "Bloodbark legs": [
+      [
+        "",
+        25416
+      ]
+    ],
+    "Blue d'hide body": [
+      [
+        "",
+        2499
+      ]
+    ],
+    "Blue d'hide chaps": [
+      [
+        "",
+        2493
+      ]
+    ],
+    "Blue wizard hat": [
+      [
+        "",
+        579
+      ]
+    ],
+    "Blue wizard robe": [
+      [
+        "",
+        577
+      ]
+    ],
+    "Book of darkness": [
+      [
+        "",
+        12612
+      ]
+    ],
+    "Book of law": [
+      [
+        "",
+        12610
+      ]
+    ],
+    "Bow of faerdhinen": [
+      [
+        "Inactive",
+        25862
+      ],
+      [
+        "Charged",
+        25865
+      ]
+    ],
+    "Coif": [
+      [
+        "",
+        1169
+      ]
+    ],
+    "Combat bracelet": [
+      [
+        "Uncharged",
+        11126
+      ],
+      [
+        "(1)",
+        11124
+      ],
+      [
+        "(2)",
+        11122
+      ],
+      [
+        "(3)",
+        11120
+      ],
+      [
+        "(4)",
+        11118
+      ],
+      [
+        "(5)",
+        11974
+      ],
+      [
+        "(6)",
+        11972
+      ]
+    ],
+    "Confliction gauntlets": [
+      [
+        "",
+        31106
+      ]
+    ],
+    "Crystal body": [
+      [
+        "Active",
+        23975
+      ],
+      [
+        "Inactive",
+        23977
+      ]
+    ],
+    "Crystal helm": [
+      [
+        "Active",
+        23971
+      ],
+      [
+        "Inactive",
+        23973
+      ]
+    ],
+    "Crystal legs": [
+      [
+        "Active",
+        23979
+      ],
+      [
+        "Inactive",
+        23981
+      ]
+    ],
+    "Dinh's bulwark": [
+      [
+        "",
+        21015
+      ]
+    ],
+    "Dizana's quiver": [
+      [
+        "Uncharged",
+        28947
+      ],
+      [
+        "Charged",
+        28951
+      ],
+      [
+        "Uncharged + Locked",
+        28949
+      ],
+      [
+        "Charged + Locked",
+        28953
+      ]
+    ],
+    "Dorgeshuun crossbow": [
+      [
+        "",
+        8880
+      ]
+    ],
+    "Dragon boots": [
+      [
+        "",
+        11840
+      ]
+    ],
+    "Dragon crossbow": [
+      [
+        "",
+        21902
+      ]
+    ],
+    "Dragon defender": [
+      [
+        "5 February 2015 –<br/>28 February 2019",
+        12954
+      ],
+      [
+        "21 July 2016 –<br/>28 February 2019",
+        20463
+      ],
+      [
+        "Locked",
+        24143
+      ]
+    ],
+    "Dragon hunter crossbow": [
+      [
+        "",
+        21012
+      ]
+    ],
+    "Dragon hunter wand": [
+      [
+        "",
+        30070
+      ]
+    ],
+    "Dragon platelegs": [
+      [
+        "",
+        4087
+      ]
+    ],
+    "Dragon scimitar": [
+      [
+        "",
+        4587
+      ]
+    ],
+    "Dragonfire ward": [
+      [
+        "Uncharged",
+        22003
+      ],
+      [
+        "Charged",
+        22002
+      ]
+    ],
+    "Echo boots": [
+      [
+        "",
+        28945
+      ]
+    ],
+    "Eclipse atlatl": [
+      [
+        "",
+        29000
+      ]
+    ],
+    "Elidinis' ward": [
+      [
+        "",
+        25985
+      ]
+    ],
+    "Elidinis' ward (f)": [
+      [
+        "",
+        27251
+      ]
+    ],
+    "Elite void robe": [
+      [
+        "6 March 2015 –<br/>9 February 2017",
+        13073
+      ],
+      [
+        "}}",
+        20471
+      ],
+      [
+        "Locked",
+        24180
+      ],
+      [
+        "[[File:Elite void robe (l) (broken) detail.png|left|130px]]",
+        33488
+      ],
+      [
+        "[[File:Elite void robe (l) (mangled) detail.png|left|130px]]",
+        33490
+      ]
+    ],
+    "Elite void top": [
+      [
+        "6 March 2015 –<br/>9 February 2017",
+        13072
+      ],
+      [
+        "}}",
+        20467
+      ],
+      [
+        "Locked",
+        24178
+      ],
+      [
+        "[[File:Elite void top (l) (broken) detail.png|left|130px]]",
+        33480
+      ],
+      [
+        "[[File:Elite void top (l) (mangled) detail.png|left|130px]]",
+        33482
+      ]
+    ],
+    "Eternal boots": [
+      [
+        "",
+        13235
+      ]
+    ],
+    "Explorer's ring 1": [
+      [
+        "",
+        13125
+      ]
+    ],
+    "Explorer's ring 2": [
+      [
+        "",
+        13126
+      ]
+    ],
+    "Explorer's ring 3": [
+      [
+        "",
+        13127
+      ]
+    ],
+    "Explorer's ring 4": [
+      [
+        "",
+        13128
+      ]
+    ],
+    "Eye of ayak": [
+      [
+        "Uncharged",
+        31115
+      ],
+      [
+        "Charged",
+        31113
+      ]
+    ],
+    "Ferocious gloves": [
+      [
+        "",
+        22981
+      ]
+    ],
+    "Fighter torso": [
+      [
+        "Normal",
+        10551
+      ],
+      [
+        "Broken",
+        20513
+      ],
+      [
+        "Locked",
+        24175
+      ],
+      [
+        "[[File:Fighter torso (l) (broken) detail.png|left|130px]]",
+        33520
+      ],
+      [
+        "[[File:Fighter torso (l) (mangled) detail.png|left|130px]]",
+        33522
+      ]
+    ],
+    "Fire cape": [
+      [
+        "Normal",
+        6570
+      ],
+      [
+        "Broken",
+        20445
+      ],
+      [
+        "Locked",
+        24223
+      ]
+    ],
+    "Ghrazi rapier": [
+      [
+        "",
+        22324
+      ]
+    ],
+    "Green d'hide body": [
+      [
+        "",
+        1135
+      ]
+    ],
+    "Green d'hide chaps": [
+      [
+        "",
+        1099
+      ]
+    ],
+    "Green d'hide shield": [
+      [
+        "",
+        22275
+      ]
+    ],
+    "Green d'hide vambraces": [
+      [
+        "",
+        1065
+      ]
+    ],
+    "Harmonised nightmare staff": [
+      [
+        "",
+        24423
+      ]
+    ],
+    "Helm of neitiznot": [
+      [
+        "",
+        10828
+      ]
+    ],
+    "Hunters' sunlight crossbow": [
+      [
+        "",
+        28869
+      ]
+    ],
+    "Iban's staff (u)": [
+      [
+        "",
+        12658
+      ]
+    ],
+    "Imbued saradomin cape": [
+      [
+        "Normal",
+        21791
+      ],
+      [
+        "Broken",
+        24236
+      ],
+      [
+        "Locked",
+        24248
+      ]
+    ],
+    "Infernal cape": [
+      [
+        "Normal",
+        21295
+      ],
+      [
+        "Locked",
+        21287
+      ],
+      [
+        "[[File:Infernal cape (l) detail.png|left|150px]]",
+        24224
+      ],
+      [
+        "[[File:Infernal cape (l) (broken) detail.png|left|150px]]",
+        33500
+      ],
+      [
+        "[[File:Infernal cape (l) (mangled) detail.png|left|150px]]",
+        33502
+      ]
+    ],
+    "Infinity boots": [
+      [
+        "",
+        6920
+      ]
+    ],
+    "Inquisitor's great helm": [
+      [
+        "",
+        24419
+      ]
+    ],
+    "Inquisitor's hauberk": [
+      [
+        "",
+        24420
+      ]
+    ],
+    "Inquisitor's mace": [
+      [
+        "",
+        24417
+      ]
+    ],
+    "Inquisitor's plateskirt": [
+      [
+        "",
+        24421
+      ]
+    ],
+    "Iron full helm": [
+      [
+        "",
+        1153
+      ]
+    ],
+    "Iron platebody": [
+      [
+        "",
+        1115
+      ]
+    ],
+    "Iron platelegs": [
+      [
+        "",
+        1067
+      ]
+    ],
+    "Iron scimitar": [
+      [
+        "",
+        1323
+      ]
+    ],
+    "Justiciar chestguard": [
+      [
+        "",
+        22327
+      ]
+    ],
+    "Justiciar faceguard": [
+      [
+        "",
+        22326
+      ]
+    ],
+    "Justiciar legguards": [
+      [
+        "",
+        22328
+      ]
+    ],
+    "Kodai wand": [
+      [
+        "",
+        21006
+      ]
+    ],
+    "Leather body": [
+      [
+        "",
+        1129
+      ]
+    ],
+    "Leather boots": [
+      [
+        "",
+        1061
+      ]
+    ],
+    "Leather chaps": [
+      [
+        "",
+        1095
+      ]
+    ],
+    "Leather cowl": [
+      [
+        "",
+        1167
+      ]
+    ],
+    "Leather gloves": [
+      [
+        "",
+        1059
+      ]
+    ],
+    "Leather vambraces": [
+      [
+        "",
+        1063
+      ]
+    ],
+    "Lightbearer": [
+      [
+        "",
+        25975
+      ]
+    ],
+    "Magic shortbow": [
+      [
+        "",
+        861
+      ]
+    ],
+    "Magic shortbow (i)": [
+      [
+        "",
+        12788
+      ]
+    ],
+    "Magus ring": [
+      [
+        "",
+        28313
+      ]
+    ],
+    "Malediction ward": [
+      [
+        "",
+        11924
+      ]
+    ],
+    "Maple shortbow": [
+      [
+        "",
+        853
+      ]
+    ],
+    "Masori body": [
+      [
+        "",
+        27229
+      ]
+    ],
+    "Masori body (f)": [
+      [
+        "",
+        27238
+      ]
+    ],
+    "Masori chaps": [
+      [
+        "",
+        27232
+      ]
+    ],
+    "Masori chaps (f)": [
+      [
+        "",
+        27241
+      ]
+    ],
+    "Masori mask": [
+      [
+        "",
+        27226
+      ]
+    ],
+    "Masori mask (f)": [
+      [
+        "",
+        27235
+      ]
+    ],
+    "Mithril full helm": [
+      [
+        "",
+        1159
+      ]
+    ],
+    "Mithril platebody": [
+      [
+        "",
+        1121
+      ]
+    ],
+    "Mithril platelegs": [
+      [
+        "",
+        1071
+      ]
+    ],
+    "Mithril scimitar": [
+      [
+        "",
+        1329
+      ]
+    ],
+    "Mystic boots": [
+      [
+        "",
+        4097
+      ]
+    ],
+    "Mystic hat": [
+      [
+        "",
+        4089
+      ]
+    ],
+    "Mystic robe bottom": [
+      [
+        "",
+        4093
+      ]
+    ],
+    "Mystic robe top": [
+      [
+        "",
+        4091
+      ]
+    ],
+    "Necklace of anguish": [
+      [
+        "",
+        19547
+      ]
+    ],
+    "Necklace of rupture": [
+      [
+        "",
+        33639
+      ]
+    ],
+    "Neitiznot faceguard": [
+      [
+        "",
+        24271
+      ]
+    ],
+    "Nightmare staff": [
+      [
+        "",
+        24422
+      ]
+    ],
+    "Oak shortbow": [
+      [
+        "",
+        843
+      ]
+    ],
+    "Occult necklace": [
+      [
+        "",
+        12002
+      ]
+    ],
+    "Odium ward": [
+      [
+        "",
+        11926
+      ]
+    ],
+    "Pegasian boots": [
+      [
+        "",
+        13237
+      ]
+    ],
+    "Primordial boots": [
+      [
+        "",
+        13239
+      ]
+    ],
+    "Purging staff": [
+      [
+        "",
+        29594
+      ]
+    ],
+    "Ring of suffering": [
+      [
+        "Uncharged",
+        19550
+      ],
+      [
+        "Recoil",
+        20655
+      ]
+    ],
+    "Ring of suffering (i)": [
+      [
+        "Uncharged",
+        19710
+      ],
+      [
+        "Recoil",
+        20657
+      ],
+      [
+        "Uncharged",
+        25246
+      ],
+      [
+        "Recoil",
+        25248
+      ],
+      [
+        "Uncharged",
+        26761
+      ],
+      [
+        "Recoil",
+        26762
+      ]
+    ],
+    "Rune boots": [
+      [
+        "",
+        4131
+      ]
+    ],
+    "Rune crossbow": [
+      [
+        "",
+        9185
+      ]
+    ],
+    "Rune full helm": [
+      [
+        "",
+        1163
+      ]
+    ],
+    "Rune platebody": [
+      [
+        "",
+        1127
+      ]
+    ],
+    "Rune platelegs": [
+      [
+        "",
+        1079
+      ]
+    ],
+    "Rune scimitar": [
+      [
+        "",
+        1333
+      ]
+    ],
+    "Sanguinesti staff": [
+      [
+        "Uncharged",
+        22481
+      ],
+      [
+        "Charged",
+        22323
+      ]
+    ],
+    "Saradomin cape": [
+      [
+        "",
+        2412
+      ]
+    ],
+    "Scorching bow": [
+      [
+        "",
+        29591
+      ]
+    ],
+    "Scythe of vitur": [
+      [
+        "Uncharged",
+        22486
+      ],
+      [
+        "Charged",
+        22325
+      ]
+    ],
+    "Seers ring": [
+      [
+        "",
+        6731
+      ]
+    ],
+    "Seers ring (i)": [
+      [
+        "Nightmare Zone",
+        11770
+      ],
+      [
+        "Soul Wars",
+        25258
+      ],
+      [
+        "Emir's Arena",
+        26767
+      ]
+    ],
+    "Serpentine helm": [
+      [
+        "Uncharged",
+        12929
+      ],
+      [
+        "Charged",
+        12931
+      ]
+    ],
+    "Shortbow": [
+      [
+        "",
+        841
+      ]
+    ],
+    "Snakeskin bandana": [
+      [
+        "",
+        6326
+      ]
+    ],
+    "Snakeskin boots": [
+      [
+        "",
+        6328
+      ]
+    ],
+    "Staff of air": [
+      [
+        "",
+        1381
+      ]
+    ],
+    "Steel full helm": [
+      [
+        "",
+        1157
+      ]
+    ],
+    "Steel platebody": [
+      [
+        "",
+        1119
+      ]
+    ],
+    "Steel platelegs": [
+      [
+        "",
+        1069
+      ]
+    ],
+    "Steel scimitar": [
+      [
+        "",
+        1325
+      ]
+    ],
+    "Studded body": [
+      [
+        "",
+        1133
+      ]
+    ],
+    "Studded chaps": [
+      [
+        "",
+        1097
+      ]
+    ],
+    "Tome of fire": [
+      [
+        "Empty",
+        20716
+      ],
+      [
+        "Charged",
+        20714
+      ]
+    ],
+    "Tome of water": [
+      [
+        "Empty",
+        25576
+      ],
+      [
+        "Charged",
+        25574
+      ]
+    ],
+    "Torag's platelegs": [
+      [
+        "Undamaged",
+        4751
+      ],
+      [
+        "100",
+        4970
+      ],
+      [
+        "75",
+        4971
+      ],
+      [
+        "50",
+        4972
+      ],
+      [
+        "25",
+        4973
+      ],
+      [
+        "0",
+        4974
+      ]
+    ],
+    "Tormented bracelet": [
+      [
+        "",
+        19544
+      ]
+    ],
+    "Torva full helm": [
+      [
+        "[[File:Placeholder.png|center|link=]]",
+        26376
+      ],
+      [
+        "16 August 2023 –<br/>present",
+        26382
+      ]
+    ],
+    "Torva platebody": [
+      [
+        "[[File:Placeholder.png|center|link=]]",
+        26378
+      ],
+      [
+        "16 August 2023 –<br/>present",
+        26384
+      ]
+    ],
+    "Torva platelegs": [
+      [
+        "[[File:Torva platelegs (damaged).png|center]]",
+        26380
+      ],
+      [
+        "[[File:Torva platelegs.png|center]]",
+        26386
+      ]
+    ],
+    "Toxic blowpipe": [
+      [
+        "Empty",
+        12924
+      ],
+      [
+        "Charged",
+        12926
+      ]
+    ],
+    "Toxic staff of the dead": [
+      [
+        "Uncharged",
+        12902
+      ],
+      [
+        "Charged",
+        12904
+      ]
+    ],
+    "Trident of the seas": [
+      [
+        "[[File:Uncharged trident.png|center]]",
+        11908
+      ],
+      [
+        "[[File:Trident of the seas.png|center]]",
+        11907
+      ],
+      [
+        "[[File:Trident of the seas (full).png|center]]",
+        11905
+      ]
+    ],
+    "Trident of the swamp": [
+      [
+        "Uncharged",
+        12900
+      ],
+      [
+        "Charged",
+        12899
+      ]
+    ],
+    "Tumeken's shadow": [
+      [
+        "Uncharged",
+        27277
+      ],
+      [
+        "Charged",
+        27275
+      ]
+    ],
+    "Twinflame staff": [
+      [
+        "",
+        30634
+      ]
+    ],
+    "Twisted bow": [
+      [
+        "",
+        20997
+      ]
+    ],
+    "Twisted buckler": [
+      [
+        "",
+        21000
+      ]
+    ],
+    "Ultor ring": [
+      [
+        "",
+        28307
+      ]
+    ],
+    "Venator bow": [
+      [
+        "Uncharged",
+        27612
+      ],
+      [
+        "Charged",
+        27610
+      ]
+    ],
+    "Venator ring": [
+      [
+        "",
+        28310
+      ]
+    ],
+    "Virtus mask": [
+      [
+        "",
+        26241
+      ]
+    ],
+    "Virtus robe bottom": [
+      [
+        "",
+        26245
+      ]
+    ],
+    "Virtus robe top": [
+      [
+        "",
+        26243
+      ]
+    ],
+    "Void knight gloves": [
+      [
+        "Normal",
+        8842
+      ],
+      [
+        "Broken",
+        20475
+      ],
+      [
+        "Locked",
+        24182
+      ],
+      [
+        "[[File:Void knight gloves (l) (broken) detail.png|left|130px]]",
+        33492
+      ],
+      [
+        "[[File:Void knight gloves (l) (mangled) detail.png|left|130px]]",
+        33494
+      ]
+    ],
+    "Void ranger helm": [
+      [
+        "Normal",
+        11664
+      ],
+      [
+        "Broken",
+        20479
+      ],
+      [
+        "Locked",
+        24184
+      ],
+      [
+        "[[File:Void ranger helm (l) (broken) detail.png|left|130px]]",
+        33472
+      ],
+      [
+        "[[File:Void ranger helm (l) (mangled) detail.png|left|130px]]",
+        33474
+      ]
+    ],
+    "Warped sceptre": [
+      [
+        "Uncharged",
+        28583
+      ],
+      [
+        "Charged",
+        28585
+      ]
+    ],
+    "Webweaver bow": [
+      [
+        "Uncharged",
+        27652
+      ],
+      [
+        "Charged",
+        27655
+      ]
+    ],
+    "Willow shortbow": [
+      [
+        "",
+        849
+      ]
+    ],
+    "Xerician hat": [
+      [
+        "",
+        13385
+      ]
+    ],
+    "Xerician robe": [
+      [
+        "",
+        13389
+      ]
+    ],
+    "Xerician top": [
+      [
+        "",
+        13387
+      ]
+    ],
+    "Zamorak monk bottom": [
+      [
+        "",
+        1033
+      ]
+    ],
+    "Zaryte crossbow": [
+      [
+        "",
+        26374
+      ]
+    ],
+    "Zaryte vambraces": [
+      [
+        "",
+        26235
+      ]
+    ]
+  }
+}

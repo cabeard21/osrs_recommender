@@ -1,0 +1,6 @@
+# A tier is an ordering. Without a slot and a style there is no ladder to order it against,
+# so this reads like progression data and contributes none.
+- id: voidwaker
+  name: Voidwaker
+  item_id: 27690
+  tier: 3

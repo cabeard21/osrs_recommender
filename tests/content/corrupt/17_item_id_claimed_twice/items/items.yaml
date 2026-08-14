@@ -1,0 +1,9 @@
+# One observation would mark both items held — the charged/uncharged aliasing gone wrong.
+- id: voidwaker
+  name: Voidwaker
+  item_id: 27690
+
+- id: armadyl_godsword
+  name: Armadyl godsword
+  item_id: 11802
+  variant_item_ids: [27690]

@@ -18,11 +18,15 @@ why the seeded account puts an unknown and a locked item on the same page.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from fastapi import FastAPI
 from playwright.sync_api import Page, ViewportSize
 
 from tracker.api.router import API_PREFIX
+from tracker.integrations.llm.types import LlmRefused, LlmUnavailable
+from tracker.sync.advisor import AdvisorThrottled
 from tracker.ui.shell import NAV
 from tracker.ui.view_model import BLOCKERS_CTA
 
@@ -586,3 +590,161 @@ def test_the_consequence_rows_are_separate_nodes_from_the_reason(
         phone.locator("[data-testid=recommendation-reason] [data-testid=works-toward]").count() == 0
     )
     assert phone.locator("[data-testid=works-toward]").count() >= 1
+
+
+def test_every_recommendation_offers_guidance(phone: Page, ui_base_url: str) -> None:
+    """§21's affordance sits on each entry, keyed to the candidate it explains.
+
+    Asserted in the browser because the pairing is what matters: a button that renders but
+    carries the wrong candidate would ask about the wrong task, and only the DOM says which
+    button belongs to which card.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+
+    cards = phone.locator('[data-testid="recommendation"]')
+    buttons = phone.locator('[data-testid="guidance-button"]')
+
+    assert cards.count() > 0
+    assert buttons.count() == cards.count()
+
+
+def test_the_guidance_button_does_not_shadow_the_candidate_selector(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The button carries ``data-guidance-for``, never a second ``data-candidate``.
+
+    Its own test because the failure is invisible in the rendered page and shows up only as
+    every pre-existing ``[data-candidate=...]`` locator quietly matching twice.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    first = phone.locator('[data-testid="guidance-button"]').first
+    candidate = first.get_attribute("data-guidance-for")
+
+    assert candidate
+    assert phone.locator(f'[data-candidate="{candidate}"]').count() == 1
+
+
+def test_guidance_reports_itself_unconfigured_rather_than_failing(
+    phone: Page, ui_base_url: str
+) -> None:
+    """D14 — with no provider the feature explains itself and nothing else changes.
+
+    The seeded app has no API key, which is the state most installs are in. The button still
+    appears, because a feature the user cannot discover is a feature they cannot switch on.
+    """
+    _open(phone, ui_base_url, "/recommendations")
+    phone.locator('[data-testid="guidance-button"]').first.click()
+
+    error = phone.locator('[data-testid="guidance-error"]')
+    error.first.wait_for(state="visible")
+
+    assert "not configured" in (error.first.inner_text() or "")
+    assert phone.locator('[data-testid="recommendation"]').count() > 0
+
+
+# ---------------------------------------------------------------------------
+# §22 — the advisor
+# ---------------------------------------------------------------------------
+
+
+def _ask(page: Page, base: str, question: str) -> Page:
+    """Type a question and send it.
+
+    Located by placeholder rather than by ``data-testid``: NiceGUI puts ``props`` on the Quasar
+    wrapper, and the element that actually accepts text is a ``textarea`` nested inside it, so a
+    testid selector here would be asserting about the wrapper's markup rather than about the box
+    a person types in.
+    """
+    _open(page, base, "/advisor")
+    page.get_by_placeholder("Ask about your account").fill(question)
+    page.locator('[data-testid="advisor-send"]').first.click()
+    return page
+
+
+def test_the_nav_offers_the_advisor(phone: Page, ui_base_url: str) -> None:
+    _open(phone, ui_base_url, "/")
+    assert "Advisor" in (phone.locator('[data-testid="nav"]').first.inner_text() or "")
+    assert any(item.path == "/advisor" for item in NAV)
+
+
+def test_an_empty_advisor_says_what_it_can_see(phone: Page, ui_base_url: str) -> None:
+    """The first question should be an informed one."""
+    _open(phone, ui_base_url, "/advisor")
+    empty = phone.locator('[data-testid="advisor-empty"]')
+    empty.first.wait_for(state="visible")
+    assert "Ask anything" in (empty.first.inner_text() or "")
+
+
+def test_asking_renders_the_question_and_the_answer(phone: Page, ui_base_url: str) -> None:
+    _ask(phone, ui_base_url, "what should I bring to crocodiles?")
+    answer = phone.locator('[data-testid="advisor-message"][data-role="advisor"]')
+    answer.first.wait_for(state="visible", timeout=15_000)
+    assert "Bring a whip" in (answer.first.inner_text() or "")
+    asked = phone.locator('[data-testid="advisor-message"][data-role="you"]')
+    assert "crocodiles" in (asked.first.inner_text() or "")
+
+
+def test_the_answer_carries_its_provenance(phone: Page, ui_base_url: str) -> None:
+    """§15 — the reader should not have to infer which prose a model wrote."""
+    _ask(phone, ui_base_url, "who wrote this?")
+    provenance = phone.locator('[data-testid="advisor-provenance"]')
+    provenance.first.wait_for(state="visible", timeout=15_000)
+    assert "scripted-advisor" in (provenance.first.inner_text() or "")
+
+
+def test_a_hedge_is_drawn_apart_from_the_answer(phone: Page, ui_base_url: str) -> None:
+    """It cannot be marked *as* a hedge if it arrives inside the paragraph."""
+    _ask(phone, ui_base_url, "what are you unsure about?")
+    hedge = phone.locator('[data-testid="advisor-uncertain"]')
+    hedge.first.wait_for(state="visible", timeout=15_000)
+    assert "unsure" in (hedge.first.inner_text() or "")
+
+
+def test_the_lookups_an_answer_used_are_named(phone: Page, ui_base_url: str) -> None:
+    """So a reader can tell corpus-backed claims from the model's own knowledge."""
+    _ask(phone, ui_base_url, "which methods exist?")
+    sources = phone.locator('[data-testid="advisor-sources"]')
+    sources.first.wait_for(state="visible", timeout=15_000)
+    assert "training methods" in (sources.first.inner_text() or "")
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected"),
+    [
+        ("unavailable", "Could not reach the advisor"),
+        ("refused", "declined to answer"),
+        ("throttled", "wait"),
+    ],
+)
+def test_each_failure_renders_its_own_sentence_in_the_conversation(
+    phone: Page, ui_base_url: str, advisor: Any, failure: str, expected: str
+) -> None:
+    """D14 — a failure is text where the reader is looking, and nothing else moves.
+
+    Three sentences rather than one because the remedies differ: an outage is worth retrying,
+    a refusal is not, and a throttle is a wait. Collapsing them would tell someone to retry
+    something that will never succeed.
+    """
+    advisor.failure = {
+        "unavailable": LlmUnavailable("down"),
+        "refused": LlmRefused("no"),
+        "throttled": AdvisorThrottled("wait 10s before asking again"),
+    }[failure]
+
+    _ask(phone, ui_base_url, f"trigger {failure}")
+    error = phone.locator('[data-testid="advisor-error"]')
+    error.first.wait_for(state="visible", timeout=15_000)
+    assert expected in (error.first.inner_text() or "")
+    # The rest of the page is untouched: the nav is still there and nothing was replaced.
+    assert phone.locator('[data-testid="nav"]').count() > 0
+
+
+def test_the_advisor_page_does_not_scroll_horizontally(phone: Page, ui_base_url: str) -> None:
+    _ask(phone, ui_base_url, "a fairly long question about what to train next on this account")
+    phone.locator('[data-testid="advisor-message"][data-role="advisor"]').first.wait_for(
+        state="visible", timeout=15_000
+    )
+    overflow = phone.evaluate(
+        "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    )
+    assert overflow <= 1

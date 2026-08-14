@@ -28,7 +28,7 @@ otherwise quietly show two refreshers, rather than silently rendering a policy v
 from __future__ import annotations
 
 import html
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol
 
 from nicegui import ui
@@ -42,6 +42,11 @@ from tracker.ui.view_model import (
     RecommendationEntryRow,
     assert_at_most_one_refresher,
 )
+
+#: What the "How do I do this?" button hands back. Awaitable because §21.4's call is a
+#: network round trip and NiceGUI is asyncio — a synchronous handler here would freeze the
+#: page (and, on this one-process design, the sync API with it) for the whole generation.
+GuidanceHandler = Callable[[str], Awaitable[None]]
 
 
 def _estimate_line(row: RecommendationEntryRow) -> None:
@@ -149,8 +154,17 @@ def _consequence_row(heading: str, rows: Sequence[_Labelled], testid: str) -> No
         line.props(f"data-testid={testid}")
 
 
-def render_entry(row: RecommendationEntryRow) -> None:
-    """One §9.10 entry, refresher or progression, through the same markup either way."""
+def render_entry(
+    row: RecommendationEntryRow,
+    *,
+    on_guidance: GuidanceHandler | None = None,
+) -> None:
+    """One §9.10 entry, refresher or progression, through the same markup either way.
+
+    ``on_guidance`` is keyword-only and defaulted so that an install without §21 configured
+    draws exactly the markup it drew before — D14's promise that a missing provider changes
+    nothing else, made true at the level of the DOM rather than asserted in prose.
+    """
     card = section(row.name, testid="recommendation")
     card.props(f"data-candidate={row.candidate_id} data-kind={row.kind_label} data-rank={row.rank}")
     with card:
@@ -208,6 +222,19 @@ def render_entry(row: RecommendationEntryRow) -> None:
 
         _factor_breakdown(row)
 
+        # Last, and deliberately: the engine's own account of the entry comes first, and the
+        # generated prose is an optional expansion of it rather than a replacement (D14).
+        if on_guidance is not None:
+            button = ui.button(
+                "How do I do this?",
+                on_click=lambda candidate_id=row.candidate_id: on_guidance(candidate_id),
+            )
+            # `data-guidance-for`, not `data-candidate`: the card already carries that
+            # attribute, and a second element inside it answering to the same selector
+            # silently doubles every existing `[data-candidate=...]` locator.
+            button.props("flat dense no-caps data-testid=guidance-button")
+            button.props(f"data-guidance-for={row.candidate_id}")
+
 
 def render_blocked(rows: Sequence[BlockedRecommendationRow]) -> None:
     """§15's collapsed section — never mixed into the ranked list (§16.2).
@@ -239,7 +266,10 @@ def render_blocked(rows: Sequence[BlockedRecommendationRow]) -> None:
 
 
 def render(
-    rows: Sequence[RecommendationEntryRow], blocked: Sequence[BlockedRecommendationRow]
+    rows: Sequence[RecommendationEntryRow],
+    blocked: Sequence[BlockedRecommendationRow],
+    *,
+    on_guidance: GuidanceHandler | None = None,
 ) -> None:
     """The whole view: the ranked primary list, then the collapsed blocked section."""
     assert_at_most_one_refresher(rows)
@@ -248,6 +278,6 @@ def render(
         empty_state("No recommendation yet - sync RuneLite to generate one.")
     else:
         for row in rows:
-            render_entry(row)
+            render_entry(row, on_guidance=on_guidance)
 
     render_blocked(blocked)

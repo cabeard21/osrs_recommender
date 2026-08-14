@@ -41,6 +41,12 @@ CORRUPT_CORPORA: list[tuple[str, str]] = [
     ("13_candidate_without_completion", "no non-empty completion predicate"),
     # Step 5: generated skill bands made a duplicate target reachable by accident.
     ("14_duplicate_skill_target", "completes on magic 94"),
+    # §10.5's gear ladders. Each of these three would otherwise degrade silently: a tier
+    # nothing orders, a rung whose winner is decided by dict iteration, and an id that marks
+    # two different items as held from one observation.
+    ("15_tier_without_ladder", "no gear ladder to sit on"),
+    ("16_duplicate_gear_rung", "shares melee weapon tier 3"),
+    ("17_item_id_claimed_twice", "claims item id 27690"),
 ]
 
 
@@ -172,7 +178,7 @@ class TestEveryRule:
         """A fixture nobody asserts against is a rule nobody is checking."""
         on_disk = {p.name for p in CORRUPT.iterdir() if p.is_dir()}
         assert on_disk == {directory for directory, _ in CORRUPT_CORPORA}
-        assert len(CORRUPT_CORPORA) == 14
+        assert len(CORRUPT_CORPORA) == 17
 
 
 class TestCycleReporting:

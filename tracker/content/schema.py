@@ -98,15 +98,63 @@ class Quest(ContentModel):
     quest_points: int = Field(default=0, ge=0)
 
 
+#: §10.5. The equipment slots the gear ladders are authored against. Not every declared
+#: item sits in one — a quest item or a resource has no slot — so the field is optional.
+ItemSlot = Literal[
+    "weapon",
+    "ammunition",
+    "head",
+    "body",
+    "legs",
+    "hands",
+    "feet",
+    "cape",
+    "neck",
+    "ring",
+    "shield",
+]
+
+#: Which ladder an item belongs to. A piece that serves two styles is declared once per
+#: ladder, each with its own id, rather than as a single row that has to mean both.
+CombatStyle = Literal["melee", "ranged", "magic"]
+
+
 class Item(ContentModel):
-    """§10.5. ``item_id`` is the numeric in-game id the price API and plugin both use."""
+    """§10.5. ``item_id`` is the numeric in-game id the price API and plugin both use.
+
+    ``slot``, ``style`` and ``tier`` place the item on a gear ladder. They are what let a
+    reader be told *"their best melee weapon is a rune scimitar, and the next rung is a
+    dragon scimitar"* rather than an alphabetical list of everything they own — an ordering
+    the corpus knows and a model would otherwise have to guess. All three go together: an
+    item that is not equipment has no rung, and a ``tier`` with no ladder to sit on is
+    meaningless, which :func:`tracker.content.validate._check_gear_ladders` rejects rather
+    than silently ignores.
+
+    ``variant_item_ids`` is the answer to the failure this file's header comment describes.
+    One piece of gear can wear several numeric ids — charged and uncharged, broken and
+    locked, imbued from three different sources — and *owning any of them* is owning the
+    item. Matching on ``item_id`` alone is how a player with a charged Toxic blowpipe gets
+    told to go and buy one. **Ownership tests the union; pricing uses ``item_id`` alone**,
+    because only one variant is the one the market quotes.
+    """
 
     id: str
     name: str
     item_id: int | None = Field(default=None, gt=0)
+    variant_item_ids: tuple[int, ...] = ()
+    slot: ItemSlot | None = None
+    style: CombatStyle | None = None
+    tier: int | None = Field(default=None, ge=1)
     price_mode: Literal["live", "static"] = "static"
     fallback_price_gp: int | None = Field(default=None, ge=0)
     price_staleness_days: int | None = Field(default=None, gt=0)
+
+    @property
+    def owned_item_ids(self) -> frozenset[int]:
+        """Every id that means the player has this item. Empty when none was declared."""
+        if self.item_id is None:
+            return frozenset(self.variant_item_ids)
+        return frozenset({self.item_id, *self.variant_item_ids})
 
 
 # ---------------------------------------------------------------------------
