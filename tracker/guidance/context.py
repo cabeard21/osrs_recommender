@@ -42,9 +42,12 @@ from tracker.content.requirements import (
     UnlockLeaf,
     iter_leaves,
 )
-from tracker.content.schema import Candidate, TrainingMethod
+from tracker.content.schema import Candidate, Item, TrainingMethod
 from tracker.domain.types import (
+    COINS_ITEM_ID,
     BandEstimate,
+    Container,
+    ItemObservation,
     LeafRef,
     PlayerState,
     Recommendation,
@@ -55,6 +58,15 @@ from tracker.domain.types import (
 #: a dozen ways to train one skill in one band, and a model handed all of them writes about
 #: the choice rather than about the task.
 MAX_METHODS = 6
+
+#: How many items reach the prompt. Generous against today's corpus — every declared item
+#: fits — and a real bound once §10.5's item list grows past what is worth spending tokens on.
+MAX_ITEMS = 40
+
+#: Every container an item could be sitting in. An item unobserved after only a bank scan is
+#: *unknown*, not *absent* — the same rule :meth:`Evaluator._item` applies, and the reason
+#: this module cannot simply test membership of ``observed_items``.
+_ALL_CONTAINERS: frozenset[Container] = frozenset(Container)
 
 #: What an unobserved three-valued fact renders as. A single constant so the *unknown* in
 #: ``account_type`` and the one in ``members`` cannot drift apart in the rendered text.
@@ -114,6 +126,55 @@ class MethodFact:
 
 
 @dataclass(frozen=True, slots=True)
+class ItemFact:
+    """One item §10.5 declares, and whether this account has been seen holding it.
+
+    ``state`` is §4.5's three, and the middle one is the whole reason this type exists. An
+    item missing from ``observed_items`` after a bank scan alone is **unknown**, not absent:
+    the equipment slot the player is wearing it in has never been looked at. Only once every
+    container has been scanned does absence become evidence — the same rule
+    :meth:`tracker.progression.evaluate.Evaluator._item` applies, deliberately duplicated
+    rather than shared because that one returns a ``Tri`` for the engine and this one returns
+    prose for a reader.
+
+    ``required`` marks an item this task's own requirement trees name. Those are listed even
+    when not held, because *"you need this and do not have it"* is the point; an unrequired
+    item is only worth its tokens when the player actually has it.
+    """
+
+    item_id: str
+    name: str
+    state: str
+    quantity: int | None = None
+    containers: tuple[str, ...] = ()
+    required: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class GearRung:
+    """Where the account stands on one authored ladder — one style, one slot (§10.5).
+
+    Two hundred items collapse to a handful of these. ``best_held`` is the highest rung the
+    account has been seen wearing or banking, ``next_name`` is the rung above it, and
+    ``ladder_size`` gives both a scale: *"rung 5 of 12"* says far more than *"Rune scimitar"*.
+
+    ``certain`` is false when nothing on this ladder has been seen **and** some container has
+    never been scanned. That combination is the one §4.5 cares about: it looks identical to
+    owning nothing, and telling a player to go and buy their first scimitar when they are
+    wearing a whip is the failure this whole section exists to prevent.
+    """
+
+    style: str
+    slot: str
+    ladder_size: int
+    best_held: str | None = None
+    best_tier: int | None = None
+    next_name: str | None = None
+    next_tier: int | None = None
+    certain: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class TaskContext:
     """Everything §21.3's prompt is allowed to know about one task on one account.
 
@@ -131,6 +192,15 @@ class TaskContext:
     quest_points: int | None = None
     liquid_gp: int | None = None
     """``None`` is *nobody has scanned a container*, and is not ``0`` (§6.5, G3)."""
+
+    scanned_containers: tuple[str, ...] = ()
+    """Which of bank, inventory and equipment have been seen in full — **not when**.
+
+    The *when* is deliberately absent for the reason this class's docstring gives: §21.5
+    hashes this object's rendering, and a timestamp would invalidate every stored note on
+    every sync. Which containers were looked in is what changes the advice; how long ago
+    they were looked in is §15's job and it already does it.
+    """
 
     # The task.
     candidate_id: str = ""
@@ -159,6 +229,25 @@ class TaskContext:
     relevant_skills: tuple[SkillFact, ...] = ()
     relevant_quests: tuple[tuple[str, str], ...] = ()
     relevant_unlocks: tuple[tuple[str, str], ...] = ()
+    items: tuple[ItemFact, ...] = ()
+    """What the account is known to own, as far as §10.5's corpus can name it.
+
+    Not a slice of the bank — the tracker has no view of one. ``observed_items`` is keyed by
+    numeric id and carries no names, and §8.3 forbids pulling the price API's full catalogue
+    at runtime to supply them, so the only items that can be *named* to a model are the ones
+    the corpus declares. That makes this list narrow by construction, and the rendering says
+    so: a model that reads "not held" against eight items and infers an empty bank has been
+    misled by the omission rather than by anything stated.
+    """
+
+    gear: tuple[GearRung, ...] = ()
+    """Where the account stands on each authored gear ladder (§10.5).
+
+    Separate from :attr:`items`, which answers *"does this task's requirement hold?"*. This
+    answers *"what are they actually using, and what is the next upgrade?"* — the question
+    no requirement leaf asks and the one a player asks first.
+    """
+
     methods: tuple[MethodFact, ...] = field(default_factory=tuple)
 
 
@@ -216,9 +305,12 @@ def build_task_context(
         works_toward=_works_toward(recommendation),
         speeds_up=_speeds_up(recommendation),
         roadmaps=_roadmaps(roadmaps, content),
+        scanned_containers=_scanned_containers(state),
         relevant_skills=_skill_facts(skill_ids, skill_targets, state, content),
         relevant_quests=_quest_facts(trees, recommendation, state, content),
         relevant_unlocks=_unlock_facts(trees, recommendation, state),
+        items=_item_facts(trees, recommendation, state, content),
+        gear=_gear_rungs(state, content),
         methods=methods,
     )
 
@@ -315,6 +407,149 @@ def _unlock_facts(
         observed = state.unlocks.get(key)
         facts.append((key, observed.value if observed is not None else UNKNOWN))
     return tuple(facts)
+
+
+def _scanned_containers(state: PlayerState) -> tuple[str, ...]:
+    """Which containers have been seen in full, in the enum's own order.
+
+    Enum order rather than alphabetical: bank, inventory, equipment is how a player thinks
+    about where their things are, and the order is fixed by the enum so it cannot drift and
+    move §21.5's hash.
+    """
+    return tuple(container.value for container in Container if container in state.container_scans)
+
+
+def _item_facts(
+    trees: Iterable[Requirement],
+    recommendation: Recommendation,
+    state: PlayerState,
+    content: Content,
+) -> tuple[ItemFact, ...]:
+    """The items worth naming: what this task needs, and what the account is known to hold.
+
+    Both halves are needed and neither is sufficient. The requirement trees name what would
+    block the task, which is the existing slice principle applied to :class:`ItemLeaf`. But
+    the question a player actually asks — *"do I already have something better than this?"* —
+    is not answered by any leaf, and answering it is what stops the model prefacing its advice
+    with a guess about gear it was never shown. So every declared item the account is observed
+    to hold is listed too, task-relevant or not.
+
+    Coins are skipped: §6.5 already renders them as ``liquid_gp`` in the account block, and a
+    second line saying the same number in different words is a line the model has to reconcile.
+    """
+    required_ids = {leaf.item_id for leaf in _leaves(trees) if isinstance(leaf, ItemLeaf)}
+    required_ids |= {
+        blocker.key for blocker in recommendation.blockers if blocker.leaf_type == "item"
+    }
+    fully_scanned = _ALL_CONTAINERS <= state.container_scans.keys()
+
+    facts: list[ItemFact] = []
+    for item in content.items.values():
+        if item.item_id is None or item.item_id == COINS_ITEM_ID:
+            continue
+        required = item.id in required_ids
+        observation = _observation(item, state)
+        held = observation is not None and observation.quantity > 0
+        # An unrequired item nobody has been seen holding earns nothing but tokens.
+        if not held and not required:
+            continue
+        # Nor does one the ladder summary already reported: `gear` names the best rung held
+        # in every slot, so repeating it here spends tokens to say the same thing twice and
+        # invites the model to treat two mentions as two items.
+        if held and not required and item.tier is not None:
+            continue
+        facts.append(
+            ItemFact(
+                item_id=item.id,
+                name=item.name,
+                state=_item_state(held=held, fully_scanned=fully_scanned),
+                quantity=observation.quantity if held and observation is not None else None,
+                containers=(
+                    tuple(
+                        container.value
+                        for container in Container
+                        if container in observation.containers
+                    )
+                    if held and observation is not None
+                    else ()
+                ),
+                required=required,
+            )
+        )
+
+    # Required first — those are the ones that gate the task — then by name, so a corpus
+    # reordering cannot move the cache.
+    facts.sort(key=lambda fact: (not fact.required, fact.name))
+    return tuple(facts[:MAX_ITEMS])
+
+
+def _observation(item: Item, state: PlayerState) -> ItemObservation | None:
+    """The observation for any id that counts as owning ``item`` (§10.5).
+
+    One piece of gear wears several numeric ids — charged and uncharged, broken and locked —
+    and matching only ``item_id`` is how a player holding a *charged* blowpipe is told they
+    have no blowpipe. Ties break on the largest stack, then the lowest id, so two variants in
+    the bank cannot make the rendering depend on set iteration order.
+    """
+    found = [
+        observation
+        for item_id in sorted(item.owned_item_ids)
+        if (observation := state.observed_items.get(item_id)) is not None
+        and observation.quantity > 0
+    ]
+    if not found:
+        return None
+    return max(found, key=lambda observation: (observation.quantity, -observation.item_id))
+
+
+def _gear_rungs(state: PlayerState, content: Content) -> tuple[GearRung, ...]:
+    """Where this account stands on each authored ladder: best held, and the next rung up.
+
+    This is the section that answers the question a player actually asks, and it exists
+    because listing two hundred items cannot. A ladder collapses to two names — what they
+    have and what comes next — which is both far cheaper and far more useful than the corpus
+    dumped out in full.
+
+    A ladder with nothing held is still worth a line: *"no ranged weapon on the ladder has
+    been seen"* is exactly the state that produces bad advice when left unsaid, and it is
+    reported as unknown rather than absent until every container has been scanned.
+    """
+    fully_scanned = _ALL_CONTAINERS <= state.container_scans.keys()
+    ladders: dict[tuple[str, str], list[Item]] = {}
+    for item in content.items.values():
+        if item.tier is None or item.slot is None or item.style is None:
+            continue
+        ladders.setdefault((item.style, item.slot), []).append(item)
+
+    rungs: list[GearRung] = []
+    for (style, slot), items in sorted(ladders.items()):
+        # By tier, then id: validation forbids two items sharing a rung, so the id is a
+        # tie-break that can never fire — it is here so a corpus bug degrades to a stable
+        # ordering rather than to a cache that misses at random.
+        items.sort(key=lambda item: (item.tier or 0, item.id))
+        held = [item for item in items if _observation(item, state) is not None]
+        best = held[-1] if held else None
+        following = [item for item in items if best is None or (item.tier or 0) > (best.tier or 0)]
+        rungs.append(
+            GearRung(
+                style=style,
+                slot=slot,
+                ladder_size=len(items),
+                best_held=best.name if best is not None else None,
+                best_tier=best.tier if best is not None else None,
+                next_name=following[0].name if following else None,
+                next_tier=following[0].tier if following else None,
+                certain=bool(held) or fully_scanned,
+            )
+        )
+    return tuple(rungs)
+
+
+def _item_state(*, held: bool, fully_scanned: bool) -> str:
+    """§4.5's three states. Absence is only evidence once every container has been looked in."""
+    if held:
+        return "held"
+    return "not held" if fully_scanned else UNKNOWN
 
 
 def _relevant_methods(

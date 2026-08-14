@@ -24,7 +24,6 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
@@ -32,6 +31,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.content.schema import Candidate
+from tracker.db import entry_decode
 from tracker.db import guidance as guidance_repo
 from tracker.db.enums import RecommendationCandidateKind
 from tracker.db.models import RecommendationEntry, RecommendationSnapshot
@@ -39,19 +39,10 @@ from tracker.db.projection import build_player_state
 from tracker.db.repository import roadmap_selection
 from tracker.db.session import session_scope
 from tracker.domain.types import (
-    Acceleration,
-    BandEstimate,
     CandidateKind,
     Confidence,
-    Consequences,
     Estimate,
-    FactorContribution,
-    GateProgress,
-    GoalLink,
-    GoalProgress,
-    LeafRef,
     Recommendation,
-    UnblockedCapability,
 )
 from tracker.guidance.context import build_task_context
 from tracker.guidance.prompt import GUIDANCE_SCHEMA_VERSION, build_prompt
@@ -253,12 +244,12 @@ def _entry_to_recommendation(entry: RecommendationEntry, content: Content) -> Re
         name=name,
         kind=_kind(entry, candidate),
         score=entry.score,
-        factors=_factors(entry.factors),
+        factors=entry_decode.factors_from_json(entry.factors),
         reason=entry.reason,
         estimate=_estimate(entry),
         blocked=entry.blocked,
-        blockers=_blockers(entry.blockers),
-        consequences=_consequences(entry.consequences),
+        blockers=entry_decode.blockers_from_json(entry.blockers),
+        consequences=entry_decode.consequences_from_json(entry.consequences),
     )
 
 
@@ -277,30 +268,8 @@ def _kind(entry: RecommendationEntry, candidate: Candidate | None) -> CandidateK
     return candidate.kind if candidate is not None else CandidateKind.SKILL_TRAINING
 
 
-def _factors(raw: dict[str, Any] | None) -> dict[str, FactorContribution]:
-    return {
-        name: FactorContribution(
-            name=name,
-            value=float(values.get("value", 0.0)),
-            weight=float(values.get("weight", 0.0)),
-            log_contribution=float(values.get("log_contribution", 0.0)),
-        )
-        for name, values in (raw or {}).items()
-    }
-
-
 def _estimate(entry: RecommendationEntry) -> Estimate | None:
-    bands = tuple(
-        BandEstimate(
-            from_level=int(band.get("from_level", 0)),
-            to_level=int(band.get("to_level", 0)),
-            method_id=band.get("method_id"),
-            hours=float(band.get("hours", 0.0)),
-            gp=int(band.get("gp", 0)),
-            fallback=bool(band.get("fallback", False)),
-        )
-        for band in (entry.bands or ())
-    )
+    bands = entry_decode.bands_from_json(entry.bands)
     if entry.estimated_hours is None and entry.estimated_gp is None and not bands:
         return None
     return Estimate(
@@ -308,55 +277,4 @@ def _estimate(entry: RecommendationEntry) -> Estimate | None:
         gp=entry.estimated_gp,
         confidence=Confidence(entry.estimate_confidence),
         bands=bands,
-    )
-
-
-def _blockers(raw: list[dict[str, Any]] | None) -> tuple[LeafRef, ...]:
-    return tuple(
-        LeafRef(
-            leaf_type=str(leaf.get("leaf_type", "")),
-            key=str(leaf.get("key", "")),
-            description=str(leaf.get("description", "")),
-            target=leaf.get("target"),
-        )
-        for leaf in (raw or ())
-    )
-
-
-def _consequences(raw: dict[str, Any] | None) -> Consequences:
-    """§9.10's consequences, back from the JSON ``asdict`` wrote.
-
-    An absent or empty object is a legitimate result — an entry that ranked on cheapness
-    alone genuinely has nothing to say, and inventing something for it here would be exactly
-    the authored justification §9.5 forbids.
-    """
-    data = raw or {}
-    return Consequences(
-        unblocks_capabilities=tuple(
-            UnblockedCapability(**item) for item in data.get("unblocks_capabilities", ())
-        ),
-        gate_progress=tuple(
-            GateProgress(
-                candidate_id=item["candidate_id"],
-                name=item["name"],
-                remaining_before=item["remaining_before"],
-                remaining_after=item["remaining_after"],
-                satisfied=_blockers(item.get("satisfied")),
-            )
-            for item in data.get("gate_progress", ())
-        ),
-        goal_progress=tuple(
-            GoalProgress(
-                capability_id=item["capability_id"],
-                name=item["name"],
-                weight=item["weight"],
-                remaining_before=item["remaining_before"],
-                remaining_after=item["remaining_after"],
-                on_roadmap=item["on_roadmap"],
-                satisfied=_blockers(item.get("satisfied")),
-            )
-            for item in data.get("goal_progress", ())
-        ),
-        speeds_up=tuple(Acceleration(**item) for item in data.get("speeds_up", ())),
-        goal_links=tuple(GoalLink(**item) for item in data.get("goal_links", ())),
     )

@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from tracker.content.loader import Content
-from tracker.content.schema import Candidate, MethodDetail, TrainingMethod
+from tracker.content.schema import Candidate, Item, MethodDetail, TrainingMethod
 from tracker.domain.types import (
     Acceleration,
     AccountType,
@@ -733,3 +733,340 @@ class TestDeterminism:
         )
 
         assert forward.methods == reversed_.methods
+
+
+class TestItems:
+    """§4.5's three states, applied to the one fact a player asks about by name.
+
+    "What am I wearing" is not a requirement leaf and never appears in one, so none of the
+    slice logic above reaches it. Left unsaid, the model fills the gap with a guess and
+    prefaces otherwise-good advice with a caveat about gear it could have been shown — which
+    is the failure these tests exist to hold shut.
+    """
+
+    def test_a_held_item_is_reported_with_its_containers(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        context = build_task_context(
+            state=make_player_state(
+                container_scans={Container.EQUIPMENT: observed_at},
+                observed_items={
+                    27690: ItemObservation(
+                        item_id=27690,
+                        quantity=1,
+                        containers=frozenset({Container.EQUIPMENT}),
+                        observed_at=observed_at,
+                    )
+                },
+            ),
+            recommendation=make_recommendation(),
+            content=make_content(
+                candidates=[make_candidate("train_slayer_10")],
+                items=[Item(id="voidwaker", name="Voidwaker", item_id=27690)],
+            ),
+            roadmaps=no_roadmaps,
+        )
+
+        assert [(fact.name, fact.state) for fact in context.items] == [("Voidwaker", "held")]
+        assert context.items[0].containers == ("equipment",)
+
+    def test_an_unseen_item_is_unknown_until_every_container_is_scanned(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """A bank scan alone cannot prove they are not *wearing* the thing (§4.5)."""
+        content = make_content(
+            candidates=[make_candidate("train_slayer_10", requires={"item": "voidwaker"})],
+            items=[Item(id="voidwaker", name="Voidwaker", item_id=27690)],
+        )
+
+        def state_with(*scanned: Container) -> PlayerState:
+            return make_player_state(container_scans=dict.fromkeys(scanned, observed_at))
+
+        def item_state(*scanned: Container) -> str:
+            context = build_task_context(
+                state=state_with(*scanned),
+                recommendation=make_recommendation(),
+                content=content,
+                roadmaps=no_roadmaps,
+            )
+            return context.items[0].state
+
+        assert item_state(Container.BANK) == UNKNOWN
+        assert item_state(Container.BANK, Container.INVENTORY) == UNKNOWN
+        assert item_state(Container.BANK, Container.INVENTORY, Container.EQUIPMENT) == "not held"
+
+    def test_an_unheld_item_this_task_does_not_need_is_not_listed(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """Relevance again: *"they do not have this irrelevant thing"* is bought tokens."""
+        context = build_task_context(
+            state=make_player_state(
+                container_scans=dict.fromkeys(Container, observed_at),
+            ),
+            recommendation=make_recommendation(),
+            content=make_content(
+                candidates=[make_candidate("train_slayer_10")],
+                items=[Item(id="voidwaker", name="Voidwaker", item_id=27690)],
+            ),
+            roadmaps=no_roadmaps,
+        )
+
+        assert context.items == ()
+
+    def test_a_required_item_is_listed_even_when_not_held(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        context = build_task_context(
+            state=make_player_state(container_scans=dict.fromkeys(Container, observed_at)),
+            recommendation=make_recommendation(),
+            content=make_content(
+                candidates=[make_candidate("train_slayer_10", requires={"item": "voidwaker"})],
+                items=[Item(id="voidwaker", name="Voidwaker", item_id=27690)],
+            ),
+            roadmaps=no_roadmaps,
+        )
+
+        assert [(fact.name, fact.state, fact.required) for fact in context.items] == [
+            ("Voidwaker", "not held", True)
+        ]
+
+    def test_an_item_with_no_numeric_id_is_skipped_rather_than_reported_absent(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """It can never appear in an observation, so *"not held"* would be a permanent lie."""
+        context = build_task_context(
+            state=make_player_state(container_scans=dict.fromkeys(Container, observed_at)),
+            recommendation=make_recommendation(),
+            content=make_content(
+                candidates=[make_candidate("train_slayer_10", requires={"item": "blowpipe"})],
+                items=[Item(id="blowpipe", name="Toxic blowpipe")],
+            ),
+            roadmaps=no_roadmaps,
+        )
+
+        assert context.items == ()
+
+    def test_scanned_containers_are_reported_in_a_fixed_order(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """A dict insertion order leaking here would move §21.5's hash at random."""
+
+        def scanned(*containers: Container) -> tuple[str, ...]:
+            context = build_task_context(
+                state=make_player_state(container_scans=dict.fromkeys(containers, observed_at)),
+                recommendation=make_recommendation(),
+                content=make_content(candidates=[make_candidate("train_slayer_10")]),
+                roadmaps=no_roadmaps,
+            )
+            return context.scanned_containers
+
+        assert scanned(Container.EQUIPMENT, Container.BANK) == ("bank", "equipment")
+        assert scanned(Container.BANK, Container.EQUIPMENT) == ("bank", "equipment")
+        assert scanned() == ()
+
+
+class TestGearLadders:
+    """§10.5's rungs — the answer to *"what am I actually using?"*.
+
+    No requirement leaf asks that question, so none of the slice logic above reaches it, and
+    a guidance answer that has to guess at it opens with an apology instead of advice.
+    """
+
+    def test_the_best_held_rung_wins_and_names_the_next_one(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        ladder = [
+            Item(id="bronze", name="Bronze", item_id=1, slot="weapon", style="melee", tier=1),
+            Item(id="rune", name="Rune", item_id=2, slot="weapon", style="melee", tier=2),
+            Item(id="dragon", name="Dragon", item_id=3, slot="weapon", style="melee", tier=3),
+        ]
+        # Holding two rungs is the ordinary case — the old one stays in the bank.
+        context = build_task_context(
+            state=make_player_state(
+                container_scans=dict.fromkeys(Container, observed_at),
+                observed_items={
+                    1: ItemObservation(
+                        item_id=1,
+                        quantity=1,
+                        containers=frozenset({Container.BANK}),
+                        observed_at=observed_at,
+                    ),
+                    2: ItemObservation(
+                        item_id=2,
+                        quantity=1,
+                        containers=frozenset({Container.EQUIPMENT}),
+                        observed_at=observed_at,
+                    ),
+                },
+            ),
+            recommendation=make_recommendation(),
+            content=make_content(candidates=[make_candidate("train_slayer_10")], items=ladder),
+            roadmaps=no_roadmaps,
+        )
+
+        rung = context.gear[0]
+        assert (rung.best_held, rung.best_tier) == ("Rune", 2)
+        assert (rung.next_name, rung.next_tier) == ("Dragon", 3)
+        assert rung.ladder_size == 3
+
+    def test_a_variant_id_counts_as_owning_the_item(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """The charged blowpipe again: matching ``item_id`` alone would report it missing."""
+        blowpipe = Item(
+            id="toxic_blowpipe",
+            name="Toxic blowpipe",
+            item_id=12924,  # the empty form — the only one with a market price
+            variant_item_ids=(12926,),  # charged, and untradeable
+            slot="weapon",
+            style="ranged",
+            tier=1,
+        )
+        context = build_task_context(
+            state=make_player_state(
+                container_scans=dict.fromkeys(Container, observed_at),
+                observed_items={
+                    12926: ItemObservation(
+                        item_id=12926,
+                        quantity=1,
+                        containers=frozenset({Container.EQUIPMENT}),
+                        observed_at=observed_at,
+                    )
+                },
+            ),
+            recommendation=make_recommendation(),
+            content=make_content(candidates=[make_candidate("train_slayer_10")], items=[blowpipe]),
+            roadmaps=no_roadmaps,
+        )
+
+        assert context.gear[0].best_held == "Toxic blowpipe"
+
+    def test_an_empty_ladder_is_uncertain_until_every_container_is_scanned(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """*"They own no weapon"* off a bank scan alone is a guess about the equipment slot."""
+        ladder = [Item(id="rune", name="Rune", item_id=2, slot="weapon", style="melee", tier=1)]
+        content = make_content(candidates=[make_candidate("train_slayer_10")], items=ladder)
+
+        def certain_with(*scanned: Container) -> bool:
+            context = build_task_context(
+                state=make_player_state(container_scans=dict.fromkeys(scanned, observed_at)),
+                recommendation=make_recommendation(),
+                content=content,
+                roadmaps=no_roadmaps,
+            )
+            return context.gear[0].certain
+
+        assert certain_with(Container.BANK) is False
+        assert certain_with(*Container) is True
+
+    def test_a_held_item_on_a_ladder_is_not_also_listed_as_a_loose_item(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+        observed_at: Any,
+    ) -> None:
+        """Two mentions of one sword invite the model to infer two swords."""
+        ladder = [Item(id="rune", name="Rune", item_id=2, slot="weapon", style="melee", tier=1)]
+        context = build_task_context(
+            state=make_player_state(
+                container_scans=dict.fromkeys(Container, observed_at),
+                observed_items={
+                    2: ItemObservation(
+                        item_id=2,
+                        quantity=1,
+                        containers=frozenset({Container.EQUIPMENT}),
+                        observed_at=observed_at,
+                    )
+                },
+            ),
+            recommendation=make_recommendation(),
+            content=make_content(candidates=[make_candidate("train_slayer_10")], items=ladder),
+            roadmaps=no_roadmaps,
+        )
+
+        assert context.gear[0].best_held == "Rune"
+        assert context.items == ()
+
+    def test_ladders_are_ordered_independently_of_the_corpus(
+        self,
+        make_player_state: Callable[..., PlayerState],
+        make_candidate: Callable[..., Candidate],
+        make_content: Callable[..., Content],
+        make_recommendation: Callable[..., Recommendation],
+        no_roadmaps: RoadmapSelection,
+    ) -> None:
+        """A YAML reordering must not move §21.5's hash."""
+        ladder = [
+            Item(id="a", name="A", item_id=1, slot="weapon", style="melee", tier=1),
+            Item(id="b", name="B", item_id=2, slot="head", style="magic", tier=1),
+            Item(id="c", name="C", item_id=3, slot="weapon", style="ranged", tier=1),
+        ]
+
+        def gear_for(items: list[Item]) -> tuple[Any, ...]:
+            context = build_task_context(
+                state=make_player_state(),
+                recommendation=make_recommendation(),
+                content=make_content(candidates=[make_candidate("train_slayer_10")], items=items),
+                roadmaps=no_roadmaps,
+            )
+            return context.gear
+
+        assert gear_for(ladder) == gear_for(list(reversed(ladder)))

@@ -30,7 +30,7 @@ from tracker.domain.types import (
     Recommendation,
     RoadmapSelection,
 )
-from tracker.guidance.context import SkillFact, TaskContext, build_task_context
+from tracker.guidance.context import ItemFact, SkillFact, TaskContext, build_task_context
 from tracker.guidance.prompt import (
     SYSTEM_PROMPT,
     build_prompt,
@@ -88,6 +88,16 @@ class TestTheStableHalfIsStable:
         assert "uncertain" in SYSTEM_PROMPT
         assert "unknown" in SYSTEM_PROMPT
         assert "tracker's" in SYSTEM_PROMPT
+
+    def test_the_system_prompt_demands_an_answer_specific_to_the_account(self) -> None:
+        """The instruction that stops §21 producing advice fit for anybody.
+
+        §21.2 spends real money assembling a per-account slice, and an instruction block that
+        does not require the model to *use* it fails silently: the answers stay fluent, stay
+        correct, and stay generic. There is no exception and no wrong number attached to that
+        failure, so a test is the only thing that notices when the rule is trimmed away.
+        """
+        assert "identically for any account" in SYSTEM_PROMPT
 
 
 class TestContextHash:
@@ -336,6 +346,76 @@ class TestRendering:
         assert "# Training methods" not in rendered
         assert "# Account" in rendered
 
+    def test_a_held_item_is_named_with_where_it_was_seen(self) -> None:
+        """The line that stops the model guessing at gear it was in fact told about."""
+        rendered = render_context(
+            TaskContext(
+                task_name="Train Slayer to 10",
+                scanned_containers=("bank", "inventory", "equipment"),
+                items=(
+                    ItemFact(
+                        item_id="rune_crossbow",
+                        name="Rune crossbow",
+                        state="held",
+                        quantity=1,
+                        containers=("equipment",),
+                    ),
+                ),
+            )
+        )
+
+        assert "- Rune crossbow: held, in equipment" in rendered
+
+    def test_a_required_item_is_listed_even_when_not_held(self) -> None:
+        """*"You need this and do not have it"* is the whole point of listing it."""
+        rendered = render_context(
+            TaskContext(
+                scanned_containers=("bank", "inventory", "equipment"),
+                items=(
+                    ItemFact(
+                        item_id="voidwaker",
+                        name="Voidwaker",
+                        state="not held",
+                        required=True,
+                    ),
+                ),
+            )
+        )
+
+        assert "- Voidwaker: not held *(this task needs it)*" in rendered
+
+    def test_a_partial_scan_says_absence_is_not_proof(self) -> None:
+        """§4.5's middle state, in the one place a model would otherwise read it as a "no"."""
+        rendered = render_context(TaskContext(scanned_containers=("bank",)))
+
+        assert "Never scanned: inventory, equipment" in rendered
+        assert "absence below is not proof they lack it" in rendered
+
+    def test_nothing_scanned_says_so_rather_than_omitting_the_section(self) -> None:
+        """An omitted section reads as *"not applicable"*; here it would read as *"no gear"*."""
+        rendered = render_context(TaskContext())
+
+        assert "# Gear and items" in rendered
+        assert "No container has ever been scanned" in rendered
+
+    def test_the_item_section_disowns_the_gear_it_cannot_see(self) -> None:
+        """The instruction that answers the complaint this section was built for.
+
+        A model shown a short item list and nothing else concludes the bank is empty, or
+        opens with a paragraph apologising for not knowing what the player is wearing. Both
+        are worse than the truth, which is that the tracker names a few items and no more.
+        """
+        rendered = render_context(
+            TaskContext(
+                scanned_containers=("bank", "inventory", "equipment"),
+                items=(ItemFact(item_id="voidwaker", name="Voidwaker", state="not held"),),
+            )
+        )
+
+        assert "the tracker sees nothing else in the bank" in rendered
+        assert "unseen rather than absent" in rendered
+        assert "apologising for not knowing their gear" in rendered
+
     def test_the_whole_rendering_is_a_golden_string(
         self,
         make_player_state: Callable[..., PlayerState],
@@ -426,6 +506,22 @@ class TestRendering:
             "not shown.\n"
             "\n"
             "- Slayer: level 4, target 10\n"
+            "\n"
+            "# Gear and items\n"
+            "\n"
+            "Scanned in full: bank. Never scanned: inventory, equipment — an item could be "
+            "sitting there unseen, so absence below is not proof they lack it.\n"
+            "\n"
+            "The ladders cover weapons, armour and jewellery for all three combat styles. "
+            "They do not cover supplies, resources or quest items, and the tracker sees "
+            "nothing else in the bank — so a rung is authoritative, and everything off the "
+            "ladders is unseen rather than absent.\n"
+            "\n"
+            "Use this rather than guessing. If they are shown holding a weapon, do not tell "
+            "them to buy a worse one, and do not open your answer by apologising for not "
+            "knowing their gear. Where advice turns on something off the ladders, put the "
+            'condition in the line that needs it — "if you are not already stocked with '
+            'food" — and carry on.\n'
             "\n"
             "# Training methods from the tracker's content\n"
             "\n"

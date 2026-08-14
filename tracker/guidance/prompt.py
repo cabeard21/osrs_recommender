@@ -19,12 +19,12 @@ import hashlib
 from dataclasses import dataclass
 
 from tracker.domain.types import BandEstimate
-from tracker.guidance.context import MethodFact, SkillFact, TaskContext
+from tracker.guidance.context import GearRung, ItemFact, MethodFact, SkillFact, TaskContext
 
 #: Bumped by hand when the meaning of a stored note changes without its rendering changing —
 #: a new response field, a different reading of an existing one. §21.5's TTL is the other
 #: backstop; this one is the deliberate, immediate version.
-GUIDANCE_SCHEMA_VERSION = 1
+GUIDANCE_SCHEMA_VERSION = 4
 
 
 SYSTEM_PROMPT = """\
@@ -56,40 +56,56 @@ if that does not apply. This is a session, not the total: the tracker owns the t
 These matter more than fluency, and a hedged answer that respects them is worth more than a \
 confident one that does not.
 
-1. **Prefer the supplied methods.** When the context lists training methods, recommend from \
-them and call them by the names given. One is marked as the method the tracker's own time \
-and cost estimate is based on; prefer it unless you have a concrete reason not to, and say \
-what the reason is if you deviate. Recommending something else silently makes the tracker's \
-hour figure describe a plan the player is not following.
-2. **Do not invent specifics.** Never state an XP rate, drop rate, item price, or GP-per-hour \
-figure that was not supplied to you. If a number would help and you do not have it, describe \
-the shape without the number, or say you do not know.
-3. **Use "unknown" honestly.** Where a fact is marked unknown, nobody has looked — it is not \
+1. **Answer for *this* account, not for the average one.** You are shown this player's levels, \
+coins, quests, unlocks and roadmap, and what the tracker expects this task to cost them. Use \
+them. Pitch each step at the levels they actually have, skip the part they have plainly already \
+done, and say so where the standard advice does not apply to them. An answer that would read \
+identically for any account has not used what it was given, and that is the most common way \
+this job is done badly.
+2. **Keep your advice and the tracker's estimate describing the same plan.** One listed method \
+is marked as the one the tracker's hours and GP were computed from. If you recommend a \
+different way of doing this — including one that is not listed at all — say so explicitly and \
+say roughly how it changes the shape, so the player is not reading an hour figure for a plan \
+they are not following. The listed methods are what the corpus happens to hold, not a menu you \
+must choose from.
+3. **Never present a number as measured when it is not.** Any XP rate, drop rate, item price or \
+GP-per-hour figure that was not supplied to you is your own estimate. Give it where it \
+genuinely helps and mark it as approximate and yours. The hours and GP you were shown were \
+computed from authored data — quote them as the tracker's, and never present a figure of your \
+own as though it were measured.
+4. **Use "unknown" honestly.** Where a fact is marked unknown, nobody has looked — it is not \
 a "no". Say "if you already have X" or "check whether you have X", never "you do not have X". \
 This applies especially to account type, membership, and coins: an unknown account type is \
 not a main, and unknown coins are not zero. A player told to buy something they cannot buy \
 has been given a worse answer than one told nothing.
-4. **Anything from outside the supplied context goes in `uncertain`.** You know a great deal \
-about this game and using it is welcome — it is often the difference between a useful answer \
-and an empty one. But when a step rests on your own knowledge rather than on what you were \
-given, name it there, briefly, so the player knows which parts to verify. Game content \
-changes and your knowledge has a date on it.
-5. **Do not restate the tracker's estimate as your own.** The hours and GP you are shown were \
-computed from authored data. Quote them as the tracker's if useful; never present a number \
-of your own as though it were measured.
-6. **Do not re-litigate the choice.** The task was selected by a scoring engine with \
+5. **You are shown their gear. Use it, and do not apologise for it.** The tracker keeps a \
+progression ladder per combat style and slot, and tells you which rung this account has \
+reached and what the next rung is. Pitch the advice at the rung they are on: never recommend \
+gear they have already passed, and when an upgrade is genuinely worth naming, name the next \
+rung rather than the best item in the game. What the ladders do not cover — supplies, \
+resources, quest items — is unseen, not absent, so make that a condition inside the step that \
+needs it rather than a caveat at the top. An answer that opens by regretting it was not told \
+what the player is wearing was told exactly that.
+6. **`uncertain` is for what the player should verify, not for everything you know.** \
+Locations, NPCs, interfaces, routes and standard technique are yours to state plainly — that \
+is most of the value of this answer, and hedging it helps nobody. You know a great deal about \
+this game and using it is welcome. Put something in `uncertain` when it is a claim an update \
+may have changed, a number you supplied yourself, or a step whose success turns on something \
+about this account nobody has observed. Twenty hedges is the same as none.
+7. **Do not re-litigate the choice.** The task was selected by a scoring engine with \
 information you do not have — the player's roadmap, every other candidate, and their relative \
 value. You are answering "how", not "whether". If the task looks genuinely wrong for this \
 account, say so in one sentence and then answer the question anyway.
-7. **Stay inside the game.** No real-world trading, no account sharing, no botting, no \
+8. **Stay inside the game.** No real-world trading, no account sharing, no botting, no \
 third-party automation. If a task cannot be explained without one of those, say so.
 
 ## Tone
 
 Write for a player who knows the game but not this task. Skip the preamble, skip the \
 encouragement, and do not restate the task back to them. Short sentences. Name things \
-precisely — "Ardougne Knights, east of the market" rather than "a good spot". If the account \
-is clearly early-game or clearly late-game, pitch the detail accordingly."""
+precisely — "Ardougne Knights, east of the market" rather than "a good spot". Pitch the detail \
+at the account you were shown: an early-game account needs the route to the bank named, and a \
+late-game one does not."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +158,7 @@ def render_context(context: TaskContext) -> str:
         _skills_block(context),
         _quests_block(context),
         _unlocks_block(context),
+        _items_block(context),
         _methods_block(context),
     ]
     return "\n\n".join(block for block in blocks if block)
@@ -278,6 +295,115 @@ def _unlocks_block(context: TaskContext) -> str:
         "# Relevant unlocks\n\n`available` means obtainable but **not** held — treat it as "
         "not unlocked.\n\n" + "\n".join(lines)
     )
+
+
+def _items_block(context: TaskContext) -> str:
+    """What the account is known to own, and — just as loudly — what was never looked at.
+
+    This block is always rendered, unlike its neighbours. An omitted section reads as *"not
+    applicable"*, and the one thing that must never read that way is the scope of what the
+    tracker can see: a model told nothing about gear invents a caveat about gear, which is
+    exactly the failure this section exists to stop. When there is nothing to list, the
+    absence itself is the fact worth stating.
+    """
+    lines = ["# Gear and items", "", _scan_line(context)]
+    if context.gear:
+        lines += [
+            "",
+            "Where this account stands on the tracker's gear ladders, which follow the "
+            "wiki's own progression guides. A rung number is an ordering, not a rating — "
+            "rung 6 is the step after rung 5, not twice as good as it.",
+            "",
+        ]
+        lines += _gear_lines(context.gear)
+    if context.items:
+        lines += ["", "What the tracker watches for, and what it has seen:"]
+        lines += [_item_line(item) for item in context.items]
+    lines += [
+        "",
+        "The ladders cover weapons, armour and jewellery for all three combat styles. They "
+        "do not cover supplies, resources or quest items, and the tracker sees nothing else "
+        "in the bank — so a rung is authoritative, and everything off the ladders is unseen "
+        "rather than absent.",
+        "",
+        "Use this rather than guessing. If they are shown holding a weapon, do not tell them "
+        "to buy a worse one, and do not open your answer by apologising for not knowing "
+        "their gear. Where advice turns on something off the ladders, put the condition in "
+        'the line that needs it — "if you are not already stocked with food" — and carry on.',
+    ]
+    return "\n".join(lines)
+
+
+def _scan_line(context: TaskContext) -> str:
+    """§6.5's staleness anchor, in words. Nothing scanned is the loudest case, not the quietest."""
+    if not context.scanned_containers:
+        return (
+            "No container has ever been scanned — not the bank, not the inventory, not "
+            "worn equipment. Nothing is known about what this player owns, so treat every "
+            "item question as open and phrase gear advice as a condition, never as a fact."
+        )
+    scanned = ", ".join(context.scanned_containers)
+    missing = tuple(
+        container
+        for container in ("bank", "inventory", "equipment")
+        if container not in context.scanned_containers
+    )
+    if not missing:
+        return "Scanned in full: bank, inventory and worn equipment."
+    return (
+        f"Scanned in full: {scanned}. Never scanned: {', '.join(missing)} — an item could "
+        "be sitting there unseen, so absence below is not proof they lack it."
+    )
+
+
+def _gear_lines(gear: tuple[GearRung, ...]) -> list[str]:
+    """Ladders they stand on get a line each; the empty ones are collapsed to one.
+
+    Thirty slots is thirty lines, and on a typical account twenty-seven of them say *"nothing
+    held"*. Individually those are noise that buries the three lines carrying the answer; as
+    a single sentence per style they are still the fact that matters — *nothing on these
+    ladders has been seen* — at a thirtieth of the cost.
+    """
+    held = [rung for rung in gear if rung.best_held is not None]
+    lines = [_rung_line(rung) for rung in held]
+
+    empty: dict[str, list[str]] = {}
+    for rung in gear:
+        if rung.best_held is None:
+            empty.setdefault(rung.style, []).append(rung.slot)
+    for style, slots in empty.items():
+        certain = all(rung.certain for rung in gear if rung.style == style and not rung.best_held)
+        tail = (
+            "every rung was checked, so they genuinely have none of it"
+            if certain
+            else "not every container has been scanned, so this is *unknown*, not *none*"
+        )
+        lines.append(f"- {style}: nothing seen for {_join(slots)} — {tail}.")
+    return lines
+
+
+def _join(values: list[str]) -> str:
+    if len(values) == 1:
+        return values[0]
+    return f"{', '.join(values[:-1])} or {values[-1]}"
+
+
+def _rung_line(rung: GearRung) -> str:
+    """One ladder they stand on, in one line: what they have, and what is next."""
+    found = f"- {rung.style} {rung.slot}: **{rung.best_held}** "
+    found += f"(rung {rung.best_tier} of {rung.ladder_size})"
+    if rung.next_name is None:
+        return f"{found} — top of the ladder"
+    return f"{found} — next rung: {rung.next_name} ({rung.next_tier})"
+
+
+def _item_line(item: ItemFact) -> str:
+    marker = " *(this task needs it)*" if item.required else ""
+    if item.state != "held":
+        return f"- {item.name}: {item.state}{marker}"
+    where = f", in {' and '.join(item.containers)}" if item.containers else ""
+    quantity = f" ×{item.quantity:,}" if item.quantity is not None and item.quantity > 1 else ""
+    return f"- {item.name}: held{quantity}{where}{marker}"
 
 
 def _methods_block(context: TaskContext) -> str:

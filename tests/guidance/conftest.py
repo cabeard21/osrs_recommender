@@ -24,6 +24,7 @@ from tracker.content.requirements import Requirement
 from tracker.content.requirements import parse as parse_requirement
 from tracker.content.schema import (
     Candidate,
+    Item,
     KappaPresets,
     LevelRange,
     MethodDetail,
@@ -222,9 +223,11 @@ def make_content() -> Callable[..., Content]:
         skills: Sequence[str] = ALL_SKILLS,
         quests: Mapping[str, str] | None = None,
         roadmaps: Mapping[str, str] | None = None,
+        items: Sequence[Item] = (),
     ) -> Content:
         return Content(
             profile=PROFILE,
+            items={item.id: item for item in items},
             skills={skill_id: Skill(id=skill_id, name=skill_id.title()) for skill_id in skills},
             quests={
                 quest_id: Quest(id=quest_id, name=name) for quest_id, name in (quests or {}).items()

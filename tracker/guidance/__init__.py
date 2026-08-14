@@ -11,7 +11,14 @@ module in the tree that reads it heavily — putting it under
 D14 states the same boundary from the other end: what happens here is a terminal output.
 """
 
-from tracker.guidance.context import MethodFact, SkillFact, TaskContext, build_task_context
+from tracker.guidance.context import (
+    GearRung,
+    ItemFact,
+    MethodFact,
+    SkillFact,
+    TaskContext,
+    build_task_context,
+)
 from tracker.guidance.prompt import (
     GUIDANCE_SCHEMA_VERSION,
     SYSTEM_PROMPT,
@@ -24,7 +31,9 @@ from tracker.guidance.prompt import (
 __all__ = [
     "GUIDANCE_SCHEMA_VERSION",
     "SYSTEM_PROMPT",
+    "GearRung",
     "GuidancePrompt",
+    "ItemFact",
     "MethodFact",
     "SkillFact",
     "TaskContext",
