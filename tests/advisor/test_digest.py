@@ -22,17 +22,94 @@ from tests.advisor.conftest import (
 from tracker.advisor.digest import MAX_RANKED, build_digest, render_digest
 from tracker.advisor.snapshot import ObservationAge
 from tracker.domain.types import (
+    Acceleration,
     AccountType,
+    Consequences,
+    GateProgress,
     LeafRef,
     QuestStatus,
     RoadmapSelection,
     Status,
+    UnblockedCapability,
     UnlockState,
 )
 
 
 def _render(**overrides: object) -> str:
     return render_digest(build_digest(make_snapshot(**overrides)))
+
+
+class TestTheConsequenceLine:
+    """§9.10 reaching §22.2 at all.
+
+    These are regression tests before they are feature tests: ``RankedTask.consequences`` was
+    declared, defaulted and never populated, so the advisor could say what the engine scored but
+    never what completing the thing would *do*.
+    """
+
+    def test_an_unblocked_capability_is_named(self) -> None:
+        capability = UnblockedCapability(capability_id="ice_barrage_nh", name="Ice Barrage NH")
+        rendered = _render(
+            ranked=(
+                make_task(
+                    consequences=Consequences(unblocks_capabilities=(capability,)),
+                ),
+            )
+        )
+        assert "What it would do: unlocks Ice Barrage NH" in rendered
+
+    def test_only_a_gate_it_would_finish_is_named(self) -> None:
+        """A gate dented is not a gate cleared, and only one of them earns a line here."""
+        rendered = _render(
+            ranked=(
+                make_task(
+                    consequences=Consequences(
+                        gate_progress=(
+                            GateProgress(
+                                candidate_id="dt1",
+                                name="Desert Treasure I",
+                                remaining_before=1,
+                                remaining_after=0,
+                            ),
+                            GateProgress(
+                                candidate_id="mm2",
+                                name="Monkey Madness II",
+                                remaining_before=4,
+                                remaining_after=3,
+                            ),
+                        )
+                    ),
+                ),
+            )
+        )
+        assert "clears the last requirement of Desert Treasure I" in rendered
+        assert "Monkey Madness II" not in rendered
+
+    def test_an_entry_with_nothing_to_say_gets_no_line(self) -> None:
+        """§9.5: an entry that ranked on cheapness alone is not owed a justification."""
+        assert "What it would do" not in _render(ranked=(make_task(),))
+
+    def test_the_digest_does_not_move_when_an_acceleration_is_repriced(self) -> None:
+        """``speeds_up`` renders as a count for exactly this reason.
+
+        Prices move without the player doing anything. If the hours behind an acceleration
+        reached the digest, every reprice would retire the cached prefix of every open
+        conversation — a bill for a change the account never made.
+        """
+
+        def rendered(hours_after: float) -> str:
+            acceleration = Acceleration(
+                candidate_id="train_slayer",
+                name="Train Slayer",
+                hours_before=40.0,
+                hours_after=hours_after,
+            )
+            return _render(
+                ranked=(make_task(consequences=Consequences(speeds_up=(acceleration,))),)
+            )
+
+        assert rendered(22.0) == rendered(19.5)
+        assert "shortens 1 other task" in rendered(22.0)
 
 
 class TestThreeValuedFacts:

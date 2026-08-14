@@ -23,6 +23,7 @@ question directly — *"can I afford this?"* answered from an assumed zero is a 
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Final
 
@@ -58,6 +59,11 @@ QUEST_GATE_DEPTH: Final = 30
 
 #: Blockers rendered per capability before the count takes over.
 MAX_CAPABILITY_BLOCKERS: Final = 3
+
+#: Names rendered in a ranked entry's consequence line before the count takes over. The ranked
+#: block carries ten entries on every turn, so this is a line-length budget as much as a
+#: readability one.
+MAX_CONSEQUENCE_NAMES: Final = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,7 +269,55 @@ def _task_block(task: RankedTask) -> str:
         lines.append(f"- Tracker's estimate: {estimate}")
     if task.reason:
         lines.append(f"- Why the tracker ranked it: {task.reason}")
+    consequence = _consequence_line(task)
+    if consequence:
+        lines.append(f"- What it would do: {consequence}")
     return "\n".join(lines)
+
+
+def _consequence_line(task: RankedTask) -> str:
+    """§9.10's consequences for one ranked entry, in **one** line.
+
+    :func:`tracker.advisor.dispatch._consequence_lines` renders the same object across four
+    lines with figures attached, and that is the right shape there — it answers a question
+    somebody asked about one candidate. Here the same detail is multiplied by ten entries on
+    every turn, so this is the short form: what it opens, what it finishes, and how many things
+    it shortens.
+
+    Two omissions are deliberate and both are about §22.3's hash. ``remaining_after`` /
+    ``remaining_before`` move whenever any requirement is observed, so only the *completed*
+    gates are named — a gate part-way cleared says nothing here that the blocked section does
+    not. ``speeds_up`` renders as a count rather than ``hours_before → hours_after`` because
+    those floats move on every reprice, which would re-cache the prefix for a change the player
+    did not make.
+
+    An empty result is a legitimate answer and renders as no line at all: §9.5 forbids authored
+    justification, and an entry that ranked on cheapness alone genuinely has nothing to say.
+    """
+    consequences = task.consequences
+    parts = []
+    if consequences.unblocks_capabilities:
+        names = _bounded_names(item.name for item in consequences.unblocks_capabilities)
+        parts.append(f"unlocks {names}")
+    finishes = [gate.name for gate in consequences.gate_progress if gate.unblocks]
+    if finishes:
+        parts.append(f"clears the last requirement of {_bounded_names(finishes)}")
+    if consequences.goal_progress:
+        goals = _bounded_names(goal.name for goal in consequences.goal_progress)
+        parts.append(f"moves toward {goals}")
+    if consequences.speeds_up:
+        count = len(consequences.speeds_up)
+        parts.append(f"shortens {count} other task{'' if count == 1 else 's'}")
+    return "; ".join(parts)
+
+
+def _bounded_names(names: Iterable[str]) -> str:
+    """A comma-joined name list, capped, announcing what it left out."""
+    listed = list(names)
+    shown = listed[:MAX_CONSEQUENCE_NAMES]
+    joined = ", ".join(shown)
+    remaining = len(listed) - len(shown)
+    return f"{joined} and {remaining} more" if remaining > 0 else joined
 
 
 def _estimate_line(task: RankedTask) -> str:
@@ -396,10 +450,13 @@ def _unlock_keys(tree: Requirement | None) -> set[str]:
 def _practice_block(snapshot: AdvisorSnapshot) -> str:
     if not snapshot.stale_practice:
         return ""
-    lines = [f"- {domain}: {freshness}" for domain, freshness in snapshot.stale_practice]
+    lines = [f"- {name}: {band}" for name, band in snapshot.stale_practice]
     return (
-        "# Practice freshness\n\nDomains whose execution evidence has aged (§6.9). This lowers "
-        "readiness confidence; it never revokes a capability (D1, D8).\n\n" + "\n".join(lines)
+        "# Practice freshness\n\nExecution milestones whose evidence has aged (§6.9). This "
+        "lowers readiness confidence; it never revokes a capability (D1, D8). A milestone "
+        "absent from this list has either been practiced recently or has no practice evidence "
+        "at all — the two are not distinguished here, and neither is a failure.\n\n"
+        + "\n".join(lines)
     )
 
 

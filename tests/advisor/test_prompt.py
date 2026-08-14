@@ -85,6 +85,18 @@ class TestTheSystemPromptCarriesItsRules:
     def test_it_stays_inside_the_game(self) -> None:
         assert "No real-world trading" in ADVISOR_SYSTEM_PROMPT
 
+    def test_it_demands_an_answer_specific_to_the_account(self) -> None:
+        """§22.2 assembles a whole-account digest; this is the rule that makes it get used.
+
+        The failure it guards against is the quiet one. An advisor that never opens a tool and
+        never names a level still answers every question fluently — it just answers them for
+        nobody in particular, and nothing else in this suite would notice.
+        """
+        assert "identically for any account" in ADVISOR_SYSTEM_PROMPT
+
+    def test_it_tells_the_model_to_look_before_recommending(self) -> None:
+        assert "look at what they actually have" in ADVISOR_SYSTEM_PROMPT
+
 
 class TestTheHash:
     def test_it_is_stable_for_an_unchanged_prefix(self) -> None:

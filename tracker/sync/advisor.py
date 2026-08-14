@@ -47,6 +47,7 @@ from tracker.advisor.tools import TOOLS, tools_fingerprint
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.db import advisor as advisor_repo
+from tracker.db import entry_decode
 from tracker.db.models import (
     AdvisorConversation,
     ItemPrice,
@@ -57,7 +58,8 @@ from tracker.db.models import (
 from tracker.db.projection import build_player_state
 from tracker.db.repository import roadmap_selection
 from tracker.db.session import session_scope
-from tracker.domain.types import BandEstimate, Confidence, LeafRef
+from tracker.domain.types import Freshness, PlayerState
+from tracker.freshness.policy import freshness
 from tracker.integrations.llm.types import AdvisorProvider, AdvisorTurn
 from tracker.progression.engine import compute_capability_states
 
@@ -268,9 +270,38 @@ class AdvisorService:
             roadmaps=roadmap_selection(session, player_id),
             ranked=ranked,
             blocked=blocked,
+            stale_practice=_stale_practice(state, self._content, now),
             prices=_price_facts(session, self._content),
             now=now,
         )
+
+
+def _stale_practice(
+    state: PlayerState, content: Content, now: datetime
+) -> tuple[tuple[str, str], ...]:
+    """§6.9's aged execution evidence, per milestone, for §22.2's practice section.
+
+    Per *milestone* rather than per practice group. The group carries an ``urgency`` float that
+    moves every day, and §22.3 hashes this rendering into the conversation's cached prefix — a
+    daily-moving number there would re-cache the whole prefix on a turn that earned nothing.
+    The three freshness *bands* transition rarely, which is the same trade
+    :class:`~tracker.advisor.snapshot.ObservationAge` already makes for the sync timestamp.
+
+    :func:`~tracker.freshness.policy.freshness` returns ``None`` twice over, and both silences
+    are load-bearing (G6): a ``knowledge`` or ``threshold`` milestone does not age, and a
+    milestone with no ``last_practiced_at`` has no evidence *either way* — reporting that as
+    stale would turn absence of evidence into evidence of decay.
+
+    Ordering is left to :func:`~tracker.advisor.snapshot.build_advisor_snapshot`, which sorts.
+    """
+    aged = []
+    for key, milestone in state.milestones.items():
+        band = freshness(milestone.last_practiced_at, now, milestone.class_)
+        if band is None or band is Freshness.CURRENT:
+            continue
+        declared = content.milestones.get(key)
+        aged.append((declared.name if declared is not None else key, band.value))
+    return tuple(aged)
 
 
 def _persisted_entries(
@@ -328,37 +359,11 @@ def _entry_to_task(entry: RecommendationEntry, content: Content) -> RankedTask:
         blocked=entry.blocked,
         hours=entry.estimated_hours,
         gp=entry.estimated_gp,
-        confidence=_confidence_word(entry.estimate_confidence),
-        blockers=tuple(
-            LeafRef(
-                leaf_type=str(leaf.get("leaf_type", "")),
-                key=str(leaf.get("key", "")),
-                description=str(leaf.get("description", "")),
-                target=leaf.get("target"),
-            )
-            for leaf in (entry.blockers or ())
-        ),
-        bands=tuple(
-            BandEstimate(
-                from_level=int(band.get("from_level", 0)),
-                to_level=int(band.get("to_level", 0)),
-                method_id=band.get("method_id"),
-                hours=float(band.get("hours", 0.0)),
-                gp=int(band.get("gp", 0)),
-                fallback=bool(band.get("fallback", False)),
-            )
-            for band in (entry.bands or ())
-        ),
+        confidence=entry_decode.confidence_word(entry.estimate_confidence),
+        blockers=entry_decode.blockers_from_json(entry.blockers),
+        bands=entry_decode.bands_from_json(entry.bands),
+        consequences=entry_decode.consequences_from_json(entry.consequences),
     )
-
-
-def _confidence_word(raw: object) -> str:
-    if isinstance(raw, Confidence):
-        return raw.name.lower()
-    try:
-        return Confidence(raw).name.lower()  # type: ignore[arg-type]
-    except (ValueError, TypeError):
-        return "unknown"
 
 
 def _price_facts(session: Session, content: Content) -> dict[int, PriceFact]:

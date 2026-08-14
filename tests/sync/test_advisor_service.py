@@ -20,8 +20,11 @@ from tracker.config.settings import Settings
 from tracker.content.loader import Content
 from tracker.content.validate import load_and_validate
 from tracker.db import advisor as advisor_repo
-from tracker.db.models import Base, Player
+from tracker.db.enums import RecommendationCandidateKind
+from tracker.db.models import Base, Player, RecommendationEntry, RecommendationSnapshot
+from tracker.db.models import Milestone as MilestoneRow
 from tracker.db.session import build_engine, build_session_factory
+from tracker.domain.types import Confidence, MilestoneClass, MilestoneKind, Source
 from tracker.integrations.llm.types import (
     AdvisorTurn,
     LlmUnavailable,
@@ -296,6 +299,122 @@ class TestBounds:
             factory, corpus, provider=Recording(), max_model_iterations=3, max_tool_calls=4
         ).ask(player_id, "anything")
         assert seen == {"iterations": 3, "tools": 4}
+
+
+class TestWhatTheGatherPutsInTheDigest:
+    """The two fields §22.2 declared, defaulted, and then never filled.
+
+    Both bugs were invisible: the renderers existed, the dataclass fields existed with empty
+    defaults, and the only symptom was an advisor that never mentioned what a task would do or
+    which practice had gone stale. Driven end-to-end through :meth:`AdvisorService.ask` rather
+    than by calling ``_snapshot``, because the gather is exactly what regressed.
+    """
+
+    def test_a_persisted_consequence_reaches_the_prompt(
+        self, factory: sessionmaker[Session], corpus: Content, player_id: int
+    ) -> None:
+        double = _Double()
+        with factory() as session:
+            _seed_entry(
+                session,
+                player_id,
+                consequences={
+                    "unblocks_capabilities": [
+                        {"capability_id": "ice_barrage_nh", "name": "Ice Barrage NH"}
+                    ]
+                },
+            )
+        _service(factory, corpus, provider=double).ask(player_id, "why that one?")
+        assert "What it would do: unlocks Ice Barrage NH" in double.prompts[0].digest
+
+    def test_an_entry_with_no_consequences_says_nothing(
+        self, factory: sessionmaker[Session], corpus: Content, player_id: int
+    ) -> None:
+        double = _Double()
+        with factory() as session:
+            _seed_entry(session, player_id, consequences={})
+        _service(factory, corpus, provider=double).ask(player_id, "why that one?")
+        assert "What it would do" not in double.prompts[0].digest
+
+    def test_an_aged_execution_milestone_reaches_the_prompt(
+        self, factory: sessionmaker[Session], corpus: Content, player_id: int
+    ) -> None:
+        double = _Double()
+        with factory() as session:
+            _seed_milestone(
+                session,
+                player_id,
+                key="comfortable_4_way_switches",
+                class_=MilestoneClass.EXECUTION,
+                last_practiced_at=NOW - timedelta(days=100),
+            )
+        _service(factory, corpus, provider=double).ask(player_id, "am I sharp?")
+        digest = double.prompts[0].digest
+        assert "# Practice freshness" in digest
+        assert "Comfortable 4-way switches: very_stale" in digest
+
+    def test_a_milestone_never_practiced_is_not_reported_as_stale(
+        self, factory: sessionmaker[Session], corpus: Content, player_id: int
+    ) -> None:
+        """G6: absence of evidence is not evidence of decay."""
+        double = _Double()
+        with factory() as session:
+            _seed_milestone(
+                session,
+                player_id,
+                key="comfortable_4_way_switches",
+                class_=MilestoneClass.EXECUTION,
+                last_practiced_at=None,
+            )
+        _service(factory, corpus, provider=double).ask(player_id, "am I sharp?")
+        assert "# Practice freshness" not in double.prompts[0].digest
+
+
+def _seed_entry(session: Session, player_id: int, *, consequences: dict[str, Any]) -> None:
+    """One ranked run holding a single entry, so the digest has something to describe."""
+    snapshot = RecommendationSnapshot(
+        player_id=player_id, run_at=NOW, roadmap_selection={}, scoring_profile_version=1
+    )
+    session.add(snapshot)
+    session.flush()
+    session.add(
+        RecommendationEntry(
+            snapshot_id=snapshot.id,
+            candidate_id="train_magic_87_94",
+            rank=1,
+            candidate_kind=RecommendationCandidateKind.PROGRESSION,
+            score=0.42,
+            factors={},
+            reason="unblocks Ice Barrage NH",
+            estimate_confidence=Confidence.MEDIUM,
+            consequences=consequences,
+        )
+    )
+    session.commit()
+
+
+def _seed_milestone(
+    session: Session,
+    player_id: int,
+    *,
+    key: str,
+    class_: MilestoneClass,
+    last_practiced_at: datetime | None,
+) -> None:
+    session.add(
+        MilestoneRow(
+            player_id=player_id,
+            key=key,
+            kind=MilestoneKind.SELF_ATTESTED,
+            class_=class_,
+            achieved=True,
+            attested_at=NOW - timedelta(days=500),
+            last_practiced_at=last_practiced_at,
+            source=Source.RUNELITE,
+            observed_at=NOW,
+        )
+    )
+    session.commit()
 
 
 class TestDigestInvalidation:
