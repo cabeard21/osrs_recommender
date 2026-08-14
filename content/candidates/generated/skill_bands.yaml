@@ -1298,11 +1298,25 @@
   grants_facts:
     skill:
       prayer: 99
-- id: train_ranged_1_to_70
+- id: train_ranged_1_to_40
+  name: Train Ranged to 40
+  kind: skill_training
+  source: generated
+  advances: {}
+  completion:
+    skill:
+      ranged: 40
+  grants_facts:
+    skill:
+      ranged: 40
+- id: train_ranged_40_to_70
   name: Train Ranged to 70
   kind: skill_training
   source: generated
   advances: {}
+  requires:
+    skill:
+      ranged: 40
   completion:
     skill:
       ranged: 70
@@ -1404,14 +1418,28 @@
   grants_facts:
     skill:
       slayer: 10
-- id: train_slayer_10_to_55
-  name: Train Slayer to 55
+- id: train_slayer_10_to_30
+  name: Train Slayer to 30
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
       slayer: 10
+  completion:
+    skill:
+      slayer: 30
+  grants_facts:
+    skill:
+      slayer: 30
+- id: train_slayer_30_to_55
+  name: Train Slayer to 55
+  kind: skill_training
+  source: generated
+  advances: {}
+  requires:
+    skill:
+      slayer: 30
   completion:
     skill:
       slayer: 55
