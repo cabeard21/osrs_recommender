@@ -1,0 +1,14 @@
+# Two items on one rung makes "the best melee weapon held" a coin toss decided by dict order.
+- id: voidwaker
+  name: Voidwaker
+  item_id: 27690
+  slot: weapon
+  style: melee
+  tier: 3
+
+- id: armadyl_godsword
+  name: Armadyl godsword
+  item_id: 11802
+  slot: weapon
+  style: melee
+  tier: 3

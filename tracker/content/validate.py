@@ -18,6 +18,8 @@ rule needs to see:
 | every candidate declares a non-empty ``completion`` | ``Candidate`` model validator |
 | only ``class: execution`` milestones practice | ``Milestone`` model validator |
 | ``price_mode: live`` implies a numeric ``item_id`` | here |
+| a gear ``tier`` implies a ``slot`` and ``style``, and each rung is unique | here |
+| no numeric item id is claimed by two items | here |
 | capability and requirement graphs are acyclic | here |
 | weights, ``pvp_value``, ``advances`` and roadmap weights ∈ [0,1] | model validators |
 | κ presets satisfy §9.6 min/max/ordering | here |
@@ -69,6 +71,7 @@ def validate_content(content: Content) -> list[ContentError]:
     errors.extend(_check_unique_skill_targets(content))
     errors.extend(_check_practice_groups(content))
     errors.extend(_check_live_prices(content))
+    errors.extend(_check_gear_ladders(content))
     errors.extend(_check_acyclic(content))
     errors.extend(_check_kappa(content))
     return errors
@@ -275,6 +278,63 @@ def _check_live_prices(content: Content) -> list[ContentError]:
         for item in content.items.values()
         if item.price_mode == "live" and item.item_id is None
     ]
+
+
+def _check_gear_ladders(content: Content) -> list[ContentError]:
+    """A rung needs a ladder, a ladder has one item per rung, and an id belongs to one item.
+
+    Three failures, none of which raise on their own:
+
+    *A tier with no slot or style* is a number with nothing to order it against. It reads
+    like progression data and contributes none, so it is rejected rather than ignored.
+
+    *Two items on the same rung* makes "their best melee weapon" ambiguous, and which one
+    wins would fall to dict ordering — the exact non-determinism §21.5's cache cannot take.
+
+    *One id on two items* means a single observed item would mark both as held. That is how
+    a corpus edit turns into a player being told they own something they do not.
+    """
+    errors: list[ContentError] = []
+    rungs: dict[tuple[str, str, int], str] = {}
+    owners: dict[int, str] = {}
+
+    for item in content.items.values():
+        location = content.location_of("item", item.id).with_path(item.id)
+        if item.tier is not None and (item.slot is None or item.style is None):
+            errors.append(
+                ContentError(
+                    f"declares tier {item.tier} but no gear ladder to sit on; tier needs "
+                    "both slot and style to mean anything (§10.5)",
+                    location,
+                )
+            )
+        elif item.tier is not None and item.slot is not None and item.style is not None:
+            rung = (item.style, item.slot, item.tier)
+            if rung in rungs:
+                errors.append(
+                    ContentError(
+                        f"shares {item.style} {item.slot} tier {item.tier} with "
+                        f"{rungs[rung]!r}; a rung holds one item, or 'the best held' is a "
+                        "coin toss (§10.5)",
+                        location,
+                    )
+                )
+            else:
+                rungs[rung] = item.id
+
+        for item_id in sorted(item.owned_item_ids):
+            if item_id in owners and owners[item_id] != item.id:
+                errors.append(
+                    ContentError(
+                        f"claims item id {item_id}, which {owners[item_id]!r} also claims; "
+                        "one observation would mark both items held (§10.5)",
+                        location,
+                    )
+                )
+            else:
+                owners[item_id] = item.id
+
+    return errors
 
 
 # ---------------------------------------------------------------------------
