@@ -59,6 +59,23 @@ _STATE_ORDER = {
     UiState.LOCKED: 3,
 }
 
+#: The attestation controls, which are the only writes in the whole application and were
+#: the smallest controls on the page — ``text-xs`` on a Quasar button lands well under the
+#: 44 px a thumb needs. A question that is hard to answer accurately on a phone is a
+#: question that gets answered wrongly, and a wrong "Not yet" is a real write to a leaf.
+CAPABILITIES_CSS = """
+.question-row {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 0.4rem; justify-content: space-between;
+}
+.question-text { font-size: 0.8125rem; color: var(--ink); }
+.question-actions { display: flex; gap: 0.4rem; }
+.attest-button.q-btn {
+  min-height: 2.75rem; min-width: 4.5rem; font-size: 0.75rem;
+  border: 1px solid var(--edge); color: var(--ink-dim);
+}
+"""
+
 
 def sort_rows(rows: Sequence[CapabilityRow]) -> tuple[CapabilityRow, ...]:
     """Order for display. Pure, so the ordering policy is testable without a browser."""
@@ -99,20 +116,23 @@ def _question_list(leaves: Sequence[LeafRow], on_attest: AttestHandler) -> None:
     with container:
         ui.html(QUESTIONS_CTA).classes("cta")
         if not leaves:
-            ui.html(NO_QUESTIONS).classes("text-xs opacity-60")
+            ui.html(NO_QUESTIONS).classes("text-xs tracker-faint")
             return
         with ui.element("ul").classes("leaf-list"):
             for leaf in leaves:
-                with ui.element("li").props(f"data-milestone={leaf.key}"):
-                    ui.html(leaf.description or leaf.key)
-                    with ui.element("span").classes("flex gap-1 ml-2"):
+                with (
+                    ui.element("li").props(f"data-milestone={leaf.key}"),
+                    ui.element("div").classes("question-row"),
+                ):
+                    ui.html(leaf.description or leaf.key).classes("question-text")
+                    with ui.element("span").classes("question-actions"):
                         ui.button("Yes", on_click=lambda leaf=leaf: on_attest(leaf, True)).props(
-                            f"data-testid=attest-yes data-milestone={leaf.key}"
-                        ).classes("text-xs")
+                            f"data-testid=attest-yes data-milestone={leaf.key} flat"
+                        ).classes("attest-button")
                         ui.button(
                             "Not yet", on_click=lambda leaf=leaf: on_attest(leaf, False)
-                        ).props(f"data-testid=attest-no data-milestone={leaf.key}").classes(
-                            "text-xs"
+                        ).props(f"data-testid=attest-no data-milestone={leaf.key} flat").classes(
+                            "attest-button"
                         )
 
 
@@ -133,7 +153,7 @@ def render_capability(row: CapabilityRow, *, on_attest: AttestHandler) -> None:
             # §6.9 attaches warnings to readiness, not to status. They render under the
             # layer block rather than inside the readiness row so that a capability with
             # five warnings cannot push the third layer off a phone screen.
-            ui.html(warning).classes("text-xs opacity-70 block")
+            ui.html(warning).classes("text-xs tracker-dim block")
 
         sync_unknowns, questions = split_unknowns(row.unknowns)
         with ui.element("div").classes("tracker-grid mt-2"):
@@ -149,5 +169,6 @@ def render(rows: Sequence[CapabilityRow], *, on_attest: AttestHandler) -> None:
     pure function of its input so both the ordering and the markup can be exercised without
     a database.
     """
+    ui.add_css(CAPABILITIES_CSS)
     for row in sort_rows(rows):
         render_capability(row, on_attest=on_attest)

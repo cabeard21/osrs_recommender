@@ -120,6 +120,9 @@ module = [
     # rest: D15 makes purity the *enforcement* of "tools cannot write", not merely its style.
     # A session reaching this package would be a bug the type checker should catch first.
     "tracker.advisor.*",
+    # §23 — the gear projection, held to the advisor's bar rather than to guidance's, because
+    # the advisor imports it. Its purity is a component of D15's guarantee, not a style choice.
+    "tracker.gear.*",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true

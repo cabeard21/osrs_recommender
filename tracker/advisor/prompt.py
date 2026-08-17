@@ -30,7 +30,12 @@ from dataclasses import dataclass
 #: Bumped by hand when the meaning of a stored conversation changes without its rendering
 #: changing. §22.6 keeps threads across restarts; this is the manual override that retires
 #: threads whose answers were written under instructions that no longer apply.
-ADVISOR_SCHEMA_VERSION = 2
+#:
+#: 3 — §23 landed. Every answer before it was written by an advisor that could not see what
+#: the account is able to equip, so *"what should I wear"* was answered from the model's own
+#: knowledge of the game and nothing else. That is exactly the class of answer §22.6's
+#: per-message hash exists to let the interface qualify.
+ADVISOR_SCHEMA_VERSION = 3
 
 
 ADVISOR_SYSTEM_PROMPT = """\
@@ -92,7 +97,11 @@ player told to buy something they cannot buy has been given a worse answer than 
 nothing.
 5. **Gear and inventory lists in the content are descriptive, not requirements.** They tell you \
 what a method is usually done with. They do not gate anything and they do not affect any cost \
-the tracker has computed.
+the tracker has computed. The gear *setup* from `get_gear_setup` is a different thing and is \
+not descriptive: the tracker computed it from authored requirements and this account's own \
+skills, quests and items. Report it as given. If you add a piece it does not name, say that \
+the suggestion is yours. An item there whose requirements are "not established" is a gap in \
+the tracker, not in the account — do not tell them to sync over it.
 6. **The ranking is the tracker's, not yours.** It was produced by a scoring engine with \
 information you do not have. You may disagree, in one sentence, with a reason. You may not \
 restate its hours or GP figures as your own measurement, and nothing you say changes the list. \

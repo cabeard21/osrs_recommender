@@ -208,6 +208,31 @@ def append_turn(
     return asked, answered
 
 
+def delete_conversation(session: Session, player_id: int, conversation_id: int) -> bool:
+    """Remove one thread and every message in it. Returns whether there was one to remove.
+
+    ``player_id`` sits in the predicate rather than being checked afterwards, for the reason
+    :func:`get_conversation` gives: an id arriving from a URL must not be able to address
+    another player's thread, and a delete is the operation where that stops being theoretical.
+
+    The messages are deleted explicitly rather than left to the ``ondelete="CASCADE"`` on
+    :class:`~tracker.db.models.AdvisorMessage`, which is the same choice
+    :func:`prune_conversations` makes just below. SQLite enforces foreign keys only when
+    ``PRAGMA foreign_keys`` is on, so a cascade is a promise about connection setup rather than
+    about this statement — and the failure it buys is orphaned message rows, which nothing
+    would report.
+
+    The caller commits, as everywhere in this module: the two statements are one deletion.
+    """
+    if get_conversation(session, player_id, conversation_id) is None:
+        return False
+    session.execute(
+        sa.delete(AdvisorMessage).where(AdvisorMessage.conversation_id == conversation_id)
+    )
+    session.execute(sa.delete(AdvisorConversation).where(AdvisorConversation.id == conversation_id))
+    return True
+
+
 def prune_conversations(session: Session, player_id: int, *, keep: int) -> None:
     """Drop all but the ``keep`` most recently updated threads.
 

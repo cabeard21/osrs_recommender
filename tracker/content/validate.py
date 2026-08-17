@@ -19,7 +19,9 @@ rule needs to see:
 | only ``class: execution`` milestones practice | ``Milestone`` model validator |
 | ``price_mode: live`` implies a numeric ``item_id`` | here |
 | a gear ``tier`` implies a ``slot`` and ``style``, and each rung is unique | here |
-| no numeric item id is claimed by two items | here |
+| a numeric item id is claimed by one *piece* (two rows only as placements of it) | here |
+| an item's wear gate resolves its referenced ids (§23.2) | here |
+| no item declares both `requires` and `gate_unknown` | here |
 | capability and requirement graphs are acyclic | here |
 | weights, ``pvp_value``, ``advances`` and roadmap weights ∈ [0,1] | model validators |
 | κ presets satisfy §9.6 min/max/ordering | here |
@@ -36,7 +38,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 
 from tracker.content.errors import ContentError, ContentLocation
@@ -55,6 +57,7 @@ from tracker.content.requirements import (
     SkillLeaf,
     iter_leaves,
 )
+from tracker.content.schema import Item
 from tracker.domain.types import MilestoneClass
 
 #: §9.6's validation block, restated so a retune cannot quietly leave the sane range.
@@ -72,6 +75,8 @@ def validate_content(content: Content) -> list[ContentError]:
     errors.extend(_check_practice_groups(content))
     errors.extend(_check_live_prices(content))
     errors.extend(_check_gear_ladders(content))
+    errors.extend(_check_item_requirements(content))
+    errors.extend(_check_item_acquisition(content))
     errors.extend(_check_acyclic(content))
     errors.extend(_check_kappa(content))
     return errors
@@ -110,6 +115,13 @@ def _requirement_sources(content: Content) -> Iterator[tuple[str, str, Requireme
         for tree in (candidate.requires, candidate.completion, candidate.grants_facts):
             if tree is not None:
                 yield "candidate", candidate.id, tree
+    # §23.2's wear gates. Without this loop an item's tree gets no referential integrity at
+    # all, and a mistyped quest id becomes a gate that evaluates UNKNOWN forever rather than
+    # an error — which renders as "requirements not checked" on an item whose requirements
+    # *were* checked. Silent in both directions, so it is worth the one loop.
+    for item in content.items.values():
+        if item.requires is not None:
+            yield "item", item.id, item.requires
 
 
 def _check_references(content: Content) -> list[ContentError]:
@@ -291,12 +303,19 @@ def _check_gear_ladders(content: Content) -> list[ContentError]:
     *Two items on the same rung* makes "their best melee weapon" ambiguous, and which one
     wins would fall to dict ordering — the exact non-determinism §21.5's cache cannot take.
 
-    *One id on two items* means a single observed item would mark both as held. That is how
-    a corpus edit turns into a player being told they own something they do not.
+    *One id on two items* means a single observed item would mark both as held — which is
+    **right** when the two rows are the same piece of gear on two different ladders, and
+    wrong every other time. An Antler guard is one shield and the guides put it on the melee
+    and the ranged progression both; owning it really does place the account on both. So the
+    rule is not *"an id belongs to one row"* but *"an id belongs to one **piece**"*, and rows
+    sharing an id must prove they are placements of it: same name, same ownership union, same
+    wear gate, same acquisition, same pricing, and different ladders. Anything else is the
+    aliasing slip this rule was written for — the corrupt fixture is a Voidwaker id listed
+    among an Armadyl godsword's variants — and is still rejected.
     """
     errors: list[ContentError] = []
     rungs: dict[tuple[str, str, int], str] = {}
-    owners: dict[int, str] = {}
+    owners: dict[int, Item] = {}
 
     for item in content.items.values():
         location = content.location_of("item", item.id).with_path(item.id)
@@ -323,18 +342,169 @@ def _check_gear_ladders(content: Content) -> list[ContentError]:
                 rungs[rung] = item.id
 
         for item_id in sorted(item.owned_item_ids):
-            if item_id in owners and owners[item_id] != item.id:
+            other = owners.get(item_id)
+            if other is not None and other.id != item.id:
+                if _same_piece(item, other):
+                    continue
                 errors.append(
                     ContentError(
-                        f"claims item id {item_id}, which {owners[item_id]!r} also claims; "
-                        "one observation would mark both items held (§10.5)",
+                        f"claims item id {item_id}, which {other.id!r} also claims, and the "
+                        "two are not the same piece on different ladders; one observation "
+                        "would mark both items held (§10.5)",
                         location,
                     )
                 )
             else:
-                owners[item_id] = item.id
+                owners[item_id] = item
 
     return errors
+
+
+#: What two rows must agree on to be placements of one piece of gear rather than two items
+#: that have collided. Everything about the *item*; nothing about where it sits.
+_PIECE_FIELDS = (
+    "name",
+    "item_id",
+    "variant_item_ids",
+    "requires",
+    "gate_unknown",
+    "acquisition",
+    "acquired_from",
+    "price_mode",
+    "fallback_price_gp",
+    "price_staleness_days",
+)
+
+
+def _same_piece(left: Item, right: Item) -> bool:
+    """Whether two rows are one piece of gear placed on two ladders (§10.5).
+
+    The permission is deliberately narrow. Sharing an id lets one observation mark both rows
+    held, so the rows must be indistinguishable as *items* — the only things allowed to differ
+    are ``id``, ``style``, ``slot`` and ``tier``, which say where the piece sits and nothing
+    about what it is. A second row with a different wear gate would be two answers to *"can I
+    equip this"* for one object in the bank, and the surfaces would show whichever the
+    iteration order handed them.
+
+    They must also sit on **different** ladders. Two placements on one ladder is a piece
+    occupying two rungs of its own progression, which is a duplicate however it is spelled.
+    """
+    if (left.style, left.slot) == (right.style, right.slot):
+        return False
+    return all(getattr(left, field) == getattr(right, field) for field in _PIECE_FIELDS)
+
+
+def _check_item_requirements(content: Content) -> list[ContentError]:
+    """§23.2's two failures: a contradictory gate, and a gate that can never be satisfied.
+
+    *An item declaring both ``requires`` and ``gate_unknown``* asserts at once that the
+    gate is known and that it is not. The two fields exist to keep three answers apart
+    (§10.5), and an item claiming two of them leaves the reader to pick — so it is
+    rejected rather than resolved by precedence, which would only hide the authoring slip.
+
+    *An item requirement cycle* — ``a`` needs ``b`` needs ``a`` — is a gate no account can
+    ever satisfy, and the evaluator would descend it rather than report it. The diagnostic
+    prints the path for :func:`_check_acyclic`'s reason: a bare "there is a cycle" leaves
+    the author to find it by hand.
+
+    A **monotonicity** rule was considered and deliberately left out: *a rung may not be
+    gated more weakly than the rung below it* sounds right and is not, because requirements
+    are not totally ordered. Barrows gloves are a quest and Ferocious gloves are a level;
+    neither is weaker than the other, and a corpus stating both correctly would fail.
+    """
+    errors: list[ContentError] = []
+    edges: dict[str, list[str]] = {}
+
+    for item in content.items.values():
+        location = content.location_of("item", item.id).with_path(item.id)
+        if item.requires is not None and item.gate_unknown:
+            errors.append(
+                ContentError(
+                    "declares both requires and gate_unknown; the gate is either known or "
+                    "it is not, and claiming both leaves the reader to choose (§10.5)",
+                    location,
+                )
+            )
+        edges[item.id] = (
+            [
+                leaf.item_id
+                for leaf in iter_leaves(item.requires)
+                if isinstance(leaf, ItemLeaf) and leaf.item_id in content.items
+            ]
+            if item.requires is not None
+            else []
+        )
+
+    errors.extend(
+        ContentError(
+            f"item requirements form a cycle: {' -> '.join(cycle)}; no account can ever "
+            "satisfy it (§10.5)",
+            content.location_of("item", cycle[0]).with_path(cycle[0]),
+        )
+        for cycle in _cycles(edges)
+    )
+    return errors
+
+
+def _check_item_acquisition(content: Content) -> list[ContentError]:
+    """§10.5's acquisition axis: a source belongs only to a piece you cannot buy.
+
+    ``acquired_from`` names the content that yields an **untradeable** piece. On a
+    ``tradeable`` one it sends a reader to a boss for something the market sells; on an
+    unclassified one the corpus claims at once that nobody knows how the piece is obtained
+    and that it comes from the Inferno. Rejected rather than resolved by precedence, for
+    :func:`_check_item_requirements`'s reason — picking one would only hide the slip.
+
+    The **converse is deliberately not a rule.** An ``untradeable`` piece with no source is
+    allowed: requiring the prose would turn a missing sentence into a blocked corpus edit,
+    and every surface has an honest line for it. §4.5's discipline is about never converting
+    an absence into a claim, not about forbidding absences.
+
+    There is also no rule that an ``acquisition`` be declared at all. Absence is the third
+    state (§10.5) and §23.4 does not demote on it; what makes the absence trustworthy is
+    ``tools.gear_ladders.missing_acquisitions``, which proves the authoring partition total
+    on the side that can act on it.
+    """
+    return [
+        ContentError(
+            "declares acquired_from without acquisition: untradeable. Naming the content "
+            "that yields a piece the market sells sends the reader to a boss for something "
+            "they can buy, and naming it on an unclassified piece says at once that nobody "
+            "knows how it is obtained and where it comes from (§10.5)",
+            content.location_of("item", item.id).with_path(item.id),
+        )
+        for item in content.items.values()
+        if item.acquired_from is not None and item.acquisition != "untradeable"
+    ]
+
+
+def _cycles(edges: Mapping[str, list[str]]) -> list[list[str]]:
+    """Every cycle in a small graph, each reported once and as the path that closes it."""
+    found: list[list[str]] = []
+    seen_cycles: set[frozenset[str]] = set()
+    settled: set[str] = set()
+
+    def walk(node: str, stack: list[str], on_stack: set[str]) -> None:
+        if node in on_stack:
+            cycle = [*stack[stack.index(node) :], node]
+            key = frozenset(cycle)
+            if key not in seen_cycles:
+                seen_cycles.add(key)
+                found.append(cycle)
+            return
+        if node in settled:
+            return
+        stack.append(node)
+        on_stack.add(node)
+        for target in edges.get(node, ()):
+            walk(target, stack, on_stack)
+        on_stack.discard(node)
+        stack.pop()
+        settled.add(node)
+
+    for start in sorted(edges):
+        walk(start, [], set())
+    return found
 
 
 # ---------------------------------------------------------------------------

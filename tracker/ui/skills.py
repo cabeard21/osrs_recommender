@@ -48,13 +48,13 @@ def render_skill(row: SkillRow) -> None:
         with ui.element("div").classes("flex items-baseline justify-between gap-2"):
             ui.html(row.name).classes("text-sm")
             ui.html(row.level_label).classes(
-                "text-sm font-semibold" if row.is_ranked else "text-xs opacity-70 italic"
+                "text-sm font-semibold" if row.is_ranked else "text-xs tracker-dim italic"
             )
         ui.linear_progress(row.progress, show_value=False, size="6px").props(
             "data-testid=skill-progress"
         )
         if row.is_ranked and row.xp is not None:
-            ui.html(f"{row.xp:,} xp").classes("text-xs opacity-60 block")
+            ui.html(f"{row.xp:,} xp").classes("text-xs tracker-faint block")
 
 
 def render(rows: Sequence[SkillRow]) -> None:
@@ -69,13 +69,13 @@ def render(rows: Sequence[SkillRow]) -> None:
 
     with section(f"Ranked ({len(ranked)})", testid="skills-ranked"):
         if not ranked:
-            ui.html("No ranked skills observed yet.").classes("text-xs opacity-60")
+            ui.html("No ranked skills observed yet.").classes("text-xs tracker-faint")
         for row in ranked:
             render_skill(row)
 
     with section(f"Unranked ({len(unranked)})", testid="skills-unranked"):
-        ui.html(UNRANKED_NOTE).classes("text-xs opacity-70 block mb-1")
+        ui.html(UNRANKED_NOTE).classes("text-xs tracker-dim block mb-1")
         if not unranked:
-            ui.html("None.").classes("text-xs opacity-50")
+            ui.html("None.").classes("text-xs tracker-faint")
         for row in unranked:
             render_skill(row)

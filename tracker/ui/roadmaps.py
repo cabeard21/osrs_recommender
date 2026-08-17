@@ -41,7 +41,7 @@ def render(
     with section("Primary roadmap", testid="roadmap-primary"):
         ui.html(
             "Your main goal. Weighted at 1.00 (§4.3) unless changed in advanced settings."
-        ).classes("text-xs opacity-70 block mb-1")
+        ).classes("text-xs tracker-dim block mb-1")
         group = ui.radio(
             {option.roadmap_id: option.name for option in options},
             value=primary_id,
@@ -51,7 +51,7 @@ def render(
 
     with section("Secondary roadmaps", testid="roadmap-secondary"):
         ui.html("Optional. Weighted at 0.25 (§4.3) unless changed in advanced settings.").classes(
-            "text-xs opacity-70 block mb-1"
+            "text-xs tracker-dim block mb-1"
         )
         for option in options:
             if option.roadmap_id == primary_id:
@@ -70,7 +70,7 @@ def render(
     with ui.expansion("Advanced settings", icon="tune").props("data-testid=roadmap-advanced"):
         ui.html(
             "Raw selection weights (§6.12). Normalized to sum to 1 when the engine runs."
-        ).classes("text-xs opacity-70 block mb-1")
+        ).classes("text-xs tracker-dim block mb-1")
         for option in options:
             if not option.selected:
                 continue

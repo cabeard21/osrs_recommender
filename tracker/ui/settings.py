@@ -80,7 +80,7 @@ def render(
         )
         if view.tracked_username is None:
             note = ui.html("No character set — Wise Old Man cannot look anything up yet.")
-            note.classes("text-xs opacity-60")
+            note.classes("text-xs tracker-faint")
             note.props("data-testid=no-username-note")
 
     with section("Upgrade cost", testid="settings-sensitivity"):
@@ -112,7 +112,7 @@ def render(
             "data-testid=account-type-radio "
             f"data-configured={str(view.account_type is not None).lower()}"
         )
-        ui.html(ACCOUNT_TYPE_NOTE).classes("text-xs opacity-60 block")
+        ui.html(ACCOUNT_TYPE_NOTE).classes("text-xs tracker-faint block")
 
         ui.html(MEMBERS_QUESTION).classes("text-sm block mb-1 mt-3")
         members_group = ui.radio(
@@ -149,7 +149,7 @@ def render(
                 f"data-testid=token-presence data-present={str(view.api_token_present).lower()}"
             )
 
-    footer = ui.element("p").classes("text-xs opacity-60 mt-2")
+    footer = ui.element("p").classes("text-xs tracker-faint mt-2")
     footer.props("data-testid=price-attribution")
     with footer:
         ui.html(

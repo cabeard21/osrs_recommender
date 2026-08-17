@@ -61,25 +61,42 @@ STATE_LABELS: Mapping[UiState, str] = {
 }
 
 #: §15's rendering table, plus the hatch that keeps ``unknown`` from reading as a colour on
-#: the locked-to-unlocked scale. The other three are solid fills; ``unknown`` is
-#: deliberately not filled at all, so it is distinguishable without colour vision and does
-#: not sit anywhere on that scale.
+#: the locked-to-unlocked scale.
+#:
+#: **Weight tracks urgency, not merely identity.** These were four solid pills of equal
+#: loudness, and since ``locked`` is the resting state of almost everything in this
+#: application, the loudest thing on a page was reliably the one state that asks for
+#: nothing — five grey pills to one green. So ``available``, the only state that means *you
+#: could do this now*, is the only filled badge; ``unlocked`` reads quietly because it is
+#: finished; and ``locked`` is a bare outline, because a default should not shout.
+#:
+#: That is a change of emphasis and not of meaning: the classes remain one per state and
+#: remain injective, so §15's guarantee is exactly as strong as it was.
+#:
+#: ``unknown`` keeps its hatch and gains a ``?``. It is deliberately not filled at all, so
+#: it is distinguishable without colour vision and sits nowhere on the locked-to-unlocked
+#: scale — and the glyph says, without relying on either colour or fill, that this is a
+#: question rather than a result. The hatch stroke is a fixed mid-tone rather than a token,
+#: because it has to stay visible against both the dark and the light ground.
 STATE_CSS = """
 .state-badge {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.1rem 0.55rem; border-radius: 9999px;
-  font-size: 0.75rem; font-weight: 600; line-height: 1.4;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.08rem 0.5rem; border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.6875rem; font-weight: 600; line-height: 1.5;
   border: 1px solid transparent; white-space: nowrap;
 }
-.state-unlocked  { background: #16a34a; color: #ffffff; }
-.state-available { background: #eab308; color: #1f2937; }
-.state-locked    { background: #9ca3af; color: #ffffff; }
+.state-unlocked  { background: transparent; color: var(--jade); border-color: var(--jade); }
+.state-available { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.state-locked    { background: transparent; color: var(--ink-faint); border-color: var(--edge); }
 .state-unknown {
   background: repeating-linear-gradient(
-    45deg, transparent, transparent 4px, #94a3b8 4px, #94a3b8 5px);
-  color: #1f2937;
-  border: 1px dashed #475569;
+    45deg, transparent, transparent 4px,
+    rgba(140, 128, 105, 0.55) 4px, rgba(140, 128, 105, 0.55) 5px);
+  color: var(--ink);
+  border: 1px dashed var(--ink-faint);
 }
+.state-unknown::before { content: "?"; font-weight: 700; }
 """
 
 

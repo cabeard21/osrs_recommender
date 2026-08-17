@@ -33,6 +33,7 @@ from tracker.content.requirements import iter_leaves
 from tracker.db import advisor as advisor_repo
 from tracker.db.enums import AdvisorRole, RecommendationCandidateKind
 from tracker.db.models import (
+    AdvisorConversation,
     AdvisorMessage,
     CapabilityState,
     ContainerScan,
@@ -62,15 +63,21 @@ from tracker.domain.types import (
     GpSensitivity,
     LeafRef,
     MilestoneKind,
+    PlayerState,
     Source,
     Status,
+    Tri,
     UnlockState,
 )
+from tracker.gear.render import rungs_label
+from tracker.gear.setup import GearPick, GearSetup, SetupSlot, gear_progress
 from tracker.recommendations.refreshers import practice_candidates
 from tracker.sync.advisor import AdvisorReply
 from tracker.sync.guidance import StoredGuidance
-from tracker.ui.staleness import humanize_age, scan_note
+from tracker.ui.staleness import CONTAINER_NAMES, humanize_age, scan_note
+from tracker.ui.states import UiState
 from tracker.ui.view_model import (
+    NEW_CONVERSATION_ID,
     AdvisorConversationRow,
     AdvisorMessageRow,
     AdvisorThreadView,
@@ -79,6 +86,10 @@ from tracker.ui.view_model import (
     CapabilityRow,
     DashboardView,
     FactorDiffRow,
+    GearPickRow,
+    GearSlotRow,
+    GearStyleRow,
+    GearView,
     GoalProgressRow,
     GuidanceStepRow,
     GuidanceView,
@@ -97,6 +108,7 @@ from tracker.ui.view_model import (
     SpeedUpRow,
     UnblockRow,
     UnlockRow,
+    _gp,
     capability_row,
     recommendation_entry_row,
     skill_row,
@@ -1200,12 +1212,13 @@ def advisor_thread(
     a conversation rather than an error. The write path in :mod:`tracker.sync.advisor` is
     stricter for the opposite reason — there, silently answering into a different thread would
     put the user's words somewhere they did not intend.
+
+    :data:`~tracker.ui.view_model.NEW_CONVERSATION_ID` is the one id that does not take that
+    fallback, and it cannot: it is not an id that failed to resolve, it is a request for a
+    blank thread. Running it through the fallback answered that request with the most recent
+    conversation, which is what made *New conversation* a control that appeared to do nothing.
     """
-    conversation = None
-    if conversation_id is not None:
-        conversation = advisor_repo.get_conversation(session, player_id, conversation_id)
-    if conversation is None:
-        conversation = advisor_repo.latest_conversation(session, player_id)
+    conversation = _chosen_conversation(session, player_id, conversation_id)
 
     rows = tuple(
         AdvisorConversationRow(
@@ -1228,6 +1241,38 @@ def advisor_thread(
         ),
         conversations=rows,
     )
+
+
+def _chosen_conversation(
+    session: Session, player_id: int, conversation_id: int | None
+) -> AdvisorConversation | None:
+    """Which thread the URL is asking for, in the three senses it can ask.
+
+    *Nothing* means "wherever I was", *zero* means "a new one", and any other number means that
+    thread if it is this player's and the most recent otherwise. Separated out because the
+    middle case reads as an oversight when it is inlined among the fallbacks — it is the only
+    branch that must not fall through, and it looked exactly like the branch that must.
+    """
+    if conversation_id == NEW_CONVERSATION_ID:
+        return None
+    if conversation_id is not None:
+        found = advisor_repo.get_conversation(session, player_id, conversation_id)
+        if found is not None:
+            return found
+    return advisor_repo.latest_conversation(session, player_id)
+
+
+def delete_advisor_conversation(session: Session, player_id: int, conversation_id: int) -> bool:
+    """Remove one thread, and say whether there was one. Commits.
+
+    The only destructive action the interface offers, which is why it is spelled out here
+    rather than reached through :mod:`tracker.db.advisor` directly: a page should not be the
+    thing that decides when a delete is committed.
+    """
+    deleted = advisor_repo.delete_conversation(session, player_id, conversation_id)
+    if deleted:
+        session.commit()
+    return deleted
 
 
 def _advisor_message_row(message: AdvisorMessage, *, current_hash: str) -> AdvisorMessageRow:
@@ -1271,3 +1316,197 @@ def advisor_reply_row(reply: AdvisorReply) -> AdvisorMessageRow:
         tool_names=tuple(entry.name for entry in turn.tool_trace),
         truncated=turn.truncated,
     )
+
+
+# ---------------------------------------------------------------------------
+# §23 — gear progression
+# ---------------------------------------------------------------------------
+
+#: Which §23 answer each :class:`UiState` draws. ``UNKNOWN`` is the one with a rule
+#: attached (§15): it means *nobody looked* or *nobody authored it*, never *no*.
+_GEAR_STATE: Mapping[Tri, UiState] = {
+    Tri.SATISFIED: UiState.UNLOCKED,
+    Tri.UNSATISFIED: UiState.LOCKED,
+    Tri.UNKNOWN: UiState.UNKNOWN,
+}
+
+#: Ownership in ownership's own words. The *state* is shared with the lock scale — one
+#: `UiState`, so §15's disjointness assertion still covers these badges — but the *word* is
+#: not, because "locked" answers whether the account can wear the piece and reads as a flat
+#: contradiction on the very rung the page has just recommended.
+_HELD_LABEL: Mapping[Tri, str] = {
+    Tri.SATISFIED: "held",
+    Tri.UNSATISFIED: "not held",
+    Tri.UNKNOWN: "not yet seen",
+}
+
+#: Whether the account can wear it. Rendered only where the row's own layer does not
+#: already say so — see `_gear_pick_row`.
+_FIT_LABEL: Mapping[Tri, str] = {
+    Tri.SATISFIED: "can equip",
+    Tri.UNSATISFIED: "cannot equip yet",
+    Tri.UNKNOWN: "requirements unknown",
+}
+
+
+def gear_view(session: Session, player_id: int | None, content: Content) -> GearView:
+    """§23.5's page: the computed setup, turned into rows.
+
+    Reads the same cached prices §22 does, preferring ``selected_price_gp`` over
+    ``high_price_gp`` for §8.3's reason — that is the figure the estimator actually costed
+    with, and showing the raw quote instead would put a number on this page that no other
+    page agrees with.
+
+    The computation itself is :func:`tracker.gear.setup.gear_progress`, unchanged and shared
+    with §22. One projection, two renderings.
+    """
+    if player_id is None:
+        return GearView()
+
+    state = build_player_state(session, player_id)
+    prices: dict[int, int | None] = {
+        row.item_id: (
+            row.selected_price_gp if row.selected_price_gp is not None else row.high_price_gp
+        )
+        for row in session.scalars(select(ItemPrice)).all()
+    }
+    progress = gear_progress(state, content, prices=prices)
+
+    return GearView(
+        styles=tuple(_gear_style_row(setup) for setup in progress.setups),
+        fully_scanned=progress.fully_scanned,
+        scan_note=None if progress.fully_scanned else _gear_scan_note(state),
+    )
+
+
+def _gear_scan_note(state: PlayerState) -> str:
+    """Name the containers nobody has opened, because that is what the reader can act on.
+
+    Deliberately not :func:`tracker.ui.staleness.scan_note`: that one reports *when* a
+    container was last seen and needs a clock, and this page's question is the prior one —
+    whether it has ever been looked in at all. Until every container has, every *not held*
+    below is really *unknown* (§4.5), which is a caveat over the whole page rather than a
+    fact about any one row.
+    """
+    unseen = [
+        CONTAINER_NAMES[container]
+        for container in Container
+        if container not in state.container_scans
+    ]
+    return (
+        f"Never scanned: {', '.join(unseen)}. Anything shown as not held may simply not have "
+        "been seen — open it in-game with RuneLite running."
+    )
+
+
+def _gear_style_row(setup: GearSetup) -> GearStyleRow:
+    missing = setup.missing
+    total = setup.to_complete_gp
+    if not missing:
+        label = "Every recommended piece is already held."
+    elif total is not None:
+        label = f"Still to get: {len(missing)} pieces, about {_gp(total)} gp at cached prices."
+    else:
+        # Not a partial sum — see `GearSetup.to_complete_gp`. A figure covering only the
+        # cached half would read as the whole bill and understate it.
+        label = f"Still to get: {len(missing)} pieces. No total — some have no cached price."
+
+    return GearStyleRow(
+        style=setup.style,
+        slots=tuple(_gear_slot_row(slot) for slot in setup.slots),
+        missing_label=label,
+    )
+
+
+def _gear_slot_row(slot: SetupSlot) -> GearSlotRow:
+    # Compared on `item_id` rather than on the rendered rows: two rungs can share a name and
+    # a rung number across ladders, and identity is the thing being asked about.
+    same = (
+        slot.recommended is not None
+        and slot.best_held is not None
+        and slot.recommended.item_id == slot.best_held.item_id
+    )
+    return GearSlotRow(
+        slot=slot.slot,
+        # Shared with the advisor's rendering rather than spelled twice — the ammunition
+        # ladder holds one rung, and "1 rungs" is a stated fact that is wrong.
+        ladder_label=rungs_label(slot.ladder_size),
+        recommended=_gear_pick_row(slot.recommended, slot.ladder_size),
+        best_held=_gear_pick_row(slot.best_held, slot.ladder_size),
+        held_is_recommended=same,
+        next_rung=_gear_pick_row(slot.next_rung, slot.ladder_size),
+        earn=_gear_pick_row(slot.earn, slot.ladder_size),
+        aspirational=tuple(
+            row
+            for pick in slot.aspirational[1:]
+            if (row := _gear_pick_row(pick, slot.ladder_size)) is not None
+        ),
+        also_held=tuple(
+            row
+            for pick in slot.also_held
+            if (row := _gear_pick_row(pick, slot.ladder_size)) is not None
+        ),
+        ladder=tuple((pick.tier, pick.name) for pick in slot.rungs),
+        conflict=slot.holds_what_it_cannot_wear,
+    )
+
+
+def _gear_pick_row(pick: GearPick | None, ladder_size: int) -> GearPickRow | None:
+    if pick is None:
+        return None
+    return GearPickRow(
+        name=pick.name,
+        rung_label=f"rung {pick.tier} of {ladder_size}",
+        held_state=_GEAR_STATE[pick.held],
+        fit_state=_GEAR_STATE[pick.fit],
+        # Empty rather than "no cached price". §8.3's rule is that absent is absent, and an
+        # empty label keeps it — but the sentence was being repeated once per rung, so a slot
+        # with five unpriced rungs said it five times and the page read as an apology. The
+        # fact is not dropped: `tracker.ui.gear` says it once, for the whole style, when no
+        # rung in it has a price. One caveat at the scope it actually applies to.
+        # An untradeable rung shows no price, whatever is cached against it. The figure held
+        # for an Avernic defender is really its *hilt*, and a gp label beside a piece the
+        # market does not sell invites a purchase nobody can make (§23.5).
+        price_label=(
+            f"{_gp(pick.price_gp)} gp"
+            if pick.price_gp is not None and pick.obtainable is not Tri.UNSATISFIED
+            else ""
+        ),
+        held_label=_HELD_LABEL[pick.held],
+        # A wearable rung needs no badge saying so: every layer that can carry one either
+        # states it outright ("best you can equip") or explains the gap in `note`. The badge
+        # earns its place only when the answer is no or nobody knows.
+        fit_label="" if pick.fit is Tri.SATISFIED else _FIT_LABEL[pick.fit],
+        note=_gear_note(pick),
+        acquire_label=_acquire_label(pick),
+        tier=pick.tier,
+    )
+
+
+def _acquire_label(pick: GearPick) -> str:
+    """§23.2's second axis, in the words a reader can act on.
+
+    Three answers and only two of them are worth a line. A tradeable rung says nothing —
+    *"you can buy this"* is what the price beside it already means — while the other two both
+    change what the reader should do next, and so both earn the space.
+    """
+    if pick.obtainable is Tri.UNSATISFIED:
+        if pick.acquired_from:
+            return f"Earn it — {pick.acquired_from}. It cannot be bought."
+        return "It cannot be bought — the tracker has not recorded what wins it."
+    if pick.obtainable is Tri.UNKNOWN:
+        return "The tracker has not recorded how this is obtained."
+    return ""
+
+
+def _gear_note(pick: GearPick) -> str | None:
+    """Why a rung is not usable — the requirement, not merely that one exists."""
+    if pick.gate_unknown:
+        return "Requirements not established by the tracker — not a claim about your account."
+    if pick.fit is Tri.UNSATISFIED and pick.blockers:
+        return "Needs " + ", ".join(ref.description for ref in pick.blockers[:3])
+    if pick.fit is Tri.UNKNOWN and pick.unknowns:
+        return "Cannot tell — nobody has observed " + ", ".join(
+            ref.description for ref in pick.unknowns[:3]
+        )
+    return None

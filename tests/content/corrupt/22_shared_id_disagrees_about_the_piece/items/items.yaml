@@ -1,0 +1,33 @@
+# §10.5. Two rows may share a numeric item id when they are one piece of gear placed on two
+# ladders — an Antler guard is a tribrid shield and the melee and ranged guides both print it,
+# so owning the one in your bank really does place you on both.
+#
+# That permission is narrow, and this is what it excludes. These two rows share an id and
+# disagree about the *wear gate*, so the corpus holds two answers to "can I equip this" for a
+# single object in the bank, and each surface would show whichever the iteration order handed
+# it. The only fields allowed to differ are the ones saying where the piece sits — `id`,
+# `slot`, `style`, `tier` — never one saying what it is.
+#
+# Note what is *not* corrupt: two rows sharing an id, per se. `17_item_id_claimed_twice` is the
+# other half of this rule, where an id is shared by two genuinely different items.
+- id: antler_guard
+  name: Antler guard
+  item_id: 31081
+  slot: shield
+  style: melee
+  tier: 1
+  requires:
+    skill:
+      prayer: 50
+  acquisition: tradeable
+
+- id: antler_guard_ranged
+  name: Antler guard
+  item_id: 31081
+  slot: shield
+  style: ranged
+  tier: 1
+  requires:
+    skill:
+      prayer: 43
+  acquisition: tradeable

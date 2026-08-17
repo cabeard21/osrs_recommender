@@ -1,6 +1,8 @@
 {
   "catalog": {
     "Abyssal whip": 4151,
+    "Adamant arrow": 890,
+    "Adamant dart": 810,
     "Adamant full helm": 1161,
     "Adamant platebody": 1123,
     "Adamant platelegs": 1073,
@@ -8,6 +10,8 @@
     "Ahrim's hood": 4708,
     "Ahrim's robeskirt": 4714,
     "Ahrim's robetop": 4712,
+    "Amethyst arrow": 21326,
+    "Amethyst dart": 25849,
     "Amulet of fury": 6585,
     "Amulet of glory": 1704,
     "Amulet of magic": 1727,
@@ -19,13 +23,16 @@
     "Ancestral robe bottom": 21024,
     "Ancestral robe top": 21021,
     "Ancient staff": 4675,
+    "Antler guard": 31081,
     "Archer helm": 3749,
     "Armadyl crossbow": 11785,
+    "Atlatl dart": 28991,
     "Avernic treads": 31088,
     "Bellator ring": 28316,
     "Berserker helm": 3751,
     "Berserker ring": 6737,
     "Black cape": 1019,
+    "Black chinchompa": 11959,
     "Black d'hide body": 2503,
     "Black d'hide chaps": 2497,
     "Blood moon tassets": 29025,
@@ -37,18 +44,23 @@
     "Blue d'hide chaps": 2493,
     "Blue wizard hat": 579,
     "Blue wizard robe": 577,
+    "Bone bolts": 8882,
+    "Broad bolts": 11875,
     "Coif": 1169,
     "Combat bracelet": 11126,
     "Confliction gauntlets": 31106,
-    "Dinh's bulwark": 21015,
+    "Diamond bolts (e)": 9243,
+    "Diamond dragon bolts (e)": 21946,
     "Dorgeshuun crossbow": 8880,
     "Dragon boots": 11840,
     "Dragon crossbow": 21902,
+    "Dragon dart": 11230,
     "Dragon hunter crossbow": 21012,
     "Dragon hunter wand": 30070,
     "Dragon platelegs": 4087,
     "Dragon scimitar": 4587,
     "Dragonfire ward": 22003,
+    "Dragonstone bolts (e)": 9244,
     "Eclipse atlatl": 29000,
     "Elidinis' ward": 25985,
     "Eternal boots": 13235,
@@ -57,13 +69,21 @@
     "Green d'hide chaps": 1099,
     "Green d'hide shield": 22275,
     "Green d'hide vambraces": 1065,
+    "Guthix chaps": 10380,
+    "Guthix coif": 10382,
+    "Guthix d'hide body": 10378,
+    "Guthix d'hide boots": 19927,
     "Helm of neitiznot": 10828,
+    "Hueycoatl hide body": 30076,
+    "Hueycoatl hide chaps": 30079,
+    "Hueycoatl hide coif": 30073,
     "Hunters' sunlight crossbow": 28869,
     "Infinity boots": 6920,
     "Inquisitor's great helm": 24419,
     "Inquisitor's hauberk": 24420,
     "Inquisitor's mace": 24417,
     "Inquisitor's plateskirt": 24421,
+    "Iron arrow": 884,
     "Iron full helm": 1153,
     "Iron platebody": 1115,
     "Iron platelegs": 1067,
@@ -89,10 +109,16 @@
     "Masori chaps (f)": 27241,
     "Masori mask": 27226,
     "Masori mask (f)": 27235,
+    "Mithril arrow": 888,
     "Mithril full helm": 1159,
     "Mithril platebody": 1121,
     "Mithril platelegs": 1071,
     "Mithril scimitar": 1329,
+    "Mixed hide boots": 29286,
+    "Mixed hide cape": 29289,
+    "Mixed hide legs": 29283,
+    "Mixed hide top": 29280,
+    "Moonlight antler bolts": 28878,
     "Mystic boots": 4097,
     "Mystic hat": 4089,
     "Mystic robe bottom": 4093,
@@ -101,28 +127,39 @@
     "Necklace of rupture": 33639,
     "Nightmare staff": 24422,
     "Oak shortbow": 843,
+    "Oathplate chest": 30753,
+    "Oathplate helm": 30750,
+    "Oathplate legs": 30756,
     "Occult necklace": 12002,
     "Odium ward": 11926,
+    "Peaceful blessing": 20226,
     "Pegasian boots": 13237,
     "Primordial boots": 13239,
+    "Red chinchompa": 10034,
     "Ring of suffering": 19550,
+    "Ruby bolts (e)": 9242,
+    "Ruby dragon bolts (e)": 21944,
+    "Rune arrow": 892,
     "Rune boots": 4131,
     "Rune crossbow": 9185,
+    "Rune dart": 811,
     "Rune full helm": 1163,
     "Rune platebody": 1127,
     "Rune platelegs": 1079,
     "Rune scimitar": 1333,
-    "Seers ring": 6731,
+    "Seeking dragon arrow": 33595,
     "Shortbow": 841,
     "Snakeskin bandana": 6326,
     "Snakeskin boots": 6328,
     "Staff of air": 1381,
+    "Steel arrow": 886,
     "Steel full helm": 1157,
     "Steel platebody": 1119,
     "Steel platelegs": 1069,
     "Steel scimitar": 1325,
     "Studded body": 1133,
     "Studded chaps": 1097,
+    "Sunlight antler bolts": 28872,
     "Torag's platelegs": 4751,
     "Tormented bracelet": 19544,
     "Torva full helm": 26382,
@@ -155,6 +192,56 @@
       [
         "",
         4151
+      ]
+    ],
+    "Adamant arrow": [
+      [
+        "[[File:Adamant arrow 1.png|center]]",
+        890
+      ],
+      [
+        "[[File:Adamant arrow(p) 1.png|center]]",
+        891
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5620
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5626
+      ]
+    ],
+    "Adamant dart": [
+      [
+        "Unpoisoned",
+        810
+      ],
+      [
+        "Poison",
+        816
+      ],
+      [
+        "Poison+",
+        5633
+      ],
+      [
+        "Poison++",
+        5640
+      ]
+    ],
+    "Adamant defender": [
+      [
+        "Normal",
+        8849
+      ],
+      [
+        "Broken",
+        20459
+      ],
+      [
+        "Locked",
+        24141
       ]
     ],
     "Adamant full helm": [
@@ -257,6 +344,42 @@
       [
         "[[File:Ahrim's robetop 0.png|center]]",
         4872
+      ]
+    ],
+    "Amethyst arrow": [
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        21326
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        21332
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        21334
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        21336
+      ]
+    ],
+    "Amethyst dart": [
+      [
+        "Unpoisoned",
+        25849
+      ],
+      [
+        "Poison",
+        25851
+      ],
+      [
+        "Poison+",
+        25855
+      ],
+      [
+        "Poison++",
+        25857
       ]
     ],
     "Amulet of blood fury": [
@@ -373,6 +496,12 @@
         4675
       ]
     ],
+    "Antler guard": [
+      [
+        "",
+        31081
+      ]
+    ],
     "Archer helm": [
       [
         "",
@@ -395,6 +524,12 @@
       [
         "",
         11785
+      ]
+    ],
+    "Atlatl dart": [
+      [
+        "",
+        28991
       ]
     ],
     "Ava's accumulator": [
@@ -487,6 +622,12 @@
         1019
       ]
     ],
+    "Black chinchompa": [
+      [
+        "",
+        11959
+      ]
+    ],
     "Black d'hide body": [
       [
         "",
@@ -497,6 +638,20 @@
       [
         "",
         2497
+      ]
+    ],
+    "Black defender": [
+      [
+        "Normal",
+        8847
+      ],
+      [
+        "Broken",
+        20455
+      ],
+      [
+        "Locked",
+        24139
       ]
     ],
     "Blade of saeldor": [
@@ -571,6 +726,12 @@
         577
       ]
     ],
+    "Bone bolts": [
+      [
+        "",
+        8882
+      ]
+    ],
     "Book of darkness": [
       [
         "",
@@ -591,6 +752,26 @@
       [
         "Charged",
         25865
+      ]
+    ],
+    "Broad bolts": [
+      [
+        "",
+        11875
+      ]
+    ],
+    "Bronze defender": [
+      [
+        "Normal",
+        8844
+      ],
+      [
+        "Broken",
+        20449
+      ],
+      [
+        "Locked",
+        24136
       ]
     ],
     "Coif": [
@@ -665,10 +846,16 @@
         23981
       ]
     ],
-    "Dinh's bulwark": [
+    "Diamond bolts (e)": [
       [
         "",
-        21015
+        9243
+      ]
+    ],
+    "Diamond dragon bolts (e)": [
+      [
+        "",
+        21946
       ]
     ],
     "Dizana's quiver": [
@@ -705,6 +892,24 @@
       [
         "",
         21902
+      ]
+    ],
+    "Dragon dart": [
+      [
+        "Unpoisoned",
+        11230
+      ],
+      [
+        "Poison",
+        11231
+      ],
+      [
+        "Poison+",
+        11233
+      ],
+      [
+        "Poison++",
+        11234
       ]
     ],
     "Dragon defender": [
@@ -753,6 +958,12 @@
       [
         "Charged",
         22002
+      ]
+    ],
+    "Dragonstone bolts (e)": [
+      [
+        "",
+        9244
       ]
     ],
     "Echo boots": [
@@ -891,6 +1102,12 @@
         33522
       ]
     ],
+    "Fighting boots": [
+      [
+        "",
+        9006
+      ]
+    ],
     "Fire cape": [
       [
         "Normal",
@@ -935,6 +1152,30 @@
         1065
       ]
     ],
+    "Guthix chaps": [
+      [
+        "",
+        10380
+      ]
+    ],
+    "Guthix coif": [
+      [
+        "",
+        10382
+      ]
+    ],
+    "Guthix d'hide body": [
+      [
+        "",
+        10378
+      ]
+    ],
+    "Guthix d'hide boots": [
+      [
+        "",
+        19927
+      ]
+    ],
     "Harmonised nightmare staff": [
       [
         "",
@@ -945,6 +1186,24 @@
       [
         "",
         10828
+      ]
+    ],
+    "Hueycoatl hide body": [
+      [
+        "",
+        30076
+      ]
+    ],
+    "Hueycoatl hide chaps": [
+      [
+        "",
+        30079
+      ]
+    ],
+    "Hueycoatl hide coif": [
+      [
+        "",
+        30073
       ]
     ],
     "Hunters' sunlight crossbow": [
@@ -1023,6 +1282,38 @@
       [
         "",
         24421
+      ]
+    ],
+    "Iron arrow": [
+      [
+        "[[File:Iron arrow 1.png|center]]",
+        884
+      ],
+      [
+        "[[File:Iron arrow(p) 1.png|center]]",
+        885
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5617
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5623
+      ]
+    ],
+    "Iron defender": [
+      [
+        "Normal",
+        8845
+      ],
+      [
+        "Broken",
+        20451
+      ],
+      [
+        "Locked",
+        24137
       ]
     ],
     "Iron full helm": [
@@ -1181,6 +1472,38 @@
         27235
       ]
     ],
+    "Mithril arrow": [
+      [
+        "[[File:Mithril arrow 1.png|center]]",
+        888
+      ],
+      [
+        "[[File:Mithril arrow(p) 1.png|center]]",
+        889
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5619
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5625
+      ]
+    ],
+    "Mithril defender": [
+      [
+        "Normal",
+        8848
+      ],
+      [
+        "Broken",
+        20457
+      ],
+      [
+        "Locked",
+        24140
+      ]
+    ],
     "Mithril full helm": [
       [
         "",
@@ -1203,6 +1526,42 @@
       [
         "",
         1329
+      ]
+    ],
+    "Mixed hide boots": [
+      [
+        "",
+        29286
+      ]
+    ],
+    "Mixed hide cape": [
+      [
+        "",
+        29289
+      ]
+    ],
+    "Mixed hide legs": [
+      [
+        "",
+        29283
+      ]
+    ],
+    "Mixed hide top": [
+      [
+        "",
+        29280
+      ]
+    ],
+    "Mooleta": [
+      [
+        "",
+        33101
+      ]
+    ],
+    "Moonlight antler bolts": [
+      [
+        "",
+        28878
       ]
     ],
     "Mystic boots": [
@@ -1259,6 +1618,24 @@
         843
       ]
     ],
+    "Oathplate chest": [
+      [
+        "",
+        30753
+      ]
+    ],
+    "Oathplate helm": [
+      [
+        "",
+        30750
+      ]
+    ],
+    "Oathplate legs": [
+      [
+        "",
+        30756
+      ]
+    ],
     "Occult necklace": [
       [
         "",
@@ -1269,6 +1646,12 @@
       [
         "",
         11926
+      ]
+    ],
+    "Peaceful blessing": [
+      [
+        "",
+        20226
       ]
     ],
     "Pegasian boots": [
@@ -1287,6 +1670,24 @@
       [
         "",
         29594
+      ]
+    ],
+    "Rada's blessing 3": [
+      [
+        "",
+        22945
+      ]
+    ],
+    "Rada's blessing 4": [
+      [
+        "",
+        22947
+      ]
+    ],
+    "Red chinchompa": [
+      [
+        "",
+        10034
       ]
     ],
     "Ring of suffering": [
@@ -1325,6 +1726,36 @@
         26762
       ]
     ],
+    "Ruby bolts (e)": [
+      [
+        "",
+        9242
+      ]
+    ],
+    "Ruby dragon bolts (e)": [
+      [
+        "",
+        21944
+      ]
+    ],
+    "Rune arrow": [
+      [
+        "[[File:Rune arrow 1.png|center]]",
+        892
+      ],
+      [
+        "[[File:Rune arrow(p) 1.png|center]]",
+        893
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5621
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5627
+      ]
+    ],
     "Rune boots": [
       [
         "",
@@ -1335,6 +1766,38 @@
       [
         "",
         9185
+      ]
+    ],
+    "Rune dart": [
+      [
+        "Unpoisoned",
+        811
+      ],
+      [
+        "Poison",
+        817
+      ],
+      [
+        "Poison+",
+        5634
+      ],
+      [
+        "Poison++",
+        5641
+      ]
+    ],
+    "Rune defender": [
+      [
+        "Normal",
+        8850
+      ],
+      [
+        "Broken",
+        20461
+      ],
+      [
+        "Locked",
+        24142
       ]
     ],
     "Rune full helm": [
@@ -1393,10 +1856,10 @@
         22325
       ]
     ],
-    "Seers ring": [
+    "Seeking dragon arrow": [
       [
         "",
-        6731
+        33595
       ]
     ],
     "Seers ring (i)": [
@@ -1447,6 +1910,38 @@
         1381
       ]
     ],
+    "Steel arrow": [
+      [
+        "[[File:Steel arrow 1.png|center]]",
+        886
+      ],
+      [
+        "[[File:Steel arrow(p) 1.png|center]]",
+        887
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5618
+      ],
+      [
+        "<gallery captionalign=\"center\" widths=\"120\">",
+        5624
+      ]
+    ],
+    "Steel defender": [
+      [
+        "Normal",
+        8846
+      ],
+      [
+        "Broken",
+        20453
+      ],
+      [
+        "Locked",
+        24138
+      ]
+    ],
     "Steel full helm": [
       [
         "",
@@ -1481,6 +1976,12 @@
       [
         "",
         1097
+      ]
+    ],
+    "Sunlight antler bolts": [
+      [
+        "",
+        28872
       ]
     ],
     "Tome of fire": [
@@ -1697,6 +2198,28 @@
       [
         "[[File:Void knight gloves (l) (mangled) detail.png|left|130px]]",
         33494
+      ]
+    ],
+    "Void mage helm": [
+      [
+        "Normal",
+        11663
+      ],
+      [
+        "Broken",
+        20477
+      ],
+      [
+        "Locked",
+        24183
+      ],
+      [
+        "[[File:Void mage helm (l) (broken) detail.png|left|130px]]",
+        33468
+      ],
+      [
+        "[[File:Void mage helm (l) (mangled) detail.png|left|130px]]",
+        33470
       ]
     ],
     "Void ranger helm": [

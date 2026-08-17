@@ -115,8 +115,15 @@ ItemSlot = Literal[
 ]
 
 #: Which ladder an item belongs to. A piece that serves two styles is declared once per
-#: ladder, each with its own id, rather than as a single row that has to mean both.
+#: ladder, each with its own id, rather than as a single row that has to mean both — the rows
+#: share the numeric ``item_id`` and differ only in ``id``, ``slot``, ``style`` and ``tier``,
+#: which :func:`tracker.content.validate._check_gear_ladders` holds them to.
 CombatStyle = Literal["melee", "ranged", "magic"]
+
+#: §10.5's acquisition axis — how a piece reaches the account's hands, as against what it
+#: takes to wear it. **Absent is the third state** and means nobody classified it; see
+#: :class:`Item` for why that needs no companion flag where ``gate_unknown`` did.
+Acquisition = Literal["tradeable", "untradeable"]
 
 
 class Item(ContentModel):
@@ -136,6 +143,64 @@ class Item(ContentModel):
     item. Matching on ``item_id`` alone is how a player with a charged Toxic blowpipe gets
     told to go and buy one. **Ownership tests the union; pricing uses ``item_id`` alone**,
     because only one variant is the one the market quotes.
+
+    ``requires`` and ``gate_unknown`` say what it takes to *wear* the item (§23.2), and
+    they are two fields rather than one because there are three answers, not two:
+
+    ===============================  ===========================================
+    ``requires`` set                 the corpus knows the gate
+    both unset                       the corpus asserts there is **no** gate
+    ``gate_unknown`` set             nobody has established the gate
+    ===============================  ===========================================
+
+    Collapsing the last two — treating an unauthored item as ungated — is the failure
+    §23.4 is built around: it reports a Torva platebody as wearable to an account that
+    cannot lift it, and does so with no signal that anything is missing. So the third
+    state is explicit, evaluates to :attr:`~tracker.domain.types.Tri.UNKNOWN`, and can
+    never be promoted into *"you can wear this"*. Declaring both is a contradiction, and
+    :func:`tracker.content.validate._check_item_requirements` rejects it.
+
+    ``acquisition`` and ``acquired_from`` are §10.5's second axis: how the piece reaches the
+    account's hands, which is a different question from what it takes to wear it and has a
+    different answer. A Fire cape's wear gate is 40 Defence, which most accounts meet long
+    before they could survive the Fight Caves, and no amount of gp buys one at all. Without
+    this axis §23.4 recommended an Infernal cape to everybody — true, and useless.
+
+    ===============================  ===========================================
+    ``tradeable``                    the Grand Exchange carries it
+    ``untradeable``                  it must be won from a piece of content
+    neither                          nobody has established which
+    ===============================  ===========================================
+
+    **Two fields, not three, and the asymmetry with ``gate_unknown`` is deliberate.** That
+    pair exists because ``requires=None`` was *already spoken for* — it asserts there is no
+    gate — so the third answer had nowhere to live. Nothing is spoken for here: both values
+    are positive assertions with their own spellings, which leaves ``None`` free to carry
+    *nobody classified this*, in the polarity §4.5 actually asks for. An
+    ``acquisition_unknown`` flag would have exactly two legal states and would buy a
+    validation rule to forbid the other two, expressing nothing the two values did not.
+
+    ``acquired_from`` is **prose and never an id**, for the reason :class:`MethodDetail`'s
+    ``gear`` is: §10.7 checks ids against a registry, and "the Fight Caves" is none of the
+    six the corpus keeps. It is also a **noun phrase and never a sentence**, because every
+    surface composes it into one — *"untradeable — earned from {acquired_from}"* — and an
+    author who writes a sentence sees that break the first time it renders. It is named
+    ``acquired_from`` rather than ``source`` because
+    :class:`tracker.domain.types.Source` is observation provenance, and a second ``source``
+    in the adjacent model would collide with it at exactly the §4.5 machinery this sits
+    beside. :func:`tracker.content.validate._check_item_acquisition` rejects it on an item
+    that is not ``untradeable``.
+
+    **Not derived from ``price_mode``**, which selects §8.3's cascade and is a pipeline
+    setting rather than a fact about the game. Its polarity is backwards — it defaults to
+    ``static``, so deriving from it would assert *untradeable* of everything nobody thought
+    about — and the two genuinely disagree wherever the worn piece is untradeable while a
+    sibling id trades, which is the whole reason ``PRICED_VARIANT`` exists.
+
+    **This gates nothing in §9.** No candidate's requirement tree reads ``requires`` or
+    ``acquisition``, and no estimate moves because of either — a wear requirement that fed
+    the evaluator would silently reprice every candidate whose ``completion`` names an item,
+    which is a ranking change wearing the clothes of a content edit.
     """
 
     id: str
@@ -145,9 +210,15 @@ class Item(ContentModel):
     slot: ItemSlot | None = None
     style: CombatStyle | None = None
     tier: int | None = Field(default=None, ge=1)
+    requires: Requirement | None = None
+    gate_unknown: bool = False
+    acquisition: Acquisition | None = None
+    acquired_from: str | None = None
     price_mode: Literal["live", "static"] = "static"
     fallback_price_gp: int | None = Field(default=None, ge=0)
     price_staleness_days: int | None = Field(default=None, gt=0)
+
+    _parse_requires = _requirement_field("requires")
 
     @property
     def owned_item_ids(self) -> frozenset[int]:

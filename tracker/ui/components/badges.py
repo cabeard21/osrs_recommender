@@ -29,19 +29,33 @@ CONFIDENCE_CLASSES = {
     Confidence.LOW: "confidence-low",
 }
 
+#: Confidence resolves through the palette tokens rather than through its own hexadecimals,
+#: so it inverts with the theme. The previous pastel fills were light-mode-only and became
+#: three glowing blocks on a dark ground.
+#:
+#: Unlike the state vocabulary these still read as one axis, because they *are* one: §6.9's
+#: confidence is ordered, so a low chip being louder than a high one is correct here — it is
+#: the reading that most deserves a second look.
 CONFIDENCE_CSS = """
 .confidence-chip {
   display: inline-flex; align-items: center;
-  padding: 0.05rem 0.45rem; border-radius: 0.25rem;
-  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em;
+  padding: 0.05rem 0.4rem; border-radius: 0.2rem;
+  font-family: var(--font-data);
+  font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.01em;
+  border: 1px solid transparent;
 }
-.confidence-high   { background: #dcfce7; color: #14532d; }
-.confidence-medium { background: #fef3c7; color: #713f12; }
-.confidence-low    { background: #fee2e2; color: #7f1d1d; }
+.confidence-high   { color: var(--jade); border-color: var(--edge); }
+.confidence-medium { color: var(--amber); border-color: var(--amber); }
+.confidence-low    { color: var(--rust); border-color: var(--rust); }
 .leaf-list { list-style: none; margin: 0; padding: 0; }
-.leaf-list li { padding: 0.15rem 0; font-size: 0.85rem; }
-.cta { font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-       letter-spacing: 0.04em; opacity: 0.75; display: block; }
+.leaf-list li {
+  padding: 0.2rem 0 0.2rem 0.7rem; font-size: 0.8125rem;
+  border-left: 1px solid var(--edge-soft);
+}
+.cta {
+  font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--ink-faint); display: block; margin-bottom: 0.2rem;
+}
 """
 
 
@@ -93,7 +107,7 @@ def leaf_list(leaves: Sequence[LeafRow], *, testid: str, cta: str, empty: str) -
     with container:
         ui.html(cta).classes("cta")
         if not leaves:
-            ui.html(empty).classes("text-xs opacity-60")
+            ui.html(empty).classes("text-xs tracker-faint")
             return container
         with ui.element("ul").classes("leaf-list"):
             for leaf in leaves:
@@ -126,7 +140,7 @@ def staleness_note(message: str) -> ui.element:
     component free to compose its own sentence would be a second place for it to be got
     wrong.
     """
-    element = ui.element("p").classes("text-xs opacity-70 m-0")
+    element = ui.element("p").classes("text-xs tracker-dim m-0")
     element.props("data-testid=staleness-note")
     with element:
         ui.html(message)

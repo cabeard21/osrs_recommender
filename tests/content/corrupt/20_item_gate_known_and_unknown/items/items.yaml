@@ -1,0 +1,17 @@
+# §23.2. `requires` says the gate is known; `gate_unknown` says nobody established it.
+# Declaring both asserts each of two contradictory things, and the two fields exist
+# precisely to keep three answers apart (§10.5).
+#
+# Rejected rather than resolved by precedence: picking a winner would let the authoring
+# slip survive, and the slip is the interesting part. Whichever field was meant, the corpus
+# no longer says which.
+- id: torva_platebody
+  name: Torva platebody
+  item_id: 26384
+  slot: body
+  style: melee
+  tier: 1
+  gate_unknown: true
+  requires:
+    skill:
+      defence: 80

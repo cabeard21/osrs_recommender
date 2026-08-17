@@ -47,6 +47,19 @@ CORRUPT_CORPORA: list[tuple[str, str]] = [
     ("15_tier_without_ladder", "no gear ladder to sit on"),
     ("16_duplicate_gear_rung", "shares melee weapon tier 3"),
     ("17_item_id_claimed_twice", "claims item id 27690"),
+    # §23.2's wear gates. 18 is not redundant with 02: that one reaches a dangling id
+    # through a capability, so it would keep passing with item trees checked by nobody.
+    ("18_item_requires_dangling_reference", "references quest 'monkey_madness_the_first'"),
+    ("19_item_requires_cycle", "item requirements form a cycle"),
+    ("20_item_gate_known_and_unknown", "declares both requires and gate_unknown"),
+    # §10.5's acquisition axis. Not a second copy of 20: that one contradicts itself about
+    # *what it takes to wear* a piece, this one about *how you get* it, and the two are
+    # checked by different rules because they answer different questions.
+    ("21_item_acquired_from_without_untradeable", "declares acquired_from without"),
+    # The other half of 17. An id shared by two rows is legal when they are one piece placed
+    # on two ladders; this is a pair that shares an id while disagreeing about the wear gate —
+    # two answers to "can I equip this" for one object in the bank.
+    ("22_shared_id_disagrees_about_the_piece", "are not the same piece on different ladders"),
 ]
 
 
@@ -178,7 +191,7 @@ class TestEveryRule:
         """A fixture nobody asserts against is a rule nobody is checking."""
         on_disk = {p.name for p in CORRUPT.iterdir() if p.is_dir()}
         assert on_disk == {directory for directory, _ in CORRUPT_CORPORA}
-        assert len(CORRUPT_CORPORA) == 17
+        assert len(CORRUPT_CORPORA) == 22
 
 
 class TestCycleReporting:

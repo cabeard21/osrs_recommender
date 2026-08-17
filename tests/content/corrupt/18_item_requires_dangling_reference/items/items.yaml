@@ -1,0 +1,15 @@
+# §23.2. An item's wear gate is a requirement tree like any other, and it needs the same
+# referential integrity. This fixture exists specifically to prove that items were added to
+# `_requirement_sources` — 02 already covers dangling references in general, but it covers
+# them through a *capability*, so it would still pass with item trees checked by nobody.
+#
+# The failure being prevented: a mistyped quest id evaluates UNKNOWN forever, which renders
+# as "requirements not checked" on an item whose requirements were, in fact, checked.
+- id: dragon_scimitar
+  name: Dragon scimitar
+  item_id: 4587
+  slot: weapon
+  style: melee
+  tier: 1
+  requires:
+    quest: monkey_madness_the_first

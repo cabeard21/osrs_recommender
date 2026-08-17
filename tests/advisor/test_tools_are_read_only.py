@@ -32,6 +32,7 @@ _CALLS: dict[str, dict[str, Any]] = {
     "search_candidates": {"query": "magic"},
     "get_candidate_detail": {"candidate_id": "train_magic_87_94"},
     "get_capability_detail": {"capability_id": "ice_barrage_nh"},
+    "get_gear_setup": {"style": "melee"},
     "list_training_methods": {"skill_id": "magic"},
     "get_quest_status": {"name_query": "desert"},
     "get_skill_detail": {"skill_id": "magic"},

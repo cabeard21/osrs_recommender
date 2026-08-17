@@ -19,7 +19,8 @@ import hashlib
 from dataclasses import dataclass
 
 from tracker.domain.types import BandEstimate
-from tracker.guidance.context import GearRung, ItemFact, MethodFact, SkillFact, TaskContext
+from tracker.gear.ladders import GearRung
+from tracker.guidance.context import ItemFact, MethodFact, SkillFact, TaskContext
 
 #: Bumped by hand when the meaning of a stored note changes without its rendering changing —
 #: a new response field, a different reading of an existing one. §21.5's TTL is the other

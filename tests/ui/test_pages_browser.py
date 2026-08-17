@@ -49,9 +49,15 @@ def _open(page: Page, base: str, path: str) -> Page:
     ``goto`` returns a shell with none of the markup under test in it. Waiting on the nav —
     which every page in the shell renders — is what makes these assertions about the page
     rather than about a race.
+
+    ``document.fonts.ready`` is the second half of the same argument. The shell loads three
+    webfonts, and a page measured between the fallback metrics and the real ones is being
+    measured mid-reflow — which surfaced exactly as that would be expected to: as a width
+    assertion that failed under some orderings of this module and not others.
     """
     page.goto(f"{base}{path}")
     page.wait_for_selector("[data-testid=nav]", timeout=15_000)
+    page.evaluate("() => document.fonts.ready")
     return page
 
 
@@ -166,6 +172,82 @@ def test_a_ranked_skill_still_shows_its_level(phone: Page, ui_base_url: str) -> 
 
 
 # ---------------------------------------------------------------------------
+# §15: the theme control
+# ---------------------------------------------------------------------------
+
+
+def _ground(page: Page) -> str:
+    """The page's actual background, which is what "the theme changed" means to a reader."""
+    return page.evaluate("() => getComputedStyle(document.body).backgroundColor")
+
+
+def test_the_theme_control_cycles_auto_dark_light(phone: Page, ui_base_url: str) -> None:
+    """Three states, not two.
+
+    A plain dark/light switch cannot express *follow the device*, which is the default and the
+    setting most readers should stay on. Asserting the whole cycle — including that it returns
+    to auto — is what stops a later edit quietly reducing this to a boolean.
+    """
+    _open(phone, ui_base_url, "/")
+    phone.evaluate("() => localStorage.removeItem('tracker-theme')")
+    _open(phone, ui_base_url, "/")
+
+    toggle = phone.locator("[data-testid=theme-toggle]").first
+    assert phone.evaluate("() => document.documentElement.hasAttribute('data-theme')") is False
+
+    toggle.click()
+    assert phone.evaluate("() => document.documentElement.getAttribute('data-theme')") == "dark"
+    toggle.click()
+    assert phone.evaluate("() => document.documentElement.getAttribute('data-theme')") == "light"
+    toggle.click()
+    assert phone.evaluate("() => document.documentElement.hasAttribute('data-theme')") is False
+
+
+def test_choosing_a_theme_repaints_the_page(phone: Page, ui_base_url: str) -> None:
+    """The attribute is the mechanism; the ground colour is the promise.
+
+    Asserting only that ``data-theme`` flips would pass just as happily if the two token
+    blocks were identical — which is how this would most plausibly break, since the tokens
+    and the switch live in different constants.
+    """
+    _open(phone, ui_base_url, "/")
+    phone.evaluate("() => localStorage.setItem('tracker-theme', 'dark')")
+    _open(phone, ui_base_url, "/")
+    dark = _ground(phone)
+
+    phone.locator("[data-testid=theme-toggle]").first.click()
+
+    assert _ground(phone) != dark, f"both themes painted the same ground: {dark}"
+
+
+def test_a_chosen_theme_survives_a_reload(phone: Page, ui_base_url: str) -> None:
+    """And beats the device, which is the whole reason the control exists.
+
+    The test browser reports ``prefers-color-scheme: light``, so a stored *dark* that survives
+    a load is also proof the ``:not([data-theme])`` guard holds — without it the media query
+    would re-assert the device's preference every time and the control would read as broken.
+    """
+    _open(phone, ui_base_url, "/")
+    phone.evaluate("() => localStorage.setItem('tracker-theme', 'dark')")
+
+    _open(phone, ui_base_url, "/advisor")
+    assert phone.evaluate("() => document.documentElement.getAttribute('data-theme')") == "dark"
+    dark = _ground(phone)
+
+    phone.evaluate("() => localStorage.setItem('tracker-theme', 'light')")
+    _open(phone, ui_base_url, "/advisor")
+
+    assert _ground(phone) != dark
+
+
+def test_every_page_offers_the_theme_control(phone: Page, ui_base_url: str) -> None:
+    """It belongs to the application, so it is not somewhere a reader has to navigate to."""
+    for item in NAV:
+        _open(phone, ui_base_url, item.path)
+        assert phone.locator("[data-testid=theme-toggle]").count() == 1, item.path
+
+
+# ---------------------------------------------------------------------------
 # §15: mobile-first
 # ---------------------------------------------------------------------------
 
@@ -176,6 +258,7 @@ def test_a_ranked_skill_still_shows_its_level(phone: Page, ui_base_url: str) -> 
         "/",
         "/capabilities",
         "/unlocks",
+        "/gear",
         "/skills",
         "/recommendations",
         "/practice",
@@ -189,12 +272,57 @@ def test_no_horizontal_scroll_at_390px(phone: Page, ui_base_url: str, path: str)
 
     Capability ids, unlock keys and generated reasons are long unbroken tokens, and a single
     unbreakable string is the usual cause of a page that scrolls sideways on a phone.
+
+    ``/gear`` was missing from this list, which is the page most able to overflow: it is the
+    densest, it carries item names beside two badges and a price on one line, and it is the
+    one whose layout was actually broken — a grid rule colliding with a flex row, wrapping
+    every rung across three lines. The one view not covered here was the one that needed it.
     """
     _open(phone, ui_base_url, path)
     overflow = phone.evaluate(
         "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
     )
     assert overflow <= 0, f"{path} overflows its viewport by {overflow}px at 390px"
+
+
+def test_no_element_is_both_a_flex_row_and_the_layer_grid(phone: Page, ui_base_url: str) -> None:
+    """The gear page's original defect, generalised into a rule the whole app is held to.
+
+    ``.layer-row`` sets ``display: grid`` with two columns and Quasar's ``.nicegui-row``
+    sets ``display: flex``. They have equal specificity and the application stylesheet is
+    injected last, so an element carrying both silently becomes a two-column grid and every
+    child past the second wraps onto a new line. Nothing about the source looks wrong —
+    both classes are individually correct and the call reads as an ordinary styled row — so
+    this is not catchable by review, only by asserting the two never co-occur.
+
+    It cost the gear page three lines per rung, which at five rungs a slot is most of a
+    phone screen for one piece of equipment.
+    """
+    for path in ("/gear", "/capabilities", "/recommendations", "/settings", "/roadmaps"):
+        _open(phone, ui_base_url, path)
+        assert phone.locator(".nicegui-row.layer-row").count() == 0, path
+
+
+def test_a_gear_slot_draws_each_rung_once_and_marks_at_most_one_best(
+    phone: Page, ui_base_url: str
+) -> None:
+    """The ladder is an ordered set, so a rung appears on it exactly once.
+
+    The four source fields overlap by design — the rung you hold is frequently also the best
+    you can equip — and the previous layout drew the overlap twice under two headings, which
+    reads as a distinction and sends the reader looking for one that is not there.
+    """
+    _open(phone, ui_base_url, "/gear")
+    slot = phone.locator("[data-testid^=gear-slot-]").first
+    rungs = slot.locator("[data-testid=gear-rung]")
+
+    assert rungs.count() > 0, "no rungs rendered, so this asserts nothing"
+    tiers = [rungs.nth(i).get_attribute("data-tier") for i in range(rungs.count())]
+    assert len(tiers) == len(set(tiers)), tiers
+    # Descending: the ladder is drawn as one, top rung first.
+    assert tiers == sorted(tiers, key=lambda tier: -int(tier or 0))
+    # "Best you can equip" is a single answer, so it cannot mark two rungs of one slot.
+    assert slot.locator('[data-testid=gear-rung][data-role*="best"]').count() <= 1
 
 
 def test_the_dashboard_shows_the_persisted_reason(phone: Page, ui_base_url: str) -> None:
@@ -706,6 +834,276 @@ def test_the_lookups_an_answer_used_are_named(phone: Page, ui_base_url: str) -> 
     sources = phone.locator('[data-testid="advisor-sources"]')
     sources.first.wait_for(state="visible", timeout=15_000)
     assert "training methods" in (sources.first.inner_text() or "")
+
+
+def _open_picker(page: Page) -> None:
+    """Open the conversation list, and wait for it to actually be there.
+
+    Quasar teleports a menu's content to the body when it opens, so the rows do not exist in
+    the document until that has happened — a bare click followed by a count reads zero.
+    """
+    page.locator('[data-testid="advisor-picker"]').first.click()
+    page.locator('[data-testid="advisor-conversation"]').first.wait_for(
+        state="visible", timeout=10_000
+    )
+
+
+def _ask_in_new_thread(page: Page, base: str, question: str) -> None:
+    """Ask into a thread of its own, so that the thread is *named* after this question.
+
+    A conversation takes its title from the question that opened it, and the fixtures in this
+    module share one database for the whole session. Without the *New* click, a question lands
+    in whichever conversation an earlier test left behind — and is then filed under that test's
+    title, which is why every assertion below picks a word no other test uses.
+    """
+    _open(page, base, "/advisor")
+    page.locator('[data-testid="advisor-new"]').first.click()
+    # Waited on the URL, not on the empty state. *New* is a navigation, and the page being left
+    # is itself empty whenever this account has no history yet — so waiting for an empty thread
+    # is answered by the document we are trying to leave, and the question then gets typed into
+    # a textarea that the navigation is about to discard.
+    page.wait_for_url(lambda url: url.endswith("conversation=0"), timeout=15_000)
+    page.wait_for_selector("[data-testid=nav]", timeout=15_000)
+    page.locator('[data-testid="advisor-empty"]').first.wait_for(state="visible", timeout=15_000)
+    page.get_by_placeholder("Ask about your account").fill(question)
+    page.locator('[data-testid="advisor-send"]').first.click()
+    page.locator('[data-testid="advisor-message"][data-role="advisor"]').first.wait_for(
+        state="visible", timeout=15_000
+    )
+
+
+def _listed(page: Page) -> str:
+    """Every title the open picker is showing, as one string."""
+    rows = page.locator('[data-testid="advisor-conversation"]')
+    return " ".join(rows.nth(index).inner_text() or "" for index in range(rows.count()))
+
+
+def test_starting_a_new_conversation_leaves_the_old_one(phone: Page, ui_base_url: str) -> None:
+    """*New* has to produce a blank thread, which for a while it did not.
+
+    ``?conversation=0`` went through the read path's unknown-id fallback — the branch that
+    exists so a stale bookmark still shows something — and came back with the most recent
+    conversation. So the control returned the reader to the thread they were trying to leave,
+    and the next question was appended to it.
+    """
+    _ask(phone, ui_base_url, "a conversation worth leaving behind")
+    phone.locator('[data-testid="advisor-message"][data-role="advisor"]').first.wait_for(
+        state="visible", timeout=15_000
+    )
+
+    phone.locator('[data-testid="advisor-new"]').first.click()
+    phone.locator('[data-testid="advisor-empty"]').first.wait_for(state="visible", timeout=15_000)
+
+    assert phone.locator('[data-testid="advisor-message"]').count() == 0
+
+
+def test_the_picker_names_the_thread_you_are_reading(phone: Page, ui_base_url: str) -> None:
+    """Which nothing on the page said before: the old row marked it with a gold outline only."""
+    _ask_in_new_thread(phone, ui_base_url, "a question about zulrah, and nothing else")
+
+    picker = phone.locator('[data-testid="advisor-picker"]')
+    assert "zulrah" in (picker.first.inner_text() or "")
+
+
+def test_past_conversations_are_listed_where_they_can_be_read(
+    phone: Page, ui_base_url: str
+) -> None:
+    """Both threads, by name — the failure of the old row was that you could read neither."""
+    _ask_in_new_thread(phone, ui_base_url, "an older thread, about vorkath")
+    _ask_in_new_thread(phone, ui_base_url, "a newer thread, about wintertodt")
+    _open_picker(phone)
+
+    listed = _listed(phone)
+    assert "vorkath" in listed
+    assert "wintertodt" in listed
+
+
+def test_opening_a_listed_conversation_goes_to_it(phone: Page, ui_base_url: str) -> None:
+    _ask_in_new_thread(phone, ui_base_url, "the thread about tempoross that I want back")
+    _ask_in_new_thread(phone, ui_base_url, "some later thread about hallowed sepulchre")
+    _open_picker(phone)
+
+    rows = phone.locator('[data-testid="advisor-conversation"]')
+    wanted = next(
+        index
+        for index in range(rows.count())
+        if "tempoross" in (rows.nth(index).inner_text() or "")
+    )
+    rows.nth(wanted).click()
+
+    # Waited for by *content*, not by the presence of a question row. Opening a thread is a
+    # navigation, and the page being left already has a question in it — so anything that only
+    # asks "is there a question on screen" is answered by the old document and passes before
+    # the new one has loaded, which is exactly how this read as green while landing nowhere.
+    phone.wait_for_selector('[data-testid=advisor-thread]:has-text("tempoross")', timeout=15_000)
+
+
+def test_cancelling_a_delete_keeps_the_conversation(phone: Page, ui_base_url: str) -> None:
+    """The only irreversible thing this application does, so cancelling has to really cancel."""
+    _ask_in_new_thread(phone, ui_base_url, "a thread about chambers that survives this")
+    _open_picker(phone)
+
+    phone.locator('[data-testid="advisor-delete"]').first.click()
+    body = phone.locator('[data-testid="advisor-delete-body"]')
+    body.first.wait_for(state="visible", timeout=10_000)
+    # It names the thread, because every one of those buttons is otherwise identical.
+    assert "chambers" in (body.first.inner_text() or "")
+
+    phone.locator('[data-testid="advisor-delete-cancel"]').first.click()
+    body.first.wait_for(state="hidden", timeout=10_000)
+
+    _open(phone, ui_base_url, "/advisor")
+    _open_picker(phone)
+    assert "chambers" in _listed(phone)
+
+
+def test_a_confirmed_delete_removes_the_conversation(phone: Page, ui_base_url: str) -> None:
+    _ask_in_new_thread(phone, ui_base_url, "a thread about theatre of blood, soon gone")
+    _open_picker(phone)
+    before = phone.locator('[data-testid="advisor-conversation"]').count()
+
+    phone.locator('[data-testid="advisor-delete"]').first.click()
+    phone.locator('[data-testid="advisor-delete-body"]').first.wait_for(
+        state="visible", timeout=10_000
+    )
+    phone.locator('[data-testid="advisor-delete-confirm"]').first.click()
+
+    phone.wait_for_selector("[data-testid=nav]", timeout=15_000)
+    _open_picker(phone)
+    assert phone.locator('[data-testid="advisor-conversation"]').count() == before - 1
+    assert "theatre of blood" not in _listed(phone)
+
+
+def _continue_thread(page: Page, base: str) -> Page:
+    """Reload wherever the last turn left us, so the next question *continues* a thread.
+
+    The distinction is the whole subject of the tests below. A question that opens a new
+    conversation ends in a navigate, and the reload hides everything the optimistic render did
+    by fetching the stored turn back. Only the second question in a thread exercises the path
+    where what stays on screen is what the page put there.
+    """
+    return _open(page, base, page.url.removeprefix(base))
+
+
+def test_a_second_question_in_a_thread_stays_on_screen(phone: Page, ui_base_url: str) -> None:
+    """The question and its answer have different lifetimes, and only the spinner is temporary.
+
+    This is a regression test with a specific shape behind it: the question and the spinner
+    were once rendered into a single wrapper that was deleted when the answer arrived, which
+    deleted the question too. The first turn hid it — that one ends in a navigate, and the
+    reload drew the stored question back — so the symptom only appeared from the second
+    question onwards, as a thread of answers with nothing above them.
+    """
+    _ask(phone, ui_base_url, "first question about crocodiles")
+    phone.locator('[data-testid="advisor-message"][data-role="advisor"]').first.wait_for(
+        state="visible", timeout=15_000
+    )
+    _continue_thread(phone, ui_base_url)
+
+    asked = phone.locator('[data-testid="advisor-message"][data-role="you"]')
+    answers = phone.locator('[data-testid="advisor-message"][data-role="advisor"]')
+    questions_before, answers_before = asked.count(), answers.count()
+
+    phone.get_by_placeholder("Ask about your account").fill("second question about kalphites")
+    phone.locator('[data-testid="advisor-send"]').first.click()
+    answers.nth(answers_before).wait_for(state="visible", timeout=15_000)
+
+    assert asked.count() == questions_before + 1
+    assert "kalphites" in (asked.nth(questions_before).inner_text() or "")
+    # The spinner is the one thing that was supposed to go.
+    assert phone.locator('[data-testid="advisor-pending"]').count() == 0
+
+
+def test_a_failed_question_goes_back_into_the_box(
+    phone: Page, ui_base_url: str, advisor: Any
+) -> None:
+    """Nothing was asked, so nothing is left claiming to have been.
+
+    The echoed question was optimistic and the turn was never stored, so leaving it in the
+    transcript would promise a reload that will not show it. Returning it to the composer —
+    which was cleared on send — is what makes *Ask* a retry instead of a request to retype the
+    question, and a throttle is exactly the failure worth retrying.
+    """
+    advisor.failure = LlmUnavailable("down")
+    _ask(phone, ui_base_url, "a question that will not survive the provider")
+
+    phone.locator('[data-testid="advisor-error"]').first.wait_for(state="visible", timeout=15_000)
+
+    box = phone.get_by_placeholder("Ask about your account")
+    assert "will not survive" in (box.input_value() or "")
+    echoed = phone.locator('[data-testid="advisor-message"][data-role="you"]')
+    assert echoed.filter(has_text="will not survive").count() == 0
+
+
+def test_the_page_announces_a_turn_without_showing_anything(phone: Page, ui_base_url: str) -> None:
+    """The advisor is driven from the keyboard, and its answer arrives out of sight.
+
+    The region has to exist *before* the question is sent — a live region appended alongside
+    the content it describes is not reliably announced — so its presence on an untouched page
+    is half of what is under test here.
+    """
+    _open(phone, ui_base_url, "/advisor")
+    status = phone.locator('[data-testid="advisor-status"]')
+    assert status.count() == 1
+    assert status.first.get_attribute("aria-live") == "polite"
+
+    phone.get_by_placeholder("Ask about your account").fill("announce this one")
+    phone.locator('[data-testid="advisor-send"]').first.click()
+
+    # Waited on the announcement itself rather than on an answer appearing. This page may open
+    # onto a thread that already has answers in it, so "an answer is visible" is true before
+    # this question is even sent. `state="attached"` because the region is clipped to a pixel
+    # on purpose — its whole job is to be read aloud and never drawn.
+    phone.wait_for_selector(
+        '[data-testid=advisor-status]:has-text("answered")', state="attached", timeout=15_000
+    )
+    # `text_content` rather than `inner_text` for the same reason: `inner_text` reports what is
+    # rendered, which for this element is nothing.
+    assert "answered" in (status.first.text_content() or "")
+
+
+def test_a_new_answer_is_scrolled_into_view(phone: Page, ui_base_url: str, advisor: Any) -> None:
+    """A page whose response to a question is to change nothing visible has not answered it.
+
+    Asserted as *where the answer ended up*, not as "the page scrolled". Scroll offset alone
+    is not evidence: Playwright scrolls the composer into view in order to type into it, so a
+    non-zero ``scrollY`` is true here whether or not this feature exists at all — which is
+    exactly what an earlier draft of this test measured, and it passed with the scrolling
+    removed.
+    """
+    original = advisor.answer
+    advisor.answer = "Bring a whip and food.\n\n" + "\n\n".join(
+        f"A paragraph of supporting detail, number {n}." for n in range(60)
+    )
+    try:
+        _ask(phone, ui_base_url, "a question whose answer runs past the fold")
+        phone.locator('[data-testid="advisor-message"][data-role="advisor"]').first.wait_for(
+            state="visible", timeout=15_000
+        )
+        _continue_thread(phone, ui_base_url)
+        answers = phone.locator('[data-testid="advisor-message"][data-role="advisor"]')
+        answers_before = answers.count()
+
+        phone.get_by_placeholder("Ask about your account").fill("and another one, just as long")
+        phone.locator('[data-testid="advisor-send"]').first.click()
+        arrived = answers.nth(answers_before)
+        arrived.wait_for(state="visible", timeout=15_000)
+        phone.wait_for_timeout(250)
+
+        # `bounding_box` is viewport-relative, and nothing in this test scrolls the answer
+        # itself — `wait_for` does not. So where the top edge sits is the page's doing.
+        #
+        # Asserted against the *top* of the screen rather than merely "on screen". An answer
+        # appended to a thread the reader has already scrolled to the foot of starts just
+        # below the fold anyway, so "somewhere in the viewport" is satisfied by doing nothing
+        # at all — measured, and it was.
+        # The lower bound has a pixel of slack in it: `scrollIntoView` lands on a fractional
+        # offset, and the top edge measures a shade either side of zero rather than on it.
+        box = arrived.bounding_box()
+        assert box is not None
+        assert -2 <= box["y"] < PHONE["height"] / 4
+    finally:
+        advisor.answer = original
 
 
 @pytest.mark.parametrize(

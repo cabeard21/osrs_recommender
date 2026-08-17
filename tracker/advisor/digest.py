@@ -35,6 +35,7 @@ from tracker.domain.types import (
     PlayerState,
     QuestStatus,
     RoadmapSelection,
+    Tri,
 )
 
 #: What an unobserved three-valued fact renders as. One constant so the *unknown* in
@@ -78,6 +79,7 @@ class AccountDigest:
 
     account: str
     skills: str
+    gear: str
     capabilities: str
     roadmaps: str
     recommended: str
@@ -92,6 +94,7 @@ def build_digest(snapshot: AdvisorSnapshot) -> AccountDigest:
     return AccountDigest(
         account=_account_block(snapshot),
         skills=_skills_block(snapshot),
+        gear=_gear_block(snapshot),
         capabilities=_capabilities_block(snapshot),
         roadmaps=_roadmaps_block(snapshot.roadmaps, snapshot.content),
         recommended=_recommended_block(snapshot),
@@ -111,6 +114,7 @@ def render_digest(digest: AccountDigest) -> str:
     blocks = (
         digest.account,
         digest.skills,
+        digest.gear,
         digest.capabilities,
         digest.roadmaps,
         digest.recommended,
@@ -163,6 +167,70 @@ def _skills_block(snapshot: AdvisorSnapshot) -> str:
             current = f"level {observed.level}"
         lines.append(f"- {declared.name}: {current}")
     return "# Skills\n\n" + "\n".join(lines)
+
+
+def _gear_block(snapshot: AdvisorSnapshot) -> str:
+    """§23's summary: one line per style, and the tool that reaches the rest.
+
+    A summary rather than the setup itself, and the bound is the point. Three styles by ten
+    slots is a hundred and eighty facts on every turn forever, most of them irrelevant to the
+    question asked; ``get_gear_setup`` reaches any of it on demand and costs nothing until it
+    is called.
+
+    **No prices and no totals here.** They move on every reprice, and §22.3 hashes this text
+    into the conversation's cached prefix — a figure that drifts daily would re-cache the whole
+    prefix for a change the player never made. It is the same trade ``_consequence_line`` makes
+    when it renders ``speeds_up`` as a count.
+    """
+    if not snapshot.gear.setups:
+        return ""
+
+    lines = ["# Gear", ""]
+    lines.append(
+        "Where this account stands on the tracker's ladders. Rung numbers are the wiki "
+        "guides' ordering, not a power rating."
+    )
+    lines.append("")
+    for setup in snapshot.gear.setups:
+        slots = setup.slots
+        missing = len(setup.missing)
+        unseen = sum(1 for slot in slots if slot.best_held is None)
+        blocked = sum(
+            1
+            for slot in slots
+            if slot.next_rung is not None and slot.next_rung.fit is Tri.UNSATISFIED
+        )
+        best = max(
+            (slot for slot in slots if slot.best_held is not None),
+            key=lambda slot: slot.best_held.tier if slot.best_held else 0,
+            default=None,
+        )
+        parts = []
+        if best is not None and best.best_held is not None:
+            parts.append(f"best held {best.best_held.name} ({best.slot})")
+        parts.append(f"{len(slots) - unseen} of {len(slots)} slots have something seen")
+        if missing:
+            parts.append(f"{missing} recommended pieces not held")
+        if blocked:
+            parts.append(f"{blocked} slots have their next rung blocked by a requirement")
+        earn = sum(1 for slot in slots if slot.earn is not None)
+        if earn:
+            # A count, not names, for this block's standing reason — and the phrasing carries
+            # the distinction the count would otherwise lose. "Could wear but must earn" is
+            # not "blocked": the requirements are already met, and what stands in the way is
+            # a fight rather than a level or a purchase.
+            parts.append(f"{earn} slots have a piece it could wear but must earn")
+        lines.append(f"- {setup.style}: " + "; ".join(parts))
+
+    if not snapshot.gear.fully_scanned:
+        lines.append("")
+        lines.append(
+            "Not every container has been scanned, so *nothing seen* means unknown here and "
+            "never none."
+        )
+    lines.append("")
+    lines.append("Only a summary. Use `get_gear_setup` for the per-slot setup of one style.")
+    return "\n".join(lines)
 
 
 def _capabilities_block(snapshot: AdvisorSnapshot) -> str:

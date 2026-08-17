@@ -11,8 +11,10 @@ module in the tree that reads it heavily — putting it under
 D14 states the same boundary from the other end: what happens here is a terminal output.
 """
 
+# §23 hoisted the ladder projection out of this package; it is still re-exported here
+# because §21 is what renders it and callers reasonably look for it beside TaskContext.
+from tracker.gear.ladders import GearRung
 from tracker.guidance.context import (
-    GearRung,
     ItemFact,
     MethodFact,
     SkillFact,

@@ -46,14 +46,14 @@ def render_dialog(view: GuidanceView) -> None:
                     item.props(f"data-testid=guidance-step data-order={step.order}")
                     with item:
                         ui.html(html.escape(step.label)).classes("font-medium block")
-                        ui.html(html.escape(step.detail)).classes("opacity-80 block")
+                        ui.html(html.escape(step.detail)).classes("tracker-dim block")
 
         _list_block("Watch out for", view.warnings, "guidance-warnings")
 
         # Kept visually distinct from the warnings above: this is the model telling you
         # which parts of its own answer to check, which is a different request of the reader.
         if view.uncertainty_label is not None:
-            uncertain = ui.element("div").classes("flex flex-col gap-1 opacity-80")
+            uncertain = ui.element("div").classes("flex flex-col gap-1 tracker-dim")
             uncertain.props("data-testid=guidance-uncertain")
             with uncertain:
                 ui.html(html.escape(view.uncertainty_label)).classes("layer-label")
@@ -61,10 +61,10 @@ def render_dialog(view: GuidanceView) -> None:
                     ui.html(f"- {html.escape(item_text)}").classes("text-sm block")
 
         if view.session_label is not None:
-            session = ui.html(html.escape(view.session_label)).classes("text-xs opacity-70")
+            session = ui.html(html.escape(view.session_label)).classes("text-xs tracker-dim")
             session.props("data-testid=guidance-session")
 
-        provenance = ui.html(html.escape(view.provenance_label)).classes("text-xs opacity-60")
+        provenance = ui.html(html.escape(view.provenance_label)).classes("text-xs tracker-faint")
         provenance.props(f"data-testid=guidance-provenance data-cached={str(view.cached).lower()}")
 
 
@@ -74,7 +74,7 @@ def render_error(message: str) -> None:
     Deliberately plain text rather than an alert: guidance is a terminal output (D14), so its
     absence changes nothing else on the page, and dressing the failure up would imply it did.
     """
-    element = ui.html(html.escape(message)).classes("text-sm opacity-80")
+    element = ui.html(html.escape(message)).classes("text-sm tracker-dim")
     element.props("data-testid=guidance-error")
 
 

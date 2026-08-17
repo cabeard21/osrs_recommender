@@ -33,6 +33,7 @@ from tracker.domain.types import (
     PlayerState,
     RoadmapSelection,
 )
+from tracker.gear.setup import GearProgress, gear_progress
 
 
 class ObservationAge(Enum):
@@ -122,6 +123,15 @@ class AdvisorSnapshot:
     stale_practice: tuple[tuple[str, str], ...] = ()
     prices: Mapping[int, PriceFact] = field(default_factory=dict)
     observed_age: ObservationAge = ObservationAge.NEVER
+    gear: GearProgress = field(default_factory=GearProgress)
+    """§23.4's computed setup, and the reason it is a *snapshot field* (D17).
+
+    Computing it here rather than in a tool handler is what keeps §22.4's dispatch "a
+    pure function of the frozen snapshot and the call". By the time any tool runs this is
+    already-computed state, which is the category D15 permits a tool to project; a handler
+    that evaluated requirement trees against model-chosen arguments would instead be an
+    estimator on demand, which D15 forbids outright.
+    """
 
 
 def build_advisor_snapshot(
@@ -156,6 +166,13 @@ def build_advisor_snapshot(
         stale_practice=tuple(sorted(stale_practice)),
         prices=dict(sorted((prices or {}).items())),
         observed_age=observation_age(state.last_sync_at, now=now),
+        # Pricing keys on `item_id` alone and never the ownership union (§10.5), which is
+        # exactly what `PriceFact` is keyed by, so the mapping passes straight through.
+        gear=gear_progress(
+            state,
+            content,
+            prices={item_id: fact.price_gp for item_id, fact in (prices or {}).items()},
+        ),
     )
 
 

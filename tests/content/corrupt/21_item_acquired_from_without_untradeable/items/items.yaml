@@ -1,0 +1,22 @@
+# §10.5's acquisition axis. `acquired_from` names the content that yields a piece you
+# cannot buy, so it belongs only to an item declared `untradeable`.
+#
+# Here it sits on a tradeable one, and the pair reads as two instructions at once: the
+# market sells this, and go and beat Zulrah for it. A reader following the second wastes an
+# evening on something they could have bought — which is the failure this axis was added to
+# remove, arriving through the field that was supposed to remove it.
+#
+# Rejected rather than resolved by precedence, for 20's reason: whichever field was meant,
+# the corpus no longer says which, and picking a winner would let the slip survive.
+#
+# Note what is *not* corrupt: an `untradeable` item with no `acquired_from` at all. That is
+# a missing sentence, not a contradiction, and §4.5's discipline is about never converting
+# an absence into a claim rather than about forbidding absences.
+- id: toxic_blowpipe
+  name: Toxic blowpipe
+  item_id: 12926
+  slot: weapon
+  style: ranged
+  tier: 1
+  acquisition: tradeable
+  acquired_from: Zulrah

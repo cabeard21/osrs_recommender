@@ -81,11 +81,11 @@ def _method_lines(row: RecommendationEntryRow) -> None:
                 f"data-fallback={str(band.fallback).lower()}"
             )
             with entry:
-                ui.html(band.level_label).classes("opacity-60 text-xs")
-                classes = "text-sm opacity-70 italic" if band.fallback else "text-sm"
+                ui.html(band.level_label).classes("tracker-faint text-xs")
+                classes = "text-sm tracker-dim italic" if band.fallback else "text-sm"
                 ui.html(html.escape(band.method_label)).classes(classes)
                 if band.place_label:
-                    ui.html(html.escape(band.place_label)).classes("text-xs opacity-70")
+                    ui.html(html.escape(band.place_label)).classes("text-xs tracker-dim")
             if band.gear or band.inventory:
                 # Free text, never `item:` leaves — see MethodDetail. Escaped for the same
                 # reason every other authored string here is: content is trusted, but a
@@ -98,9 +98,9 @@ def _method_lines(row: RecommendationEntryRow) -> None:
                     )
                     if part
                 )
-                ui.html(html.escape(kit)).classes("text-xs opacity-60 block pl-6")
+                ui.html(html.escape(kit)).classes("text-xs tracker-faint block pl-6")
             if band.notes:
-                ui.html(html.escape(band.notes)).classes("text-xs opacity-60 block pl-6")
+                ui.html(html.escape(band.notes)).classes("text-xs tracker-faint block pl-6")
 
 
 def _factor_breakdown(row: RecommendationEntryRow) -> None:
@@ -120,7 +120,7 @@ def _factor_breakdown(row: RecommendationEntryRow) -> None:
             card = ui.element("div").classes("text-xs")
             card.props(f"data-testid=factor data-factor={factor.name}")
             with card:
-                ui.html(factor.name.replace("_", " ")).classes("opacity-70")
+                ui.html(factor.name.replace("_", " ")).classes("tracker-dim")
                 ui.html(
                     f"value {factor.value:.2f} · weight {factor.weight:.2f} · "
                     f"contribution {factor.log_contribution:+.2f}"
@@ -170,7 +170,7 @@ def render_entry(
     with card:
         if row.is_refresher and row.suggested_session:
             ui.html(f"Suggested session: {row.suggested_session}").classes(
-                "text-xs opacity-70 block"
+                "text-xs tracker-dim block"
             )
         if row.unlocks:
             with ui.element("div").classes("layer-row"):
@@ -205,7 +205,7 @@ def render_entry(
             _estimate_line(row)
         if row.affordability_note:
             note = ui.html(html.escape(row.affordability_note))
-            note.classes("text-xs opacity-70 block")
+            note.classes("text-xs tracker-dim block")
             note.props("data-testid=affordability")
         if row.has_method_detail:
             with ui.element("div").classes("layer-row"):
@@ -215,7 +215,7 @@ def render_entry(
             ui.html("Priority").classes("layer-label")
             ui.html(row.priority_stars).classes("text-sm")
 
-        reason = ui.element("p").classes("text-sm opacity-80 m-0 mt-1")
+        reason = ui.element("p").classes("text-sm tracker-dim m-0 mt-1")
         reason.props("data-testid=recommendation-reason")
         with reason:
             ui.html(f"Why: {row.reason}")
@@ -249,7 +249,7 @@ def render_blocked(rows: Sequence[BlockedRecommendationRow]) -> None:
     """
     with ui.expansion(f"Blocked ({len(rows)})", icon="block").props("data-testid=blocked-section"):
         if not rows:
-            ui.html("Nothing is blocked right now.").classes("text-xs opacity-60")
+            ui.html("Nothing is blocked right now.").classes("text-xs tracker-faint")
             return
         for row in rows:
             element = ui.element("div").classes("tracker-card")

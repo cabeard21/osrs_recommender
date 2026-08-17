@@ -25,7 +25,6 @@ from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from nicegui import run, ui
-from nicegui.element import Element
 from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.api.deps import (
@@ -44,6 +43,7 @@ from tracker.sync.guidance import GuidanceNotFound, GuidanceThrottled
 from tracker.ui import advisor as advisor_view
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
+from tracker.ui import gear as gear_view
 from tracker.ui import guidance as guidance_view
 from tracker.ui import history as history_view
 from tracker.ui import practice as practice_view
@@ -60,6 +60,7 @@ from tracker.ui.view_model import (
     ADVISOR_UNAVAILABLE,
     GUIDANCE_DISABLED,
     GUIDANCE_UNAVAILABLE,
+    NEW_CONVERSATION_ID,
     LeafRow,
     PracticeGroupRow,
     RoadmapSelectorModel,
@@ -80,19 +81,6 @@ NO_PLAYER = (
     "No account yet. Start RuneLite with the companion plugin and open your bank; "
     "the first sync creates it."
 )
-
-
-def _advisor_failure(pending: Element, transcript: Element, message: str) -> None:
-    """Replace the pending row with an explanation, in the conversation.
-
-    The pending row goes because its spinner promises an answer that is not coming. The message
-    lands in the transcript rather than in a toast because D14 says an advisor failure changes
-    nothing else on the page, and an interruption that covers the screen would contradict that
-    while the code underneath still honoured it.
-    """
-    pending.delete()
-    with transcript:
-        advisor_view.render_error(message)
 
 
 def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None) -> None:
@@ -207,6 +195,19 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                 return
             unlocks_view.render(unlock_rows)
 
+    @ui.page("/gear")
+    def gear_page() -> None:
+        """§23.5. Read-only: this page changes no fact and feeds no ranking."""
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            view = read_model.gear_view(session, player_id, content())
+        with page("Gear", path="/gear", roadmap=roadmap):
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
+            gear_view.render(view)
+
     @ui.page("/skills")
     def skills_page() -> None:
         with session_factory()() as session:
@@ -242,7 +243,11 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                 if player_id is not None
                 else ()
             )
-        with page("Recommendations", path="/recommendations", roadmap=roadmap):
+        # "Next up" rather than "Recommendations", and the same word in the nav: the label
+        # has to survive a 78 px slot in the phone bar, and the plainer name is the one a
+        # reader would use for it anyway. One name through the whole flow, so the tab you
+        # tapped and the heading you land on agree.
+        with page("Next up", path="/recommendations", roadmap=roadmap):
             if player_id is None:
                 empty_state(NO_PLAYER)
                 return
@@ -322,17 +327,59 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                 advisor_view.render_error(ADVISOR_DISABLED)
                 return
 
+            advisor_view.inject_styles()
+
             current_id = view.conversation_id
+
+            def open_conversation(identifier: int) -> None:
+                ui.navigate.to(f"/advisor?conversation={identifier}")
+
+            def start_conversation() -> None:
+                ui.navigate.to(f"/advisor?conversation={NEW_CONVERSATION_ID}")
+
+            def remove_conversation(identifier: int) -> None:
+                """Delete a thread, then land wherever the reader still has a right to be.
+
+                Deleting the thread you are *reading* has to move you; deleting another one
+                from the list must not. Both are covered by asking for the current thread
+                again — unless that is the one that just went, in which case the bare path
+                falls back to the most recent survivor, which is the honest answer to "where
+                now".
+                """
+                with session_factory()() as write_session:
+                    read_model.delete_advisor_conversation(write_session, player_id, identifier)
+                if identifier == current_id:
+                    ui.navigate.to("/advisor")
+                    return
+                ui.navigate.to(f"/advisor?conversation={current_id or NEW_CONVERSATION_ID}")
+
             advisor_view.render_conversation_list(
                 view,
-                on_select=lambda identifier: ui.navigate.to(f"/advisor?conversation={identifier}"),
-                on_new=lambda: ui.navigate.to("/advisor?conversation=0"),
+                on_select=open_conversation,
+                on_new=start_conversation,
+                on_delete=remove_conversation,
             )
 
-            transcript = ui.element("div").classes("flex flex-col gap-4")
+            def use_prompt(text: str) -> None:
+                """Put a suggested question in the box, and leave the sending to the reader.
+
+                Deliberately not "ask it immediately". These prompts are starting points, and
+                most are worth a word of editing before they are spent — every question here
+                costs a call to a paid provider, so a click that silently committed one would
+                be the wrong default for a control whose whole job is to be easy to press.
+                """
+                box.value = text
+                box.run_method("focus")
+
+            transcript = ui.element("div").classes("advisor-thread")
             transcript.props("data-testid=advisor-thread")
             with transcript:
-                advisor_view.render_thread(view)
+                advisor_view.render_thread(view, on_prompt=use_prompt)
+
+            # Outside the transcript, and empty until something happens. See
+            # `advisor_view.render_live_region` for why it is one persistent element rather
+            # than `aria-live` on the conversation itself.
+            status = advisor_view.render_live_region()
 
             async def ask(*, player_id: int = player_id) -> None:
                 question = str(box.value or "").strip()
@@ -340,10 +387,34 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                     return
                 box.value = ""
                 box.disable()
+                # Two elements, not one wrapper around both: the spinner is always removed and
+                # the question survives, unless the turn failed — in which case nothing was
+                # asked and both go. Wrapping them together is what previously deleted the
+                # question along with the spinner on every turn but the first.
                 with transcript:
-                    pending = ui.element("div").classes("flex flex-col gap-1")
-                    with pending:
-                        advisor_view.render_pending(question)
+                    asked = advisor_view.render_question(question)
+                    pending = advisor_view.render_pending()
+                advisor_view.announce(status, advisor_view.PENDING_ANNOUNCEMENT)
+                advisor_view.scroll_to_latest()
+
+                def failed(message: str) -> None:
+                    """Take the unasked question back, and say why, in the conversation.
+
+                    The echoed question goes with the spinner because it was optimistic: the
+                    turn was never stored, so leaving it on screen would promise a reload that
+                    will not show it. It goes back into the box instead, which makes *Ask* a
+                    retry rather than a request to retype a paragraph — the composer was
+                    cleared on send and a throttle is the failure most likely to be worth
+                    trying again immediately.
+                    """
+                    asked.delete()
+                    pending.delete()
+                    box.value = question
+                    with transcript:
+                        advisor_view.render_error(message)
+                    advisor_view.announce(status, message)
+                    advisor_view.scroll_to_latest()
+
                 try:
                     # `run.io_bound` keeps the blocking turn off the event loop that is also
                     # serving /api/sync in this process (§5). A tool-using turn is several
@@ -355,13 +426,13 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                         conversation_id=current_id or None,
                     )
                 except (AdvisorThrottled, AdvisorNotFound) as declined:
-                    _advisor_failure(pending, transcript, str(declined))
+                    failed(str(declined))
                     return
                 except LlmRefused:
-                    _advisor_failure(pending, transcript, ADVISOR_REFUSED)
+                    failed(ADVISOR_REFUSED)
                     return
                 except LlmUnavailable:
-                    _advisor_failure(pending, transcript, ADVISOR_UNAVAILABLE)
+                    failed(ADVISOR_UNAVAILABLE)
                     return
                 finally:
                     box.enable()
@@ -374,14 +445,37 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                     return
                 with transcript:
                     advisor_view.render_message(read_model.advisor_reply_row(reply))
+                advisor_view.announce(status, advisor_view.ANSWER_ANNOUNCEMENT)
                 if not current_id:
                     ui.navigate.to(f"/advisor?conversation={reply.conversation_id}")
+                    return
+                # Only when the page is staying put. A navigate replaces the document, and
+                # scrolling the one it is about to discard is at best wasted work.
+                advisor_view.scroll_to_latest()
 
-            with ui.row().classes("w-full items-end gap-2"):
-                box = ui.textarea(placeholder="Ask about your account, or about the game…")
-                box.classes("grow").props("autogrow outlined data-testid=advisor-input")
-                send = ui.button("Ask", on_click=ask)
-                send.props("data-testid=advisor-send")
+            # A plain div rather than `ui.row()`, because this one is `position: sticky` and a
+            # Quasar row brings margins that fight a sticky offset. Declared after `ask` and
+            # `use_prompt` close over `box`: both run on a click, long after this has bound.
+            with ui.element("div").classes("advisor-composer"):
+                with ui.element("div").classes("advisor-composer-row"):
+                    box = ui.textarea(placeholder="Ask about your account, or about the game…")
+                    box.classes("grow").props("autogrow outlined data-testid=advisor-input")
+                    # Enter inserts a newline, as it should in a box that grows — a question
+                    # here is often several lines, and a surface that sent on Enter would
+                    # spend a paid call every time someone reached for a paragraph break.
+                    box.on("keydown.ctrl.enter", ask)
+                    box.on("keydown.meta.enter", ask)
+                    # `color=None` is what keeps this button on the palette, and it is not
+                    # optional — see the note above `.q-btn[data-testid="advisor-send"]` in
+                    # `advisor.ADVISOR_CSS`. NiceGUI's default of `color="primary"` attaches
+                    # `bg-primary`, whose `!important` sits in a cascade layer that no
+                    # stylesheet this app adds can outrank. Removing the class is the fix;
+                    # overriding it is not available.
+                    send = ui.button("Ask", on_click=ask, color=None)
+                    send.props("data-testid=advisor-send")
+                # Inside the sticky block, so it travels with the control it describes rather
+                # than scrolling away underneath it.
+                ui.html("Ctrl + Enter to send").classes("advisor-hint")
 
     @ui.page("/practice")
     def practice_page() -> None:

@@ -20,6 +20,30 @@
 # — and owning any of them is owning the item. Ownership tests the union; `item_id` alone is
 # what gets priced, so it names the variant the market actually quotes (the *empty* blowpipe,
 # since the charged form is untradeable).
+#
+# `requires` is what it takes to *wear* the item (§23.2) — never what it takes to make, imbue
+# or repair it. The wiki states these in prose rather than in any infobox field, so the levels
+# printed on a page freely mix the two: 80 Fletching for a magic shortbow and 90 Smithing for
+# Torva gate the crafting bench, not the equipment screen, and neither appears here.
+#
+# Three states, not two, and the third is the point. An item with no `requires` and no
+# `gate_unknown` is one the corpus *asserts* has no gate; `gate_unknown: true` is one nobody
+# has established. Letting an unauthored rung default to ungated is how a level-3 account gets
+# told it can equip a Twisted bow, so tools/gear_ladders.py partitions every rung across
+# REQUIREMENTS, UNGATED and UNTRANSCRIBED and a test proves the partition is total.
+#
+# `acquisition` is the second axis, and it is not `requires` — it says how the piece reaches
+# your hands rather than what it takes to wear it. Without it §23.4 recommended an Infernal
+# cape to every account with 40 Defence: true, since that really is the whole wear gate, and
+# useless, since no amount of gp buys one. `tradeable` means gp alone can get you one, which
+# includes the tradeable component of a piece that becomes untradeable on use — an empty
+# blowpipe, an inactive Blade of saeldor, a crystal armour seed. `acquired_from` names the
+# content that yields an untradeable piece and is a noun phrase, because every surface
+# composes it into a sentence.
+#
+# It is deliberately **not** derived from `price_mode`, which selects §8.3's pricing cascade,
+# defaults to `static`, and would therefore brand as untradeable every item nobody thought
+# about. A second total partition in tools/gear_ladders.py carries it, with its own test.
 
 # ==========================================================================
 # MELEE
@@ -32,6 +56,7 @@
   slot: weapon
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -41,6 +66,10 @@
   slot: weapon
   style: melee
   tier: 2
+  requires:
+    skill:
+      attack: 5
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -50,6 +79,10 @@
   slot: weapon
   style: melee
   tier: 3
+  requires:
+    skill:
+      attack: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -59,6 +92,10 @@
   slot: weapon
   style: melee
   tier: 4
+  requires:
+    skill:
+      attack: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -68,6 +105,10 @@
   slot: weapon
   style: melee
   tier: 5
+  requires:
+    skill:
+      attack: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -77,6 +118,12 @@
   slot: weapon
   style: melee
   tier: 6
+  requires:
+    all_of:
+    - skill:
+        attack: 60
+    - quest: monkey_madness_i
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -86,6 +133,10 @@
   slot: weapon
   style: melee
   tier: 7
+  requires:
+    skill:
+      attack: 70
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 1500000
   price_staleness_days: 30
@@ -96,6 +147,10 @@
   slot: weapon
   style: melee
   tier: 8
+  requires:
+    skill:
+      attack: 75
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 2500000
 
@@ -105,6 +160,10 @@
   slot: weapon
   style: melee
   tier: 9
+  requires:
+    skill:
+      attack: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 40000000
   price_staleness_days: 30
@@ -116,6 +175,10 @@
   slot: weapon
   style: melee
   tier: 10
+  requires:
+    skill:
+      attack: 80
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 130000000
 
@@ -125,6 +188,10 @@
   slot: weapon
   style: melee
   tier: 11
+  requires:
+    skill:
+      attack: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 45000000
   price_staleness_days: 30
@@ -136,6 +203,13 @@
   slot: weapon
   style: melee
   tier: 12
+  requires:
+    all_of:
+    - skill:
+        attack: 80
+    - skill:
+        strength: 90
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 900000000
 
@@ -147,6 +221,7 @@
   slot: head
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -156,6 +231,10 @@
   slot: head
   style: melee
   tier: 2
+  requires:
+    skill:
+      defence: 5
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -165,6 +244,10 @@
   slot: head
   style: melee
   tier: 3
+  requires:
+    skill:
+      defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -174,6 +257,10 @@
   slot: head
   style: melee
   tier: 4
+  requires:
+    skill:
+      defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -183,6 +270,10 @@
   slot: head
   style: melee
   tier: 5
+  requires:
+    skill:
+      defence: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -192,6 +283,12 @@
   slot: head
   style: melee
   tier: 6
+  requires:
+    all_of:
+    - skill:
+        defence: 45
+    - quest: the_fremennik_trials
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -201,6 +298,12 @@
   slot: head
   style: melee
   tier: 7
+  requires:
+    all_of:
+    - skill:
+        defence: 55
+    - quest: the_fremennik_isles
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -211,6 +314,10 @@
   slot: head
   style: melee
   tier: 8
+  requires:
+    skill:
+      defence: 75
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 900000
 
@@ -220,6 +327,12 @@
   slot: head
   style: melee
   tier: 9
+  requires:
+    all_of:
+    - skill:
+        defence: 70
+    - quest: the_fremennik_exiles
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 35000000
 
@@ -229,7 +342,28 @@
   slot: head
   style: melee
   tier: 10
+  requires:
+    all_of:
+    - skill:
+        defence: 30
+    - skill:
+        strength: 70
+  acquisition: tradeable
   price_mode: live
+  price_staleness_days: 30
+
+- id: oathplate_helm
+  name: Oathplate helm
+  item_id: 30750
+  slot: head
+  style: melee
+  tier: 11
+  requires:
+    skill:
+      defence: 78
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 84000000
   price_staleness_days: 30
 
 - id: torva_full_helm
@@ -238,7 +372,11 @@
   variant_item_ids: [26376]
   slot: head
   style: melee
-  tier: 11
+  tier: 12
+  requires:
+    skill:
+      defence: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 90000000
   price_staleness_days: 30
@@ -248,7 +386,11 @@
   item_id: 22326
   slot: head
   style: melee
-  tier: 12
+  tier: 13
+  requires:
+    skill:
+      defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 30000000
   price_staleness_days: 30
@@ -261,6 +403,7 @@
   slot: body
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -270,6 +413,10 @@
   slot: body
   style: melee
   tier: 2
+  requires:
+    skill:
+      defence: 5
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -279,6 +426,10 @@
   slot: body
   style: melee
   tier: 3
+  requires:
+    skill:
+      defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -288,6 +439,10 @@
   slot: body
   style: melee
   tier: 4
+  requires:
+    skill:
+      defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -297,6 +452,12 @@
   slot: body
   style: melee
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        defence: 40
+    - quest: dragon_slayer_i
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -307,6 +468,11 @@
   slot: body
   style: melee
   tier: 6
+  requires:
+    skill:
+      defence: 40
+  acquisition: untradeable
+  acquired_from: Barbarian Assault
   price_mode: static
 
 - id: inquisitors_hauberk
@@ -315,7 +481,28 @@
   slot: body
   style: melee
   tier: 7
+  requires:
+    all_of:
+    - skill:
+        defence: 30
+    - skill:
+        strength: 70
+  acquisition: tradeable
   price_mode: live
+  price_staleness_days: 30
+
+- id: oathplate_chest
+  name: Oathplate chest
+  item_id: 30753
+  slot: body
+  style: melee
+  tier: 8
+  requires:
+    skill:
+      defence: 78
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 88000000
   price_staleness_days: 30
 
 - id: torva_platebody
@@ -324,7 +511,11 @@
   variant_item_ids: [26378]
   slot: body
   style: melee
-  tier: 8
+  tier: 9
+  requires:
+    skill:
+      defence: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 130000000
   price_staleness_days: 30
@@ -334,7 +525,11 @@
   item_id: 22327
   slot: body
   style: melee
-  tier: 9
+  tier: 10
+  requires:
+    skill:
+      defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 25000000
   price_staleness_days: 30
@@ -347,6 +542,7 @@
   slot: legs
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -356,6 +552,10 @@
   slot: legs
   style: melee
   tier: 2
+  requires:
+    skill:
+      defence: 5
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -365,6 +565,10 @@
   slot: legs
   style: melee
   tier: 3
+  requires:
+    skill:
+      defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -374,6 +578,10 @@
   slot: legs
   style: melee
   tier: 4
+  requires:
+    skill:
+      defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -383,6 +591,10 @@
   slot: legs
   style: melee
   tier: 5
+  requires:
+    skill:
+      defence: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -392,6 +604,10 @@
   slot: legs
   style: melee
   tier: 6
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -402,6 +618,10 @@
   slot: legs
   style: melee
   tier: 7
+  requires:
+    skill:
+      defence: 70
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -412,6 +632,13 @@
   slot: legs
   style: melee
   tier: 8
+  requires:
+    all_of:
+    - skill:
+        defence: 50
+    - skill:
+        strength: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 8000000
   price_staleness_days: 30
@@ -422,7 +649,28 @@
   slot: legs
   style: melee
   tier: 9
+  requires:
+    all_of:
+    - skill:
+        defence: 30
+    - skill:
+        strength: 70
+  acquisition: tradeable
   price_mode: live
+  price_staleness_days: 30
+
+- id: oathplate_legs
+  name: Oathplate legs
+  item_id: 30756
+  slot: legs
+  style: melee
+  tier: 10
+  requires:
+    skill:
+      defence: 78
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 85000000
   price_staleness_days: 30
 
 - id: torva_platelegs
@@ -431,7 +679,11 @@
   variant_item_ids: [26380]
   slot: legs
   style: melee
-  tier: 10
+  tier: 11
+  requires:
+    skill:
+      defence: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 110000000
   price_staleness_days: 30
@@ -441,7 +693,11 @@
   item_id: 22328
   slot: legs
   style: melee
-  tier: 11
+  tier: 12
+  requires:
+    skill:
+      defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 20000000
   price_staleness_days: 30
@@ -454,6 +710,18 @@
   slot: hands
   style: melee
   tier: 1
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: combat_bracelet
+  name: Combat bracelet
+  item_id: 11126
+  variant_item_ids: [11124, 11122, 11120, 11118, 11974, 11972]
+  slot: hands
+  style: melee
+  tier: 2
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -462,7 +730,11 @@
   item_id: 7462
   slot: hands
   style: melee
-  tier: 2
+  tier: 3
+  requires:
+    quest: recipe_for_disaster
+  acquisition: untradeable
+  acquired_from: Recipe for Disaster
   price_mode: static
 
 - id: ferocious_gloves
@@ -470,7 +742,14 @@
   item_id: 22981
   slot: hands
   style: melee
-  tier: 3
+  tier: 4
+  requires:
+    all_of:
+    - skill:
+        attack: 80
+    - skill:
+        defence: 80
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 25000000
 
@@ -482,15 +761,30 @@
   slot: feet
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
+
+- id: fighting_boots
+  name: Fighting boots
+  item_id: 9006
+  slot: feet
+  style: melee
+  tier: 2
+  acquisition: untradeable
+  acquired_from: the Stronghold of Security, with two-factor authentication enabled
+  price_mode: static
 
 - id: rune_boots
   name: Rune boots
   item_id: 4131
   slot: feet
   style: melee
-  tier: 2
+  tier: 3
+  requires:
+    skill:
+      defence: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -499,7 +793,11 @@
   item_id: 11840
   slot: feet
   style: melee
-  tier: 3
+  tier: 4
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -508,7 +806,14 @@
   item_id: 13239
   slot: feet
   style: melee
-  tier: 4
+  tier: 5
+  requires:
+    all_of:
+    - skill:
+        defence: 75
+    - skill:
+        strength: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 32000000
   price_staleness_days: 30
@@ -518,7 +823,11 @@
   item_id: 28945
   slot: feet
   style: melee
-  tier: 5
+  tier: 6
+  requires:
+    skill:
+      defence: 75
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 40000000
 
@@ -530,6 +839,7 @@
   slot: cape
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -539,6 +849,8 @@
   slot: cape
   style: melee
   tier: 2
+  acquisition: untradeable
+  acquired_from: the Ardougne Diary
   price_mode: static
 
 - id: ardougne_cloak_2
@@ -547,7 +859,26 @@
   slot: cape
   style: melee
   tier: 3
+  acquisition: untradeable
+  acquired_from: the Ardougne Diary
   price_mode: static
+
+- id: mixed_hide_cape
+  name: Mixed hide cape
+  item_id: 29289
+  slot: cape
+  style: melee
+  tier: 4
+  requires:
+    all_of:
+    - skill:
+        ranged: 60
+    - skill:
+        defence: 50
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 19000
+  price_staleness_days: 30
 
 - id: fire_cape
   name: Fire cape
@@ -555,7 +886,9 @@
   variant_item_ids: [20445, 24223]
   slot: cape
   style: melee
-  tier: 4
+  tier: 5
+  acquisition: untradeable
+  acquired_from: the Fight Caves
   price_mode: static
 
 - id: infernal_cape
@@ -564,7 +897,9 @@
   variant_item_ids: [21287, 24224, 33500, 33502]
   slot: cape
   style: melee
-  tier: 5
+  tier: 6
+  acquisition: untradeable
+  acquired_from: the Inferno
   price_mode: static
 
 
@@ -575,6 +910,7 @@
   slot: neck
   style: melee
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -584,6 +920,7 @@
   slot: neck
   style: melee
   tier: 2
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 3000000
   price_staleness_days: 30
@@ -594,6 +931,10 @@
   slot: neck
   style: melee
   tier: 3
+  requires:
+    skill:
+      hitpoints: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 12000000
   price_staleness_days: 30
@@ -604,6 +945,10 @@
   slot: neck
   style: melee
   tier: 4
+  requires:
+    skill:
+      hitpoints: 90
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -613,17 +958,39 @@
   slot: neck
   style: melee
   tier: 5
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 12000000
 
 
 # --- melee / ring ---
+- id: explorers_ring_1
+  name: Explorer's ring 1
+  item_id: 13125
+  slot: ring
+  style: melee
+  tier: 1
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
+  price_mode: static
+
+- id: explorers_ring_2
+  name: Explorer's ring 2
+  item_id: 13126
+  slot: ring
+  style: melee
+  tier: 2
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
+  price_mode: static
+
 - id: berserker_ring
   name: Berserker ring
   item_id: 6737
   slot: ring
   style: melee
-  tier: 1
+  tier: 3
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 3500000
   price_staleness_days: 30
@@ -634,7 +1001,9 @@
   variant_item_ids: [25264, 26770]
   slot: ring
   style: melee
-  tier: 2
+  tier: 4
+  acquisition: untradeable
+  acquired_from: imbuing a Berserker ring at Nightmare Zone or Soul Wars
   price_mode: static
 
 - id: ultor_ring
@@ -642,7 +1011,9 @@
   item_id: 28307
   slot: ring
   style: melee
-  tier: 3
+  tier: 5
+  gate_unknown: true
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 100000000
   price_staleness_days: 30
@@ -653,7 +1024,11 @@
   variant_item_ids: [20655]
   slot: ring
   style: melee
-  tier: 4
+  tier: 6
+  requires:
+    skill:
+      hitpoints: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 3500000
   price_staleness_days: 30
@@ -664,7 +1039,9 @@
   variant_item_ids: [20657, 25246, 25248, 26761, 26762]
   slot: ring
   style: melee
-  tier: 5
+  tier: 7
+  acquisition: untradeable
+  acquired_from: imbuing a Ring of suffering at Nightmare Zone or Soul Wars
   price_mode: static
 
 - id: bellator_ring
@@ -672,20 +1049,51 @@
   item_id: 28316
   slot: ring
   style: melee
-  tier: 6
+  tier: 8
+  gate_unknown: true
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 60000000
   price_staleness_days: 30
 
 
 # --- melee / shield ---
+- id: mooleta
+  name: Mooleta
+  item_id: 33101
+  slot: shield
+  style: melee
+  tier: 1
+  acquisition: untradeable
+  acquired_from: Brutus, after the quest
+  price_mode: static
+
+- id: antler_guard
+  name: Antler guard
+  item_id: 31081
+  slot: shield
+  style: melee
+  tier: 2
+  requires:
+    skill:
+      prayer: 50
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 550000
+  price_staleness_days: 30
+
 - id: dragon_defender
   name: Dragon defender
   item_id: 12954
   variant_item_ids: [20463, 24143]
   slot: shield
   style: melee
-  tier: 1
+  tier: 3
+  requires:
+    skill:
+      defence: 60
+  acquisition: untradeable
+  acquired_from: Cyclopes in the Warriors' Guild basement, shown a rune defender
   price_mode: static
 
 - id: avernic_defender
@@ -694,18 +1102,28 @@
   variant_item_ids: [22441, 24186]
   slot: shield
   style: melee
-  tier: 2
+  tier: 4
+  requires:
+    all_of:
+    - skill:
+        attack: 70
+    - skill:
+        defence: 70
+  acquisition: untradeable
+  acquired_from: a Dragon defender and a hilt from the Theatre of Blood
   price_mode: static
   fallback_price_gp: 55000000
 
-- id: dinhs_bulwark
-  name: Dinh's bulwark
-  item_id: 21015
-  slot: shield
+
+# --- melee / ammunition ---
+- id: peaceful_blessing
+  name: Peaceful blessing
+  item_id: 20226
+  slot: ammunition
   style: melee
-  tier: 3
+  tier: 1
+  acquisition: tradeable
   price_mode: live
-  fallback_price_gp: 20000000
   price_staleness_days: 30
 
 
@@ -720,6 +1138,7 @@
   slot: weapon
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -729,6 +1148,10 @@
   slot: weapon
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 5
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -738,6 +1161,10 @@
   slot: weapon
   style: ranged
   tier: 3
+  requires:
+    skill:
+      ranged: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -747,6 +1174,10 @@
   slot: weapon
   style: ranged
   tier: 4
+  requires:
+    skill:
+      ranged: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -756,6 +1187,10 @@
   slot: weapon
   style: ranged
   tier: 5
+  requires:
+    skill:
+      ranged: 28
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -765,6 +1200,10 @@
   slot: weapon
   style: ranged
   tier: 6
+  requires:
+    skill:
+      ranged: 50
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -774,23 +1213,65 @@
   slot: weapon
   style: ranged
   tier: 7
+  requires:
+    skill:
+      ranged: 50
+  acquisition: untradeable
+  acquired_from: imbuing a Magic shortbow at Nightmare Zone or Soul Wars
   price_mode: static
-
-- id: rune_crossbow
-  name: Rune crossbow
-  item_id: 9185
-  slot: weapon
-  style: ranged
-  tier: 8
-  price_mode: live
-  price_staleness_days: 30
 
 - id: hunters_sunlight_crossbow
   name: Hunters' sunlight crossbow
   item_id: 28869
   slot: weapon
   style: ranged
+  tier: 8
+  requires:
+    all_of:
+    - skill:
+        ranged: 66
+    - skill:
+        hunter: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: rune_crossbow
+  name: Rune crossbow
+  item_id: 9185
+  slot: weapon
+  style: ranged
   tier: 9
+  requires:
+    skill:
+      ranged: 61
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: red_chinchompa
+  name: Red chinchompa
+  item_id: 10034
+  slot: weapon
+  style: ranged
+  tier: 10
+  requires:
+    skill:
+      ranged: 55
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: black_chinchompa
+  name: Black chinchompa
+  item_id: 11959
+  slot: weapon
+  style: ranged
+  tier: 11
+  requires:
+    skill:
+      ranged: 65
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -799,8 +1280,31 @@
   item_id: 21902
   slot: weapon
   style: ranged
-  tier: 10
+  tier: 12
+  requires:
+    skill:
+      ranged: 64
+  acquisition: tradeable
   price_mode: live
+  price_staleness_days: 30
+
+- id: eclipse_atlatl
+  name: Eclipse atlatl
+  item_id: 29000
+  slot: weapon
+  style: ranged
+  tier: 13
+  requires:
+    all_of:
+    - skill:
+        ranged: 75
+    - skill:
+        attack: 50
+    - skill:
+        strength: 50
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 3000000
   price_staleness_days: 30
 
 - id: toxic_blowpipe
@@ -809,19 +1313,13 @@
   variant_item_ids: [12926]
   slot: weapon
   style: ranged
-  tier: 11
+  tier: 14
+  requires:
+    skill:
+      ranged: 75
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 3000000
-
-- id: eclipse_atlatl
-  name: Eclipse atlatl
-  item_id: 29000
-  slot: weapon
-  style: ranged
-  tier: 12
-  price_mode: live
-  fallback_price_gp: 3000000
-  price_staleness_days: 30
 
 - id: webweaver_bow
   name: Webweaver bow
@@ -829,7 +1327,11 @@
   variant_item_ids: [27655]
   slot: weapon
   style: ranged
-  tier: 13
+  tier: 15
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 90000000
 
@@ -838,7 +1340,10 @@
   item_id: 29591
   slot: weapon
   style: ranged
-  tier: 14
+  tier: 16
+  requires:
+    skill:
+      ranged: 77
   price_mode: static
   fallback_price_gp: 90000000
 
@@ -847,7 +1352,11 @@
   item_id: 21012
   slot: weapon
   style: ranged
-  tier: 15
+  tier: 17
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -856,7 +1365,11 @@
   item_id: 11785
   slot: weapon
   style: ranged
-  tier: 16
+  tier: 18
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 38000000
   price_staleness_days: 30
@@ -867,7 +1380,14 @@
   variant_item_ids: [25865]
   slot: weapon
   style: ranged
-  tier: 17
+  tier: 19
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        agility: 70
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 45000000
 
@@ -876,7 +1396,11 @@
   item_id: 26374
   slot: weapon
   style: ranged
-  tier: 18
+  tier: 20
+  requires:
+    skill:
+      ranged: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 400000000
   price_staleness_days: 30
@@ -887,7 +1411,11 @@
   variant_item_ids: [27610]
   slot: weapon
   style: ranged
-  tier: 19
+  tier: 21
+  requires:
+    skill:
+      ranged: 80
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 60000000
 
@@ -896,7 +1424,11 @@
   item_id: 20997
   slot: weapon
   style: ranged
-  tier: 20
+  tier: 22
+  requires:
+    skill:
+      ranged: 85
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 1400000000
   price_staleness_days: 30
@@ -909,6 +1441,7 @@
   slot: head
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -918,6 +1451,10 @@
   slot: head
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -927,6 +1464,13 @@
   slot: head
   style: ranged
   tier: 3
+  requires:
+    all_of:
+    - skill:
+        ranged: 30
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -936,6 +1480,12 @@
   slot: head
   style: ranged
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        defence: 45
+    - quest: the_fremennik_trials
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -946,14 +1496,71 @@
   slot: head
   style: ranged
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        attack: 42
+    - skill:
+        strength: 42
+    - skill:
+        defence: 42
+    - skill:
+        ranged: 42
+    - skill:
+        magic: 42
+    - skill:
+        hitpoints: 42
+    - skill:
+        prayer: 22
+  acquisition: untradeable
+  acquired_from: Pest Control
   price_mode: static
+
+- id: guthix_coif
+  name: Guthix coif
+  item_id: 10382
+  slot: head
+  style: ranged
+  tier: 6
+  requires:
+    all_of:
+    - skill:
+        ranged: 70
+    - skill:
+        defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: hueycoatl_hide_coif
+  name: Hueycoatl hide coif
+  item_id: 30073
+  slot: head
+  style: ranged
+  tier: 7
+  requires:
+    all_of:
+    - skill:
+        ranged: 70
+    - skill:
+        defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
 
 - id: masori_mask
   name: Masori mask
   item_id: 27226
   slot: head
   style: ranged
-  tier: 6
+  tier: 8
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 20000000
   price_staleness_days: 30
@@ -964,7 +1571,14 @@
   variant_item_ids: [23973]
   slot: head
   style: ranged
-  tier: 7
+  tier: 9
+  requires:
+    all_of:
+    - skill:
+        defence: 70
+    - skill:
+        agility: 50
+  acquisition: tradeable
   price_mode: static
 
 - id: masori_mask_f
@@ -972,7 +1586,14 @@
   item_id: 27235
   slot: head
   style: ranged
-  tier: 8
+  tier: 10
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -984,6 +1605,7 @@
   slot: body
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -993,6 +1615,10 @@
   slot: body
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1002,6 +1628,15 @@
   slot: body
   style: ranged
   tier: 3
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          ranged: 40
+      - skill:
+          defence: 40
+    - quest: dragon_slayer_i
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1011,6 +1646,31 @@
   slot: body
   style: ranged
   tier: 4
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          ranged: 50
+      - skill:
+          defence: 40
+    - quest: dragon_slayer_i
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: mixed_hide_top
+  name: Mixed hide top
+  item_id: 29280
+  slot: body
+  style: ranged
+  tier: 5
+  requires:
+    all_of:
+    - skill:
+        ranged: 60
+    - skill:
+        defence: 50
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1019,7 +1679,16 @@
   item_id: 2503
   slot: body
   style: ranged
-  tier: 5
+  tier: 6
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          ranged: 70
+      - skill:
+          defence: 40
+    - quest: dragon_slayer_i
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1029,15 +1698,72 @@
   variant_item_ids: [20467, 24178, 33480, 33482]
   slot: body
   style: ranged
-  tier: 6
+  tier: 7
+  requires:
+    all_of:
+    - skill:
+        attack: 42
+    - skill:
+        strength: 42
+    - skill:
+        defence: 42
+    - skill:
+        ranged: 42
+    - skill:
+        magic: 42
+    - skill:
+        hitpoints: 42
+    - skill:
+        prayer: 22
+  acquisition: untradeable
+  acquired_from: Pest Control
   price_mode: static
+
+- id: guthix_dhide_body
+  name: Guthix d'hide body
+  item_id: 10378
+  slot: body
+  style: ranged
+  tier: 8
+  requires:
+    all_of:
+    - skill:
+        ranged: 70
+    - skill:
+        defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: hueycoatl_hide_body
+  name: Hueycoatl hide body
+  item_id: 30076
+  slot: body
+  style: ranged
+  tier: 9
+  requires:
+    all_of:
+    - skill:
+        ranged: 70
+    - skill:
+        defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
 
 - id: masori_body
   name: Masori body
   item_id: 27229
   slot: body
   style: ranged
-  tier: 7
+  tier: 10
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 60000000
   price_staleness_days: 30
@@ -1048,7 +1774,14 @@
   variant_item_ids: [23977]
   slot: body
   style: ranged
-  tier: 8
+  tier: 11
+  requires:
+    all_of:
+    - skill:
+        defence: 70
+    - skill:
+        agility: 50
+  acquisition: tradeable
   price_mode: static
 
 - id: masori_body_f
@@ -1056,7 +1789,14 @@
   item_id: 27238
   slot: body
   style: ranged
-  tier: 9
+  tier: 12
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1068,6 +1808,7 @@
   slot: legs
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1077,6 +1818,10 @@
   slot: legs
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1086,6 +1831,10 @@
   slot: legs
   style: ranged
   tier: 3
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1095,6 +1844,23 @@
   slot: legs
   style: ranged
   tier: 4
+  requires:
+    skill:
+      ranged: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: mixed_hide_legs
+  name: Mixed hide legs
+  item_id: 29283
+  slot: legs
+  style: ranged
+  tier: 5
+  requires:
+    skill:
+      ranged: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1103,7 +1869,11 @@
   item_id: 2497
   slot: legs
   style: ranged
-  tier: 5
+  tier: 6
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1113,15 +1883,66 @@
   variant_item_ids: [20471, 24180, 33488, 33490]
   slot: legs
   style: ranged
-  tier: 6
+  tier: 7
+  requires:
+    all_of:
+    - skill:
+        attack: 42
+    - skill:
+        strength: 42
+    - skill:
+        defence: 42
+    - skill:
+        ranged: 42
+    - skill:
+        magic: 42
+    - skill:
+        hitpoints: 42
+    - skill:
+        prayer: 22
+  acquisition: untradeable
+  acquired_from: Pest Control
   price_mode: static
+
+- id: guthix_chaps
+  name: Guthix chaps
+  item_id: 10380
+  slot: legs
+  style: ranged
+  tier: 8
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: hueycoatl_hide_chaps
+  name: Hueycoatl hide chaps
+  item_id: 30079
+  slot: legs
+  style: ranged
+  tier: 9
+  requires:
+    skill:
+      ranged: 70
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
 
 - id: masori_chaps
   name: Masori chaps
   item_id: 27232
   slot: legs
   style: ranged
-  tier: 7
+  tier: 10
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 40000000
   price_staleness_days: 30
@@ -1132,7 +1953,14 @@
   variant_item_ids: [23981]
   slot: legs
   style: ranged
-  tier: 8
+  tier: 11
+  requires:
+    all_of:
+    - skill:
+        defence: 70
+    - skill:
+        agility: 50
+  acquisition: tradeable
   price_mode: static
 
 - id: masori_chaps_f
@@ -1140,7 +1968,14 @@
   item_id: 27241
   slot: legs
   style: ranged
-  tier: 9
+  tier: 12
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 30
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1152,6 +1987,7 @@
   slot: hands
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1161,10 +1997,26 @@
   slot: hands
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
-# Barrows gloves is already declared as `barrows_gloves`; it is also ranged hands tier 3.
+# Barrows gloves again — the guides place it on this ladder too.
+- id: barrows_gloves_ranged
+  name: Barrows gloves
+  item_id: 7462
+  slot: hands
+  style: ranged
+  tier: 3
+  requires:
+    quest: recipe_for_disaster
+  acquisition: untradeable
+  acquired_from: Recipe for Disaster
+  price_mode: static
+
 - id: void_knight_gloves
   name: Void knight gloves
   item_id: 8842
@@ -1172,6 +2024,24 @@
   slot: hands
   style: ranged
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        attack: 42
+    - skill:
+        strength: 42
+    - skill:
+        defence: 42
+    - skill:
+        ranged: 42
+    - skill:
+        magic: 42
+    - skill:
+        hitpoints: 42
+    - skill:
+        prayer: 22
+  acquisition: untradeable
+  acquired_from: Pest Control
   price_mode: static
 
 - id: zaryte_vambraces
@@ -1180,6 +2050,13 @@
   slot: hands
   style: ranged
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        ranged: 80
+    - skill:
+        defence: 45
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 40000000
   price_staleness_days: 30
@@ -1192,6 +2069,45 @@
   slot: feet
   style: ranged
   tier: 1
+  requires:
+    all_of:
+    - skill:
+        ranged: 30
+    - skill:
+        defence: 30
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: mixed_hide_boots
+  name: Mixed hide boots
+  item_id: 29286
+  slot: feet
+  style: ranged
+  tier: 2
+  requires:
+    all_of:
+    - skill:
+        ranged: 60
+    - skill:
+        defence: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: guthix_dhide_boots
+  name: Guthix d'hide boots
+  item_id: 19927
+  slot: feet
+  style: ranged
+  tier: 3
+  requires:
+    all_of:
+    - skill:
+        ranged: 70
+    - skill:
+        defence: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1200,7 +2116,14 @@
   item_id: 13237
   slot: feet
   style: ranged
-  tier: 2
+  tier: 4
+  requires:
+    all_of:
+    - skill:
+        ranged: 75
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 35000000
   price_staleness_days: 30
@@ -1210,7 +2133,18 @@
   item_id: 31088
   slot: feet
   style: ranged
-  tier: 3
+  tier: 5
+  requires:
+    all_of:
+    - skill:
+        defence: 80
+    - skill:
+        strength: 80
+    - skill:
+        ranged: 80
+    - skill:
+        magic: 80
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1222,6 +2156,8 @@
   slot: cape
   style: ranged
   tier: 1
+  acquisition: untradeable
+  acquired_from: Animal Magnetism
   price_mode: static
 
 - id: avas_accumulator
@@ -1230,6 +2166,8 @@
   slot: cape
   style: ranged
   tier: 2
+  acquisition: untradeable
+  acquired_from: Animal Magnetism
   price_mode: static
 
 - id: avas_assembler
@@ -1239,6 +2177,11 @@
   slot: cape
   style: ranged
   tier: 3
+  requires:
+    skill:
+      ranged: 70
+  acquisition: untradeable
+  acquired_from: Dragon Slayer II
   price_mode: static
 
 - id: dizanas_quiver
@@ -1248,6 +2191,11 @@
   slot: cape
   style: ranged
   tier: 4
+  requires:
+    skill:
+      ranged: 75
+  acquisition: untradeable
+  acquired_from: the Fortis Colosseum
   price_mode: static
   fallback_price_gp: 200000000
 
@@ -1259,6 +2207,7 @@
   slot: neck
   style: ranged
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1269,6 +2218,7 @@
   slot: neck
   style: ranged
   tier: 2
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1278,6 +2228,10 @@
   slot: neck
   style: ranged
   tier: 3
+  requires:
+    skill:
+      hitpoints: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 12000000
   price_staleness_days: 30
@@ -1288,25 +2242,35 @@
   slot: neck
   style: ranged
   tier: 4
+  requires:
+    skill:
+      hitpoints: 90
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
 
 # --- ranged / ring ---
-- id: explorers_ring_1
+# Explorer's ring 1 again — the guides place it on this ladder too.
+- id: explorers_ring_1_ranged
   name: Explorer's ring 1
   item_id: 13125
   slot: ring
   style: ranged
   tier: 1
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
   price_mode: static
 
-- id: explorers_ring_2
+# Explorer's ring 2 again — the guides place it on this ladder too.
+- id: explorers_ring_2_ranged
   name: Explorer's ring 2
   item_id: 13126
   slot: ring
   style: ranged
   tier: 2
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
   price_mode: static
 
 - id: explorers_ring_3
@@ -1315,6 +2279,8 @@
   slot: ring
   style: ranged
   tier: 3
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
   price_mode: static
 
 - id: explorers_ring_4
@@ -1323,23 +2289,28 @@
   slot: ring
   style: ranged
   tier: 4
+  acquisition: untradeable
+  acquired_from: the Lumbridge & Draynor Diary
   price_mode: static
-
-- id: venator_ring
-  name: Venator ring
-  item_id: 28310
-  slot: ring
-  style: ranged
-  tier: 5
-  price_mode: live
-  price_staleness_days: 30
 
 - id: lightbearer
   name: Lightbearer
   item_id: 25975
   slot: ring
   style: ranged
+  tier: 5
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: venator_ring
+  name: Venator ring
+  item_id: 28310
+  slot: ring
+  style: ranged
   tier: 6
+  gate_unknown: true
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1351,6 +2322,13 @@
   slot: shield
   style: ranged
   tier: 1
+  requires:
+    all_of:
+    - skill:
+        ranged: 40
+    - skill:
+        defence: 40
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1360,16 +2338,37 @@
   slot: shield
   style: ranged
   tier: 2
+  acquisition: untradeable
+  acquired_from: Horror from the Deep, from a damaged book and its pages
   price_mode: static
 
-- id: twisted_buckler
-  name: Twisted buckler
-  item_id: 21000
+# Antler guard again — the guides place it on this ladder too.
+- id: antler_guard_ranged
+  name: Antler guard
+  item_id: 31081
   slot: shield
   style: ranged
   tier: 3
+  requires:
+    skill:
+      prayer: 50
+  acquisition: tradeable
   price_mode: live
-  fallback_price_gp: 55000000
+  fallback_price_gp: 550000
+  price_staleness_days: 30
+
+- id: odium_ward
+  name: Odium ward
+  item_id: 11926
+  slot: shield
+  style: ranged
+  tier: 4
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 4000000
   price_staleness_days: 30
 
 - id: dragonfire_ward
@@ -1378,19 +2377,138 @@
   variant_item_ids: [22002]
   slot: shield
   style: ranged
-  tier: 4
+  tier: 5
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          ranged: 70
+      - skill:
+          defence: 75
+    - quest: dragon_slayer_i
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 60000000
   price_staleness_days: 30
 
-- id: odium_ward
-  name: Odium ward
-  item_id: 11926
+- id: twisted_buckler
+  name: Twisted buckler
+  item_id: 21000
   slot: shield
   style: ranged
-  tier: 5
+  tier: 6
+  requires:
+    all_of:
+    - skill:
+        ranged: 75
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
-  fallback_price_gp: 4000000
+  fallback_price_gp: 55000000
+  price_staleness_days: 30
+
+
+# --- ranged / ammunition ---
+- id: iron_arrow
+  name: Iron arrow
+  item_id: 884
+  variant_item_ids: [885, 5617, 5623]
+  slot: ammunition
+  style: ranged
+  tier: 1
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: mithril_arrow
+  name: Mithril arrow
+  item_id: 888
+  variant_item_ids: [889, 5619, 5625]
+  slot: ammunition
+  style: ranged
+  tier: 2
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: adamant_arrow
+  name: Adamant arrow
+  item_id: 890
+  variant_item_ids: [891, 5620, 5626]
+  slot: ammunition
+  style: ranged
+  tier: 3
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: bone_bolts
+  name: Bone bolts
+  item_id: 8882
+  slot: ammunition
+  style: ranged
+  tier: 4
+  requires:
+    skill:
+      ranged: 28
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: rune_arrow
+  name: Rune arrow
+  item_id: 892
+  variant_item_ids: [893, 5621, 5627]
+  slot: ammunition
+  style: ranged
+  tier: 5
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: amethyst_arrow
+  name: Amethyst arrow
+  item_id: 21326
+  variant_item_ids: [21332, 21334, 21336]
+  slot: ammunition
+  style: ranged
+  tier: 6
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: moonlight_antler_bolts
+  name: Moonlight antler bolts
+  item_id: 28878
+  slot: ammunition
+  style: ranged
+  tier: 7
+  requires:
+    skill:
+      ranged: 66
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: ruby_dragon_bolts_e
+  name: Ruby dragon bolts (e)
+  item_id: 21944
+  slot: ammunition
+  style: ranged
+  tier: 8
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: seeking_dragon_arrow
+  name: Seeking dragon arrow
+  item_id: 33595
+  slot: ammunition
+  style: ranged
+  tier: 9
+  acquisition: tradeable
+  price_mode: live
   price_staleness_days: 30
 
 
@@ -1405,6 +2523,7 @@
   slot: weapon
   style: magic
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1414,6 +2533,14 @@
   slot: weapon
   style: magic
   tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 50
+    - skill:
+        attack: 50
+  acquisition: untradeable
+  acquired_from: Underground Pass
   price_mode: static
 
 - id: ancient_staff
@@ -1422,6 +2549,15 @@
   slot: weapon
   style: magic
   tier: 3
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          magic: 50
+      - skill:
+          attack: 50
+    - quest: desert_treasure_i
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1431,6 +2567,10 @@
   slot: weapon
   style: magic
   tier: 4
+  requires:
+    skill:
+      magic: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1441,6 +2581,10 @@
   slot: weapon
   style: magic
   tier: 5
+  requires:
+    skill:
+      magic: 62
+  acquisition: tradeable
   price_mode: static
 
 - id: trident_of_the_seas
@@ -1450,15 +2594,10 @@
   slot: weapon
   style: magic
   tier: 6
-  price_mode: static
-
-- id: trident_of_the_swamp
-  name: Trident of the swamp
-  item_id: 12900
-  variant_item_ids: [12899]
-  slot: weapon
-  style: magic
-  tier: 7
+  requires:
+    skill:
+      magic: 75
+  acquisition: tradeable
   price_mode: static
 
 - id: ancient_sceptre
@@ -1467,7 +2606,31 @@
   variant_item_ids: [27626, 33827, 33829]
   slot: weapon
   style: magic
+  tier: 7
+  requires:
+    all_of:
+    - all_of:
+      - skill:
+          magic: 70
+      - skill:
+          strength: 60
+      - skill:
+          attack: 50
+    - quest: secrets_of_the_north
+  acquisition: tradeable
+  price_mode: static
+
+- id: trident_of_the_swamp
+  name: Trident of the swamp
+  item_id: 12900
+  variant_item_ids: [12899]
+  slot: weapon
+  style: magic
   tier: 8
+  requires:
+    skill:
+      magic: 78
+  acquisition: tradeable
   price_mode: static
 
 - id: nightmare_staff
@@ -1476,6 +2639,13 @@
   slot: weapon
   style: magic
   tier: 9
+  requires:
+    all_of:
+    - skill:
+        magic: 72
+    - skill:
+        hitpoints: 50
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 8000000
   price_staleness_days: 30
@@ -1486,6 +2656,10 @@
   slot: weapon
   style: magic
   tier: 10
+  requires:
+    skill:
+      magic: 65
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 130000000
   price_staleness_days: 30
@@ -1497,6 +2671,13 @@
   slot: weapon
   style: magic
   tier: 11
+  requires:
+    all_of:
+    - skill:
+        magic: 75
+    - skill:
+        attack: 75
+  acquisition: tradeable
   price_mode: static
 
 - id: sanguinesti_staff
@@ -1506,34 +2687,10 @@
   slot: weapon
   style: magic
   tier: 12
-  price_mode: static
-  fallback_price_gp: 60000000
-
-- id: kodai_wand
-  name: Kodai wand
-  item_id: 21006
-  slot: weapon
-  style: magic
-  tier: 13
-  price_mode: live
-  fallback_price_gp: 90000000
-  price_staleness_days: 30
-
-- id: harmonised_nightmare_staff
-  name: Harmonised nightmare staff
-  item_id: 24423
-  slot: weapon
-  style: magic
-  tier: 14
-  price_mode: static
-  fallback_price_gp: 900000000
-
-- id: purging_staff
-  name: Purging staff
-  item_id: 29594
-  slot: weapon
-  style: magic
-  tier: 15
+  requires:
+    skill:
+      magic: 82
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 60000000
 
@@ -1543,9 +2700,57 @@
   variant_item_ids: [31113]
   slot: weapon
   style: magic
-  tier: 16
+  tier: 13
+  requires:
+    skill:
+      magic: 83
   price_mode: static
   fallback_price_gp: 90000000
+
+- id: kodai_wand
+  name: Kodai wand
+  item_id: 21006
+  slot: weapon
+  style: magic
+  tier: 14
+  requires:
+    skill:
+      magic: 80
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 90000000
+  price_staleness_days: 30
+
+- id: harmonised_nightmare_staff
+  name: Harmonised nightmare staff
+  item_id: 24423
+  slot: weapon
+  style: magic
+  tier: 15
+  requires:
+    all_of:
+    - skill:
+        magic: 82
+    - skill:
+        hitpoints: 50
+  acquisition: tradeable
+  price_mode: static
+  fallback_price_gp: 900000000
+
+- id: purging_staff
+  name: Purging staff
+  item_id: 29594
+  slot: weapon
+  style: magic
+  tier: 16
+  requires:
+    all_of:
+    - skill:
+        magic: 77
+    - skill:
+        attack: 50
+  price_mode: static
+  fallback_price_gp: 60000000
 
 - id: tumekens_shadow
   name: Tumeken's shadow
@@ -1554,6 +2759,10 @@
   slot: weapon
   style: magic
   tier: 17
+  requires:
+    skill:
+      magic: 85
+  acquisition: tradeable
   price_mode: static
   fallback_price_gp: 900000000
 
@@ -1565,6 +2774,23 @@
   slot: head
   style: magic
   tier: 1
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: xerician_hat
+  name: Xerician hat
+  item_id: 13385
+  slot: head
+  style: magic
+  tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 20
+    - skill:
+        defence: 10
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1573,7 +2799,14 @@
   item_id: 4089
   slot: head
   style: magic
-  tier: 2
+  tier: 3
+  requires:
+    all_of:
+    - skill:
+        magic: 40
+    - skill:
+        defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1582,7 +2815,14 @@
   item_id: 25413
   slot: head
   style: magic
-  tier: 3
+  tier: 4
+  requires:
+    all_of:
+    - skill:
+        magic: 60
+    - skill:
+        defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1592,16 +2832,14 @@
   variant_item_ids: [4856, 4857, 4858, 4859, 4860]
   slot: head
   style: magic
-  tier: 4
-  price_mode: live
-  price_staleness_days: 30
-
-- id: xerician_hat
-  name: Xerician hat
-  item_id: 13385
-  slot: head
-  style: magic
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        magic: 70
+    - skill:
+        defence: 70
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1611,6 +2849,13 @@
   slot: head
   style: magic
   tier: 6
+  requires:
+    all_of:
+    - skill:
+        magic: 78
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 30000000
   price_staleness_days: 30
@@ -1621,9 +2866,43 @@
   slot: head
   style: magic
   tier: 7
+  requires:
+    all_of:
+    - skill:
+        magic: 75
+    - skill:
+        defence: 65
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 130000000
   price_staleness_days: 30
+
+- id: void_mage_helm
+  name: Void mage helm
+  item_id: 11663
+  variant_item_ids: [20477, 24183, 33468, 33470]
+  slot: head
+  style: magic
+  tier: 8
+  requires:
+    all_of:
+    - skill:
+        attack: 42
+    - skill:
+        strength: 42
+    - skill:
+        defence: 42
+    - skill:
+        ranged: 42
+    - skill:
+        magic: 42
+    - skill:
+        hitpoints: 42
+    - skill:
+        prayer: 22
+  acquisition: untradeable
+  acquired_from: Pest Control
+  price_mode: static
 
 
 # --- magic / body ---
@@ -1633,6 +2912,7 @@
   slot: body
   style: magic
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1642,6 +2922,13 @@
   slot: body
   style: magic
   tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 20
+    - skill:
+        defence: 10
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1651,6 +2938,13 @@
   slot: body
   style: magic
   tier: 3
+  requires:
+    all_of:
+    - skill:
+        magic: 40
+    - skill:
+        defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1660,6 +2954,13 @@
   slot: body
   style: magic
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        magic: 60
+    - skill:
+        defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1670,17 +2971,14 @@
   slot: body
   style: magic
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        magic: 70
+    - skill:
+        defence: 70
+  acquisition: tradeable
   price_mode: live
-  price_staleness_days: 30
-
-- id: ancestral_robe_top
-  name: Ancestral robe top
-  item_id: 21021
-  slot: body
-  style: magic
-  tier: 6
-  price_mode: live
-  fallback_price_gp: 250000000
   price_staleness_days: 30
 
 - id: virtus_robe_top
@@ -1688,9 +2986,33 @@
   item_id: 26243
   slot: body
   style: magic
-  tier: 7
+  tier: 6
+  requires:
+    all_of:
+    - skill:
+        magic: 78
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 60000000
+  price_staleness_days: 30
+
+- id: ancestral_robe_top
+  name: Ancestral robe top
+  item_id: 21021
+  slot: body
+  style: magic
+  tier: 7
+  requires:
+    all_of:
+    - skill:
+        magic: 75
+    - skill:
+        defence: 65
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 250000000
   price_staleness_days: 30
 
 
@@ -1701,6 +3023,7 @@
   slot: legs
   style: magic
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1710,6 +3033,13 @@
   slot: legs
   style: magic
   tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 20
+    - skill:
+        defence: 10
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1719,6 +3049,13 @@
   slot: legs
   style: magic
   tier: 3
+  requires:
+    all_of:
+    - skill:
+        magic: 40
+    - skill:
+        defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1728,6 +3065,13 @@
   slot: legs
   style: magic
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        magic: 60
+    - skill:
+        defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1738,17 +3082,14 @@
   slot: legs
   style: magic
   tier: 5
+  requires:
+    all_of:
+    - skill:
+        magic: 70
+    - skill:
+        defence: 70
+  acquisition: tradeable
   price_mode: live
-  price_staleness_days: 30
-
-- id: ancestral_robe_bottom
-  name: Ancestral robe bottom
-  item_id: 21024
-  slot: legs
-  style: magic
-  tier: 6
-  price_mode: live
-  fallback_price_gp: 200000000
   price_staleness_days: 30
 
 - id: virtus_robe_bottom
@@ -1756,29 +3097,59 @@
   item_id: 26245
   slot: legs
   style: magic
-  tier: 7
+  tier: 6
+  requires:
+    all_of:
+    - skill:
+        magic: 78
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 45000000
   price_staleness_days: 30
 
-
-# --- magic / hands ---
-- id: tormented_bracelet
-  name: Tormented bracelet
-  item_id: 19544
-  slot: hands
+- id: ancestral_robe_bottom
+  name: Ancestral robe bottom
+  item_id: 21024
+  slot: legs
   style: magic
-  tier: 1
+  tier: 7
+  requires:
+    all_of:
+    - skill:
+        magic: 75
+    - skill:
+        defence: 65
+  acquisition: tradeable
   price_mode: live
+  fallback_price_gp: 200000000
   price_staleness_days: 30
 
-- id: combat_bracelet
+
+# --- magic / hands ---
+# Combat bracelet again — the guides place it on this ladder too.
+- id: combat_bracelet_magic
   name: Combat bracelet
   item_id: 11126
   variant_item_ids: [11124, 11122, 11120, 11118, 11974, 11972]
   slot: hands
   style: magic
+  tier: 1
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+- id: tormented_bracelet
+  name: Tormented bracelet
+  item_id: 19544
+  slot: hands
+  style: magic
   tier: 2
+  requires:
+    skill:
+      hitpoints: 75
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1788,6 +3159,9 @@
   slot: hands
   style: magic
   tier: 3
+  requires:
+    skill:
+      hitpoints: 90
   price_mode: live
   price_staleness_days: 30
 
@@ -1799,6 +3173,13 @@
   slot: feet
   style: magic
   tier: 1
+  requires:
+    all_of:
+    - skill:
+        magic: 40
+    - skill:
+        defence: 20
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1808,6 +3189,13 @@
   slot: feet
   style: magic
   tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 60
+    - skill:
+        defence: 60
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1817,6 +3205,13 @@
   slot: feet
   style: magic
   tier: 3
+  requires:
+    all_of:
+    - skill:
+        magic: 50
+    - skill:
+        defence: 25
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1826,6 +3221,13 @@
   slot: feet
   style: magic
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        magic: 75
+    - skill:
+        defence: 75
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 4000000
   price_staleness_days: 30
@@ -1838,6 +3240,8 @@
   slot: cape
   style: magic
   tier: 1
+  acquisition: untradeable
+  acquired_from: the Mage Arena
   price_mode: static
 
 - id: imbued_saradomin_cape
@@ -1847,6 +3251,11 @@
   slot: cape
   style: magic
   tier: 2
+  requires:
+    skill:
+      magic: 75
+  acquisition: untradeable
+  acquired_from: the Mage Arena II
   price_mode: static
 
 
@@ -1857,6 +3266,7 @@
   slot: neck
   style: magic
   tier: 1
+  acquisition: tradeable
   price_mode: live
   price_staleness_days: 30
 
@@ -1866,39 +3276,38 @@
   slot: neck
   style: magic
   tier: 2
+  requires:
+    skill:
+      magic: 70
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 800000
   price_staleness_days: 30
 
 
 # --- magic / ring ---
-- id: magus_ring
-  name: Magus ring
-  item_id: 28313
-  slot: ring
-  style: magic
-  tier: 1
-  price_mode: live
-  fallback_price_gp: 90000000
-  price_staleness_days: 30
-
-- id: seers_ring
-  name: Seers ring
-  item_id: 6731
-  slot: ring
-  style: magic
-  tier: 2
-  price_mode: live
-  price_staleness_days: 30
-
 - id: seers_ring_i
   name: Seers ring (i)
   item_id: 11770
   variant_item_ids: [25258, 26767]
   slot: ring
   style: magic
-  tier: 3
+  tier: 1
+  acquisition: untradeable
+  acquired_from: imbuing a Seers ring at Nightmare Zone or Soul Wars
   price_mode: static
+
+- id: magus_ring
+  name: Magus ring
+  item_id: 28313
+  slot: ring
+  style: magic
+  tier: 2
+  gate_unknown: true
+  acquisition: tradeable
+  price_mode: live
+  fallback_price_gp: 90000000
+  price_staleness_days: 30
 
 
 # --- magic / shield ---
@@ -1908,6 +3317,8 @@
   slot: shield
   style: magic
   tier: 1
+  acquisition: untradeable
+  acquired_from: Horror from the Deep, from a damaged book and its pages
   price_mode: static
 
 - id: malediction_ward
@@ -1916,6 +3327,10 @@
   slot: shield
   style: magic
   tier: 2
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 25000000
   price_staleness_days: 30
@@ -1926,6 +3341,15 @@
   slot: shield
   style: magic
   tier: 3
+  requires:
+    all_of:
+    - skill:
+        magic: 80
+    - skill:
+        defence: 80
+    - skill:
+        prayer: 80
+  acquisition: tradeable
   price_mode: live
   fallback_price_gp: 25000000
   price_staleness_days: 30
@@ -1936,6 +3360,14 @@
   slot: shield
   style: magic
   tier: 4
+  requires:
+    all_of:
+    - skill:
+        magic: 80
+    - skill:
+        defence: 80
+    - skill:
+        prayer: 80
   price_mode: static
   fallback_price_gp: 200000000
 
@@ -1946,6 +3378,10 @@
   slot: shield
   style: magic
   tier: 5
+  requires:
+    skill:
+      magic: 50
+  acquisition: tradeable
   price_mode: static
 
 - id: tome_of_water
@@ -1955,6 +3391,10 @@
   slot: shield
   style: magic
   tier: 6
+  requires:
+    skill:
+      magic: 50
+  acquisition: tradeable
   price_mode: static
 
 

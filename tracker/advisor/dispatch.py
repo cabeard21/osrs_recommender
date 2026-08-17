@@ -53,6 +53,8 @@ from tracker.content.requirements import (
 from tracker.content.schema import Candidate, TrainingMethod
 from tracker.domain.types import QuestStatus, Status, UnlockState
 from tracker.estimation.xp_table import xp_for_level
+from tracker.gear.render import render_setup
+from tracker.gear.setup import STYLES
 from tracker.integrations.llm.types import ToolCall, ToolResult
 
 _SATISFIED = "satisfied"
@@ -657,10 +659,45 @@ def _price_line(price: PriceFact) -> str:
 
 _Handler = Callable[[AdvisorSnapshot, Mapping[str, Any]], str]
 
+
+def _get_gear_setup(snapshot: AdvisorSnapshot, arguments: Mapping[str, Any]) -> str:
+    """Project §23.4's setup for one style. **Computes nothing** — D15.
+
+    Every decision rendered here was made in
+    :func:`~tracker.advisor.snapshot.build_advisor_snapshot` while the turn's inputs were
+    being frozen. This handler picks a style out of that frozen structure and renders it; it
+    does not evaluate a requirement, read a price, or accept any argument that could describe
+    an account other than this one. That is the whole of what makes a gear tool safe here.
+    """
+    style = _required_str(arguments, "style")
+    setup = snapshot.gear.setup(style)
+    if setup is None:
+        raise _BadArgument(f"no ladder for style {style!r}; the styles are " + ", ".join(STYLES))
+
+    slot = _optional_str(arguments, "slot")
+    if slot is not None:
+        known = sorted({plan.slot for plan in setup.slots})
+        if slot not in known:
+            raise _BadArgument(
+                f"no {style} ladder for slot {slot!r}; this style has " + ", ".join(known)
+            )
+
+    body = render_setup(setup, slots=(slot,) if slot is not None else None)
+    if snapshot.gear.fully_scanned:
+        return body
+    # Prepended rather than appended: it qualifies everything below it.
+    scanned = ", ".join(snapshot.gear.scanned_containers) or "nothing"
+    return (
+        f"Not every container has been scanned — so far: {scanned}. Anything reported as "
+        "unknown below is unknown, not absent.\n\n" + body
+    )
+
+
 _HANDLERS: Mapping[str, _Handler] = {
     "search_candidates": _search_candidates,
     "get_candidate_detail": _get_candidate_detail,
     "get_capability_detail": _get_capability_detail,
+    "get_gear_setup": _get_gear_setup,
     "list_training_methods": _list_training_methods,
     "get_quest_status": _get_quest_status,
     "get_skill_detail": _get_skill_detail,

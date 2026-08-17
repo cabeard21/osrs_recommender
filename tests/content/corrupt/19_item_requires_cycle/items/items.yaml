@@ -1,0 +1,24 @@
+# §23.2. Two rungs each gated on the other. Neither can ever be worn, and the failure is
+# not that the answer is wrong — it is that there is no answer, and the evaluator would
+# descend the loop rather than say so.
+#
+# An upgrade path genuinely does require the rung below it (an abyssal tentacle needs an
+# abyssal whip), so item-naming-item is legal and common. It is only the closed loop that
+# cannot be satisfied, which is why the rule is acyclicity and not "no item leaves".
+- id: abyssal_whip
+  name: Abyssal whip
+  item_id: 4151
+  slot: weapon
+  style: melee
+  tier: 1
+  requires:
+    item: abyssal_tentacle
+
+- id: abyssal_tentacle
+  name: Abyssal tentacle
+  item_id: 12006
+  slot: weapon
+  style: melee
+  tier: 2
+  requires:
+    item: abyssal_whip

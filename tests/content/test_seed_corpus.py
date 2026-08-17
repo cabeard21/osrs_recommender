@@ -302,3 +302,48 @@ class TestScoringProfile:
         declared by leaving this ``None``.
         """
         assert content.profile.tuned_against_corpus == "b978d44"
+
+
+class TestGearLaddersAreContiguous:
+    """Every ladder runs 1..n with no gap, which is a claim the page makes out loud.
+
+    ``ladder_size`` counts the rungs that reached the corpus and ``tier`` is the position in
+    the transcription, so the two only agree while nothing is dropped between them. They
+    disagreed for as long as a name could sit on only one ladder: Barrows gloves are melee and
+    ranged, the generator declared them once, and the ranged hands ladder was left with tiers
+    1, 2, 4, 5 and a top rung rendering as *"rung 5 of 4"*.
+
+    Asserted over the shipped corpus rather than over the transcription, because the
+    transcription is contiguous by construction — ``tier`` is ``enumerate``'s index — and the
+    dropping happened downstream of it.
+    """
+
+    def test_no_ladder_skips_a_rung(self, content: Content) -> None:
+        from tracker.gear.ladders import build_ladders
+
+        gaps = {
+            f"{ladder.style} {ladder.slot}": [item.tier for item in ladder.rungs]
+            for ladder in build_ladders(content)
+            if [item.tier for item in ladder.rungs] != list(range(1, ladder.size + 1))
+        }
+        assert gaps == {}
+
+    def test_a_piece_on_two_ladders_is_one_piece_with_two_placements(
+        self, content: Content
+    ) -> None:
+        """One numeric id, two rows, and every field that describes the *item* identical.
+
+        Ownership tests the union, so an observation of the one Antler guard in the bank
+        marks both rows held — which is the point, and is only sound while the rows cannot
+        disagree about what the item is.
+        """
+        rows = [item for item in content.items.values() if item.name == "Antler guard"]
+        assert len(rows) == 2
+        assert {(row.style, row.slot) for row in rows} == {
+            ("melee", "shield"),
+            ("ranged", "shield"),
+        }
+        assert len({row.item_id for row in rows}) == 1
+        assert len({row.requires for row in rows}) == 1
+        assert len({row.acquisition for row in rows}) == 1
+        assert len({row.fallback_price_gp for row in rows}) == 1

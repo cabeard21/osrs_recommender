@@ -81,9 +81,9 @@ def render(rows: Sequence[UnlockRow]) -> None:
         items = grouped[state]
         container = section(f"{heading} ({len(items)})", testid=f"unlock-group-{state.value}")
         with container:
-            ui.html(note).classes("text-xs opacity-70 block mb-1")
+            ui.html(note).classes("text-xs tracker-dim block mb-1")
             if not items:
-                ui.html("None.").classes("text-xs opacity-50")
+                ui.html("None.").classes("text-xs tracker-faint")
                 continue
             with ui.element("div").classes("tracker-grid"):
                 for row in items:

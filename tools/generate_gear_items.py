@@ -15,9 +15,17 @@ charged items it is the *uncharged* one, since the charged form is untradeable.
 :data:`PRICED_VARIANT` names that choice wherever the catalog cannot settle it, and every
 other id becomes an ownership-only alias in ``variant_item_ids``.
 
-**Which ids are already spoken for.** A name on two ladders (Barrows gloves is melee *and*
-ranged) is declared once and left as a comment on the second. Declaring it twice would trip
-validation's one-id-one-item rule, and picking a winner silently would be worse.
+**How a piece on two ladders is spelled.** Barrows gloves are melee *and* ranged; an Antler
+guard is a tribrid shield both guides print. Each placement gets its own row, sharing the
+numeric ``item_id`` and suffixing the content id (``antler_guard``, ``antler_guard_ranged``),
+because ids are unique and the piece is not. Every other field is emitted from the same tables
+and is therefore identical, which is exactly what ``_check_gear_ladders`` goes on to require.
+
+This used to declare the name once and comment out the recurrence, and that was the worse
+choice by some distance: whichever style was walked first won the rung, the rest lost it with
+no error, and their tier numbering was left with a hole the page rendered as *"rung 5 of 4"*.
+An id claimed by a *different* name is still the aliasing bug the rule exists for, and is now
+fatal here rather than left for validation to find.
 
 **What keeps its old id.** :data:`PRESERVED_SLUGS` and :data:`OFF_LADDER` carry the corpus
 that existed before the ladders did. Those slugs are named by ``item:`` requirement leaves in
@@ -40,7 +48,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from gear_ladders import LADDERS
+import yaml
+from gear_ladders import LADDERS, UNTRANSCRIBED, acquisition_for, requirement_for
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_IDS = REPO_ROOT / "tools" / "data" / "osrs_gear_ids.json"
@@ -59,6 +68,7 @@ FALLBACKS: dict[str, int] = {
     "ancestral_hat": 130_000_000,
     "ancestral_robe_bottom": 200_000_000,
     "ancestral_robe_top": 250_000_000,
+    "antler_guard": 550_000,
     "armadyl_crossbow": 38_000_000,
     "avernic_defender": 55_000_000,
     "bellator_ring": 60_000_000,
@@ -66,7 +76,6 @@ FALLBACKS: dict[str, int] = {
     "blade_of_saeldor": 130_000_000,
     "blood_moon_tassets": 8_000_000,
     "bow_of_faerdhinen": 45_000_000,
-    "dinhs_bulwark": 20_000_000,
     "dizanas_quiver": 200_000_000,
     "dragon_hunter_wand": 130_000_000,
     "dragonfire_ward": 60_000_000,
@@ -89,9 +98,13 @@ FALLBACKS: dict[str, int] = {
     "masori_body": 60_000_000,
     "masori_chaps": 40_000_000,
     "masori_mask": 20_000_000,
+    "mixed_hide_cape": 19_000,
     "necklace_of_anguish": 12_000_000,
     "neitiznot_faceguard": 35_000_000,
     "nightmare_staff": 8_000_000,
+    "oathplate_chest": 88_000_000,
+    "oathplate_helm": 84_000_000,
+    "oathplate_legs": 85_000_000,
     "occult_necklace": 800_000,
     "odium_ward": 4_000_000,
     "pegasian_boots": 35_000_000,
@@ -211,7 +224,31 @@ HEADER = """\
 # several ids — charged and uncharged, broken and locked, imbued from three different sources
 # — and owning any of them is owning the item. Ownership tests the union; `item_id` alone is
 # what gets priced, so it names the variant the market actually quotes (the *empty* blowpipe,
-# since the charged form is untradeable)."""
+# since the charged form is untradeable).
+#
+# `requires` is what it takes to *wear* the item (§23.2) — never what it takes to make, imbue
+# or repair it. The wiki states these in prose rather than in any infobox field, so the levels
+# printed on a page freely mix the two: 80 Fletching for a magic shortbow and 90 Smithing for
+# Torva gate the crafting bench, not the equipment screen, and neither appears here.
+#
+# Three states, not two, and the third is the point. An item with no `requires` and no
+# `gate_unknown` is one the corpus *asserts* has no gate; `gate_unknown: true` is one nobody
+# has established. Letting an unauthored rung default to ungated is how a level-3 account gets
+# told it can equip a Twisted bow, so tools/gear_ladders.py partitions every rung across
+# REQUIREMENTS, UNGATED and UNTRANSCRIBED and a test proves the partition is total.
+#
+# `acquisition` is the second axis, and it is not `requires` — it says how the piece reaches
+# your hands rather than what it takes to wear it. Without it §23.4 recommended an Infernal
+# cape to every account with 40 Defence: true, since that really is the whole wear gate, and
+# useless, since no amount of gp buys one. `tradeable` means gp alone can get you one, which
+# includes the tradeable component of a piece that becomes untradeable on use — an empty
+# blowpipe, an inactive Blade of saeldor, a crystal armour seed. `acquired_from` names the
+# content that yields an untradeable piece and is a noun phrase, because every surface
+# composes it into a sentence.
+#
+# It is deliberately **not** derived from `price_mode`, which selects §8.3's pricing cascade,
+# defaults to `static`, and would therefore brand as untradeable every item nobody thought
+# about. A second total partition in tools/gear_ladders.py carries it, with its own test."""
 
 
 def slug(name: str) -> str:
@@ -229,6 +266,55 @@ def slug(name: str) -> str:
     return "".join(out).strip("_")
 
 
+def _requirement_lines(name: str) -> list[str]:
+    """The ``requires:`` block for one rung, or the ``gate_unknown`` marker, or neither.
+
+    Three outcomes, because :mod:`tools.gear_ladders` keeps three answers apart and this is
+    where the third one becomes corpus. An ungated rung emits *nothing* — the absence is
+    the assertion, and it is only trustworthy because ``missing_requirements()`` proves no
+    rung reached here unclassified.
+
+    ``sort_keys=False`` is load-bearing: ``at_least: {n: 2, of: [...]}`` reordered to
+    ``{of: [...], n: 2}`` still parses, but the regeneration diff stops being readable, and
+    an unreadable diff on a generated file is how a wrong gate survives review.
+    """
+    if name in UNTRANSCRIBED:
+        return ["  gate_unknown: true"]
+    requirement = requirement_for(name)
+    if requirement is None:
+        return []
+    body = yaml.safe_dump(
+        requirement, sort_keys=False, default_flow_style=False, width=1000
+    ).rstrip()
+    return ["  requires:"] + [f"    {line}" for line in body.splitlines()]
+
+
+def _acquisition_lines(name: str) -> list[str]:
+    """The ``acquisition:`` block for one rung, or nothing (§10.5).
+
+    Nothing is the third state rather than a default, exactly as it is above, and it is only
+    trustworthy because ``missing_acquisitions()`` proves no rung reached here unclassified.
+
+    The source is dumped rather than interpolated. *"Cyclopes in the Warriors' Guild"* needs
+    no quoting and *"a Dragon defender and a hilt from the Theatre of Blood"* is fine too, but
+    a source with a leading ``*`` or a trailing ``:`` would produce a generated file that does
+    not parse — and finding that out from a YAML error is a worse afternoon than a quoted
+    string in a diff.
+
+    Dumped as a **mapping** rather than as a bare scalar, which is not a style preference:
+    ``safe_dump("the Fight Caves")`` emits the document-end marker ``...`` on its own line
+    underneath, and that landed in the corpus as a stray key the first time this ran.
+    """
+    acquisition, acquired_from = acquisition_for(name)
+    if acquisition is None:
+        return []
+    lines = [f"  acquisition: {acquisition}"]
+    if acquired_from is not None:
+        dumped = yaml.safe_dump({"acquired_from": acquired_from}, width=1000).rstrip()
+        lines.append(f"  {dumped}")
+    return lines
+
+
 def render(catalog: Mapping[str, int], wiki: Mapping[str, Sequence[Sequence[Any]]]) -> str:
     """The whole corpus file, as text. Pure — every input arrives as an argument."""
     seen_ids: dict[int, str] = {}
@@ -240,9 +326,12 @@ def render(catalog: Mapping[str, int], wiki: Mapping[str, Sequence[Sequence[Any]
         for slot, names in slots.items():
             lines += ["", f"# --- {style} / {slot} ---"]
             for tier, name in enumerate(names, start=1):
-                identifier = PRESERVED_SLUGS.get(name, slug(name))
-                if identifier in seen_slugs:
-                    identifier = f"{identifier}_{style}"
+                # The base slug is what FALLBACKS and PRESERVED_SLUGS are keyed on, and it
+                # stays the base even where this row is a second placement — a suffixed
+                # lookup would silently drop the fallback price from one of two rows that
+                # validation then requires to be identical.
+                base = PRESERVED_SLUGS.get(name, slug(name))
+                identifier = base if base not in seen_slugs else f"{base}_{style}"
                 seen_slugs.add(identifier)
 
                 catalog_id = catalog.get(name)
@@ -257,16 +346,27 @@ def render(catalog: Mapping[str, int], wiki: Mapping[str, Sequence[Sequence[Any]
                 else:  # pragma: no cover — the capture refuses to leave a name unresolved
                     raise SystemExit(f"no id for {name!r} — refusing to author it")
 
-                claimed = [value for value in [priced, *variants] if value in seen_ids]
-                if claimed:
-                    lines.append(
-                        f"# {name} is already declared as `{seen_ids[claimed[0]]}`; "
-                        f"it is also {style} {slot} tier {tier}."
+                # A numeric id claimed by a *different name* is the aliasing bug §10.5's rule
+                # exists for — a Voidwaker id listed among an Armadyl godsword's variants —
+                # and it is fatal here rather than emitted for validation to find later.
+                # The same name claiming it again is a second placement and is fine.
+                stolen = [
+                    value for value in [priced, *variants] if seen_ids.get(value, name) != name
+                ]
+                if stolen:
+                    raise SystemExit(
+                        f"{name!r} claims item id {stolen[0]}, which "
+                        f"{seen_ids[stolen[0]]!r} already claims — one observation would "
+                        f"mark both held. Fix the ids rather than authoring this."
                     )
-                    continue
                 for value in [priced, *variants]:
-                    seen_ids[value] = identifier
+                    seen_ids[value] = name
 
+                if identifier != base:
+                    # Same piece, second ladder. The id is suffixed because ids are unique
+                    # and the piece is not; every other field is identical by construction,
+                    # which is what `_check_gear_ladders` goes on to require.
+                    lines.append(f"# {name} again — the guides place it on this ladder too.")
                 lines += [f"- id: {identifier}", f"  name: {name}", f"  item_id: {priced}"]
                 if variants:
                     lines.append(f"  variant_item_ids: [{', '.join(map(str, variants))}]")
@@ -274,9 +374,13 @@ def render(catalog: Mapping[str, int], wiki: Mapping[str, Sequence[Sequence[Any]
                     f"  slot: {slot}",
                     f"  style: {style}",
                     f"  tier: {tier}",
-                    f"  price_mode: {'live' if catalog_id is not None else 'static'}",
                 ]
-                fallback = FALLBACKS.get(identifier)
+                # What it is, then what it takes to wear, then how you get it, then what it
+                # costs — the order a reader asks the questions in.
+                lines += _requirement_lines(name)
+                lines += _acquisition_lines(name)
+                lines.append(f"  price_mode: {'live' if catalog_id is not None else 'static'}")
+                fallback = FALLBACKS.get(base)
                 if fallback is not None:
                     lines.append(f"  fallback_price_gp: {fallback}")
                 if catalog_id is not None:

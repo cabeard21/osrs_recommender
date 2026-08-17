@@ -320,6 +320,86 @@ overstated one merely makes a good suggestion look slightly worse than it is.
 `item_id` is the numeric in-game id — the key the OSRS Wiki price API and the plugin both
 use. `price_mode: live` without one is rejected: it could never be priced.
 
+### Equipment: ladders and wear gates (§10.5, §23)
+
+Equipment carries more fields, and they go together:
+
+```yaml
+- id: dragon_scimitar
+  name: Dragon scimitar
+  item_id: 4587
+  variant_item_ids: [4588]    # owning *any* of these is owning the item
+  slot: weapon
+  style: melee
+  tier: 6                     # the rung — the wiki guide's printed order, not a rating
+  requires:                   # what it takes to WEAR it
+    all_of:
+      - skill: {attack: 60}
+      - quest: monkey_madness_i
+  acquisition: tradeable      # how you GET it — a different question (§23.2)
+```
+
+An untradeable rung names what wins it instead:
+
+```yaml
+- id: fire_cape
+  name: Fire cape
+  item_id: 6570
+  slot: cape
+  style: melee
+  tier: 4
+  acquisition: untradeable
+  acquired_from: the Fight Caves
+```
+
+**Do not hand-edit these rows.** `content/items/items.yaml` is generated. Edit
+`tools/gear_ladders.py` and re-run `python tools/generate_gear_items.py`, or the next
+regeneration discards your change.
+
+Three things are easy to get wrong here:
+
+1. **`requires` is what it takes to *wear* the item, never to make or repair it.** The wiki
+   states these in prose and mixes the two freely — 80 Fletching for a magic shortbow, 90
+   Smithing to repair Torva. Neither gates the equipment screen. A test rejects any wear gate
+   naming an artisan skill.
+2. **An unauthored gate is not an absent gate.** Every rung must land in exactly one of
+   `REQUIREMENTS`, `UNGATED` or `UNTRANSCRIBED` in `tools/gear_ladders.py`. An item in the
+   third emits `gate_unknown: true` and reads as *nobody has checked*; letting it default to
+   ungated is how a level-3 account gets told it can equip a Twisted bow.
+   `missing_requirements()` proves the partition is total, and a test asserts it is empty.
+3. **Inserting a rung renumbers the ones below it.** Tiers are positional, so an insertion
+   shifts every lower rung and moves §21.5's context hash for any account holding one —
+   invalidating stored guidance. That is correct, but it should be on purpose.
+4. **A rung must come from the guide's own loadout tables — never from a slot table.** The
+   wiki also publishes `Shield_slot_table`, `Cape_slot_table` and friends, which list *every*
+   item in a slot with its stats. They are tempting and they are a different document: a
+   ladder padded from one looks more complete while quietly ceasing to be the guide's
+   opinion, which is the only thing `tier` encodes. This has gone wrong twice — seven plain
+   defenders on the melee shield ladder, and the whole arrow/bolt/dart family on the ranged
+   ammunition one — and in both cases every added name was a real item in a sensible order,
+   which is exactly why nothing caught it. `tests/tools/test_gear_ladders.py` now pins both
+   ladders by name. If a slot looks too short, that is the guide being opinionated rather
+   than the guide being incomplete.
+4. **How a piece is *got* is a second question, with a second partition.** `acquisition`
+   answers it, and it is orthogonal to `requires`: a Fire cape's whole wear gate is 40
+   Defence, and no amount of gp buys one. Every rung lands in exactly one of `TRADEABLE`,
+   `EARNED_FROM` or `ACQUISITION_UNTRANSCRIBED`, and `missing_acquisitions()` proves that
+   partition total the same way its sibling does.
+
+   `TRADEABLE` means **gp alone can get you one**, which includes the tradeable component of
+   a piece that turns untradeable on use — an empty blowpipe, an inactive Blade of saeldor, a
+   crystal armour seed. It is *not* the wiki's tradeability flag. What is untradeable is a
+   piece whose chain reaches something the market never sells: an Avernic defender needs a
+   Dragon defender, and nothing buys a Dragon defender.
+
+   `EARNED_FROM`'s value is a **noun phrase, never a sentence** — every surface composes it
+   into *"cannot be bought — earned from {value}"*.
+
+   Unlike the gate tables, leaving a rung in `ACQUISITION_UNTRANSCRIBED` is the *safe*
+   choice: §23.4 does not demote on an unknown acquisition, so the rung is still recommended
+   and merely hedged. Guessing `untradeable` is the error that costs something — it withholds
+   a rung the player could have gone and bought.
+
 ## The scoring profile
 
 `content/scoring/profile.yaml` holds the tuning knobs — factor weights, τ, the κ presets,
@@ -346,6 +426,11 @@ means — *high* sensitivity to cost discourages spending **sooner**, which is a
 - every refresher's `practice_group` has at least one `class: execution` member
 - only `class: execution` milestones declare `practiced_by` / `practice_group`
 - every `price_mode: live` item has a numeric `item_id`
+- a gear `tier` has a `slot` and a `style`, each rung holds one item, and no numeric item id
+  is claimed by two items
+- every id an item's wear gate references resolves, and no item declares both `requires` and
+  `gate_unknown` — the gate is either known or it is not
+- item-to-item wear gates are acyclic — and it names the cycle
 - the capability graph is acyclic — and it names the cycle
 - weights, `pvp_value` and roadmap capability weights lie in `[0, 1]`
 - κ presets satisfy the min/max/ordering constraints

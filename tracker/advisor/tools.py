@@ -21,8 +21,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Final
+from typing import Any, Final, get_args
 
+from tracker.content.schema import ItemSlot
 from tracker.integrations.llm.types import ToolSpec
 
 #: How much one tool may return. Six thousand characters is roughly a page and a half — enough
@@ -227,6 +228,45 @@ GET_ITEM_PRICE = ToolSpec(
 )
 
 
+GET_GEAR_SETUP = ToolSpec(
+    name="get_gear_setup",
+    description=(
+        "Where this account stands on the tracker's gear ladders for one combat style, and "
+        "what it can actually equip. Per slot: the best rung whose requirements are met, what "
+        "the account is seen holding, the next rung up with whatever is still missing, and "
+        "cached prices. This is computed by the tracker from authored requirements and the "
+        "account's own observed skills, quests and items — it is not chosen by you, and gear "
+        "it does not name should not be substituted in as though it were. Rungs come from the "
+        "wiki's progression guides and are an ordering, not a power rating: rung 6 is the step "
+        "after rung 5, not twice as good as rung 3. Held, not held and unknown are three "
+        "different answers — unknown means not every container has been scanned, and is never "
+        "a no. An item may also carry no established requirement, which is a gap in the "
+        "tracker rather than in the account, and is not a reason to tell them to sync. "
+        "The setup names only pieces the account can wear *and* can get. A piece it can wear "
+        "but must win — a fire cape, a dragon defender — is listed separately as something to "
+        "earn, with the content that yields it and no price, because no amount of gp buys "
+        "one; it is never in the total and must not be presented as a purchase."
+    ),
+    input_schema=_schema(
+        {
+            "style": {
+                "type": "string",
+                "enum": ["melee", "ranged", "magic"],
+                "description": "Which ladder to report.",
+            },
+            "slot": {
+                "type": "string",
+                "enum": list(get_args(ItemSlot)),
+                "description": "Restrict to one equipment slot. Omit for every slot.",
+            },
+        },
+        # Required deliberately. All three ladders at once would exceed the result bound, and
+        # §22.2 is emphatic that a cut list which does not announce the cut reads as complete.
+        ["style"],
+    ),
+)
+
+
 #: The catalogue. Sorted by name and frozen at import — see the module docstring.
 TOOLS: Final[tuple[ToolSpec, ...]] = tuple(
     sorted(
@@ -234,6 +274,7 @@ TOOLS: Final[tuple[ToolSpec, ...]] = tuple(
             SEARCH_CANDIDATES,
             GET_CANDIDATE_DETAIL,
             GET_CAPABILITY_DETAIL,
+            GET_GEAR_SETUP,
             LIST_TRAINING_METHODS,
             GET_QUEST_STATUS,
             GET_SKILL_DETAIL,

@@ -16,6 +16,8 @@
 | 0.4 | 2026-08-04 | Resolved D6–D10 (§18). **`CapabilityState.unlocked: bool` replaced by tri-valued `status`**, with three-valued requirement evaluation throughout (§9.1). Added `PracticeEvent` and the derived-practice-proxy model. Refresher candidates grouped by practice domain with a one-per-list cap. κ presets retained and relabelled in user terms. Price feed pinned to the OSRS Wiki real-time prices API, with confidence derived from **trade** timestamps rather than fetch time. Added the `recommended_now` status layer. |
 | 0.5 | 2026-08-04 | Closed 21 specification gaps found while planning implementation; each is traced in §20. **Added the missing `Candidate` schema (§10.6)** — a core noun that had a content directory and drove every scoring factor, but no defined fields — together with the derivations for `pvp_value`, `leverage`, `proximity`, `completed` and `blocked` (D11). Completed the three-valued leaf resolution table (§9.1), pinning `unlock: available` and `quest: in_progress` as **unsatisfied**. Fixed the `unlock_fraction` denominator and defined *contributing* and *aged* for `readiness_confidence` (§6.9). Added `Milestone.attested_at` semantics so "never prompted" is representable (§6.6). Added `ActiveRoadmap` (§6.12) and made `SyncEvent.player_id` nullable so §11.3's audit requirement is satisfiable (§6.11). Moved the health endpoint outside `/api` (§11). Added **§4.5**, naming the observation/truth distinction that now recurs three times in the design. Sync contract declared provisional until validated against a real snapshot (D12). |
 | 0.6 | 2026-08-13 | Added **§22, the general advisor** — a conversational surface with the whole account pinned as context and a read-only tool catalogue for everything the digest cannot hold. §21 answers *how do I do this one chosen task*; §22 answers everything else, and may draw on the model's own knowledge of the game where §21 may not, without relaxing §21.3's honesty rules. Two new decisions follow from that widening. **D15** extends D14 to the input side: tools project already-computed state and never rank, estimate, evaluate a hypothetical, fetch or write, enforced by dispatch being a pure function of a frozen snapshot. **D16** keeps conversation history to questions and answers, discarding tool traffic at the end of each turn — the cached prefix must not grow, and a stale tool result is worse than a re-derivable one. §22.7 removes §21.6's cache-first rule explicitly rather than silently, since every question is new, and gives the advisor its own interval and daily ceiling because a turn costs several model calls where a guidance note costs one. Rankings, estimates and capability states are unchanged by construction. |
+| 0.7 | 2026-08-14 | Added **§23, gear progression** — a read-only projection answering *what should I be wearing, and what do I buy next*, which §21 and §22 could each only approach sideways. §10.5's ladders placed items on rungs but a rung's position says nothing about whether the account can equip it, so `Item.requires` extends §10.5 with a §10.2 tree for what it takes to **wear** a piece, evaluated three-valued by §9.1. Item requirement trees join §10.7's referential integrity, and two new rules reject a cycle and a contradictory gate. The wear gate has **three** states, not two: `gate_unknown` marks a requirement nobody has established, distinct from an item asserted to have none — letting an unauthored rung default to *ungated* is how a level-3 account gets told it can equip a Twisted bow. §21.2's per-ladder summary is hoisted into shared machinery so §21 and §23 describe one account with one implementation; its rendering is unchanged, so no stored guidance is invalidated. **D17** places the computation in the advisor's snapshot rather than in a tool handler, which is what keeps §22.4's dispatch a pure function of frozen state under D15, and forbids the setup from claiming any rung is *better* rather than *wearable*. The advisor gains a bounded digest section and `get_gear_setup`; `ADVISOR_SCHEMA_VERSION` goes to 3, and every live thread takes one cold prefix on its next turn. Rankings, estimates and capability states are unchanged by construction. |
+| 0.8 | 2026-08-15 | Added the **acquisition axis** to §10.5 and §23, found by reading the shipped page: it told every melee account that an *Infernal cape* was the best it could equip. The sentence was true under §23.4 — the cape's wear gate really is 40 Defence and nothing else — and useless, because no amount of gp buys one and the corpus had no field that could say so. `Item.acquisition` and `Item.acquired_from` name **how a piece is got**, which is a different question from what it takes to wear it, and §23.4's recommendation narrows to the highest rung the account can wear **and** either holds or can buy. A rung it can wear but must win becomes `earn` — the *lowest* such rung above the recommendation, so a capeless account is pointed at the Fight Caves rather than the Inferno, and the target walks itself up as each is won. Two consequences worth naming: the setup's gp total can no longer contain something no amount of gp can buy, and it gets that guarantee from the selection rule rather than from a second filter that would have to be kept in step; and **an unknown acquisition does not demote**, which is the deliberate opposite of *an unknown gate does not promote* — §23.4 derives that rule from what the two errors cost, and acquisition-unknown has no player-side remedy, so dropping a wearable rung would punish the player for a gap in the corpus. `acquired_from` is prose and never an id (§10.5), and is **not** derived from `price_mode`, which is a pricing cascade and defaults the wrong way. Rankings, estimates and capability states are unchanged by construction. |
 | 0.5.3 | 2026-08-13 | Closed **A31**, found by reading the shipped output: §9.10's card said how a candidate *scored* and never what it was *for*, and for the generated skill bands it could not — `tools/generate_candidates.py` authors them with `advances: {}` (§10.6), so no §9.4 factor carries a goal and *"Train Slayer to 10"* reached the top of a PvM list explaining itself as *"quick to finish"*. Added **consequences** (§9.10): what a candidate unblocks, what it is a prerequisite of, which goals it measurably moves, and which grind it shortens — derived after the ranking is fixed, read by no factor, and persisted on `RecommendationEntry` (§6.10). The two identities §9.4 already computed and discarded — *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated — are retained rather than recomputed. Rankings are unchanged by construction. |
 | 0.5.2 | 2026-08-11 | Closed **A30**, found by running §16.3's tuning procedure against the golden corpus: §9.4 had no factor for a candidate that makes *another* candidate cheaper or faster, so Desert Treasure I scored zero on `leverage` for an account that already had Ancients while being the one action that turns 113 Magic hours into 16. Added **`method_unlock`** as §9.4's sixth factor with its own authored weight, derived in code from `grants_facts` and §8's estimator (D13). Folded `unknown_effort_hours` into §9.7's printed profile — ratified in code since Step 5 but never transcribed. |
 | 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
@@ -1353,12 +1355,111 @@ the engine reads. `gp_cost` is `0` for refreshers, which is correct and needs no
 ## 10.5 Item metadata
 
 ```yaml
-id: voidwaker
-item_id: 27690
+id: dragon_scimitar
+name: Dragon scimitar
+item_id: 4587             # what the price API and the plugin both key on
+variant_item_ids: [4588]  # charged, broken, locked, imbued — owning any is owning it
+slot: weapon              # weapon|ammunition|head|body|legs|hands|feet|cape|neck|ring|shield
+style: melee              # melee|ranged|magic
+tier: 6                   # the rung, 1-based, positional
+requires:                 # what it takes to *wear* it (§23.2)
+  all_of:
+    - skill: {attack: 60}
+    - quest: monkey_madness_i
+acquisition: tradeable    # tradeable | untradeable; absent means nobody established it (§23.2)
+acquired_from: ~          # for an untradeable piece, the content that yields it
 price_mode: live          # live | static
 fallback_price_gp: 85000000
 price_staleness_days: 7
 ```
+
+`slot`, `style` and `tier` place the item on a **gear ladder**. All three go together: an item that
+is not equipment has no rung, and a `tier` with no ladder to sit on is meaningless. **Tier is an
+ordering, not a rating** — it is the position the wiki's own progression guide prints, so rung 6 is
+the step after rung 5 and not twice as good as rung 3. Re-tiering against measured DPS would be a
+different and deliberate act.
+
+`variant_item_ids` exists because one piece of gear wears several numeric ids — charged and
+uncharged, broken and locked, imbued from three sources — and *owning any of them* is owning the
+item. **Ownership tests the union; pricing uses `item_id` alone**, because only one variant is the
+one the market quotes.
+
+A piece may sit on **more than one ladder**, and is then authored as one row per placement: same
+numeric id, distinct content id, `slot`/`style`/`tier` differing and nothing else. Barrows gloves
+are melee and ranged; an Antler guard is a tribrid shield both guides print. One observation marks
+every placement held, which is the point — the account really is on both ladders — and is sound
+only while the rows cannot disagree about what the item *is*, which §10.7 enforces. The rule this
+replaces was *"no numeric id is claimed by two items"*, and it made the legitimate case
+unauthorable: the generator declared a name once and dropped the recurrence, so whichever style
+was walked first won the rung, the others lost it silently, and their `tier` numbering was left
+with a hole it then rendered as *"rung 5 of 4"*.
+
+`requires` and `gate_unknown` say what it takes to wear the item, and there are **three** answers
+rather than two:
+
+| Declared | Means |
+|---|---|
+| `requires` | the corpus knows the gate |
+| neither | the corpus asserts there is **no** gate |
+| `gate_unknown: true` | nobody has established the gate |
+
+Collapsing the last two is the failure §23.4 is built around: an unauthored item defaulting to
+*ungated* reports a Torva platebody as wearable to an account that cannot lift it, with no signal
+that anything is missing. So the third state is explicit and evaluates to **unknown**, which §23.4
+forbids from ever becoming *"you can wear this"*. Declaring both is a contradiction and §10.7
+rejects it.
+
+These are **wear** requirements and never the levels needed to make, imbue or repair the item. The
+wiki states them in prose rather than in any structured field, and that prose mixes the two freely —
+80 Fletching for a magic shortbow, 90 Smithing to repair Torva. Neither gates the equipment screen.
+
+**`requires` gates nothing in §9.** No candidate's requirement tree reads it and no estimate moves
+because of it. A wear requirement that fed the evaluator would silently reprice every candidate
+whose `completion` names an item — a ranking change wearing the clothes of a content edit.
+
+### The acquisition axis
+
+`requires` says what it takes to **wear** a piece. `acquisition` says how the piece reaches the
+account's hands, and the two are independent: a Fire cape's wear gate is 40 Defence, which most
+accounts meet long before they could survive the Fight Caves, and no amount of gp buys one at all.
+
+| Declared | Means |
+|---|---|
+| `acquisition: tradeable` | the Grand Exchange carries it |
+| `acquisition: untradeable` | it must be won from a piece of content |
+| neither | nobody has established which |
+
+**Two fields here, not three, and the asymmetry with `gate_unknown` is deliberate.** That pair
+exists because `requires: ~` was *already spoken for* — it asserts there is no gate — so the third
+answer had nowhere to live. Nothing is spoken for on this axis: `tradeable` and `untradeable` are
+both positive assertions with their own spellings, which leaves absence free to carry *nobody
+classified this*, in the right polarity. A companion flag would have exactly two legal states and
+would buy a validation rule to forbid the other two, expressing nothing the two values did not.
+
+`acquired_from` names the content that yields an untradeable piece — *"the Fight Caves"*, *"the
+Inferno"*, *"Cyclopes in the Warriors' Guild"*. It is **prose and never an id**: §10.7 checks ids
+against a registry, and these are none of the six registries the corpus keeps. Minting an
+activities registry whose members exist only to be pointed at would buy spell-checking and nothing
+else. It is a **noun phrase and never a sentence**, because every surface composes it into one —
+*"untradeable — earned from {acquired_from}"* — and that shape rule is what an author who writes a
+sentence sees break the first time it renders. §10.7 rejects `acquired_from` on an item that is
+not `untradeable`: on a tradeable one it sends a reader to a boss for something on the market, and
+on an unclassified one the corpus claims at once that nobody knows how you get this and that you
+get it from the Inferno. An `untradeable` piece with no source is *not* rejected — requiring the
+prose would turn a missing sentence into a blocked corpus edit, and the surfaces have an honest
+line for it.
+
+**It is not derived from `price_mode`,** which selects §8.3's pricing cascade and is a pipeline
+setting rather than a fact about the game. Three reasons, any one sufficient. Its polarity is
+backwards: it defaults to `static`, so deriving from it would assert *untradeable* of every item
+nobody thought about — an absence becoming a claim. The two genuinely disagree, because the piece
+a player wears is often untradeable while a sibling id trades — the uncharged blowpipe, the
+uncharged shadow — and `live` there is a true statement about a market quote and a false one about
+the item on the ladder. And they agree today only by construction: `price_mode` is set from
+whether a name resolved in a captured `/mapping` snapshot, so a name missing on the day of the
+capture would be branded untradeable silently and forever.
+
+**`acquisition` gates nothing in §9,** for the same reason `requires` does not.
 
 ## 10.6 Candidates
 
@@ -1430,6 +1531,13 @@ Every content file is parsed into **Pydantic v2 models**. A `make validate-conte
 * every candidate declares a non-empty `completion` predicate — a candidate that can never be
   complete would rank forever
 * every refresher declares `suggested_session_hours` (§10.4)
+* a gear `tier` implies a `slot` and a `style`, each rung holds one item, and a numeric item id is
+  claimed by one **piece** — two rows may share it only as placements of that piece on different
+  ladders, agreeing on name, ownership union, wear gate, acquisition and pricing (§10.5)
+* every id referenced by an item's wear gate resolves, and no item declares both `requires` and
+  `gate_unknown` (§23.2) — the gate is either known or it is not, and claiming both leaves the
+  reader to choose
+* item-to-item wear gates are acyclic; a rung requiring itself through a chain can never be satisfied
 * the capability and requirement graphs are acyclic
 * weights, `pvp_value`, `advances` weights and roadmap capability weights lie in `[0,1]`
 * κ presets satisfy the §9.6 min/max/ordering constraints
@@ -1568,6 +1676,10 @@ osrs-tracker/
         recommendations/    # scoring, roadmap blending, refresher grouping, hysteresis,
                             # and §9.10's explanation (consequences, reason phrasing)
         estimation/         # time and GP estimates
+        gear/               # §23's ladder projection and computed setup — pure, and shared
+                            # by §21's guidance and §22's advisor rather than copied
+        guidance/           # §21's task context and prompt (pure)
+        advisor/            # §22's digest, tool catalogue and dispatch (pure, D15)
         integrations/
             wise_old_man/
             hiscores/
@@ -1632,6 +1744,24 @@ Dedicated view for all stale practice groups, with **Mark session complete** and
 
 ## Skills
 Progress bars. Unranked skills render as unranked, not as level 1.
+
+## Gear
+Per style, per slot: the best rung whose requirements are met, the best rung held, and the next rung
+up with whatever blocks it named — *"needs 60 Attack, Monkey Madness I"* rather than a bare lock.
+
+Held, not held and unknown are three states drawn from the same badge implementation §15's unlock
+table uses, and the rule carries over unchanged: **unknown must never render as not-held**. It means
+"sync RuneLite", not "go and buy one". While any container has never been scanned the page says so
+once, above everything, because the caveat scopes the whole page rather than any single row.
+
+A rung held *above* the rung whose requirements are met is shown as both, never resolved to the
+higher one — one of the two is wrong, and hiding which would hide a corpus bug behind a plausible
+answer. Prices are cached only; an absent one reads as absent and never as zero, and one absent
+price makes the setup's total unknown rather than understated.
+
+A piece the account could wear but cannot buy is an **earn target**, drawn as a rung with its own
+role and never in the recommendation's emphasis or in purchase vocabulary — it carries the content
+that yields it instead of a price (§23.5).
 
 ## Unlocks
 Cards, four states:
@@ -1779,7 +1909,7 @@ Weights are **not** optimized against exact expected ranks. Procedure:
 
 * Multiple characters in the UI (schema already supports it — §6.1)
 * Collection Log integration
-* Bank progression and gear planner
+* Bank progression and a purchase planner — the *gear progression* half of this line shipped as §23; what remains is affordability, purchase ordering and bank value (§23.7)
 * Money-making recommendations, feeding `cost_decay` with real income rates
 * Quest routing
 * Inventory planner
@@ -1869,6 +1999,26 @@ Weights are **not** optimized against exact expected ranks. Procedure:
 > Tool calls and tool results are discarded at the end of the turn that produced them. They are never persisted into the conversation thread and never re-sent on a later turn. Only the question and the answer accumulate. What is retained about a tool call is a **trace** — its name, its arguments and the size of its result — for provenance and cost accounting, never the result itself.
 
 *Rationale:* three reasons, and each alone would be sufficient. The cached prefix is `tools + instructions + digest` (§22.3), and a transcript that accumulates tool traffic grows without bound behind that prefix, so every turn re-bills a conversation for lookups it already paid for. A tool result is re-derivable at zero model cost, so storing it buys nothing; but a *stale* tool result is worse than nothing, because it asserts as current a fact the account may have moved past — the same failure §6.8 addresses for prices and §21.5 addresses with the context hash. And a thread that mixes prose with machine traffic cannot be rendered by §15's `read_model -> frozen rows -> renderer` layering without inventing a row type for something the user never asked to see. The consequence constrains the prompt rather than the storage, and §22.3 states it: a model that learns a load-bearing fact from a tool must restate it in its answer, because it will not see the tool result again.
+
+### D17 — The recommended gear setup is computed, and the model only renders it
+> A recommended setup (§23.4) is derived by a pure function of the projected `PlayerState` (§6), the
+> authored corpus (§10) and §9.1's three-valued evaluation. It is computed **once per turn while the
+> advisor's snapshot is frozen** (§22.2), never inside a tool handler and never by the model. The tool
+> projects the already-computed setup; it accepts no hypothetical parameter and cannot be asked what a
+> different account would be recommended. And the setup names the highest rung whose requirements the
+> account *satisfies* — never the "best" one.
+
+*Rationale:* "what should I wear" is exactly the artifact a language model would otherwise invent, and
+an invented one is indistinguishable from a computed one at the point of reading — D14's failure mode,
+arriving through a different door. But moving the computation into a tool handler would be D15's: a
+tool that evaluates requirement trees against model-chosen arguments is a tool that estimates on
+demand. Computing it at snapshot-build time satisfies both, because by the time any tool runs it is
+*already-computed state*, which is the one category D15 permits a tool to project.
+
+The second half of the decision is about what the setup may claim. §10.5's `tier` is the wiki guide's
+printed order, not a measurement, so calling the top rung "best" would assert something nobody
+measured — §10.6's rule that no content file may assert its own priority, applied to gear. §23, §22.4,
+D14, D15.
 
 ---
 
@@ -2130,8 +2280,9 @@ The digest carries, in full: the account facts (type, members, combat level, que
 **all twenty-three skills**, **all capability states** with unlock fraction, readiness confidence and
 blockers, and the active roadmap selection. It carries, bounded: the top ranked entries with the
 engine's own `reason` verbatim, the nearest blocked entries with their blockers, incomplete quests
-named by a capability tree or a highly-ranked gate, the unlock keys the corpus references, and stale
-practice domains. It carries **nothing else** — and each bounded section says so in the rendered text,
+named by a capability tree or a highly-ranked gate, the unlock keys the corpus references, stale
+practice domains, and **one line per combat style of §23's gear standing** — no prices and no totals,
+for the reason §23.6 gives. It carries **nothing else** — and each bounded section says so in the rendered text,
 naming the tool that reaches the rest, because a truncated list that does not announce its truncation
 reads as a complete one.
 
@@ -2209,7 +2360,8 @@ makes this safe rather than merely careful.
 
 The catalogue reaches exactly what §22.2 left out: candidate search and candidate detail (the way into
 the corpus the digest cannot hold), capability detail with its full requirement tree, the authored
-training methods for a skill and level range, quest status, skill detail, and cached item prices.
+training methods for a skill and level range, quest status, skill detail, cached item prices, and
+§23.4's computed gear setup for one combat style.
 Every result is markdown, bounded in size, and truncated with an explicit marker rather than silently.
 
 Two things are deliberately absent. **Nothing that computes**: no ranking, no scoring, no estimation on
@@ -2316,3 +2468,202 @@ interface is where that promise is either kept or quietly broken.
 The request is issued off the event loop. §5 runs the interface and `/api/sync` in one process, and a
 tool-using turn can run for a minute; a blocking call on the shared loop would freeze the RuneLite
 plugin's sync for the duration of a question.
+
+---
+
+# 23. Gear Progression
+
+## 23.1 Scope
+
+§21 answers *how do I carry out this one chosen task*. §22 answers everything else, conversationally.
+Neither answers the question a PKer asks most often and most concretely: **what should I be wearing,
+and what do I buy next?**
+
+That question has been unanswerable not for want of data but for want of a projection. §10.5's
+ladders already place two hundred items on rungs, and §21.2 has rendered a two-line summary of them
+since the guidance work. What was missing is that a rung's *position* says nothing about whether the
+account can equip it: tier is the wiki's printed order, so *"next rung: Twisted bow"* is addressed to
+somebody forty Ranged levels away.
+
+§23 is a **read-only projection** over §10.5's ladders and §9.1's evaluator. Stated as loudly as the
+scope itself: it adds no candidate, reads no §9.4 factor, writes no table, and **changes no ranking**.
+§16.1's golden corpus is untouched by construction. It reads the corpus; nothing reads it back. That
+is D14's shape applied to a computed projection rather than to a generated one.
+
+## 23.2 Reachability
+
+An item's `requires` (§10.5) is an ordinary §10.2 requirement tree, evaluated three-valued by §9.1
+against the account. A gate is **met**, **blocked** or **unknown**, and the three stay three.
+
+An item declaring `gate_unknown` also evaluates to *unknown*, but it is a different unknown and the
+two are reported apart. One says *sync your account*; the other says *nobody has written this
+requirement down*. Telling a player to log in and refresh when the gap is in the tracker wastes their
+time, so the surfaces distinguish them even though both withhold the same conclusion.
+
+Referential integrity applies to these trees exactly as to any other (§10.7). Without it a mistyped
+quest id would evaluate *unknown* forever and render as *"requirements not checked"* on an item whose
+requirements were, in fact, checked — silent in both directions.
+
+**Reachability has a second axis, and it is not the gate.** Whether a piece can be *worn* and
+whether it can be *got* are different questions with different answers, and the page that
+collapsed them recommended an Infernal cape to everyone: its wear gate is 40 Defence and its
+acquisition is TzKal-Zuk. §10.5's `acquisition` carries the second answer in its own three states,
+and §23.4 requires both before it will say *"wear this"*.
+
+Held settles the question. A piece already in the bank is obtainable whatever the corpus says
+about buying one — *"wear the one you own"* is the most actionable sentence the page has, and this
+axis exists to remove advice nobody can act on, not to remove that.
+
+## 23.3 The ladder projection
+
+The per-ladder summary §21.2 renders — best held, the rung above it, the ladder's size, and whether
+the answer is certain — is **one implementation**, shared by §21 and §23 rather than written twice.
+Two surfaces describing one account must describe it identically, and the way to guarantee that is
+for them to run the same function.
+
+§4.5 applies to gear exactly as elsewhere: nothing on a ladder having been seen is **unknown** until
+every container has been scanned, and is never *owns nothing*. The two states look identical and lead
+to opposite advice.
+
+## 23.4 The recommended setup
+
+Per style, per slot, from rungs ordered by tier:
+
+1. `fit` is §9.1's evaluation of the rung's gate; an item with no gate and no `gate_unknown` is
+   **met**.
+2. `held` is §4.5's three-valued answer, matching **any** id in the ownership union (§10.5).
+3. `obtainable` is §23.2's second axis: *met* when the rung is held or `tradeable`, *blocked* when
+   it is `untradeable`, *unknown* when the corpus has not classified it.
+4. **`recommended`** is the highest rung whose `fit` is *met* and whose `obtainable` is not
+   *blocked*. This is the answer to *"what should I wear"*, held or not.
+5. **`best_held`** is the highest rung owned, computed **independently** of `fit`.
+6. **`next_rung`** is the lowest rung above the recommendation, whatever its gate, carrying what
+   blocks it — *"needs 60 Attack"* is actionable where a bare lock is not.
+7. **`earn`** is the **lowest** rung above the recommendation that fits and must be won. Lowest
+   rather than highest for the reason the aspirational list is bounded at all: an account with no
+   cape is served by the Fight Caves, not by the Inferno. It walks itself — once the Fire cape is
+   held it becomes the recommendation and `earn` advances one rung — so the page never has to
+   decide how far ahead to look.
+8. What the setup still **costs** is the sum over recommended pieces not already held. It is unknown
+   rather than a partial sum when any price is absent: a total assembled from the prices that
+   happened to be cached reads as *the* cost and understates it by however many were not.
+
+That total can no longer contain something no amount of gp can buy, and it gets that from step 4
+rather than from a rule of its own: a recommended piece is held-or-buyable, so an *unheld*
+recommended piece is buyable by construction. A second "do not count this" filter beside the cost
+step would have been a thing to keep in step with the selection rule, and the two would eventually
+disagree.
+
+**An unknown gate does not promote.** This is a deliberate departure from §10.6, where an unknown
+gate does not *block* a candidate, and both follow from one principle applied at opposite polarities:
+never drop something from a list for want of evidence, and never assert a capability for want of it.
+There the output is a list, and dropping an entry costs the user something real. Here the output is
+the positive claim *"you can wear this"*, and making it from an unobserved quest is precisely the
+§4.5 conversion this design exists to prevent.
+
+**An unknown acquisition does not demote,** and the asymmetry with the paragraph above is the
+point rather than an oversight. That rule is not derived by analogy from the shape of a three-state
+field; it is derived from what the two errors *cost*, and that comparison comes out the other way
+here.
+
+An unknown gate demotes because being told to wear a Torva platebody you cannot lift is a wrong
+claim about the account, and because half of *fit unknown* has a player-side remedy — *sync your
+account* — so withholding the claim is itself advice. An unknown acquisition has no player-side
+remedy at all. It is purely a hole in the corpus, and dropping a rung on it withholds something the
+account can wear and may well own, punishes the player for the author's gap, and offers them nothing
+to do about it. That is §10.6's polarity — *never drop something from a list for want of
+evidence* — and the worst case is a wasted trip to the Grand Exchange rather than a false claim
+about what the account can do.
+
+So the uncertainty is carried in the wording, not in the ranking: the rung stands and every surface
+says the tracker has not recorded how it is obtained. Two things keep that honest rather than
+merely convenient. The corpus's own totality check makes the state unreachable for any authored
+rung, exactly as it does for an unauthored gate. And it is the polarity under which a corpus that
+declares no acquisition anywhere behaves **identically** to one that never had the field — which is
+what lets this land without moving a page on the strength of an absence.
+
+A rung held **above** the recommendation — they own something they cannot equip, or the corpus is
+wrong about one of the two — is reported as both rather than resolved to the higher one. Taking the
+higher silently would hide a transcription error behind a plausible answer.
+
+**The setup is computed, never authored and never model-authored.** It names the highest rung whose
+requirements the account *satisfies*; it makes no claim about which rung is stronger, because §10.5's
+tier is a printed ordering and not a measurement (D17).
+
+## 23.5 Interface
+
+§15 applies unchanged, and one of its rules is sharper here — see §15's *Gear* entry.
+
+Every rung answers two questions, and they must be **worded apart**. *Can the account wear this*
+runs on the lock scale (`unlocked | locked | unknown`); *does the account own this* does not, and
+reads `held | not held | not yet seen`. They share a `UiState` — which is what keeps §15's
+disjointness assertion covering both badges — but not a label, because §15's `STATE_LABELS` spell
+the fit question, and badging ownership with them renders a piece the account *can* wear but does
+not own as **locked**, one line under the heading that just recommended it. That is not a cosmetic
+slip: it contradicts the page's own recommendation, and reads as a requirement the player must go
+and meet.
+
+Where the two questions land on the **same rung** — the best held piece *is* the recommended one,
+the common case on a settled slot — it is drawn once and says so. Two identical rows read as a
+distinction, and the reader goes looking for one that is not there. The read model keeps the two
+fields apart regardless: the case where they *disagree* is the one §23 exists to surface. Sameness
+is decided by item identity rather than by the rendered rows, since two rungs can share a name and
+a rung number across ladders.
+
+The same collapse applies to §23.6's tool text, for a second reason: a restated line spends the
+result's bound on a repetition and invites the model to narrate an upgrade between two identical
+pieces.
+
+The **earn target is a third question and gets a third treatment**, not a third badge. Two badges
+on a rung already wrapped on a phone once; a third would break the layout that fixed it. It is a
+*position on the ladder with a role*, drawn where the ladder already draws roles, and it must not
+carry the recommendation's own emphasis — painting a piece you cannot buy in the colour that means
+*wear this* re-creates the exact conflation §23.2 added the axis to remove. It is likewise never
+worded as a purchase, and never priced: a gp figure beside something the market does not sell is a
+number that invites an action nobody can take.
+
+## 23.6 Advisor exposure
+
+The advisor gets both a bounded digest section and a tool, and the split is decided by size: three
+styles by ten slots is a hundred and eighty facts on every turn forever, most of them irrelevant to
+the question asked.
+
+The **digest** carries one line per style — where the best held piece is, how many slots have
+something seen, how many recommended pieces are missing, how many next rungs are blocked — and, as
+every bounded section must (§22.2), announces that it is a summary and names the tool that reaches
+the rest. It carries **no prices and no totals**: those move on every reprice, and §22.3 hashes this
+text into the conversation's cached prefix, so a daily-drifting figure would re-cache the whole
+prefix for a change the player never made.
+
+The **tool** is `get_gear_setup`, taking a required `style` and an optional `slot`. `style` is
+required because all three ladders at once would exceed §22.4's result bound, and a truncated setup
+is exactly the *"a cut list that does not say so reads as complete"* failure §22.2 is built to avoid.
+It takes **no** parameter that could posit different stats: a tool that could be asked *"what if my
+Ranged were 85"* would be an evaluator, and D15 forbids the advisor one.
+
+The instruction block gains one clause: the setup is the tracker's, computed from authored
+requirements and the account's own facts; report it as given, and mark any piece added from the
+model's own knowledge as the model's.
+
+## 23.7 What this deliberately does not do
+
+**No best-in-slot ranking.** §10.5's tier is the guide's printed order. Calling the top rung "best"
+would assert a measurement nobody made — §10.6's rule that content may not assert its own priority,
+applied to gear.
+
+**No purchase plan and no affordability check.** *"Can I afford this, and what should I buy first"*
+is §17's bank planner and is still future. §23 reports what a piece costs at cached prices and stops
+there; ordering purchases by value would be a ranking, and §23.1 has none.
+
+**No route to the content.** Naming the Inferno as what yields an Infernal cape is not telling
+anyone how to beat it. §21 answers *how*, on a task the player has chosen; §23 names the target and
+stops.
+
+**No ordering of earn targets by difficulty.** `earn` is the lowest such rung on the ladder, which
+is the guide's printed order and not a judgement about which fight is harder. Ranking targets by
+difficulty would be a ranking, and §23.1 has none. Acquisition is a **fact about the item** —
+whether a market sells it — and never an assessment of its value or its cost in effort.
+
+**No persistence.** The setup is derived on read. A stored one is a second thing that can disagree
+with the corpus — the opposite of §6.10, where persistence exists *because* the ranking must not
+drift under the user between runs.

@@ -22,6 +22,18 @@ make lint typecheck test
 `config.yaml` is gitignored — it holds the bearer token shared with the RuneLite plugin.
 `bind_address` has no default and `0.0.0.0` is rejected outright (§11.1).
 
+## Gear progression
+
+`/gear` answers *what should I be wearing, and what do I buy next* (§23). It places the account on
+the OSRS Wiki's own progression ladders and, for each slot, names the best rung whose **requirements
+it actually meets** — not merely the next rung up, which for a fresh account is often forty levels
+and two quests away.
+
+It computes; it does not rank. No candidate, no score and no estimate changes because of it, and the
+advisor is handed the same computed setup rather than left to invent one. Three states everywhere:
+*held*, *not held*, and *unknown* — and until every container has been scanned, *unknown* is the
+honest answer rather than *no*.
+
 ## Optional: the two AI features
 
 Both are **off by default**, both need an Anthropic API key, and both are *terminal outputs* —
@@ -30,7 +42,7 @@ syncs and renders identically to one with it (D14). Turning them off again is li
 
 | Feature | What it answers | Switch |
 |---|---|---|
-| **Task guidance** (§21) | *"How do I actually do this one task?"* — a button on the Recommendations page | `integrations.llm.enabled` |
+| **Task guidance** (§21) | *"How do I actually do this one task?"* — a button on the Next up page (`/recommendations`) | `integrations.llm.enabled` |
 | **The advisor** (§22) | Anything else, at `/advisor`, with your whole account as context — including general OSRS questions | `integrations.llm.enabled` **and** `integrations.llm.advisor.enabled` |
 
 The advisor needs its own switch rather than following the first: a guidance note costs one
@@ -43,8 +55,8 @@ export ANTHROPIC_API_KEY=sk-ant-...   # or set integrations.llm.api_key in confi
 ```
 
 The advisor reads already-computed state and can look things up — the candidate corpus, a
-capability's requirement tree, training methods, quest status, cached item prices — but it
-cannot rank, estimate, write, or fetch anything from the network (D15). Its conversations live
+capability's requirement tree, training methods, quest status, cached item prices, the gear setup
+above — but it cannot rank, estimate, write, or fetch anything from the network (D15). Its conversations live
 in their own two tables and nothing else reads them.
 
 Both features are honest about what they do not know: an unobserved account type is *unknown*

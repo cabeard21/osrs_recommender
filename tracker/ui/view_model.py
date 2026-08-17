@@ -1059,6 +1059,17 @@ class AdvisorMessageRow:
         return self.role == "advisor"
 
     @property
+    def who_label(self) -> str:
+        """The attribution as a person would say it, not as the wire spells it.
+
+        ``role`` stays the wire word because ``data-role`` is a query surface and the browser
+        tests select on it. What the eye gets is a phrase: *"You asked"* reads as one half of
+        an exchange in a way that a bare lowercase *"you"* — which is what this drew before —
+        does not.
+        """
+        return "Advisor" if self.is_answer else "You asked"
+
+    @property
     def provenance_label(self) -> str | None:
         """Who wrote this, or ``None`` for the reader's own question."""
         if not self.is_answer:
@@ -1113,6 +1124,33 @@ class AdvisorConversationRow:
     updated_at: datetime | None = None
     current: bool = False
 
+    @property
+    def when_label(self) -> str | None:
+        """The day this thread last moved, or ``None`` if we never recorded one.
+
+        A date rather than a *"2 days ago"*, because a relative phrase needs a clock and a
+        clock is a dependency this row does not otherwise have — and the question a reader
+        asks of a thread list is *which one was that*, which an absolute day answers as well.
+        Omitted rather than filled with a placeholder: an unknown time is not a time.
+        """
+        if self.updated_at is None:
+            return None
+        return self.updated_at.strftime("%d %b").lstrip("0")
+
+
+#: What the query string says for *a thread that does not exist yet*.
+#:
+#: The advisor keeps its position in the URL so a reload returns to the same conversation, which
+#: leaves it needing a way to spell "none of them" — and an absent parameter cannot mean that,
+#: because an absent parameter already means *whichever I was last reading*. Those are different
+#: requests and were previously the same one: ``?conversation=0`` fell through the read path's
+#: unknown-id fallback and landed back on the most recent thread, so *New conversation* returned
+#: the reader to the conversation they were trying to leave.
+#:
+#: Zero rather than a word because the parameter is typed as an integer at the route, and no row
+#: can collide with it: SQLite's ``INTEGER PRIMARY KEY`` starts at one.
+NEW_CONVERSATION_ID = 0
+
 
 @dataclass(frozen=True, slots=True)
 class AdvisorThreadView:
@@ -1126,6 +1164,26 @@ class AdvisorThreadView:
     @property
     def is_empty(self) -> bool:
         return not self.messages
+
+    @property
+    def current_label(self) -> str:
+        """What the picker calls the thread on screen.
+
+        A thread is named after its first question, so one that has not been asked yet has no
+        name to show. It says what it *is* rather than going blank, because the control has to
+        read as a control whether or not there is anything behind it.
+        """
+        return self.title or "New conversation"
+
+    @property
+    def has_conversations(self) -> bool:
+        """Whether there is anything to go back to.
+
+        Decides whether the picker opens a list at all: on a first visit it would open onto
+        nothing, and a control that does not act is worse than no control — the rule
+        :func:`~tracker.ui.advisor.render_empty` already follows for its suggested prompts.
+        """
+        return bool(self.conversations)
 
 
 #: Shown when the feature is not configured (§22.1, D14). Names both switches, because the
@@ -1155,3 +1213,133 @@ ADVISOR_EMPTY = (
     "capabilities, roadmaps and ranked tasks, and can look up quests, tasks, training "
     "methods and cached item prices."
 )
+
+#: Three questions to start from, offered beside :data:`ADVISOR_EMPTY`.
+#:
+#: An empty screen is an invitation to act, and the sentence above it only describes — it
+#: tells a reader what the advisor can see and then leaves them to compose the first question
+#: from a cold start. These are chosen to demonstrate the three *shapes* of question this
+#: surface answers rather than to be good questions in themselves: one about the account
+#: (needs the digest), one about the game (needs the corpus), one about a decision (needs
+#: both). Someone who reads all three has learned the range without being told it.
+ADVISOR_PROMPTS: tuple[str, ...] = (
+    "What should I train next, and why that over the alternatives?",
+    "What do I still need for Barrows gloves?",
+    "Is my current gear holding me back anywhere?",
+)
+
+
+# ---------------------------------------------------------------------------
+# §23 — gear progression
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class GearPickRow:
+    """One rung, pre-formatted. §15 renders rows; it does not compose sentences.
+
+    ``held_state`` is a :class:`UiState` rather than a boolean because there are three
+    answers, and the third has a rendering rule attached: *unknown* must never be drawn as
+    *locked* or as *not held*. Reusing ``state_badge`` is the enforcement — ``STATE_CLASSES``
+    is injective, so two states cannot share markup however the page is edited later.
+    """
+
+    name: str
+    rung_label: str
+    held_state: UiState
+    fit_state: UiState
+    price_label: str
+    held_label: str = ""
+    """The word for ``held_state``, in ownership vocabulary rather than on the lock scale.
+
+    Carried explicitly because :data:`~tracker.ui.states.STATE_LABELS` spells these states
+    ``unlocked | locked``, which answer the *other* question on the row — can you equip it.
+    Badging ownership with those words renders a piece the account can wear but does not
+    own as "locked", contradicting the layer that just recommended it.
+    """
+    fit_label: str = ""
+    """The word for ``fit_state``. Empty where the row's own layer already implies it."""
+    note: str | None = None
+    """Why this rung is not usable, or that nobody has established what it takes."""
+    acquire_label: str = ""
+    """How this rung is obtained, when that is worth saying — §23.2's second axis.
+
+    The *same layer* as ``note`` rather than a third badge, and that is a §23.5 rule rather
+    than a layout preference: two badges on the name line already wrapped on a phone once, and
+    the fix was to move the second one down beside the sentence explaining it. A third
+    vocabulary on the row would undo that.
+
+    Empty for a tradeable rung, on the rule ``fit_label`` follows — an answer of *yes* earns
+    no space.
+    """
+    tier: int = 0
+    """This rung's position on its ladder, as a number rather than as prose.
+
+    ``rung_label`` already says "rung 2 of 5", but a page that wants to *order* rungs — or
+    to draw the ladder as a ladder — would have to parse that sentence back into an integer
+    to do it. Carrying both is not duplication: one is the sentence shown to a reader, the
+    other is the value the layout is computed from, and deriving either from the other is
+    how the two would come to disagree.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class GearSlotRow:
+    """One equipment slot: what to wear, what is owned, what comes next."""
+
+    slot: str
+    ladder_label: str
+    recommended: GearPickRow | None
+    best_held: GearPickRow | None
+    next_rung: GearPickRow | None
+    earn: GearPickRow | None = None
+    """A rung the account can already wear and cannot buy — a target, never a purchase."""
+    aspirational: tuple[GearPickRow, ...] = ()
+    also_held: tuple[GearPickRow, ...] = ()
+    """Other rungs the account owns, below the best one.
+
+    Computed by §23.4 since it shipped and discarded by this layer until now, which meant the
+    page could fail to mention gear the player actually has — on the page whose whole job is
+    to say what they have.
+    """
+
+    ladder: tuple[tuple[int, str], ...] = ()
+    """``(tier, name)`` for every rung, lowest first.
+
+    Not for drawing. It is what lets the page say *which* rungs it left out: a card headed
+    "11 rungs" that draws four is a silent cut, and naming the remainder is the difference
+    between a summary and a page that merely looks complete.
+    """
+
+    conflict: bool = False
+    """They hold a rung above the one they can equip — shown, never silently resolved."""
+    held_is_recommended: bool = False
+    """The best rung held *is* the recommended one, so the two layers name one item.
+
+    The common case on a settled slot, and drawing it as two rows invites the reader to
+    hunt for a difference that is not there. The layers stay separate fields rather than
+    being merged in the read model: they answer different questions, and the case where
+    they disagree is the one §23 exists to surface.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class GearStyleRow:
+    style: str
+    slots: tuple[GearSlotRow, ...]
+    missing_label: str
+    """What the recommended setup still costs, or why there is no figure."""
+
+
+@dataclass(frozen=True, slots=True)
+class GearView:
+    """§23.5's whole page.
+
+    ``scan_note`` is not decoration. With a container unscanned, every *not held* on this
+    page is really *unknown*, and a page that omitted to say so would read as a complete
+    inventory of an account nobody has looked at.
+    """
+
+    styles: tuple[GearStyleRow, ...] = ()
+    fully_scanned: bool = False
+    scan_note: str | None = None

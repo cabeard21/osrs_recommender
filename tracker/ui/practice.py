@@ -81,7 +81,9 @@ def render_group(
     card = section(group.name, testid="practice-group")
     card.props(f"data-group={group.template_id} data-urgency={group.urgency:.2f}")
     with card:
-        ui.html(f"Suggested session: {group.suggested_session}").classes("text-xs opacity-70 block")
+        ui.html(f"Suggested session: {group.suggested_session}").classes(
+            "text-xs tracker-dim block"
+        )
         with ui.element("ul").classes("leaf-list"):
             for member in group.members:
                 with ui.element("li"):
