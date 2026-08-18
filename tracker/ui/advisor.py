@@ -564,11 +564,29 @@ def scroll_to_latest() -> None:
     Written against the transcript's own ``data-testid`` rather than an element handle,
     because NiceGUI's DOM ids are an implementation detail of the framework and this selector
     is one the browser tests already depend on.
+
+    **Deferred two frames, and that is the whole reason this works.** ``run_javascript`` goes
+    down the same websocket as the element updates it follows, but Vue applies those patches
+    on ``nextTick`` — so script that runs on arrival sees the thread *without* the message
+    just appended to it. Scrolling then is not merely early, it is silently wrong: the
+    browser clamps a scroll to the document as it stands, the answer renders afterwards and
+    makes the document taller, and the page is left parked short of where it asked to be with
+    no error anywhere. Measured on a 390x844 viewport, that landed a 2332px answer 464px down
+    the screen — on screen, which is why an assertion about *scrolling* rather than about
+    where the answer ended up would have called it fine.
+
+    One frame gets past Vue's flush; the second gets past the layout that flush triggers, so
+    ``scrollIntoView`` measures the document that now contains the answer. ``rAF`` rather than
+    a timeout because the thing being waited for is a paint, and a timeout that happens to be
+    long enough on one machine is the bug above wearing a different number.
     """
     ui.run_javascript(
-        "const thread = document.querySelector('[data-testid=advisor-thread]');"
-        "const last = thread && thread.lastElementChild;"
-        "if (last) { last.scrollIntoView({block: 'start'}); }"
+        "const scroll = () => {"
+        "  const thread = document.querySelector('[data-testid=advisor-thread]');"
+        "  const last = thread && thread.lastElementChild;"
+        "  if (last) { last.scrollIntoView({block: 'start'}); }"
+        "};"
+        "requestAnimationFrame(() => requestAnimationFrame(scroll));"
     )
 
 
