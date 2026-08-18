@@ -1012,7 +1012,13 @@ def set_tracked_username(session: Session, player_id: int | None, username: str)
         session.flush()
         return created.id
 
+    # ``display_name`` moves with the username. It is what the dashboard shows as the
+    # account (§15's account stat), so leaving it at the previous character's value would
+    # label one account's data with another's name. A later sync overwrites it with the
+    # properly-cased name from the payload's identity block (``tracker.sync.merge``); until
+    # then, what the user typed is the best name available.
     player.username = cleaned
+    player.display_name = cleaned
     return player.id
 
 
