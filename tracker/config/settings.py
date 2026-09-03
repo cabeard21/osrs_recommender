@@ -11,10 +11,10 @@ RuneLite plugin (§11.2).
 
 Two fields are deliberately hostile to defaults:
 
-* ``bind_address`` has **no default** and rejects unspecified addresses. §11.1 makes
-  the bind address explicit configuration precisely because "no public exposure" is a
-  deployment property, not an access control — a convenient default is how a tracker
-  ends up listening on every interface.
+* ``bind_address`` has **no default** and rejects unspecified addresses unless the
+  separate ``allow_all_interfaces`` container-network opt-in is true. §11.1 makes the
+  bind address explicit configuration precisely because "no public exposure" is a
+  deployment property, not an access control.
 * ``api_token`` is required. There is no unauthenticated mode to fall back to.
 """
 
@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -215,7 +215,10 @@ class Settings(BaseSettings):
     )
 
     bind_address: str
-    """Loopback or the Tailscale interface address. No default — see §11.1."""
+    """Loopback, Tailscale address, or an explicitly opted-in container bind address."""
+
+    allow_all_interfaces: bool = False
+    """Explicit container-network opt-in for an unspecified bind address."""
 
     port: int = Field(default=8502, gt=0, lt=65536)
     api_token: str = Field(min_length=1)
@@ -230,12 +233,6 @@ class Settings(BaseSettings):
     @classmethod
     def _reject_unspecified_bind_address(cls, value: str) -> str:
         candidate = value.strip()
-        if candidate in _UNSPECIFIED_ADDRESSES:
-            raise ValueError(
-                f"bind_address {value!r} binds every interface, which §11.1 forbids: any device "
-                "that can route to this host could POST to /api/sync. Use the loopback address "
-                "(127.0.0.1) or this machine's Tailscale interface address."
-            )
         if not candidate:
             raise ValueError("bind_address must not be empty")
         try:
@@ -243,12 +240,22 @@ class Settings(BaseSettings):
         except ValueError:
             # Hostnames are permitted — a Tailscale MagicDNS name is a legitimate bind target.
             return candidate
-        if parsed.is_unspecified:
+        if parsed.is_unspecified and candidate not in _UNSPECIFIED_ADDRESSES:
             raise ValueError(
                 f"bind_address {value!r} is an unspecified address and binds every interface "
                 "(§11.1)"
             )
         return candidate
+
+    @model_validator(mode="after")
+    def _require_explicit_all_interfaces_opt_in(self) -> Settings:
+        if self.bind_address in _UNSPECIFIED_ADDRESSES and not self.allow_all_interfaces:
+            raise ValueError(
+                f"bind_address {self.bind_address!r} binds every interface, which §11.1 "
+                "forbids unless allow_all_interfaces is explicitly enabled for an isolated "
+                "container network"
+            )
+        return self
 
     @classmethod
     def settings_customise_sources(

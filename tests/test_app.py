@@ -45,13 +45,23 @@ def settings() -> Settings:
 
 
 @pytest.mark.parametrize("address", ["0.0.0.0", "::", "*"])
-def test_the_app_cannot_be_configured_to_bind_every_interface(address: str) -> None:
-    """§11.1. The rejection lives in ``Settings``, so it fires before an app object exists —
-    which is the point: a value that binds every interface must never reach a socket, and
-    "we validate at startup" is only true if startup cannot proceed without validating.
+def test_the_app_requires_an_explicit_opt_in_to_bind_every_interface(address: str) -> None:
+    """§11.1. The rejection lives in ``Settings``, so it fires before an app object exists
+    unless the isolated-container opt-in is set.
     """
     with pytest.raises(ValidationError):
         Settings(bind_address=address, api_token=TOKEN)
+
+
+def test_the_app_accepts_the_container_bind_opt_in() -> None:
+    settings = Settings(
+        bind_address="0.0.0.0",
+        allow_all_interfaces=True,
+        api_token=TOKEN,
+    )
+
+    assert settings.bind_address == "0.0.0.0"
+    assert settings.allow_all_interfaces is True
 
 
 def test_the_app_cannot_be_configured_without_a_token() -> None:

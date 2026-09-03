@@ -10,6 +10,69 @@ make migrate                           # alembic upgrade head
 make run
 ```
 
+## Raspberry Pi Docker Compose
+
+The production image is published as `ghcr.io/OWNER/osrs_recommender:sha-COMMIT` for both
+`linux/amd64` and `linux/arm64`. Replace `OWNER` and `COMMIT` with the GitHub repository
+owner and the immutable full commit SHA produced by CI. Release pushes also publish a
+version tag; the workflow deliberately does not publish `latest`.
+
+The container serves port `8502`; its unauthenticated liveness URL is `/healthz`. This
+Compose example publishes the port only on an explicitly selected private Pi address.
+Set `TRACKER_PUBLISH_ADDRESS` to the Pi's Tailscale or private LAN address in a private
+`.env` file next to the Compose file. Do not use `0.0.0.0` and do not forward this port
+from the router.
+
+```yaml
+services:
+  osrs-recommender:
+    image: ghcr.io/OWNER/osrs_recommender:sha-COMMIT
+    restart: unless-stopped
+    ports:
+      - "${TRACKER_PUBLISH_ADDRESS:?set a private Pi address}:8502:8502"
+    environment:
+      TRACKER_API_TOKEN: "${TRACKER_API_TOKEN:?set a private token}"
+      TRACKER_BIND_ADDRESS: 0.0.0.0
+      TRACKER_ALLOW_ALL_INTERFACES: "true"
+      TRACKER_DATABASE_URL: sqlite:////data/tracker.db
+      TRACKER_CONFIG_FILE: /config/config.yaml
+      NICEGUI_STORAGE_PATH: /data/nicegui
+    volumes:
+      - ./data:/data
+      - ./config/config.yaml:/config/config.yaml:ro
+```
+
+`TRACKER_ALLOW_ALL_INTERFACES=true` is a narrow, explicit opt-in for Docker bridge
+networking. It changes only the address inside the container; the host-side publish
+address above still controls which private interface accepts traffic. Direct host runs
+continue to reject `0.0.0.0` by default.
+
+Before the first start, create the private paths and make the data directory writable by
+the image's non-root UID. Never commit either path:
+
+```bash
+mkdir -p data config
+cp /path/to/osrs_recommender/config.example.yaml config/config.yaml
+sudo chown -R 10001:10001 data config
+chmod 700 data config
+chmod 600 config/config.yaml
+```
+
+The example requires `TRACKER_API_TOKEN` through the private Compose environment; its
+value overrides the placeholder in the mounted YAML file. If task guidance or the advisor
+is enabled, also provide `ANTHROPIC_API_KEY`; it is otherwise optional. The image runs
+`alembic upgrade head` against `TRACKER_DATABASE_URL` before starting the app, and startup
+stops if migration fails.
+
+Mount the entire `./data` directory rather than only a pre-created database file. SQLite
+uses WAL mode and needs its `tracker.db-wal` and `tracker.db-shm` sidecars beside the
+database. NiceGUI's own runtime storage is also kept there at `/data/nicegui`, outside the
+container writable layer. Back up a live database with the `.backup` command in section 7
+below, not by copying the files.
+
+Monitor `http://PRIVATE_PI_ADDRESS:8502/healthz` from Uptime Kuma on the private network.
+The image also declares an equivalent Docker health check.
+
 ---
 
 ## 1. Choose a bind address deliberately
@@ -27,7 +90,7 @@ can POST to `/api/sync` and rewrite your account state.
 | `127.0.0.1` | This machine only. The plugin and the browser must both be local. |
 | Your Tailscale interface address (e.g. `100.x.y.z`) | Reachable from your tailnet — your phone, your laptop. |
 | Your Tailscale MagicDNS name | The same, resolved by name. |
-| `0.0.0.0` | **Rejected at startup.** Every interface, including whatever network you happen to be on. |
+| `0.0.0.0` | Rejected unless `allow_all_interfaces` is explicitly enabled for an isolated container network. |
 
 Find your tailnet address with `tailscale ip -4`.
 

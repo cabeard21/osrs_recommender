@@ -5,8 +5,11 @@
 # __ for nesting, e.g. TRACKER_API_TOKEN, TRACKER_INTEGRATIONS__PRICES__TTL_HOURS.
 # Environment variables win over this file.
 
-# §11.1 — explicit, never 0.0.0.0. Loopback, or this machine's Tailscale interface address.
+# §11.1 — explicit. Use loopback or this machine's Tailscale interface address on the host.
 bind_address: 127.0.0.1
+# Keep false for direct host execution. The container image explicitly opts in because
+# bridge networking requires the process to listen on the container's interfaces.
+allow_all_interfaces: false
 port: 8502
 
 # §11.2 — shared secret; the RuneLite plugin sends it as a bearer token on /api/*.

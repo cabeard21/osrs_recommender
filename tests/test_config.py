@@ -66,6 +66,17 @@ def test_unspecified_bind_address_is_rejected(address: str) -> None:
         Settings(bind_address=address, api_token="t")
 
 
+def test_container_bind_requires_an_explicit_opt_in() -> None:
+    settings = Settings(
+        bind_address="0.0.0.0",
+        allow_all_interfaces=True,
+        api_token="t",
+    )
+
+    assert settings.bind_address == "0.0.0.0"
+    assert settings.allow_all_interfaces is True
+
+
 def test_bind_address_has_no_default() -> None:
     with pytest.raises(ValidationError, match="bind_address"):
         Settings(api_token="t")  # type: ignore[call-arg]
@@ -97,6 +108,21 @@ def test_environment_overrides_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert settings.api_token == "from-env"
     assert settings.integrations.prices.ttl_hours == 1
     assert settings.bind_address == "127.0.0.1"  # untouched keys still come from YAML
+
+
+def test_container_runtime_paths_and_bind_opt_in_load_from_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TRACKER_BIND_ADDRESS", "0.0.0.0")
+    monkeypatch.setenv("TRACKER_ALLOW_ALL_INTERFACES", "true")
+    monkeypatch.setenv("TRACKER_API_TOKEN", "container-token")
+    monkeypatch.setenv("TRACKER_DATABASE_URL", "sqlite:////data/tracker.db")
+
+    settings = Settings()
+
+    assert settings.bind_address == "0.0.0.0"
+    assert settings.allow_all_interfaces is True
+    assert settings.database_url == "sqlite:////data/tracker.db"
 
 
 def test_unknown_key_is_rejected(tmp_path: Path) -> None:

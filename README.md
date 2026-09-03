@@ -20,7 +20,12 @@ make lint typecheck test
 ```
 
 `config.yaml` is gitignored — it holds the bearer token shared with the RuneLite plugin.
-`bind_address` has no default and `0.0.0.0` is rejected outright (§11.1).
+`bind_address` has no default and `0.0.0.0` is rejected unless the Docker deployment's
+separate container-network opt-in is explicitly enabled (§11.1).
+
+For the Raspberry Pi Docker/GHCR deployment, including port `8502`, `/healthz`, the
+SQLite/config bind mounts, and the explicit container-network bind opt-in, see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md#raspberry-pi-docker-compose).
 
 ## Gear progression
 
