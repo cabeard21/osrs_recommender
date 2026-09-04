@@ -171,22 +171,22 @@ class TestG9:
         corpus = tmp_path / "content"
         shutil.copytree(CONTENT_ROOT, corpus)
         (corpus / "candidates" / "extra.yaml").write_text(
-            "id: unlock_augury\n"
-            "name: Unlock Augury\n"
+            "id: unlock_chivalry\n"
+            "name: Unlock Chivalry\n"
             "kind: unlock\n"
             "advances:\n"
             "  ice_barrage_nh: 0.35\n"
             "  deep_wildy_nh: 0.30\n"
             "completion:\n"
             "  all_of:\n"
-            "    - skill: {prayer: 77}\n"
-            "    - unlock: augury\n"
+            "    - skill: {prayer: 60}\n"
+            "    - unlock: chivalry\n"
             "grants_facts:\n"
-            "  unlock: augury\n",
+            "  unlock: chivalry\n",
             encoding="utf-8",
         )
 
-        added = load_and_validate(corpus).candidates["unlock_augury"]
+        added = load_and_validate(corpus).candidates["unlock_chivalry"]
 
         assert added.kind is CandidateKind.UNLOCK
         assert added.advances == {"ice_barrage_nh": 0.35, "deep_wildy_nh": 0.30}

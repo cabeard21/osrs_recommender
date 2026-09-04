@@ -1,18 +1,17 @@
-# Rung 4 of the PvM bossing ladder — see boss_fundamentals.yaml for the design note.
-#
-# The one rung gated on a single named item. Vorkath and the rest of the dragon tier are
-# where the Dragon hunter crossbow stops being an upgrade and starts being the method, which
-# is also why `buy_dragon_hunter_crossbow` in content/candidates/acquisitions.yaml carries a
-# weight against this capability rather than against the ladder generally.
+# Elite-tier preparation from the pinned Wiki guide. The five combat-stat floors are account
+# readiness recommendations; quest and prayer-unlock leaves capture observed access/setup.
 id: dragon_bossing
-name: Vorkath and dragon bossing
+name: Elite bossing preparation
 recommended_readiness: high
-pvp_value: 0.90
+pvp_value: 0.78
 requires:
   all_of:
-    - capability: gwd_bossing
+    - skill: {attack: 80}
+    - skill: {strength: 80}
+    - skill: {defence: 80}
     - skill: {ranged: 80}
-    - skill: {prayer: 74}      # Rigour/Piety territory, and the last Prayer gate on the ladder
+    - skill: {magic: 80}
     - quest: dragon_slayer_ii
-    - unlock: ca_hard
-    - item: dragon_hunter_crossbow
+    - quest: desert_treasure_ii_the_fallen_empire
+    - quest: beneath_cursed_sands
+    - unlock: rigour

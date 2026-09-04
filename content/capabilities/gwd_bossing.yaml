@@ -1,22 +1,15 @@
-# Rung 3 of the PvM bossing ladder — see boss_fundamentals.yaml for the design note.
-#
-# Agility 70 and the two Troll quests are the God Wars Dungeon entrance itself; the rest is
-# what surviving its multi-combat rooms costs. `any_of` on the chestplate because Bandos and
-# Armadyl are the melee and ranged answers to the same question, and a corpus that demanded
-# both would gate the rung on a style the player is not using.
+# Hard-tier preparation from the pinned Wiki guide. Unsupported reward/unlock facts remain
+# informational in the guide instead of becoming permanently unknown capability gates.
 id: gwd_bossing
-name: God Wars Dungeon bossing
+name: Hard bossing preparation
 recommended_readiness: high
-pvp_value: 0.80
+pvp_value: 0.65
 requires:
   all_of:
-    - capability: mid_tier_bossing
-    - skill: {agility: 70}
-    - skill: {strength: 70}
-    - skill: {hitpoints: 75}
-    - skill: {prayer: 70}
-    - quest: troll_stronghold
-    - quest: death_plateau
-    - any_of:
-        - item: bandos_chestplate
-        - item: armadyl_chestplate
+    - quest: the_final_dawn
+    - quest: a_kingdom_divided
+    - quest: song_of_the_elves
+    - quest: monkey_madness_ii
+    - quest: sins_of_the_father
+    - quest: while_guthix_sleeps
+    - item: fire_cape

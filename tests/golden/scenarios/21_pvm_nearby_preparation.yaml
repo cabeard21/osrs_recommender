@@ -1,0 +1,27 @@
+id: pvm_nearby_preparation
+title: Early account following the bossing ladder
+notes: >-
+  The six tier weights rise toward Grandmaster, but an early account should still be coached
+  toward nearby Easy preparation rather than a distant endgame stat target.
+now: 2026-08-04T12:00:00+00:00
+player:
+  combat_level: 45
+  quest_points: 20
+  skills:
+    attack: 35
+    strength: 35
+    defence: 35
+    prayer: 35
+    ranged: 35
+    magic: 35
+  quests: {}
+  items: []
+  scanned: all
+roadmaps:
+  pvm_ladder: 1.0
+judgments:
+  must_rank_above:
+    - pair: [train_prayer_to_43, train_ranged_to_95]
+      because: >-
+        Eight nearby Prayer levels unlock the Easy-tier overhead-prayer floor; sixty distant
+        Ranged levels are aspirational Grandmaster preparation and must not jump the queue.

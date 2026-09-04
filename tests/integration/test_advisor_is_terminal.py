@@ -59,7 +59,7 @@ ENGINE_TABLES = (
 
 _ARGUMENTS: dict[str, dict[str, Any]] = {
     "search_candidates": {"query": "magic"},
-    "get_candidate_detail": {"candidate_id": "train_magic_94_to_99"},
+    "get_candidate_detail": {"candidate_id": "train_magic_95_to_99"},
     "get_capability_detail": {"capability_id": "ice_barrage_nh"},
     "get_gear_setup": {"style": "melee"},
     "list_training_methods": {"skill_id": "magic"},
@@ -132,7 +132,7 @@ def seeded(factory: sessionmaker[Session]) -> int:
             RecommendationEntry(
                 snapshot_id=snapshot.id,
                 rank=1,
-                candidate_id="train_magic_94_to_99",
+                candidate_id="train_magic_95_to_99",
                 candidate_kind="progression",
                 score=0.42,
                 reason="unblocks Ice Barrage NH",
@@ -217,7 +217,7 @@ def test_every_tool_answered_from_real_data(
     provider = _ToolUsingAdvisor()
     _service(factory, corpus, provider).ask(seeded, "anything")
     by_name = {spec.name: result for spec, result in zip(TOOLS, provider.results, strict=True)}
-    assert "train_magic_94_to_99" in by_name["search_candidates"].content
+    assert "train_magic_95_to_99" in by_name["search_candidates"].content
     assert "Ice Barrage NH" in by_name["get_capability_detail"].content
     assert "unblocks Ice Barrage NH" in by_name["get_candidate_detail"].content
 

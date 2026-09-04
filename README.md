@@ -39,6 +39,21 @@ advisor is handed the same computed setup rather than left to invent one. Three 
 *held*, *not held*, and *unknown* — and until every container has been scanned, *unknown* is the
 honest answer rather than *no*.
 
+## PvM bossing ladder
+
+`/roadmaps/pvm-ladder` turns the PvM roadmap into a granular, account-aware bossing guide.
+It follows all six tiers of the OSRS Wiki's Bossing Ladder, shows preparation before the
+encounters in each tier, and separates requirements that prevent entry from recommended stats
+and equipment that merely make a first attempt more approachable. Tiers are guidance, not gates:
+meeting an encounter's requirements can make it ready even when earlier encounters are unfinished.
+
+The guide uses the facts already synced for recommendations. It does not add kill-count tracking,
+manual encounter completion, or fields to the RuneLite sync payload. Its authored source is pinned
+to [OSRS Wiki revision 15319480](https://oldschool.runescape.wiki/w/Guide:Bossing_Ladder?oldid=15319480)
+and is maintained as static, attributed content; see
+[`docs/CONTENT_AUTHORING.md`](docs/CONTENT_AUTHORING.md#authoring-the-pvm-bossing-guide) for the
+refresh procedure.
+
 ## Optional: the two AI features
 
 Both are **off by default**, both need an Anthropic API key, and both are *terminal outputs* —

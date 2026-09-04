@@ -40,6 +40,7 @@ import os
 import sys
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
+from urllib.parse import urlparse
 
 from tracker.content.errors import ContentError, ContentLocation
 from tracker.content.loader import (
@@ -71,6 +72,7 @@ def validate_content(content: Content) -> list[ContentError]:
     errors.extend(_check_references(content))
     errors.extend(_check_grants(content))
     errors.extend(_check_candidate_advances(content))
+    errors.extend(_check_roadmap_guides(content))
     errors.extend(_check_unique_skill_targets(content))
     errors.extend(_check_practice_groups(content))
     errors.extend(_check_live_prices(content))
@@ -122,6 +124,15 @@ def _requirement_sources(content: Content) -> Iterator[tuple[str, str, Requireme
     for item in content.items.values():
         if item.requires is not None:
             yield "item", item.id, item.requires
+    for guide in content.roadmap_guides.values():
+        for tier in guide.tiers:
+            for step in tier.preparation:
+                if step.completion is not None:
+                    yield "roadmap_guide", guide.id, step.completion
+            for encounter in tier.encounters:
+                for tree in (encounter.access, encounter.recommendations):
+                    if tree is not None:
+                        yield "roadmap_guide", guide.id, tree
 
 
 def _check_references(content: Content) -> list[ContentError]:
@@ -201,6 +212,89 @@ def _check_candidate_advances(content: Content) -> list[ContentError]:
         for capability_id in candidate.advances
         if capability_id not in content.capabilities
     ]
+
+
+def _check_roadmap_guides(content: Content) -> list[ContentError]:
+    """Validate guide references, nested identity, and safe external links."""
+    errors: list[ContentError] = []
+
+    def problem(guide_id: str, message: str) -> ContentError:
+        return ContentError(
+            message,
+            content.location_of("roadmap_guide", guide_id).with_path(guide_id),
+        )
+
+    def check_https(guide_id: str, label: str, url: str) -> None:
+        parsed = urlparse(url)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username is not None:
+            errors.append(
+                problem(guide_id, f"{label} must use HTTPS without credentials; got {url!r}")
+            )
+
+    for guide in content.roadmap_guides.values():
+        roadmap = content.roadmaps.get(guide.roadmap_id)
+        if roadmap is None:
+            errors.append(
+                problem(
+                    guide.id,
+                    f"references roadmap {guide.roadmap_id!r}, which is not declared anywhere "
+                    "in the corpus",
+                )
+            )
+        check_https(guide.id, "source.url", guide.source.url)
+
+        tier_ids: set[str] = set()
+        preparation_ids: set[str] = set()
+        encounter_ids: set[str] = set()
+        for tier in guide.tiers:
+            if tier.id in tier_ids:
+                errors.append(problem(guide.id, f"duplicate tier id {tier.id!r}"))
+            tier_ids.add(tier.id)
+
+            if tier.capability_id not in content.capabilities:
+                errors.append(
+                    problem(
+                        guide.id,
+                        f"tier {tier.id!r} references capability {tier.capability_id!r}, "
+                        "which is not declared anywhere in the corpus",
+                    )
+                )
+            elif roadmap is not None and tier.capability_id not in roadmap.capabilities:
+                errors.append(
+                    problem(
+                        guide.id,
+                        f"tier {tier.id!r} capability {tier.capability_id!r} is not included "
+                        f"in roadmap {roadmap.id!r}",
+                    )
+                )
+
+            for step in tier.preparation:
+                if step.id in preparation_ids:
+                    errors.append(problem(guide.id, f"duplicate preparation id {step.id!r}"))
+                preparation_ids.add(step.id)
+                if step.wiki_url is not None:
+                    check_https(guide.id, f"preparation {step.id!r} wiki_url", step.wiki_url)
+                if len(set(step.candidate_ids)) != len(step.candidate_ids):
+                    errors.append(
+                        problem(guide.id, f"preparation {step.id!r} repeats a candidate reference")
+                    )
+                for candidate_id in step.candidate_ids:
+                    if candidate_id not in content.candidates:
+                        errors.append(
+                            problem(
+                                guide.id,
+                                f"preparation {step.id!r} references candidate {candidate_id!r}, "
+                                "which is not declared anywhere in the corpus",
+                            )
+                        )
+
+            for encounter in tier.encounters:
+                if encounter.id in encounter_ids:
+                    errors.append(problem(guide.id, f"duplicate encounter id {encounter.id!r}"))
+                encounter_ids.add(encounter.id)
+                check_https(guide.id, f"encounter {encounter.id!r} wiki_url", encounter.wiki_url)
+
+    return errors
 
 
 def _check_unique_skill_targets(content: Content) -> list[ContentError]:

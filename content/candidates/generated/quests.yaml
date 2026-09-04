@@ -9,28 +9,6 @@
 # `source: authored`, and fill in `advances`. This file is regenerated wholesale, and a
 # quest already claimed by an authored candidate's `completion` is skipped here.
 
-- id: complete_animal_magnetism
-  name: Complete Animal Magnetism
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        crafting: 19
-    - skill:
-        ranged: 30
-    - skill:
-        slayer: 18
-    - skill:
-        woodcutting: 35
-    - quest: the_restless_ghost
-    - quest: ernest_the_chicken
-    - quest: priest_in_peril
-  completion:
-    quest: animal_magnetism
-  grants_facts:
-    quest: animal_magnetism
 - id: complete_another_slice_of_ham
   name: Complete Another Slice of H.A.M.
   kind: quest
@@ -738,20 +716,6 @@
     quest: the_fremennik_exiles
   grants_facts:
     quest: the_fremennik_exiles
-- id: complete_the_fremennik_isles
-  name: Complete The Fremennik Isles
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        construction: 20
-    - quest: the_fremennik_trials
-  completion:
-    quest: the_fremennik_isles
-  grants_facts:
-    quest: the_fremennik_isles
 - id: complete_the_fremennik_trials
   name: Complete The Fremennik Trials
   kind: quest
@@ -965,30 +929,6 @@
     quest: hazeel_cult
   grants_facts:
     quest: hazeel_cult
-- id: complete_heroes_quest
-  name: Complete Heroes' Quest
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        cooking: 53
-    - skill:
-        fishing: 53
-    - skill:
-        herblore: 25
-    - skill:
-        mining: 50
-    - quest_points: 55
-    - quest: shield_of_arrav
-    - quest: lost_city
-    - quest: merlins_crystal
-    - quest: dragon_slayer_i
-  completion:
-    quest: heroes_quest
-  grants_facts:
-    quest: heroes_quest
 - id: complete_holy_grail
   name: Complete Holy Grail
   kind: quest
@@ -1094,36 +1034,6 @@
     quest: jungle_potion
   grants_facts:
     quest: jungle_potion
-- id: complete_a_kingdom_divided
-  name: Complete A Kingdom Divided
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 54
-    - skill:
-        crafting: 38
-    - skill:
-        herblore: 50
-    - skill:
-        magic: 35
-    - skill:
-        mining: 42
-    - skill:
-        thieving: 52
-    - skill:
-        woodcutting: 52
-    - quest: the_depths_of_despair
-    - quest: the_queen_of_thieves
-    - quest: the_ascent_of_arceuus
-    - quest: the_forsaken_tower
-    - quest: tale_of_the_righteous
-  completion:
-    quest: a_kingdom_divided
-  grants_facts:
-    quest: a_kingdom_divided
 - id: complete_kings_ransom
   name: Complete King's Ransom
   kind: quest
@@ -1221,25 +1131,6 @@
     quest: lost_city
   grants_facts:
     quest: lost_city
-- id: complete_the_lost_tribe
-  name: Complete The Lost Tribe
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 13
-    - skill:
-        mining: 17
-    - skill:
-        thieving: 13
-    - quest: goblin_diplomacy
-    - quest: rune_mysteries
-  completion:
-    quest: the_lost_tribe
-  grants_facts:
-    quest: the_lost_tribe
 - id: complete_mage_arena_i
   name: Complete Mage Arena I
   kind: quest
@@ -1320,46 +1211,6 @@
     quest: misthalin_mystery
   grants_facts:
     quest: misthalin_mystery
-- id: complete_monkey_madness_i
-  name: Complete Monkey Madness I
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - quest: the_grand_tree
-    - quest: tree_gnome_village
-  completion:
-    quest: monkey_madness_i
-  grants_facts:
-    quest: monkey_madness_i
-- id: complete_monkey_madness_ii
-  name: Complete Monkey Madness II
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 55
-    - skill:
-        crafting: 70
-    - skill:
-        firemaking: 60
-    - skill:
-        hunter: 60
-    - skill:
-        slayer: 69
-    - skill:
-        thieving: 55
-    - quest: enlightened_journey
-    - quest: the_eyes_of_glouphrie
-    - quest: troll_stronghold
-    - quest: watchtower
-  completion:
-    quest: monkey_madness_ii
-  grants_facts:
-    quest: monkey_madness_ii
 - id: complete_monks_friend
   name: Complete Monk's Friend
   kind: quest
@@ -1606,57 +1457,6 @@
     quest: ratcatchers
   grants_facts:
     quest: ratcatchers
-- id: complete_recipe_for_disaster
-  name: Complete Recipe for Disaster
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 48
-    - skill:
-        cooking: 70
-    - skill:
-        crafting: 40
-    - skill:
-        firemaking: 50
-    - skill:
-        fishing: 53
-    - skill:
-        fletching: 10
-    - skill:
-        herblore: 25
-    - skill:
-        magic: 59
-    - skill:
-        mining: 50
-    - skill:
-        ranged: 40
-    - skill:
-        smithing: 40
-    - skill:
-        thieving: 53
-    - skill:
-        woodcutting: 36
-    - quest_points: 175
-    - quest: cooks_assistant
-    - quest: fishing_contest
-    - quest: goblin_diplomacy
-    - quest: big_chompy_bird_hunting
-    - quest: murder_mystery
-    - quest: nature_spirit
-    - quest: witchs_house
-    - quest: gertrudes_cat
-    - quest: shadow_of_the_storm
-    - quest: legends_quest
-    - quest: monkey_madness_i
-    - quest: desert_treasure_i
-    - quest: horror_from_the_deep
-  completion:
-    quest: recipe_for_disaster
-  grants_facts:
-    quest: recipe_for_disaster
 - id: complete_recruitment_drive
   name: Complete Recruitment Drive
   kind: quest
@@ -1869,33 +1669,6 @@
     quest: shilo_village
   grants_facts:
     quest: shilo_village
-- id: complete_sins_of_the_father
-  name: Complete Sins of the Father
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 52
-    - skill:
-        attack: 50
-    - skill:
-        crafting: 56
-    - skill:
-        fletching: 60
-    - skill:
-        magic: 49
-    - skill:
-        slayer: 50
-    - skill:
-        woodcutting: 62
-    - quest: vampyre_slayer
-    - quest: a_taste_of_hope
-  completion:
-    quest: sins_of_the_father
-  grants_facts:
-    quest: sins_of_the_father
 - id: complete_skippy_and_the_mogres
   name: Complete Skippy and the Mogres
   kind: quest
@@ -1929,36 +1702,6 @@
     quest: the_slug_menace
   grants_facts:
     quest: the_slug_menace
-- id: complete_song_of_the_elves
-  name: Complete Song of the Elves
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 70
-    - skill:
-        construction: 70
-    - skill:
-        farming: 70
-    - skill:
-        herblore: 70
-    - skill:
-        hunter: 70
-    - skill:
-        mining: 70
-    - skill:
-        smithing: 70
-    - skill:
-        woodcutting: 70
-    - quest: mournings_end_part_ii
-    - quest: making_history
-    - quest: druidic_ritual
-  completion:
-    quest: song_of_the_elves
-  grants_facts:
-    quest: song_of_the_elves
 - id: complete_a_souls_bane
   name: Complete A Soul's Bane
   kind: quest
@@ -2202,20 +1945,6 @@
     quest: troll_stronghold
   grants_facts:
     quest: troll_stronghold
-- id: complete_underground_pass
-  name: Complete Underground Pass
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        ranged: 25
-    - quest: biohazard
-  completion:
-    quest: underground_pass
-  grants_facts:
-    quest: underground_pass
 - id: complete_vampyre_slayer
   name: Complete Vampyre Slayer
   kind: quest
@@ -2403,24 +2132,6 @@
     quest: temple_of_the_eye
   grants_facts:
     quest: temple_of_the_eye
-- id: complete_beneath_cursed_sands
-  name: Complete Beneath Cursed Sands
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 62
-    - skill:
-        crafting: 55
-    - skill:
-        firemaking: 55
-    - quest: contact
-  completion:
-    quest: beneath_cursed_sands
-  grants_facts:
-    quest: beneath_cursed_sands
 - id: complete_sleeping_giants
   name: Complete Sleeping Giants
   kind: quest
@@ -2640,36 +2351,6 @@
     quest: secrets_of_the_north
   grants_facts:
     quest: secrets_of_the_north
-- id: complete_desert_treasure_ii_the_fallen_empire
-  name: Complete Desert Treasure II - The Fallen Empire
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        construction: 60
-    - skill:
-        firemaking: 75
-    - skill:
-        herblore: 62
-    - skill:
-        magic: 75
-    - skill:
-        runecraft: 60
-    - skill:
-        thieving: 70
-    - quest: desert_treasure_i
-    - quest: secrets_of_the_north
-    - quest: enakhras_lament
-    - quest: temple_of_the_eye
-    - quest: the_garden_of_death
-    - quest: below_ice_mountain
-    - quest: his_faithful_servants
-  completion:
-    quest: desert_treasure_ii_the_fallen_empire
-  grants_facts:
-    quest: desert_treasure_ii_the_fallen_empire
 - id: complete_his_faithful_servants
   name: Complete His Faithful Servants
   kind: quest
@@ -2765,46 +2446,6 @@
     quest: defender_of_varrock
   grants_facts:
     quest: defender_of_varrock
-- id: complete_while_guthix_sleeps
-  name: Complete While Guthix Sleeps
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        agility: 66
-    - skill:
-        attack: 99
-    - skill:
-        farming: 65
-    - skill:
-        firemaking: 49
-    - skill:
-        herblore: 65
-    - skill:
-        hunter: 62
-    - skill:
-        magic: 67
-    - skill:
-        strength: 99
-    - skill:
-        thieving: 72
-    - quest_points: 180
-    - quest: defender_of_varrock
-    - quest: the_path_of_glouphrie
-    - quest: fight_arena
-    - quest: dream_mentor
-    - quest: the_hand_in_the_sand
-    - quest: wanted
-    - quest: temple_of_the_eye
-    - quest: tears_of_guthix
-    - quest: nature_spirit
-    - quest: a_tail_of_two_cats
-  completion:
-    quest: while_guthix_sleeps
-  grants_facts:
-    quest: while_guthix_sleeps
 - id: complete_twilights_promise
   name: Complete Twilight's Promise
   kind: quest
@@ -2958,25 +2599,6 @@
     quest: the_curse_of_arrav
   grants_facts:
     quest: the_curse_of_arrav
-- id: complete_the_final_dawn
-  name: Complete The Final Dawn
-  kind: quest
-  source: generated
-  advances: {}
-  requires:
-    all_of:
-    - skill:
-        fletching: 52
-    - skill:
-        runecraft: 52
-    - skill:
-        thieving: 66
-    - quest: the_heart_of_darkness
-    - quest: perilous_moons
-  completion:
-    quest: the_final_dawn
-  grants_facts:
-    quest: the_final_dawn
 - id: complete_shadows_of_custodia
   name: Complete Shadows of Custodia
   kind: quest

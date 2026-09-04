@@ -36,11 +36,13 @@ from tracker.api.deps import (
 )
 from tracker.config.settings import Settings
 from tracker.content.loader import Content
+from tracker.db.projection import build_player_state
 from tracker.domain.types import AccountType, GpSensitivity
 from tracker.integrations.llm import LlmRefused, LlmUnavailable
 from tracker.sync.advisor import AdvisorNotFound, AdvisorThrottled
 from tracker.sync.guidance import GuidanceNotFound, GuidanceThrottled
 from tracker.ui import advisor as advisor_view
+from tracker.ui import bossing as bossing_view
 from tracker.ui import capabilities as capabilities_view
 from tracker.ui import dashboard as dashboard_view
 from tracker.ui import gear as gear_view
@@ -53,6 +55,7 @@ from tracker.ui import roadmaps as roadmaps_view
 from tracker.ui import settings as settings_view
 from tracker.ui import skills as skills_view
 from tracker.ui import unlocks as unlocks_view
+from tracker.ui.bossing_read_model import project_bossing_guide
 from tracker.ui.shell import empty_state, page
 from tracker.ui.view_model import (
     ADVISOR_DISABLED,
@@ -547,6 +550,26 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
                 on_toggle_secondary=toggle_secondary,
                 on_set_weight=set_weight,
             )
+
+    @ui.page("/roadmaps/pvm-ladder")
+    def pvm_ladder_page() -> None:
+        with session_factory()() as session:
+            player_id = read_model.first_player_id(session)
+            roadmap = selector(session, player_id)
+            guide = content().roadmap_guides.get("pvm_bossing_ladder")
+            view = (
+                project_bossing_guide(guide, build_player_state(session, player_id), content())
+                if player_id is not None and guide is not None
+                else None
+            )
+        with page("PvM bossing ladder", path="/roadmaps/pvm-ladder", roadmap=roadmap):
+            if player_id is None:
+                empty_state(NO_PLAYER)
+                return
+            if guide is None or view is None:
+                empty_state("The PvM bossing guide is not available in this content version.")
+                return
+            bossing_view.render(view, guide.source)
 
     @ui.page("/settings")
     def settings_page() -> None:

@@ -18,6 +18,7 @@
 | 0.6 | 2026-08-13 | Added **§22, the general advisor** — a conversational surface with the whole account pinned as context and a read-only tool catalogue for everything the digest cannot hold. §21 answers *how do I do this one chosen task*; §22 answers everything else, and may draw on the model's own knowledge of the game where §21 may not, without relaxing §21.3's honesty rules. Two new decisions follow from that widening. **D15** extends D14 to the input side: tools project already-computed state and never rank, estimate, evaluate a hypothetical, fetch or write, enforced by dispatch being a pure function of a frozen snapshot. **D16** keeps conversation history to questions and answers, discarding tool traffic at the end of each turn — the cached prefix must not grow, and a stale tool result is worse than a re-derivable one. §22.7 removes §21.6's cache-first rule explicitly rather than silently, since every question is new, and gives the advisor its own interval and daily ceiling because a turn costs several model calls where a guidance note costs one. Rankings, estimates and capability states are unchanged by construction. |
 | 0.7 | 2026-08-14 | Added **§23, gear progression** — a read-only projection answering *what should I be wearing, and what do I buy next*, which §21 and §22 could each only approach sideways. §10.5's ladders placed items on rungs but a rung's position says nothing about whether the account can equip it, so `Item.requires` extends §10.5 with a §10.2 tree for what it takes to **wear** a piece, evaluated three-valued by §9.1. Item requirement trees join §10.7's referential integrity, and two new rules reject a cycle and a contradictory gate. The wear gate has **three** states, not two: `gate_unknown` marks a requirement nobody has established, distinct from an item asserted to have none — letting an unauthored rung default to *ungated* is how a level-3 account gets told it can equip a Twisted bow. §21.2's per-ladder summary is hoisted into shared machinery so §21 and §23 describe one account with one implementation; its rendering is unchanged, so no stored guidance is invalidated. **D17** places the computation in the advisor's snapshot rather than in a tool handler, which is what keeps §22.4's dispatch a pure function of frozen state under D15, and forbids the setup from claiming any rung is *better* rather than *wearable*. The advisor gains a bounded digest section and `get_gear_setup`; `ADVISOR_SCHEMA_VERSION` goes to 3, and every live thread takes one cold prefix on its next turn. Rankings, estimates and capability states are unchanged by construction. |
 | 0.8 | 2026-08-15 | Added the **acquisition axis** to §10.5 and §23, found by reading the shipped page: it told every melee account that an *Infernal cape* was the best it could equip. The sentence was true under §23.4 — the cape's wear gate really is 40 Defence and nothing else — and useless, because no amount of gp buys one and the corpus had no field that could say so. `Item.acquisition` and `Item.acquired_from` name **how a piece is got**, which is a different question from what it takes to wear it, and §23.4's recommendation narrows to the highest rung the account can wear **and** either holds or can buy. A rung it can wear but must win becomes `earn` — the *lowest* such rung above the recommendation, so a capeless account is pointed at the Fight Caves rather than the Inferno, and the target walks itself up as each is won. Two consequences worth naming: the setup's gp total can no longer contain something no amount of gp can buy, and it gets that guarantee from the selection rule rather than from a second filter that would have to be kept in step; and **an unknown acquisition does not demote**, which is the deliberate opposite of *an unknown gate does not promote* — §23.4 derives that rule from what the two errors cost, and acquisition-unknown has no player-side remedy, so dropping a wearable rung would punish the player for a gap in the corpus. `acquired_from` is prose and never an id (§10.5), and is **not** derived from `price_mode`, which is a pricing cascade and defaults the wrong way. Rankings, estimates and capability states are unchanged by construction. |
+| 0.9 | 2026-09-04 | Added the attributed six-tier PvM Bossing Ladder guide and `/roadmaps/pvm-ladder`. The guide separates enforced access requirements from advisory first-attempt recommendations, treats tiers as independent difficulty bands, and promotes linked preparation work into Next up without accumulating duplicate relevance. It is static content pinned to OSRS Wiki revision 15319480 under CC BY-NC-SA 3.0. No boss-KC tracking, manual completion, persistence migration, or sync-payload change is introduced. |
 | 0.5.3 | 2026-08-13 | Closed **A31**, found by reading the shipped output: §9.10's card said how a candidate *scored* and never what it was *for*, and for the generated skill bands it could not — `tools/generate_candidates.py` authors them with `advances: {}` (§10.6), so no §9.4 factor carries a goal and *"Train Slayer to 10"* reached the top of a PvM list explaining itself as *"quick to finish"*. Added **consequences** (§9.10): what a candidate unblocks, what it is a prerequisite of, which goals it measurably moves, and which grind it shortens — derived after the ranking is fixed, read by no factor, and persisted on `RecommendationEntry` (§6.10). The two identities §9.4 already computed and discarded — *which* capabilities `leverage` counted and *which* candidate `method_unlock` accelerated — are retained rather than recomputed. Rankings are unchanged by construction. |
 | 0.5.2 | 2026-08-11 | Closed **A30**, found by running §16.3's tuning procedure against the golden corpus: §9.4 had no factor for a candidate that makes *another* candidate cheaper or faster, so Desert Treasure I scored zero on `leverage` for an account that already had Ancients while being the one action that turns 113 Magic hours into 16. Added **`method_unlock`** as §9.4's sixth factor with its own authored weight, derived in code from `grants_facts` and §8's estimator (D13). Folded `unknown_effort_hours` into §9.7's printed profile — ratified in code since Step 5 but never transcribed. |
 | 0.5.1 | 2026-08-04 | Closed A22, found while implementing §10.7's validator: added `content/quests/`, `content/skills/` and `content/refreshers/` to §10.1. §10.7 demanded referential integrity for quest and skill ids that the layout gave nowhere to declare, and §10.4's refresher templates had no directory. Quests and skills are content rather than a code table because §10.8 names a quest as precisely the thing that must never require a code change. Status moved from *design* to *implementation in progress*. |
@@ -186,6 +187,24 @@ hasn't observed."*
 The consequence for implementation is uniform. Any fact whose observation is opportunistic
 rather than continuous needs **two timestamps** — when the underlying event occurred, and
 when we learned of it — and its absence must resolve to `unknown` rather than to a negative.
+
+## 4.6 Roadmap guides are attributed projections
+
+A `RoadmapGuide` adds authored explanation and fine-grained readiness to an existing roadmap. It
+does not replace the roadmap's capability weights and is not a second recommendation engine. The
+PvM guide has six ordered difficulty tiers, but those tiers are independent: order controls display
+and tie-breaking only, never access. Earlier encounters do not need to be completed before a later
+one can be ready.
+
+Each encounter evaluates two requirement trees. **Access** contains only enforced entry conditions;
+an unsatisfied access leaf makes the encounter `locked`. **Recommendations** contain suggested
+combat stats and setup; unmet advice makes an accessible encounter `building_toward`, while meeting
+both trees makes it `ready` (rendered “Ready to try”). Unknown facts remain `sync_needed` and
+render separately from blockers. These states describe account preparation, not player mastery or
+encounter completion.
+
+The guide reads the existing fact snapshot only. Boss kill counts are not completion signals,
+there is no manual completion state, and the sync payload is unchanged.
 
 ---
 
@@ -1259,6 +1278,7 @@ content/
     capabilities/
     candidates/
     roadmaps/
+    roadmap_guides/   # attributed preparation and encounter guidance
     training_methods/
     milestones/
     refreshers/       # practice-group templates (§10.4)
@@ -1552,6 +1572,27 @@ The actual, defensible boundary:
 
 > **No game content lives in code.** The engine knows about requirement *types*, practice *domains*, and factor *names*. Adding new game content — a quest, an item, a capability, a roadmap, a milestone, a scoring profile — never requires a code change. Adding a new requirement type or practice domain does.
 
+## 10.9 Roadmap guides
+
+`RoadmapGuide` contains a stable id, name, `roadmap_id`, `BossingGuideSource` metadata
+(`url`, numeric `revision`, `checked_at`, and `license`), and ordered `BossingTier` entries. A tier
+has a stable id, name, summary, `capability_id`, preparation steps and encounters. A
+`BossingPreparationStep` is either informational or has a `completion` predicate plus one or more
+actionable `candidate_ids`. A `BossingEncounter` has separate `access` and `recommendations`
+predicates, paraphrased mechanics and rewards, and a direct HTTPS source link.
+
+Validation requires six unique PvM tiers in Easy-to-Grandmaster order; unique step and encounter
+ids/order; resolving roadmap, capability, candidate and requirement references; safe HTTPS links;
+and candidate linkage for every checkable preparation step. The pinned source is OSRS Wiki
+Bossing Ladder revision 15319480, checked 2026-09-04. Adapted material is attributed to Old School
+RuneScape Wiki contributors under CC BY-NC-SA 3.0. Refreshes are intentional authored updates to a
+new pinned revision; the runtime never scrapes the Wiki.
+
+Guide relevance joins candidate scoring through the associated tier capability. Direct preparation
+and encounter prerequisites receive that tier's contribution, and multiple matches use the existing
+maximum semantics rather than summation. Generated skill/quest candidates can therefore explain
+and advance nearby PvM preparation without introducing a second ranked candidate pool.
+
 ---
 
 # 11. Security and Network Exposure
@@ -1727,6 +1768,13 @@ The headline view — *"what can I actually do today?"* Each capability shows al
 
 ## Roadmaps
 Primary roadmap selector plus optional secondaries. Selection weights hidden behind advanced settings; defaults `1.00` primary / `0.25` secondary.
+
+The PvM roadmap links to `/roadmaps/pvm-ladder`, which renders preparation followed by encounter
+cards for all six tiers. The page shows overall ready/building counts and the closest next encounter,
+chosen by recommendation-completion fraction with source tier/order as the tie-breaker. It expands
+the highest tier containing a ready encounter by default, falling back to Easy. Cards keep access
+blockers and sync-needed facts distinct, and include mechanics, rewards and direct source links.
+`/capabilities` remains a general capability view and does not duplicate the encounter catalogue.
 
 ## Recommendations
 Sortable ranked list with per-item factor breakdown, estimate, and a confidence marker for anything below `high`. Blocked candidates in a separate collapsed section. **At most one refresher** appears here (§9.8).

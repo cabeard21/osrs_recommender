@@ -121,25 +121,14 @@
   grants_facts:
     skill:
       agility: 99
-- id: train_attack_1_to_60
-  name: Train Attack to 60
-  kind: skill_training
-  source: generated
-  advances: {}
-  completion:
-    skill:
-      attack: 60
-  grants_facts:
-    skill:
-      attack: 60
-- id: train_attack_60_to_70
+- id: train_attack_65_to_70
   name: Train Attack to 70
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      attack: 60
+      attack: 65
   completion:
     skill:
       attack: 70
@@ -160,20 +149,6 @@
   grants_facts:
     skill:
       attack: 75
-- id: train_attack_75_to_80
-  name: Train Attack to 80
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      attack: 75
-  completion:
-    skill:
-      attack: 80
-  grants_facts:
-    skill:
-      attack: 80
 - id: train_attack_80_to_85
   name: Train Attack to 85
   kind: skill_training
@@ -188,20 +163,6 @@
   grants_facts:
     skill:
       attack: 85
-- id: train_attack_85_to_90
-  name: Train Attack to 90
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      attack: 85
-  completion:
-    skill:
-      attack: 90
-  grants_facts:
-    skill:
-      attack: 90
 - id: train_attack_90_to_94
   name: Train Attack to 94
   kind: skill_training
@@ -462,31 +423,6 @@
   grants_facts:
     skill:
       crafting: 99
-- id: train_defence_1_to_40
-  name: Train Defence to 40
-  kind: skill_training
-  source: generated
-  advances: {}
-  completion:
-    skill:
-      defence: 40
-  grants_facts:
-    skill:
-      defence: 40
-- id: train_defence_40_to_60
-  name: Train Defence to 60
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      defence: 40
-  completion:
-    skill:
-      defence: 60
-  grants_facts:
-    skill:
-      defence: 60
 - id: train_defence_70_to_75
   name: Train Defence to 75
   kind: skill_training
@@ -501,20 +437,6 @@
   grants_facts:
     skill:
       defence: 75
-- id: train_defence_75_to_80
-  name: Train Defence to 80
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      defence: 75
-  completion:
-    skill:
-      defence: 80
-  grants_facts:
-    skill:
-      defence: 80
 - id: train_defence_80_to_85
   name: Train Defence to 85
   kind: skill_training
@@ -529,20 +451,6 @@
   grants_facts:
     skill:
       defence: 85
-- id: train_defence_85_to_90
-  name: Train Defence to 90
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      defence: 85
-  completion:
-    skill:
-      defence: 90
-  grants_facts:
-    skill:
-      defence: 90
 - id: train_defence_90_to_94
   name: Train Defence to 94
   kind: skill_training
@@ -733,28 +641,14 @@
   grants_facts:
     skill:
       herblore: 75
-- id: train_herblore_75_to_78
-  name: Train Herblore to 78
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      herblore: 75
-  completion:
-    skill:
-      herblore: 78
-  grants_facts:
-    skill:
-      herblore: 78
-- id: train_herblore_78_to_80
+- id: train_herblore_75_to_80
   name: Train Herblore to 80
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      herblore: 78
+      herblore: 75
   completion:
     skill:
       herblore: 80
@@ -828,28 +722,14 @@
   grants_facts:
     skill:
       hitpoints: 50
-- id: train_hitpoints_50_to_60
-  name: Train Hitpoints to 60
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      hitpoints: 50
-  completion:
-    skill:
-      hitpoints: 60
-  grants_facts:
-    skill:
-      hitpoints: 60
-- id: train_hitpoints_60_to_70
+- id: train_hitpoints_50_to_70
   name: Train Hitpoints to 70
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      hitpoints: 60
+      hitpoints: 50
   completion:
     skill:
       hitpoints: 70
@@ -993,20 +873,6 @@
   grants_facts:
     skill:
       magic: 75
-- id: train_magic_75_to_80
-  name: Train Magic to 80
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      magic: 75
-  completion:
-    skill:
-      magic: 80
-  grants_facts:
-    skill:
-      magic: 80
 - id: train_magic_80_to_82
   name: Train Magic to 82
   kind: skill_training
@@ -1035,28 +901,14 @@
   grants_facts:
     skill:
       magic: 85
-- id: train_magic_85_to_90
-  name: Train Magic to 90
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      magic: 85
-  completion:
-    skill:
-      magic: 90
-  grants_facts:
-    skill:
-      magic: 90
-- id: train_magic_94_to_99
+- id: train_magic_95_to_99
   name: Train Magic to 99
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      magic: 94
+      magic: 95
   completion:
     skill:
       magic: 99
@@ -1186,20 +1038,6 @@
   grants_facts:
     skill:
       mining: 99
-- id: train_prayer_25_to_43
-  name: Train Prayer to 43
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      prayer: 25
-  completion:
-    skill:
-      prayer: 43
-  grants_facts:
-    skill:
-      prayer: 43
 - id: train_prayer_43_to_70
   name: Train Prayer to 70
   kind: skill_training
@@ -1228,14 +1066,14 @@
   grants_facts:
     skill:
       prayer: 75
-- id: train_prayer_75_to_80
+- id: train_prayer_77_to_80
   name: Train Prayer to 80
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      prayer: 75
+      prayer: 77
   completion:
     skill:
       prayer: 80
@@ -1309,14 +1147,14 @@
   grants_facts:
     skill:
       ranged: 40
-- id: train_ranged_40_to_70
+- id: train_ranged_61_to_70
   name: Train Ranged to 70
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      ranged: 40
+      ranged: 61
   completion:
     skill:
       ranged: 70
@@ -1337,20 +1175,6 @@
   grants_facts:
     skill:
       ranged: 75
-- id: train_ranged_75_to_80
-  name: Train Ranged to 80
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      ranged: 75
-  completion:
-    skill:
-      ranged: 80
-  grants_facts:
-    skill:
-      ranged: 80
 - id: train_ranged_80_to_85
   name: Train Ranged to 85
   kind: skill_training
@@ -1365,20 +1189,6 @@
   grants_facts:
     skill:
       ranged: 85
-- id: train_ranged_85_to_90
-  name: Train Ranged to 90
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      ranged: 85
-  completion:
-    skill:
-      ranged: 90
-  grants_facts:
-    skill:
-      ranged: 90
 - id: train_ranged_90_to_94
   name: Train Ranged to 94
   kind: skill_training
@@ -1393,14 +1203,14 @@
   grants_facts:
     skill:
       ranged: 94
-- id: train_ranged_94_to_99
+- id: train_ranged_95_to_99
   name: Train Ranged to 99
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      ranged: 94
+      ranged: 95
   completion:
     skill:
       ranged: 99
@@ -1432,28 +1242,14 @@
   grants_facts:
     skill:
       slayer: 30
-- id: train_slayer_30_to_55
-  name: Train Slayer to 55
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      slayer: 30
-  completion:
-    skill:
-      slayer: 55
-  grants_facts:
-    skill:
-      slayer: 55
-- id: train_slayer_55_to_70
+- id: train_slayer_30_to_70
   name: Train Slayer to 70
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      slayer: 55
+      slayer: 30
   completion:
     skill:
       slayer: 70
@@ -1639,25 +1435,14 @@
   grants_facts:
     skill:
       smithing: 99
-- id: train_strength_1_to_60
-  name: Train Strength to 60
-  kind: skill_training
-  source: generated
-  advances: {}
-  completion:
-    skill:
-      strength: 60
-  grants_facts:
-    skill:
-      strength: 60
-- id: train_strength_60_to_70
+- id: train_strength_65_to_70
   name: Train Strength to 70
   kind: skill_training
   source: generated
   advances: {}
   requires:
     skill:
-      strength: 60
+      strength: 65
   completion:
     skill:
       strength: 70
@@ -1678,20 +1463,6 @@
   grants_facts:
     skill:
       strength: 75
-- id: train_strength_75_to_80
-  name: Train Strength to 80
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      strength: 75
-  completion:
-    skill:
-      strength: 80
-  grants_facts:
-    skill:
-      strength: 80
 - id: train_strength_80_to_85
   name: Train Strength to 85
   kind: skill_training
@@ -1706,20 +1477,6 @@
   grants_facts:
     skill:
       strength: 85
-- id: train_strength_85_to_90
-  name: Train Strength to 90
-  kind: skill_training
-  source: generated
-  advances: {}
-  requires:
-    skill:
-      strength: 85
-  completion:
-    skill:
-      strength: 90
-  grants_facts:
-    skill:
-      strength: 90
 - id: train_strength_90_to_94
   name: Train Strength to 94
   kind: skill_training

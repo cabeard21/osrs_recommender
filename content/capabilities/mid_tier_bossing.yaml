@@ -1,23 +1,24 @@
-# Rung 2 of the PvM bossing ladder — see boss_fundamentals.yaml for the design note.
-#
-# Slayer 55 rather than a boss name: the mid-tier bosses this rung stands for are reached
-# through Slayer assignments, and a level is a fact the plugin reports where a kill count is
-# not. The corpus prefers the fact it can observe over the one it would have to guess.
-#
-# Gated on the Rune crossbow alone, and not on `any_of: [rune_crossbow, toxic_blowpipe]` as
-# the obvious alternative. `tools/lookup_item_ids.py` found that only `Toxic blowpipe (empty)`
-# has a price-API catalog row — the charged form is untradeable — so an `item:` leaf naming it
-# would miss every player who owns a charged one, and §8.3 could not price it either way.
+# Medium-tier preparation from the pinned Wiki guide. Every leaf is independently observable;
+# no Easy-tier capability gate forces a player through encounters in source-table order.
 id: mid_tier_bossing
-name: Mid-tier bossing
+name: Medium bossing preparation
 recommended_readiness: medium
-pvp_value: 0.70
+pvp_value: 0.55
 requires:
   all_of:
-    - capability: boss_fundamentals
-    - skill: {slayer: 55}
-    - skill: {ranged: 70}
-    - skill: {defence: 70}
-    - quest: priest_in_peril
-    - unlock: ca_medium
+    - skill: {attack: 65}
+    - skill: {strength: 65}
+    - skill: {defence: 60}
+    - skill: {ranged: 61}
+    - quest: monkey_madness_i
+    - quest: heroes_quest
+    - quest: underground_pass
+    - quest: desert_treasure_i
+    - quest: the_fremennik_isles
+    - quest: recipe_for_disaster
+    - item: dragon_defender
     - item: rune_crossbow
+    - item: dragon_scimitar
+    - item: ibans_staff_u
+    - item: helm_of_neitiznot
+    - item: barrows_gloves

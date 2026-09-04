@@ -81,7 +81,7 @@
   name: Buy a Rune crossbow
   kind: acquisition
   advances:
-    mid_tier_bossing: 0.45
+    mid_tier_bossing: 1.00
   requires:
     any_of:
       - account_type: main
@@ -96,8 +96,7 @@
 - id: buy_gwd_body_armour
   name: Buy God Wars body armour
   kind: acquisition
-  advances:
-    gwd_bossing: 0.70
+  advances: {}
   requires:
     any_of:
       - account_type: main
@@ -117,9 +116,7 @@
 - id: buy_dragon_hunter_crossbow
   name: Buy a Dragon hunter crossbow
   kind: acquisition
-  advances:
-    dragon_bossing: 0.75
-    raid_ready: 0.35
+  advances: {}
   requires:
     any_of:
       - account_type: main
@@ -128,3 +125,61 @@
     item: dragon_hunter_crossbow
   grants_facts:
     item: dragon_hunter_crossbow
+
+# Observable equipment named directly by the Wiki's tier preparation lists.
+- id: obtain_rune_scimitar
+  name: Obtain a Rune scimitar
+  kind: acquisition
+  advances: {boss_fundamentals: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: rune_scimitar}
+  grants_facts: {item: rune_scimitar}
+- id: obtain_dorgeshuun_crossbow
+  name: Obtain a Dorgeshuun crossbow
+  kind: acquisition
+  advances: {boss_fundamentals: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: dorgeshuun_crossbow}
+  grants_facts: {item: dorgeshuun_crossbow}
+- id: obtain_dragon_defender
+  name: Obtain a Dragon defender
+  kind: acquisition
+  advances: {mid_tier_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: dragon_defender}
+  grants_facts: {item: dragon_defender}
+- id: obtain_dragon_scimitar
+  name: Obtain a Dragon scimitar
+  kind: acquisition
+  advances: {mid_tier_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: dragon_scimitar}
+  grants_facts: {item: dragon_scimitar}
+- id: obtain_ibans_staff
+  name: Obtain Iban's staff
+  kind: acquisition
+  advances: {mid_tier_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: ibans_staff_u}
+  grants_facts: {item: ibans_staff_u}
+- id: obtain_helm_of_neitiznot
+  name: Obtain a Helm of neitiznot
+  kind: acquisition
+  advances: {mid_tier_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: helm_of_neitiznot}
+  grants_facts: {item: helm_of_neitiznot}
+- id: obtain_barrows_gloves
+  name: Obtain Barrows gloves
+  kind: acquisition
+  advances: {mid_tier_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: barrows_gloves}
+  grants_facts: {item: barrows_gloves}
+- id: obtain_fire_cape
+  name: Earn a Fire cape
+  kind: acquisition
+  advances: {gwd_bossing: 1.0}
+  requires: {any_of: [{account_type: main}, {account_type: group}]}
+  completion: {item: fire_cape}
+  grants_facts: {item: fire_cape}

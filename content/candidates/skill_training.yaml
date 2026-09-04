@@ -57,3 +57,135 @@
     skill: {woodcutting: 99}
   grants_facts:
     skill: {woodcutting: 99}
+
+# Wiki bossing-ladder preparation boundaries. These are authored (rather than generated)
+# because `advances` is editorial roadmap relevance; generation deliberately assigns none.
+- id: train_attack_to_40
+  name: Train Attack to 40
+  kind: skill_training
+  advances: {boss_fundamentals: 1.0}
+  completion: {skill: {attack: 40}}
+  grants_facts: {skill: {attack: 40}}
+- id: train_strength_to_40
+  name: Train Strength to 40
+  kind: skill_training
+  advances: {boss_fundamentals: 1.0}
+  completion: {skill: {strength: 40}}
+  grants_facts: {skill: {strength: 40}}
+- id: train_defence_to_40
+  name: Train Defence to 40
+  kind: skill_training
+  advances: {boss_fundamentals: 1.0}
+  completion: {skill: {defence: 40}}
+  grants_facts: {skill: {defence: 40}}
+- id: train_prayer_to_43
+  name: Train Prayer to 43
+  kind: skill_training
+  advances: {boss_fundamentals: 1.0}
+  completion: {skill: {prayer: 43}}
+  grants_facts: {skill: {prayer: 43}}
+- id: train_attack_to_65
+  name: Train Attack to 65
+  kind: skill_training
+  advances: {mid_tier_bossing: 1.0}
+  completion: {skill: {attack: 65}}
+  grants_facts: {skill: {attack: 65}}
+- id: train_strength_to_65
+  name: Train Strength to 65
+  kind: skill_training
+  advances: {mid_tier_bossing: 1.0}
+  completion: {skill: {strength: 65}}
+  grants_facts: {skill: {strength: 65}}
+- id: train_defence_to_60
+  name: Train Defence to 60
+  kind: skill_training
+  advances: {mid_tier_bossing: 1.0}
+  completion: {skill: {defence: 60}}
+  grants_facts: {skill: {defence: 60}}
+- id: train_ranged_to_61
+  name: Train Ranged to 61
+  kind: skill_training
+  advances: {mid_tier_bossing: 1.0}
+  completion: {skill: {ranged: 61}}
+  grants_facts: {skill: {ranged: 61}}
+- id: train_attack_to_80
+  name: Train Attack to 80
+  kind: skill_training
+  advances: {dragon_bossing: 1.0}
+  completion: {skill: {attack: 80}}
+  grants_facts: {skill: {attack: 80}}
+- id: train_strength_to_80
+  name: Train Strength to 80
+  kind: skill_training
+  advances: {dragon_bossing: 1.0}
+  completion: {skill: {strength: 80}}
+  grants_facts: {skill: {strength: 80}}
+- id: train_defence_to_80
+  name: Train Defence to 80
+  kind: skill_training
+  advances: {dragon_bossing: 1.0}
+  completion: {skill: {defence: 80}}
+  grants_facts: {skill: {defence: 80}}
+- id: train_ranged_to_80
+  name: Train Ranged to 80
+  kind: skill_training
+  advances: {dragon_bossing: 1.0}
+  completion: {skill: {ranged: 80}}
+  grants_facts: {skill: {ranged: 80}}
+- id: train_magic_to_80
+  name: Train Magic to 80
+  kind: skill_training
+  advances: {dragon_bossing: 1.0}
+  completion: {skill: {magic: 80}}
+  grants_facts: {skill: {magic: 80}}
+- id: train_attack_to_90
+  name: Train Attack to 90
+  kind: skill_training
+  advances: {raid_ready: 1.0, grandmaster_bossing: 1.0}
+  completion: {skill: {attack: 90}}
+  grants_facts: {skill: {attack: 90}}
+- id: train_strength_to_90
+  name: Train Strength to 90
+  kind: skill_training
+  advances: {raid_ready: 1.0}
+  completion: {skill: {strength: 90}}
+  grants_facts: {skill: {strength: 90}}
+- id: train_defence_to_90
+  name: Train Defence to 90
+  kind: skill_training
+  advances: {raid_ready: 1.0, grandmaster_bossing: 1.0}
+  completion: {skill: {defence: 90}}
+  grants_facts: {skill: {defence: 90}}
+- id: train_ranged_to_90
+  name: Train Ranged to 90
+  kind: skill_training
+  advances: {raid_ready: 1.0}
+  completion: {skill: {ranged: 90}}
+  grants_facts: {skill: {ranged: 90}}
+- id: train_magic_to_90
+  name: Train Magic to 90
+  kind: skill_training
+  advances:
+    ice_barrage_nh: 0.35
+    deep_wildy_nh: 0.20
+    raid_ready: 1.0
+  completion: {skill: {magic: 90}}
+  grants_facts: {skill: {magic: 90}}
+- id: train_strength_to_95
+  name: Train Strength to 95
+  kind: skill_training
+  advances: {grandmaster_bossing: 1.0}
+  completion: {skill: {strength: 95}}
+  grants_facts: {skill: {strength: 95}}
+- id: train_ranged_to_95
+  name: Train Ranged to 95
+  kind: skill_training
+  advances: {grandmaster_bossing: 1.0}
+  completion: {skill: {ranged: 95}}
+  grants_facts: {skill: {ranged: 95}}
+- id: train_magic_to_95
+  name: Train Magic to 95
+  kind: skill_training
+  advances: {grandmaster_bossing: 1.0}
+  completion: {skill: {magic: 95}}
+  grants_facts: {skill: {magic: 95}}

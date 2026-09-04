@@ -470,7 +470,8 @@ def _nav_link(item: NavItem, current: str) -> None:
     without announcing it, or announce it without looking it.
     """
     link = ui.link(item.label, item.path).classes("nav-link")
-    if item.path == current:
+    is_current = item.path == current or (item.path != "/" and current.startswith(f"{item.path}/"))
+    if is_current:
         link.props("aria-current=page")
 
 

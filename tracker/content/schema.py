@@ -22,6 +22,7 @@ code would violate G9. Both are thin: an id and a name.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import date
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
@@ -306,6 +307,71 @@ class Roadmap(ContentModel):
         if not value:
             raise ValueError("a roadmap must weight at least one capability")
         return value
+
+
+class BossingGuideSource(ContentModel):
+    """Pinned attribution metadata for an authored bossing guide."""
+
+    url: str
+    revision: int = Field(gt=0)
+    checked_at: date
+    license: str
+
+
+class BossingPreparationStep(ContentModel):
+    """Preparation advice, optionally checkable against observed account facts."""
+
+    id: str
+    label: str
+    completion: Requirement | None = None
+    candidate_ids: tuple[str, ...] = ()
+    wiki_url: str | None = None
+
+    _parse_completion = _requirement_field("completion")
+
+    @model_validator(mode="after")
+    def _checkable_steps_link_candidates(self) -> BossingPreparationStep:
+        if self.completion is not None and not self.candidate_ids:
+            raise ValueError("a checkable preparation step must reference at least one candidate")
+        if self.completion is None and self.candidate_ids:
+            raise ValueError("an informational preparation step cannot reference candidates")
+        return self
+
+
+class BossingEncounter(ContentModel):
+    """One encounter row, with enforced access separate from advisory readiness."""
+
+    id: str
+    name: str
+    access: Requirement | None = None
+    recommendations: Requirement | None = None
+    mechanics: tuple[str, ...] = Field(min_length=1)
+    rewards: tuple[str, ...] = Field(min_length=1)
+    wiki_url: str
+
+    _parse_access = _requirement_field("access")
+    _parse_recommendations = _requirement_field("recommendations")
+
+
+class BossingTier(ContentModel):
+    """An ordered display tier associated with one capability in the roadmap."""
+
+    id: str
+    name: str
+    summary: str
+    capability_id: str
+    preparation: tuple[BossingPreparationStep, ...] = ()
+    encounters: tuple[BossingEncounter, ...] = Field(min_length=1)
+
+
+class RoadmapGuide(ContentModel):
+    """Authored, attributed detail layered over a capability roadmap."""
+
+    id: str
+    roadmap_id: str
+    name: str
+    source: BossingGuideSource
+    tiers: tuple[BossingTier, ...] = Field(min_length=1)
 
 
 class Milestone(ContentModel):

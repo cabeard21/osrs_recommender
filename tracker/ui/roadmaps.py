@@ -35,6 +35,14 @@ def render(
     on_set_weight: WeightHandler,
 ) -> None:
     """The whole view: a primary radio group, secondary checkboxes, and advanced weights."""
+    with section("PvM bossing ladder", testid="pvm-ladder-card"):
+        ui.html(
+            "A six-tier, encounter-by-encounter guide based on your observed account readiness."
+        ).classes("text-sm tracker-dim mb-2")
+        link = ui.link("Open the granular ladder", "/roadmaps/pvm-ladder").classes("text-sm")
+        link.style("color: var(--gold)")
+        link.props("data-testid=pvm-ladder-link")
+
     primary = mark_primary(options)
     primary_id = primary[0].roadmap_id if primary else None
 

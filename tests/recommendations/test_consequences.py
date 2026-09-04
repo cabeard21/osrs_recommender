@@ -116,8 +116,8 @@ class TestTheUsersOwnComplaint:
         roadmap weight cannot supply when every link is off-roadmap."""
         links = explain("train_slayer_1_to_10").goal_links  # type: ignore[attr-defined]
 
-        assert [link.name for link in links] == ["Ice Barrage NH", "Deep Wilderness NH"]
-        assert links[0].via_name == "Complete Desert Treasure I"
+        assert [link.name for link in links] == ["Medium bossing preparation", "Ice Barrage NH"]
+        assert all(link.via_name == "Complete Desert Treasure I" for link in links)
 
     def test_the_goal_beyond_the_quest_is_flagged_as_off_the_pvm_ladder(
         self, explain: Callable[..., object]
@@ -127,18 +127,19 @@ class TestTheUsersOwnComplaint:
         not worth hiding, and not worth silently ranking as though it were a chosen goal."""
         links = explain("train_slayer_1_to_10").goal_links  # type: ignore[attr-defined]
 
-        assert all(link.on_roadmap is False for link in links)
+        assert links[0].on_roadmap is True
+        assert links[1].on_roadmap is False
 
-    def test_training_attack_to_sixty_dents_boss_fundamentals_directly(
+    def test_training_prayer_to_43_dents_easy_bossing_directly(
         self, explain: Callable[..., object]
     ) -> None:
-        """The band that *does* serve the chosen roadmap, and the contrast that makes the
-        flag above legible. ``boss_fundamentals`` names ``skill: {attack: 60}`` outright, so
-        this is measured against the capability's own requirements rather than inferred."""
-        goals = explain("train_attack_1_to_60").goal_progress  # type: ignore[attr-defined]
+        """The authored Easy-tier boundary serves the selected roadmap directly."""
+        goals = explain("train_prayer_to_43").goal_progress  # type: ignore[attr-defined]
 
-        assert [(goal.name, goal.on_roadmap) for goal in goals] == [("Boss fundamentals", True)]
-        assert (goals[0].remaining_before, goals[0].remaining_after) == (5, 4)
+        assert [(goal.name, goal.on_roadmap) for goal in goals] == [
+            ("Easy bossing preparation", True)
+        ]
+        assert goals[0].remaining_before - goals[0].remaining_after == 1
 
     def test_the_high_risk_setup_reveals_itself_as_serving_no_selected_goal(
         self, explain: Callable[..., object]
@@ -175,7 +176,7 @@ class TestWhatItRefusesToSay:
         """A guess shown beside a measurement reads as the same kind of claim. Attack 60
         dents ``boss_fundamentals`` outright, so nothing is gained by also reporting what
         the candidates it gates are hypothetically for."""
-        result = explain("train_attack_1_to_60")
+        result = explain("train_prayer_to_43")
 
         assert result.goal_progress  # type: ignore[attr-defined]
         assert result.goal_links == ()  # type: ignore[attr-defined]
@@ -264,7 +265,7 @@ class TestOrdering:
     ) -> None:
         """The caps are what keep a card readable. A silent overflow would be a design
         regression that no other assertion here would notice."""
-        for candidate_id in ("train_slayer_1_to_10", "train_attack_1_to_60", "buy_high_risk_gear"):
+        for candidate_id in ("train_slayer_1_to_10", "train_prayer_to_43", "buy_high_risk_gear"):
             result = explain(candidate_id)
             assert len(result.gate_progress) <= 3  # type: ignore[attr-defined]
             assert len(result.goal_progress) <= 2  # type: ignore[attr-defined]

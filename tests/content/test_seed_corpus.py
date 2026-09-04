@@ -44,6 +44,7 @@ class TestShape:
             "gwd_bossing",
             "dragon_bossing",
             "raid_ready",
+            "grandmaster_bossing",
         }
 
     def test_roadmaps(self, content: Content) -> None:
@@ -63,13 +64,10 @@ class TestShape:
 
 
 class TestPvmLadder:
-    """The ladder is a chain in the capability DAG, and that must stay true.
+    """The Wiki tiers are independently evaluable preparation goals.
 
-    §4.2 forbids a roadmap having a dependency graph of its own, so the *only* thing making
-    the bossing ladder ordered is that each rung's ``requires`` names the rung below. That
-    is a property nothing else in the corpus checks: every rung would still load, validate
-    and score if the ``capability:`` leaves were deleted — it would simply stop being a
-    ladder and become five unrelated goals, silently, with the roadmap file unchanged.
+    Tier order belongs to the authored guide.  A player must therefore be able to be ready
+    for a later encounter without completing every earlier encounter or capability.
     """
 
     #: Bottom to top. The order is the assertion.
@@ -79,6 +77,7 @@ class TestPvmLadder:
         "gwd_bossing",
         "dragon_bossing",
         "raid_ready",
+        "grandmaster_bossing",
     )
 
     @staticmethod
@@ -101,16 +100,9 @@ class TestPvmLadder:
             for leaf in TestPvmLadder._capability_leaves(child)
         ]
 
-    def test_each_rung_requires_exactly_the_rung_below_it(self, content: Content) -> None:
-        for lower, upper in zip(self.RUNGS, self.RUNGS[1:], strict=False):
-            requires = content.capabilities[upper].requires
-            assert self._capability_leaves(requires) == [lower], (
-                f"{upper} must name {lower} and nothing else — the chain *is* the ordering"
-            )
-
-    def test_the_bottom_rung_depends_on_no_capability(self, content: Content) -> None:
-        """Otherwise the ladder has a step below its first one, or a cycle."""
-        assert self._capability_leaves(content.capabilities[self.RUNGS[0]].requires) == []
+    def test_no_tier_requires_another_tier(self, content: Content) -> None:
+        for rung in self.RUNGS:
+            assert self._capability_leaves(content.capabilities[rung].requires) == [], rung
 
     def test_the_roadmap_weights_every_rung_and_only_the_rungs(self, content: Content) -> None:
         """A rung the roadmap does not weight contributes nothing to ``pvp_value`` (§9.4),
@@ -120,7 +112,21 @@ class TestPvmLadder:
     def test_weights_rise_toward_the_goal(self, content: Content) -> None:
         weights = content.roadmaps["pvm_ladder"].capabilities
         ordered = [weights[rung] for rung in self.RUNGS]
-        assert ordered == sorted(ordered), "a later rung must not be worth less than an earlier"
+        assert ordered == [0.45, 0.55, 0.65, 0.78, 0.9, 1.0]
+
+    def test_direct_tier_preparation_has_authored_ranking_relevance(self, content: Content) -> None:
+        expected = {
+            "complete_dragon_slayer_i": "boss_fundamentals",
+            "complete_monkey_madness_i": "mid_tier_bossing",
+            "complete_song_of_the_elves": "gwd_bossing",
+            "complete_dragon_slayer_ii": "dragon_bossing",
+            "train_attack_to_90": "raid_ready",
+            "train_ranged_to_95": "grandmaster_bossing",
+        }
+        for candidate_id, capability_id in expected.items():
+            candidate = content.candidates[candidate_id]
+            assert candidate.source == "authored", candidate_id
+            assert candidate.advances[capability_id] == 1.0
 
 
 class TestMilestones:

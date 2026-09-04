@@ -317,15 +317,16 @@ class TestGateOracle:
 
         assert all(leaf.leaf_type != "item" for leaf in outstanding)
 
-    def test_a_capability_gate_resolves_through_the_rung_below(
+    def test_a_pvm_tier_reports_its_own_preparation_requirements(
         self, player: Callable[..., PlayerState], seed_content: Content
     ) -> None:
-        """§4.1's DAG. The PvM ladder encodes its ordering in ``requires: capability:``, so
-        a rung asked about must answer for the chain beneath it rather than for one leaf."""
+        """Wiki tiers are independently evaluable rather than chained capability gates."""
         state = player()
         gates = GateOracle(_Worlds(state, seed_content))
 
-        assert gates.capability("gwd_bossing")
+        outstanding = gates.capability("gwd_bossing")
+        assert outstanding
+        assert all(leaf.leaf_type != "capability" for leaf in outstanding)
 
     def test_a_capability_the_corpus_never_declared_answers_rather_than_raises(
         self, player: Callable[..., PlayerState], seed_content: Content

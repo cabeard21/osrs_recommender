@@ -29,6 +29,7 @@ from tracker.content.schema import (
     Quest,
     RefresherTemplate,
     Roadmap,
+    RoadmapGuide,
     ScoringProfile,
     Skill,
     TrainingMethod,
@@ -48,6 +49,7 @@ _DIRECTORIES: tuple[tuple[str, str, type[ContentModel]], ...] = (
     ("capabilities", "capability", Capability),
     ("candidates", "candidate", Candidate),
     ("roadmaps", "roadmap", Roadmap),
+    ("roadmap_guides", "roadmap_guide", RoadmapGuide),
     ("training_methods", "training_method", TrainingMethod),
     ("refreshers", "refresher", RefresherTemplate),
 )
@@ -90,6 +92,7 @@ class Content:
     capabilities: Mapping[str, Capability] = field(default_factory=dict)
     candidates: Mapping[str, Candidate] = field(default_factory=dict)
     roadmaps: Mapping[str, Roadmap] = field(default_factory=dict)
+    roadmap_guides: Mapping[str, RoadmapGuide] = field(default_factory=dict)
     training_methods: Mapping[str, TrainingMethod] = field(default_factory=dict)
     refreshers: Mapping[str, RefresherTemplate] = field(default_factory=dict)
     locations: Mapping[tuple[str, str], ContentLocation] = field(default_factory=dict)
@@ -190,6 +193,7 @@ def parse_corpus(
         capabilities=indexes["capabilities"],
         candidates=indexes["candidates"],
         roadmaps=indexes["roadmaps"],
+        roadmap_guides=indexes["roadmap_guides"],
         training_methods=indexes["training_methods"],
         refreshers=indexes["refreshers"],
         locations=locations,

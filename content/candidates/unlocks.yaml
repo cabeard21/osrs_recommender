@@ -46,6 +46,7 @@
     deep_wildy_nh: 0.30
     anti_pk: 0.40
     budget_nh: 0.15
+    dragon_bossing: 1.00
   completion:
     all_of:
       - skill: {prayer: 74}
@@ -53,3 +54,15 @@
       - unlock: rigour
   grants_facts:
     unlock: rigour
+
+- id: unlock_augury
+  name: Unlock Augury
+  kind: unlock
+  advances:
+    dragon_bossing: 1.00
+  completion:
+    all_of:
+      - skill: {prayer: 77}
+      - unlock: augury
+  grants_facts:
+    unlock: augury

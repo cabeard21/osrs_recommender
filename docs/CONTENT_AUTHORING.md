@@ -25,6 +25,7 @@ first.
 content/
     capabilities/      what the player can *do* in PvP, gated by a requirement tree
     roadmaps/          weighted capability sets — what "better" means for a playstyle
+    roadmap_guides/    attributed preparation and encounter guidance for a roadmap
     milestones/        PvP milestones, with how they are measured and how they age
     refreshers/        practice-group templates that become candidates when stale
     training_methods/  xp/hour and gp/hour per skill and level band
@@ -97,7 +98,7 @@ Capabilities compose into a DAG. `make validate-content` reports the actual cycl
 you create one.
 
 **`pvp_value` means "goal value", and nothing reads it.** The corpus is no longer PvP-only —
-`content/roadmaps/pvm_ladder.yaml` is a bossing ladder — and its five rung capabilities
+`content/roadmaps/pvm_ladder.yaml` is a bossing ladder — and its six tier capabilities
 declare this field like any other. The name is kept because it is load-bearing in the schema,
 the tuned scoring profile, the factor JSON persisted on every recommendation entry and every
 golden fixture at once, and renaming it would rewrite all of them to change nothing the
@@ -106,8 +107,8 @@ engine computes. Tuning it moves nothing: what gives a capability weight in the 
 
 ### Ordered progressions
 
-If a roadmap needs an **order** — a bossing ladder, a quest chain, a gear progression — build
-it as a chain of capabilities, each rung's `requires` naming the rung below:
+If a roadmap needs a **mandatory dependency order** — for example, a quest chain — build it as a
+chain of capabilities, each rung's `requires` naming the rung below:
 
 ```yaml
 # content/capabilities/dragon_bossing.yaml
@@ -122,6 +123,10 @@ Do **not** add an ordering field to the roadmap. §4.2 keeps roadmaps free of a 
 graph of their own precisely so there is only one graph to keep consistent with the facts,
 and the DAG already produces the ordering — a rung whose predecessor is unmet is blocked, so
 only the reachable rung is ever offered.
+
+Difficulty ordering is not necessarily dependency ordering. The PvM bossing guide uses tier and
+encounter order for presentation and tie-breaking only; its encounters stay independent so account
+readiness, rather than completion of prior content, controls what is ready to try.
 
 The chain pays a second dividend that is easy to miss. `tools/generate_candidates.py` reads
 every `skill:` level the corpus references and emits training bands ending **exactly** at
@@ -148,6 +153,67 @@ capabilities they list.
 Weights are in `[0, 1]`. A capability in two active roadmaps *blends*, never accumulates:
 at selection weights `main_nh: 0.75, anti_pk: 0.25`, a capability weighted `1.00` and
 `0.60` lands at `0.90`, never `1.80`.
+
+## Authoring the PvM bossing guide
+
+`content/roadmap_guides/pvm_ladder.yaml` is a `RoadmapGuide`: attributed authored content that
+adds detailed preparation and encounters to the weighted `pvm_ladder` roadmap without changing
+what a roadmap means. It contains source metadata and six ordered `BossingTier` values — Easy,
+Medium, Hard, Elite, Master and Grandmaster. Each tier contains:
+
+- `BossingPreparationStep` entries, either checkable through the normal requirement grammar or
+  explicitly informational when the advice cannot be inferred from synced facts.
+- `BossingEncounter` entries in source order, with a stable id and name, access requirements,
+  advisory recommendations, paraphrased mechanics and rewards, and an HTTPS Wiki link.
+
+Keep source-table rows intact. A combined row such as Obor/Bryophyta remains one encounter rather
+than being split into facts the source did not distinguish. The six tiers express difficulty and
+presentation order, not a mandatory completion chain: never require an earlier tier or encounter
+to be completed before a later encounter can be ready.
+
+### Readiness semantics
+
+Access and recommendations are separate predicates because they answer different questions:
+
+| Result | Meaning |
+|---|---|
+| `locked` | At least one enforced access requirement is known to be unsatisfied. |
+| `building_toward` | Access is satisfied, but one or more advisory recommendations are unsatisfied. |
+| `ready` | Access and the authored recommendations are satisfied (shown as “Ready to try”). |
+| `sync_needed` | A relevant fact has not been observed; list it separately from actionable blockers. |
+
+Use access requirements only for conditions the activity enforces: quests, keys or required items,
+Slayer levels, and activity-entry skill levels. Suggested combat stats and equipment belong under
+recommendations. `ready` means the account matches the guide's suggested setup; it never
+claims mechanical mastery or completion.
+
+Every checkable preparation step must reference one or more actionable `candidate_ids`, and every
+referenced roadmap, capability and candidate id must resolve. Guide-linked candidates participate in **Next
+up** through their associated PvM tier capability. When one candidate helps several steps or
+encounters, the existing maximum relevance semantics apply; contributions never accumulate merely
+because the guide mentions the action more than once.
+
+### Source and refresh procedure
+
+The shipped baseline is [OSRS Wiki Bossing Ladder revision
+15319480](https://oldschool.runescape.wiki/w/Guide:Bossing_Ladder?oldid=15319480), checked on
+2026-09-04. The adapted guide content is attributed to the Old School RuneScape Wiki contributors
+and licensed under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+The application never scrapes the Wiki at runtime.
+
+To refresh the guide:
+
+1. Choose and record a specific Wiki revision; never author against the moving current-page URL.
+2. Compare all six preparation sections and encounter tables with the previously pinned revision.
+3. Update the YAML by hand, paraphrasing mechanics and rewards while retaining the source order and
+   direct Wiki links. Update the revision and checked date in the same change.
+4. Confirm that access conditions remain enforced and recommendations remain advisory, and link any
+   new checkable preparation step to a real candidate.
+5. Run `make validate-content` and the focused guide/read-model tests, then review
+   `/roadmaps/pvm-ladder` at desktop and phone widths.
+
+The guide is a read-only projection over existing account facts. Do not add boss KC, manual
+completion controls, database state, or sync-payload fields as part of a content refresh.
 
 ## Adding a candidate
 

@@ -263,6 +263,7 @@ def test_every_page_offers_the_theme_control(phone: Page, ui_base_url: str) -> N
         "/recommendations",
         "/practice",
         "/roadmaps",
+        "/roadmaps/pvm-ladder",
         "/settings",
         "/history",
     ],
@@ -427,6 +428,55 @@ def test_the_roadmap_selector_shows_the_players_live_selection(
     # The page's own control and the header selector coexist: the header offers §4.3's one
     # choice, the page offers the weighting exercise. Both write through the same handler.
     assert phone.locator("[data-testid=global-roadmap-select]").count() == 1
+
+
+def test_the_roadmaps_page_links_to_the_granular_pvm_ladder(phone: Page, ui_base_url: str) -> None:
+    _open(phone, ui_base_url, "/roadmaps")
+
+    link = phone.locator("[data-testid=pvm-ladder-link]")
+    assert link.count() == 1
+    assert link.get_attribute("href") == "/roadmaps/pvm-ladder"
+
+
+def test_the_pvm_ladder_marks_roadmaps_as_the_current_view(phone: Page, ui_base_url: str) -> None:
+    _open(phone, ui_base_url, "/roadmaps/pvm-ladder")
+
+    roadmaps_link = phone.locator('[data-testid=nav] a[href="/roadmaps"]')
+    assert roadmaps_link.get_attribute("aria-current") == "page"
+
+
+def test_the_pvm_ladder_renders_the_complete_attributed_guide(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/roadmaps/pvm-ladder")
+
+    summary = phone.locator("[data-testid=bossing-summary]")
+    assert summary.count() == 1
+    assert "Ready" in summary.inner_text()
+    assert "Building toward" in summary.inner_text()
+    assert phone.locator("[data-testid=bossing-closest-next]").count() == 1
+
+    tiers = phone.locator("[data-testid=bossing-tier]")
+    assert tiers.count() == 6
+    assert phone.locator("[data-testid=bossing-preparation]").count() > 0
+    assert phone.locator("[data-testid=bossing-encounter]").count() == 71
+    assert phone.locator("[data-testid=bossing-mechanics]").count() == 71
+    assert phone.locator("[data-testid=bossing-rewards]").count() == 71
+
+    source = phone.locator("[data-testid=bossing-source]")
+    assert source.count() == 1
+    assert "Old School RuneScape Wiki" in source.inner_text()
+    assert "oldid=15319480" in (source.get_attribute("href") or "")
+
+
+def test_the_pvm_ladder_keeps_blockers_and_sync_needed_facts_distinct(
+    phone: Page, ui_base_url: str
+) -> None:
+    _open(phone, ui_base_url, "/roadmaps/pvm-ladder")
+
+    assert phone.locator("[data-testid=bossing-blockers]").count() > 0
+    assert phone.locator("[data-testid=bossing-unknowns]").count() > 0
+    assert "Sync needed" in phone.locator("[data-testid=bossing-unknowns]").first.inner_text()
 
 
 @pytest.mark.parametrize("path", [item.path for item in NAV])

@@ -16,6 +16,7 @@
     ice_barrage_nh: 0.90
     deep_wildy_nh: 0.60
     budget_nh: 0.50
+    mid_tier_bossing: 1.00
   # Skill *and* quest requirements. The quest half was omitted until Step 4 because
   # quests/ declared only the two quests the capabilities gate on, and §10.7 rejects a
   # `quest:` leaf naming an undeclared id. The generated registry now declares all 211,
@@ -110,7 +111,7 @@
   kind: quest
   source: authored
   advances:
-    boss_fundamentals: 0.60
+    boss_fundamentals: 1.00
   requires:
     quest_points: 32
   completion:
@@ -127,8 +128,7 @@
   kind: quest
   source: authored
   advances:
-    dragon_bossing: 0.85
-    raid_ready: 0.40
+    dragon_bossing: 1.00
   requires:
     all_of:
       - skill: {agility: 60}
@@ -152,3 +152,97 @@
     quest: dragon_slayer_ii
   grants_facts:
     quest: dragon_slayer_ii
+
+# Direct preparation quests from the Wiki bossing ladder. Generated quest candidates are
+# intentionally unweighted; authored completion predicates make these entries win collision
+# resolution while retaining the same objective completion fact.
+- id: complete_the_lost_tribe
+  name: Complete The Lost Tribe
+  kind: quest
+  advances: {boss_fundamentals: 1.0}
+  completion: {quest: the_lost_tribe}
+  grants_facts: {quest: the_lost_tribe}
+- id: complete_animal_magnetism
+  name: Complete Animal Magnetism
+  kind: quest
+  advances: {boss_fundamentals: 1.0}
+  completion: {quest: animal_magnetism}
+  grants_facts: {quest: animal_magnetism}
+- id: complete_monkey_madness_i
+  name: Complete Monkey Madness I
+  kind: quest
+  advances: {mid_tier_bossing: 1.0}
+  completion: {quest: monkey_madness_i}
+  grants_facts: {quest: monkey_madness_i}
+- id: complete_heroes_quest
+  name: Complete Heroes' Quest
+  kind: quest
+  advances: {mid_tier_bossing: 1.0}
+  completion: {quest: heroes_quest}
+  grants_facts: {quest: heroes_quest}
+- id: complete_underground_pass
+  name: Complete Underground Pass
+  kind: quest
+  advances: {mid_tier_bossing: 1.0}
+  completion: {quest: underground_pass}
+  grants_facts: {quest: underground_pass}
+- id: complete_the_fremennik_isles
+  name: Complete The Fremennik Isles
+  kind: quest
+  advances: {mid_tier_bossing: 1.0}
+  completion: {quest: the_fremennik_isles}
+  grants_facts: {quest: the_fremennik_isles}
+- id: complete_recipe_for_disaster
+  name: Complete Recipe for Disaster
+  kind: quest
+  advances: {mid_tier_bossing: 1.0}
+  completion: {quest: recipe_for_disaster}
+  grants_facts: {quest: recipe_for_disaster}
+- id: complete_the_final_dawn
+  name: Complete The Final Dawn
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: the_final_dawn}
+  grants_facts: {quest: the_final_dawn}
+- id: complete_a_kingdom_divided
+  name: Complete A Kingdom Divided
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: a_kingdom_divided}
+  grants_facts: {quest: a_kingdom_divided}
+- id: complete_song_of_the_elves
+  name: Complete Song of the Elves
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: song_of_the_elves}
+  grants_facts: {quest: song_of_the_elves}
+- id: complete_monkey_madness_ii
+  name: Complete Monkey Madness II
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: monkey_madness_ii}
+  grants_facts: {quest: monkey_madness_ii}
+- id: complete_sins_of_the_father
+  name: Complete Sins of the Father
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: sins_of_the_father}
+  grants_facts: {quest: sins_of_the_father}
+- id: complete_while_guthix_sleeps
+  name: Complete While Guthix Sleeps
+  kind: quest
+  advances: {gwd_bossing: 1.0}
+  completion: {quest: while_guthix_sleeps}
+  grants_facts: {quest: while_guthix_sleeps}
+- id: complete_desert_treasure_ii_the_fallen_empire
+  name: Complete Desert Treasure II - The Fallen Empire
+  kind: quest
+  advances: {dragon_bossing: 1.0}
+  completion: {quest: desert_treasure_ii_the_fallen_empire}
+  grants_facts: {quest: desert_treasure_ii_the_fallen_empire}
+- id: complete_beneath_cursed_sands
+  name: Complete Beneath Cursed Sands
+  kind: quest
+  advances: {dragon_bossing: 1.0}
+  completion: {quest: beneath_cursed_sands}
+  grants_facts: {quest: beneath_cursed_sands}
