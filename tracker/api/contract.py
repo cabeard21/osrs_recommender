@@ -23,14 +23,15 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-#: ``tracker/api/contract.py`` -> ``tracker/api`` -> ``tracker`` -> repo root.
-CONTRACT_PATH = Path(__file__).resolve().parents[2] / "contracts" / "sync_payload.schema.json"
+#: One resource shared by the source checkout and the installed wheel.
+CONTRACT_PATH = Path(str(files("contracts").joinpath("sync_payload.schema.json")))
 
 
 def load_sync_payload_schema() -> dict[str, Any]:

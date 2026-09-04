@@ -43,7 +43,10 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["tracker*"]
+include = ["contracts", "tracker*"]
+
+[tool.setuptools.package-data]
+contracts = ["*.json"]
 
 # --------------------------------------------------------------------------
 # ruff — lint + format

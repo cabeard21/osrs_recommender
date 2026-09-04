@@ -23,6 +23,11 @@ jobs:
       - run: python -m ruff check .
       - run: python -m ruff format --check .
       - run: python -m pytest --cov=tracker --cov-report=term
+      - run: docker build --tag osrs-recommender:test .
+      - run: >-
+          docker run --rm --entrypoint python osrs-recommender:test
+          -c 'from tracker.api.contract import sync_payload_validator;
+          sync_payload_validator()'
 
   publish:
     needs: test
