@@ -72,8 +72,21 @@ def render(
         field = ui.input(
             label="RuneScape username",
             value=view.tracked_username or "",
-            on_change=lambda event: on_set_username(str(event.value)),
         )
+
+        # Committed on blur or Enter, never per keystroke. Naming a character reloads the
+        # page — a different account changes what every other page is about — and an
+        # ``on_change`` handler fires once per letter, so typing "Rehvun" reloaded the page
+        # six times and wrote five partial usernames on the way. The equality guard keeps
+        # merely tabbing through the field from counting as a change.
+        def commit() -> None:
+            candidate = str(field.value or "").strip()
+            if not candidate or candidate == (view.tracked_username or ""):
+                return
+            on_set_username(candidate)
+
+        field.on("blur", commit)
+        field.on("keydown.enter", commit)
         field.props(
             "data-testid=tracked-username "
             f"data-configured={str(view.tracked_username is not None).lower()}"
