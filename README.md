@@ -54,6 +54,17 @@ and is maintained as static, attributed content; see
 [`docs/CONTENT_AUTHORING.md`](docs/CONTENT_AUTHORING.md#authoring-the-pvm-bossing-guide) for the
 refresh procedure.
 
+## Verification policy
+
+GitHub Actions is intentionally a fast deployment gate. It runs formatting, linting, production
+type checks, content validation, and `make test-ci`; that test lane excludes the slow golden corpus
+and browser suite. Container smoke validation runs alongside it, and successful `main` pushes still
+publish both amd64 and arm64 images.
+
+The exhaustive gate is local-only. Install Chromium once with `make browsers`, then run
+`make test-cov` to execute the full Python, golden-corpus, and Playwright suites with the 80% coverage
+floor. CI must not install Chromium or run those exhaustive checks.
+
 ## Optional: the two AI features
 
 Both are **off by default**, both need an Anthropic API key, and both are *terminal outputs* —

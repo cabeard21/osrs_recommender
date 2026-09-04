@@ -11,7 +11,7 @@ VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: install venv browsers test test-cov lint format typecheck validate-content migrate run clean
+.PHONY: install venv browsers test test-ci test-cov lint format typecheck validate-content migrate run clean
 
 venv: ; @test -d $(VENV) || python3 -m venv $(VENV)
 
@@ -24,7 +24,8 @@ install: venv ; $(PIP) install --upgrade pip -q && $(PIP) install -e ".[dev]"
 browsers: ; $(PY) -m playwright install chromium
 
 test:              ; $(PY) -m pytest $(ARGS)
-test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing $(ARGS)
+test-ci:           ; $(PY) -m pytest --ignore=tests/golden --ignore=tests/ui/test_pages_browser.py $(ARGS)
+test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing --cov-fail-under=80 $(ARGS)
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
 # `tests` is checked too, deliberately. A Protocol is only verified where an
