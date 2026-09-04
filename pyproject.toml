@@ -23,7 +23,10 @@ dependencies = [
     "plotly",
     # §21.4 — task guidance provider. Imported only by tracker/integrations/llm/, and only
     # constructed when integrations.llm.enabled and a key resolves (D14: off changes nothing).
-    "anthropic",
+    # 1.x migrated the SDK's transport layer to httpx2. The provider's injected test seam and
+    # the rest of this application deliberately share httpx, so stay on the compatible SDK
+    # generation until that migration is made end-to-end.
+    "anthropic>=0.121,<1",
 ]
 
 [project.optional-dependencies]
