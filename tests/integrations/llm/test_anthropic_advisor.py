@@ -342,14 +342,9 @@ class TestBounds:
         assert turn.tool_trace[0].is_error is False
         assert turn.tool_trace[1].is_error is True
 
-    def test_prose_alongside_a_tool_call_is_unavailable_rather_than_a_crash(self) -> None:
-        """`messages.parse` validates every text block, so this cannot yield a null parse.
-
-        The SDK raises a ``ValidationError`` from inside the request. Left unhandled that is a
-        traceback out of the provider; handled, it is an ordinary "try again" the UI already
-        renders. The breaker counts it a success because the provider was reachable and the
-        answer was well-formed — only unrepresentable.
-        """
+    @pytest.mark.parametrize("digest_changed", [False, True])
+    def test_follow_up_can_include_prose_alongside_a_tool_call(self, digest_changed: bool) -> None:
+        """Tool-call commentary is not the final structured answer."""
         script = _Script(
             [
                 _body(
@@ -358,15 +353,40 @@ class TestBounds:
                         _tool_use("t1", "get_skill_detail", {"skill_id": "magic"}),
                     ],
                     stop_reason="tool_use",
-                )
+                ),
+                _answer("Train Magic next.", ["Check the current costs."]),
             ]
         )
         breaker = CircuitBreaker()
-        with pytest.raises(LlmUnavailable, match="did not match the expected schema"):
-            _provider(script, breaker=breaker).converse(
-                _prompt(), TOOLS, _echo, max_iterations=2, max_tool_calls=10
-            )
+        prompt = _prompt(
+            history=(
+                ConversationTurn(role="user", text="What should I train?"),
+                ConversationTurn(role="assistant", text="Consider Magic."),
+            ),
+            question="Why that skill?",
+            digest_changed=digest_changed,
+        )
+        turn = _converse(_provider(script, breaker=breaker), prompt)
+        assert turn.answer == "Train Magic next."
+        assert turn.uncertain == ("Check the current costs.",)
+        assert len(turn.tool_trace) == 1
+        assert turn.iterations == 2
+        echoed = script.requests[1]["messages"][-2]["content"]
+        assert echoed[0]["text"] == "Partial thought."
+        assert echoed[1]["id"] == "t1"
+        result = script.requests[1]["messages"][-1]["content"][0]
+        assert result["tool_use_id"] == "t1"
+        assert script.requests[0]["output_config"]["format"]["type"] == "json_schema"
         assert not breaker.is_open
+
+    def test_invalid_final_answer_is_logged_without_response_content(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        script = _Script([_body(content=[{"type": "text", "text": "private response"}])])
+        with pytest.raises(LlmUnavailable, match="expected schema"):
+            _converse(_provider(script))
+        assert "invalid final answer" in caplog.text
+        assert "private response" not in caplog.text
 
     def test_exhausting_iterations_with_no_answer_is_unavailable(self) -> None:
         """A caller told 'success, here is an empty string' would store the empty string."""
@@ -405,6 +425,23 @@ class TestFailures:
 
         with pytest.raises(LlmUnavailable):
             _converse(_provider(handler))
+
+    def test_provider_failure_logs_status_and_request_id_only(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                400,
+                headers={"request-id": "req_diagnostic"},
+                json={"error": {"message": "private account detail"}},
+            )
+
+        with pytest.raises(LlmUnavailable):
+            _converse(_provider(handler))
+        assert "status=400" in caplog.text
+        assert "req_diagnostic" in caplog.text
+        assert "private account detail" not in caplog.text
+        assert "test-key" not in caplog.text
 
     def test_a_connection_error_is_unavailable(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

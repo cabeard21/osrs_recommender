@@ -29,6 +29,7 @@ the answer.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
@@ -51,6 +52,8 @@ from tracker.integrations.llm.types import (
     ToolSpec,
     ToolTraceEntry,
 )
+
+_log = logging.getLogger(__name__)
 
 #: What the model is told when it has spent the turn's tool budget. Phrased as an instruction to
 #: finish rather than as a failure, because the alternative — cutting the turn off — throws away
@@ -167,6 +170,7 @@ class AnthropicAdvisorProvider:
     ) -> AdvisorTurn:
         """Answer one question, running tools until the model stops asking for them."""
         if self._breaker.is_open:
+            _log.warning("Advisor request skipped: provider failure cooldown")
             raise LlmUnavailable(
                 "the advisor provider is in a failure cooldown (§7.5); not asking again yet"
             )
@@ -198,7 +202,20 @@ class AnthropicAdvisorProvider:
 
             calls = _tool_calls(blocks)
             if not calls:
-                parsed = getattr(response, "parsed_output", None)
+                # Tool-call commentary is ordinary prose. Validate only the final answer,
+                # after the tool loop has finished, rather than every incoming text block.
+                parsed = None
+                if text:
+                    try:
+                        parsed = AdvisorAnswerModel.model_validate_json(text)
+                    except ValidationError as exc:
+                        _log.warning(
+                            "Advisor response failed: invalid final answer (stop_reason=%s)",
+                            stop_reason,
+                        )
+                        raise LlmUnavailable(
+                            "the advisor returned output that did not match the expected schema"
+                        ) from exc
                 return self._turn(parsed, last_text, trace, usage, stop_reason, iteration)
 
             # The assistant turn is echoed back verbatim; dropping a `tool_use` block would
@@ -236,6 +253,7 @@ class AnthropicAdvisorProvider:
         # The loop ran out. Whatever prose exists is worth more than nothing, but silence is not
         # an answer — a caller told "success, here is an empty string" would store it.
         if not last_text:
+            _log.warning("Advisor response failed: iteration limit (%s)", max_iterations)
             raise LlmUnavailable(f"the advisor did not finish within {max_iterations} steps")
         return self._turn(None, last_text, trace, usage, stop_reason, max_iterations)
 
@@ -272,10 +290,18 @@ class AnthropicAdvisorProvider:
         messages: list[dict[str, Any]],
     ) -> Any:
         try:
-            return self._client.messages.parse(
+            return self._client.messages.create(
                 model=self._settings.model,
                 max_tokens=self._advisor.max_tokens,
-                output_config={"effort": self._advisor.effort},
+                output_config={
+                    "effort": self._advisor.effort,
+                    "format": {
+                        "type": "json_schema",
+                        "schema": anthropic.transform_schema(
+                            AdvisorAnswerModel.model_json_schema()
+                        ),
+                    },
+                },
                 system=[
                     {
                         "type": "text",
@@ -295,29 +321,31 @@ class AnthropicAdvisorProvider:
                 # which checks the bytes actually sent rather than the declared type.
                 tools=cast("Any", wire_tools),
                 messages=cast("Any", messages),
-                output_format=AdvisorAnswerModel,
             )
-        except ValidationError as exc:
-            # `messages.parse` validates *every* text block against the output schema, so a
-            # turn that emits prose alongside a `tool_use` raises here rather than yielding a
-            # null `parsed_output`. That is a well-formed answer the SDK cannot represent, not
-            # a transport failure — so the breaker records a success and the caller is told to
-            # try again, which is what `LlmUnavailable` means.
-            self._breaker.record_success()
-            raise LlmUnavailable(
-                f"the advisor returned output that did not match the expected schema: {exc}"
-            ) from exc
         except anthropic.RateLimitError as exc:
             self._breaker.record_failure()
+            _log.warning("Advisor provider rate limited (request_id=%s)", exc.request_id)
             raise LlmRateLimited(
                 "the advisor provider is rate limiting this account",
                 retry_after=_retry_after(exc),
             ) from exc
         except anthropic.APIConnectionError as exc:
             self._breaker.record_failure()
+            _log.warning(
+                "Advisor provider connection failed (error=%s, cause=%s)",
+                type(exc).__name__,
+                type(exc.__cause__).__name__,
+            )
             raise LlmUnavailable(f"could not reach the advisor provider: {exc}") from exc
         except anthropic.APIStatusError as exc:
             self._breaker.record_failure()
+            # Status and request ID diagnose provider failures without logging account data,
+            # credentials, or the raw response body.
+            _log.warning(
+                "Advisor provider rejected request (status=%s, request_id=%s)",
+                exc.status_code,
+                exc.request_id,
+            )
             raise LlmUnavailable(f"the advisor provider returned {exc.status_code}") from exc
 
     def _turn(
@@ -337,6 +365,7 @@ class AnthropicAdvisorProvider:
         """
         answer = parsed.answer if parsed is not None else fallback_text
         if not answer:
+            _log.warning("Advisor response failed: empty answer (stop_reason=%s)", stop_reason)
             raise LlmUnavailable("the advisor returned an empty answer")
         return AdvisorTurn(
             answer=answer,
