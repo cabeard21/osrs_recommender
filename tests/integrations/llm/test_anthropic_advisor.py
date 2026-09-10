@@ -11,6 +11,7 @@ produces a wrong answer, and all of them show up only on an invoice.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -380,8 +381,12 @@ class TestBounds:
         assert not breaker.is_open
 
     def test_invalid_final_answer_is_logged_without_response_content(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        # Alembic's fileConfig disables existing loggers in earlier migration tests.
+        logger = logging.getLogger("tracker.integrations.llm.anthropic_advisor")
+        monkeypatch.setattr(logger, "disabled", False)
+        caplog.set_level(logging.WARNING, logger=logger.name)
         script = _Script([_body(content=[{"type": "text", "text": "private response"}])])
         with pytest.raises(LlmUnavailable, match="expected schema"):
             _converse(_provider(script))
@@ -427,8 +432,12 @@ class TestFailures:
             _converse(_provider(handler))
 
     def test_provider_failure_logs_status_and_request_id_only(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        logger = logging.getLogger("tracker.integrations.llm.anthropic_advisor")
+        monkeypatch.setattr(logger, "disabled", False)
+        caplog.set_level(logging.WARNING, logger=logger.name)
+
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 400,
