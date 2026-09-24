@@ -33,6 +33,8 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from tracker.mcp.settings import MCPSettings
+
 DEFAULT_CONFIG_FILE = "config.yaml"
 CONFIG_FILE_ENV_VAR = "TRACKER_CONFIG_FILE"
 
@@ -226,6 +228,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./tracker.db"
     integrations: IntegrationsSettings = Field(default_factory=IntegrationsSettings)
+    mcp: MCPSettings = Field(default_factory=MCPSettings)
     content_dir: Path = Path("content")
     scoring_profile_path: Path = Path("content/scoring/profile.yaml")
 

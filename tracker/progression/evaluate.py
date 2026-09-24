@@ -32,6 +32,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
+from tracker.accounts.requirements import level_status, quest_status
 from tracker.content.loader import Content
 from tracker.content.requirements import (
     AccountTypeLeaf,
@@ -260,9 +261,7 @@ class Evaluator:
         ref = LeafRef("skill", leaf.skill, f"{leaf.level} {name}", leaf.level)
 
         snapshot = self._state.skills.get(leaf.skill)
-        if snapshot is None:
-            return _leaf(ref, Tri.UNKNOWN)
-        return _leaf(ref, Tri.from_bool(snapshot.level >= leaf.level))
+        return _leaf(ref, level_status(snapshot.level if snapshot else None, leaf.level))
 
     def _unlock(self, leaf: UnlockLeaf) -> EvalResult:
         """satisfied: ``unlocked`` · unsatisfied: ``available`` or ``locked`` · unknown: ditto.
@@ -288,13 +287,7 @@ class Evaluator:
         ref = LeafRef("quest", leaf.quest_id, name)
 
         status = self._state.quests.get(leaf.quest_id, QuestStatus.UNKNOWN)
-        match status:
-            case QuestStatus.COMPLETE:
-                return _leaf(ref, Tri.SATISFIED)
-            case QuestStatus.NOT_STARTED | QuestStatus.IN_PROGRESS:
-                return _leaf(ref, Tri.UNSATISFIED)
-            case QuestStatus.UNKNOWN:
-                return _leaf(ref, Tri.UNKNOWN)
+        return _leaf(ref, quest_status(status))
 
     def _item(self, leaf: ItemLeaf) -> EvalResult:
         """satisfied: seen in a scan · unsatisfied: scanned and absent · unknown: never scanned.

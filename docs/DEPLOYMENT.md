@@ -1,8 +1,9 @@
 # Deployment
 
-The app is one process serving one port (SDD §5): the NiceGUI UI at `/`, the sync API at
-`/api/sync`, and an unauthenticated liveness check at `/healthz`. There is no second
-service to start and no reverse proxy in the design.
+The normal app is one process serving one port (SDD §5): the NiceGUI UI at `/`, the sync
+API at `/api/sync`, and an unauthenticated liveness check at `/healthz`. Optional
+Milestone 1 MCP runs as a separate process and never mounts those routes. Neither
+service requires a public reverse proxy.
 
 ```bash
 cp config.example.yaml config.yaml     # then edit — see below
@@ -11,6 +12,20 @@ make run
 ```
 
 ## Raspberry Pi Docker Compose
+
+The production Compose source is `home-app-deployment/stacks/osrs-recommender/compose.yaml`;
+the live stack is `/opt/stacks/osrs-recommender/compose.yaml`. Preserve local settings when
+updating it. The verified deployment uses `./data:/data`,
+`./config/config.yaml:/config/config.yaml:ro`, SQLite at `/data/tracker.db`, UID/GID
+`10001:10001`, and private publication at `100.117.157.57:8502`.
+
+For the optional `mcp` profile, existing OpenAI tunnel reuse, secret provisioning,
+health checks, production acceptance, and rollback, follow
+[the Milestone 1 production runbook](Refactor_Milestone1_Implementation.md#production-raspberry-pi-deployment).
+The same immutable application image runs both the app and `python -m tracker.mcp`.
+Only the default application startup runs migrations; explicit command overrides do not.
+The sidecar uses the existing database and does not publish port 8503. Its failure does
+not prevent normal dashboard or RuneLite synchronization.
 
 The production image is published as `ghcr.io/OWNER/osrs_recommender:sha-COMMIT` for both
 `linux/amd64` and `linux/arm64`. Replace `OWNER` and `COMMIT` with the GitHub repository
@@ -157,7 +172,7 @@ device to the tailnet.
 
 ## 5. Outbound traffic
 
-The app talks to two providers and sends each the minimum it needs (§11.6):
+The core application uses these providers (§11.6):
 
 | Provider | Sent | Not sent |
 |---|---|---|
@@ -166,6 +181,12 @@ The app talks to two providers and sends each the minimum it needs (§11.6):
 
 **Practice events never leave the machine.** They are the most sensitive thing the app
 stores, and nothing outbound carries them.
+
+When the optional MCP profile is enabled, the separate tunnel makes outbound HTTPS
+connections to OpenAI and delivers the four tools' account/Quest Cape responses to
+ChatGPT. This does not publish the dashboard or synchronization API. Its runtime key
+is a tunnel-only file secret, separate from the RuneLite bearer token; never put it in
+the stack's `.env`, which the existing application imports wholesale.
 
 Both clients send a descriptive `User-Agent` that you configure (§7.5) — set it to
 something that identifies your install, and include a contact only if you want to.

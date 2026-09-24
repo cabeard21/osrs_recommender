@@ -93,3 +93,9 @@ in their own two tables and nothing else reads them.
 Both features are honest about what they do not know: an unobserved account type is *unknown*
 and never *main*, unobserved coins are *unknown* and never zero, and anything drawn from the
 model's own knowledge of the game rather than from your account is flagged as such.
+
+Quest Cape account tools are also available through an optional private Streamable HTTP MCP
+sidecar (`make run-mcp`). It exposes four factual, read-only tools for ChatGPT through OpenAI
+Secure MCP Tunnel, with one configured player ID and no recommendation ranking. It is disabled
+by default and does not expose the dashboard or sync API. See the
+[Milestone 1 handoff and tunnel setup](docs/Refactor_Milestone1_Implementation.md).

@@ -21,6 +21,18 @@ database_url: sqlite:///./tracker.db
 content_dir: content
 scoring_profile_path: content/scoring/profile.yaml
 
+# Private MCP sidecar: run `make run-mcp` separately from the dashboard/sync server.
+# Select an existing player.id. The tunnel client connects to http://127.0.0.1:8503/mcp.
+# No RuneLite token, public hostname, or OAuth provider is used for this endpoint.
+mcp:
+  enabled: false
+  player_id: null
+  bind_address: 127.0.0.1
+  # Docker sidecar overrides these only on its isolated, unpublished network.
+  allow_all_interfaces: false
+  allowed_hostnames: []
+  port: 8503
+
 integrations:
   # §7.5 — the provider may block generic User-Agents. Name the app, version and purpose;
   # public contact detail is optional and is only published if you put it here.

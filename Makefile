@@ -38,4 +38,8 @@ migrate:           ; $(PY) -m alembic $(if $(ARGS),$(ARGS),upgrade head)
 # The bind address comes from config.yaml and has no default (§11.1) — see docs/DEPLOYMENT.md.
 run:               ; $(PY) -m tracker.app
 
+.PHONY: run-mcp validate-quest-cape
+run-mcp:           ; $(PY) -m tracker.mcp
+validate-quest-cape: ; $(PY) tools/generate_quest_cape.py --check
+
 clean: ; rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage

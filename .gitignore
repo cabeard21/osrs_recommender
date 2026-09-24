@@ -9,6 +9,12 @@ __pycache__/
 *.db-journal
 *.sqlite3
 .venv/
+.venv-*/
+.pytest_tmp*/
+.tmp/
+secrets/
+*.env
+!*.env.example
 .env
 config.yaml
 # Agent worktrees. These are live checkouts of other branches; committing them or

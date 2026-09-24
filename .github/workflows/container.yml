@@ -27,6 +27,7 @@ jobs:
       - run: python -m ruff format --check .
       - run: python -m mypy tracker
       - run: python -m tracker.content.validate
+      - run: python tools/generate_quest_cape.py --check
       - run: make test-ci PY=python
 
   container-smoke:
@@ -46,6 +47,7 @@ jobs:
           docker run --rm --entrypoint python osrs-recommender:test
           -c 'from tracker.api.contract import sync_payload_validator;
           sync_payload_validator()'
+      - run: python3 tools/container_smoke.py osrs-recommender:test
 
   publish:
     needs: [validate, container-smoke]

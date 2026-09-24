@@ -1,0 +1,2 @@
+# The Linux image executes this file directly through sh, including Windows builds.
+docker-entrypoint.sh text eol=lf

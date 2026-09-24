@@ -21,6 +21,7 @@ dependencies = [
     "pyyaml",
     "jsonschema",
     "plotly",
+    "mcp>=2.2,<3",
     # §21.4 — task guidance provider. Imported only by tracker/integrations/llm/, and only
     # constructed when integrations.llm.enabled and a key resolves (D14: off changes nothing).
     # 1.x migrated the SDK's transport layer to httpx2. The provider's injected test seam and
@@ -129,6 +130,8 @@ module = [
     # §23 — the gear projection, held to the advisor's bar rather than to guidance's, because
     # the advisor imports it. Its purity is a component of D15's guarantee, not a style choice.
     "tracker.gear.*",
+    "tracker.accounts.*",
+    "tracker.quest_cape.*",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true
