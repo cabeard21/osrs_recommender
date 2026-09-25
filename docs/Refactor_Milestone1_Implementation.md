@@ -56,12 +56,42 @@ There is no model-supplied player selector. MCP is disabled until explicitly con
 |---|---|---|
 | `get_account_summary` | None | Observed facts, timestamps, provenance, snapshot ID |
 | `get_goal_status` | `goal`, optional `quest_offset`, `quest_limit`, `quest_ids` | Whole-goal totals/thresholds and a page of explanations |
-| `get_available_actions` | `goal` | Separate available quest actions and training thresholds |
+| `get_available_actions` | `goal`, optional `action_type`, `skill`, `action_offset`, `action_limit` | A bounded page of available quest actions and training thresholds |
 | `evaluate_action` | `action`, `goal`, optional `expected_snapshot_id` | Hypothetical deltas and blocker changes |
 
-The only goal is `quest_cape`. `quest_limit` defaults to 20 through MCP, with a maximum
-of 100. Follow `next_quest_offset` or request specific quest IDs. Counts and thresholds
-always cover the whole goal; pagination affects only quest details.
+The only goal is `quest_cape`. Start with `get_account_summary` and inspect `last_sync_at`
+before advising; it is the last account sync, while skill and quest observations have their
+own timestamps. Use `get_goal_status(goal="quest_cape", quest_ids=[])` for compact whole-goal
+totals and skill blockers without quest detail trees. Request specific `quest_ids` for
+selected explanations; use `next_quest_offset` only when scanning the catalog.
+`quest_limit` defaults to 20 through MCP, with a maximum of 100. Counts and thresholds
+always cover the whole goal, independent of quest-detail pagination.
+
+`get_available_actions` returns at most 50 actions by default, not the full set. It orders
+matching quests by name, then matching skill actions by skill and target level. `actions_total`
+is the count after `action_type` and `skill` filters but before pagination;
+`next_action_offset` is the offset to request next, or null when the filtered result is
+exhausted. Follow that offset or narrow discovery with `action_type="complete_quest"`,
+`action_type="train_skill"`, and optionally a canonical `skill`. The limit can be 1–100.
+The separate `quest_actions` and `skill_actions` arrays contain only that page. The snapshot
+ID and `last_sync_at` accompany goal status, actions, and counterfactual results. Compare
+snapshot IDs across pages and restart discovery if the account changed between calls. No tool
+labels an account stale by an invented time threshold; if known gameplay happened afterward,
+refresh the account observation before treating an action evaluation as current advice.
+`available_now` counts incomplete Cape-counting quests currently available. By contrast,
+`actions_total` counts matching goal-advancing actions, including prerequisite quests and
+training thresholds. Each discovered `quest_actions` entry has `counts_for_cape`: `true`
+means the quest independently counts toward the Cape total, while `false` means it is a
+useful prerequisite or subquest that does not. These counts can differ. The field is
+discovery metadata; pass only `type` and `quest` to `evaluate_action`.
+Treat account facts as observations as of `last_sync_at`, with individual observations
+possibly older. Qualify advice if later gameplay may have changed the account. For a
+recommendation, compare plausible actions with `evaluate_action` when practical, then
+make the judgment in ChatGPT. Its deltas do not simulate XP rewards, item rewards, costs,
+or elapsed time; general OSRS knowledge must be identified separately from those deltas.
+Canonicalizing a legacy `runecrafting` observation changes the snapshot fingerprint even
+though its persisted history is unchanged. Retrieve a new snapshot ID after updating the
+desktop MCP process and pass that ID to `evaluate_action`.
 
 Actions are `{"type":"complete_quest","quest":"regicide"}` or
 `{"type":"train_skill","skill":"agility","target_level":70}`. IDs must come from
@@ -97,10 +127,12 @@ new RuneLite identities require refreshing the identity spine and recapturing th
 
 Desktop integration has passed on Windows with Python 3.12 and tunnel-client v0.0.14:
 the MCP listener, exactly four tools, prompt discovery 404s, `doctor`, tunnel readiness,
-ChatGPT app creation, and actual tool invocation were verified. The desktop database is
-stale; these checks do not establish acceptance against current RuneLite state. The
-authoritative database lives on the Pi. Do not repeat provisioning or create another
-logical tunnel for production.
+ChatGPT app creation, and actual tool invocation were verified. A later real ChatGPT
+acceptance run used a checksum-verified copy of the Pi account database and confirmed
+goal status, action discovery, read-only counterfactuals, and ChatGPT's own advisory
+reasoning. The copied snapshot can lag subsequent gameplay; `last_sync_at` and individual
+observation times must be inspected before treating it as current state. The authoritative
+database remains on the Pi. Do not repeat provisioning or create another logical tunnel.
 
 ### Configure and start locally
 
@@ -186,6 +218,30 @@ Routing-fix verification on Windows (2026-09-24): `tests/quest_cape`, `tests/api
 90%, including 100% of `tracker/mcp/server.py`. The regression tests include a real
 loopback listener with two-second HTTP timeouts and a deliberately waiting SDK stub
 that must never receive non-MCP requests. Scoped Ruff and MCP mypy checks passed.
+
+### Refresh the existing ChatGPT connection after tool schema changes
+
+Restart only the desktop MCP process against the intended local database and player.
+Keep the same Secure MCP Tunnel and existing ChatGPT MCP app. Verify local `tools/list`
+still advertises exactly four tools; inspect `get_available_actions` for its new optional
+filters/pagination inputs and `actions_total`, `next_action_offset`, `last_sync_at`, and
+`counts_for_cape` outputs. Run `tunnel-client doctor --profile osrs-recommender --explain`
+against the restarted process.
+
+In [ChatGPT Plugins](https://chatgpt.com/plugins), open the **existing** OSRS connection
+and select **Refresh**. Confirm the changed tool descriptions and schemas, then attach
+that same connection in a **new** conversation. Existing conversations may retain older
+tool metadata. These are the [documented developer-mode refresh steps](https://developers.openai.com/plugins/deploy/connect-chatgpt).
+
+For Round 3, give the fresh conversation only: “I'm working toward getting my Quest Cape.
+Based on where my account is right now, what should I do next?” Do not prescribe a tool
+sequence to ChatGPT. After it responds, inspect tool activity and the answer: it should
+acknowledge `last_sync_at`, treat Regicide as `not_started` **in the snapshot** rather than
+known-current progress, distinguish 18 available Cape quests from 23 available quest
+actions, compare plausible alternatives when practical, use pagination or filters as
+needed, and separate simulated requirement deltas from general OSRS reasoning. If the
+same copied snapshot is still used, the Regicide mismatch is intentional acceptance
+evidence. Do not refresh the copied database for this round.
 
 ## Development tunnel setup (already completed)
 
@@ -449,8 +505,11 @@ absent, check workspace association and permissions before changing the connecti
    alone does not rule out the stale desktop database.
 2. Attach the connection in a new ChatGPT conversation and ask:
    **“I'm working toward my Quest Cape. What should I do next?”**
-3. Inspect tool activity: require `get_goal_status("quest_cape")` and
-   `get_available_actions("quest_cape")`.
+3. Inspect tool activity: require `get_goal_status(goal="quest_cape", quest_ids=[])` for the
+   compact goal summary, then selected quest details as needed. Require
+   `get_available_actions(goal="quest_cape")`, and check `actions_total` and
+   `next_action_offset`: the first page is not necessarily the whole set. Follow the offset
+   or use `action_type`/`skill` filters to discover the relevant alternatives.
 4. Have ChatGPT evaluate an available quest action and an offered skill threshold. Pass the
    returned snapshot ID to detect intervening syncs. If necessary, explicitly ask it to compare
    one quest and one training action before answering.

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import socket
 import threading
 import time
@@ -167,6 +168,19 @@ def test_http_tools_delegate_and_use_configured_account(service, snapshot):
             },
         )
         assert "tools" in initialized["capabilities"]
+        instructions = initialized["instructions"].lower()
+        assert "as of last_sync_at" in instructions
+        assert "quest, skill, or account state" in instructions
+        assert "observed incomplete as of last_sync_at is not known incomplete now" in instructions
+        assert (
+            "a non-null last_sync_at does not establish that no gameplay occurred afterward"
+            in instructions
+        )
+        assert "if you haven't completed it since then" in instructions
+        assert "sync time is unknown" in instructions
+        assert "more than one" in instructions
+        assert "xp rewards" in instructions
+        assert "general osrs" in instructions
         tools = rpc("tools/list")["tools"]
         assert {t["name"] for t in tools} == {
             "get_account_summary",
@@ -177,6 +191,34 @@ def test_http_tools_delegate_and_use_configured_account(service, snapshot):
         assert all(t["annotations"]["readOnlyHint"] for t in tools)
         assert all("player_id" not in t["inputSchema"].get("properties", {}) for t in tools)
         assert all("outputSchema" in t for t in tools)
+        actions_tool = next(t for t in tools if t["name"] == "get_available_actions")
+        assert {"action_type", "skill", "action_offset", "action_limit"} <= set(
+            actions_tool["inputSchema"]["properties"]
+        )
+        assert {"actions_total", "next_action_offset", "last_sync_at"} <= set(
+            actions_tool["outputSchema"]["properties"]
+        )
+        action_schema = json.dumps(actions_tool["outputSchema"]).lower()
+        assert "counts_for_cape" in action_schema
+        assert "cape-counting" in action_schema
+        assert "goal-advancing" in action_schema
+        goal_tool = next(t for t in tools if t["name"] == "get_goal_status")
+        assert "cape-counting" in json.dumps(goal_tool["outputSchema"]).lower()
+        evaluation_tool = next(t for t in tools if t["name"] == "evaluate_action")
+        assert "counts_for_cape" not in json.dumps(evaluation_tool["inputSchema"])
+        assert "xp rewards" in evaluation_tool["description"].lower()
+        description = actions_tool["description"].lower()
+        assert all(
+            phrase in description
+            for phrase in (
+                "first page",
+                "not the complete",
+                "actions_total",
+                "next_action_offset",
+                "action_type",
+                "skill",
+            )
+        )
         for name, arguments, expected in [
             (
                 "get_goal_status",
@@ -201,6 +243,27 @@ def test_http_tools_delegate_and_use_configured_account(service, snapshot):
             assert result["structuredContent"] == expected
         summary = rpc("tools/call", {"name": "get_account_summary"})
         assert summary["structuredContent"]["snapshot_id"] == snapshot.fingerprint
+        page = rpc(
+            "tools/call",
+            {
+                "name": "get_available_actions",
+                "arguments": {"action_type": "train_skill", "action_limit": 1},
+            },
+        )["structuredContent"]
+        assert page["actions_total"] == 2
+        assert page["next_action_offset"] == 1
+        assert not page["quest_actions"]
+        assert len(page["skill_actions"]) == 1
+        end = rpc(
+            "tools/call",
+            {
+                "name": "get_available_actions",
+                "arguments": {"action_type": "train_skill", "action_offset": 1, "action_limit": 1},
+            },
+        )["structuredContent"]
+        assert end["actions_total"] == 2
+        assert end["next_action_offset"] is None
+        assert end["skill_actions"][0] != page["skill_actions"][0]
         # A forged player argument must either be rejected or ignored; it must never
         # reach the account service. SDK versions may differ on extra argument policy.
         rpc("tools/call", {"name": "get_account_summary", "arguments": {"player_id": 99}})

@@ -212,6 +212,25 @@ class TestSkills:
         assert state.skills["runecraft"].xp is None
         assert state.skills["runecraft"].level == 1
 
+    def test_legacy_wom_only_alias_projects_as_runecraft(
+        self, session: Session, new_player: PlayerFactory
+    ) -> None:
+        player_id = new_player(session)
+        append_skill_snapshot(
+            session,
+            player_id,
+            skill="runecrafting",
+            level=20,
+            xp=4470,
+            source=Source.WISE_OLD_MAN,
+            observed_at=NOW,
+        )
+        session.commit()
+
+        state = build_player_state(session, player_id)
+        assert set(state.skills) == {"runecraft"}
+        assert state.skills["runecraft"].level == 20
+
     def test_a_ranked_skill_carries_its_xp(
         self, session: Session, new_player: PlayerFactory
     ) -> None:

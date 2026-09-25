@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from types import MappingProxyType
 
+from tracker.domain.skills import canonical_skill_states
 from tracker.domain.types import QuestStatus, SkillState, UnlockState
 
 
@@ -33,7 +34,8 @@ class AccountSnapshot:
 
     def __post_init__(self) -> None:
         # Frozen dataclasses alone do not freeze dictionaries or detach caller-owned data.
-        for name in ("skills", "quests", "quest_observations", "unlocks"):
+        object.__setattr__(self, "skills", MappingProxyType(canonical_skill_states(self.skills)))
+        for name in ("quests", "quest_observations", "unlocks"):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
 
     def summary(self) -> dict[str, object]:

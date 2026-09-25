@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
@@ -19,6 +20,16 @@ class CompleteQuest(BaseModel):
     quest: str
 
 
+class AvailableQuestAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    type: Literal["complete_quest"]
+    quest: str
+    counts_for_cape: bool = Field(
+        description="True if this quest independently counts toward Quest Cape completion; "
+        "false for a goal-advancing prerequisite or subquest."
+    )
+
+
 class TrainSkill(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     type: Literal["train_skill"]
@@ -27,6 +38,7 @@ class TrainSkill(BaseModel):
 
 
 Action = Annotated[CompleteQuest | TrainSkill, Field(discriminator="type")]
+ActionType = Literal["complete_quest", "train_skill"]
 ACTION_ADAPTER: TypeAdapter[Action] = TypeAdapter(Action)
 
 
@@ -53,12 +65,19 @@ class SkillBlocker(BaseModel):
 class GoalStatus(BaseModel):
     goal: Literal["quest_cape"] = "quest_cape"
     snapshot_id: str
+    last_sync_at: datetime | None = Field(
+        description="Last account sync time. Facts are observed as of this time, "
+        "not guaranteed current."
+    )
     catalog_id: str
     catalog_version: str
     total: int
     completed: int
     remaining: int
-    available_now: int
+    available_now: int = Field(
+        description="Incomplete Cape-counting quests currently available; excludes prerequisite "
+        "quests that do not independently count toward the Cape total."
+    )
     blocked: int
     unknown: int
     skill_blockers: tuple[SkillBlocker, ...]
@@ -75,9 +94,23 @@ class GoalStatus(BaseModel):
 class AvailableActions(BaseModel):
     goal: Literal["quest_cape"] = "quest_cape"
     snapshot_id: str
+    last_sync_at: datetime | None = Field(
+        description="Last account sync time. Actions reflect observations as of this time, "
+        "not guaranteed current."
+    )
     catalog_id: str
-    quest_actions: tuple[CompleteQuest, ...]
+    quest_actions: tuple[AvailableQuestAction, ...] = Field(
+        description="Available goal-advancing quest actions on this page, including "
+        "non-Cape-counting prerequisites; not a recommendation ranking."
+    )
     skill_actions: tuple[TrainSkill, ...]
+    actions_total: int = Field(
+        description="Matching goal-advancing quest and skill actions after filters, before "
+        "pagination; not the number of available Cape-counting quests."
+    )
+    next_action_offset: int | None = Field(
+        description="Offset for the next page; null when all matching actions have been returned."
+    )
     ordering: str = "Quest name; skill name and target level. No recommendation ranking."
 
 
@@ -91,6 +124,9 @@ class ActionEvaluation(BaseModel):
     goal: Literal["quest_cape"] = "quest_cape"
     hypothetical: Literal[True] = True
     snapshot_id: str
+    last_sync_at: datetime | None = Field(
+        description="Last sync time of the observed account used for this hypothetical evaluation."
+    )
     catalog_id: str
     action: Action
     completed_before: int
@@ -102,7 +138,10 @@ class ActionEvaluation(BaseModel):
     downstream_quests: tuple[str, ...]
     preconditions: tuple[RequirementResult, ...]
     blocker_changes: tuple[BlockerChange, ...]
-    limitations: tuple[str, ...]
+    limitations: tuple[str, ...] = Field(
+        description="Simulation boundaries, including unmodeled XP rewards, item rewards, "
+        "costs, and elapsed time."
+    )
 
 
 def _check_goal(goal: str) -> None:
@@ -211,6 +250,7 @@ class QuestCapeService:
         end = len(selected) if quest_limit is None else quest_offset + quest_limit
         return GoalStatus(
             snapshot_id=snapshot.fingerprint,
+            last_sync_at=snapshot.last_sync_at,
             catalog_id=self.catalog.fingerprint,
             catalog_version=self.catalog.version,
             total=len(counted),
@@ -237,24 +277,50 @@ class QuestCapeService:
         self,
         snapshot: AccountSnapshot,
         goal: str = "quest_cape",
+        *,
+        action_type: ActionType | None = None,
+        skill: str | None = None,
+        action_offset: int = 0,
+        action_limit: int = 50,
     ) -> AvailableActions:
+        if action_offset < 0 or not 1 <= action_limit <= 100:
+            raise ValueError("Action offset must be nonnegative; limit must be between 1 and 100")
+        if action_type not in (None, "complete_quest", "train_skill"):
+            raise ValueError("Unknown action type")
+        if skill is not None and action_type == "complete_quest":
+            raise ValueError("Skill filter cannot be used with complete_quest actions")
         status = self.get_goal_status(snapshot, goal)
         outstanding = self._outstanding(snapshot)
+        quest_actions = tuple(
+            AvailableQuestAction(
+                type="complete_quest", quest=q.id, counts_for_cape=q.counts_for_cape
+            )
+            for q in status.quests
+            if q.availability == "available" and q.id in outstanding
+        )
+        skill_actions = tuple(
+            TrainSkill(type="train_skill", skill=b.skill, target_level=level)
+            for b in status.skill_blockers
+            if b.current is not None
+            for level in b.thresholds
+            if level > b.current and (skill is None or b.skill == skill)
+        )
+        matching: tuple[AvailableQuestAction | TrainSkill, ...] = (
+            *(quest_actions if action_type != "train_skill" and skill is None else ()),
+            *(skill_actions if action_type != "complete_quest" else ()),
+        )
+        page = matching[action_offset : action_offset + action_limit]
+        end = action_offset + len(page)
         return AvailableActions(
             snapshot_id=status.snapshot_id,
+            last_sync_at=snapshot.last_sync_at,
             catalog_id=status.catalog_id,
             quest_actions=tuple(
-                CompleteQuest(type="complete_quest", quest=q.id)
-                for q in status.quests
-                if q.availability == "available" and q.id in outstanding
+                action for action in page if isinstance(action, AvailableQuestAction)
             ),
-            skill_actions=tuple(
-                TrainSkill(type="train_skill", skill=b.skill, target_level=level)
-                for b in status.skill_blockers
-                if b.current is not None
-                for level in b.thresholds
-                if level > b.current
-            ),
+            skill_actions=tuple(action for action in page if isinstance(action, TrainSkill)),
+            actions_total=len(matching),
+            next_action_offset=end if end < len(matching) else None,
         )
 
     def evaluate_action(
@@ -364,6 +430,7 @@ class QuestCapeService:
                 )
         return ActionEvaluation(
             snapshot_id=before.snapshot_id,
+            last_sync_at=snapshot.last_sync_at,
             catalog_id=before.catalog_id,
             action=action,
             completed_before=before.completed,

@@ -45,6 +45,7 @@ from tracker.db.models import (
     SyncEvent,
     Unlock,
 )
+from tracker.domain.skills import SKILL_ALIASES
 from tracker.domain.types import (
     SOURCE_PRECEDENCE,
     Container,
@@ -114,28 +115,35 @@ _SOURCE_RANK = case(
     else_=len(SOURCE_PRECEDENCE),
 )
 
+_CANONICAL_SKILL = case(
+    *((SkillSnapshot.skill == alias, name) for alias, name in SKILL_ALIASES.items()),
+    else_=SkillSnapshot.skill,
+)
+
 
 def current_skill_snapshots(session: Session, player_id: int) -> Sequence[SkillSnapshot]:
-    """The one current snapshot per skill, resolved by §7.4.
+    """The one current snapshot per canonical skill, resolved by §7.4.
 
     Resolved in SQL with a window function rather than by loading every row and reducing
     in Python. ``SkillSnapshot`` is an append-only history feeding the §15 XP chart, so
     the naive version's cost grows with the account's age — a player synced hourly for a
     year is a six-figure row count to answer a question about twenty-three skills.
 
-    ``id`` is the final tie-break so the result is stable when two rows share both an
-    ``observed_at`` and a source; without it SQLite is free to return either, and a
-    projection that flickers between equal candidates is impossible to debug.
+    Legacy ``runecrafting`` and canonical ``runecraft`` rows share one partition. An exact
+    time/source tie prefers the canonical stored key, then the newest row id. The returned
+    ORM row retains its original key and provenance; read consumers present the canonical
+    identity without rewriting history.
     """
     ranked = (
         select(
             SkillSnapshot,
             func.row_number()
             .over(
-                partition_by=SkillSnapshot.skill,
+                partition_by=_CANONICAL_SKILL,
                 order_by=(
                     SkillSnapshot.observed_at.desc(),
                     _SOURCE_RANK.asc(),
+                    SkillSnapshot.skill.asc(),
                     SkillSnapshot.id.desc(),
                 ),
             )

@@ -50,6 +50,7 @@ from urllib.parse import quote
 import httpx
 
 from tracker.config.settings import WiseOldManSettings
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import Source
 from tracker.integrations.http import CircuitBreaker, build_client, get_with_retry
 
@@ -134,11 +135,15 @@ class WiseOldManClient:
         data = snapshot.get("data") or {}
         observed_at = _parse_timestamp(snapshot.get("createdAt")) or self._clock()
 
-        skills = tuple(
-            _parse_skill(metric, entry, observed_at)
-            for metric, entry in (data.get("skills") or {}).items()
-            if metric not in _NON_SKILL_METRICS and isinstance(entry, dict)
-        )
+        parsed_skills: dict[str, tuple[str, SkillDTO]] = {}
+        for metric, entry in (data.get("skills") or {}).items():
+            if metric in _NON_SKILL_METRICS or not isinstance(entry, dict):
+                continue
+            skill = _parse_skill(metric, entry, observed_at)
+            prior = parsed_skills.get(skill.skill)
+            if prior is None or metric == skill.skill:
+                parsed_skills[skill.skill] = (metric, skill)
+        skills = tuple(skill for _, skill in parsed_skills.values())
 
         lms_entry = (data.get("activities") or {}).get("last_man_standing") or {}
         lms_score = _normalize_unranked(lms_entry.get("score"))
@@ -151,7 +156,7 @@ class WiseOldManClient:
 def _parse_skill(metric: str, entry: dict[str, Any], observed_at: datetime) -> SkillDTO:
     level = entry.get("level")
     return SkillDTO(
-        skill=metric,
+        skill=canonical_skill_name(metric),
         level=level if isinstance(level, int) and level > 0 else 1,
         xp=_normalize_unranked(entry.get("experience")),
         source=Source.WISE_OLD_MAN,

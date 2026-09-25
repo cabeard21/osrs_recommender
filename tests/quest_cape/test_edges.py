@@ -7,7 +7,7 @@ import pytest
 from tools.generate_quest_cape import generate
 from tracker.content.requirements import parse
 from tracker.domain.types import QuestStatus, SkillState, Source
-from tracker.quest_cape.catalog import load_catalog
+from tracker.quest_cape.catalog import QuestCatalog, load_catalog
 from tracker.quest_cape.service import CompleteQuest, QuestCapeService, TrainSkill
 
 
@@ -29,6 +29,166 @@ def test_detail_pages_keep_global_counts(service, snapshot):
     for kwargs in ({"quest_limit": 0}, {"quest_offset": -1}, {"quest_ids": ["not_a_quest"]}):
         with pytest.raises(ValueError):
             service.get_goal_status(snapshot, **kwargs)
+
+
+def test_action_pages_and_filters_cover_every_action(service, snapshot):
+    all_actions = service.get_available_actions(snapshot)
+    assert all_actions.actions_total == 3
+    assert all_actions.next_action_offset is None
+
+    first = service.get_available_actions(snapshot, action_limit=1)
+    second = service.get_available_actions(snapshot, action_offset=1, action_limit=1)
+    third = service.get_available_actions(snapshot, action_offset=2, action_limit=1)
+    assert [a.quest for a in first.quest_actions] == ["a"]
+    assert [a.target_level for a in second.skill_actions] == [68]
+    assert [a.target_level for a in third.skill_actions] == [70]
+    assert [page.actions_total for page in (first, second, third)] == [3, 3, 3]
+    assert [page.next_action_offset for page in (first, second, third)] == [1, 2, None]
+
+    skills = service.get_available_actions(snapshot, action_type="train_skill", action_limit=1)
+    assert not skills.quest_actions
+    assert skills.actions_total == 2
+    assert skills.next_action_offset == 1
+    quests = service.get_available_actions(snapshot, action_type="complete_quest")
+    assert [a.quest for a in quests.quest_actions] == ["a"]
+    assert quests.actions_total == 1
+    filtered = service.get_available_actions(snapshot, skill="agility", action_offset=1)
+    assert not filtered.quest_actions
+    assert [a.target_level for a in filtered.skill_actions] == [70]
+    assert filtered.actions_total == 2
+    assert filtered.next_action_offset is None
+    missing = service.get_available_actions(snapshot, skill="runecraft")
+    assert missing.actions_total == 0
+    assert missing.next_action_offset is None
+    assert not missing.skill_actions
+
+
+def test_available_quest_actions_mark_cape_counting_without_changing_pagination(snapshot):
+    catalog = QuestCatalog.model_validate(
+        {
+            "version": "action-counting-fixture",
+            "source": "fixture",
+            "quests": [
+                {
+                    "id": "miniquest",
+                    "name": "A prerequisite miniquest",
+                    "counts_for_cape": False,
+                    "requirements_verified": True,
+                    "wiki_url": "https://example.test/miniquest",
+                },
+                {
+                    "id": "cape_quest",
+                    "name": "B Cape quest",
+                    "counts_for_cape": True,
+                    "requires": {"quest": "miniquest"},
+                    "requirements_verified": True,
+                    "wiki_url": "https://example.test/cape-quest",
+                },
+                {
+                    "id": "available_cape_quest",
+                    "name": "C available Cape quest",
+                    "counts_for_cape": True,
+                    "requirements_verified": True,
+                    "wiki_url": "https://example.test/available-cape-quest",
+                },
+            ],
+        }
+    )
+    account = replace(
+        snapshot,
+        quests=dict.fromkeys(
+            ("miniquest", "cape_quest", "available_cape_quest"), QuestStatus.NOT_STARTED
+        ),
+    )
+    service = QuestCapeService(catalog)
+    assert service.get_goal_status(account, quest_ids=[]).available_now == 1
+    first = service.get_available_actions(account, action_type="complete_quest", action_limit=1)
+    second = service.get_available_actions(
+        account, action_type="complete_quest", action_offset=1, action_limit=1
+    )
+    assert [(action.quest, action.counts_for_cape) for action in first.quest_actions] == [
+        ("miniquest", False)
+    ]
+    assert [(action.quest, action.counts_for_cape) for action in second.quest_actions] == [
+        ("available_cape_quest", True)
+    ]
+    assert [page.actions_total for page in (first, second)] == [2, 2]
+    assert [page.next_action_offset for page in (first, second)] == [1, None]
+    assert service.get_available_actions(account).actions_total == 2
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"action_offset": -1},
+        {"action_limit": 0},
+        {"action_limit": 101},
+        {"action_type": "unknown"},
+        {"action_type": "complete_quest", "skill": "agility"},
+    ],
+)
+def test_invalid_action_discovery_inputs(service, snapshot, kwargs):
+    with pytest.raises(ValueError):
+        service.get_available_actions(snapshot, **kwargs)
+
+
+def test_goal_summary_and_freshness_on_all_goal_results(service, snapshot):
+    summary = service.get_goal_status(snapshot, quest_ids=[])
+    assert not summary.quests
+    assert summary.total == 5
+    assert summary.skill_blockers
+    assert summary.last_sync_at == snapshot.last_sync_at
+    assert service.get_available_actions(snapshot).last_sync_at == snapshot.last_sync_at
+    evaluation = service.evaluate_action(snapshot, CompleteQuest(type="complete_quest", quest="a"))
+    assert evaluation.last_sync_at == snapshot.last_sync_at
+    assert evaluation.snapshot_id == snapshot.fingerprint
+    unsynced = replace(snapshot, last_sync_at=None)
+    assert service.get_goal_status(unsynced, quest_ids=[]).last_sync_at is None
+    assert service.get_available_actions(unsynced).last_sync_at is None
+    assert (
+        service.evaluate_action(
+            unsynced, CompleteQuest(type="complete_quest", quest="a")
+        ).last_sync_at
+        is None
+    )
+
+
+def test_default_action_discovery_is_a_page_of_the_catalog(snapshot):
+    catalog = load_catalog(Path("content/quest_cape/catalog.json"))
+    service = QuestCapeService(catalog)
+    account = replace(
+        snapshot,
+        quests={q.id: QuestStatus.NOT_STARTED for q in catalog.quests},
+        skills={},
+    )
+    blockers = service.get_goal_status(account, quest_ids=[]).skill_blockers
+    account = replace(
+        account,
+        skills={
+            b.skill: SkillState(1, None, Source.RUNELITE, snapshot.last_sync_at) for b in blockers
+        },
+    )
+    first = service.get_available_actions(account)
+    assert len(first.quest_actions) + len(first.skill_actions) == 50
+    assert first.actions_total > 50
+    assert first.next_action_offset == 50
+    seen: set[tuple[str, str, int | None]] = set()
+    offset = 0
+    while True:
+        page = service.get_available_actions(account, action_offset=offset)
+        assert page.actions_total == first.actions_total
+        for action in (*page.quest_actions, *page.skill_actions):
+            key = (
+                action.type,
+                action.quest if action.type == "complete_quest" else action.skill,
+                None if action.type == "complete_quest" else action.target_level,
+            )
+            assert key not in seen
+            seen.add(key)
+        if page.next_action_offset is None:
+            break
+        offset = page.next_action_offset
+    assert len(seen) == first.actions_total
 
 
 def test_final_rfd_chapter_counts_parent_once(snapshot):

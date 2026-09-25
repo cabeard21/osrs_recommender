@@ -57,6 +57,7 @@ from tracker.db.repository import (
     set_active_roadmap,
     upsert_milestone,
 )
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import (
     AccountType,
     Container,
@@ -233,7 +234,7 @@ def unlock_rows(session: Session, player_id: int, content: Content) -> tuple[Unl
 
 
 def skill_rows(session: Session, player_id: int, content: Content) -> tuple[SkillRow, ...]:
-    """One row per skill snapshot, ranked first and highest first.
+    """One row per canonical current skill, ranked first and highest first.
 
     Names and combat flags come from content where the id resolves; a snapshot for a skill
     the corpus does not declare still renders, under a titled id. §10.7 makes that
@@ -243,20 +244,19 @@ def skill_rows(session: Session, player_id: int, content: Content) -> tuple[Skil
     snapshots: Sequence[SkillSnapshot] = current_skill_snapshots(session, player_id)
     skills = content.skills
 
-    rows = [
-        skill_row(
-            skill_id=snapshot.skill,
-            name=(
-                skills[snapshot.skill].name
-                if snapshot.skill in skills
-                else snapshot.skill.replace("_", " ").title()
-            ),
-            is_combat=skills[snapshot.skill].is_combat if snapshot.skill in skills else False,
-            level=snapshot.level,
-            xp=snapshot.xp,
+    rows = []
+    for snapshot in snapshots:
+        skill_id = canonical_skill_name(snapshot.skill)
+        definition = skills.get(skill_id)
+        rows.append(
+            skill_row(
+                skill_id=skill_id,
+                name=definition.name if definition else skill_id.replace("_", " ").title(),
+                is_combat=definition.is_combat if definition else False,
+                level=snapshot.level,
+                xp=snapshot.xp,
+            )
         )
-        for snapshot in snapshots
-    ]
     # Ranked before unranked, then by level. Sorting unranked rows by their stored `level`
     # would place them where their nominal 1 falls, reintroducing into the *ordering* the
     # very number §6.2 says must not be shown.
@@ -1085,7 +1085,7 @@ def history_snapshots(
 
 
 def xp_series(session: Session, player_id: int) -> Mapping[str, tuple[SkillXpPoint, ...]]:
-    """Every ranked skill's XP history, oldest first, for the §15 Plotly chart (§6.2).
+    """Every ranked skill's XP history under its canonical key, oldest first (§6.2).
 
     Unranked snapshots (``xp IS NULL``) are excluded — a chart has no honest way to plot
     "no experience figure exists yet" as a point on a numeric axis, and a ``0`` would be
@@ -1094,14 +1094,14 @@ def xp_series(session: Session, player_id: int) -> Mapping[str, tuple[SkillXpPoi
     snapshots = session.scalars(
         select(SkillSnapshot)
         .where(SkillSnapshot.player_id == player_id, SkillSnapshot.xp.is_not(None))
-        .order_by(SkillSnapshot.skill.asc(), SkillSnapshot.observed_at.asc())
+        .order_by(SkillSnapshot.observed_at.asc(), SkillSnapshot.id.asc())
     ).all()
 
     by_skill: dict[str, list[SkillXpPoint]] = {}
     for snapshot in snapshots:
         if snapshot.xp is None:  # pragma: no cover — excluded by the query above
             continue
-        by_skill.setdefault(snapshot.skill, []).append(
+        by_skill.setdefault(canonical_skill_name(snapshot.skill), []).append(
             SkillXpPoint(observed_at=snapshot.observed_at, xp=snapshot.xp)
         )
     return {skill: tuple(points) for skill, points in by_skill.items()}

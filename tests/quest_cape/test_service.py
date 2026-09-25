@@ -1,12 +1,13 @@
 import ast
 from dataclasses import replace
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.requirements import parse
-from tracker.domain.types import QuestStatus, Tri
+from tracker.domain.types import QuestStatus, SkillState, Source, Tri
 from tracker.quest_cape.catalog import QuestCatalog, load_catalog
 from tracker.quest_cape.requirements import evaluate_requirement
 from tracker.quest_cape.service import (
@@ -31,6 +32,40 @@ from tracker.quest_cape.service import (
 )
 def test_requirement(snapshot, requirement, status):
     assert evaluate_requirement(snapshot, parse(requirement)).status is status
+
+
+def test_direct_snapshot_canonicalizes_legacy_runecrafting_observation(snapshot):
+    legacy = SkillState(20, 4470, Source.WISE_OLD_MAN, snapshot.last_sync_at)
+    direct = replace(snapshot, skills={"runecrafting": legacy})
+
+    assert set(direct.skills) == {"runecraft"}
+    assert direct.skills["runecraft"] == legacy
+    assert evaluate_requirement(direct, parse({"skill": {"runecraft": 20}})).status is Tri.SATISFIED
+
+
+def test_direct_snapshot_chooses_newest_then_source_then_canonical_key(snapshot):
+    at = snapshot.last_sync_at
+    older = SkillState(30, 30, Source.RUNELITE, at - timedelta(days=1))
+    legacy = SkillState(31, 31, Source.WISE_OLD_MAN, at)
+    canonical = SkillState(32, 32, Source.RUNELITE, at)
+
+    assert (
+        replace(snapshot, skills={"runecraft": older, "runecrafting": legacy}).skills["runecraft"]
+        == legacy
+    )
+    assert (
+        replace(snapshot, skills={"runecraft": canonical, "runecrafting": legacy}).skills[
+            "runecraft"
+        ]
+        == canonical
+    )
+    assert (
+        replace(
+            snapshot,
+            skills={"runecraft": canonical, "runecrafting": replace(canonical, level=33)},
+        ).skills["runecraft"]
+        == canonical
+    )
 
 
 def test_status_and_thresholds(service, snapshot):

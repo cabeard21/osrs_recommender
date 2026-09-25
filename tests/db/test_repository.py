@@ -51,6 +51,59 @@ class TestPlayerLookup:
 
 
 class TestSkillSnapshots:
+    def test_legacy_alias_and_canonical_rows_select_one_current_skill(
+        self, session: Session, new_player: PlayerFactory
+    ) -> None:
+        player_id = new_player(session)
+        old = repository.append_skill_snapshot(
+            session,
+            player_id,
+            skill="runecrafting",
+            level=20,
+            xp=4470,
+            source=Source.WISE_OLD_MAN,
+            observed_at=NOW - timedelta(days=1),
+        )
+        fresh = repository.append_skill_snapshot(
+            session,
+            player_id,
+            skill="runecraft",
+            level=21,
+            xp=5018,
+            source=Source.RUNELITE,
+            observed_at=NOW,
+        )
+        session.commit()
+
+        assert repository.current_skill_snapshots(session, player_id) == [fresh]
+        assert {row.id for row in session.scalars(select(SkillSnapshot))} == {old.id, fresh.id}
+
+    def test_alias_selection_uses_time_source_canonical_key_then_row_id(
+        self, session: Session, new_player: PlayerFactory
+    ) -> None:
+        player_id = new_player(session)
+        rows = [
+            repository.append_skill_snapshot(
+                session,
+                player_id,
+                skill=skill,
+                level=level,
+                xp=level,
+                source=source,
+                observed_at=at,
+            )
+            for skill, level, source, at in (
+                ("runecraft", 10, Source.RUNELITE, NOW - timedelta(days=1)),
+                ("runecrafting", 11, Source.WISE_OLD_MAN, NOW),
+                ("runecrafting", 12, Source.RUNELITE, NOW),
+                ("runecraft", 13, Source.RUNELITE, NOW),
+                ("runecraft", 14, Source.RUNELITE, NOW),
+            )
+        ]
+        session.commit()
+
+        assert repository.current_skill_snapshots(session, player_id) == [rows[-1]]
+
     def test_appending_never_overwrites_the_history(
         self, session: Session, new_player: PlayerFactory
     ) -> None:

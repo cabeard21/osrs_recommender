@@ -36,6 +36,7 @@ from sqlalchemy.orm import Session
 
 from tracker.db import repository
 from tracker.db.models import ContainerScan, Milestone, ObservedItem, SkillSnapshot
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import (
     AccountType,
     Container,
@@ -105,7 +106,7 @@ def _skills(snapshots: Iterable[SkillSnapshot]) -> Mapping[str, SkillState]:
     skill, so no skill can appear twice and no ordering assumption is made here.
     """
     return {
-        snapshot.skill: SkillState(
+        canonical_skill_name(snapshot.skill): SkillState(
             level=snapshot.level,
             xp=snapshot.xp,
             source=snapshot.source,

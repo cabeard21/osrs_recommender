@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.accounts.snapshot import AccountSnapshot, Observation
 from tracker.db import repository
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import SkillState
 
 
@@ -22,7 +23,9 @@ class AccountService:
                 player_id=player.id,
                 username=player.username,
                 skills={
-                    row.skill: SkillState(row.level, row.xp, row.source, row.observed_at)
+                    canonical_skill_name(row.skill): SkillState(
+                        row.level, row.xp, row.source, row.observed_at
+                    )
                     for row in repository.current_skill_snapshots(session, player_id)
                 },
                 quests={row.quest_id: row.status for row in quests},

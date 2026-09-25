@@ -52,6 +52,7 @@ from tracker.db.repository import (
     upsert_quest_state,
     upsert_unlock,
 )
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import (
     SOURCE_PRECEDENCE,
     Container,
@@ -257,11 +258,13 @@ def _merge_skills(
     row. That is the rollback rule 3 forbids, and it is why the guard compares against the
     currently-selected snapshot rather than against the last row inserted.
     """
-    current = {row.skill: row for row in current_skill_snapshots(session, player_id)}
+    current = {
+        canonical_skill_name(row.skill): row for row in current_skill_snapshots(session, player_id)
+    }
     written = ignored = 0
 
     for entry in entries:
-        skill = entry["skill"]
+        skill = canonical_skill_name(entry["skill"])
         level = entry["level"]
         xp = entry.get("xp")
         stored = current.get(skill)

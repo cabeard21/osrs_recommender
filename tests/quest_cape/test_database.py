@@ -14,6 +14,34 @@ from tracker.mcp.settings import MCPSettings
 from tracker.quest_cape.service import CompleteQuest, TrainSkill
 
 
+def test_account_snapshot_normalizes_legacy_wom_skill_without_changing_history(tmp_path):
+    engine = build_engine(f"sqlite:///{tmp_path / 'alias.db'}")
+    Base.metadata.create_all(engine)
+    sessions = build_session_factory(engine)
+    now = datetime(2026, 9, 1, tzinfo=UTC)
+    with sessions.begin() as db:
+        db.add(Player(id=1, username="fixture", display_name="Fixture", created_at=now))
+        db.flush()
+        db.add(
+            SkillSnapshot(
+                player_id=1,
+                skill="runecrafting",
+                level=20,
+                xp=4470,
+                source=Source.WISE_OLD_MAN,
+                observed_at=now,
+            )
+        )
+
+    account = AccountService(sessions).get_snapshot(1)
+    assert set(account.skills) == {"runecraft"}
+    assert account.skills["runecraft"].level == 20
+    assert account.summary()["skills"].keys() == {"runecraft"}
+    with sessions() as db:
+        assert db.query(SkillSnapshot).one().skill == "runecrafting"
+    engine.dispose()
+
+
 def test_snapshot_and_evaluations_are_read_only(tmp_path, service, monkeypatch):
     from tracker.recommendations import engine as recommendation_engine
 

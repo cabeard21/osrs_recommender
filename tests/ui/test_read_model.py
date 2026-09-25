@@ -24,7 +24,7 @@ from tracker.content.schema import (
     ScoringWeights,
 )
 from tracker.content.schema import Milestone as ContentMilestone
-from tracker.db.models import Base, Player
+from tracker.db.models import Base, Player, SkillSnapshot
 from tracker.db.models import Milestone as MilestoneRow
 from tracker.db.session import build_engine, build_session_factory
 from tracker.domain.types import (
@@ -129,6 +129,26 @@ def test_an_unranked_snapshot_reads_back_unranked(
     assert rows["construction"].level is None
     assert rows["magic"].is_ranked is True
     assert rows["magic"].level == 94
+
+
+def test_legacy_runecrafting_uses_canonical_current_skill_row(
+    session: Session, player_id: int, content: Content, now: datetime
+) -> None:
+    session.add(
+        SkillSnapshot(
+            player_id=player_id,
+            skill="runecrafting",
+            level=20,
+            xp=4470,
+            source=Source.WISE_OLD_MAN,
+            observed_at=now,
+        )
+    )
+    session.flush()
+
+    rows = {row.skill_id: row for row in read_model.skill_rows(session, player_id, content)}
+    assert "runecrafting" not in rows
+    assert rows["runecraft"].level == 20
 
 
 def test_ranked_skills_sort_before_unranked_ones(
@@ -682,6 +702,36 @@ def test_xp_series_excludes_unranked_snapshots(session: Session, player_id: int)
     assert "magic" in series
     assert "construction" not in series, "xp is NULL for this one (§6.2) - no chart point"
     assert series["magic"][-1].xp == 7_195_629
+
+
+def test_xp_series_combines_legacy_runecrafting_history(
+    session: Session, player_id: int, now: datetime
+) -> None:
+    session.add_all(
+        [
+            SkillSnapshot(
+                player_id=player_id,
+                skill="runecrafting",
+                level=20,
+                xp=4470,
+                source=Source.WISE_OLD_MAN,
+                observed_at=now - timedelta(days=1),
+            ),
+            SkillSnapshot(
+                player_id=player_id,
+                skill="runecraft",
+                level=21,
+                xp=5018,
+                source=Source.RUNELITE,
+                observed_at=now,
+            ),
+        ]
+    )
+    session.flush()
+
+    series = read_model.xp_series(session, player_id)
+    assert "runecrafting" not in series
+    assert [point.xp for point in series["runecraft"]] == [4470, 5018]
 
 
 def test_snapshot_diff_reports_the_same_snapshot_as_unchanged(

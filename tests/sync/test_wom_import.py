@@ -146,6 +146,32 @@ class TestG4PrecedenceHoldsForTheWomWriter:
             assert stored["magic"].xp == 8_000_000, "WOM rolled back a fresher RuneLite read"
             assert stored["magic"].source is Source.RUNELITE
 
+    def test_legacy_alias_cannot_bypass_wom_no_regression_guard(
+        self, pipeline_sessions: sessionmaker[Session], player: int
+    ) -> None:
+        with pipeline_sessions() as session:
+            append_skill_snapshot(
+                session,
+                player,
+                skill="runecrafting",
+                level=21,
+                xp=5018,
+                source=Source.RUNELITE,
+                observed_at=_SNAPSHOT_AT - timedelta(hours=1),
+            )
+            session.commit()
+
+            with _wom_client(_snapshot_response(runecrafting=4470)) as client:
+                outcome = import_wom_skills(session, player, client=client)
+            session.commit()
+
+            assert outcome.skills_written == 0
+            assert outcome.skills_ignored == 1
+            current = current_skill_snapshots(session, player)
+            assert len(current) == 1
+            assert current[0].skill == "runecrafting"
+            assert current[0].xp == 5018
+
 
 class TestItDoesNotClaimWhatWomCannotKnow:
     def test_last_sync_at_stays_null_so_combat_level_remains_unknown(
