@@ -1,4 +1,4 @@
-# OSRS PvP Progression Tracker — developer targets.
+# OSRS Account Companion — developer targets.
 #
 # Argument passing uses ARGS=, not trailing bare words: GNU make treats trailing
 # words as *goals*, so `make test -- tests/x` exits 2. Use:
@@ -26,9 +26,8 @@ browsers: ; $(PY) -m playwright install chromium
 test:              ; $(PY) -m pytest -m "not browser and not llm_live" $(ARGS)
 test-full:         ; $(PY) -m pytest -m "not llm_live" $(ARGS)
 test-ci: test-full
-# Measure the supported account, goal, sync, API, persistence and gear boundaries.
-# Legacy recommender scoring remains runnable but is no longer a coverage target.
-test-cov:          ; $(PY) -m pytest -m "not llm_live" --cov=tracker.accounts --cov=tracker.quest_cape --cov=tracker.sync --cov=tracker.api --cov=tracker.mcp --cov=tracker.db --cov=tracker.config --cov=tracker.content.requirements --cov=tracker.progression.tri --cov=tracker.gear --cov-report=term-missing --cov-fail-under=80 $(ARGS)
+# Measure the established supported account, goal, sync, API, persistence and gear boundary.
+test-cov:          ; $(PY) -m pytest -m "not llm_live" --cov=tracker.accounts --cov=tracker.quest_cape --cov=tracker.sync --cov=tracker.api --cov=tracker.mcp --cov=tracker.db --cov=tracker.config --cov=tracker.content.requirements --cov=tracker.domain.tri --cov=tracker.gear --cov-report=term-missing --cov-fail-under=80 $(ARGS)
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
 # `tests` is checked too, deliberately. A Protocol is only verified where an

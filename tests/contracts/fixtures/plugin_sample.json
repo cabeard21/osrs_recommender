@@ -55,13 +55,5 @@
       "container": "bank",
       "scanned_at": "2026-08-11T20:12:30Z"
     }
-  ],
-  "practice_events": [
-    {
-      "domain": "lms",
-      "started_at": "2026-08-11T19:45:00Z",
-      "ended_at": "2026-08-11T20:05:00Z",
-      "evidence_type": "lms_match_completed"
-    }
   ]
 }

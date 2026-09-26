@@ -30,8 +30,8 @@ def create_app(settings: Settings, session_factory: sessionmaker[Session]) -> Fa
     under that prefix, or the liveness probe would require a credential (§11.7, A16).
     """
     app = FastAPI(
-        title="OSRS PvP Progression Tracker",
-        description="Local sync API for the RuneLite companion plugin (SDD §12).",
+        title="OSRS Account Companion",
+        description="Private RuneLite account synchronization API.",
     )
     setattr(app.state, SETTINGS_ATTR, settings)
     setattr(app.state, SESSION_FACTORY_ATTR, session_factory)

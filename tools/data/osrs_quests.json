@@ -4,7 +4,7 @@
   "runelite_api_version": "1.12.35",
   "wiki_api": "https://oldschool.runescape.wiki/api.php",
   "wiki_query": "bucket(\"quest\").select(\"page_name\",\"requirements\").limit(1000).run()",
-  "note": "requirements is raw wikitext; parsing lives in tools/generate_candidates.py"
+  "note": "RuneLite quest identities for Quest Cape capture and the factual quest registry; raw requirements are historical capture data"
  },
  "quests": [
   {

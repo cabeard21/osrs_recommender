@@ -14,25 +14,12 @@ import httpx
 
 from tracker.config.settings import PricesSettings
 from tracker.content.loader import Content
-from tracker.content.schema import Item, KappaPresets, ScoringProfile, ScoringWeights
+from tracker.content.schema import Item
 from tracker.integrations.prices.cache import resolve_prices
 from tracker.integrations.prices.client import PriceDTO, PricesClient, PriceSource
 
 _NOW = datetime(2026, 8, 4, 12, 0, tzinfo=UTC)
 _ITEM_ID = 27690
-
-_PROFILE = ScoringProfile(
-    version=1,
-    kappa_gp=KappaPresets(high=8_000_000, normal=20_000_000, low=50_000_000),
-    weights=ScoringWeights(
-        pvp_value=0.3,
-        leverage=0.3,
-        proximity=0.2,
-        effort_decay=0.1,
-        cost_decay=0.1,
-        method_unlock=0.0,
-    ),
-)
 
 
 class _FakeCacheReader:
@@ -51,7 +38,6 @@ class _FakeCacheReader:
 
 def _content(fallback_price_gp: int | None = 85_000_000) -> Content:
     return Content(
-        profile=_PROFILE,
         items={
             "voidwaker": Item(
                 id="voidwaker",

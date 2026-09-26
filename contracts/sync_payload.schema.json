@@ -71,7 +71,7 @@
     },
 
     "practice_events": {
-      "description": "§7.6, exactly the summarized shape and nothing more. The four properties below are the whole vocabulary: no opponent names, no attack sequences, no chat, no individual prayer selections, no fight-time inventories, no tick-by-tick location. `additionalProperties: false` on the item schema is what enforces that (G8).",
+      "description": "Deprecated v1 compatibility field. Older plugins may send these validated events; the account companion ignores them. New plugins omit this field. The closed item shape prevents extra personal data in legacy payloads.",
       "type": "array",
       "items": { "$ref": "#/$defs/practice_event" }
     }

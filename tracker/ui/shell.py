@@ -35,10 +35,7 @@ from dataclasses import dataclass
 
 from nicegui import ui
 
-from tracker.ui.components import roadmap_selector
-from tracker.ui.components.badges import CONFIDENCE_CSS
 from tracker.ui.states import STATE_CSS
-from tracker.ui.view_model import RoadmapSelectorModel
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,25 +54,13 @@ class NavItem:
     primary: bool = False
 
 
-#: Step 10's four views, plus Step 11's five. Added to this one tuple rather than to a
-#: second nav, so there is one answer to "what can this app show me".
-#:
-#: The four ``primary`` items are the ones with a reason to be one tap away: the dashboard
-#: answers the app's headline question, gear and recommendations are the two views consulted
-#: mid-session, and the advisor is the only view you arrive at with a question already in
-#: mind. The rest are consulted deliberately, and a deliberate visit can afford a tap.
+#: One navigation for the factual Account Companion surfaces.
 NAV: tuple[NavItem, ...] = (
     NavItem("/", "Dashboard", primary=True),
-    NavItem("/capabilities", "Capabilities"),
     NavItem("/unlocks", "Unlocks"),
     NavItem("/gear", "Gear", primary=True),
     NavItem("/skills", "Skills"),
-    NavItem("/recommendations", "Next up", primary=True),
-    NavItem("/advisor", "Advisor", primary=True),
-    NavItem("/practice", "Practice"),
-    NavItem("/roadmaps", "Roadmaps"),
     NavItem("/settings", "Settings"),
-    NavItem("/history", "History"),
 )
 
 #: Loaded from Google Fonts with a full system fallback stack behind every role, because
@@ -439,7 +424,6 @@ def inject_styles() -> None:
     ui.add_css(NAV_CSS)
     ui.add_css(THEME_CSS)
     ui.add_css(STATE_CSS)
-    ui.add_css(CONFIDENCE_CSS)
 
 
 def theme_toggle() -> None:
@@ -507,7 +491,7 @@ def _nav_bar(current: str) -> None:
 
 
 @contextmanager
-def page(title: str, *, path: str, roadmap: RoadmapSelectorModel | None = None) -> Iterator[None]:
+def page(title: str, *, path: str) -> Iterator[None]:
     """Wrap a page body in the shared frame.
 
     A context manager rather than a decorator taking a render callable, so a page function
@@ -515,13 +499,7 @@ def page(title: str, *, path: str, roadmap: RoadmapSelectorModel | None = None) 
     being read from the request, because the nav highlight is a property of the page being
     built and NiceGUI rebuilds pages outside any request scope on reconnect.
 
-    ``roadmap`` arrives as an already-read model with an already-bound callback, because
-    this module opens no session and knows no read model — :mod:`tracker.ui.pages` builds
-    it. ``None`` draws no selector, which is what a page with no player row gets: a
-    dropdown before the first sync would imply a choice that has nothing to choose for
-    (§4.5).
-
-    The title is drawn before the roadmap selector rather than after it. The nav has moved
+    The nav has moved
     to the foot of a phone screen, so the first thing at the top of the document is now the
     first thing the reader sees, and that should be the name of the view they asked for.
 
@@ -536,15 +514,13 @@ def page(title: str, *, path: str, roadmap: RoadmapSelectorModel | None = None) 
         with ui.element("div").classes("tracker-titlebar"):
             ui.html(title).classes("tracker-title block")
             theme_toggle()
-        if roadmap is not None:
-            roadmap_selector.render(roadmap)
         yield
 
 
 def empty_state(message: str, *, testid: str = "empty-state") -> None:
     """What a view shows before the first sync.
 
-    Phrased as an instruction, never as a result. "No capabilities" would be a claim about
+    Phrased as an instruction, never as a result. "No account data" would be a claim about
     the account; "no sync yet" is a claim about our records, and only the second is true
     (§4.5).
     """
@@ -567,7 +543,7 @@ def section(title: str, *, testid: str | None = None) -> ui.element:
 def layer_row(label: str, render_value: Callable[[], object]) -> None:
     """One ``label: value`` line of §4.4's three-layer block.
 
-    Every capability field goes through this, so the three layers are three rows with the
+    Factual status fields go through this, so related facts are rows with the
     same visual weight. A layout that gave ``status`` a heading and the other two a
     footnote would be the collapse §4.4 forbids, achieved by typography instead of by data.
     """

@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "osrs-pvp-progression-tracker"
+name = "osrs-account-companion"
 version = "0.1.0"
-description = "Locally hosted OSRS Wilderness PvP progression tracker (see docs/SDD.md)"
+description = "Private OSRS account companion for factual Quest Cape and Gear tools"
 readme = "README.md"
 requires-python = ">=3.12"
 
@@ -22,12 +22,6 @@ dependencies = [
     "jsonschema",
     "plotly",
     "mcp>=2.2,<3",
-    # §21.4 — task guidance provider. Imported only by tracker/integrations/llm/, and only
-    # constructed when integrations.llm.enabled and a key resolves (D14: off changes nothing).
-    # 1.x migrated the SDK's transport layer to httpx2. The provider's injected test seam and
-    # the rest of this application deliberately share httpx, so stay on the compatible SDK
-    # generation until that migration is made end-to-end.
-    "anthropic>=0.121,<1",
 ]
 
 [project.optional-dependencies]
@@ -116,19 +110,8 @@ mypy_path = "."
 module = [
     "tracker.domain.*",
     "tracker.content.*",
-    "tracker.freshness.*",
-    "tracker.progression.*",
-    "tracker.recommendations.*",
     "tracker.estimation.*",
-    # §21.2 — context assembly is pure by the same rule and held to the same bar. Nothing here
-    # reaches a ranking (D14), but everything here feeds a hash the cache depends on.
-    "tracker.guidance.*",
-    # §22.2 — the advisor's digest and tool dispatch are pure for a stronger reason than the
-    # rest: D15 makes purity the *enforcement* of "tools cannot write", not merely its style.
-    # A session reaching this package would be a bug the type checker should catch first.
-    "tracker.advisor.*",
-    # §23 — the gear projection, held to the advisor's bar rather than to guidance's, because
-    # the advisor imports it. Its purity is a component of D15's guarantee, not a style choice.
+    # Gear and account/goal evaluation operate on factual inputs without writes.
     "tracker.gear.*",
     "tracker.accounts.*",
     "tracker.quest_cape.*",
@@ -165,6 +148,5 @@ markers = [
     # guards (no provider is built without a transport or a key) keep the suite offline.
     "llm_live: hits a real guidance provider; never run by `make test` (§21.4)",
 ]
-# The tuner imports the retained golden corpus loader from `tests.golden`.
 # `--import-mode=importlib` adds nothing to sys.path, so a bare `pytest` needs the root.
 pythonpath = ["."]

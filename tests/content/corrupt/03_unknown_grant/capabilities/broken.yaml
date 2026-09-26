@@ -1,3 +1,0 @@
-id: broken
-name: Grants a capability nobody declared
-grants: [not_a_capability]

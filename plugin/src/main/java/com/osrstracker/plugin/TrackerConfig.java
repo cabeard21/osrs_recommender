@@ -68,17 +68,4 @@ public interface TrackerConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(
-		keyName = "practiceDetection",
-		name = "Practice detection",
-		description =
-			"Summarize PvP sessions as practice evidence (§7.6). Never transmits opponents, "
-				+ "chat, prayers, inventories or locations. Step 12c implements the detector.",
-		section = collectionSection,
-		position = 1
-	)
-	default boolean practiceDetection()
-	{
-		return true;
-	}
 }

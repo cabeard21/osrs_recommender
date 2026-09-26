@@ -1,11 +1,8 @@
-"""Alembic round-trip on a seeded database (§6.13, Step 3a exit criteria).
+"""Historical reversible Alembic revisions and current account audit schema.
 
-An empty-schema round trip only proves the DDL is syntactically valid. The task list
-deliberately asks for `upgrade head -> downgrade base -> upgrade head` *on a database that
-already holds rows*, because that is the case an empty round trip cannot catch: with
-`foreign_keys=ON` (`tracker.db.session`), `DROP TABLE` on a parent performs an implicit
-delete of every row that still has a live foreign-key reference to it, and it is only with
-real rows in place that a `downgrade()` written in the wrong table order would surface.
+The M3 retirement revision is intentionally irreversible because its dropped rows cannot
+be recovered from schema DDL. Its forward preservation and backup boundary are tested in
+``test_m3_migration.py``; this module round-trips the preceding revisions only.
 """
 
 from __future__ import annotations
@@ -20,12 +17,10 @@ from alembic.config import Config
 from sqlalchemy import Engine, inspect, select
 from sqlalchemy.orm import Session
 
-from tracker.db.models import ActiveRoadmap, Base, Milestone, Player, SyncEvent, Unlock
+from tracker.db.models import Base, Player, SyncEvent, Unlock
 from tracker.db.session import build_engine, build_session_factory
 from tracker.domain.types import (
     GpSensitivity,
-    MilestoneClass,
-    MilestoneKind,
     Source,
     UnlockState,
 )
@@ -44,12 +39,11 @@ def _alembic_config(database_url: str) -> Config:
 
 
 def _seed_one_row_per_representative_table(engine: Engine) -> int:
-    """Populate enough of the schema to exercise every FK relationship once.
+    """Populate account facts and historical tables before the pre-M3 round trip.
 
     Returns the seeded player id. Covers a current-state table with a composite key
-    (``Unlock``), a nullable-enum column (``Milestone.freshness`` left unset), a
-    ``CASCADE`` FK (``ActiveRoadmap``), and the ``SET NULL`` FK with ``player_id IS NULL``
-    (``SyncEvent``, A17) in the same pass.
+    (``Unlock``), a legacy ``CASCADE`` FK (``ActiveRoadmap``), and a ``SET NULL``
+    FK with ``player_id IS NULL`` (``SyncEvent``, A17) in the same pass.
     """
     session_factory = build_session_factory(engine)
     with session_factory() as session:
@@ -71,18 +65,18 @@ def _seed_one_row_per_representative_table(engine: Engine) -> int:
                 observed_at=NOW,
             )
         )
-        session.add(
-            Milestone(
-                player_id=player.id,
-                key="comfortable_4_way_switches",
-                kind=MilestoneKind.SELF_ATTESTED,
-                class_=MilestoneClass.EXECUTION,
-                achieved=True,
-                source=Source.MANUAL,
-                observed_at=NOW,
-            )
+        session.connection().exec_driver_sql(
+            'INSERT INTO milestone (player_id, key, kind, "class", achieved, source, '
+            "observed_at) "
+            "VALUES (?, 'comfortable_4_way_switches', 'self_attested', 'execution', 1, "
+            "'manual', '2026-08-04')",
+            (player.id,),
         )
-        session.add(ActiveRoadmap(player_id=player.id, roadmap_id="main_nh", selection_weight=1.0))
+        session.connection().exec_driver_sql(
+            "INSERT INTO active_roadmap (player_id, roadmap_id, selection_weight) "
+            "VALUES (?, 'main_nh', 1.0)",
+            (player.id,),
+        )
         session.add(
             SyncEvent(
                 player_id=None,
@@ -98,14 +92,14 @@ def _seed_one_row_per_representative_table(engine: Engine) -> int:
 
 
 class TestAlembicRoundTrip:
-    """upgrade -> downgrade -> upgrade must survive a populated database (§6.13)."""
+    """Historical revisions can still round-trip on populated databases."""
 
     def test_upgrade_downgrade_upgrade_on_seeded_database(self, tmp_path: Path) -> None:
         db_path = tmp_path / "roundtrip.db"
         database_url = f"sqlite:///{db_path}"
         config = _alembic_config(database_url)
 
-        command.upgrade(config, "head")
+        command.upgrade(config, "e2f8a34b91c7")
 
         engine = build_engine(database_url)
         _seed_one_row_per_representative_table(engine)

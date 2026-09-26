@@ -46,7 +46,6 @@ def test_loads_from_yaml(tmp_path: Path) -> None:
     assert settings.integrations.prices.base_url == "https://prices.runescape.wiki/api/v1/osrs"
     assert settings.integrations.wise_old_man.base_url == "https://api.wiseoldman.net/v2"
     assert settings.content_dir == Path("content")
-    assert settings.scoring_profile_path == Path("content/scoring/profile.yaml")
 
 
 def test_example_config_is_loadable(tmp_path: Path) -> None:
@@ -57,6 +56,23 @@ def test_example_config_is_loadable(tmp_path: Path) -> None:
     assert settings.bind_address == "127.0.0.1"
     assert settings.integrations.prices.ttl_hours == 12
     assert settings.integrations.prices.manual_refresh_min_interval_seconds == 60
+
+
+def test_private_config_ignores_retired_recommender_keys(tmp_path: Path) -> None:
+    config = """
+bind_address: 127.0.0.1
+api_token: test-token
+scoring_profile_path: content/scoring/profile.yaml
+integrations:
+  llm:
+    enabled: true
+  prices:
+    ttl_hours: 6
+"""
+    settings = load_settings(_write_config(tmp_path, config))
+
+    assert settings.integrations.prices.ttl_hours == 6
+    assert not hasattr(settings, "scoring_profile_path")
 
 
 @pytest.mark.parametrize("address", ["0.0.0.0", "::", "0:0:0:0:0:0:0:0", " 0.0.0.0 "])

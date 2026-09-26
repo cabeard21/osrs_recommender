@@ -119,11 +119,8 @@ def settings() -> Settings:
 def content() -> Content:
     """The real seed corpus.
 
-    Loaded once for the whole session: from Step 9 the accepted path runs the full §12
-    pipeline, which needs capabilities, candidates and a scoring profile to produce
-    anything at all. Using the shipped corpus rather than a fixture one means these tests
-    catch a payload that validates against the contract and then breaks the engine — the
-    seam nothing else covers.
+    Loaded once for the whole session so accepted syncs exercise the shipped factual
+    content alongside the real merge and price scope.
     """
     return load_content()
 

@@ -42,13 +42,7 @@ def test_account_snapshot_normalizes_legacy_wom_skill_without_changing_history(t
     engine.dispose()
 
 
-def test_snapshot_and_evaluations_are_read_only(tmp_path, service, monkeypatch):
-    from tracker.recommendations import engine as recommendation_engine
-
-    def forbidden(*args, **kwargs):
-        raise AssertionError("read path invoked recommendations")
-
-    monkeypatch.setattr(recommendation_engine, "recommend", forbidden)
+def test_snapshot_and_evaluations_are_read_only(tmp_path, service):
     engine = build_engine(f"sqlite:///{tmp_path / 'account.db'}")
     Base.metadata.create_all(engine)
     sessions = build_session_factory(engine)

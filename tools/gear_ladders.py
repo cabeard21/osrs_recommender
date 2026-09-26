@@ -1,4 +1,4 @@
-"""The three combat gear ladders, transcribed by hand from the wiki's progression guides.
+"""The three combat gear ladders, transcribed by hand from wiki progression guides.
 
 This module is **data, not a fetch**. Its siblings in ``tools/`` pull from APIs; this one is
 a transcription, and it is the one file in the pipeline a human has to edit when the guides
@@ -12,19 +12,15 @@ Sources, one per style:
 * https://oldschool.runescape.wiki/w/Guide:Magic_Gear_Progression
 
 **Order is the whole payload.** The position of a name in its list becomes its ``tier`` in
-``content/items/items.yaml``, and tier is what lets §21's prompt say *"rung 5 of 12, next
-rung Dragon scimitar"* instead of listing two hundred items alphabetically. Two consequences
-are worth stating, because both are easy to get wrong later:
+``content/items/items.yaml``, which GearService reports as curated progression. Two
+consequences are worth stating, because both are easy to get wrong later:
 
 1. **It is the guide's order, not a power ranking.** Within a band the guides list several
    options and the transcription keeps that order. Inquisitor's mace sits below Scythe of
    vitur because the melee guide prints them that way, not because anyone measured.
-   :func:`tracker.guidance.prompt._rung_line` says as much to the model, and re-tiering
-   against real DPS numbers would be a different, deliberate act — not a tidy-up.
-2. **Inserting a name renumbers every rung beneath it.** Tiers are positional, so a new rung
-   shifts the ones below it and moves §21.5's context hash for any account holding one of
-   them. That is correct — the advice really did change — but it means an edit here
-   invalidates stored guidance, and that should be on purpose rather than a surprise.
+   Re-tiering against DPS numbers would be a different product decision.
+2. **Inserting a name renumbers every rung beneath it.** Tiers are positional, so a new
+   rung changes the factual progression order reported to the dashboard and MCP.
 
 Names must match the wiki's own page titles exactly, because that is what both id lookups
 key on: the price API's ``/mapping`` catalog for tradeables, and the wiki's ``Infobox Item``

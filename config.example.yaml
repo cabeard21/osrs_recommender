@@ -19,7 +19,6 @@ api_token: CHANGE_ME
 database_url: sqlite:///./tracker.db
 
 content_dir: content
-scoring_profile_path: content/scoring/profile.yaml
 
 # Private MCP sidecar: run `make run-mcp` separately from the dashboard/sync server.
 # Select an existing player.id. The tunnel client connects to http://127.0.0.1:8503/mcp.
@@ -40,7 +39,7 @@ integrations:
     provider: osrs_wiki
     base_url: https://prices.runescape.wiki/api/v1/osrs
     user_agent: >-
-      osrs-pvp-progression-tracker/0.1
+      osrs-account-companion/0.1
       (private local progression app; contact: github.com/example/osrs-tracker)
     ttl_hours: 12
     manual_refresh_min_interval_seconds: 60
@@ -49,52 +48,5 @@ integrations:
   wise_old_man:
     base_url: https://api.wiseoldman.net/v2
     user_agent: >-
-      osrs-pvp-progression-tracker/0.1
+      osrs-account-companion/0.1
       (private local progression app; contact: github.com/example/osrs-tracker)
-
-  # §21 — task guidance ("How do I do this?" on a recommendation). Off by default, and D14
-  # means off changes nothing else: no ranking, estimate or capability state depends on it.
-  llm:
-    enabled: false
-    provider: anthropic
-    model: claude-opus-5
-    effort: medium
-    max_tokens: 8000
-    # §21.6 — every press costs money and the button is right there.
-    guidance_ttl_hours: 168
-    min_interval_seconds: 30
-    max_calls_per_day: 50
-    # The key is left unset on purpose. Export ANTHROPIC_API_KEY instead and this file stays
-    # single-secret; set it here only if you would rather keep both in one gitignored place.
-    # api_key: sk-ant-REPLACE_ME
-
-    # §22 — the general advisor (the /advisor page: ask anything, with your account as
-    # context). A **second** switch, and deliberately not implied by `enabled` above: a
-    # guidance note costs one model call, an advisor turn costs one per tool lookup plus the
-    # answer, so turning on "how do I do this?" is not consent to a chat surface. Both must
-    # be true, and a key must resolve, before any client is built.
-    #
-    # D14 and D15 hold regardless of anything here: the advisor reads already-computed state
-    # and writes only its own two tables. Switching it off leaves rankings byte-identical.
-    advisor:
-      enabled: false
-      effort: medium
-      max_tokens: 8000
-      # A tool-using turn is several sequential round trips, so the timeout is higher than
-      # guidance's and the interval is lower — conversation is inherently interactive.
-      timeout_seconds: 180
-      min_interval_seconds: 10
-      # §22.7 — the advisor's own ceiling, counted from its own stored answers so a restart
-      # does not hand out a fresh allowance. Not shared with guidance above: a shared budget
-      # would let one conversation silently starve the "how do I do this?" button.
-      max_calls_per_day: 60
-      # Per turn. The iteration bound stops a runaway loop; the tool bound stops one question
-      # doing thirty lookups. Exceeding the tool budget asks the model to answer with what it
-      # has rather than cutting the turn off and wasting what was already paid for.
-      max_model_iterations: 6
-      max_tool_calls: 10
-      # How much of a thread is replayed. The account summary is cached; the history is not,
-      # so this is the setting that actually grows a long conversation's cost.
-      max_history_turns: 12
-      keep_conversations: 20
-      keep_messages_per_conversation: 60

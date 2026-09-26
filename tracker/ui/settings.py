@@ -1,18 +1,7 @@
-"""§9.6, §11.2, §7.5, §15's settings page.
+"""Account settings, connection observability, and a retained GP preference.
 
-**§9.6 is explicit about vocabulary**: *"The UI never says 'κ' or even 'GP sensitivity'."*
-It asks one question, in three words the player already understands:
-
-> How strongly should expensive upgrades be deprioritized?
-
-with the answer as Strongly / Normally / Barely — never as the internal ``high | normal |
-low`` names and never as a κ value. :data:`~tracker.ui.view_model.GP_SENSITIVITY_LABELS` is
-the one place that mapping exists; this module reads it rather than repeating it, and a test
-greps this page's rendered source for the forbidden tokens directly.
-
-**Bind address and token presence, never the token value** (§15, §11.2). The token is a
-bearer credential shared with the RuneLite plugin; a settings page that echoed it back would
-turn a screenshot into a credential leak. Only whether one is configured is shown.
+The GP preference remains editable but is currently not applied by factual Gear, price,
+budget, or MCP operations. The bearer token is represented only by its presence.
 """
 
 from __future__ import annotations
@@ -98,6 +87,10 @@ def render(
 
     with section("Upgrade cost", testid="settings-sensitivity"):
         ui.html(SENSITIVITY_QUESTION).classes("text-sm block mb-1")
+        ui.html(
+            "Saved for your account. This preference currently has no effect on "
+            "Gear, prices, budget facts, or ChatGPT tools."
+        ).classes("text-xs tracker-faint block mb-2")
         group = ui.radio(
             {level.value: GP_SENSITIVITY_LABELS[level] for level in _SENSITIVITY_ORDER},
             value=view.gp_sensitivity.value,

@@ -38,8 +38,6 @@ public class ContractSerializationTest
 	/** Fixed instants — a byte-stable fixture is the point (see class javadoc). */
 	private static final Instant OBSERVED_AT = Instant.parse("2026-08-11T20:15:00Z");
 	private static final Instant BANK_SCANNED_AT = Instant.parse("2026-08-11T20:12:30Z");
-	private static final Instant PRACTICE_START = Instant.parse("2026-08-11T19:45:00Z");
-	private static final Instant PRACTICE_END = Instant.parse("2026-08-11T20:05:00Z");
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -62,8 +60,6 @@ public class ContractSerializationTest
 			.unlock(new AccountSnapshot.Unlock("diary_wilderness_hard", "locked"))
 			.item(new AccountSnapshot.ObservedItem(27690, 1, "bank"))
 			.containerScan(new AccountSnapshot.ContainerScan("bank", BANK_SCANNED_AT))
-			.practiceEvent(new AccountSnapshot.PracticeEvent(
-				"lms", PRACTICE_START, PRACTICE_END, "lms_match_completed"))
 			.build();
 	}
 

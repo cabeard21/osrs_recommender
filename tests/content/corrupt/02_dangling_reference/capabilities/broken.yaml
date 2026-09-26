@@ -1,4 +1,0 @@
-id: broken
-name: References an item nobody declared
-requires:
-  item: nonexistent_item

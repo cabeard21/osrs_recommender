@@ -1,29 +1,14 @@
-"""The database side of §8.3's price cascade — the reader Step 7 injects, and A19's writer.
-
-Two halves of one seam:
-
-* :class:`DatabasePriceCache` implements Step 7's ``PriceCacheReader`` protocol. Step 7's
-  client decides *whether to fetch* by asking this reader what is already stored; keeping
-  the query here is what let Step 7 ship without depending on Step 3 at all.
-* :func:`persist_prices` writes the fetched rows **and** the three ``selected_*`` columns
-  §6.8 defines but assigns to no writer — the gap A19 records. Step 5 computes them purely
-  (:func:`tracker.estimation.prices.resolve_price`); this is where they land.
-
-The split matters: ``selected_price_gp`` is the *output of a policy*, not data the feed
-supplied, so it is written from a ``ResolvedPrice`` rather than copied off a DTO.
-"""
+"""Cache raw market observations with their source and capture times."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tracker.db.models import ItemPrice
 from tracker.domain.types import PriceSourceLayer
-from tracker.estimation.prices import ResolvedPrice
 from tracker.integrations.prices.client import PriceDTO, PriceSource
 
 
@@ -60,23 +45,16 @@ class DatabasePriceCache:
         self._last_manual_refresh_at = at
 
 
-def persist_prices(
-    session: Session,
-    prices: Mapping[int, PriceDTO],
-    *,
-    resolved: Mapping[int, ResolvedPrice] | None = None,
-) -> int:
-    """Upsert one ``ItemPrice`` row per item, including A19's ``selected_*`` columns.
+def persist_prices(session: Session, prices: Mapping[int, PriceDTO]) -> int:
+    """Upsert raw ``ItemPrice`` observations without storing a chosen price.
 
     Rows whose ``source`` is ``unknown`` are skipped. §8.3's cascade always returns an
     entry for every requested id — a candidate with no price is better flagged
     low-confidence than dropped — but "we could not price this" is not a market fact, and
     storing it would give the item a ``fetched_at`` implying we had looked something up.
 
-    ``resolved`` is optional because the two writes have different natural moments: a fetch
-    happens once per run, while a selection can be recomputed from stored rows at any time.
-    When absent the ``selected_*`` columns are left as they were rather than cleared — a
-    stale selection is more useful than none, and the next run overwrites it.
+    Gear resolves a price from these observations on demand, retaining the source and
+    freshness of whichever observation it used.
     """
     written = 0
     for item_id, dto in prices.items():
@@ -96,36 +74,10 @@ def persist_prices(
         row.fetched_at = dto.fetched_at
         row.source = PriceSourceLayer(dto.source.value)
 
-        selection = (resolved or {}).get(item_id)
-        if selection is not None:
-            row.selected_price_gp = selection.gp
-            row.selection_policy = selection.policy
-            row.selection_reason = selection.selection_reason
-
         written += 1
 
     session.flush()
     return written
-
-
-def stored_prices(session: Session, item_ids: frozenset[int]) -> dict[int, PriceDTO]:
-    """Every stored row among ``item_ids``, as the DTOs the engine reads.
-
-    Converted rather than handed over as ORM rows, for a reason worth recording because it
-    looks like pointless copying: the engine reads prices through
-    :class:`~tracker.estimation.prices.PriceRecord`, whose ``source`` member is typed
-    ``str`` so that a ``StrEnum``-tagged DTO satisfies it. ``ItemPrice.source`` is a plain
-    ``Enum`` — the column's own type — and a plain ``Enum`` is not a ``str``. Passing rows
-    through would type-check only by widening the protocol, which is exactly the loosening
-    that would later let something non-price-shaped past it.
-
-    The second reason is the one from :meth:`DatabasePriceCache.get`: a detached ORM row
-    handed to pure code can emit a query on attribute access.
-    """
-    if not item_ids:
-        return {}
-    rows = session.scalars(select(ItemPrice).where(ItemPrice.item_id.in_(item_ids))).all()
-    return {row.item_id: _to_dto(row) for row in rows}
 
 
 def _to_dto(row: ItemPrice) -> PriceDTO:

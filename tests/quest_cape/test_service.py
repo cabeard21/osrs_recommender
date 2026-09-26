@@ -34,11 +34,11 @@ def test_requirement(snapshot, requirement, status):
     assert evaluate_requirement(snapshot, parse(requirement)).status is status
 
 
-def test_unsupported_requirement_explains_unknown(snapshot):
-    result = evaluate_requirement(snapshot, parse({"milestone": "unmodeled_gate"}))
+def test_unrecognized_item_identity_explains_unknown(snapshot):
+    result = evaluate_requirement(snapshot, parse({"item": "unmodeled_item"}))
 
     assert result.status is Tri.UNKNOWN
-    assert result.kind == "milestone"
+    assert result.kind == "item"
     assert "unsupported" in result.reason.lower()
 
 

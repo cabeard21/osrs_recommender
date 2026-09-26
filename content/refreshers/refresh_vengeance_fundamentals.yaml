@@ -1,8 +1,0 @@
-id: refresh_vengeance_fundamentals
-name: Refresh vengeance timing
-practice_group: vengeance_fundamentals
-trigger:
-  any_member_freshness_at_least: stale
-suggested_session: 10 minutes of vengeance timing drills
-suggested_session_hours: 0.25
-advances: [vengeance_pvp]

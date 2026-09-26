@@ -1,14 +1,13 @@
-"""The requirement grammar of §10.2, as a typed AST.
+"""Typed requirement trees for factual account and Gear gates.
 
 Requirements need boolean structure — *"Barrows gloves **or** rune gloves"*, *"Voidwaker
 **or** AGS"* — which a flat list cannot express. The grammar is closed:
 
-* **Leaves:** ``skill``, ``unlock``, ``quest``, ``item``, ``milestone``, ``capability``,
-  ``combat_level``, ``quest_points``
+* **Leaves:** ``skill``, ``unlock``, ``quest``, ``item``, ``combat_level``,
+  ``quest_points``, ``account_type``, ``members``
 * **Combinators:** ``all_of``, ``any_of``, ``not``, ``at_least: {n, of: [...]}``
 
-Adding a leaf type is a code change; adding a *quest* is not. That is exactly the
-boundary §10.8 draws.
+Adding a leaf type is a code change; adding a quest to the factual registry is not.
 
 Every node is a single-key mapping in YAML, so parsing is a dispatch on that key. The
 parser is hand-written rather than delegated to Pydantic's union machinery because the
@@ -83,26 +82,6 @@ class ItemLeaf(RequirementNode):
 
     def to_yaml(self) -> dict[str, Any]:
         return {"item": self.item_id}
-
-
-class MilestoneLeaf(RequirementNode):
-    """``milestone: teleblock_understanding``"""
-
-    type: Literal["milestone"] = "milestone"
-    key: str
-
-    def to_yaml(self) -> dict[str, Any]:
-        return {"milestone": self.key}
-
-
-class CapabilityLeaf(RequirementNode):
-    """``capability: ice_barrage_nh`` — capabilities compose into a DAG (§4.1)."""
-
-    type: Literal["capability"] = "capability"
-    capability_id: str
-
-    def to_yaml(self) -> dict[str, Any]:
-        return {"capability": self.capability_id}
 
 
 class CombatLevelLeaf(RequirementNode):
@@ -212,8 +191,6 @@ Requirement = Annotated[
     | UnlockLeaf
     | QuestLeaf
     | ItemLeaf
-    | MilestoneLeaf
-    | CapabilityLeaf
     | CombatLevelLeaf
     | QuestPointsLeaf
     | AccountTypeLeaf
@@ -234,8 +211,6 @@ LEAF_TYPES: frozenset[str] = frozenset(
         "unlock",
         "quest",
         "item",
-        "milestone",
-        "capability",
         "combat_level",
         "quest_points",
         "account_type",
@@ -450,8 +425,6 @@ _PARSERS: dict[str, _NodeParser] = {
     "unlock": _string_leaf("unlock", lambda value: UnlockLeaf(key=value)),
     "quest": _string_leaf("quest", lambda value: QuestLeaf(quest_id=value)),
     "item": _string_leaf("item", lambda value: ItemLeaf(item_id=value)),
-    "milestone": _string_leaf("milestone", lambda value: MilestoneLeaf(key=value)),
-    "capability": _string_leaf("capability", lambda value: CapabilityLeaf(capability_id=value)),
     "combat_level": _integer_leaf("combat_level", lambda value: CombatLevelLeaf(level=value)),
     "quest_points": _integer_leaf("quest_points", lambda value: QuestPointsLeaf(points=value)),
     "account_type": _string_leaf("account_type", lambda value: AccountTypeLeaf(account_type=value)),

@@ -1,6 +1,6 @@
 # Deployment
 
-The normal app is one process serving one port (SDD §5): the NiceGUI UI at `/`, the sync
+The normal app is one process serving one port: the NiceGUI UI at `/`, the sync
 API at `/api/sync`, and an unauthenticated liveness check at `/healthz`. Optional
 Milestone 1 MCP runs as a separate process and never mounts those routes. Neither
 service requires a public reverse proxy.
@@ -74,8 +74,7 @@ chmod 600 config/config.yaml
 ```
 
 The example requires `TRACKER_API_TOKEN` through the private Compose environment; its
-value overrides the placeholder in the mounted YAML file. If task guidance or the advisor
-is enabled, also provide `ANTHROPIC_API_KEY`; it is otherwise optional. The image runs
+value overrides the placeholder in the mounted YAML file. The image runs
 `alembic upgrade head` against `TRACKER_DATABASE_URL` before starting the app, and startup
 stops if migration fails.
 
@@ -172,18 +171,18 @@ device to the tailnet.
 
 ## 5. Outbound traffic
 
-The core application uses these providers (§11.6):
+The account companion uses these providers:
 
 | Provider | Sent | Not sent |
 |---|---|---|
 | Wise Old Man | your username | anything else |
-| OSRS Wiki prices | numeric item ids referenced by your active roadmap | your username, your account state |
+| OSRS Wiki prices | numeric item ids in authored tradeable Gear ladders | your username, your account state |
 
-**Practice events never leave the machine.** They are the most sensitive thing the app
-stores, and nothing outbound carries them.
+Deployed version 1 RuneLite clients may still send the optional `practice_events`
+field. The server validates and ignores it; new clients omit it.
 
 When the optional MCP profile is enabled, the separate tunnel makes outbound HTTPS
-connections to OpenAI and delivers the four tools' account/Quest Cape responses to
+connections to OpenAI and delivers the eight Account/Quest Cape/Gear tools to
 ChatGPT. This does not publish the dashboard or synchronization API. Its runtime key
 is a tunnel-only file secret, separate from the RuneLite bearer token; never put it in
 the stack's `.env`, which the existing application imports wholesale.
@@ -249,6 +248,18 @@ with the repository's Alembic head, then backs up the existing dev DB to
 physical DB and any WAL sidecars are also retained beside that backup with an
 `.original-` suffix. A snapshot or migration failure leaves the current dev DB alone.
 No production migration, upload, container restart, or raw live-DB copy occurs.
+
+### Milestone 3 schema retirement
+
+Before upgrading an existing database to the M3 Alembic head, take and verify an online
+SQLite backup using the procedure above. The forward migration deletes legacy
+recommendation, capability, roadmap, guidance, advisor, practice, and milestone rows,
+plus persisted selected-price outputs. It retains account observations, separate
+container scan timestamps, raw market prices and provenance, sync audit, and the
+`gp_sensitivity` preference. The removed rows have no archive table. Alembic cannot
+restore their contents on downgrade; rollback requires stopping the app and MCP and
+restoring the verified pre-M3 backup. Do not substitute a raw copy of a live WAL-mode
+database.
 
 To restore, stop the local app/MCP again and use the retained backup (adjust timestamp):
 

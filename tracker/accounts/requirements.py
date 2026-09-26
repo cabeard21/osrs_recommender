@@ -21,8 +21,8 @@ from tracker.content.requirements import (
     SkillLeaf,
     UnlockLeaf,
 )
+from tracker.domain.tri import and_all, at_least, negate, or_any
 from tracker.domain.types import Container, QuestStatus, Tri, UnlockState
-from tracker.progression.tri import and_all, at_least, negate, or_any
 
 
 def level_status(current: int | None, required: int) -> Tri:

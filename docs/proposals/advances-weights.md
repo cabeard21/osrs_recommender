@@ -1,5 +1,8 @@
 # Proposal: `advances` weights for the generated corpus
 
+> **Historical proposal.** The weighted recommendation and generated candidate
+> corpus were retired in Milestone 3. See [current architecture](../ARCHITECTURE.md).
+
 **Status:** §§1–3 **applied**. §4 (diaries) accepted as "no weights". §5 (the blocked-row
 path) remains open — see the note at the end.
 

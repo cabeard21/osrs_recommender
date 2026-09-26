@@ -1,30 +1,4 @@
-"""Per-aggregate read and write helpers over the §6 tables.
-
-This module is deliberately dull. It knows how to find every row belonging to one player
-and how to write one fact back, and nothing else. The three-valued reasoning that gives
-those rows meaning lives in :mod:`tracker.progression.evaluate`; the mapping from rows to
-:class:`~tracker.domain.types.PlayerState` lives in :mod:`tracker.db.projection`. Putting
-any of it here would give the project two implementations of §9.1 that could drift, which
-is the specific failure D8 exists to prevent.
-
-Two rules do live here, and both are about *which row to read*, not about what it means:
-
-* **§7.4 read-side conflict resolution** — ``SkillSnapshot`` is a history log (§6.2), so
-  "the player's Magic level" is a selection among rows: most recent ``observed_at`` first,
-  ties broken by ``runelite > wise_old_man > hiscores``. See
-  :func:`current_skill_snapshots`, which resolves it in SQL rather than by loading a log
-  that grows without bound.
-* **§6.12 read-time normalization** — ``ActiveRoadmap.selection_weight`` is stored raw and
-  normalized on read, so removing one roadmap cannot rescale the others' stored values.
-  :func:`roadmap_selection` returns the raw weights inside a
-  :class:`~tracker.domain.types.RoadmapSelection`, whose ``normalized()`` applies §9.3.
-
-§7.4's *write*-side rules — never let a staler observation overwrite a fresher one, never
-let a lower-precedence source decrease stored XP — are **not** applied by the writers here.
-They require comparing an incoming payload's provenance against what is stored, which is
-the sync layer's job (§7.1, Step 8); a repository that silently dropped writes would make
-that layer impossible to test. The writers below are last-write-wins by construction.
-"""
+"""Account fact reads and writes; sync owns observation conflict resolution."""
 
 from __future__ import annotations
 
@@ -35,9 +9,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, aliased
 
 from tracker.db.models import (
-    ActiveRoadmap,
     ContainerScan,
-    Milestone,
     ObservedItem,
     Player,
     QuestState,
@@ -49,10 +21,7 @@ from tracker.domain.skills import SKILL_ALIASES
 from tracker.domain.types import (
     SOURCE_PRECEDENCE,
     Container,
-    MilestoneClass,
-    MilestoneKind,
     QuestStatus,
-    RoadmapSelection,
     Source,
     UnlockState,
 )
@@ -328,113 +297,6 @@ def record_container_scan(
     row.scanned_at = scanned_at
     row.source = source
     return row
-
-
-# ---------------------------------------------------------------------------
-# §6.6 Milestone
-# ---------------------------------------------------------------------------
-
-
-def get_milestones(session: Session, player_id: int) -> Sequence[Milestone]:
-    return session.scalars(select(Milestone).where(Milestone.player_id == player_id)).all()
-
-
-def upsert_milestone(
-    session: Session,
-    player_id: int,
-    key: str,
-    *,
-    kind: MilestoneKind,
-    class_: MilestoneClass,
-    achieved: bool,
-    source: Source,
-    observed_at: datetime,
-    value: int | None = None,
-    attested_at: datetime | None = None,
-    last_practiced_at: datetime | None = None,
-) -> Milestone:
-    """Write the current state of one milestone, keyed by ``(player_id, key)`` (§6.6).
-
-    ``attested_at=None`` must be preserved on a row that was never prompted: it is what
-    makes the leaf resolve ``unknown`` instead of ``unsatisfied`` (A7). Callers that only
-    mean to record practice should pass the row's existing ``attested_at`` back, not
-    ``None``, since this is a whole-row write.
-
-    No monotonic guard is applied to ``achieved``. §6.6's rule is that it is *"never set
-    back to false **by the passage of time**"* — which forbids the freshness service
-    (§9.8) clearing it, not a user correcting an attestation they made in error. This
-    layer cannot see which of the two a caller is doing, so the guard belongs to the
-    freshness pipeline, where the reason for the write is known.
-    """
-    row = session.get(Milestone, (player_id, key))
-    if row is None:
-        row = Milestone(player_id=player_id, key=key, kind=kind, class_=class_)
-        session.add(row)
-    row.kind = kind
-    row.class_ = class_
-    row.achieved = achieved
-    row.value = value
-    row.attested_at = attested_at
-    row.last_practiced_at = last_practiced_at
-    row.source = source
-    row.observed_at = observed_at
-    return row
-
-
-# ---------------------------------------------------------------------------
-# §6.12 ActiveRoadmap (A13)
-# ---------------------------------------------------------------------------
-
-
-def get_active_roadmaps(session: Session, player_id: int) -> Sequence[ActiveRoadmap]:
-    return session.scalars(
-        select(ActiveRoadmap)
-        .where(ActiveRoadmap.player_id == player_id)
-        .order_by(ActiveRoadmap.roadmap_id)
-    ).all()
-
-
-def roadmap_selection(session: Session, player_id: int) -> RoadmapSelection:
-    """Build the §4.3 selection from ``ActiveRoadmap`` rows.
-
-    Deliberately **not** part of ``PlayerState``. §16.1 fixes the engine's entry point as
-    ``recommend(state, selection, content, profile, incumbent)`` — the selection is a
-    separate parameter because it is live configuration the user changes between runs
-    (§6.12), not an observation of the account. Folding it into the state object would
-    make every golden-corpus fixture restate a setting it is not testing.
-
-    Weights come back **raw**. Normalization is
-    :meth:`~tracker.domain.types.RoadmapSelection.normalized`'s job and happens at the
-    point of use (§6.12), so that deselecting one roadmap does not rescale the stored
-    weight of the others.
-
-    A player with no rows gets an empty selection rather than an error: "no roadmap
-    chosen yet" is the state every account starts in.
-    """
-    rows = get_active_roadmaps(session, player_id)
-    return RoadmapSelection(weights={row.roadmap_id: row.selection_weight for row in rows})
-
-
-def set_active_roadmap(
-    session: Session, player_id: int, roadmap_id: str, *, selection_weight: float
-) -> ActiveRoadmap:
-    """Select a roadmap, or change its raw weight (§6.12). Stored unnormalized."""
-    row = session.get(ActiveRoadmap, (player_id, roadmap_id))
-    if row is None:
-        row = ActiveRoadmap(
-            player_id=player_id, roadmap_id=roadmap_id, selection_weight=selection_weight
-        )
-        session.add(row)
-        return row
-    row.selection_weight = selection_weight
-    return row
-
-
-def clear_active_roadmap(session: Session, player_id: int, roadmap_id: str) -> None:
-    """Deselect a roadmap. Silent when it was not selected — deselection is idempotent."""
-    row = session.get(ActiveRoadmap, (player_id, roadmap_id))
-    if row is not None:
-        session.delete(row)
 
 
 # ---------------------------------------------------------------------------
