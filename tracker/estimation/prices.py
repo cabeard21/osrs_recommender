@@ -1,4 +1,4 @@
-"""The §8.3 price cascade, resolved to one number the estimator can spend (§6.8, A19).
+"""Resolve cached market facts and authored hints into an on-demand Gear price.
 
 .. code-block:: text
 
@@ -10,18 +10,12 @@
         |  absent
     unknown
 
-The left column is §8.3's three-layer cascade; the right column is the acquisition
-selection order **within** it, and the two are the same list read at two granularities —
-which is why one function implements both. The order is conservative by design: a
-recommendation to *buy* something must not understate its cost, so the high (instant-buy)
-price is preferred over the low, and a recent trade of either kind is preferred over a
-last-known figure.
+The output is a deterministic view of raw price facts and their timestamps. A recent
+high (instant-buy) price is preferred over a recent low price; stale cached values and
+static hints remain labeled. The selected value, policy, and reason are returned to
+GearService and MCP, not persisted as another price row.
 
-:func:`resolve_price` is the writer §6.8 says it lacks (A19): the ``selected_price_gp``,
-``selection_policy`` and ``selection_reason`` columns are *output of this policy*, not
-data the feed supplies, so Step 9 persists what this returns rather than recomputing it.
-
-**The subtle rule (§8.4, D10).** Price confidence comes from the **trade timestamp**, not
+Price confidence comes from the **trade timestamp**, not
 from ``fetched_at``. *"Fetching today does not make a three-day-old trade fresh — this is
 the same defect as ``ContainerScan`` (§6.5) one layer out."* The plausible wrong version
 is a one-line ``now - record.fetched_at``: it type-checks, it reads as freshness, and it

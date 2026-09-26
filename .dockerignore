@@ -4,6 +4,11 @@
 .codex
 .claude
 .venv
+.venv-*
+.pytest_tmp*
+.tmp
+secrets
+*.env
 __pycache__
 *.py[cod]
 .pytest_cache

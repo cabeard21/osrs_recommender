@@ -60,15 +60,19 @@ class TestThePartitionIsTotal:
 class TestRequirementsAreWellFormed:
     """The tables are plain dicts here and requirement trees by the time they are corpus."""
 
-    @pytest.mark.parametrize("name", sorted(gear_ladders.REQUIREMENTS))
-    def test_every_requirement_parses_as_a_tree(self, name: str) -> None:
+    def test_every_requirement_parses_as_a_tree(self) -> None:
         """§10.2, checked here because ``gear_ladders`` cannot import the parser itself."""
-        requirement = gear_ladders.requirement_for(name)
-        assert requirement is not None
-        assert parse(requirement, path=name) is not None
+        failures = []
+        for name in sorted(gear_ladders.REQUIREMENTS):
+            requirement = gear_ladders.requirement_for(name)
+            try:
+                assert requirement is not None
+                assert parse(requirement, path=name) is not None
+            except (AssertionError, ValueError, TypeError) as error:
+                failures.append(f"{name}: {error}")
+        assert not failures, "Invalid wear requirements:\n" + "\n".join(failures)
 
-    @pytest.mark.parametrize("name", sorted(gear_ladders.REQUIREMENTS))
-    def test_no_requirement_gates_on_making_the_item(self, name: str) -> None:
+    def test_no_requirement_gates_on_making_the_item(self) -> None:
         """Wear requirements only.
 
         The wiki states these in prose, and the prose mixes in the levels needed to *make*
@@ -79,14 +83,18 @@ class TestRequirementsAreWellFormed:
         one appearing here is always a transcription slip rather than a real gate.
         """
         artisan = {"fletching", "smithing", "crafting", "herblore", "cooking", "firemaking"}
-        requirement = gear_ladders.requirement_for(name)
-        assert requirement is not None
-        skills = {
-            leaf.skill
-            for leaf in iter_leaves(parse(requirement, path=name))
-            if isinstance(leaf, SkillLeaf)
-        }
-        assert not skills & artisan, f"{name} gates on a skill that makes it, not one that wears it"
+        mistakes = []
+        for name in sorted(gear_ladders.REQUIREMENTS):
+            requirement = gear_ladders.requirement_for(name)
+            assert requirement is not None, name
+            skills = {
+                leaf.skill
+                for leaf in iter_leaves(parse(requirement, path=name))
+                if isinstance(leaf, SkillLeaf)
+            }
+            if skills & artisan:
+                mistakes.append(f"{name}: {sorted(skills & artisan)}")
+        assert not mistakes, "Crafting skills used as wear gates:\n" + "\n".join(mistakes)
 
 
 class TestCanonicalisation:
@@ -151,17 +159,14 @@ class TestSourcesAreNounPhrases:
     where it is cheap.
     """
 
-    @pytest.mark.parametrize("name", sorted(gear_ladders.EARNED_FROM))
-    def test_the_source_reads_as_a_noun_phrase(self, name: str) -> None:
-        source = gear_ladders.EARNED_FROM[name]
-        assert source, f"{name} has an empty source"
-        assert not source.endswith("."), f"{name} ends in a full stop, so it is a sentence"
-        assert source.split()[0] not in {
-            "You",
-            "Complete",
-            "Kill",
-            "Beat",
-        }, f"{name} starts like a sentence rather than a noun phrase"
+    def test_the_source_reads_as_a_noun_phrase(self) -> None:
+        mistakes = []
+        for name, source in sorted(gear_ladders.EARNED_FROM.items()):
+            if not source:
+                mistakes.append(f"{name}: empty source")
+            elif source.endswith(".") or source.split()[0] in {"You", "Complete", "Kill", "Beat"}:
+                mistakes.append(f"{name}: sentence-shaped source {source!r}")
+        assert not mistakes, "Acquisition sources must be noun phrases:\n" + "\n".join(mistakes)
 
 
 class TestNothingEarnedIsAlsoQuotedByTheMarket:

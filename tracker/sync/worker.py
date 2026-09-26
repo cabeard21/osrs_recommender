@@ -1,25 +1,4 @@
-"""The background refresher — periodic price TTL check, single-flight (§5, §7.5).
-
-§5 lists a *"background sync worker"* alongside the UI and the API in one process. It
-exists because the app's remote inputs arrive on their own schedule rather than on the
-plugin's: WOM keeps polling the hiscores whether or not RuneLite is open (§7.2), and the
-price cache expires on a clock (§7.5). Without it, a player who has not launched the game
-today sees recommendations priced last week.
-
-**Single-flight is the whole point of this module.** §7.5 allows *"at most one refresh
-attempt per recommendation run"*, and a manual refresh from the UI can land while a
-scheduled one is mid-flight. Two concurrent runs would issue two fetches for the same ids —
-the sustained-volume pattern the provider reserves the right to limit — and, worse, would
-have two pipelines writing the same ``CapabilityState`` rows from two different
-``PlayerState`` reads, the loser silently overwriting the winner.
-
-The lock is therefore around the **whole refresh**, not around the fetch: serializing only
-the HTTP call would still leave two pipelines running.
-
-A caller that finds the lock held is told so and does nothing. It does not queue and does
-not wait — a refresh that is happening right now is as good as the one being asked for, and
-a queue would let repeated clicking schedule exactly the work the throttle exists to prevent.
-"""
+"""Single-flight background import of WOM skills and authored Gear price facts."""
 
 from __future__ import annotations
 
@@ -107,7 +86,7 @@ class SingleFlightRefresher:
         return self._lock.locked()
 
     def refresh(self, player_id: int, *, manual: bool = False) -> RefreshOutcome:
-        """Recompute stages 4–7 for one player, if no other refresh holds the lock."""
+        """Refresh account and price facts, if no other refresh holds the lock."""
         if not self._lock.acquire(blocking=False):
             return RefreshOutcome(ran=False, skipped_reason="a refresh is already in flight")
         try:
@@ -136,18 +115,7 @@ class SingleFlightRefresher:
             self._lock.release()
 
     def _import_wom(self, session: Session, player_id: int) -> WomImportOutcome | None:
-        """Pull WOM's skill read in, before the pipeline projects ``PlayerState``.
-
-        **Order is the whole point.** ``run_pipeline`` builds ``PlayerState`` from the
-        database at stage 4, so a WOM merge that landed after it would be invisible until the
-        *next* refresh an hour later. Merging first means one refresh incorporates one WOM
-        read, which is what §5's "background sync worker" is for.
-
-        It runs inside the same transaction and the same single-flight lock as the rest of
-        the refresh. That is deliberate: two concurrent refreshes would otherwise issue two
-        WOM fetches for one account, which is the sustained-volume pattern §7.5 exists to
-        keep the app clear of.
-        """
+        """Import available WOM skill facts in the same single-flight transaction."""
         if self._wom_client_factory is None:
             return None
         with self._wom_client_factory() as client:

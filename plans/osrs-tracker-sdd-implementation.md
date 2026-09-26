@@ -1,5 +1,8 @@
 # Blueprint — OSRS PvP Progression Tracker (SDD v0.4 implementation)
 
+> **Historical implementation blueprint.** Milestone 3 retired this product design.
+> See [current architecture](../docs/ARCHITECTURE.md).
+
 | | |
 |---|---|
 | **Objective** | Implement `docs/SDD.md` v0.4 end to end |

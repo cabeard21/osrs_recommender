@@ -1,4 +1,4 @@
-# OSRS PvP Progression Tracker — developer targets.
+# OSRS Account Companion — developer targets.
 #
 # Argument passing uses ARGS=, not trailing bare words: GNU make treats trailing
 # words as *goals*, so `make test -- tests/x` exits 2. Use:
@@ -11,7 +11,7 @@ VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: install venv browsers test test-ci test-cov lint format typecheck validate-content migrate run clean
+.PHONY: install venv browsers test test-full test-ci test-cov lint format typecheck validate-content migrate run clean
 
 venv: ; @test -d $(VENV) || python3 -m venv $(VENV)
 
@@ -23,9 +23,11 @@ install: venv ; $(PIP) install --upgrade pip -q && $(PIP) install -e ".[dev]"
 # ~150 MB and only the browser-backed tests need it.
 browsers: ; $(PY) -m playwright install chromium
 
-test:              ; $(PY) -m pytest $(ARGS)
-test-ci:           ; $(PY) -m pytest --ignore=tests/golden --ignore=tests/ui/test_pages_browser.py $(ARGS)
-test-cov:          ; $(PY) -m pytest --cov=tracker --cov-report=term-missing --cov-fail-under=80 $(ARGS)
+test:              ; $(PY) -m pytest -m "not browser and not llm_live" $(ARGS)
+test-full:         ; $(PY) -m pytest -m "not llm_live" $(ARGS)
+test-ci: test-full
+# Measure the established supported account, goal, sync, API, persistence and gear boundary.
+test-cov:          ; $(PY) -m pytest -m "not llm_live" --cov=tracker.accounts --cov=tracker.quest_cape --cov=tracker.sync --cov=tracker.api --cov=tracker.mcp --cov=tracker.db --cov=tracker.config --cov=tracker.content.requirements --cov=tracker.domain.tri --cov=tracker.gear --cov-report=term-missing --cov-fail-under=80 $(ARGS)
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
 format:            ; $(PY) -m ruff format .
 # `tests` is checked too, deliberately. A Protocol is only verified where an
@@ -37,5 +39,9 @@ migrate:           ; $(PY) -m alembic $(if $(ARGS),$(ARGS),upgrade head)
 # One process, one port (§5): UI at /, sync API at /api/sync, health at /healthz.
 # The bind address comes from config.yaml and has no default (§11.1) — see docs/DEPLOYMENT.md.
 run:               ; $(PY) -m tracker.app
+
+.PHONY: run-mcp validate-quest-cape
+run-mcp:           ; $(PY) -m tracker.mcp
+validate-quest-cape: ; $(PY) tools/generate_quest_cape.py --check
 
 clean: ; rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage

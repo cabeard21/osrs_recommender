@@ -40,7 +40,6 @@ public final class AccountSnapshot
 	private final List<Unlock> unlocks;
 	private final List<ObservedItem> observedItems;
 	private final List<ContainerScan> containerScans;
-	private final List<PracticeEvent> practiceEvents;
 
 	private AccountSnapshot(Builder builder)
 	{
@@ -54,7 +53,6 @@ public final class AccountSnapshot
 		this.unlocks = new ArrayList<>(builder.unlocks);
 		this.observedItems = new ArrayList<>(builder.observedItems);
 		this.containerScans = new ArrayList<>(builder.containerScans);
-		this.practiceEvents = new ArrayList<>(builder.practiceEvents);
 	}
 
 	public String username()
@@ -89,7 +87,6 @@ public final class AccountSnapshot
 		addIfPresent(root, SyncPayloadFields.UNLOCKS, unlocks);
 		addIfPresent(root, SyncPayloadFields.OBSERVED_ITEMS, observedItems);
 		addIfPresent(root, SyncPayloadFields.CONTAINER_SCANS, containerScans);
-		addIfPresent(root, SyncPayloadFields.PRACTICE_EVENTS, practiceEvents);
 		return root;
 	}
 
@@ -235,35 +232,6 @@ public final class AccountSnapshot
 		}
 	}
 
-	public static final class PracticeEvent implements Entry
-	{
-		private final String domain;
-		private final Instant startedAt;
-		private final Instant endedAt;
-		private final String evidenceType;
-
-		public PracticeEvent(String domain, Instant startedAt, Instant endedAt, String evidenceType)
-		{
-			this.domain = domain;
-			this.startedAt = startedAt;
-			this.endedAt = endedAt;
-			this.evidenceType = evidenceType;
-		}
-
-		@Override
-		public JsonObject toJson()
-		{
-			// G8: exactly these four keys. The schema's additionalProperties:false is the
-			// enforcement; this shape is the intent.
-			final JsonObject json = new JsonObject();
-			json.addProperty(SyncPayloadFields.PracticeEvent.DOMAIN, domain);
-			json.addProperty(SyncPayloadFields.PracticeEvent.STARTED_AT, timestamp(startedAt));
-			json.addProperty(SyncPayloadFields.PracticeEvent.ENDED_AT, timestamp(endedAt));
-			json.addProperty(SyncPayloadFields.PracticeEvent.EVIDENCE_TYPE, evidenceType);
-			return json;
-		}
-	}
-
 	public static Builder builder(String username, Instant observedAt)
 	{
 		return new Builder(username, observedAt);
@@ -281,7 +249,6 @@ public final class AccountSnapshot
 		private final List<Unlock> unlocks = new ArrayList<>();
 		private final List<ObservedItem> observedItems = new ArrayList<>();
 		private final List<ContainerScan> containerScans = new ArrayList<>();
-		private final List<PracticeEvent> practiceEvents = new ArrayList<>();
 
 		private Builder(String username, Instant observedAt)
 		{
@@ -334,12 +301,6 @@ public final class AccountSnapshot
 		public Builder containerScan(ContainerScan value)
 		{
 			containerScans.add(value);
-			return this;
-		}
-
-		public Builder practiceEvent(PracticeEvent value)
-		{
-			practiceEvents.add(value);
 			return this;
 		}
 

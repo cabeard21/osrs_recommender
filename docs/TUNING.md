@@ -1,5 +1,9 @@
 # Weight tuning — procedure, corpus, and disagreement log
 
+> **Historical record only.** Milestone 3 retired the weighted recommender, scoring
+> profile, tuner, and golden corpus. The commands and procedures below no longer
+> apply. See [current architecture](ARCHITECTURE.md).
+
 > **Status: D1, D2 and D3 are RESOLVED (§16.3 step 5, human review, 2026-08-11).
 > A fourth disagreement — D4, below — is open, and `content/scoring/profile.yaml` is still
 > `version: 1`.**

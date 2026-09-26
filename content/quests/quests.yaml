@@ -1,5 +1,5 @@
-# Only quests this corpus's capabilities actually gate on. Add a quest here before
-# referencing it from a `quest:` leaf — §10.7 will tell you if you forget.
+# Additional authored quest identities. Add a quest here before referencing it
+# from an item `quest:` gate; factual content validation catches missing ids.
 - id: desert_treasure_i
   name: Desert Treasure I
   quest_points: 3

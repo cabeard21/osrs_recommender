@@ -1,9 +1,7 @@
 """``POST /api/sync`` — the plugin's entry point (§12, A14, A17).
 
-This step accepts, validates and *audits*. It does not merge: §7.4's precedence rules and
-the ``ContainerScan`` writes are Step 8b's, and the freshness mapping is Step 8c's. The
-split is deliberate — a payload that conforms to the contract but loses a §7.4 tie should
-fail Step 8b's tests, not this endpoint's.
+This endpoint validates and audits the payload, then merges account facts and refreshes
+authored Gear prices in one transaction. Source precedence lives in the merge service.
 
 **Rejection order matters.** ``payload_version`` is checked *before* schema validation.
 §12.2 says an unsupported version is rejected with 409 "rather than silently parsing a
@@ -68,9 +66,6 @@ class SyncAccepted(BaseModel):
     #: server trusts (§6.11). A first sync creates the row, so from Step 9 onwards this is
     #: always populated on the accepted path.
     player_id: int | None = None
-    #: How many entries the run produced. A receipt, not a report: it answers "did my sync
-    #: actually reach the engine" without the plugin having to parse a recommendation.
-    recommendations: int = 0
 
 
 def _reject(
@@ -150,7 +145,7 @@ async def post_sync(request: Request) -> SyncAccepted:
             payload_version=version,
         )
 
-    # Stages 3-7 of §12 run in one transaction with the audit row (Step 9). One payload is
+    # Account merge and price refresh run in one transaction with the audit row. One payload is
     # one observation of one account at one instant, so committing the SyncEvent separately
     # would let the trail record a sync whose facts were rolled back.
     now = datetime.now(UTC)
@@ -178,5 +173,4 @@ async def post_sync(request: Request) -> SyncAccepted:
     return SyncAccepted(
         payload_version=version,
         player_id=result.player_id,
-        recommendations=len(result.recommendations),
     )

@@ -1,10 +1,15 @@
 # OSRS PvP Progression Tracker — Software Design Document
 
+> **Historical design, retired by Milestone 3.** This document describes the former
+> weighted recommendation, roadmap, practice, guidance, and in-app advisor product.
+> It is not the current architecture or implementation contract. See
+> [Account Companion architecture](ARCHITECTURE.md) for current behavior.
+
 | | |
 |---|---|
 | **Version** | 0.6 |
 | **Date** | 2026-08-13 |
-| **Status** | Implementation in progress against `plans/osrs-tracker-sdd-implementation.md`. All design questions resolved and all known specification gaps closed (§20). |
+| **Status** | Historical specification; the recommendation architecture is retired. |
 
 ## Changelog
 

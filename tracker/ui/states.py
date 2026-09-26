@@ -1,20 +1,7 @@
-"""The four render states, and the one place their visual identities are decided (§15).
+"""Distinct UI states for observed account unlocks.
 
-§15's hardest UI requirement is a *negative* one:
-
-> Unknown must never render as locked. It means "sync RuneLite", not "go do this."
-
-"Visually distinct" is a human judgment and cannot be asserted. So the distinction is
-carried by data instead: every status-bearing element in the UI emits
-``data-state="unknown|locked|available|unlocked"`` and exactly one class from
-:data:`STATE_CLASSES`, and the mapping is injective by construction. A test can then assert
-that the ``unknown`` and ``locked`` selectors are disjoint — which is what §15 actually
-means — rather than that two colours look different.
-
-Keeping the mapping here, rather than inline at each call site, is what makes that true of
-the *whole* UI rather than of whichever view was written most recently. Capabilities carry
-three states (§4.4's ``status`` has no ``available``) and unlocks carry four (§6.3); both
-draw from this vocabulary, so the guarantee holds across views that share no code.
+Unknown means there is no accepted observation. It is visually and structurally distinct
+from locked, so missing facts cannot look like a confirmed unmet requirement.
 """
 
 from __future__ import annotations
@@ -22,18 +9,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from enum import Enum
 
-from tracker.domain.types import Status, UnlockState
+from tracker.domain.types import UnlockState
 
 
 class UiState(Enum):
-    """The render vocabulary — the union of §6.3's four unlock states.
-
-    Deliberately its own type rather than a reuse of :class:`~tracker.domain.types.Status`
-    or :class:`~tracker.domain.types.UnlockState`. Those are *domain* enums with different
-    members (``Status`` has no ``available``), and a UI that switched on either directly
-    would need two rendering paths for one visual language — which is how the two would
-    drift until ``unknown`` picked up ``locked``'s treatment in one of them.
-    """
+    """The four observed unlock render states."""
 
     UNLOCKED = "unlocked"
     AVAILABLE = "available"
@@ -98,16 +78,6 @@ STATE_CSS = """
 }
 .state-unknown::before { content: "?"; font-weight: 700; }
 """
-
-
-def ui_state_for_status(status: Status) -> UiState:
-    """§4.4's ``status`` as a render state.
-
-    Total by construction: ``Status`` has exactly three members and each names a member of
-    :class:`UiState`. There is no fallback branch, because a fallback is how ``unknown``
-    would one day arrive at ``locked``.
-    """
-    return UiState(status.value)
 
 
 def ui_state_for_unlock(state: UnlockState) -> UiState:

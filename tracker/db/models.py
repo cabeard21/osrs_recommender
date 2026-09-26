@@ -1,59 +1,4 @@
-"""SQLAlchemy 2.0 models for every table in SDD §6, plus amendments A12/A13/A17/A18.
-
-This module is the *storage* projection of §6, not the engine's view of the account —
-that is ``tracker.domain.types.PlayerState``, built from these tables by
-``tracker.db.projection`` (Step 3b). The engine never queries the database (§16.1); it
-only ever sees the frozen dataclasses in ``tracker.domain``. Nothing here should leak
-into ``tracker/progression/``, ``tracker/recommendations/`` or ``tracker/estimation/`` —
-that boundary is enforced by ``tests/progression/test_import_boundary.py`` (Step 4).
-
-## Which tables get a surrogate ``id`` and which get a composite key
-
-§6's own table listings are the tie-breaker here. Where a table's SDD listing shows an
-explicit ``id | int PK`` row (``Player``, ``SkillSnapshot``, ``PracticeEvent``,
-``RecommendationSnapshot``, ``SyncEvent``), that is because the row is one entry in a
-growing history or audit log — ``SkillSnapshot`` feeds the §15 History XP chart,
-``PracticeEvent`` is an immutable evidence log, ``RecommendationSnapshot`` exists so two
-runs can be diffed (§6.10), ``SyncEvent`` is an audit trail (§6.11) — and a synthetic key
-is the only sane identity for a log row.
-
-Every other table's SDD listing omits ``id`` entirely, and reading §6 closely shows why:
-those tables hold *the current value of a fact* (``Unlock.state``, ``Milestone.achieved``,
-``CapabilityState.status``, ...), addressed by their natural key and overwritten in place
-as new observations arrive — never accumulated. §6.6 says outright that ``achieved`` is
-"never set back to false by the passage of time", which only makes sense as a statement
-about a single mutable row. This module therefore gives those tables a composite primary
-key on their natural key (``player_id`` plus whatever the fact is keyed by) instead of
-inventing an ``id`` column the SDD never lists. It also means the composite-key indexes
-Step 3a's task list calls for on ``Unlock``, ``Milestone`` and ``ObservedItem`` — all
-``(player_id, key-ish-column...)`` — are exactly the primary key SQLite already builds an
-index for; a second, redundant index is not added on top of it, only noted at each class.
-
-## A schema-level deviation from §6's literal table text
-
-§6's preamble states plainly: *"All tables carry provenance."* Every fact table's own
-listing honours that except ``ContainerScan`` (§6.5), whose table shows only
-``player_id``, ``container`` and ``scanned_at`` — no ``source``. A container scan is
-exactly as much an observed fact as an ``ObservedItem`` row (today it can only come from
-RuneLite, but nothing in the schema should assume that stays true forever), so this
-module adds ``ContainerScan.source`` to make the preamble's own rule hold everywhere. This
-is the same category of gap A17/A18 already closed elsewhere in §6 — a rule stated once
-at the top that one subsection's table forgot to carry through — and is called out in the
-step 3a commit rather than silently "fixed".
-
-## Enum storage
-
-Every ``Mapped[SomeDomainEnum]`` column stores a lowercase string (``"runelite"``, not
-``"RUNELITE"``) via ``_enum_column``'s ``values_callable`` — see that function's docstring
-for why this is ``member.name.lower()`` rather than ``member.value`` (short version:
-``Confidence`` is an ``IntEnum``, and ``sa.Enum`` cannot use its integer ``.value`` as a
-column string). The on-disk result is the same string the SDD's own tables print either way.
-
-A few columns use enums that live in ``tracker.db.enums`` instead of ``tracker.domain.types``
-— see that module's docstring for why: they describe storage/provenance concerns particular
-tables define with their own value sets (§6.7's two-valued ``confidence``, §6.8's price cascade
-layer, §6.10's ``candidate_kind``), not vocabulary the engine reasons over.
-"""
+"""SQLAlchemy account facts, raw market prices, and sync audit models."""
 
 from __future__ import annotations
 
@@ -64,25 +9,13 @@ from typing import Any, ClassVar
 import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from tracker.db.enums import (
-    AdvisorRole,
-    PracticeEventConfidence,
-    PriceSelectionPolicy,
-    PriceSourceLayer,
-    RecommendationCandidateKind,
-)
 from tracker.db.types import UtcDateTime
 from tracker.domain.types import (
-    Confidence,
     Container,
-    Freshness,
     GpSensitivity,
-    MilestoneClass,
-    MilestoneKind,
-    PracticeDomain,
+    PriceSourceLayer,
     QuestStatus,
     Source,
-    Status,
     UnlockState,
 )
 
@@ -100,16 +33,7 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
-    """Declarative base. ``tracker/migrations/env.py`` targets ``Base.metadata``.
-
-    Every ``Mapped[datetime]`` in this module resolves to :class:`UtcDateTime` through
-    ``type_annotation_map`` rather than being spelled out per column. Eighteen explicit
-    ``mapped_column(UtcDateTime)`` calls would work today and would be one omission away
-    from failing later: the columns Steps 8 and 9 add are exactly the ones whose author is
-    least likely to know the rule, and a missed one is invisible until an aware ``now``
-    meets a naive stored value at runtime. Declaring it once makes the correct type the
-    default and forgetting it impossible.
-    """
+    """Declarative base with aware UTC timestamp and named-constraint defaults."""
 
     metadata = sa.MetaData(naming_convention=NAMING_CONVENTION)
     # ``ClassVar`` is required, not cosmetic: the declarative machinery maps every other
@@ -118,18 +42,7 @@ class Base(DeclarativeBase):
 
 
 def _enum_column(enum_cls: type[Enum]) -> sa.Enum:
-    """Build an ``Enum`` column type that stores lowercase member names as strings.
-
-    Every enum in ``tracker.domain.types`` and ``tracker.db.enums`` follows the
-    convention ``MEMBER.value == MEMBER.name.lower()`` — except ``Confidence``, which is
-    an ``IntEnum`` (``LOW = 0`` ...) so that ``recommended_now`` can compare it against a
-    threshold (A9). Storing ``.value`` directly would therefore store integers for every
-    other enum's sibling column but the string ``"0"``/``"1"``/``"2"`` is not even what
-    ``.value`` gives you for an ``IntEnum`` passed through ``sa.Enum`` — it raises, since
-    ``sa.Enum`` assumes string-valued members. ``.name.lower()`` sidesteps the distinction
-    entirely and produces the same on-disk string (``"low"``, ``"runelite"``, ...) for
-    every enum in this schema.
-    """
+    """Store enum member names as lowercase strings for stable SQLite values."""
     return sa.Enum(
         enum_cls, values_callable=lambda members: [member.name.lower() for member in members]
     )
@@ -157,13 +70,7 @@ class Player(Base):
     #: Nullable for the same reason as ``last_sync_at`` — unobserved before first sync.
     combat_level: Mapped[int | None] = mapped_column(default=None)
     quest_points: Mapped[int | None] = mapped_column(default=None)
-    #: §4.2's account mode, and §6.6's ``members`` flag. Both nullable with **no default**:
-    #: ``NULL`` means nobody has been asked, which the evaluator resolves to ``unknown``
-    #: (§4.5). Defaulting ``account_type`` to ``"main"`` would assert the very fact whose
-    #: absence makes the app recommend a Voidwaker to an ironman.
-    #:
-    #: Neither arrives from the plugin — payload v1 has no field for them, and the frozen
-    #: contract is deliberately not bumped for this. The Settings page writes both.
+    #: Settings-supplied facts. ``None`` means unobserved, never an assumed main/member.
     account_type: Mapped[str | None] = mapped_column(default=None)
     members: Mapped[bool | None] = mapped_column(default=None)
     gp_sensitivity: Mapped[GpSensitivity] = mapped_column(
@@ -292,98 +199,12 @@ class ContainerScan(Base):
 
 
 # ---------------------------------------------------------------------------
-# §6.6 Milestone
-# ---------------------------------------------------------------------------
-
-
-class Milestone(Base):
-    """§6.6. One row per ``(player_id, key)`` — current milestone state.
-
-    ``class`` is a Python keyword, so the mapped attribute is ``class_``; the column
-    itself is still literally named ``class`` in SQLite (§6.6's own spelling).
-
-    ``attested_at IS NULL`` means never prompted — a different fact from "asked and
-    declined" (§4.5, §6.6). ``achieved`` must never be written back to ``False`` once
-    true (§6.6) — that invariant is enforced by whoever writes this table (Step 3b/9),
-    not by a database constraint, because SQLite has no clean way to express "this
-    column may only transition false -> true".
-
-    ``freshness`` is a real column per A18, materialized by Step 9's freshness pipeline
-    from ``last_practiced_at``; it is never authoritative and may be rebuilt at any time
-    (§6.6), so it carries no default and no constraint tying it to ``last_practiced_at``.
-    """
-
-    __tablename__ = "milestone"
-
-    player_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("player.id", ondelete="CASCADE"), primary_key=True
-    )
-    key: Mapped[str] = mapped_column(primary_key=True)
-    kind: Mapped[MilestoneKind] = mapped_column(_enum_column(MilestoneKind))
-    class_: Mapped[MilestoneClass] = mapped_column("class", _enum_column(MilestoneClass))
-    achieved: Mapped[bool] = mapped_column(default=False)
-    value: Mapped[int | None] = mapped_column(default=None)
-    attested_at: Mapped[datetime | None] = mapped_column(default=None)
-    last_practiced_at: Mapped[datetime | None] = mapped_column(default=None)
-    freshness: Mapped[Freshness | None] = mapped_column(_enum_column(Freshness), default=None)
-    source: Mapped[Source] = mapped_column(_enum_column(Source))
-    observed_at: Mapped[datetime]
-
-
-# ---------------------------------------------------------------------------
-# §6.7 PracticeEvent
-# ---------------------------------------------------------------------------
-
-
-class PracticeEvent(Base):
-    """§6.7. Immutable evidence log — integrations append rows; only the freshness
-    service (Step 9) reads them and maps them onto milestones (§7.6). Client-side
-    detection logic never touches ``Milestone`` rows directly.
-
-    The mapped attribute is ``event_metadata``, not ``metadata`` — ``metadata`` is a
-    reserved attribute name on every SQLAlchemy declarative class (it holds the table
-    catalog), so the SDD's own column name would shadow it. The database column is still
-    literally named ``metadata``.
-    """
-
-    __tablename__ = "practice_event"
-    __table_args__ = (
-        sa.Index("ix_practice_event_player_id_domain_ended_at", "player_id", "domain", "ended_at"),
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    player_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("player.id", ondelete="CASCADE"), nullable=False
-    )
-    domain: Mapped[PracticeDomain] = mapped_column(_enum_column(PracticeDomain))
-    started_at: Mapped[datetime]
-    ended_at: Mapped[datetime]
-    source: Mapped[Source] = mapped_column(_enum_column(Source))
-    confidence: Mapped[PracticeEventConfidence] = mapped_column(
-        _enum_column(PracticeEventConfidence)
-    )
-    #: e.g. ``lms_match_completed``, ``wilderness_player_combat`` (§6.7).
-    evidence_type: Mapped[str]
-    #: Summarized only (§7.6's collection boundary) — never opponent names, chat, tick-
-    #: by-tick location, or individual prayer selections.
-    event_metadata: Mapped[dict[str, Any] | None] = mapped_column("metadata", sa.JSON, default=None)
-
-
-# ---------------------------------------------------------------------------
 # §6.8 ItemPrice
 # ---------------------------------------------------------------------------
 
 
 class ItemPrice(Base):
-    """§6.8. One row per item, global (not per-player) — prices are shared market facts,
-    scoped only by which items the active roadmap references (§8.3's fetch-scope rule),
-    which is a query-time concern, not a schema one.
-
-    The provider client (§7.5) writes every column except the three ``selected_*``
-    columns; those are the *output* of the §8.3 resolution policy, computed by the
-    estimator (Step 5) and persisted by Step 9. They exist here, nullable, with no writer
-    yet — that is intentional, not an omission.
-    """
+    """Raw, globally cached market observations and their provenance."""
 
     __tablename__ = "item_price"
 
@@ -393,147 +214,10 @@ class ItemPrice(Base):
     high_trade_at: Mapped[datetime | None] = mapped_column(default=None)
     low_price_gp: Mapped[int | None] = mapped_column(default=None)
     low_trade_at: Mapped[datetime | None] = mapped_column(default=None)
-    #: No writer in Step 3a — see class docstring.
-    selected_price_gp: Mapped[int | None] = mapped_column(default=None)
-    selection_policy: Mapped[PriceSelectionPolicy | None] = mapped_column(
-        _enum_column(PriceSelectionPolicy), default=None
-    )
-    #: Which cascade layer supplied ``selected_price_gp``, in prose (§6.8).
-    selection_reason: Mapped[str | None] = mapped_column(default=None)
     provider: Mapped[str]
     #: When *we* called the API — not when the trade happened (§4.5, §8.4).
     fetched_at: Mapped[datetime]
     source: Mapped[PriceSourceLayer] = mapped_column(_enum_column(PriceSourceLayer))
-
-
-# ---------------------------------------------------------------------------
-# §6.9 CapabilityState
-# ---------------------------------------------------------------------------
-
-
-class CapabilityState(Base):
-    """§6.9. Materialized output of the progression engine — one row per
-    ``(player_id, capability_id)``, overwritten on every recompute. ``status`` is never
-    influenced by freshness (G2); ``readiness_confidence`` is only meaningful when
-    ``status = unlocked`` (§9.2's "information flows only downward").
-    """
-
-    __tablename__ = "capability_state"
-    __table_args__ = (
-        sa.CheckConstraint(
-            "unlock_fraction >= 0 AND unlock_fraction <= 1", name="unlock_fraction_range"
-        ),
-    )
-
-    player_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("player.id", ondelete="CASCADE"), primary_key=True
-    )
-    capability_id: Mapped[str] = mapped_column(primary_key=True)
-    status: Mapped[Status] = mapped_column(_enum_column(Status))
-    #: ``satisfied_leaves / total_leaves``; unknown leaves sit in the denominator but are
-    #: never credited (§6.9).
-    unlock_fraction: Mapped[float]
-    #: Leaves evaluating to ``unsatisfied`` — "do this" (§6.9).
-    blockers: Mapped[list[Any]] = mapped_column(sa.JSON, default=list)
-    #: Leaves evaluating to ``unknown`` — "sync this", not "do this" (§6.9).
-    unknowns: Mapped[list[Any]] = mapped_column(sa.JSON, default=list)
-    #: ``NULL`` unless ``status = unlocked`` (§9.2) — never a caveat on an unlocked+low
-    #: pair that shouldn't exist in the first place.
-    readiness_confidence: Mapped[Confidence | None] = mapped_column(
-        _enum_column(Confidence), default=None
-    )
-    warnings: Mapped[list[str]] = mapped_column(sa.JSON, default=list)
-    recommended_now: Mapped[bool] = mapped_column(default=False)
-    recommended_now_reason: Mapped[str | None] = mapped_column(default=None)
-    computed_at: Mapped[datetime]
-
-
-# ---------------------------------------------------------------------------
-# §6.10 RecommendationSnapshot / RecommendationEntry
-# ---------------------------------------------------------------------------
-
-
-class RecommendationSnapshot(Base):
-    """§6.10. One row per recommendation run — required by the History UI (§15) and by
-    engine debuggability: two runs can be diffed to see which factor moved.
-    """
-
-    __tablename__ = "recommendation_snapshot"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    player_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("player.id", ondelete="CASCADE"), nullable=False
-    )
-    run_at: Mapped[datetime]
-    #: Which roadmaps and selection weights produced this run — distinct from the *live*
-    #: setting in ``ActiveRoadmap`` (§6.12), which may have changed since.
-    roadmap_selection: Mapped[dict[str, float]] = mapped_column(sa.JSON)
-    scoring_profile_version: Mapped[int]
-
-
-class RecommendationEntry(Base):
-    """§6.10. One row per ranked (or blocked) candidate within a snapshot.
-
-    §6.10's listing has no ``id`` column, unlike its parent ``RecommendationSnapshot`` —
-    consistent with this module's rule (see module docstring) that a table without one is
-    keyed by its natural identity. Here that is ``(snapshot_id, candidate_id)``: a given
-    candidate appears at most once per run, whether ranked or blocked, which ``rank``
-    alone cannot guarantee (blocked candidates are "surfaced separately", §9.4, and their
-    ``rank`` semantics belong to the engine that populates this table — Step 5/9 — not to
-    this schema).
-    """
-
-    __tablename__ = "recommendation_entry"
-
-    snapshot_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("recommendation_snapshot.id", ondelete="CASCADE"), primary_key=True
-    )
-    candidate_id: Mapped[str] = mapped_column(primary_key=True)
-    rank: Mapped[int]
-    candidate_kind: Mapped[RecommendationCandidateKind] = mapped_column(
-        _enum_column(RecommendationCandidateKind)
-    )
-    score: Mapped[float]
-    #: Per-factor values *and* log-contributions (§9.5) — the "Why" line is generated by
-    #: reading off the largest terms here, not authored separately.
-    factors: Mapped[dict[str, Any]] = mapped_column(sa.JSON)
-    reason: Mapped[str]
-    estimated_hours: Mapped[float | None] = mapped_column(default=None)
-    estimated_gp: Mapped[int | None] = mapped_column(default=None)
-    estimate_confidence: Mapped[Confidence] = mapped_column(_enum_column(Confidence))
-    #: §8.2's per-band breakdown, including the ``method_id`` §8.2 step 3 selected — the
-    #: input to §15's "How" line. JSON for ``factors``' reason: a candidate has a variable
-    #: number of bands, and nothing queries across them.
-    #:
-    #: **The stored method is rendered; it is never re-selected at read time.** Method
-    #: choice depends on what the account satisfied *when the run happened* (§8.2 step 3),
-    #: so re-deriving it later could name a method the quoted hours did not come from.
-    #: That is the same drift argument that makes ``reason`` a stored string.
-    bands: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
-    #: The ``unsatisfied`` leaves of this entry's own gate, when ``blocked`` (§15).
-    #: Persisted rather than re-derived for ``bands``' reason: a snapshot accumulates, and
-    #: re-evaluating on read would relabel a historical entry with today's facts.
-    blockers: Mapped[list[dict[str, Any]]] = mapped_column(sa.JSON, default=list)
-    #: §9.10's consequences — what this entry unblocks, is needed for, advances and speeds
-    #: up. The structured form of the same run the ``reason`` string above summarizes.
-    #:
-    #: Persisted rather than recomputed on read, for ``bands``' and ``blockers``' reason and
-    #: one sharper than either. A consequence is true of the account **at run time**:
-    #: "unblocks Desert Treasure I" stops being true the moment the quest is finished, and
-    #: re-deriving it would relabel a historical entry with today's facts — exactly what a
-    #: snapshot exists to prevent. Content moves too, so a capability whose ``requires`` was
-    #: edited between runs could make a live recompute claim an unblock that never happened.
-    #:
-    #: Contrast ``_live_practice_group``, which *is* recomputed: practice membership drives a
-    #: button, so it must be true **now**. This explains a past ranking, so it must be true
-    #: **then**.
-    #:
-    #: Names are stored beside ids so a renamed or deleted capability degrades to the stored
-    #: name rather than raising. An empty object means *nothing was recorded* — either a
-    #: pre-migration row or an entry that genuinely had nothing to say — and never invented
-    #: consequences.
-    consequences: Mapped[dict[str, Any]] = mapped_column(sa.JSON, default=dict)
-    blocked: Mapped[bool] = mapped_column(default=False)
 
 
 # ---------------------------------------------------------------------------
@@ -567,178 +251,3 @@ class SyncEvent(Base):
     #: Why a request was rejected (§6.11, §11.3) — nullable, populated only on rejection.
     reason: Mapped[str | None] = mapped_column(default=None)
     error: Mapped[str | None] = mapped_column(default=None)
-
-
-# ---------------------------------------------------------------------------
-# §6.12 ActiveRoadmap (A13)
-# ---------------------------------------------------------------------------
-
-
-class ActiveRoadmap(Base):
-    """§6.12, A13. The player's live roadmap selection — distinct from
-    ``RecommendationSnapshot.roadmap_selection``, which records what a *past run* used.
-
-    Weights are normalized on **read**, not on write (§6.12, §4.3), so this column stores
-    whatever raw weight the user set; removing one roadmap row must not require rewriting
-    the others. See ``tracker.domain.types.RoadmapSelection.normalized`` for the read-side
-    normalization this table's readers are expected to apply.
-    """
-
-    __tablename__ = "active_roadmap"
-    __table_args__ = (
-        sa.CheckConstraint(
-            "selection_weight >= 0 AND selection_weight <= 1", name="selection_weight_range"
-        ),
-    )
-
-    player_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("player.id", ondelete="CASCADE"), primary_key=True
-    )
-    roadmap_id: Mapped[str] = mapped_column(primary_key=True)
-    selection_weight: Mapped[float]
-
-
-# ---------------------------------------------------------------------------
-# §21.5 GuidanceNote
-# ---------------------------------------------------------------------------
-
-
-class GuidanceNote(Base):
-    """§21.5. One generated explanation, pinned to the prompt that produced it.
-
-    A surrogate ``id`` by this module's own rule: like ``RecommendationSnapshot``, a note is
-    one entry in a growing history — the same task is asked about repeatedly as the account
-    moves, and each answer is a distinct row rather than an overwrite.
-
-    **``context_hash`` is the invalidator; the TTL is a backstop.** The hash covers the
-    rendered account context *and* §21.3's instruction block, so it moves exactly when
-    something the advice depended on moved. That is a sharper rule than an age: a level-up
-    invalidates advice in a minute, and an untouched account's advice is still good in a
-    month. ``guidance_ttl_hours`` exists only for what the hash cannot see — a corpus or
-    prompt edit that leaves the rendered text identical.
-
-    ``schema_version`` is the manual override for the same blind spot from the other side: a
-    change in how ``body`` is *read* can invalidate notes whose text never changed.
-
-    ``model`` is stored rather than derived from config because §15 attributes this prose to
-    its author in the UI, and a note written by one model must not be relabelled with
-    whatever the settings say today. Same argument as ``RecommendationEntry.reason``: what is
-    displayed has to match the run that produced it.
-
-    Nothing here is ever read by the engine. D14 makes guidance a terminal output — no
-    ranking, estimate or capability state may depend on this table, and the application must
-    behave identically when it is empty.
-    """
-
-    __tablename__ = "guidance_note"
-    __table_args__ = (
-        # One note per distinct prompt. A repeat click on an unchanged account is a cache
-        # read (§21.6 checks it *before* any throttle), not a second row.
-        sa.UniqueConstraint(
-            "player_id", "candidate_id", "context_hash", name="uq_guidance_note_context"
-        ),
-        sa.Index("ix_guidance_note_player_candidate", "player_id", "candidate_id"),
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    player_id: Mapped[int] = mapped_column(sa.ForeignKey("player.id", ondelete="CASCADE"))
-    candidate_id: Mapped[str]
-    context_hash: Mapped[str]
-    schema_version: Mapped[int]
-    model: Mapped[str]
-    generated_at: Mapped[datetime] = mapped_column(UtcDateTime)
-    #: The ``GuidanceDTO``, serialized. JSON for ``RecommendationEntry.factors``' reason:
-    #: variable-length nested prose that nothing queries across.
-    body: Mapped[dict[str, Any]] = mapped_column(sa.JSON)
-    #: What the call cost, so the question is answerable without asking the provider.
-    #: ``cache_read_input_tokens`` is the diagnostic one — if it stays zero across notes,
-    #: §21.3's stable prefix has stopped being stable and every request is paying full price.
-    input_tokens: Mapped[int] = mapped_column(default=0)
-    output_tokens: Mapped[int] = mapped_column(default=0)
-    cache_read_input_tokens: Mapped[int] = mapped_column(default=0)
-
-
-# ---------------------------------------------------------------------------
-# §22.6 Advisor conversations
-# ---------------------------------------------------------------------------
-
-
-class AdvisorConversation(Base):
-    """§22.6. One thread of questions and answers.
-
-    ``digest_hash`` is the snapshot the thread was **last answered against**, not the one it
-    began with. §22.3 compares it at the start of every turn; a mismatch means a sync landed
-    between questions, and the turn sends the refreshed digest plus an operator note saying so.
-    Storing the latest rather than the original is what makes that a one-turn cost instead of a
-    permanent one.
-
-    ``model`` is stored for :class:`GuidanceNote`'s reason, one level up: a thread can outlive a
-    configuration change, and relabelling old answers with today's model would be a false claim
-    about who wrote them.
-
-    Nothing here is ever read by the engine (D14), and no tool may write to it (D15).
-    """
-
-    __tablename__ = "advisor_conversation"
-    __table_args__ = (
-        sa.Index("ix_advisor_conversation_player_updated", "player_id", "updated_at"),
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    player_id: Mapped[int] = mapped_column(sa.ForeignKey("player.id", ondelete="CASCADE"))
-    #: The first question, truncated. A thread needs a name in a list before it has a summary,
-    #: and asking a model to title it would be a second paid call for one line of chrome.
-    title: Mapped[str]
-    schema_version: Mapped[int]
-    digest_hash: Mapped[str]
-    model: Mapped[str]
-    created_at: Mapped[datetime] = mapped_column(UtcDateTime)
-    updated_at: Mapped[datetime] = mapped_column(UtcDateTime)
-
-
-class AdvisorMessage(Base):
-    """§22.6. One question or one answer.
-
-    **``tool_trace`` holds names, arguments and result sizes — never results.** That is D16, and
-    the reason is worth restating where the column is declared: a stored tool result would grow
-    the table without bound behind a cached prefix, and would sit there inviting a future edit
-    to re-send it as though it were still true. What is kept is exactly enough to tell the user
-    which lookups an answer rests on (§22.8) and to audit what a turn cost.
-
-    ``digest_hash`` is per-message as well as per-conversation, so the interface can mark an
-    individual answer as written against a superseded snapshot rather than marking the whole
-    thread.
-
-    ``ordinal`` is unique per conversation and monotonic. A question and its answer are written
-    together or not at all (§22.6): a stored question with no answer is not a turn, and a thread
-    that begins with an orphaned answer cannot be replayed into a prompt.
-    """
-
-    __tablename__ = "advisor_message"
-    __table_args__ = (
-        sa.UniqueConstraint("conversation_id", "ordinal", name="uq_advisor_message_ordinal"),
-        sa.Index("ix_advisor_message_conversation", "conversation_id", "ordinal"),
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    conversation_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("advisor_conversation.id", ondelete="CASCADE")
-    )
-    ordinal: Mapped[int]
-    role: Mapped[AdvisorRole] = mapped_column(_enum_column(AdvisorRole))
-    content: Mapped[str]
-    #: The model's own hedges, kept apart from the prose so §15's interface can mark a hedge
-    #: *as* a hedge. ``None`` on a user message, where the concept does not apply.
-    uncertain: Mapped[list[str] | None] = mapped_column(sa.JSON, default=None)
-    tool_trace: Mapped[list[dict[str, Any]] | None] = mapped_column(sa.JSON, default=None)
-    model: Mapped[str | None] = mapped_column(default=None)
-    stop_reason: Mapped[str | None] = mapped_column(default=None)
-    digest_hash: Mapped[str | None] = mapped_column(default=None)
-    created_at: Mapped[datetime] = mapped_column(UtcDateTime)
-    #: ``cache_read_input_tokens`` is the diagnostic one, as on :class:`GuidanceNote`: if it
-    #: stays zero across a conversation's turns, §22.3's three-layer prefix is not being reused
-    #: and every question is paying to re-send the whole account.
-    input_tokens: Mapped[int] = mapped_column(default=0)
-    output_tokens: Mapped[int] = mapped_column(default=0)
-    cache_read_input_tokens: Mapped[int] = mapped_column(default=0)
-    cache_creation_input_tokens: Mapped[int] = mapped_column(default=0)

@@ -1040,6 +1040,9 @@
   slot: ring
   style: melee
   tier: 7
+  requires:
+    skill:
+      hitpoints: 75
   acquisition: untradeable
   acquired_from: imbuing a Ring of suffering at Nightmare Zone or Soul Wars
   price_mode: static
@@ -2156,6 +2159,9 @@
   slot: cape
   style: ranged
   tier: 1
+  requires:
+    skill:
+      ranged: 30
   acquisition: untradeable
   acquired_from: Animal Magnetism
   price_mode: static
@@ -2166,6 +2172,9 @@
   slot: cape
   style: ranged
   tier: 2
+  requires:
+    skill:
+      ranged: 50
   acquisition: untradeable
   acquired_from: Animal Magnetism
   price_mode: static
@@ -2338,6 +2347,8 @@
   slot: shield
   style: ranged
   tier: 2
+  requires:
+    quest: horror_from_the_deep
   acquisition: untradeable
   acquired_from: Horror from the Deep, from a damaged book and its pages
   price_mode: static
@@ -3240,6 +3251,9 @@
   slot: cape
   style: magic
   tier: 1
+  requires:
+    skill:
+      magic: 60
   acquisition: untradeable
   acquired_from: the Mage Arena
   price_mode: static
@@ -3317,6 +3331,8 @@
   slot: shield
   style: magic
   tier: 1
+  requires:
+    quest: horror_from_the_deep
   acquisition: untradeable
   acquired_from: Horror from the Deep, from a damaged book and its pages
   price_mode: static

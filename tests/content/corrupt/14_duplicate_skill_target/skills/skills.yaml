@@ -1,7 +1,0 @@
-# A file may hold a list of objects; 23 skills in 23 files would be absurd.
-- id: magic
-  name: Magic
-  is_combat: true
-- id: defence
-  name: Defence
-  is_combat: true

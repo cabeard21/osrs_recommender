@@ -22,9 +22,8 @@ hiscores — and therefore WOM — only update on logout, so a WOM read can carr
 of the account. Recency alone would let it roll the account backwards.
 
 **Idempotence.** A plugin that retries a POST, or a user who syncs twice without playing,
-must not double the account's history. The two append-only tables (``SkillSnapshot``,
-``PracticeEvent``) skip an exact duplicate rather than growing a second row; the
-current-value tables are upserts already.
+must not double the account's history. ``SkillSnapshot`` skips an exact duplicate;
+the current-value tables are upserts already.
 """
 
 from __future__ import annotations
@@ -34,11 +33,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tracker.db.enums import PracticeEventConfidence
-from tracker.db.models import Player, PracticeEvent, SkillSnapshot
+from tracker.db.models import Player, SkillSnapshot
 from tracker.db.repository import (
     append_skill_snapshot,
     current_skill_snapshots,
@@ -52,27 +49,14 @@ from tracker.db.repository import (
     upsert_quest_state,
     upsert_unlock,
 )
+from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import (
     SOURCE_PRECEDENCE,
     Container,
-    PracticeDomain,
     QuestStatus,
     Source,
     UnlockState,
 )
-
-#: §7.6's signal table, keyed by the contract's ``evidence_type`` enum.
-#:
-#: Confidence is a property of *the signal*, not of the payload, so the plugin does not
-#: send it — a client that chose its own could upgrade a weak signal by asserting it was
-#: strong. All three contract-visible evidence types are direct RuneLite observations of
-#: player combat, which §7.6 rates ``high``; the one ``medium`` signal in that table
-#: (``lms_score_increased``) is derived server-side from WOM and never arrives here.
-_EVIDENCE_CONFIDENCE: dict[str, PracticeEventConfidence] = {
-    "lms_match_completed": PracticeEventConfidence.HIGH,
-    "lms_player_combat": PracticeEventConfidence.HIGH,
-    "wilderness_player_combat": PracticeEventConfidence.HIGH,
-}
 
 #: §7.4 rule 2 as a sortable rank, lowest first. Sources the rule does not name sort last,
 #: deterministically — the same choice :mod:`tracker.db.repository` makes for the read
@@ -108,8 +92,6 @@ class MergeOutcome:
     items_ignored: int = 0
     container_scans_written: int = 0
     container_scans_ignored: int = 0
-    practice_events_written: int = 0
-    practice_events_ignored: int = 0
     #: One line per fact rejected by a §7.4 guard, naming the rule. Diagnostics, not data:
     #: "why did my level not update" is otherwise unanswerable without a debugger.
     notes: tuple[str, ...] = field(default=())
@@ -257,11 +239,13 @@ def _merge_skills(
     row. That is the rollback rule 3 forbids, and it is why the guard compares against the
     currently-selected snapshot rather than against the last row inserted.
     """
-    current = {row.skill: row for row in current_skill_snapshots(session, player_id)}
+    current = {
+        canonical_skill_name(row.skill): row for row in current_skill_snapshots(session, player_id)
+    }
     written = ignored = 0
 
     for entry in entries:
-        skill = entry["skill"]
+        skill = canonical_skill_name(entry["skill"])
         level = entry["level"]
         xp = entry.get("xp")
         stored = current.get(skill)
@@ -393,10 +377,19 @@ def _merge_items(
     notes: list[str],
 ) -> tuple[int, int]:
     stored = {(row.item_id, row.container): row for row in get_observed_items(session, player_id)}
+    scans = {row.container: row for row in get_container_scans(session, player_id)}
     written = ignored = 0
 
     for entry in entries:
         container = Container(entry["container"])
+        scan = scans.get(container)
+        if scan is not None and observed_at < scan.scanned_at:
+            ignored += 1
+            notes.append(
+                f"§7.4/1: ignored item {entry['item_id']} in {container.value} — "
+                "a fresher full-container scan is stored"
+            )
+            continue
         existing = stored.get((entry["item_id"], container))
         if existing is not None and not _supersedes(
             incoming_at=observed_at,
@@ -432,7 +425,7 @@ def _merge_container_scans(
     *,
     source: Source,
     notes: list[str],
-) -> tuple[int, int]:
+) -> tuple[int, int, dict[Container, datetime]]:
     """Record every scan the payload reports — **including scans that found nothing.**
 
     This is the least obvious writer in the module and the most important. §6.5's
@@ -448,6 +441,7 @@ def _merge_container_scans(
     """
     stored = {row.container: row for row in get_container_scans(session, player_id)}
     written = ignored = 0
+    accepted: dict[Container, datetime] = {}
 
     for entry in entries:
         container = Container(entry["container"])
@@ -463,71 +457,36 @@ def _merge_container_scans(
             notes.append(f"§7.4/1: ignored {container.value} scan — a later scan is recorded")
             continue
 
-        record_container_scan(session, player_id, container, scanned_at=scanned_at, source=source)
+        stored[container] = record_container_scan(
+            session, player_id, container, scanned_at=scanned_at, source=source
+        )
+        accepted[container] = scanned_at
         written += 1
 
-    return written, ignored
+    return written, ignored, accepted
 
 
-# ---------------------------------------------------------------------------
-# §6.7 PracticeEvent
-# ---------------------------------------------------------------------------
-
-
-def _merge_practice_events(
+def _reconcile_scanned_items(
     session: Session,
     player_id: int,
+    accepted: Mapping[Container, datetime],
     entries: Sequence[Mapping[str, Any]],
-    *,
-    source: Source,
-) -> tuple[int, int]:
-    """Append practice evidence. **This module never touches ``Milestone`` rows.**
+) -> None:
+    """A full scan replaces older container membership, including absent items.
 
-    §6.7 is explicit: integrations write ``PracticeEvent`` rows and *the freshness service*
-    maps events onto milestones — client-side detection logic never touches milestone rows
-    directly. That indirection is what keeps §7.6's four conditions checkable in one place
-    (Step 8c) instead of being re-derived by every producer of evidence.
-
-    Duplicates are skipped on the event's natural identity — a match happened at an
-    instant, in a domain, or it did not — because a plugin retrying a POST would otherwise
-    make one LMS match look like a practice streak.
+    An observation made after the scan remains valid even if the older scan omitted it.
+    A stale rejected scan has no effect. The scan and item list must be in the same
+    payload for omission to establish absence.
     """
-    written = ignored = 0
-
-    for entry in entries:
-        domain = PracticeDomain(entry["domain"])
-        started_at = parse_timestamp(entry["started_at"])
-        ended_at = parse_timestamp(entry["ended_at"])
-        evidence_type = entry["evidence_type"]
-
-        duplicate = session.scalar(
-            select(PracticeEvent).where(
-                PracticeEvent.player_id == player_id,
-                PracticeEvent.domain == domain,
-                PracticeEvent.started_at == started_at,
-                PracticeEvent.ended_at == ended_at,
-                PracticeEvent.evidence_type == evidence_type,
-            )
-        )
-        if duplicate is not None:
-            ignored += 1
+    if not accepted:
+        return
+    reported = {(entry["item_id"], Container(entry["container"])) for entry in entries}
+    for row in get_observed_items(session, player_id):
+        scan_at = accepted.get(row.container)
+        if scan_at is None or row.observed_at > scan_at:
             continue
-
-        session.add(
-            PracticeEvent(
-                player_id=player_id,
-                domain=domain,
-                started_at=started_at,
-                ended_at=ended_at,
-                source=source,
-                confidence=_EVIDENCE_CONFIDENCE[evidence_type],
-                evidence_type=evidence_type,
-                event_metadata=None,
-            )
-        )
-        written += 1
-
-    return written, ignored
+        if (row.item_id, row.container) not in reported:
+            session.delete(row)
 
 
 # ---------------------------------------------------------------------------
@@ -634,16 +593,16 @@ def merge_sync_payload(
         observed_at=observed_at,
         notes=notes,
     )
-    scans_written, scans_ignored = _merge_container_scans(
+    scans_written, scans_ignored, accepted_scans = _merge_container_scans(
         session,
         player_id,
         payload.get("container_scans", []),
         source=source,
         notes=notes,
     )
-    events_written, events_ignored = _merge_practice_events(
-        session, player_id, payload.get("practice_events", []), source=source
-    )
+    _reconcile_scanned_items(session, player_id, accepted_scans, payload.get("observed_items", []))
+    # v1 compatibility: the schema still validates optional practice_events from older
+    # clients, but practice evidence has no surviving persistence or domain consumer.
 
     session.flush()
 
@@ -660,7 +619,5 @@ def merge_sync_payload(
         items_ignored=items_ignored,
         container_scans_written=scans_written,
         container_scans_ignored=scans_ignored,
-        practice_events_written=events_written,
-        practice_events_ignored=events_ignored,
         notes=tuple(notes),
     )

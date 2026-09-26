@@ -23,15 +23,17 @@ from __future__ import annotations
 import ipaddress
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
+
+from tracker.mcp.settings import MCPSettings
 
 DEFAULT_CONFIG_FILE = "config.yaml"
 CONFIG_FILE_ENV_VAR = "TRACKER_CONFIG_FILE"
@@ -50,7 +52,7 @@ class PricesSettings(BaseModel):
 
     provider: str = "osrs_wiki"
     base_url: str = "https://prices.runescape.wiki/api/v1/osrs"
-    user_agent: str = "osrs-pvp-progression-tracker/0.1 (private local progression app)"
+    user_agent: str = "osrs-account-companion/0.1 (private local account companion)"
     ttl_hours: int = Field(default=12, gt=0)
     manual_refresh_min_interval_seconds: int = Field(default=60, ge=0)
 
@@ -71,116 +73,12 @@ class WiseOldManSettings(BaseModel):
     """Wise Old Man client configuration (§7.3)."""
 
     base_url: str = "https://api.wiseoldman.net/v2"
-    user_agent: str = "osrs-pvp-progression-tracker/0.1 (private local progression app)"
-
-
-class AdvisorSettings(BaseModel):
-    """§22's general advisor. Off by default **even when** ``llm.enabled`` is true.
-
-    Two switches rather than one, and the second is not redundant: enabling §21's task guidance
-    is not consent to a chat surface with a different cost profile. A guidance note is one model
-    call; an advisor turn is one call per tool round trip plus the answer, so the same button
-    press costs several times as much. Someone who turned guidance on should not discover the
-    advisor by finding it on their bill.
-
-    Nothing here can reach a ranking — D14 and D15 both hold regardless of these values.
-    """
-
-    enabled: bool = False
-
-    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
-    max_tokens: int = Field(default=8000, gt=0)
-    """Caps reasoning *and* answer together, as ``LlmSettings.max_tokens`` does."""
-
-    timeout_seconds: float = Field(default=180.0, gt=0)
-    """Higher than guidance's 120: a tool-using turn is several sequential round trips."""
-
-    max_model_iterations: int = Field(default=6, ge=1)
-    """Model calls per turn (§22.4). Exhausting this returns whatever text exists."""
-
-    max_tool_calls: int = Field(default=10, ge=0)
-    """Tool calls per turn, across all iterations. Exceeding it yields error results telling
-    the model to answer with what it has — cheaper than a truncated turn, and honest."""
-
-    max_history_turns: int = Field(default=12, ge=1)
-    """Question/answer pairs replayed. The prefix is cached; the history is not, so this is
-    the term that actually grows a long conversation's cost."""
-
-    min_interval_seconds: int = Field(default=10, ge=0)
-    """Lower than §21.6's 30 because conversation is inherently interactive (§22.7)."""
-
-    max_calls_per_day: int = Field(default=60, ge=0)
-    """The advisor's **own** ceiling, counted from its own stored answers. Deliberately not
-    shared with guidance: a shared ceiling would let one conversation silently consume the
-    day's guidance budget, which the user would experience as guidance mysteriously refusing."""
-
-    keep_conversations: int = Field(default=20, ge=1)
-    keep_messages_per_conversation: int = Field(default=60, ge=2)
-    """Pruned on write in pairs, so a thread never begins with an orphaned answer (§22.6)."""
-
-
-class LlmSettings(BaseModel):
-    """Task guidance provider configuration (§21.4).
-
-    Disabled by default, and the default is load-bearing rather than polite: D14 makes
-    guidance a terminal output, so an install that has never been given a key must start,
-    sync, rank and render exactly as one that has. Nothing here can reach a ranking.
-
-    ``provider`` is the vendor seam. The application talks to a narrow protocol
-    (``tracker.integrations.llm.types.GuidanceProvider``); this field selects which
-    implementation satisfies it. Widening the ``Literal`` and adding a branch to
-    ``build_provider`` is the whole cost of a second vendor.
-    """
-
-    enabled: bool = False
-
-    provider: Literal["anthropic"] = "anthropic"
-
-    model: str = "claude-opus-5"
-    base_url: str | None = None
-    """Override the provider's own default endpoint. ``None`` uses the SDK default."""
-
-    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
-    """How hard the model works. Not every provider has this knob; those that don't ignore it."""
-
-    max_tokens: int = Field(default=8000, gt=0)
-    """Caps reasoning *and* answer together, which is why this is thousands, not hundreds."""
-
-    timeout_seconds: float = Field(default=120.0, gt=0)
-    max_retries: int = Field(default=2, ge=0)
-    """Retries are the provider SDK's job. §7.5's schedule is deliberately **not** layered
-    on top — doubling the two would turn one button press into nine requests."""
-
-    api_key: SecretStr | None = None
-    """Read from ``config.yaml``, which already holds ``api_token`` (§11.2) and is gitignored.
-    ``SecretStr`` so a stray repr or log line cannot print it. Unset falls back to
-    ``api_key_env_var``; unset *and* unset in the environment leaves the provider unbuilt."""
-
-    api_key_env_var: str = "ANTHROPIC_API_KEY"
-
-    guidance_ttl_hours: int = Field(default=168, gt=0)
-    """Backstop only. §21.5: the context hash is the real invalidator — advice goes wrong when
-    the account moves, not when a clock says so. This catches the case the hash cannot see,
-    where the corpus or the instruction block changed but the rendered context did not."""
-
-    min_interval_seconds: int = Field(default=30, ge=0)
-    """Mirrors ``PricesSettings.manual_refresh_min_interval_seconds`` (§21.6)."""
-
-    max_calls_per_day: int = Field(default=50, ge=0)
-    """Counted from the stored notes themselves, so a restart does not reset the ceiling."""
-
-    keep_notes_per_candidate: int = Field(default=3, ge=1)
-    """Retention per task, pruned on write — §6.10's snapshot-retention shape, no background job."""
-
-    advisor: AdvisorSettings = Field(default_factory=AdvisorSettings)
-    """§22. Shares ``model``, ``provider``, ``base_url``, the credentials and ``max_retries``
-    with guidance above; everything cost-shaped is its own (§22.7)."""
+    user_agent: str = "osrs-account-companion/0.1 (private local account companion)"
 
 
 class IntegrationsSettings(BaseModel):
     prices: PricesSettings = Field(default_factory=PricesSettings)
     wise_old_man: WiseOldManSettings = Field(default_factory=WiseOldManSettings)
-    llm: LlmSettings = Field(default_factory=LlmSettings)
 
 
 class _YamlSettingsSource(PydanticBaseSettingsSource):
@@ -202,6 +100,15 @@ class _YamlSettingsSource(PydanticBaseSettingsSource):
             return {}
         if not isinstance(loaded, dict):
             raise ValueError(f"{path}: expected a YAML mapping at the top level")
+        # Existing private installs may retain these M2 keys in gitignored config.yaml.
+        # They no longer configure a runtime feature, but should not prevent account sync
+        # from starting during the M3 transition. Other unknown keys remain errors.
+        loaded = {key: value for key, value in loaded.items() if key != "scoring_profile_path"}
+        integrations = loaded.get("integrations")
+        if isinstance(integrations, dict):
+            loaded["integrations"] = {
+                key: value for key, value in integrations.items() if key != "llm"
+            }
         return loaded
 
 
@@ -226,8 +133,8 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./tracker.db"
     integrations: IntegrationsSettings = Field(default_factory=IntegrationsSettings)
+    mcp: MCPSettings = Field(default_factory=MCPSettings)
     content_dir: Path = Path("content")
-    scoring_profile_path: Path = Path("content/scoring/profile.yaml")
 
     @field_validator("bind_address")
     @classmethod

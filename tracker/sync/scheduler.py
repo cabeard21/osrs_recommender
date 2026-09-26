@@ -9,7 +9,7 @@ schedule rather than the plugin's. Prices expire on a TTL (§7.5), and Wise Old 
 polling the hiscores whether or not RuneLite is open (§7.2) — which is the entire reason WOM
 is in the design, since it is the only source that can advance while the plugin is silent. A
 tracker that only recomputed on sync would show a player who has not launched the game today
-recommendations priced last week, against skills from their last session.
+stale price and skill facts.
 
 **It runs in a thread, not on the event loop.** The refresh does blocking database and HTTP
 work; awaiting it on uvicorn's loop would stall every websocket the UI holds open, which is
@@ -62,7 +62,7 @@ class RefreshScheduler:
     async def _run(self) -> None:
         # Refresh **first**, then sleep. The reverse order — which this loop had — meant a
         # price was never fetched until the app had been running for a whole interval, so
-        # an app opened to check recommendations and closed again fetched nothing, ever.
+        # an app opened to check account or Gear facts and closed again fetched nothing.
         # That is why `item_price` was empty on a working install: not a broken fetch, a
         # first tick an hour away.
         #

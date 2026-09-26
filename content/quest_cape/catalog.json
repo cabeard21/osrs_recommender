@@ -1,0 +1,6220 @@
+{
+  "version": "2026-09-24T14:58:13.331473+00:00",
+  "source": "OSRS Wiki page revisions (CC BY-NC-SA 3.0); RuneLite 1.12.35",
+  "quests": [
+    {
+      "id": "a_kingdom_divided",
+      "name": "A Kingdom Divided",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 54
+            }
+          },
+          {
+            "skill": {
+              "crafting": 38
+            }
+          },
+          {
+            "skill": {
+              "herblore": 50
+            }
+          },
+          {
+            "skill": {
+              "magic": 35
+            }
+          },
+          {
+            "skill": {
+              "mining": 42
+            }
+          },
+          {
+            "skill": {
+              "thieving": 52
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 52
+            }
+          },
+          {
+            "quest": "tale_of_the_righteous"
+          },
+          {
+            "quest": "the_ascent_of_arceuus"
+          },
+          {
+            "quest": "the_depths_of_despair"
+          },
+          {
+            "quest": "the_forsaken_tower"
+          },
+          {
+            "quest": "the_queen_of_thieves"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Kingdom_Divided",
+      "revision": 15331068,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "a_night_at_the_theatre",
+      "name": "A Night at the Theatre",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "a_taste_of_hope"
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Night_at_the_Theatre",
+      "revision": 15325956,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "a_porcine_of_interest",
+      "name": "A Porcine of Interest",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Porcine_of_Interest",
+      "revision": 15329297,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "a_souls_bane",
+      "name": "A Soul's Bane",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to defeat level 45+ enemies."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Soul%27s_Bane",
+      "revision": 15344261,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "a_tail_of_two_cats",
+      "name": "A Tail of Two Cats",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "icthlarins_little_helper"
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Tail_of_Two_Cats",
+      "revision": 15340953,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "a_taste_of_hope",
+      "name": "A Taste of Hope",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 45
+            }
+          },
+          {
+            "skill": {
+              "attack": 40
+            }
+          },
+          {
+            "skill": {
+              "crafting": 48
+            }
+          },
+          {
+            "skill": {
+              "herblore": 40
+            }
+          },
+          {
+            "skill": {
+              "slayer": 38
+            }
+          },
+          {
+            "quest": "darkness_of_hallowvale"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/A_Taste_of_Hope",
+      "revision": 15350485,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "alfred_grimhands_barcrawl",
+      "name": "Alfred Grimhand's Barcrawl",
+      "counts_for_cape": false,
+      "requires": null,
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Alfred_Grimhand%27s_Barcrawl",
+      "revision": 15292247,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "animal_magnetism",
+      "name": "Animal Magnetism",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 19
+            }
+          },
+          {
+            "skill": {
+              "ranged": 30
+            }
+          },
+          {
+            "skill": {
+              "slayer": 18
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 35
+            }
+          },
+          {
+            "quest": "ernest_the_chicken"
+          },
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "the_restless_ghost"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Animal_Magnetism",
+      "revision": 15327014,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "another_slice_of_ham",
+      "name": "Another Slice of H.A.M.",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "attack": 15
+            }
+          },
+          {
+            "skill": {
+              "prayer": 25
+            }
+          },
+          {
+            "quest": "death_to_the_dorgeshuun"
+          },
+          {
+            "quest": "the_dig_site"
+          },
+          {
+            "quest": "the_giant_dwarf"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 64 (using any combat style) and two level 30 enemies using either [[Ranged]] or [[Magic]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Another_Slice_of_H.A.M.",
+      "revision": 15292360,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "at_first_light",
+      "name": "At First Light",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 27
+            }
+          },
+          {
+            "skill": {
+              "herblore": 30
+            }
+          },
+          {
+            "skill": {
+              "hunter": 46
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          },
+          {
+            "quest": "eagles_peak"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/At_First_Light",
+      "revision": 15271675,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "barbarian_training",
+      "name": "Barbarian Training",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 15
+            }
+          },
+          {
+            "skill": {
+              "crafting": 11
+            }
+          },
+          {
+            "skill": {
+              "farming": 15
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 35
+            }
+          },
+          {
+            "skill": {
+              "fishing": 55
+            }
+          },
+          {
+            "skill": {
+              "herblore": 4
+            }
+          },
+          {
+            "skill": {
+              "smithing": 5
+            }
+          },
+          {
+            "skill": {
+              "strength": 35
+            }
+          },
+          {
+            "quest": "tai_bwo_wannai_trio"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Barbarian_Training",
+      "revision": 15292392,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "bear_your_soul",
+      "name": "Bear Your Soul",
+      "counts_for_cape": false,
+      "requires": null,
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Bear_Your_Soul",
+      "revision": 15311949,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "below_ice_mountain",
+      "name": "Below Ice Mountain",
+      "counts_for_cape": true,
+      "requires": {
+        "quest_points": 16
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Below_Ice_Mountain",
+      "revision": 15240942,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "beneath_cursed_sands",
+      "name": "Beneath Cursed Sands",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 62
+            }
+          },
+          {
+            "skill": {
+              "crafting": 55
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 55
+            }
+          },
+          {
+            "quest": "contact"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Beneath_Cursed_Sands",
+      "revision": 15333475,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "between_a_rock",
+      "name": "Between a Rock...",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "defence": 30
+            }
+          },
+          {
+            "skill": {
+              "mining": 40
+            }
+          },
+          {
+            "skill": {
+              "smithing": 50
+            }
+          },
+          {
+            "quest": "dwarf_cannon"
+          },
+          {
+            "quest": "fishing_contest"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 75-125 enemy ''(depends on how much gold you mine)''"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Between_a_Rock...",
+      "revision": 15342623,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "big_chompy_bird_hunting",
+      "name": "Big Chompy Bird Hunting",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 30
+            }
+          },
+          {
+            "skill": {
+              "fletching": 5
+            }
+          },
+          {
+            "skill": {
+              "ranged": 30
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defend against level 64 [[wolves]] and level 53 [[ogre]]s"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Big_Chompy_Bird_Hunting",
+      "revision": 15292269,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "biohazard",
+      "name": "Biohazard",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "plague_city"
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Biohazard",
+      "revision": 15327977,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "black_knights_fortress",
+      "name": "Black Knights' Fortress",
+      "counts_for_cape": true,
+      "requires": {
+        "quest_points": 12
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to evade level 33 [[Black Knight]]s"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Black_Knights%27_Fortress",
+      "revision": 15350628,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "bone_voyage",
+      "name": "Bone Voyage",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "the_dig_site"
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*100 [[Kudos]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Bone_Voyage",
+      "revision": 15345604,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "cabin_fever",
+      "name": "Cabin Fever",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 42
+            }
+          },
+          {
+            "skill": {
+              "crafting": 45
+            }
+          },
+          {
+            "skill": {
+              "ranged": 40
+            }
+          },
+          {
+            "skill": {
+              "smithing": 50
+            }
+          },
+          {
+            "quest": "pirates_treasure"
+          },
+          {
+            "quest": "rum_deal"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Cabin_Fever",
+      "revision": 15343273,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "children_of_the_sun",
+      "name": "Children of the Sun",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Children_of_the_Sun",
+      "revision": 15241067,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "client_of_kourend",
+      "name": "Client of Kourend",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "x_marks_the_spot"
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Client_of_Kourend",
+      "revision": 15315592,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "clock_tower",
+      "name": "Clock Tower",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to run past level 53 [[Ogre]]s"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Clock_Tower",
+      "revision": 15166584,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "cold_war",
+      "name": "Cold War",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 30
+            }
+          },
+          {
+            "skill": {
+              "construction": 34
+            }
+          },
+          {
+            "skill": {
+              "crafting": 30
+            }
+          },
+          {
+            "skill": {
+              "hunter": 10
+            }
+          },
+          {
+            "skill": {
+              "thieving": 15
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Access to a [[crafting table 3]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Cold_War",
+      "revision": 15315223,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "contact",
+      "name": "Contact!",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "icthlarins_little_helper"
+          },
+          {
+            "quest": "prince_ali_rescue"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Contact%21",
+      "revision": 15327950,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "cooks_assistant",
+      "name": "Cook's Assistant",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Cook%27s_Assistant",
+      "revision": 15320469,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "creature_of_fenkenstrain",
+      "name": "Creature of Fenkenstrain",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 20
+            }
+          },
+          {
+            "skill": {
+              "thieving": 25
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Partial completion of [[The Restless Ghost]]"
+      ],
+      "notes": [
+        "* Able to defeat a level 51 monster and run past level 72 monsters"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Creature_of_Fenkenstrain",
+      "revision": 15343497,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "current_affairs",
+      "name": "Current Affairs",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "fishing": 10
+            }
+          },
+          {
+            "skill": {
+              "sailing": 22
+            }
+          },
+          {
+            "quest": "pandemonium"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Current_Affairs",
+      "revision": 15314499,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "curse_of_the_empty_lord",
+      "name": "Curse of the Empty Lord",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "prayer": 31
+            }
+          },
+          {
+            "skill": {
+              "thieving": 53
+            }
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Started [[Desert Treasure I]] and [[The Restless Ghost]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Curse_of_the_Empty_Lord",
+      "revision": 15292256,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "daddys_home",
+      "name": "Daddy's Home",
+      "counts_for_cape": false,
+      "requires": null,
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Daddy%27s_Home",
+      "revision": 15337234,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "darkness_of_hallowvale",
+      "name": "Darkness of Hallowvale",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 26
+            }
+          },
+          {
+            "skill": {
+              "construction": 5
+            }
+          },
+          {
+            "skill": {
+              "crafting": 32
+            }
+          },
+          {
+            "skill": {
+              "magic": 33
+            }
+          },
+          {
+            "skill": {
+              "mining": 20
+            }
+          },
+          {
+            "skill": {
+              "strength": 40
+            }
+          },
+          {
+            "skill": {
+              "thieving": 22
+            }
+          },
+          {
+            "quest": "in_aid_of_the_myreque"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to withstand several melee attacks from a level 169 enemy."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Darkness_of_Hallowvale",
+      "revision": 15353439,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "death_on_the_isle",
+      "name": "Death on the Isle",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 32
+            }
+          },
+          {
+            "skill": {
+              "thieving": 34
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Death_on_the_Isle",
+      "revision": 15319366,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "death_plateau",
+      "name": "Death Plateau",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Death_Plateau",
+      "revision": 15352268,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "death_to_the_dorgeshuun",
+      "name": "Death to the Dorgeshuun",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 23
+            }
+          },
+          {
+            "skill": {
+              "thieving": 23
+            }
+          },
+          {
+            "quest": "the_lost_tribe"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 50 enemy with [[Melee]] or [[Magic]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Death_to_the_Dorgeshuun",
+      "revision": 15331188,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "defender_of_varrock",
+      "name": "Defender of Varrock",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "hunter": 52
+            }
+          },
+          {
+            "skill": {
+              "smithing": 55
+            }
+          },
+          {
+            "quest": "below_ice_mountain"
+          },
+          {
+            "quest": "demon_slayer"
+          },
+          {
+            "quest": "family_crest"
+          },
+          {
+            "quest": "garden_of_tranquillity"
+          },
+          {
+            "quest": "romeo_juliet"
+          },
+          {
+            "quest": "shield_of_arrav"
+          },
+          {
+            "quest": "temple_of_ikov"
+          },
+          {
+            "quest": "what_lies_below"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Defender_of_Varrock",
+      "revision": 15314409,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "demon_slayer",
+      "name": "Demon Slayer",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to defeat a level 27 [[Delrith|demon]] aided by three level 20 [[Dark wizard]]s and two level 7 Dark wizards using the [[Silverlight]] in melee."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Demon_Slayer",
+      "revision": 15309237,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "desert_treasure_i",
+      "name": "Desert Treasure I",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "firemaking": 50
+            }
+          },
+          {
+            "skill": {
+              "magic": 50
+            }
+          },
+          {
+            "skill": {
+              "thieving": 53
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "temple_of_ikov"
+          },
+          {
+            "quest": "the_dig_site"
+          },
+          {
+            "quest": "the_tourist_trap"
+          },
+          {
+            "quest": "troll_stronghold"
+          },
+          {
+            "quest": "waterfall_quest"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Access to [[Morytania Graveyard]]",
+        "* {{SCP|Slayer|10|link=yes}} {{Boostable|no}}  {{Questreqstart|no}} '''or''' the [[gas mask]] from [[Plague City]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Desert_Treasure_I",
+      "revision": 15355192,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "desert_treasure_ii_the_fallen_empire",
+      "name": "Desert Treasure II - The Fallen Empire",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 60
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 75
+            }
+          },
+          {
+            "skill": {
+              "herblore": 62
+            }
+          },
+          {
+            "skill": {
+              "magic": 75
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 60
+            }
+          },
+          {
+            "skill": {
+              "thieving": 70
+            }
+          },
+          {
+            "quest": "below_ice_mountain"
+          },
+          {
+            "quest": "desert_treasure_i"
+          },
+          {
+            "quest": "enakhras_lament"
+          },
+          {
+            "quest": "his_faithful_servants"
+          },
+          {
+            "quest": "secrets_of_the_north"
+          },
+          {
+            "quest": "temple_of_the_eye"
+          },
+          {
+            "quest": "the_garden_of_death"
+          }
+        ]
+      },
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Desert_Treasure_II_-_The_Fallen_Empire",
+      "revision": 15352463,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "devious_minds",
+      "name": "Devious Minds",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "fletching": 50
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 50
+            }
+          },
+          {
+            "skill": {
+              "smithing": 65
+            }
+          },
+          {
+            "quest": "dorics_quest"
+          },
+          {
+            "quest": "troll_stronghold"
+          },
+          {
+            "quest": "wanted"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Devious_Minds",
+      "revision": 15292315,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "dorics_quest",
+      "name": "Doric's Quest",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Doric%27s_Quest",
+      "revision": 15240932,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "dragon_slayer_i",
+      "name": "Dragon Slayer I",
+      "counts_for_cape": true,
+      "requires": {
+        "quest_points": 32
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 83 [[Elvarg|dragon]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Dragon_Slayer_I",
+      "revision": 15337984,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "dragon_slayer_ii",
+      "name": "Dragon Slayer II",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 60
+            }
+          },
+          {
+            "skill": {
+              "construction": 50
+            }
+          },
+          {
+            "skill": {
+              "crafting": 62
+            }
+          },
+          {
+            "skill": {
+              "hitpoints": 50
+            }
+          },
+          {
+            "skill": {
+              "magic": 75
+            }
+          },
+          {
+            "skill": {
+              "mining": 68
+            }
+          },
+          {
+            "skill": {
+              "smithing": 70
+            }
+          },
+          {
+            "skill": {
+              "thieving": 60
+            }
+          },
+          {
+            "quest_points": 200
+          },
+          {
+            "quest": "a_tail_of_two_cats"
+          },
+          {
+            "quest": "animal_magnetism"
+          },
+          {
+            "quest": "bone_voyage"
+          },
+          {
+            "quest": "client_of_kourend"
+          },
+          {
+            "quest": "dream_mentor"
+          },
+          {
+            "quest": "ghosts_ahoy"
+          },
+          {
+            "quest": "legends_quest"
+          }
+        ]
+      },
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Started the [[Barbarian_Training#Pyre_ships|pyre ship]] portion of the [[Barbarian Training]] [[miniquest]] to gain access to the [[Ancient Cavern]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Dragon_Slayer_II",
+      "revision": 15345913,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "dream_mentor",
+      "name": "Dream Mentor",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "combat_level": 85
+          },
+          {
+            "quest": "eadgars_ruse"
+          },
+          {
+            "quest": "lunar_diplomacy"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat 4 powerful monsters without the use of prayer"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Dream_Mentor",
+      "revision": 15350904,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "druidic_ritual",
+      "name": "Druidic Ritual",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Druidic_Ritual",
+      "revision": 15322674,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "dwarf_cannon",
+      "name": "Dwarf Cannon",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Dwarf_Cannon",
+      "revision": 15313000,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "eadgars_ruse",
+      "name": "Eadgar's Ruse",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "herblore": 31
+            }
+          },
+          {
+            "quest": "druidic_ritual"
+          },
+          {
+            "quest": "troll_stronghold"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Eadgar%27s_Ruse",
+      "revision": 15326715,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "eagles_peak",
+      "name": "Eagles' Peak",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "hunter": 27
+        }
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Eagles%27_Peak",
+      "revision": 15314504,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "elemental_workshop_i",
+      "name": "Elemental Workshop I",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 20
+            }
+          },
+          {
+            "skill": {
+              "mining": 20
+            }
+          },
+          {
+            "skill": {
+              "smithing": 20
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Elemental_Workshop_I",
+      "revision": 15349400,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "elemental_workshop_ii",
+      "name": "Elemental Workshop II",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "magic": 20
+            }
+          },
+          {
+            "skill": {
+              "smithing": 30
+            }
+          },
+          {
+            "quest": "elemental_workshop_i"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Elemental_Workshop_II",
+      "revision": 15271178,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "enakhras_lament",
+      "name": "Enakhra's Lament",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 50
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 45
+            }
+          },
+          {
+            "skill": {
+              "magic": 39
+            }
+          },
+          {
+            "skill": {
+              "prayer": 43
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Must be on the [[standard spellbook]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Enakhra%27s_Lament",
+      "revision": 15350737,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "enlightened_journey",
+      "name": "Enlightened Journey",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 36
+            }
+          },
+          {
+            "skill": {
+              "farming": 30
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 20
+            }
+          },
+          {
+            "quest_points": 20
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Enlightened_Journey",
+      "revision": 15292357,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "enter_the_abyss",
+      "name": "Enter the Abyss",
+      "counts_for_cape": false,
+      "requires": {
+        "quest": "rune_mysteries"
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Enter_the_Abyss",
+      "revision": 15292255,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "ernest_the_chicken",
+      "name": "Ernest the Chicken",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defend from a level 22 [[Skeleton]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Ernest_the_Chicken",
+      "revision": 15316578,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "ethically_acquired_antiquities",
+      "name": "Ethically Acquired Antiquities",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "thieving": 25
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          },
+          {
+            "quest": "shield_of_arrav"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Ethically_Acquired_Antiquities",
+      "revision": 15315320,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "fairytale_i_growing_pains",
+      "name": "Fairytale I - Growing Pains",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "lost_city"
+          },
+          {
+            "quest": "nature_spirit"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 111 [[Tanglefoot]] with limited weaponry"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Fairytale_I_-_Growing_Pains",
+      "revision": 15352251,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "fairytale_ii_cure_a_queen",
+      "name": "Fairytale II - Cure a Queen",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "farming": 49
+            }
+          },
+          {
+            "skill": {
+              "herblore": 57
+            }
+          },
+          {
+            "skill": {
+              "thieving": 40
+            }
+          },
+          {
+            "quest": "fairytale_i_growing_pains"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Fairytale_II_-_Cure_a_Queen",
+      "revision": 15292318,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "fallen_from_grace",
+      "name": "Fallen From Grace",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 60
+            }
+          },
+          {
+            "skill": {
+              "mining": 53
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 47
+            }
+          },
+          {
+            "skill": {
+              "sailing": 62
+            }
+          },
+          {
+            "quest": "pandemonium"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Fallen_From_Grace",
+      "revision": 15335348,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "family_crest",
+      "name": "Family Crest",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 40
+            }
+          },
+          {
+            "skill": {
+              "magic": 59
+            }
+          },
+          {
+            "skill": {
+              "mining": 40
+            }
+          },
+          {
+            "skill": {
+              "smithing": 40
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 170 [[Demons|demon]] (can be [[safespot]]ted)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Family_Crest",
+      "revision": 15352494,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "family_pest",
+      "name": "Family Pest",
+      "counts_for_cape": false,
+      "requires": {
+        "quest": "family_crest"
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Family_Pest",
+      "revision": 15237154,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "fight_arena",
+      "name": "Fight Arena",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to defeat level 44, 63 and 137 enemies (all can be [[safespot]]ted)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Fight_Arena",
+      "revision": 15240956,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "fishing_contest",
+      "name": "Fishing Contest",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "fishing": 10
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Fishing_Contest",
+      "revision": 15302643,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "forgettable_tale",
+      "name": "Forgettable Tale...",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 22
+            }
+          },
+          {
+            "skill": {
+              "farming": 17
+            }
+          },
+          {
+            "quest": "fishing_contest"
+          },
+          {
+            "quest": "the_giant_dwarf"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Forgettable_Tale...",
+      "revision": 15315683,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "garden_of_tranquillity",
+      "name": "Garden of Tranquillity",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "farming": 25
+            }
+          },
+          {
+            "quest": "creature_of_fenkenstrain"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Garden_of_Tranquillity",
+      "revision": 15344256,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "gertrudes_cat",
+      "name": "Gertrude's Cat",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Gertrude%27s_Cat",
+      "revision": 15331542,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "getting_ahead",
+      "name": "Getting Ahead",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 26
+            }
+          },
+          {
+            "skill": {
+              "crafting": 30
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Getting_Ahead",
+      "revision": 15241058,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "ghosts_ahoy",
+      "name": "Ghosts Ahoy",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 25
+            }
+          },
+          {
+            "skill": {
+              "cooking": 20
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "the_restless_ghost"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Ghosts_Ahoy",
+      "revision": 15315208,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "goblin_diplomacy",
+      "name": "Goblin Diplomacy",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Goblin_Diplomacy",
+      "revision": 15354677,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "grim_tales",
+      "name": "Grim Tales",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 59
+            }
+          },
+          {
+            "skill": {
+              "farming": 45
+            }
+          },
+          {
+            "skill": {
+              "herblore": 52
+            }
+          },
+          {
+            "skill": {
+              "thieving": 58
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 71
+            }
+          },
+          {
+            "quest": "witchs_house"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*Ability to defeat a level 138 cloud giant—[[Glod]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Grim_Tales",
+      "revision": 15353842,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "haunted_mine",
+      "name": "Haunted Mine",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 35
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Access to [[Abandoned Mine]]"
+      ],
+      "notes": [
+        "* The ability to defeat a level 95 enemy"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Haunted_Mine",
+      "revision": 15327880,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "hazeel_cult",
+      "name": "Hazeel Cult",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "Able to defeat a level 13 cultist (this applies only if you're taking Ceril's side)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Hazeel_Cult",
+      "revision": 15328196,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "heroes_quest",
+      "name": "Heroes' Quest",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 53
+            }
+          },
+          {
+            "skill": {
+              "fishing": 53
+            }
+          },
+          {
+            "skill": {
+              "herblore": 25
+            }
+          },
+          {
+            "skill": {
+              "mining": 50
+            }
+          },
+          {
+            "quest_points": 55
+          },
+          {
+            "quest": "dragon_slayer_i"
+          },
+          {
+            "quest": "lost_city"
+          },
+          {
+            "quest": "merlins_crystal"
+          },
+          {
+            "quest": "shield_of_arrav"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* A partner"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Heroes%27_Quest",
+      "revision": 15349465,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "his_faithful_servants",
+      "name": "His Faithful Servants",
+      "counts_for_cape": false,
+      "requires": {
+        "quest": "priest_in_peril"
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/His_Faithful_Servants",
+      "revision": 15167680,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "holy_grail",
+      "name": "Holy Grail",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "attack": 20
+            }
+          },
+          {
+            "quest": "merlins_crystal"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*Must be able to defeat a level 120 [[Black Knight Titan]] (can be [[safespot]]ted or [[flinch]]ed)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Holy_Grail",
+      "revision": 15273068,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "hopespears_will",
+      "name": "Hopespear's Will",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "prayer": 50
+            }
+          },
+          {
+            "quest": "desert_treasure_i"
+          },
+          {
+            "quest": "fairytale_ii_cure_a_queen"
+          },
+          {
+            "quest": "land_of_the_goblins"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Started [[The Restless Ghost]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Hopespear%27s_Will",
+      "revision": 15335611,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "horror_from_the_deep",
+      "name": "Horror from the Deep",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 35
+            }
+          },
+          {
+            "quest": "alfred_grimhands_barcrawl"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Horror_from_the_Deep",
+      "revision": 15326714,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "icthlarins_little_helper",
+      "name": "Icthlarin's Little Helper",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "gertrudes_cat"
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 91 monster."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Icthlarin%27s_Little_Helper",
+      "revision": 15292330,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "imp_catcher",
+      "name": "Imp Catcher",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Imp_Catcher",
+      "revision": 15293702,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "in_aid_of_the_myreque",
+      "name": "In Aid of the Myreque",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 25
+            }
+          },
+          {
+            "skill": {
+              "crafting": 25
+            }
+          },
+          {
+            "skill": {
+              "magic": 7
+            }
+          },
+          {
+            "skill": {
+              "mining": 15
+            }
+          },
+          {
+            "quest": "in_search_of_the_myreque"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/In_Aid_of_the_Myreque",
+      "revision": 15337334,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "in_search_of_knowledge",
+      "name": "In Search of Knowledge",
+      "counts_for_cape": false,
+      "requires": null,
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "None - but a high [[combat level]] is recommended."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/In_Search_of_Knowledge",
+      "revision": 15309889,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "in_search_of_the_myreque",
+      "name": "In Search of the Myreque",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 25
+            }
+          },
+          {
+            "quest": "nature_spirit"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 97 foe ([[safespot]]table)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/In_Search_of_the_Myreque",
+      "revision": 15315257,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "into_the_tombs",
+      "name": "Into the Tombs",
+      "counts_for_cape": false,
+      "requires": {
+        "quest": "beneath_cursed_sands"
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Into_the_Tombs",
+      "revision": 15218542,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "jungle_potion",
+      "name": "Jungle Potion",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "herblore": 3
+            }
+          },
+          {
+            "quest": "druidic_ritual"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defend against level 53 [[Jogre]]s and level 46 [[Harpie Bug Swarm]]s."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Jungle_Potion",
+      "revision": 15281195,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "kings_ransom",
+      "name": "King's Ransom",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "defence": 65
+            }
+          },
+          {
+            "skill": {
+              "magic": 45
+            }
+          },
+          {
+            "quest": "black_knights_fortress"
+          },
+          {
+            "quest": "holy_grail"
+          },
+          {
+            "quest": "murder_mystery"
+          },
+          {
+            "quest": "one_small_favour"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/King%27s_Ransom",
+      "revision": 15292350,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "lair_of_tarn_razorlor",
+      "name": "Lair of Tarn Razorlor",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "slayer": 40
+            }
+          },
+          {
+            "quest": "haunted_mine"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Lair_of_Tarn_Razorlor",
+      "revision": 15302491,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "land_of_the_goblins",
+      "name": "Land of the Goblins",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 38
+            }
+          },
+          {
+            "skill": {
+              "fishing": 40
+            }
+          },
+          {
+            "skill": {
+              "herblore": 48
+            }
+          },
+          {
+            "skill": {
+              "thieving": 45
+            }
+          },
+          {
+            "quest": "another_slice_of_ham"
+          },
+          {
+            "quest": "fishing_contest"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Land_of_the_Goblins",
+      "revision": 15314873,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "learning_the_ropes",
+      "name": "Learning the Ropes",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Learning_the_Ropes",
+      "revision": 15315138,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "legends_quest",
+      "name": "Legends' Quest",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 50
+            }
+          },
+          {
+            "skill": {
+              "crafting": 50
+            }
+          },
+          {
+            "skill": {
+              "herblore": 45
+            }
+          },
+          {
+            "skill": {
+              "magic": 56
+            }
+          },
+          {
+            "skill": {
+              "mining": 52
+            }
+          },
+          {
+            "skill": {
+              "prayer": 42
+            }
+          },
+          {
+            "skill": {
+              "smithing": 50
+            }
+          },
+          {
+            "skill": {
+              "strength": 50
+            }
+          },
+          {
+            "skill": {
+              "thieving": 50
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 50
+            }
+          },
+          {
+            "quest_points": 107
+          },
+          {
+            "quest": "family_crest"
+          },
+          {
+            "quest": "heroes_quest"
+          },
+          {
+            "quest": "shilo_village"
+          },
+          {
+            "quest": "underground_pass"
+          },
+          {
+            "quest": "waterfall_quest"
+          }
+        ]
+      },
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 187 demon"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Legends%27_Quest",
+      "revision": 15345395,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "lost_city",
+      "name": "Lost City",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 31
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 36
+            }
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*Ability to kill a level 101 [[Tree spirit (Lost City)|Tree spirit]] with limited [[armour]] and [[weapons]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Lost_City",
+      "revision": 15326723,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "lunar_diplomacy",
+      "name": "Lunar Diplomacy",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 61
+            }
+          },
+          {
+            "skill": {
+              "defence": 40
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 49
+            }
+          },
+          {
+            "skill": {
+              "herblore": 5
+            }
+          },
+          {
+            "skill": {
+              "magic": 65
+            }
+          },
+          {
+            "skill": {
+              "mining": 60
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 55
+            }
+          },
+          {
+            "quest": "lost_city"
+          },
+          {
+            "quest": "rune_mysteries"
+          },
+          {
+            "quest": "shilo_village"
+          },
+          {
+            "quest": "the_fremennik_trials"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Access to each of the elemental [[runic altars]] ([[Air Altar|Air]], [[Fire Altar|Fire]], [[Water Altar|Water]], [[Earth Altar|Earth]])"
+      ],
+      "notes": [
+        "*The ability to kill multiple level 111 monsters."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Lunar_Diplomacy",
+      "revision": 15345875,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "mage_arena_i",
+      "name": "Mage Arena I",
+      "counts_for_cape": false,
+      "requires": {
+        "skill": {
+          "magic": 60
+        }
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Mage_Arena_I",
+      "revision": 15237146,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "mage_arena_ii",
+      "name": "Mage Arena II",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "magic": 75
+            }
+          },
+          {
+            "quest": "mage_arena_i"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Cast [[Claws of Guthix]], [[Flames of Zamorak]], and [[Saradomin Strike]] each 100 times inside the Mage Arena."
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Mage_Arena_II",
+      "revision": 15299152,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "making_friends_with_my_arm",
+      "name": "Making Friends with My Arm",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 68
+            }
+          },
+          {
+            "skill": {
+              "construction": 35
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 66
+            }
+          },
+          {
+            "skill": {
+              "mining": 72
+            }
+          },
+          {
+            "quest": "cold_war"
+          },
+          {
+            "quest": "my_arms_big_adventure"
+          },
+          {
+            "quest": "romeo_juliet"
+          },
+          {
+            "quest": "swan_song"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*It is beneficial to have a higher [[Agility]] level."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Making_Friends_with_My_Arm",
+      "revision": 15345660,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "making_history",
+      "name": "Making History",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "the_restless_ghost"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Making_History",
+      "revision": 15315243,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "meat_and_greet",
+      "name": "Meat and Greet",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "children_of_the_sun"
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Meat_and_Greet",
+      "revision": 15355341,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "merlins_crystal",
+      "name": "Merlin's Crystal",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 6,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "Must be able to defeat a level 39 enemy.",
+        "You do not need to have an Attack level of 20 to free Merlin, you can 'Use' Excalibur on the crystal to free him."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Merlin%27s_Crystal",
+      "revision": 15336338,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "misthalin_mystery",
+      "name": "Misthalin Mystery",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Misthalin_Mystery",
+      "revision": 15292395,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "monkey_madness_i",
+      "name": "Monkey Madness I",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "the_grand_tree"
+          },
+          {
+            "quest": "tree_gnome_village"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 195 [[Jungle Demon]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Monkey_Madness_I",
+      "revision": 15327728,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "monkey_madness_ii",
+      "name": "Monkey Madness II",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 55
+            }
+          },
+          {
+            "skill": {
+              "crafting": 70
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 60
+            }
+          },
+          {
+            "skill": {
+              "hunter": 60
+            }
+          },
+          {
+            "skill": {
+              "slayer": 69
+            }
+          },
+          {
+            "skill": {
+              "thieving": 55
+            }
+          },
+          {
+            "quest": "enlightened_journey"
+          },
+          {
+            "quest": "recipe_for_disaster_king_awowogei"
+          },
+          {
+            "quest": "the_eyes_of_glouphrie"
+          },
+          {
+            "quest": "troll_stronghold"
+          },
+          {
+            "quest": "watchtower"
+          }
+        ]
+      },
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "It is beneficial to have a high [[Combat]] and [[Agility]] level."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Monkey_Madness_II",
+      "revision": 15326728,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "monks_friend",
+      "name": "Monk's Friend",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to run past two level 14 thieves, and one level 26."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Monk%27s_Friend",
+      "revision": 15240952,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "mountain_daughter",
+      "name": "Mountain Daughter",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "agility": 20
+        }
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 70 [[The Kendal|monster]] (can be [[safespot|safespotted]])"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Mountain_Daughter",
+      "revision": 15292291,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "mournings_end_part_i",
+      "name": "Mourning's End Part I",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "ranged": 60
+            }
+          },
+          {
+            "skill": {
+              "thieving": 50
+            }
+          },
+          {
+            "quest": "big_chompy_bird_hunting"
+          },
+          {
+            "quest": "roving_elves"
+          },
+          {
+            "quest": "sheep_herder"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 11 enemy with your combat stats set to 20 each."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Mourning%27s_End_Part_I",
+      "revision": 15292327,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "mournings_end_part_ii",
+      "name": "Mourning's End Part II",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "mournings_end_part_i"
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Mourning%27s_End_Part_II",
+      "revision": 15351344,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "murder_mystery",
+      "name": "Murder Mystery",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Murder_Mystery",
+      "revision": 15353068,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "my_arms_big_adventure",
+      "name": "My Arm's Big Adventure",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "farming": 29
+            }
+          },
+          {
+            "quest": "eadgars_ruse"
+          },
+          {
+            "quest": "jungle_potion"
+          },
+          {
+            "quest": "the_feud"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "**Acquiring 100% Tai Bwo Favour rating is a requirement for the [[Medium Karamja Diary]]. If completion of the medium diary is desired, it is recommended to get 100% prior to starting this quest",
+        "*At least 60% favour in the [[Tai Bwo Wannai Cleanup]] [[minigame]] before starting this quest - this will be subtracted from the total favour",
+        "*{{SCP|Woodcutting|10|link=yes}} {{Boostable|no}}  {{Questreqstart|}} <ref>Needed to cut thatches and repair the fence for Tai Bwo Wannai favour, otherwise you will have to kill monsters spawned by other players (or nearby jungle spiders)</ref>"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/My_Arm%27s_Big_Adventure",
+      "revision": 15326710,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "nature_spirit",
+      "name": "Nature Spirit",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "the_restless_ghost"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Nature_Spirit",
+      "revision": 15326718,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "observatory_quest",
+      "name": "Observatory Quest",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Observatory_Quest",
+      "revision": 15326719,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "olafs_quest",
+      "name": "Olaf's Quest",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "firemaking": 40
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 50
+            }
+          },
+          {
+            "quest": "the_fremennik_trials"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 100 monster"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Olaf%27s_Quest",
+      "revision": 15355207,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "one_small_favour",
+      "name": "One Small Favour",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 36
+            }
+          },
+          {
+            "skill": {
+              "crafting": 25
+            }
+          },
+          {
+            "skill": {
+              "herblore": 18
+            }
+          },
+          {
+            "skill": {
+              "smithing": 30
+            }
+          },
+          {
+            "quest": "rune_mysteries"
+          },
+          {
+            "quest": "shilo_village"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/One_Small_Favour",
+      "revision": 15332553,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "pandemonium",
+      "name": "Pandemonium",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Pandemonium",
+      "revision": 15282707,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "perilous_moons",
+      "name": "Perilous Moons",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 10
+            }
+          },
+          {
+            "skill": {
+              "fishing": 20
+            }
+          },
+          {
+            "skill": {
+              "hunter": 20
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 20
+            }
+          },
+          {
+            "skill": {
+              "slayer": 48
+            }
+          },
+          {
+            "quest": "twilights_promise"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Perilous_Moons",
+      "revision": 15355298,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "pirates_treasure",
+      "name": "Pirate's Treasure",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "Able to defeat or run away from a [[Combat level]] 4 [[gardener]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Pirate%27s_Treasure",
+      "revision": 15315445,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "plague_city",
+      "name": "Plague City",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Plague_City",
+      "revision": 15343824,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "priest_in_peril",
+      "name": "Priest in Peril",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Priest_in_Peril",
+      "revision": 15317644,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "prince_ali_rescue",
+      "name": "Prince Ali Rescue",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to get past [[aggressive]] [[combat level]] 26 [[jail guard]]s."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Prince_Ali_Rescue",
+      "revision": 15260348,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "prying_times",
+      "name": "Prying Times",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "sailing": 12
+            }
+          },
+          {
+            "skill": {
+              "smithing": 30
+            }
+          },
+          {
+            "quest": "pandemonium"
+          },
+          {
+            "quest": "the_knights_sword"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*One open [[Sailing#Port_tasks|port task]] slot"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Prying_Times",
+      "revision": 15315235,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "rag_and_bone_man_i",
+      "name": "Rag and Bone Man I",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Rag_and_Bone_Man_I",
+      "revision": 15292348,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "rag_and_bone_man_ii",
+      "name": "Rag and Bone Man II",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "slayer": 40
+            }
+          },
+          {
+            "quest": "rag_and_bone_man_i"
+          },
+          {
+            "quest": "skippy_and_the_mogres"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Partial completion of [[Creature of Fenkenstrain]] {{Questreqstart|no}}",
+        "*{{SCP|Defence|20|link=yes}} {{Boostable|no}} {{Questreqstart|no}} to wield a [[mirror shield]] to kill a [[basilisk]] (though not necessary; see below)"
+      ],
+      "notes": [
+        "*The ability to kill several high-level monsters"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Rag_and_Bone_Man_II",
+      "revision": 15326708,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "ratcatchers",
+      "name": "Ratcatchers",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "icthlarins_little_helper"
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "**[[The Giant Dwarf]] started",
+        "*Access to [[Keldagrim]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Ratcatchers",
+      "revision": 15351359,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster",
+      "name": "Recipe for Disaster",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "recipe_for_disaster_culinaromancer"
+      },
+      "quest_points": 10,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat high leveled monsters, several of which have to be defeated without using {{SCP|Prayer|link=yes}}"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster",
+      "revision": 15313692,
+      "completes_parent": null,
+      "staged_rewards": true
+    },
+    {
+      "id": "recipe_for_disaster_another_cooks_quest",
+      "name": "Recipe for Disaster - Another Cook's Quest",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 10
+            }
+          },
+          {
+            "quest": "cooks_assistant"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Another_Cook%27s_Quest",
+      "revision": 15302151,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_culinaromancer",
+      "name": "Recipe for Disaster - Culinaromancer",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest_points": 175
+          },
+          {
+            "quest": "desert_treasure_i"
+          },
+          {
+            "quest": "horror_from_the_deep"
+          },
+          {
+            "quest": "recipe_for_disaster_evil_dave"
+          },
+          {
+            "quest": "recipe_for_disaster_king_awowogei"
+          },
+          {
+            "quest": "recipe_for_disaster_lumbridge_guide"
+          },
+          {
+            "quest": "recipe_for_disaster_mountain_dwarf"
+          },
+          {
+            "quest": "recipe_for_disaster_pirate_pete"
+          },
+          {
+            "quest": "recipe_for_disaster_sir_amik_varze"
+          },
+          {
+            "quest": "recipe_for_disaster_skrach_uglogwee"
+          },
+          {
+            "quest": "recipe_for_disaster_wartface_bentnoze"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat '''all''' enemies without [[Prayer]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Defeating_the_Culinaromancer",
+      "revision": 15292344,
+      "completes_parent": "recipe_for_disaster",
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_evil_dave",
+      "name": "Recipe for Disaster - Evil Dave",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "gertrudes_cat"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          },
+          {
+            "quest": "shadow_of_the_storm"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_Evil_Dave",
+      "revision": 15294908,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_king_awowogei",
+      "name": "Recipe for Disaster - King Awowogei",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 48
+            }
+          },
+          {
+            "skill": {
+              "cooking": 70
+            }
+          },
+          {
+            "quest": "monkey_madness_i"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 84 [[Big Snake]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_King_Awowogei",
+      "revision": 15331685,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_lumbridge_guide",
+      "name": "Recipe for Disaster - Lumbridge Guide",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 40
+            }
+          },
+          {
+            "quest": "big_chompy_bird_hunting"
+          },
+          {
+            "quest": "biohazard"
+          },
+          {
+            "quest": "demon_slayer"
+          },
+          {
+            "quest": "murder_mystery"
+          },
+          {
+            "quest": "nature_spirit"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          },
+          {
+            "quest": "witchs_house"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_the_Lumbridge_Guide",
+      "revision": 15297799,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_mountain_dwarf",
+      "name": "Recipe for Disaster - Mountain Dwarf",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "fishing_contest"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 13 [[icefiend]] if you don't have the [[ice gloves]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_the_Mountain_Dwarf",
+      "revision": 15323345,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_pirate_pete",
+      "name": "Recipe for Disaster - Pirate Pete",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 31
+            }
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat 5 level 30 monsters."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_Pirate_Pete",
+      "revision": 15292338,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_sir_amik_varze",
+      "name": "Recipe for Disaster - Sir Amik Varze",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest_points": 107
+          },
+          {
+            "quest": "family_crest"
+          },
+          {
+            "quest": "heroes_quest"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          },
+          {
+            "quest": "shilo_village"
+          },
+          {
+            "quest": "underground_pass"
+          },
+          {
+            "quest": "waterfall_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "**Started [[Legends' Quest]]",
+        "*Access to the [[Kharazi Jungle]]"
+      ],
+      "notes": [
+        "*The ability to defeat a level 227 [[Black dragon]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_Sir_Amik_Varze",
+      "revision": 15320990,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_skrach_uglogwee",
+      "name": "Recipe for Disaster - Skrach Uglogwee",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 41
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 20
+            }
+          },
+          {
+            "quest": "big_chompy_bird_hunting"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_Skrach_Uglogwee",
+      "revision": 15292343,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recipe_for_disaster_wartface_bentnoze",
+      "name": "Recipe for Disaster - Wartface & Bentnoze",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "goblin_diplomacy"
+          },
+          {
+            "quest": "recipe_for_disaster_another_cooks_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recipe_for_Disaster/Freeing_the_Goblin_generals",
+      "revision": 15292337,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "recruitment_drive",
+      "name": "Recruitment Drive",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "black_knights_fortress"
+          },
+          {
+            "quest": "druidic_ritual"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Recruitment_Drive",
+      "revision": 15350743,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "regicide",
+      "name": "Regicide",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 56
+            }
+          },
+          {
+            "skill": {
+              "crafting": 10
+            }
+          },
+          {
+            "quest": "underground_pass"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 110 [[Tyras guard]] (can be [[safespotted]])"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Regicide",
+      "revision": 15347677,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "romeo_juliet",
+      "name": "Romeo & Juliet",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Romeo_%26_Juliet",
+      "revision": 15278771,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "roving_elves",
+      "name": "Roving Elves",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 56
+            }
+          },
+          {
+            "quest": "regicide"
+          },
+          {
+            "quest": "waterfall_quest"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 84 enemy unarmed, with [[Glarial's Tomb#Restricted items|heavy restrictions]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Roving_Elves",
+      "revision": 15315441,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "royal_trouble",
+      "name": "Royal Trouble",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 40
+            }
+          },
+          {
+            "skill": {
+              "slayer": 40
+            }
+          },
+          {
+            "quest": "throne_of_miscellania"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Royal_Trouble",
+      "revision": 15292352,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "rum_deal",
+      "name": "Rum Deal",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 42
+            }
+          },
+          {
+            "skill": {
+              "farming": 40
+            }
+          },
+          {
+            "skill": {
+              "prayer": 47
+            }
+          },
+          {
+            "skill": {
+              "slayer": 42
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "zogre_flesh_eaters"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*{{SCP|Fishing|50|link=yes}} {{Boostable|yes}} {{Questreqstart|no}} <ref>Fishing requirement can be bypassed if obtaining 5 [[Karamthulhu]]s from [[Zombie swab]]s or [[Zombie pirate (Braindeath Island)|Zombie pirates]]</ref>"
+      ],
+      "notes": [
+        "*The ability to kill a [[combat level]] 150 [[Evil spirit|monster]] (can be [[safespotted]])"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Rum_Deal",
+      "revision": 15315444,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "rune_mysteries",
+      "name": "Rune Mysteries",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Rune_Mysteries",
+      "revision": 15275863,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "scorpion_catcher",
+      "name": "Scorpion Catcher",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "prayer": 31
+            }
+          },
+          {
+            "quest": "alfred_grimhands_barcrawl"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to run past level 172 [[black demon]]s and level 64 [[poison spider]]s"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Scorpion_Catcher",
+      "revision": 15273835,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "scrambled",
+      "name": "Scrambled!",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 38
+            }
+          },
+          {
+            "skill": {
+              "cooking": 36
+            }
+          },
+          {
+            "skill": {
+              "smithing": 35
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Scrambled%21",
+      "revision": 15323000,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "sea_slug",
+      "name": "Sea Slug",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "firemaking": 30
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Sea_Slug",
+      "revision": 15240961,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "secrets_of_the_north",
+      "name": "Secrets of the North",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 69
+            }
+          },
+          {
+            "skill": {
+              "hunter": 56
+            }
+          },
+          {
+            "skill": {
+              "thieving": 64
+            }
+          },
+          {
+            "quest": "devious_minds"
+          },
+          {
+            "quest": "hazeel_cult"
+          },
+          {
+            "quest": "making_friends_with_my_arm"
+          },
+          {
+            "quest": "the_generals_shadow"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Secrets_of_the_North",
+      "revision": 15325015,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "shades_of_mortton",
+      "name": "Shades of Mort'ton",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 20
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 5
+            }
+          },
+          {
+            "skill": {
+              "herblore": 15
+            }
+          },
+          {
+            "quest": "priest_in_peril"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Access to [[Mort'ton]]"
+      ],
+      "notes": [
+        "* Must be able to defeat 5 level-40 [[Loar Shade]]s.",
+        "* Must be able to survive an onslaught when rebuilding the Temple (Being surrounded by many players makes this much easier)."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Shades_of_Mort%27ton",
+      "revision": 15292280,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "shadow_of_the_storm",
+      "name": "Shadow of the Storm",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 30
+            }
+          },
+          {
+            "quest": "demon_slayer"
+          },
+          {
+            "quest": "the_golem"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 100 demon"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Shadow_of_the_Storm",
+      "revision": 15354765,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "shadows_of_custodia",
+      "name": "Shadows of Custodia",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 41
+            }
+          },
+          {
+            "skill": {
+              "fishing": 45
+            }
+          },
+          {
+            "skill": {
+              "hunter": 36
+            }
+          },
+          {
+            "skill": {
+              "slayer": 54
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Shadows_of_Custodia",
+      "revision": 15319376,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "sheep_herder",
+      "name": "Sheep Herder",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Sheep_Herder",
+      "revision": 15282409,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "sheep_shearer",
+      "name": "Sheep Shearer",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Sheep_Shearer",
+      "revision": 15271780,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "shield_of_arrav",
+      "name": "Shield of Arrav",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* A trustworthy friend or partner. Players can join the official [[chat-channel]] \"OSRS SOA\" to look for a partner."
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Shield_of_Arrav",
+      "revision": 15339903,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "shilo_village",
+      "name": "Shilo Village",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 32
+            }
+          },
+          {
+            "skill": {
+              "crafting": 20
+            }
+          },
+          {
+            "quest": "jungle_potion"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* Must be able to defend from many [[Undead one]]s (level 61-73) and able to defeat three monsters that are about level 90."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Shilo_Village",
+      "revision": 15350305,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "sins_of_the_father",
+      "name": "Sins of the Father",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 52
+            }
+          },
+          {
+            "skill": {
+              "attack": 50
+            }
+          },
+          {
+            "skill": {
+              "crafting": 56
+            }
+          },
+          {
+            "skill": {
+              "fletching": 60
+            }
+          },
+          {
+            "skill": {
+              "magic": 49
+            }
+          },
+          {
+            "skill": {
+              "slayer": 50
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 62
+            }
+          },
+          {
+            "quest": "a_taste_of_hope"
+          },
+          {
+            "quest": "vampyre_slayer"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Sins_of_the_Father",
+      "revision": 15350872,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "skippy_and_the_mogres",
+      "name": "Skippy and the Mogres",
+      "counts_for_cape": false,
+      "requires": {
+        "skill": {
+          "cooking": 20
+        }
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Skippy_and_the_Mogres",
+      "revision": 15292393,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "sleeping_giants",
+      "name": "Sleeping Giants",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "smithing": 15
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Sleeping_Giants",
+      "revision": 15241064,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "song_of_the_elves",
+      "name": "Song of the Elves",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 70
+            }
+          },
+          {
+            "skill": {
+              "construction": 70
+            }
+          },
+          {
+            "skill": {
+              "farming": 70
+            }
+          },
+          {
+            "skill": {
+              "herblore": 70
+            }
+          },
+          {
+            "skill": {
+              "hunter": 70
+            }
+          },
+          {
+            "skill": {
+              "mining": 70
+            }
+          },
+          {
+            "skill": {
+              "smithing": 70
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 70
+            }
+          },
+          {
+            "quest": "druidic_ritual"
+          },
+          {
+            "quest": "making_history"
+          },
+          {
+            "quest": "mournings_end_part_ii"
+          }
+        ]
+      },
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Song_of_the_Elves",
+      "revision": 15346111,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "spirits_of_the_elid",
+      "name": "Spirits of the Elid",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "magic": 33
+            }
+          },
+          {
+            "skill": {
+              "mining": 37
+            }
+          },
+          {
+            "skill": {
+              "ranged": 37
+            }
+          },
+          {
+            "skill": {
+              "thieving": 37
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*Ability to defeat three level 75 golems"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Spirits_of_the_Elid",
+      "revision": 15306897,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "swan_song",
+      "name": "Swan Song",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 62
+            }
+          },
+          {
+            "skill": {
+              "crafting": 40
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 42
+            }
+          },
+          {
+            "skill": {
+              "fishing": 62
+            }
+          },
+          {
+            "skill": {
+              "magic": 66
+            }
+          },
+          {
+            "skill": {
+              "smithing": 45
+            }
+          },
+          {
+            "quest_points": 100
+          },
+          {
+            "quest": "garden_of_tranquillity"
+          },
+          {
+            "quest": "one_small_favour"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a [[combat level]] 170 monster, which is able to use [[Magic]], [[Melee]] and can drain [[Prayer]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Swan_Song",
+      "revision": 15313334,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tai_bwo_wannai_trio",
+      "name": "Tai Bwo Wannai Trio",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 15
+            }
+          },
+          {
+            "skill": {
+              "cooking": 30
+            }
+          },
+          {
+            "skill": {
+              "fishing": 5
+            }
+          },
+          {
+            "quest": "jungle_potion"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tai_Bwo_Wannai_Trio",
+      "revision": 15265886,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tale_of_the_righteous",
+      "name": "Tale of the Righteous",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "mining": 10
+            }
+          },
+          {
+            "skill": {
+              "strength": 16
+            }
+          },
+          {
+            "quest": "client_of_kourend"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tale_of_the_Righteous",
+      "revision": 15316635,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tears_of_guthix",
+      "name": "Tears of Guthix",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "firemaking": 49
+            }
+          },
+          {
+            "skill": {
+              "mining": 20
+            }
+          },
+          {
+            "quest_points": 43
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* {{SCP|Crafting|20|link=yes}} {{Boostable|yes}} {{Questreqstart|no}} <ref>Adding the sapphire lens to a [[Bullseye lantern (unf)]] is boostable. Adding it to a [[Bullseye lantern (empty)]] or [[Bullseye lantern]] is not boostable.</ref>"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tears_of_Guthix",
+      "revision": 15292296,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "temple_of_ikov",
+      "name": "Temple of Ikov",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "ranged": 40
+            }
+          },
+          {
+            "skill": {
+              "thieving": 42
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 84 enemy with Ranged"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Temple_of_Ikov",
+      "revision": 15326722,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "temple_of_the_eye",
+      "name": "Temple of the Eye",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "runecraft": 10
+            }
+          },
+          {
+            "quest": "enter_the_abyss"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Temple_of_the_Eye",
+      "revision": 15304735,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_ascent_of_arceuus",
+      "name": "The Ascent of Arceuus",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "hunter": 12
+            }
+          },
+          {
+            "quest": "client_of_kourend"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Ascent_of_Arceuus",
+      "revision": 15314575,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_blood_moon_rises",
+      "name": "The Blood Moon Rises",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "cooking": 72
+            }
+          },
+          {
+            "skill": {
+              "crafting": 64
+            }
+          },
+          {
+            "skill": {
+              "fletching": 70
+            }
+          },
+          {
+            "skill": {
+              "herblore": 64
+            }
+          },
+          {
+            "skill": {
+              "hunter": 65
+            }
+          },
+          {
+            "skill": {
+              "magic": 57
+            }
+          },
+          {
+            "skill": {
+              "mining": 66
+            }
+          },
+          {
+            "skill": {
+              "slayer": 74
+            }
+          },
+          {
+            "skill": {
+              "smithing": 72
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 74
+            }
+          },
+          {
+            "quest": "a_night_at_the_theatre"
+          },
+          {
+            "quest": "sins_of_the_father"
+          }
+        ]
+      },
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Blood_Moon_Rises",
+      "revision": 15355256,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_corsair_curse",
+      "name": "The Corsair Curse",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Corsair_Curse",
+      "revision": 15352293,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_curse_of_arrav",
+      "name": "The Curse of Arrav",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 61
+            }
+          },
+          {
+            "skill": {
+              "mining": 64
+            }
+          },
+          {
+            "skill": {
+              "ranged": 62
+            }
+          },
+          {
+            "skill": {
+              "slayer": 37
+            }
+          },
+          {
+            "skill": {
+              "strength": 58
+            }
+          },
+          {
+            "skill": {
+              "thieving": 62
+            }
+          },
+          {
+            "quest": "defender_of_varrock"
+          },
+          {
+            "quest": "troll_romance"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Curse_of_Arrav",
+      "revision": 15336873,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_depths_of_despair",
+      "name": "The Depths of Despair",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 18
+            }
+          },
+          {
+            "quest": "client_of_kourend"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*Ability to kill a level 36 [[Sand Snake]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Depths_of_Despair",
+      "revision": 15316668,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_dig_site",
+      "name": "The Dig Site",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 10
+            }
+          },
+          {
+            "skill": {
+              "herblore": 10
+            }
+          },
+          {
+            "skill": {
+              "thieving": 25
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Dig_Site",
+      "revision": 15351969,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_enchanted_key",
+      "name": "The Enchanted Key",
+      "counts_for_cape": false,
+      "requires": {
+        "quest": "making_history"
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Enchanted_Key",
+      "revision": 15336907,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_eyes_of_glouphrie",
+      "name": "The Eyes of Glouphrie",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 5
+            }
+          },
+          {
+            "skill": {
+              "magic": 46
+            }
+          },
+          {
+            "quest": "the_grand_tree"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Eyes_of_Glouphrie",
+      "revision": 15292355,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_feud",
+      "name": "The Feud",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "thieving": 30
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to kill a level 70 [[Bandit champion|bandit]] and a level 75 [[Tough Guy|Menaphite]] (both can be safespotted)."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Feud",
+      "revision": 15315438,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_final_dawn",
+      "name": "The Final Dawn",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "fletching": 52
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 52
+            }
+          },
+          {
+            "skill": {
+              "thieving": 66
+            }
+          },
+          {
+            "quest": "perilous_moons"
+          },
+          {
+            "quest": "the_heart_of_darkness"
+          }
+        ]
+      },
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Final_Dawn",
+      "revision": 15336872,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_forsaken_tower",
+      "name": "The Forsaken Tower",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "client_of_kourend"
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Forsaken_Tower",
+      "revision": 15316647,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_fremennik_exiles",
+      "name": "The Fremennik Exiles",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 65
+            }
+          },
+          {
+            "skill": {
+              "fishing": 60
+            }
+          },
+          {
+            "skill": {
+              "mining": 60
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 55
+            }
+          },
+          {
+            "skill": {
+              "slayer": 60
+            }
+          },
+          {
+            "skill": {
+              "smithing": 60
+            }
+          },
+          {
+            "quest": "heroes_quest"
+          },
+          {
+            "quest": "lunar_diplomacy"
+          },
+          {
+            "quest": "mountain_daughter"
+          },
+          {
+            "quest": "the_fremennik_isles"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Fremennik_Exiles",
+      "revision": 15345916,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_fremennik_isles",
+      "name": "The Fremennik Isles",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 20
+            }
+          },
+          {
+            "quest": "the_fremennik_trials"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to kill a level 122 [[Ice Troll King|Troll King]] (Damage can be reduced) and, separately, 10 rock throwing [[ice troll]]s in a [[multicombat area]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Fremennik_Isles",
+      "revision": 15314025,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_fremennik_trials",
+      "name": "The Fremennik Trials",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* Ability to defeat a [[Koschei|fairly strong warrior]] without [[armour]], [[weapons]], or [[spells]]",
+        "* Ability to defeat a level-69 [[Draugen]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Fremennik_Trials",
+      "revision": 15328080,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_frozen_door",
+      "name": "The Frozen Door",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 70
+            }
+          },
+          {
+            "skill": {
+              "hitpoints": 70
+            }
+          },
+          {
+            "skill": {
+              "ranged": 70
+            }
+          },
+          {
+            "skill": {
+              "strength": 70
+            }
+          },
+          {
+            "quest": "desert_treasure_i"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Frozen_Door",
+      "revision": 15166745,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_garden_of_death",
+      "name": "The Garden of Death",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "farming": 20
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Garden_of_Death",
+      "revision": 15316642,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_generals_shadow",
+      "name": "The General's Shadow",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "curse_of_the_empty_lord"
+          },
+          {
+            "quest": "fight_arena"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [
+        "**Started [[Desert Treasure I]], for the [[ring of visibility]]"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_General%27s_Shadow",
+      "revision": 15336893,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_giant_dwarf",
+      "name": "The Giant Dwarf",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 12
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 16
+            }
+          },
+          {
+            "skill": {
+              "magic": 33
+            }
+          },
+          {
+            "skill": {
+              "thieving": 14
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Giant_Dwarf",
+      "revision": 15346380,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_golem",
+      "name": "The Golem",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 20
+            }
+          },
+          {
+            "skill": {
+              "thieving": 25
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Golem",
+      "revision": 15321144,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_grand_tree",
+      "name": "The Grand Tree",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "agility": 25
+        }
+      },
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 172 [[Black demon (The Grand Tree)|Black demon]] (safespottable for Ranged and Magic or melee using a [[halberd]])."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Grand_Tree",
+      "revision": 15343831,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_great_brain_robbery",
+      "name": "The Great Brain Robbery",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 30
+            }
+          },
+          {
+            "skill": {
+              "crafting": 16
+            }
+          },
+          {
+            "skill": {
+              "prayer": 50
+            }
+          },
+          {
+            "quest": "cabin_fever"
+          },
+          {
+            "quest": "creature_of_fenkenstrain"
+          },
+          {
+            "quest": "recipe_for_disaster_pirate_pete"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*Access to a [[player-owned house]] [[workshop]] and [[Clockmaking space|crafting table]] '''or''' the [[Grand Exchange]]"
+      ],
+      "notes": [
+        "*Be able to kill a level 190 monster that can disable [[Prayer]]s (can be safespotted without taking damage)."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Great_Brain_Robbery",
+      "revision": 15351436,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_hand_in_the_sand",
+      "name": "The Hand in the Sand",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 49
+            }
+          },
+          {
+            "skill": {
+              "thieving": 17
+            }
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Hand_in_the_Sand",
+      "revision": 15265973,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_heart_of_darkness",
+      "name": "The Heart of Darkness",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 46
+            }
+          },
+          {
+            "skill": {
+              "mining": 55
+            }
+          },
+          {
+            "skill": {
+              "slayer": 48
+            }
+          },
+          {
+            "skill": {
+              "thieving": 48
+            }
+          },
+          {
+            "quest": "twilights_promise"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Heart_of_Darkness",
+      "revision": 15318070,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_ides_of_milk",
+      "name": "The Ides of Milk",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Ides_of_Milk",
+      "revision": 15338668,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_knights_sword",
+      "name": "The Knight's Sword",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "mining": 10
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to run from [[combat level|level]] 57 [[ice warrior]]s and level 53 [[ice giant]]s could help."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Knight%27s_Sword",
+      "revision": 15249358,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_lost_tribe",
+      "name": "The Lost Tribe",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 13
+            }
+          },
+          {
+            "skill": {
+              "mining": 17
+            }
+          },
+          {
+            "skill": {
+              "thieving": 13
+            }
+          },
+          {
+            "quest": "goblin_diplomacy"
+          },
+          {
+            "quest": "rune_mysteries"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Lost_Tribe",
+      "revision": 15319381,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_path_of_glouphrie",
+      "name": "The Path of Glouphrie",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 45
+            }
+          },
+          {
+            "skill": {
+              "ranged": 47
+            }
+          },
+          {
+            "skill": {
+              "slayer": 56
+            }
+          },
+          {
+            "skill": {
+              "strength": 60
+            }
+          },
+          {
+            "skill": {
+              "thieving": 56
+            }
+          },
+          {
+            "quest": "the_eyes_of_glouphrie"
+          },
+          {
+            "quest": "tree_gnome_village"
+          },
+          {
+            "quest": "waterfall_quest"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Path_of_Glouphrie",
+      "revision": 15353829,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_queen_of_thieves",
+      "name": "The Queen of Thieves",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "thieving": 20
+            }
+          },
+          {
+            "quest": "client_of_kourend"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Queen_of_Thieves",
+      "revision": 15352295,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_red_reef",
+      "name": "The Red Reef",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "sailing": 52
+            }
+          },
+          {
+            "skill": {
+              "smithing": 48
+            }
+          },
+          {
+            "quest": "troubled_tortugans"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Red_Reef",
+      "revision": 15353290,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_restless_ghost",
+      "name": "The Restless Ghost",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "Capable of killing or running away from a [[combat level]] 13 [[skeleton]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Restless_Ghost",
+      "revision": 15331162,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_ribbiting_tale_of_a_lily_pad_labour_dispute",
+      "name": "The Ribbiting Tale of a Lily Pad Labour Dispute",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "woodcutting": 15
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Ribbiting_Tale_of_a_Lily_Pad_Labour_Dispute",
+      "revision": 15270097,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_slug_menace",
+      "name": "The Slug Menace",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "crafting": 30
+            }
+          },
+          {
+            "skill": {
+              "runecraft": 30
+            }
+          },
+          {
+            "skill": {
+              "slayer": 30
+            }
+          },
+          {
+            "skill": {
+              "thieving": 30
+            }
+          },
+          {
+            "quest": "sea_slug"
+          },
+          {
+            "quest": "wanted"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [
+        "*You must have the [[Commorb]] in your inventory to start the quest."
+      ],
+      "notes": [
+        "*The ability to defeat a level 62 enemy with [[Melee]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Slug_Menace",
+      "revision": 15352141,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "the_tourist_trap",
+      "name": "The Tourist Trap",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "fletching": 10
+            }
+          },
+          {
+            "skill": {
+              "smithing": 20
+            }
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 47 enemy"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/The_Tourist_Trap",
+      "revision": 15350316,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "throne_of_miscellania",
+      "name": "Throne of Miscellania",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest": "heroes_quest"
+          },
+          {
+            "quest": "the_fremennik_trials"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Throne_of_Miscellania",
+      "revision": 15354772,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tower_of_life",
+      "name": "Tower of Life",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "construction": 10
+        }
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tower_of_Life",
+      "revision": 15350496,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tree_gnome_village",
+      "name": "Tree Gnome Village",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 112 [[Khazard warlord]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tree_Gnome_Village",
+      "revision": 15351851,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "tribal_totem",
+      "name": "Tribal Totem",
+      "counts_for_cape": true,
+      "requires": {
+        "skill": {
+          "thieving": 21
+        }
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Tribal_Totem",
+      "revision": 15240951,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "troll_romance",
+      "name": "Troll Romance",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 28
+            }
+          },
+          {
+            "quest": "troll_stronghold"
+          }
+        ]
+      },
+      "quest_points": 2,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 113 [[Arrg|troll]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Troll_Romance",
+      "revision": 15326713,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "troll_stronghold",
+      "name": "Troll Stronghold",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 15
+            }
+          },
+          {
+            "quest": "death_plateau"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 113 [[Troll General]] (can be [[safespot]]ted)"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Troll_Stronghold",
+      "revision": 15326717,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "troubled_tortugans",
+      "name": "Troubled Tortugans",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "construction": 48
+            }
+          },
+          {
+            "skill": {
+              "crafting": 34
+            }
+          },
+          {
+            "skill": {
+              "hunter": 45
+            }
+          },
+          {
+            "skill": {
+              "sailing": 45
+            }
+          },
+          {
+            "skill": {
+              "slayer": 51
+            }
+          },
+          {
+            "skill": {
+              "woodcutting": 40
+            }
+          },
+          {
+            "quest": "pandemonium"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Troubled_Tortugans",
+      "revision": 15273864,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "twilights_promise",
+      "name": "Twilight's Promise",
+      "counts_for_cape": true,
+      "requires": {
+        "quest": "children_of_the_sun"
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Twilight%27s_Promise",
+      "revision": 15355249,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "underground_pass",
+      "name": "Underground Pass",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "ranged": 25
+            }
+          },
+          {
+            "quest": "biohazard"
+          }
+        ]
+      },
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Underground_Pass",
+      "revision": 15306381,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "vale_totems",
+      "name": "Vale Totems",
+      "counts_for_cape": false,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "fletching": 20
+            }
+          },
+          {
+            "quest": "children_of_the_sun"
+          }
+        ]
+      },
+      "quest_points": 0,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Vale_Totems_%28miniquest%29",
+      "revision": 15319442,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "vampyre_slayer",
+      "name": "Vampyre Slayer",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 3,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "Able to defeat a [[combat level]] 34 [[Count Draynor|vampyre]] with a very high health recovery rate."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Vampyre_Slayer",
+      "revision": 15316695,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "wanted",
+      "name": "Wanted!",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "quest_points": 32
+          },
+          {
+            "quest": "enter_the_abyss"
+          },
+          {
+            "quest": "priest_in_peril"
+          },
+          {
+            "quest": "recruitment_drive"
+          },
+          {
+            "quest": "the_lost_tribe"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "*The ability to defeat a level 32 [[Black Knight (Wanted!)|Black Knight]]."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Wanted%21",
+      "revision": 15327976,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "watchtower",
+      "name": "Watchtower",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 25
+            }
+          },
+          {
+            "skill": {
+              "herblore": 14
+            }
+          },
+          {
+            "skill": {
+              "magic": 14
+            }
+          },
+          {
+            "skill": {
+              "mining": 40
+            }
+          },
+          {
+            "skill": {
+              "thieving": 15
+            }
+          }
+        ]
+      },
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat a level 68 [[Ogre]] and run past level 111 [[Blue dragons]]"
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Watchtower",
+      "revision": 15351654,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "waterfall_quest",
+      "name": "Waterfall Quest",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "The ability to withstand and evade attacks from level 86 [[Fire Giant]]s and level 84 [[Moss Guardian]] without any equipment."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Waterfall_Quest",
+      "revision": 15326961,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "what_lies_below",
+      "name": "What Lies Below",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "runecraft": 35
+            }
+          },
+          {
+            "quest": "rune_mysteries"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/What_Lies_Below",
+      "revision": 15292388,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "while_guthix_sleeps",
+      "name": "While Guthix Sleeps",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "agility": 66
+            }
+          },
+          {
+            "skill": {
+              "farming": 65
+            }
+          },
+          {
+            "skill": {
+              "firemaking": 49
+            }
+          },
+          {
+            "skill": {
+              "herblore": 65
+            }
+          },
+          {
+            "skill": {
+              "hunter": 62
+            }
+          },
+          {
+            "skill": {
+              "magic": 67
+            }
+          },
+          {
+            "skill": {
+              "thieving": 72
+            }
+          },
+          {
+            "quest_points": 180
+          },
+          {
+            "quest": "a_tail_of_two_cats"
+          },
+          {
+            "quest": "defender_of_varrock"
+          },
+          {
+            "quest": "dream_mentor"
+          },
+          {
+            "quest": "fight_arena"
+          },
+          {
+            "quest": "nature_spirit"
+          },
+          {
+            "quest": "tears_of_guthix"
+          },
+          {
+            "quest": "temple_of_the_eye"
+          },
+          {
+            "quest": "the_hand_in_the_sand"
+          },
+          {
+            "quest": "the_path_of_glouphrie"
+          },
+          {
+            "quest": "wanted"
+          }
+        ]
+      },
+      "quest_points": 5,
+      "requirements_verified": true,
+      "unmodeled": [
+        "* Ability to enter the [[Warriors' Guild]] (the sum of your [[Attack]] and [[Strength]] must be at or above 130; OR {{SCP|Attack|99|link=yes}}, OR {{SCP|Strength|99|link=yes}}) {{Boostable|no}} {{Questreqstart|}}"
+      ],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/While_Guthix_Sleeps",
+      "revision": 15353110,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "witchs_house",
+      "name": "Witch's House",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 4,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* The ability to defeat 4 monsters from level 19 to 53 without a break."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Witch%27s_House",
+      "revision": 15168391,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "witchs_potion",
+      "name": "Witch's Potion",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Witch%27s_Potion",
+      "revision": 15333580,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "x_marks_the_spot",
+      "name": "X Marks the Spot",
+      "counts_for_cape": true,
+      "requires": null,
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [],
+      "wiki_url": "https://oldschool.runescape.wiki/w/X_Marks_the_Spot",
+      "revision": 15328404,
+      "completes_parent": null,
+      "staged_rewards": false
+    },
+    {
+      "id": "zogre_flesh_eaters",
+      "name": "Zogre Flesh Eaters",
+      "counts_for_cape": true,
+      "requires": {
+        "all_of": [
+          {
+            "skill": {
+              "herblore": 8
+            }
+          },
+          {
+            "skill": {
+              "ranged": 30
+            }
+          },
+          {
+            "skill": {
+              "smithing": 4
+            }
+          },
+          {
+            "quest": "big_chompy_bird_hunting"
+          },
+          {
+            "quest": "jungle_potion"
+          }
+        ]
+      },
+      "quest_points": 1,
+      "requirements_verified": true,
+      "unmodeled": [],
+      "notes": [
+        "* You must be able to defeat a level 111 enemy."
+      ],
+      "wiki_url": "https://oldschool.runescape.wiki/w/Zogre_Flesh_Eaters",
+      "revision": 15328252,
+      "completes_parent": null,
+      "staged_rewards": false
+    }
+  ]
+}

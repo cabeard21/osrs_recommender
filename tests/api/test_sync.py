@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from httpx import Response
+from httpx2 import Response
 from sqlalchemy.orm import Session, sessionmaker
 
 from tracker.api.sync import (
@@ -43,6 +43,7 @@ def test_the_canonical_payload_is_accepted_and_audited(
 
     assert response.status_code == 202
     assert response.json()["payload_version"] == 1
+    assert "recommendations" not in response.json()
 
     events = sync_events()
     assert len(events) == 1

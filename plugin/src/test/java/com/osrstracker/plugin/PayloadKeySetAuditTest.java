@@ -2,13 +2,10 @@ package com.osrstracker.plugin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.osrstracker.plugin.practice.PracticeDetector;
-import com.osrstracker.plugin.practice.PracticeDetector.Arena;
 import org.junit.Test;
 
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -79,13 +76,9 @@ public class PayloadKeySetAuditTest
 		}
 	}
 
-	/** A payload with every section populated, including practice evidence from the detector. */
+	/** A payload with every current section populated. */
 	private static AccountSnapshot fullyPopulated()
 	{
-		final PracticeDetector detector = new PracticeDetector();
-		detector.observePlayerCombat(Arena.WILDERNESS, T0, false, true);
-		detector.observePlayerCombat(Arena.WILDERNESS, T0.plusSeconds(4), true, false);
-
 		final AccountSnapshot.Builder builder = AccountSnapshot.builder("redacted", T0)
 			.displayName("redacted")
 			.combatLevel(126)
@@ -97,7 +90,6 @@ public class PayloadKeySetAuditTest
 			.item(new AccountSnapshot.ObservedItem(27690, 1, "bank"))
 			.containerScan(new AccountSnapshot.ContainerScan("bank", T0.minusSeconds(60)));
 
-		detector.drain(T0.plusSeconds(600)).forEach(builder::practiceEvent);
 		return builder.build();
 	}
 
@@ -116,10 +108,9 @@ public class PayloadKeySetAuditTest
 	@Test
 	public void theAuditWouldActuallyCatchALeak() throws Exception
 	{
-		// A test that can only pass is not a test. This proves the walker sees nested keys — the
-		// place a leak would actually appear is inside a practice event, not at the root.
+		// This proves the walker sees nested keys in a current account fact.
 		final com.google.gson.JsonObject payload = fullyPopulated().toJson();
-		payload.getAsJsonArray("practice_events").get(0).getAsJsonObject()
+		payload.getAsJsonArray("observed_items").get(0).getAsJsonObject()
 			.addProperty("opponent_name", "some_player");
 
 		final Set<String> payloadKeys = new TreeSet<>();
@@ -129,21 +120,4 @@ public class PayloadKeySetAuditTest
 		assertTrue(payloadKeys.contains("opponent_name"));
 	}
 
-	@Test
-	public void thePracticeEventsTheDetectorProducesCarryNothingExtra() throws Exception
-	{
-		// The §7.6 vocabulary is the whole vocabulary: no opponent, no chat, no prayers, no
-		// fight-time inventory, no tick-by-tick location.
-		final JsonNode events = MAPPER.readTree(fullyPopulated().toJson().toString())
-			.get("practice_events");
-
-		assertTrue(events.size() > 0);
-		for (JsonNode event : events)
-		{
-			final Set<String> keys = new TreeSet<>();
-			event.fieldNames().forEachRemaining(keys::add);
-			assertTrue(keys.toString(), keys.equals(new TreeSet<>(
-				Arrays.asList("domain", "started_at", "ended_at", "evidence_type"))));
-		}
-	}
 }

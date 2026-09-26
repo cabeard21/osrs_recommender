@@ -14,11 +14,9 @@ from tracker.content.requirements import (
     AllOf,
     AnyOf,
     AtLeast,
-    CapabilityLeaf,
     CombatLevelLeaf,
     ItemLeaf,
     MembersLeaf,
-    MilestoneLeaf,
     Not,
     QuestLeaf,
     QuestPointsLeaf,
@@ -55,8 +53,6 @@ class TestLeaves:
             ({"unlock": "spellbook_ancient"}, UnlockLeaf(key="spellbook_ancient")),
             ({"quest": "desert_treasure_i"}, QuestLeaf(quest_id="desert_treasure_i")),
             ({"item": "voidwaker"}, ItemLeaf(item_id="voidwaker")),
-            ({"milestone": "freeze_logging"}, MilestoneLeaf(key="freeze_logging")),
-            ({"capability": "ice_barrage_nh"}, CapabilityLeaf(capability_id="ice_barrage_nh")),
             ({"combat_level": 100}, CombatLevelLeaf(level=100)),
             ({"quest_points": 150}, QuestPointsLeaf(points=150)),
             ({"account_type": "ironman"}, AccountTypeLeaf(account_type="ironman")),
@@ -80,8 +76,6 @@ class TestLeaves:
             "unlock",
             "quest",
             "item",
-            "milestone",
-            "capability",
             "combat_level",
             "quest_points",
             "account_type",
@@ -142,7 +136,7 @@ class TestRoundTrip:
             {"not": {"unlock": "rigour"}},
             {"at_least": {"n": 2, "of": [{"item": "a"}, {"item": "b"}]}},
             {"all_of": [{"combat_level": 100}, {"quest_points": 150}]},
-            {"any_of": [{"milestone": "m"}, {"capability": "c"}, {"quest": "q"}]},
+            {"any_of": [{"item": "i"}, {"skill": {"magic": 94}}, {"quest": "q"}]},
         ],
     )
     def test_parse_render_parse_is_stable(self, raw: dict[str, Any]) -> None:
@@ -229,6 +223,11 @@ class TestTheMissingSpaceTrap:
 
 
 class TestOtherSyntaxErrors:
+    @pytest.mark.parametrize("key", ["capability", "milestone"])
+    def test_retired_recommendation_leaves_are_rejected(self, key: str) -> None:
+        with pytest.raises(RequirementSyntaxError, match="unknown requirement type"):
+            parse({key: "old_goal"})
+
     def test_unknown_requirement_type(self) -> None:
         with pytest.raises(RequirementSyntaxError, match="unknown requirement type 'skll'"):
             parse({"skll": {"magic": 94}})

@@ -112,6 +112,44 @@ class TestG5NegativeOneNormalizesToNone:
 
 
 class TestPlayerFetch:
+    def test_runecrafting_metric_uses_canonical_runecraft_skill(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            return _response(
+                skills={
+                    "runecrafting": {
+                        "metric": "runecrafting",
+                        "experience": 4470,
+                        "rank": 1,
+                        "level": 20,
+                    }
+                },
+                activities={},
+            )
+
+        client = _client(httpx.MockTransport(handler))
+        snapshot = client.player("Rehvun")
+
+        assert len(snapshot.skills) == 1
+        assert snapshot.skills[0].skill == "runecraft"
+        assert snapshot.skills[0].source is Source.WISE_OLD_MAN
+
+    def test_duplicate_provider_alias_prefers_native_runecraft_metric(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:
+            return _response(
+                skills={
+                    "runecrafting": {"metric": "runecrafting", "experience": 4470, "level": 20},
+                    "runecraft": {"metric": "runecraft", "experience": 5018, "level": 21},
+                },
+                activities={},
+            )
+
+        client = _client(httpx.MockTransport(handler))
+        snapshot = client.player("Rehvun")
+
+        assert [(skill.skill, skill.level, skill.xp) for skill in snapshot.skills] == [
+            ("runecraft", 21, 5018)
+        ]
+
     def test_overall_is_excluded_from_the_skill_list(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
             return _response(

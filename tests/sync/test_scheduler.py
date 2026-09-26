@@ -13,6 +13,7 @@ import asyncio
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Event
 
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
@@ -44,12 +45,16 @@ def _add_players(factory: sessionmaker[Session], *usernames: str) -> list[int]:
 class _RecordingRefresher:
     """Stands in for ``SingleFlightRefresher``: records calls, optionally explodes."""
 
-    def __init__(self, *, fail_on: set[int] | None = None) -> None:
+    def __init__(self, *, fail_on: set[int] | None = None, signal_after: int = 0) -> None:
         self.calls: list[int] = []
         self._fail_on = fail_on or set()
+        self.signal_after = signal_after
+        self.reached_expected_calls = Event()
 
     def refresh(self, player_id: int, *, manual: bool = False) -> RefreshOutcome:
         self.calls.append(player_id)
+        if len(self.calls) >= self.signal_after:
+            self.reached_expected_calls.set()
         if player_id in self._fail_on:
             raise RuntimeError("WOM exploded")
         return RefreshOutcome(ran=True)
@@ -93,7 +98,7 @@ class TestOneFailureDoesNotStopTheSchedule:
         from the outside, to one that was simply idle — which is why the loop swallows and
         the *refresh* does not."""
         ids = _add_players(sessions, "zezima")
-        refresher = _RecordingRefresher(fail_on={ids[0]})
+        refresher = _RecordingRefresher(fail_on={ids[0]}, signal_after=2)
         scheduler = RefreshScheduler(
             refresher,  # type: ignore[arg-type]
             sessions,
@@ -101,8 +106,10 @@ class TestOneFailureDoesNotStopTheSchedule:
         )
 
         scheduler.start()
-        await asyncio.sleep(0.08)
-        await scheduler.stop()
+        try:
+            assert await asyncio.to_thread(refresher.reached_expected_calls.wait, 2)
+        finally:
+            await scheduler.stop()
 
         assert len(refresher.calls) >= 2, "the loop stopped after the first failure"
 
@@ -126,7 +133,7 @@ class TestTheFirstTickIsImmediate:
     ) -> None:
         """An interval far longer than the test: if the sleep came first, nothing would run."""
         expected = _add_players(sessions, "zezima")
-        refresher = _RecordingRefresher()
+        refresher = _RecordingRefresher(signal_after=1)
         scheduler = RefreshScheduler(
             refresher,  # type: ignore[arg-type]
             sessions,
@@ -134,8 +141,10 @@ class TestTheFirstTickIsImmediate:
         )
 
         scheduler.start()
-        await asyncio.sleep(0.05)
-        await scheduler.stop()
+        try:
+            assert await asyncio.to_thread(refresher.reached_expected_calls.wait, 2)
+        finally:
+            await scheduler.stop()
 
         assert refresher.calls == expected
 

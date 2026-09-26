@@ -1,8 +1,9 @@
 # Deployment
 
-The app is one process serving one port (SDD §5): the NiceGUI UI at `/`, the sync API at
-`/api/sync`, and an unauthenticated liveness check at `/healthz`. There is no second
-service to start and no reverse proxy in the design.
+The normal app is one process serving one port: the NiceGUI UI at `/`, the sync
+API at `/api/sync`, and an unauthenticated liveness check at `/healthz`. Optional
+Milestone 1 MCP runs as a separate process and never mounts those routes. Neither
+service requires a public reverse proxy.
 
 ```bash
 cp config.example.yaml config.yaml     # then edit — see below
@@ -11,6 +12,20 @@ make run
 ```
 
 ## Raspberry Pi Docker Compose
+
+The production Compose source is `home-app-deployment/stacks/osrs-recommender/compose.yaml`;
+the live stack is `/opt/stacks/osrs-recommender/compose.yaml`. Preserve local settings when
+updating it. The verified deployment uses `./data:/data`,
+`./config/config.yaml:/config/config.yaml:ro`, SQLite at `/data/tracker.db`, UID/GID
+`10001:10001`, and private publication at `100.117.157.57:8502`.
+
+For the optional `mcp` profile, existing OpenAI tunnel reuse, secret provisioning,
+health checks, production acceptance, and rollback, follow
+[the Milestone 1 production runbook](Refactor_Milestone1_Implementation.md#production-raspberry-pi-deployment).
+The same immutable application image runs both the app and `python -m tracker.mcp`.
+Only the default application startup runs migrations; explicit command overrides do not.
+The sidecar uses the existing database and does not publish port 8503. Its failure does
+not prevent normal dashboard or RuneLite synchronization.
 
 The production image is published as `ghcr.io/OWNER/osrs_recommender:sha-COMMIT` for both
 `linux/amd64` and `linux/arm64`. Replace `OWNER` and `COMMIT` with the GitHub repository
@@ -59,8 +74,7 @@ chmod 600 config/config.yaml
 ```
 
 The example requires `TRACKER_API_TOKEN` through the private Compose environment; its
-value overrides the placeholder in the mounted YAML file. If task guidance or the advisor
-is enabled, also provide `ANTHROPIC_API_KEY`; it is otherwise optional. The image runs
+value overrides the placeholder in the mounted YAML file. The image runs
 `alembic upgrade head` against `TRACKER_DATABASE_URL` before starting the app, and startup
 stops if migration fails.
 
@@ -157,15 +171,21 @@ device to the tailnet.
 
 ## 5. Outbound traffic
 
-The app talks to two providers and sends each the minimum it needs (§11.6):
+The account companion uses these providers:
 
 | Provider | Sent | Not sent |
 |---|---|---|
 | Wise Old Man | your username | anything else |
-| OSRS Wiki prices | numeric item ids referenced by your active roadmap | your username, your account state |
+| OSRS Wiki prices | numeric item ids in authored tradeable Gear ladders | your username, your account state |
 
-**Practice events never leave the machine.** They are the most sensitive thing the app
-stores, and nothing outbound carries them.
+Deployed version 1 RuneLite clients may still send the optional `practice_events`
+field. The server validates and ignores it; new clients omit it.
+
+When the optional MCP profile is enabled, the separate tunnel makes outbound HTTPS
+connections to OpenAI and delivers the eight Account/Quest Cape/Gear tools to
+ChatGPT. This does not publish the dashboard or synchronization API. Its runtime key
+is a tunnel-only file secret, separate from the RuneLite bearer token; never put it in
+the stack's `.env`, which the existing application imports wholesale.
 
 Both clients send a descriptive `User-Agent` that you configure (§7.5) — set it to
 something that identifies your install, and include a contact only if you want to.
@@ -206,3 +226,48 @@ sqlite3 tracker.db ".backup 'tracker-backup.db'"
 
 Use `.backup` rather than `cp` — the app runs SQLite in WAL mode, so a plain copy taken
 while it is running can miss committed transactions still sitting in the write-ahead log.
+
+### Refresh dev DB from production
+
+On Windows, stop the local app and MCP, keep the repo's `.venv` and `config.yaml`
+configured, and ensure `ssh pi@pi.local` (or your SSH alias) works in PowerShell. The
+script uses the same SSH authentication and may prompt for your password. The Pi stack
+must be at `/opt/stacks/osrs-recommender`, with the running `osrs-recommender` service
+using `./data:/data` and `sqlite:////data/tracker.db`. From the repository root:
+
+```powershell
+.\scripts\refresh-dev-db.ps1 -DryRun
+.\scripts\refresh-dev-db.ps1                 # or -ProductionHost pi@pi.local
+```
+
+The script verifies Compose identity, uses SQLite's online backup API inside the running
+container, streams the complete snapshot over SSH, checks size/SHA-256 and SQLite
+`quick_check`, and verifies core account tables. It migrates the **staged Windows copy**
+with the repository's Alembic head, then backs up the existing dev DB to
+`backups/dev-before-refresh-YYYYMMDD-HHMMSS.sqlite` before installing it. The previous
+physical DB and any WAL sidecars are also retained beside that backup with an
+`.original-` suffix. A snapshot or migration failure leaves the current dev DB alone.
+No production migration, upload, container restart, or raw live-DB copy occurs.
+
+### Milestone 3 schema retirement
+
+Before upgrading an existing database to the M3 Alembic head, take and verify an online
+SQLite backup using the procedure above. The forward migration deletes legacy
+recommendation, capability, roadmap, guidance, advisor, practice, and milestone rows,
+plus persisted selected-price outputs. It retains account observations, separate
+container scan timestamps, raw market prices and provenance, sync audit, and the
+`gp_sensitivity` preference. The removed rows have no archive table. Alembic cannot
+restore their contents on downgrade; rollback requires stopping the app and MCP and
+restoring the verified pre-M3 backup. Do not substitute a raw copy of a live WAL-mode
+database.
+
+To restore, stop the local app/MCP again and use the retained backup (adjust timestamp):
+
+```powershell
+Copy-Item .\backups\dev-before-refresh-YYYYMMDD-HHMMSS.sqlite .\tracker.db
+```
+
+Remove or move aside any `tracker.db-wal` and `tracker.db-shm` from the refreshed DB
+before restoring. If `config.yaml` selects another database path inside the repository,
+restore to that path instead. Treat backups as private account data; `backups/` is ignored
+by Git.
