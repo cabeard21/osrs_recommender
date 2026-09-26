@@ -19,17 +19,20 @@ def _run_commands(job: dict[str, object]) -> tuple[str, ...]:
     return tuple(str(step["run"]) for step in steps if isinstance(step, dict) and "run" in step)
 
 
-def test_makefile_exposes_fast_ci_and_exhaustive_local_lanes() -> None:
+def test_makefile_exposes_fast_and_complete_lanes() -> None:
     makefile = MAKEFILE.read_text(encoding="utf-8")
 
-    assert "test-ci:" in makefile
-    assert "--ignore=tests/golden" in makefile
-    assert "--ignore=tests/ui/test_pages_browser.py" in makefile
+    assert "test:" in makefile
+    assert '-m "not browser and not llm_live"' in makefile
+    assert "test-full:" in makefile
+    assert '-m "not llm_live"' in makefile
+    assert "test-ci: test-full" in makefile
     assert "test-cov:" in makefile
+    assert "--cov=tracker.quest_cape" in makefile
     assert "--cov-fail-under=80" in makefile
 
 
-def test_ci_keeps_exhaustive_suites_local_and_parallelizes_the_container_smoke() -> None:
+def test_ci_runs_complete_suite_and_parallelizes_container_smoke() -> None:
     workflow = _workflow()
     jobs = workflow["jobs"]
     assert isinstance(jobs, dict)
@@ -42,18 +45,15 @@ def test_ci_keeps_exhaustive_suites_local_and_parallelizes_the_container_smoke()
     assert isinstance(publish, dict)
 
     validate_commands = _run_commands(validate)
-    all_commands = "\n".join(
-        command for job in jobs.values() if isinstance(job, dict) for command in _run_commands(job)
+    assert any(
+        "playwright install --with-deps chromium" in command for command in validate_commands
     )
-    assert any(command.startswith("make test-ci") for command in validate_commands)
-    assert "playwright install" not in all_commands
-    assert "tests/golden" not in all_commands
-    assert "test_pages_browser" not in all_commands
-    assert "--cov" not in all_commands
+    assert any(command.startswith("make test-cov") for command in validate_commands)
 
     assert "needs" not in validate
     assert "needs" not in smoke
     assert set(publish["needs"]) == {"validate", "container-smoke"}
+    assert publish["if"] == "github.event_name != 'pull_request'"
 
 
 def test_container_builds_share_a_repository_scoped_gha_cache() -> None:

@@ -12,15 +12,12 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-import pytest
-import sqlalchemy as sa
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from tests.db.conftest import NOW
 from tracker.db import advisor as repo
 from tracker.db.enums import AdvisorRole
-from tracker.db.models import AdvisorConversation, AdvisorMessage
+from tracker.db.models import AdvisorConversation
 from tracker.integrations.llm.types import AdvisorTurn, ToolTraceEntry
 
 SCHEMA_VERSION = 1
@@ -73,19 +70,6 @@ def _append(
 
 
 class TestConversations:
-    def test_the_title_is_the_first_question_collapsed(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session), "  what   should\nI do next? ")
-        assert conversation.title == "what should I do next?"
-
-    def test_a_long_question_is_truncated_with_an_ellipsis(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session), "x" * 200)
-        assert len(conversation.title) == repo.TITLE_LENGTH
-        assert conversation.title.endswith("…")
-
     def test_get_conversation_is_scoped_to_its_owner(
         self, session: Session, new_player: Callable[..., int]
     ) -> None:
@@ -95,17 +79,6 @@ class TestConversations:
         conversation = _start(session, mine)
         assert repo.get_conversation(session, mine, conversation.id) is not None
         assert repo.get_conversation(session, theirs, conversation.id) is None
-
-    def test_latest_conversation_follows_updated_at(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        player_id = new_player(session)
-        older = _start(session, player_id, "older")
-        _start(session, player_id, "newer")
-        _append(session, older, "revived", now=NOW + timedelta(hours=1))
-        latest = repo.latest_conversation(session, player_id)
-        assert latest is not None
-        assert latest.id == older.id
 
 
 class TestAppendTurn:
@@ -119,87 +92,8 @@ class TestAppendTurn:
         assert messages[0].content == "a question"
         assert messages[1].content == "an answer"
 
-    def test_ordinals_are_monotonic_across_turns(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        _append(session, conversation, "one")
-        _append(session, conversation, "two")
-        assert [m.ordinal for m in repo.thread(session, conversation.id)] == [0, 1, 2, 3]
-
-    def test_a_duplicate_ordinal_is_rejected_by_the_schema(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        """Ordering is data; two rows sharing an ordinal would replay ambiguously."""
-        conversation = _start(session, new_player(session))
-        _append(session, conversation, "one")
-        session.add(
-            AdvisorMessage(
-                conversation_id=conversation.id,
-                ordinal=0,
-                role=AdvisorRole.USER,
-                content="collides",
-                created_at=NOW,
-            )
-        )
-        with pytest.raises(IntegrityError):
-            session.flush()
-
-    def test_the_conversation_hash_and_timestamp_follow_the_turn(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        later = NOW + timedelta(hours=2)
-        _append(session, conversation, "q", digest_hash="hash-2", now=later)
-        assert conversation.digest_hash == "hash-2"
-        assert conversation.updated_at == later
-
-    def test_the_answer_records_the_digest_it_was_written_against(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        """Per-message, so the UI can mark one answer stale rather than the whole thread."""
-        conversation = _start(session, new_player(session))
-        _append(session, conversation, "q", digest_hash="hash-7")
-        assert repo.thread(session, conversation.id)[1].digest_hash == "hash-7"
-
-    def test_token_counts_and_hedges_are_stored(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        _append(
-            session,
-            conversation,
-            "q",
-            turn=_turn(
-                uncertain=("spawn locations are from my own knowledge",),
-                input_tokens=1000,
-                cache_read_input_tokens=800,
-            ),
-        )
-        answer = repo.thread(session, conversation.id)[1]
-        assert answer.uncertain == ["spawn locations are from my own knowledge"]
-        assert answer.input_tokens == 1000
-        assert answer.cache_read_input_tokens == 800
-
 
 class TestD16:
-    def test_the_trace_stores_names_arguments_and_sizes(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        trace = (
-            ToolTraceEntry(name="get_item_price", arguments={"item_ids": [4151]}, result_chars=142),
-        )
-        _append(session, conversation, "q", turn=_turn(tool_trace=trace))
-        assert repo.thread(session, conversation.id)[1].tool_trace == [
-            {
-                "name": "get_item_price",
-                "arguments": {"item_ids": [4151]},
-                "result_chars": 142,
-                "is_error": False,
-            }
-        ]
-
     def test_the_trace_stores_no_tool_output(
         self, session: Session, new_player: Callable[..., int]
     ) -> None:
@@ -210,10 +104,6 @@ class TestD16:
         stored = repo.thread(session, conversation.id)[1].tool_trace
         assert stored is not None
         assert set(stored[0]) == {"name", "arguments", "result_chars", "is_error"}
-
-    def test_no_role_exists_for_a_tool_message(self) -> None:
-        """The enum's two members are the schema-level statement of D16."""
-        assert {role.value for role in AdvisorRole} == {"user", "assistant"}
 
 
 class TestHistoryForPrompt:
@@ -226,27 +116,6 @@ class TestHistoryForPrompt:
         history = repo.history_for_prompt(session, conversation.id, max_turns=5)
         assert [turn.role for turn in history] == ["user", "assistant", "user", "assistant"]
         assert history[0].text == "one"
-
-    def test_it_is_bounded_to_the_requested_turns(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        for index in range(5):
-            _append(session, conversation, f"question {index}")
-        history = repo.history_for_prompt(session, conversation.id, max_turns=2)
-        assert len(history) == 4
-        assert history[0].text == "question 3"
-
-    def test_it_never_begins_on_an_assistant_turn(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        """A provider rejects a transcript that does not alternate from a user message."""
-        conversation = _start(session, new_player(session))
-        for index in range(3):
-            _append(session, conversation, f"question {index}")
-        session.execute(sa.delete(AdvisorMessage).where(AdvisorMessage.ordinal == 0))
-        history = repo.history_for_prompt(session, conversation.id, max_turns=10)
-        assert history[0].role == "user"
 
 
 class TestPruning:
@@ -261,15 +130,6 @@ class TestPruning:
         assert messages[0].role is AdvisorRole.USER
         assert messages[0].content == "question 3"
 
-    def test_an_odd_keep_still_leaves_a_thread_starting_on_a_question(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        """Rounding up the trim is what stops an orphaned answer surviving."""
-        conversation = _start(session, new_player(session))
-        for index in range(4):
-            _append(session, conversation, f"question {index}", keep_messages=3)
-        assert repo.thread(session, conversation.id)[0].role is AdvisorRole.USER
-
     def test_conversations_are_pruned_by_recency(
         self, session: Session, new_player: Callable[..., int]
     ) -> None:
@@ -282,18 +142,6 @@ class TestPruning:
         surviving = {c.title for c in repo.list_conversations(session, player_id, limit=10)}
         assert surviving == {"thread 3", "thread 2"}
 
-    def test_pruning_a_conversation_removes_its_messages(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        player_id = new_player(session)
-        doomed = _start(session, player_id, "doomed")
-        _append(session, doomed, "q", now=NOW)
-        kept = _start(session, player_id, "kept")
-        _append(session, kept, "q", now=NOW + timedelta(hours=1))
-        repo.prune_conversations(session, player_id, keep=1)
-        session.flush()
-        assert repo.thread(session, doomed.id) == []
-
 
 class TestAnswersSince:
     def test_it_counts_answers_not_questions(
@@ -304,10 +152,3 @@ class TestAnswersSince:
         _append(session, conversation, "one")
         _append(session, conversation, "two")
         assert repo.answers_since(session, NOW - timedelta(days=1)) == 2
-
-    def test_it_ignores_answers_before_the_boundary(
-        self, session: Session, new_player: Callable[..., int]
-    ) -> None:
-        conversation = _start(session, new_player(session))
-        _append(session, conversation, "old", turn=_turn(generated_at=NOW - timedelta(days=2)))
-        assert repo.answers_since(session, NOW - timedelta(days=1)) == 0

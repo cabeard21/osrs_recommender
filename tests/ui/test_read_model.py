@@ -18,20 +18,14 @@ from tracker.content.loader import Content
 from tracker.content.schema import (
     KappaPresets,
     RefresherPolicy,
-    RefresherTemplate,
-    RefresherTrigger,
     ScoringProfile,
     ScoringWeights,
 )
-from tracker.content.schema import Milestone as ContentMilestone
-from tracker.db.models import Base, Player, SkillSnapshot
 from tracker.db.models import Milestone as MilestoneRow
-from tracker.db.session import build_engine, build_session_factory
+from tracker.db.models import SkillSnapshot
 from tracker.domain.types import (
     Confidence,
     GpSensitivity,
-    MilestoneClass,
-    MilestoneKind,
     Source,
     Status,
 )
@@ -456,11 +450,7 @@ def test_an_unauthored_key_is_refused(
 
 
 # ---------------------------------------------------------------------------
-# Step 11 — G10 against a synthetic three-group scenario
-#
-# The real corpus only declares two practice groups; this builds a third so the "three
-# stale groups still yield exactly one refresher in the primary list, with the rest in the
-# Practice freshness view" exit criterion is checked against an actual count of three.
+# Legacy profile stub for retained history and settings read-model checks.
 # ---------------------------------------------------------------------------
 
 
@@ -481,116 +471,6 @@ def _synthetic_profile() -> ScoringProfile:
     )
 
 
-def _synthetic_content() -> Content:
-    """Three practice groups, one milestone each, no capabilities or candidates needed."""
-    milestones = {
-        f"m{i}": ContentMilestone(
-            id=f"m{i}",
-            name=f"Milestone {i}",
-            class_=MilestoneClass.EXECUTION,
-            kind=MilestoneKind.SELF_ATTESTED,
-            practice_group=f"group{i}",
-        )
-        for i in range(1, 4)
-    }
-    refreshers = {
-        f"refresh_group{i}": RefresherTemplate(
-            id=f"refresh_group{i}",
-            name=f"Refresh group {i}",
-            practice_group=f"group{i}",
-            trigger=RefresherTrigger(),
-            suggested_session=f"session {i}",
-            suggested_session_hours=0.5,
-            advances=(),
-        )
-        for i in range(1, 4)
-    }
-    return Content(profile=_synthetic_profile(), milestones=milestones, refreshers=refreshers)
-
-
-@pytest.fixture
-def synthetic_session() -> Session:
-    engine = build_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    factory = build_session_factory(engine)
-    with factory() as session:
-        yield session
-    engine.dispose()
-
-
-def test_three_stale_groups_yield_exactly_one_primary_refresher_and_two_deferred(
-    synthetic_session: Session, now: datetime
-) -> None:
-    session = synthetic_session
-    content = _synthetic_content()
-
-    player = Player(
-        username="three_groups",
-        display_name="Three Groups",
-        created_at=now - timedelta(days=400),
-        gp_sensitivity=GpSensitivity.NORMAL,
-    )
-    session.add(player)
-    session.flush()
-    player_id = int(player.id)
-
-    stale_since = now - timedelta(days=60)
-    for i in range(1, 4):
-        session.add(
-            MilestoneRow(
-                player_id=player_id,
-                key=f"m{i}",
-                kind=MilestoneKind.SELF_ATTESTED,
-                class_=MilestoneClass.EXECUTION,
-                achieved=True,
-                last_practiced_at=stale_since,
-                source=Source.RUNELITE,
-                observed_at=stale_since,
-            )
-        )
-    session.commit()
-
-    groups = read_model.stale_practice_groups(session, player_id, content, now)
-    assert len(groups) == 3, "all three groups must have triggered"
-
-    # Persist a snapshot naming one of the three as the primary list's one refresher
-    # (G10) — exactly what Step 6's ``enforce_list_policy`` would have written.
-    from tracker.db.enums import RecommendationCandidateKind
-    from tracker.db.models import RecommendationEntry, RecommendationSnapshot
-
-    snapshot = RecommendationSnapshot(
-        player_id=player_id,
-        run_at=now,
-        roadmap_selection={},
-        scoring_profile_version=1,
-    )
-    session.add(snapshot)
-    session.flush()
-    session.add(
-        RecommendationEntry(
-            snapshot_id=snapshot.id,
-            candidate_id="refresh_group2",
-            rank=1,
-            candidate_kind=RecommendationCandidateKind.REFRESHER,
-            score=0.5,
-            factors={},
-            reason="",
-            estimate_confidence=Confidence.HIGH,
-            blocked=False,
-        )
-    )
-    session.commit()
-
-    assert read_model.primary_refresher_id(session, player_id) == "refresh_group2"
-
-    primary_list = read_model.recommendation_rows(session, player_id, content, now)
-    assert sum(1 for row in primary_list if row.is_refresher) == 1
-
-    deferred = read_model.practice_freshness_rows(session, player_id, content, now)
-    assert {row.template_id for row in deferred} == {"refresh_group1", "refresh_group3"}
-
-
-# ---------------------------------------------------------------------------
 # Step 11 — Roadmaps (§4.3, §6.12)
 # ---------------------------------------------------------------------------
 

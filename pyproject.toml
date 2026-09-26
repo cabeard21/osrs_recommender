@@ -158,16 +158,13 @@ testpaths = ["tests"]
 # Renaming one would work until the next collision; this removes the class of failure.
 addopts = "--strict-markers --strict-config --import-mode=importlib"
 markers = [
-    "golden: golden-corpus ranking judgments (§16.2)",
+    "browser: Playwright tests of retained rendered workflows; excluded from fast make test",
     "contract: cross-language payload fixtures (§12.1)",
     # §21.4 — reserved for a manual smoke test against a real provider. Deliberately not
     # excluded in `addopts`: no such test exists, and `--strict-markers` plus the structural
     # guards (no provider is built without a transport or a key) keep the suite offline.
     "llm_live: hits a real guidance provider; never run by `make test` (§21.4)",
 ]
-# `tests/golden/` is the one place a test imports another test module: the corpus loader is
-# shared with `tools/tune_weights.py`, and §16.3's whole point is that the tuner optimizes
-# the same judgments the suite asserts. `--import-mode=importlib` adds nothing to sys.path,
-# so `import tests.golden.loader` needs the repo root on it explicitly. `python -m pytest`
-# supplies that by accident; this makes a bare `pytest` behave identically.
+# The tuner imports the retained golden corpus loader from `tests.golden`.
+# `--import-mode=importlib` adds nothing to sys.path, so a bare `pytest` needs the root.
 pythonpath = ["."]

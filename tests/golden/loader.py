@@ -1,7 +1,7 @@
 """Scenario YAML → ``PlayerState`` + ``RoadmapSelection`` (§16.1).
 
-One parser, two consumers. ``tests/golden/test_judgments.py`` asserts the recorded
-preferences; ``tools/tune_weights.py`` searches for weights that satisfy the most of them.
+The retained calibration tool, ``tools/tune_weights.py``, uses these recorded scenarios
+to search for weights. The old ranking-judgment pytest suite has been retired.
 If those two read the corpus through different code, the search optimizes something the
 suite does not check — so the loader lives here, in the corpus's own directory, and the
 tuner imports it rather than reimplementing it.

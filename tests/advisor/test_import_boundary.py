@@ -20,8 +20,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import pytest
-
 #: Scanned for forbidden imports. ``tracker/gear`` is here because the advisor imports it
 #: (§23.5), and this test reads *direct* imports only — so a `sqlalchemy` import one module
 #: deep in the gear package would be reachable from tool dispatch and invisible here.
@@ -58,30 +56,28 @@ def _python_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
 
 
-@pytest.mark.parametrize(
-    "path",
-    [path for root in _PURE_ROOTS for path in _python_files(root)],
-    ids=lambda path: f"{path.parent.name}/{path.name}",
-)
-def test_the_advisor_reaches_no_session_and_no_client(path: Path) -> None:
+def test_the_advisor_reaches_no_session_and_no_client() -> None:
     """D15 — purity is the enforcement, so the imports are the thing to check."""
-    for imported in _imported_modules(path):
-        for forbidden in _FORBIDDEN_TO_ADVISOR:
-            assert imported != forbidden and not imported.startswith(f"{forbidden}."), (
-                f"{path} imports {imported!r}. The advisor package is pure (D15): tool dispatch "
-                "must have no session to write through and no client to fetch with."
-            )
+    for root in _PURE_ROOTS:
+        for path in _python_files(root):
+            for imported in _imported_modules(path):
+                for forbidden in _FORBIDDEN_TO_ADVISOR:
+                    assert imported != forbidden and not imported.startswith(f"{forbidden}."), (
+                        f"{path} imports {imported!r}. The advisor package is pure (D15): "
+                        "tool dispatch must have no session to write through "
+                        "and no client to fetch with."
+                    )
 
 
-@pytest.mark.parametrize("root", _MUST_NOT_IMPORT_ADVISOR, ids=lambda path: path.name)
-def test_the_ranking_path_never_imports_the_advisor(root: Path) -> None:
+def test_the_ranking_path_never_imports_the_advisor() -> None:
     """D14 — a model-authored string must have no route into a score."""
-    for path in _python_files(root):
-        for imported in _imported_modules(path):
-            assert not imported.startswith("tracker.advisor"), (
-                f"{path} imports {imported!r}. Nothing that ranks, estimates or evaluates may "
-                "reach advisor code (D14)."
-            )
+    for root in _MUST_NOT_IMPORT_ADVISOR:
+        for path in _python_files(root):
+            for imported in _imported_modules(path):
+                assert not imported.startswith("tracker.advisor"), (
+                    f"{path} imports {imported!r}. Nothing that ranks, estimates or evaluates may "
+                    "reach advisor code (D14)."
+                )
 
 
 def test_the_advisor_package_is_not_empty() -> None:

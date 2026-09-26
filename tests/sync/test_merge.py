@@ -332,6 +332,192 @@ def test_a_scan_survives_the_items_key_being_absent_entirely(
     assert session.get(ContainerScan, (outcome.player_id, Container.EQUIPMENT)) is not None
 
 
+def test_new_full_scan_removes_absent_items_in_that_container_only(
+    session: Session, build_payload: Callable[..., Any], now: datetime, to_iso: Callable[..., str]
+) -> None:
+    later = now + timedelta(minutes=1)
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[
+                {"item_id": VOIDWAKER, "quantity": 1, "container": "bank"},
+                {"item_id": VOIDWAKER, "quantity": 1, "container": "inventory"},
+            ],
+            container_scans=[
+                {"container": "bank", "scanned_at": to_iso(now)},
+                {"container": "inventory", "scanned_at": to_iso(now)},
+            ],
+        ),
+    )
+    merge_sync_payload(
+        session,
+        build_payload(
+            later,
+            observed_items=[],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(later)}],
+        ),
+    )
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is None
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.INVENTORY)) is not None
+
+
+def test_stale_full_scan_does_not_remove_newer_item(
+    session: Session,
+    build_payload: Callable[..., Any],
+    now: datetime,
+    earlier: datetime,
+    to_iso: Callable[..., str],
+) -> None:
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(now)}],
+        ),
+    )
+    merge_sync_payload(
+        session,
+        build_payload(
+            earlier,
+            observed_items=[],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(earlier)}],
+        ),
+    )
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is not None
+
+
+def test_full_scan_keeps_a_sighting_newer_than_its_scan_time(
+    session: Session,
+    build_payload: Callable[..., Any],
+    now: datetime,
+    earlier: datetime,
+    to_iso: Callable[..., str],
+) -> None:
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now, observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}]
+        ),
+    )
+    merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(earlier)}],
+        ),
+    )
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is not None
+
+
+def test_full_scan_moves_item_between_containers_without_stale_membership(
+    session: Session, build_payload: Callable[..., Any], now: datetime, to_iso: Callable[..., str]
+) -> None:
+    later = now + timedelta(minutes=1)
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(now)}],
+        ),
+    )
+    merge_sync_payload(
+        session,
+        build_payload(
+            later,
+            observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "inventory"}],
+            container_scans=[
+                {"container": "bank", "scanned_at": to_iso(later)},
+                {"container": "inventory", "scanned_at": to_iso(later)},
+            ],
+        ),
+    )
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is None
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.INVENTORY)) is not None
+
+
+def test_omitted_item_list_with_full_scan_clears_a_container(
+    session: Session, build_payload: Callable[..., Any], now: datetime, to_iso: Callable[..., str]
+) -> None:
+    later = now + timedelta(minutes=1)
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now, observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}]
+        ),
+    )
+    merge_sync_payload(
+        session,
+        build_payload(later, container_scans=[{"container": "bank", "scanned_at": to_iso(later)}]),
+    )
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is None
+
+
+def test_omitted_items_without_a_scan_leave_membership_unchanged(
+    session: Session, build_payload: Callable[..., Any], now: datetime
+) -> None:
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now, observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}]
+        ),
+    )
+    merge_sync_payload(session, build_payload(now + timedelta(minutes=1)))
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is not None
+
+
+def test_item_observation_older_than_latest_full_scan_cannot_restore_absent_item(
+    session: Session,
+    build_payload: Callable[..., Any],
+    now: datetime,
+    earlier: datetime,
+    to_iso: Callable[..., str],
+) -> None:
+    first = merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[],
+            container_scans=[{"container": "bank", "scanned_at": to_iso(now)}],
+        ),
+    )
+    outcome = merge_sync_payload(
+        session,
+        build_payload(
+            earlier, observed_items=[{"item_id": VOIDWAKER, "quantity": 1, "container": "bank"}]
+        ),
+    )
+    assert outcome.items_ignored == 1
+    assert session.get(ObservedItem, (first.player_id, VOIDWAKER, Container.BANK)) is None
+
+
+def test_duplicate_scans_in_one_payload_cannot_roll_back_latest_scan(
+    session: Session,
+    build_payload: Callable[..., Any],
+    now: datetime,
+    earlier: datetime,
+    to_iso: Callable[..., str],
+) -> None:
+    result = merge_sync_payload(
+        session,
+        build_payload(
+            now,
+            observed_items=[],
+            container_scans=[
+                {"container": "bank", "scanned_at": to_iso(now)},
+                {"container": "bank", "scanned_at": to_iso(earlier)},
+            ],
+        ),
+    )
+    scan = session.get(ContainerScan, (result.player_id, Container.BANK))
+    assert scan is not None
+    assert scan.scanned_at == now
+    assert result.container_scans_ignored == 1
+
+
 def test_a_scan_timestamp_never_moves_backwards(
     session: Session,
     build_payload: Callable[..., Any],

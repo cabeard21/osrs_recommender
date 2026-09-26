@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +30,8 @@ jobs:
       - run: python -m mypy tracker
       - run: python -m tracker.content.validate
       - run: python tools/generate_quest_cape.py --check
-      - run: make test-ci PY=python
+      - run: python -m playwright install --with-deps chromium
+      - run: make test-cov PY=python
 
   container-smoke:
     runs-on: ubuntu-latest
@@ -50,6 +53,7 @@ jobs:
       - run: python3 tools/container_smoke.py osrs-recommender:test
 
   publish:
+    if: github.event_name != 'pull_request'
     needs: [validate, container-smoke]
     runs-on: ubuntu-latest
     permissions:

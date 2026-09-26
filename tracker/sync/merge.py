@@ -396,10 +396,19 @@ def _merge_items(
     notes: list[str],
 ) -> tuple[int, int]:
     stored = {(row.item_id, row.container): row for row in get_observed_items(session, player_id)}
+    scans = {row.container: row for row in get_container_scans(session, player_id)}
     written = ignored = 0
 
     for entry in entries:
         container = Container(entry["container"])
+        scan = scans.get(container)
+        if scan is not None and observed_at < scan.scanned_at:
+            ignored += 1
+            notes.append(
+                f"§7.4/1: ignored item {entry['item_id']} in {container.value} — "
+                "a fresher full-container scan is stored"
+            )
+            continue
         existing = stored.get((entry["item_id"], container))
         if existing is not None and not _supersedes(
             incoming_at=observed_at,
@@ -435,7 +444,7 @@ def _merge_container_scans(
     *,
     source: Source,
     notes: list[str],
-) -> tuple[int, int]:
+) -> tuple[int, int, dict[Container, datetime]]:
     """Record every scan the payload reports — **including scans that found nothing.**
 
     This is the least obvious writer in the module and the most important. §6.5's
@@ -451,6 +460,7 @@ def _merge_container_scans(
     """
     stored = {row.container: row for row in get_container_scans(session, player_id)}
     written = ignored = 0
+    accepted: dict[Container, datetime] = {}
 
     for entry in entries:
         container = Container(entry["container"])
@@ -466,10 +476,36 @@ def _merge_container_scans(
             notes.append(f"§7.4/1: ignored {container.value} scan — a later scan is recorded")
             continue
 
-        record_container_scan(session, player_id, container, scanned_at=scanned_at, source=source)
+        stored[container] = record_container_scan(
+            session, player_id, container, scanned_at=scanned_at, source=source
+        )
+        accepted[container] = scanned_at
         written += 1
 
-    return written, ignored
+    return written, ignored, accepted
+
+
+def _reconcile_scanned_items(
+    session: Session,
+    player_id: int,
+    accepted: Mapping[Container, datetime],
+    entries: Sequence[Mapping[str, Any]],
+) -> None:
+    """A full scan replaces older container membership, including absent items.
+
+    An observation made after the scan remains valid even if the older scan omitted it.
+    A stale rejected scan has no effect. The scan and item list must be in the same
+    payload for omission to establish absence.
+    """
+    if not accepted:
+        return
+    reported = {(entry["item_id"], Container(entry["container"])) for entry in entries}
+    for row in get_observed_items(session, player_id):
+        scan_at = accepted.get(row.container)
+        if scan_at is None or row.observed_at > scan_at:
+            continue
+        if (row.item_id, row.container) not in reported:
+            session.delete(row)
 
 
 # ---------------------------------------------------------------------------
@@ -637,13 +673,14 @@ def merge_sync_payload(
         observed_at=observed_at,
         notes=notes,
     )
-    scans_written, scans_ignored = _merge_container_scans(
+    scans_written, scans_ignored, accepted_scans = _merge_container_scans(
         session,
         player_id,
         payload.get("container_scans", []),
         source=source,
         notes=notes,
     )
+    _reconcile_scanned_items(session, player_id, accepted_scans, payload.get("observed_items", []))
     events_written, events_ignored = _merge_practice_events(
         session, player_id, payload.get("practice_events", []), source=source
     )

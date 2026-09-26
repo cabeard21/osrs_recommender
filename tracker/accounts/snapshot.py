@@ -10,13 +10,29 @@ from datetime import datetime
 from types import MappingProxyType
 
 from tracker.domain.skills import canonical_skill_states
-from tracker.domain.types import QuestStatus, SkillState, UnlockState
+from tracker.domain.types import Container, QuestStatus, SkillState, UnlockState
 
 
 @dataclass(frozen=True, slots=True)
 class Observation:
     source: str
     observed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ObservedItemFact:
+    item_id: int
+    container: Container
+    quantity: int
+    source: str
+    observed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ContainerScanFact:
+    container: Container
+    scanned_at: datetime
+    source: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +43,8 @@ class AccountSnapshot:
     quests: Mapping[str, QuestStatus] = field(default_factory=dict)
     quest_observations: Mapping[str, Observation] = field(default_factory=dict)
     unlocks: Mapping[str, UnlockState] = field(default_factory=dict)
+    observed_items: Mapping[tuple[int, Container], ObservedItemFact] = field(default_factory=dict)
+    container_scans: Mapping[Container, ContainerScanFact] = field(default_factory=dict)
     quest_points: int | None = None
     combat_level: int | None = None
     members: bool | None = None
@@ -35,7 +53,13 @@ class AccountSnapshot:
     def __post_init__(self) -> None:
         # Frozen dataclasses alone do not freeze dictionaries or detach caller-owned data.
         object.__setattr__(self, "skills", MappingProxyType(canonical_skill_states(self.skills)))
-        for name in ("quests", "quest_observations", "unlocks"):
+        for name in (
+            "quests",
+            "quest_observations",
+            "unlocks",
+            "observed_items",
+            "container_scans",
+        ):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
 
     def summary(self) -> dict[str, object]:
@@ -66,4 +90,18 @@ class AccountSnapshot:
 
     @property
     def fingerprint(self) -> str:
-        return hashlib.sha256(json.dumps(self.summary(), sort_keys=True).encode()).hexdigest()
+        identity = self.summary() | {
+            "observed_items": [
+                (item_id, container.value, item.quantity, item.source, item.observed_at.isoformat())
+                for (item_id, container), item in sorted(
+                    self.observed_items.items(), key=lambda pair: (pair[0][0], pair[0][1].value)
+                )
+            ],
+            "container_scans": [
+                (container.value, scan.scanned_at.isoformat(), scan.source)
+                for container, scan in sorted(
+                    self.container_scans.items(), key=lambda pair: pair[0].value
+                )
+            ],
+        }
+        return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()

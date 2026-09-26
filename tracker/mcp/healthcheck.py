@@ -7,13 +7,17 @@ import sys
 
 import httpx
 
-EXPECTED_TOOLS = frozenset(
+BASE_TOOLS = frozenset(
     {"get_account_summary", "get_goal_status", "get_available_actions", "evaluate_action"}
 )
+GEAR_TOOLS = frozenset(
+    {"get_gear_progression", "get_gear_candidates", "get_item_details", "evaluate_gear_change"}
+)
+EXPECTED_TOOLS = BASE_TOOLS | GEAR_TOOLS
 
 
 def probe(url: str, *, client: httpx.Client | None = None) -> None:
-    """Require a successful tools/list response with exactly the Milestone 1 tools."""
+    """Require the complete Milestone 2 tool set before opening the tunnel."""
     if client is None:
         with httpx.Client(timeout=3, trust_env=False) as owned_client:
             probe(url, client=owned_client)

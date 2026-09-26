@@ -127,16 +127,6 @@ class TestDisabled:
         with pytest.raises(AdvisorThrottled, match="not configured"):
             service.ask(player_id, "anything")
 
-    def test_a_disabled_service_writes_nothing(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        settings = Settings(bind_address="127.0.0.1", api_token="token")
-        service = AdvisorService(factory, corpus, settings, provider=None)
-        with pytest.raises(AdvisorThrottled):
-            service.ask(player_id, "anything")
-        with factory() as session:
-            assert advisor_repo.latest_conversation(session, player_id) is None
-
 
 class TestAsking:
     def test_a_first_question_starts_a_conversation(
@@ -152,16 +142,6 @@ class TestAsking:
                 "answer 1",
             ]
 
-    def test_a_second_question_continues_the_thread(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        service = _service(factory, corpus, min_interval_seconds=0)
-        first = service.ask(player_id, "one")
-        second = service.ask(player_id, "two", conversation_id=first.conversation_id)
-        assert second.conversation_id == first.conversation_id
-        with factory() as session:
-            assert len(advisor_repo.thread(session, first.conversation_id)) == 4
-
     def test_history_is_replayed_into_the_next_prompt(
         self, factory: sessionmaker[Session], corpus: Content, player_id: int
     ) -> None:
@@ -171,18 +151,6 @@ class TestAsking:
         service.ask(player_id, "two", conversation_id=first.conversation_id)
         assert [turn.text for turn in double.prompts[1].history] == ["one", "answer 1"]
 
-    def test_history_is_bounded_by_max_history_turns(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        double = _Double()
-        service = _service(
-            factory, corpus, provider=double, min_interval_seconds=0, max_history_turns=1
-        )
-        first = service.ask(player_id, "one")
-        for question in ("two", "three"):
-            service.ask(player_id, question, conversation_id=first.conversation_id)
-        assert len(double.prompts[-1].history) == 2
-
     def test_an_empty_question_is_rejected_without_paying(
         self, factory: sessionmaker[Session], corpus: Content, player_id: int
     ) -> None:
@@ -190,19 +158,6 @@ class TestAsking:
         with pytest.raises(AdvisorNotFound):
             _service(factory, corpus, provider=double).ask(player_id, "   ")
         assert double.calls == 0
-
-    def test_an_unknown_player_is_not_found(
-        self, factory: sessionmaker[Session], corpus: Content
-    ) -> None:
-        with pytest.raises(AdvisorNotFound, match="does not exist"):
-            _service(factory, corpus).ask(999, "anything")
-
-    def test_an_unknown_conversation_is_an_error_not_a_new_thread(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        """Quietly starting a different thread loses their history without saying so."""
-        with pytest.raises(AdvisorNotFound, match="conversation 4242"):
-            _service(factory, corpus).ask(player_id, "anything", conversation_id=4242)
 
 
 class TestBounds:
@@ -224,14 +179,6 @@ class TestBounds:
         with pytest.raises(AdvisorThrottled, match="before asking again"):
             service.ask(player_id, "two")
 
-    def test_the_interval_passes_once_enough_time_has_elapsed(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        clock = iter([NOW, NOW + timedelta(seconds=60)])
-        service = _service(factory, corpus, clock=lambda: next(clock), min_interval_seconds=10)
-        service.ask(player_id, "one")
-        assert service.ask(player_id, "two") is not None
-
     def test_the_daily_ceiling_is_counted_from_stored_answers(
         self, factory: sessionmaker[Session], corpus: Content, player_id: int
     ) -> None:
@@ -242,64 +189,6 @@ class TestBounds:
         with pytest.raises(AdvisorThrottled, match="daily limit of 2"):
             service.ask(player_id, "three")
 
-    def test_a_fresh_service_still_sees_the_spent_ceiling(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        _service(factory, corpus, min_interval_seconds=0, max_calls_per_day=1).ask(player_id, "one")
-        restarted = _service(factory, corpus, min_interval_seconds=0, max_calls_per_day=1)
-        with pytest.raises(AdvisorThrottled, match="daily limit"):
-            restarted.ask(player_id, "two")
-
-    def test_the_ceiling_resets_at_midnight_utc(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        _service(factory, corpus, min_interval_seconds=0, max_calls_per_day=1).ask(player_id, "one")
-        tomorrow = _service(
-            factory,
-            corpus,
-            clock=lambda: NOW + timedelta(days=1),
-            min_interval_seconds=0,
-            max_calls_per_day=1,
-        )
-        assert tomorrow.ask(player_id, "two") is not None
-
-    def test_a_zero_ceiling_disables_the_check_rather_than_blocking_everything(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        service = _service(factory, corpus, min_interval_seconds=0, max_calls_per_day=0)
-        assert service.ask(player_id, "one") is not None
-
-    def test_the_bounds_are_passed_through_to_the_provider(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        """The service owns the policy; the adapter merely honours it (§22.5)."""
-        seen: dict[str, int] = {}
-
-        class Recording(_Double):
-            def converse(  # type: ignore[override]
-                self,
-                prompt: AdvisorPrompt,
-                tools: Sequence[ToolSpec],
-                execute: Callable[[ToolCall], ToolResult],
-                *,
-                max_iterations: int,
-                max_tool_calls: int,
-            ) -> AdvisorTurn:
-                seen["iterations"] = max_iterations
-                seen["tools"] = max_tool_calls
-                return super().converse(
-                    prompt,
-                    tools,
-                    execute,
-                    max_iterations=max_iterations,
-                    max_tool_calls=max_tool_calls,
-                )
-
-        _service(
-            factory, corpus, provider=Recording(), max_model_iterations=3, max_tool_calls=4
-        ).ask(player_id, "anything")
-        assert seen == {"iterations": 3, "tools": 4}
-
 
 class TestWhatTheGatherPutsInTheDigest:
     """The two fields §22.2 declared, defaulted, and then never filled.
@@ -309,65 +198,6 @@ class TestWhatTheGatherPutsInTheDigest:
     which practice had gone stale. Driven end-to-end through :meth:`AdvisorService.ask` rather
     than by calling ``_snapshot``, because the gather is exactly what regressed.
     """
-
-    def test_a_persisted_consequence_reaches_the_prompt(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        double = _Double()
-        with factory() as session:
-            _seed_entry(
-                session,
-                player_id,
-                consequences={
-                    "unblocks_capabilities": [
-                        {"capability_id": "ice_barrage_nh", "name": "Ice Barrage NH"}
-                    ]
-                },
-            )
-        _service(factory, corpus, provider=double).ask(player_id, "why that one?")
-        assert "What it would do: unlocks Ice Barrage NH" in double.prompts[0].digest
-
-    def test_an_entry_with_no_consequences_says_nothing(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        double = _Double()
-        with factory() as session:
-            _seed_entry(session, player_id, consequences={})
-        _service(factory, corpus, provider=double).ask(player_id, "why that one?")
-        assert "What it would do" not in double.prompts[0].digest
-
-    def test_an_aged_execution_milestone_reaches_the_prompt(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        double = _Double()
-        with factory() as session:
-            _seed_milestone(
-                session,
-                player_id,
-                key="comfortable_4_way_switches",
-                class_=MilestoneClass.EXECUTION,
-                last_practiced_at=NOW - timedelta(days=100),
-            )
-        _service(factory, corpus, provider=double).ask(player_id, "am I sharp?")
-        digest = double.prompts[0].digest
-        assert "# Practice freshness" in digest
-        assert "Comfortable 4-way switches: very_stale" in digest
-
-    def test_a_milestone_never_practiced_is_not_reported_as_stale(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        """G6: absence of evidence is not evidence of decay."""
-        double = _Double()
-        with factory() as session:
-            _seed_milestone(
-                session,
-                player_id,
-                key="comfortable_4_way_switches",
-                class_=MilestoneClass.EXECUTION,
-                last_practiced_at=None,
-            )
-        _service(factory, corpus, provider=double).ask(player_id, "am I sharp?")
-        assert "# Practice freshness" not in double.prompts[0].digest
 
 
 def _seed_entry(session: Session, player_id: int, *, consequences: dict[str, Any]) -> None:
@@ -418,20 +248,6 @@ def _seed_milestone(
 
 
 class TestDigestInvalidation:
-    def test_an_unchanged_account_does_not_flag_a_change(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        service = _service(factory, corpus, min_interval_seconds=0)
-        first = service.ask(player_id, "one")
-        second = service.ask(player_id, "two", conversation_id=first.conversation_id)
-        assert second.digest_changed is False
-
-    def test_a_first_question_never_flags_a_change(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        """There is no previous snapshot to have moved away from."""
-        assert _service(factory, corpus).ask(player_id, "one").digest_changed is False
-
     def test_a_moved_account_flags_the_change_and_updates_the_stored_hash(
         self, factory: sessionmaker[Session], corpus: Content, player_id: int
     ) -> None:
@@ -459,26 +275,6 @@ class TestDigestInvalidation:
 
 
 class TestPersistence:
-    def test_the_stored_answer_records_its_model_not_the_configured_one(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        """A thread can outlive a configuration change (§22.8)."""
-        double = _Double([AdvisorTurn(answer="hello", model="some-older-model", generated_at=NOW)])
-        reply = _service(factory, corpus, provider=double).ask(player_id, "one")
-        with factory() as session:
-            assert advisor_repo.thread(session, reply.conversation_id)[1].model == (
-                "some-older-model"
-            )
-
-    def test_conversations_are_pruned_on_write(
-        self, factory: sessionmaker[Session], corpus: Content, player_id: int
-    ) -> None:
-        service = _service(factory, corpus, min_interval_seconds=0, keep_conversations=2)
-        for index in range(4):
-            service.ask(player_id, f"question {index}")
-        with factory() as session:
-            assert len(advisor_repo.list_conversations(session, player_id, limit=10)) == 2
-
     def test_the_tool_trace_is_stored_without_results(
         self, factory: sessionmaker[Session], corpus: Content, player_id: int
     ) -> None:

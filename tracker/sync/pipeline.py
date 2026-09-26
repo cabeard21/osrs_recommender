@@ -92,14 +92,21 @@ class PipelineResult:
 
 
 def _price_scope(content: Content, selection: RoadmapSelection) -> frozenset[int]:
-    """The numeric item ids the active roadmaps actually reference (§8.3).
+    """The active roadmap ids and primary ids of curated tradeable gear.
 
-    Scope is roadmap-derived on purpose. Pulling the full item economy would recreate the
-    item database §3 rules out, and would turn a 12-hour cache over a few dozen ids into
-    sustained volume against a provider that publishes no rate limit but reserves the right
-    to impose one.
+    The gear scope is limited to authored ladder members, not the entire item economy.
+    Ownership variants are deliberately excluded: only an item's primary id is quoted.
     """
-    return scoped_item_ids(content, selection.weights)
+    gear_ids = frozenset(
+        item.item_id
+        for item in content.items.values()
+        if item.item_id is not None
+        and item.style is not None
+        and item.slot is not None
+        and item.tier is not None
+        and item.acquisition == "tradeable"
+    )
+    return scoped_item_ids(content, selection.weights) | gear_ids
 
 
 def _refresh_prices(

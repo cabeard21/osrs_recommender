@@ -21,7 +21,6 @@ from tracker.db.models import (
     RecommendationEntry,
     RecommendationSnapshot,
 )
-from tracker.db.persist_engine_output import load_incumbent
 from tracker.db.repository import set_active_roadmap
 from tracker.db.session import build_engine, build_session_factory
 from tracker.domain.types import Freshness, MilestoneClass, PriceSourceLayer
@@ -178,53 +177,6 @@ def test_milestone_freshness_is_materialized(
     assert all(row.freshness is Freshness.CURRENT for row in practiced)
 
 
-def test_the_snapshot_records_the_profile_version_and_the_live_selection(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """A13 — ``roadmap_selection`` is read from ``ActiveRoadmap``, never hardcoded, and the
-    weights are stored **as this run used them** (§6.12): a History view re-reading the live
-    setting would relabel every past run whenever the user reweighted their roadmaps.
-    """
-    first = _run(db, content, payload)
-    set_active_roadmap(db, first.player_id, "main_nh", selection_weight=0.75)
-    set_active_roadmap(db, first.player_id, "anti_pk", selection_weight=0.25)
-    db.flush()
-
-    _run(db, content, player_id=first.player_id, now=NOW + timedelta(minutes=1))
-
-    snapshots = db.scalars(select(RecommendationSnapshot).order_by(RecommendationSnapshot.id)).all()
-    assert snapshots[0].roadmap_selection == {}
-    assert snapshots[-1].roadmap_selection == {"main_nh": 0.75, "anti_pk": 0.25}
-    assert all(row.scoring_profile_version == content.profile.version for row in snapshots)
-
-
-def test_factors_persist_values_and_log_contributions(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """§6.10 and §9.5 — both, not either. Without the raw values a stored recommendation
-    cannot explain itself; without the log contributions it is impossible to see which
-    input moved between two runs.
-    """
-    _run(db, content, payload)
-
-    entry = db.scalars(select(RecommendationEntry).order_by(RecommendationEntry.rank)).first()
-    assert entry is not None
-    assert entry.factors
-    for factor in entry.factors.values():
-        assert {"value", "weight", "log_contribution"} <= set(factor)
-
-
-def test_the_reason_is_generated_not_empty(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """§9.5 — the "Why" line is read off the largest log contributions, never authored."""
-    _run(db, content, payload)
-
-    entry = db.scalars(select(RecommendationEntry).order_by(RecommendationEntry.rank)).first()
-    assert entry is not None
-    assert entry.reason.strip()
-
-
 # ---------------------------------------------------------------------------
 # §9.9 — hysteresis across runs
 # ---------------------------------------------------------------------------
@@ -244,22 +196,6 @@ def test_a_second_identical_run_does_not_displace_the_incumbent(
     second = _run(db, content, player_id=first.player_id, now=NOW + timedelta(minutes=5))
 
     assert second.recommendations[0].candidate_id == first.recommendations[0].candidate_id
-
-
-def test_the_incumbent_is_readable_after_a_run(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """The ordering constraint that has no other test.
-
-    ``load_incumbent`` must find the previous run's top entry, and the pipeline must call
-    it *before* writing the new snapshot — persist first and each run becomes its own
-    incumbent, comparing a candidate against itself and disabling anti-thrash silently.
-    """
-    first = _run(db, content, payload)
-    incumbent = load_incumbent(db, first.player_id)
-
-    assert incumbent is not None
-    assert incumbent.candidate_id == first.recommendations[0].candidate_id
 
 
 # ---------------------------------------------------------------------------
@@ -282,65 +218,20 @@ def test_no_price_request_is_issued_while_the_cache_is_fresh(
 
     _run(db, content, player_id=first.player_id, now=NOW + timedelta(minutes=1), client=client)
     assert client.calls, "the first priced run should have fetched the roadmap-scoped ids"
+    prices = db.scalars(select(ItemPrice)).all()
+    assert prices, "the priced run should have persisted its selection"
+    assert all(
+        row.source is PriceSourceLayer.LIVE
+        and row.selected_price_gp is not None
+        and row.selection_policy is not None
+        and row.selection_reason
+        for row in prices
+    )
 
     calls_after_first = len(client.calls)
     _run(db, content, player_id=first.player_id, now=NOW + timedelta(minutes=5), client=client)
 
     assert len(client.calls) == calls_after_first
-
-
-def test_prices_are_persisted_with_their_selection(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """A19 — ``selected_price_gp`` / ``selection_policy`` / ``selection_reason`` had no
-    writer anywhere in the design. This is it: Step 5 computes them purely, Step 9 stores
-    them, and ``selection_reason`` is what lets §15 explain any figure it shows.
-    """
-    client = RecordingPricesClient()
-    first = _run(db, content, payload)
-    set_active_roadmap(db, first.player_id, "main_nh", selection_weight=1.0)
-    db.flush()
-
-    _run(db, content, player_id=first.player_id, now=NOW + timedelta(minutes=1), client=client)
-
-    rows = db.scalars(select(ItemPrice)).all()
-    assert rows, "no price rows were written"
-    for row in rows:
-        assert row.source is PriceSourceLayer.LIVE
-        assert row.selected_price_gp is not None
-        assert row.selection_reason
-
-
-def test_the_pipeline_runs_without_a_price_client(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """§7.5: *"no user-visible failure when a cached or static fallback exists."*
-
-    An app started with no network still recommends. Its estimates are flagged
-    low-confidence by §8.4's own rules, which is a different thing from failing.
-    """
-    result = _run(db, content, payload, client=None)
-
-    assert result.snapshot_id is not None
-    assert result.prices_written == 0
-
-
-def test_no_roadmap_selected_means_no_price_request_at_all(
-    db: Session, content: Content, payload: dict[str, Any]
-) -> None:
-    """§8.3's fetch scope is the *active roadmap's* transitive closure, so a player who has
-    selected no roadmap references no items and the provider is never called.
-
-    Not an edge case — it is the state of every account between its first sync and its
-    first visit to the Roadmaps view, and pulling the full item economy to cover it would
-    recreate the item database §3 rules out.
-    """
-    client = RecordingPricesClient()
-
-    result = _run(db, content, payload, client=client)
-
-    assert client.calls == []
-    assert result.prices_written == 0
 
 
 def test_a_recompute_needs_either_a_payload_or_a_player(db: Session, content: Content) -> None:

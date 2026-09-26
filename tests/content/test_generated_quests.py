@@ -14,7 +14,6 @@ Two distinct claims are tested here, and they fail for different reasons:
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
 from itertools import pairwise
 from pathlib import Path
 
@@ -25,16 +24,10 @@ from tools import generate_candidates as gen
 from tracker.content.loader import Content
 from tracker.content.requirements import QuestLeaf, SkillLeaf, iter_leaves
 from tracker.content.validate import load_and_validate
-from tracker.domain.candidates import advances_value
-from tracker.domain.types import PlayerState, RoadmapSelection
-from tracker.recommendations.engine import recommend
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 CONTENT_ROOT = REPO_ROOT / "content"
 DATA_DIR = REPO_ROOT / "tools" / "data"
-
-#: A fixed clock, for §16.1's reason: no assertion here may depend on when the suite runs.
-NOW = datetime(2026, 8, 4, tzinfo=UTC)
 
 
 @pytest.fixture(scope="module")
@@ -224,71 +217,6 @@ def test_the_generated_corpus_loads_and_cross_validates(corpus: Content) -> None
 
     assert len(generated) > 200
     assert all(candidate.completion is not None for candidate in generated)
-
-
-def test_generated_quests_advance_nothing_by_derivation(corpus: Content) -> None:
-    """``advances: {}`` ⇒ ``pvp_value`` 0 ⇒ ε-floored by §9.4, for every generated entry."""
-    weights = dict.fromkeys(corpus.capabilities, 1.0)
-
-    for candidate in corpus.candidates.values():
-        if candidate.source == "generated":
-            assert advances_value(candidate.advances, weights) == pytest.approx(0.0)
-
-
-def test_the_generated_corpus_does_not_displace_hand_weighted_candidates(
-    corpus: Content,
-) -> None:
-    """The claim that keeps Step 4 from wrecking the page.
-
-    210 unweighted candidates joined the corpus at once. Every one of them is a real,
-    valid, sometimes-unblocked action, and nothing in the derivations distinguishes one
-    from another — so the only thing standing between the user and an alphabetical slice
-    of the quest list is that the four hand-weighted candidates outscore all of them.
-
-    That is asserted here rather than left to §16.3's golden scenarios because it is a
-    property of *corpus size*: it held trivially at eight candidates and would fail
-    silently the first time a generated batch acquired weight it should not have.
-    """
-    # A never-synced account, deliberately: every leaf resolves ``unknown``, so nothing is
-    # blocked and the whole corpus competes at once — the widest field this can be run on.
-    state = PlayerState(player_id=1)
-    entries = recommend(
-        state,
-        RoadmapSelection(weights={"main_nh": 1.0}),
-        corpus,
-        corpus.profile.model_copy(update={"max_primary_entries": 10_000}),
-        now=NOW,
-    )
-    ranked = [entry.candidate_id for entry in entries]
-    # Weighted **for the roadmap being run**, not weighted in the abstract. ``pvp_value`` is
-    # ``effective_capability_weight × advances`` (§9.4), so a candidate advancing only
-    # capabilities ``main_nh`` does not weight contributes nothing here and belongs in the
-    # tail with the generated batch — which is the corpus working, not failing. Before the
-    # PvM ladder every authored weight pointed at a capability every roadmap shared, so the
-    # distinction had nothing to bite on; a third roadmap is what made it visible.
-    scored_capabilities = set(corpus.roadmaps["main_nh"].capabilities)
-    weighted = {
-        candidate.id
-        for candidate in corpus.candidates.values()
-        if scored_capabilities & set(candidate.advances)
-    }
-    generated = {c.id for c in corpus.candidates.values() if c.source == "generated"}
-    first_unweighted = next(
-        (index for index, candidate_id in enumerate(ranked) if candidate_id not in weighted),
-        len(ranked),
-    )
-
-    assert generated & set(ranked), "generated quests must be ranked, not filtered out"
-    assert set(ranked[:first_unweighted]) == weighted, (
-        "an unweighted candidate outranked a weighted one — check that nothing gave the "
-        "generated batch `advances` weight"
-    )
-    # The tail is where ``train_woodcutting`` lives, and it is *not* generated: §10.6's
-    # designated last-place candidate is unweighted for exactly the same reason the
-    # generated ones are, and sorts with them rather than above them. The invariant is
-    # about authored weight, not about provenance — which is what makes `source` safe to
-    # carry as pure metadata.
-    assert "train_woodcutting" in ranked[first_unweighted:]
 
 
 # ---------------------------------------------------------------------------

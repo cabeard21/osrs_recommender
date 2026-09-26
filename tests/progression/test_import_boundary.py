@@ -22,8 +22,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import pytest
-
 import tracker
 
 #: The packages §16.1 requires to be pure.
@@ -71,17 +69,17 @@ class TestPureCoreImports:
         found = {path.relative_to(TRACKER_ROOT).parts[0] for path in pure_modules()}
         assert found == PURE_PACKAGES
 
-    @pytest.mark.parametrize("path", pure_modules(), ids=lambda path: str(path.name))
-    def test_no_pure_module_imports_persistence_or_transport(self, path: Path) -> None:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        offending = [
-            module for module in imported_modules(tree) if module.startswith(FORBIDDEN_PREFIXES)
-        ]
-        assert not offending, (
-            f"{path.relative_to(TRACKER_ROOT.parent)} imports {offending}. §16.1 makes the "
-            "engine a pure function over PlayerState; persistence belongs to the projection "
-            "(§3b) and transport to the integrations layer"
-        )
+    def test_no_pure_module_imports_persistence_or_transport(self) -> None:
+        for path in pure_modules():
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            offending = [
+                module for module in imported_modules(tree) if module.startswith(FORBIDDEN_PREFIXES)
+            ]
+            assert not offending, (
+                f"{path.relative_to(TRACKER_ROOT.parent)} imports {offending}. §16.1 makes the "
+                "engine a pure function over PlayerState; persistence belongs to the projection "
+                "(§3b) and transport to the integrations layer"
+            )
 
     def test_the_check_would_catch_a_violation(self) -> None:
         """The detector itself, on a module that does what the rule forbids."""

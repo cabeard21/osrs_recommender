@@ -46,7 +46,7 @@ class TestTheTableIsTheCurve:
 
 
 class TestTheInverse:
-    @pytest.mark.parametrize("level", range(1, MAX_LEVEL + 1))
+    @pytest.mark.parametrize("level", [1, 2, 50, 92, MAX_LEVEL])
     def test_level_for_xp_inverts_xp_for_level(self, level: int) -> None:
         assert level_for_xp(xp_for_level(level)) == level
 

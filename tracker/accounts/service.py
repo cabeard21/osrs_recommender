@@ -2,7 +2,12 @@
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from tracker.accounts.snapshot import AccountSnapshot, Observation
+from tracker.accounts.snapshot import (
+    AccountSnapshot,
+    ContainerScanFact,
+    Observation,
+    ObservedItemFact,
+)
 from tracker.db import repository
 from tracker.domain.skills import canonical_skill_name
 from tracker.domain.types import SkillState
@@ -19,6 +24,23 @@ class AccountService:
                 session.connection().exec_driver_sql("BEGIN")
             player = repository.require_player(session, player_id)
             quests = repository.get_quest_states(session, player_id)
+            scans = {
+                row.container: ContainerScanFact(
+                    container=row.container, scanned_at=row.scanned_at, source=row.source.value
+                )
+                for row in repository.get_container_scans(session, player_id)
+            }
+            items = {
+                (row.item_id, row.container): ObservedItemFact(
+                    item_id=row.item_id,
+                    container=row.container,
+                    quantity=row.quantity,
+                    source=row.source.value,
+                    observed_at=row.observed_at,
+                )
+                for row in repository.get_observed_items(session, player_id)
+                if row.container not in scans or row.observed_at >= scans[row.container].scanned_at
+            }
             return AccountSnapshot(
                 player_id=player.id,
                 username=player.username,
@@ -33,6 +55,8 @@ class AccountService:
                     row.quest_id: Observation(row.source.value, row.observed_at) for row in quests
                 },
                 unlocks={r.key: r.state for r in repository.get_unlocks(session, player_id)},
+                observed_items=items,
+                container_scans=scans,
                 quest_points=player.quest_points,
                 combat_level=player.combat_level,
                 members=player.members,

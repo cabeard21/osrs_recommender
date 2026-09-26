@@ -56,14 +56,14 @@ refresh procedure.
 
 ## Verification policy
 
-GitHub Actions is intentionally a fast deployment gate. It runs formatting, linting, production
-type checks, content validation, and `make test-ci`; that test lane excludes the slow golden corpus
-and browser suite. Container smoke validation runs alongside it, and successful `main` pushes still
-publish both amd64 and arm64 images.
+For iteration, run `make test` for the fast deterministic suite. Install Chromium once with
+`make browsers`, then run `make test-full` before merging; it adds the focused Playwright browser
+smokes. `make test-cov` runs the complete suite with an 80% coverage floor across the supported
+account, goal, sync, API, persistence, and gear modules.
 
-The exhaustive gate is local-only. Install Chromium once with `make browsers`, then run
-`make test-cov` to execute the full Python, golden-corpus, and Playwright suites with the 80% coverage
-floor. CI must not install Chromium or run those exhaustive checks.
+GitHub Actions runs formatting, linting, production type checks, content validation, and the
+complete coverage suite with Chromium. Container smoke validation runs alongside it, and
+successful `main` pushes publish both amd64 and arm64 images.
 
 ## Optional: the two AI features
 
@@ -94,8 +94,12 @@ Both features are honest about what they do not know: an unobserved account type
 and never *main*, unobserved coins are *unknown* and never zero, and anything drawn from the
 model's own knowledge of the game rather than from your account is flagged as such.
 
-Quest Cape account tools are also available through an optional private Streamable HTTP MCP
-sidecar (`make run-mcp`). It exposes four factual, read-only tools for ChatGPT through OpenAI
-Secure MCP Tunnel, with one configured player ID and no recommendation ranking. It is disabled
-by default and does not expose the dashboard or sync API. See the
-[Milestone 1 handoff and tunnel setup](docs/Refactor_Milestone1_Implementation.md).
+Quest Cape and curated gear facts are also available through an optional private Streamable
+HTTP MCP sidecar (`make run-mcp`). Its eight read-only tools expose observed account state,
+Quest Cape progress, gear progression, factual candidate filters, item details, and limited
+gear-change evaluations to ChatGPT through OpenAI Secure MCP Tunnel. Gear order is a curated
+guide order, not a combat ranking. Item ownership is dated by container scans, and a successful
+gear-change evaluation does not establish that the proposed items work together in one loadout.
+The sidecar is disabled by default, uses one configured player ID, and does not expose the
+dashboard or sync API. See the [Account Companion implementation and tunnel setup](docs/Refactor_Milestone1_Implementation.md)
+and the [Milestone 2 gear contracts and limits](docs/Refactor_Milestone2_Implementation.md).

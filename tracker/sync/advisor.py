@@ -59,6 +59,12 @@ from tracker.db.projection import build_player_state
 from tracker.db.repository import roadmap_selection
 from tracker.db.session import session_scope
 from tracker.domain.types import Freshness, PlayerState
+from tracker.estimation.prices import (
+    REASON_CACHED_HIGH,
+    REASON_CACHED_LOW,
+    REASON_RECENT_HIGH,
+    REASON_RECENT_LOW,
+)
 from tracker.freshness.policy import freshness
 from tracker.integrations.llm.types import AdvisorProvider, AdvisorTurn
 from tracker.progression.engine import compute_capability_states
@@ -376,6 +382,17 @@ def _price_facts(session: Session, content: Content) -> dict[int, PriceFact]:
     cascade actually costed, rather than a raw quote the estimator may have declined to use.
     """
     names = {item.item_id: item.name for item in content.items.values() if item.item_id is not None}
+
+    def selected_trade_at(row: ItemPrice) -> datetime | None:
+        if row.selected_price_gp is None:
+            return row.high_trade_at if row.high_price_gp is not None else None
+        if row.selection_reason in {REASON_RECENT_HIGH, REASON_CACHED_HIGH}:
+            return row.high_trade_at
+        if row.selection_reason in {REASON_RECENT_LOW, REASON_CACHED_LOW}:
+            return row.low_trade_at
+        # Static hints and unknown selection reasons have no attributable market trade.
+        return None
+
     return {
         row.item_id: PriceFact(
             item_id=row.item_id,
@@ -383,7 +400,7 @@ def _price_facts(session: Session, content: Content) -> dict[int, PriceFact]:
             price_gp=(
                 row.selected_price_gp if row.selected_price_gp is not None else row.high_price_gp
             ),
-            trade_at=row.high_trade_at,
+            trade_at=selected_trade_at(row),
             fetched_at=row.fetched_at,
             provider=row.provider,
         )

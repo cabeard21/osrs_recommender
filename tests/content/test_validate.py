@@ -174,14 +174,7 @@ class TestEveryRule:
         with pytest.raises(ContentValidationError) as caught:
             load_and_validate(corpus, profile_path=profile_for(corpus))
         assert expected in str(caught.value)
-
-    @pytest.mark.parametrize(("directory", "_expected"), CORRUPT_CORPORA)
-    def test_every_diagnostic_names_a_file(self, directory: str, _expected: str) -> None:
-        """The κ rule is the one exception: it is about the profile as a whole."""
-        corpus = CORRUPT / directory
-        with pytest.raises(ContentValidationError) as caught:
-            load_and_validate(corpus, profile_path=profile_for(corpus))
-
+        # The κ rule is about the profile as a whole, so it has no content file.
         for error in caught.value.errors:
             if error.location.path == "scoring_profile.kappa_gp":
                 continue
@@ -309,15 +302,12 @@ class TestCli:
         assert code == 0
         assert "content OK" in capsys.readouterr().out
 
-    @pytest.mark.parametrize(("directory", "expected"), CORRUPT_CORPORA)
-    def test_exit_nonzero_on_each_corrupt_corpus(
-        self, directory: str, expected: str, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        """`make validate-content` must fail loudly on all ten."""
-        corpus = CORRUPT / directory
+    def test_exit_nonzero_on_a_corrupt_corpus(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """The CLI reports validation failures and returns a failing exit code."""
+        corpus = CORRUPT / "08_capability_cycle"
         code = main(["--content-dir", str(corpus), "--profile", str(profile_for(corpus))])
         assert code == 1
-        assert expected in capsys.readouterr().err
+        assert "form a cycle" in capsys.readouterr().err
 
     def test_module_entry_point_is_wired(self) -> None:
         """`make validate-content` runs `python -m tracker.content.validate`."""

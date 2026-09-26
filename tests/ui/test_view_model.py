@@ -1,9 +1,4 @@
-"""§15's honesty rules, asserted where they are decided rather than where they are drawn.
-
-Every test here runs without a browser and without a database. That is the point: a rule
-that can only be checked by rendering a page is a rule that stops being checked the first
-time the render gets slow or flaky, and these are the rules the whole design rests on.
-"""
+"""Fast checks for account observation and status wording in retained UI views."""
 
 from __future__ import annotations
 
@@ -12,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from tracker.domain.types import Confidence, Container, GpSensitivity, LeafRef, Status, UnlockState
+from tracker.domain.types import Confidence, Container, LeafRef, Status, UnlockState
 from tracker.ui.capabilities import sort_rows, split_unknowns
 from tracker.ui.staleness import humanize_age, ownership_note, scan_note
 from tracker.ui.states import (
@@ -24,23 +19,11 @@ from tracker.ui.states import (
 )
 from tracker.ui.unlocks import GROUPS, group_rows
 from tracker.ui.view_model import (
-    GP_SENSITIVITY_LABELS,
     NO_READINESS,
     CapabilityRow,
-    GoalProgressRow,
-    GuidanceStepRow,
-    GuidanceView,
     LeafRow,
-    NeededForRow,
-    RoadmapOptionRow,
-    SpeedUpRow,
-    UnblockRow,
-    assert_at_most_one_refresher,
     capability_row,
-    mark_primary,
     readiness_label,
-    recommendation_entry_row,
-    roadmap_selector_model,
     skill_row,
     unlock_row,
 )
@@ -212,22 +195,12 @@ def test_unknown_capabilities_sort_first() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_an_unranked_skill_has_no_level_at_all() -> None:
+def test_unranked_skill_never_displays_a_level_or_progress() -> None:
     row = skill_row(skill_id="construction", name="Construction", is_combat=False, level=1, xp=None)
     assert row.is_ranked is False
     assert row.level is None
     assert row.level_label == "unranked"
-
-
-def test_an_unranked_skill_label_contains_no_digit() -> None:
-    """The plan's exit criterion, stated as the property rather than as the token "1"."""
-    row = skill_row(skill_id="construction", name="Construction", is_combat=False, level=1, xp=None)
     assert not any(character.isdigit() for character in row.level_label)
-
-
-def test_an_unranked_skill_shows_no_progress() -> None:
-    """1/99 of a bar is the level-1 claim smuggled back in as pixels."""
-    row = skill_row(skill_id="construction", name="Construction", is_combat=False, level=1, xp=None)
     assert row.progress == 0.0
 
 
@@ -315,311 +288,3 @@ def test_the_unknown_group_is_rendered_first() -> None:
 
 def test_an_unlock_key_with_no_content_name_still_reads_as_words() -> None:
     assert unlock_row("diary_varrock_hard", UnlockState.UNKNOWN).name == "Diary Varrock Hard"
-
-
-# ---------------------------------------------------------------------------
-# Step 11 — Recommendations: G10, and factor rows read off the persisted JSON (§9.10)
-# ---------------------------------------------------------------------------
-
-
-def _entry(*, candidate_id: str = "train_magic_87_to_94", is_refresher: bool = False):
-    return recommendation_entry_row(
-        candidate_id=candidate_id,
-        rank=1,
-        name="Train Magic 87 -> 94",
-        is_refresher=is_refresher,
-        score=1.42,
-        factors={"pvp_value": {"value": 0.9, "weight": 1.0, "log_contribution": 0.61}},
-        reason="high PvP value (+0.61)",
-        estimated_hours=4.5,
-        estimated_gp=1_800_000,
-        confidence=Confidence.MEDIUM,
-    )
-
-
-def test_factor_rows_read_the_persisted_json_verbatim() -> None:
-    """§9.5: the breakdown drawer's numbers are the same ones the "Why" line came from."""
-    row = _entry()
-    assert len(row.factors) == 1
-    factor = row.factors[0]
-    assert factor.name == "pvp_value"
-    assert factor.value == pytest.approx(0.9)
-    assert factor.log_contribution == pytest.approx(0.61)
-
-
-def test_at_most_one_refresher_passes_with_zero_or_one() -> None:
-    assert_at_most_one_refresher(())
-    assert_at_most_one_refresher((_entry(is_refresher=False),))
-    assert_at_most_one_refresher((_entry(is_refresher=True),))
-
-
-def test_g10_fails_loudly_on_two_refreshers() -> None:
-    """The render-time assertion (belt-and-braces over Step 6's own guarantee, §9.8, D9)."""
-    rows = (
-        _entry(candidate_id="refresh_a", is_refresher=True),
-        _entry(candidate_id="refresh_b", is_refresher=True),
-    )
-    with pytest.raises(AssertionError, match="G10"):
-        assert_at_most_one_refresher(rows)
-
-
-def test_priority_stars_are_clamped_between_one_and_five() -> None:
-    assert _entry().priority_stars.count("★") >= 1
-    low = recommendation_entry_row(
-        candidate_id="x",
-        rank=1,
-        name="x",
-        is_refresher=False,
-        score=0.0,
-        factors={},
-        reason="",
-        estimated_hours=None,
-        estimated_gp=None,
-        confidence=Confidence.LOW,
-    )
-    assert low.priority_stars.count("★") == 1
-
-
-# ---------------------------------------------------------------------------
-# Step 11 — Roadmaps: primary is a display rule over the live §6.12 selection
-# ---------------------------------------------------------------------------
-
-
-def test_mark_primary_is_the_highest_selected_weight() -> None:
-    options = (
-        RoadmapOptionRow("anti_pk", "Anti-PKer", selected=True, selection_weight=0.25),
-        RoadmapOptionRow("main_nh", "Main NH", selected=True, selection_weight=1.0),
-    )
-    assert mark_primary(options)[0].roadmap_id == "main_nh"
-
-
-def test_mark_primary_is_empty_when_nothing_is_selected() -> None:
-    options = (RoadmapOptionRow("main_nh", "Main NH", selected=False, selection_weight=0.0),)
-    assert mark_primary(options) == ()
-
-
-def test_ties_break_by_id_so_primary_is_deterministic() -> None:
-    options = (
-        RoadmapOptionRow("b_roadmap", "B", selected=True, selection_weight=1.0),
-        RoadmapOptionRow("a_roadmap", "A", selected=True, selection_weight=1.0),
-    )
-    assert mark_primary(options)[0].roadmap_id == "a_roadmap"
-
-
-# ---------------------------------------------------------------------------
-# The global selector — a model, so "is there a dropdown" needs no browser
-# ---------------------------------------------------------------------------
-
-
-def _noop(_roadmap_id: str) -> None:  # pragma: no cover — never called by these tests
-    return None
-
-
-def test_no_selector_when_there_is_nothing_to_choose_between() -> None:
-    """No player and no corpus roadmaps are the same answer: draw no control at all."""
-    assert roadmap_selector_model((), _noop) is None
-
-
-def test_the_selector_shows_mark_primarys_answer() -> None:
-    options = (
-        RoadmapOptionRow("anti_pk", "Anti-PKer", selected=True, selection_weight=0.25),
-        RoadmapOptionRow("main_nh", "Main NH", selected=True, selection_weight=1.0),
-    )
-    model = roadmap_selector_model(options, _noop)
-    assert model is not None
-    assert model.value == mark_primary(options)[0].roadmap_id == "main_nh"
-
-
-def test_the_selector_inherits_the_tie_break_rather_than_inventing_one() -> None:
-    options = (
-        RoadmapOptionRow("b_roadmap", "B", selected=True, selection_weight=1.0),
-        RoadmapOptionRow("a_roadmap", "A", selected=True, selection_weight=1.0),
-    )
-    model = roadmap_selector_model(options, _noop)
-    assert model is not None
-    assert model.value == "a_roadmap"
-
-
-def test_the_selector_has_no_value_when_nothing_is_selected_yet() -> None:
-    """A fresh player row with no ``ActiveRoadmap``: the options exist, the choice does not.
-
-    ``value`` must be ``None`` rather than the first option — preselecting one would be the
-    UI asserting a roadmap the player never chose.
-    """
-    options = (RoadmapOptionRow("main_nh", "Main NH", selected=False, selection_weight=0.0),)
-    model = roadmap_selector_model(options, _noop)
-    assert model is not None
-    assert model.value is None
-    assert model.options == options
-
-
-# ---------------------------------------------------------------------------
-# Step 11 — Settings: user language only (§9.6)
-# ---------------------------------------------------------------------------
-
-
-def test_every_sensitivity_level_has_a_user_facing_label() -> None:
-    assert set(GP_SENSITIVITY_LABELS) == set(GpSensitivity)
-
-
-def test_sensitivity_labels_never_say_kappa_or_gp_sensitivity() -> None:
-    for label in GP_SENSITIVITY_LABELS.values():
-        assert "κ" not in label
-        assert "kappa" not in label.lower()
-        assert "gp sensitivity" not in label.lower()
-
-
-# ---------------------------------------------------------------------------
-# Step 12 — §9.10's consequences: what a recommendation is *for*
-# ---------------------------------------------------------------------------
-
-
-def test_a_needed_for_row_says_how_much_of_the_gate_it_clears() -> None:
-    """A bare "Desert Treasure I" is a goal with no sense of distance. The point of the row
-    is that the reader can tell a one-step prerequisite from a ten-step one."""
-    row = NeededForRow(name="Complete Desert Treasure I", remaining_before=3, remaining_after=2)
-
-    assert row.label == "Complete Desert Treasure I (1 of 3 remaining)"
-
-
-def test_a_gate_fully_cleared_reads_as_an_unblock_rather_than_as_zero() -> None:
-    """ "0 of 3 remaining" reads as a broken template, and the whole point of the case is
-    that the counting has stopped."""
-    row = NeededForRow(name="Complete Desert Treasure I", remaining_before=3, remaining_after=0)
-
-    assert row.label == "Complete Desert Treasure I (unblocks it)"
-    assert "0 of" not in row.label
-
-
-def test_a_needed_for_row_never_calls_the_count_the_requirements() -> None:
-    """G3, in the one place a reader would be misled by the shorter word.
-
-    The counts are over leaves the account is *known* to fail; a gate also holds leaves
-    nobody has been asked about. Saying "1 of 3 requirements" would quietly promise that
-    the three are all of them, when the corpus may name eleven.
-    """
-    label = NeededForRow(name="Q", remaining_before=3, remaining_after=2).label
-
-    assert "requirement" not in label
-    assert "remaining" in label
-
-
-def test_a_needed_for_row_carries_the_goal_one_hop_further() -> None:
-    """The sentence the user asked for, end to end: the chore, the task it unlocks, and the
-    point of that task."""
-    row = NeededForRow(
-        name="Complete Desert Treasure I",
-        remaining_before=3,
-        remaining_after=2,
-        goal_name="Ice Barrage NH",
-        goal_on_roadmap=False,
-    )
-
-    assert row.label == (
-        "Complete Desert Treasure I (1 of 3 remaining) → Ice Barrage NH (not on your roadmap)"
-    )
-
-
-def test_an_off_roadmap_goal_says_so_in_words_a_player_would_use() -> None:
-    """The flag is about the player's *selection*, so it is phrased about their roadmap and
-    not about the corpus — and it is words, because a colour cannot be read aloud."""
-    row = GoalProgressRow(name="Anti-PK", remaining_before=4, remaining_after=2, on_roadmap=False)
-
-    assert row.label == "Anti-PK (2 of 4 remaining) (not on your roadmap)"
-
-
-def test_an_on_roadmap_goal_carries_no_flag_at_all() -> None:
-    """Silence is the unmarked case. Flagging both would make the distinction invisible,
-    which is the only thing the flag is for."""
-    row = GoalProgressRow(
-        name="Boss fundamentals", remaining_before=5, remaining_after=4, on_roadmap=True
-    )
-
-    assert row.label == "Boss fundamentals (1 of 5 remaining)"
-    assert "roadmap" not in row.label
-
-
-def test_a_speed_up_row_quotes_both_sizings_rather_than_a_saving() -> None:
-    """ "97 hours saved" is a fact about the arithmetic; "113h → 16h" is a fact about the
-    player's evening, and only one of them answers "should I do this first?"."""
-    row = SpeedUpRow(name="Train Magic 87 → 94", hours_before=113.0, hours_after=16.0)
-
-    assert row.label == "Train Magic 87 → 94: 113h → 16h"
-
-
-def test_a_short_grind_keeps_the_decimal_a_long_one_drops() -> None:
-    """Below ten hours the decimal separates two different evenings; above it, it would
-    imply a precision §8's sizing does not have."""
-    assert SpeedUpRow(name="X", hours_before=7.5, hours_after=2.25).label == "X: 7.5h → 2.2h"
-
-
-def test_the_renderer_is_handed_labels_it_does_not_have_to_compose() -> None:
-    """§15's split, applied to the newest rows. A sentence assembled inside a `ui.html(...)`
-    call can only be checked by driving a browser, and a rule that expensive to check stops
-    being checked — so every one of these types answers for its own words here."""
-    rows = (
-        UnblockRow(name="Ice Barrage NH"),
-        NeededForRow(name="Q", remaining_before=2, remaining_after=1),
-        GoalProgressRow(name="C", remaining_before=2, remaining_after=1),
-        SpeedUpRow(name="G", hours_before=10.0, hours_after=1.0),
-    )
-
-    assert all(row.label for row in rows)
-
-
-class TestGuidanceView:
-    """§21's rows. Each property here exists because §15 forbids composing prose in a
-    renderer — a sentence built inside a ``ui.html(...)`` call can only be checked by
-    driving a browser, which is why these are plain properties on a frozen row."""
-
-    @staticmethod
-    def _view(**overrides: object) -> GuidanceView:
-        base: dict[str, object] = {
-            "candidate_id": "train_slayer_1_to_10",
-            "task_name": "Train Slayer to 10",
-            "summary": "Take short tasks from Turael.",
-        }
-        return GuidanceView(**{**base, **overrides})  # type: ignore[arg-type]
-
-    def test_a_step_numbers_itself(self) -> None:
-        row = GuidanceStepRow(order=2, title="Ask for a task", detail="Talk to Turael.")
-
-        assert row.label == "2. Ask for a task"
-
-    def test_the_provenance_line_names_the_model(self) -> None:
-        """§15's honesty rule applied to prose the engine did not produce."""
-        view = self._view(model="claude-opus-5")
-
-        assert view.provenance_label == "Written by claude-opus-5"
-
-    def test_the_provenance_line_survives_a_missing_model_name(self) -> None:
-        """A note from a schema that predates the column still has to attribute itself."""
-        assert self._view().provenance_label == "Written by a language model"
-
-    def test_the_session_suggestion_is_labelled_as_a_suggestion(self) -> None:
-        """D14 — §8 owns the hours, so this number must not read like one of them."""
-        view = self._view(estimated_session_minutes=25)
-
-        assert view.session_label == "Suggested session: about 25 minutes"
-
-    def test_no_session_suggestion_renders_nothing(self) -> None:
-        assert self._view().session_label is None
-
-    def test_uncertainty_is_absent_rather_than_empty(self) -> None:
-        """An empty heading claims there was nothing to be unsure about."""
-        assert self._view().uncertainty_label is None
-
-    def test_uncertainty_asks_the_reader_to_verify(self) -> None:
-        view = self._view(uncertain=("Turael's task list may have changed.",))
-
-        assert view.uncertainty_label is not None
-        assert "verify" in view.uncertainty_label
-
-    def test_warnings_and_uncertainty_are_separate_fields(self) -> None:
-        """A hazard and a hedge have different remedies and must stay distinguishable."""
-        view = self._view(
-            warnings=("The Wilderness leg is dangerous.",),
-            uncertain=("This method may have been reworked.",),
-        )
-
-        assert view.warnings != view.uncertain

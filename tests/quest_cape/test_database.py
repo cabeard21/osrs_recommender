@@ -116,13 +116,20 @@ def test_snapshot_and_evaluations_are_read_only(tmp_path, service, monkeypatch):
     assert account.skills["agility"].xp is None
     assert "magic" not in account.skills
     assert account.quest_observations["a"].source == "runelite"
-    service.get_goal_status(account)
-    service.get_available_actions(account)
-    service.evaluate_action(account, CompleteQuest(type="complete_quest", quest="a"))
+    status = service.get_goal_status(account)
+    assert (status.total, status.completed, status.remaining) == (5, 0, 5)
+    actions = service.get_available_actions(account)
+    assert [action.quest for action in actions.quest_actions] == ["a"]
+    assert [action.target_level for action in actions.skill_actions] == [68, 70]
+    quest_result = service.evaluate_action(account, CompleteQuest(type="complete_quest", quest="a"))
+    assert quest_result.completion_delta == 1
+    assert account.quests["a"] is QuestStatus.NOT_STARTED
     assert dump() == before
-    service.evaluate_action(
+    training_result = service.evaluate_action(
         account, TrainSkill(type="train_skill", skill="agility", target_level=70)
     )
+    assert training_result.quests_newly_available == ("d",)
+    assert account.skills["agility"].level == 66
     assert dump() == before
     with pytest.raises(ValueError):
         service.evaluate_action(account, CompleteQuest(type="complete_quest", quest="invalid"))

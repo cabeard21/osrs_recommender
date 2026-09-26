@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from tracker.accounts.snapshot import AccountSnapshot
+from tracker.accounts.snapshot import AccountSnapshot, ContainerScanFact, ObservedItemFact
 from tracker.content.requirements import parse
-from tracker.domain.types import QuestStatus, SkillState, Source, Tri
+from tracker.domain.types import Container, QuestStatus, SkillState, Source, Tri
 from tracker.quest_cape.catalog import QuestCatalog, load_catalog
 from tracker.quest_cape.requirements import evaluate_requirement
 from tracker.quest_cape.service import (
@@ -32,6 +32,50 @@ from tracker.quest_cape.service import (
 )
 def test_requirement(snapshot, requirement, status):
     assert evaluate_requirement(snapshot, parse(requirement)).status is status
+
+
+def test_unsupported_requirement_explains_unknown(snapshot):
+    result = evaluate_requirement(snapshot, parse({"milestone": "unmodeled_gate"}))
+
+    assert result.status is Tri.UNKNOWN
+    assert result.kind == "milestone"
+    assert "unsupported" in result.reason.lower()
+
+
+def test_item_requirement_uses_recognized_variant_and_scan_coverage(snapshot):
+    scans = {
+        container: ContainerScanFact(container, snapshot.last_sync_at, Source.RUNELITE.value)
+        for container in Container
+    }
+    item_ids = {"blowpipe": frozenset({12924, 12926})}
+    requirement = parse({"item": "blowpipe"})
+    held = replace(
+        snapshot,
+        observed_items={
+            (12926, Container.BANK): ObservedItemFact(
+                12926, Container.BANK, 1, Source.RUNELITE.value, snapshot.last_sync_at
+            )
+        },
+        container_scans=scans,
+    )
+
+    assert evaluate_requirement(held, requirement, item_ids_by_key=item_ids).status is Tri.SATISFIED
+    assert (
+        evaluate_requirement(
+            replace(held, observed_items={}), requirement, item_ids_by_key=item_ids
+        ).status
+        is Tri.UNSATISFIED
+    )
+    assert (
+        evaluate_requirement(
+            replace(
+                held, observed_items={}, container_scans={Container.BANK: scans[Container.BANK]}
+            ),
+            requirement,
+            item_ids_by_key=item_ids,
+        ).status
+        is Tri.UNKNOWN
+    )
 
 
 def test_direct_snapshot_canonicalizes_legacy_runecrafting_observation(snapshot):

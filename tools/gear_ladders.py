@@ -595,6 +595,8 @@ REQUIREMENTS: Mapping[str, Mapping[str, Any]] = {
     "Pegasian boots": {"skill": {"ranged": 75, "defence": 75}},
     "Avernic treads": {"skill": {"defence": 80, "strength": 80, "ranged": 80, "magic": 80}},
     "Ava's assembler": {"skill": {"ranged": 70}},
+    "Ava's attractor": {"skill": {"ranged": 30}},
+    "Ava's accumulator": {"skill": {"ranged": 50}},
     "Dizana's quiver": {"skill": {"ranged": 75}},
     "Necklace of anguish": {"skill": {"hitpoints": 75}},
     "Necklace of rupture": {"skill": {"hitpoints": 90}},
@@ -691,6 +693,10 @@ REQUIREMENTS: Mapping[str, Mapping[str, Any]] = {
     "Tome of fire": {"skill": {"magic": 50}},
     "Tome of water": {"skill": {"magic": 50}},
     "Ring of suffering": {"skill": {"hitpoints": 75}},
+    "Ring of suffering (i)": {"skill": {"hitpoints": 75}},
+    "Book of law": {"quest": "horror_from_the_deep"},
+    "Book of darkness": {"quest": "horror_from_the_deep"},
+    "Saradomin cape": {"skill": {"magic": 60}},
 }
 
 #: Rungs the wiki states have no requirement to equip.
@@ -733,14 +739,11 @@ UNGATED: frozenset[str] = frozenset(
         "Amulet of blood fury",
         "Berserker ring",
         "Berserker ring (i)",
-        "Ring of suffering (i)",
         "Shortbow",
         "Leather cowl",
         "Leather body",
         "Leather chaps",
         "Leather vambraces",
-        "Ava's attractor",
-        "Ava's accumulator",
         "Amulet of power",
         "Amulet of glory",
         "Explorer's ring 1",
@@ -748,16 +751,13 @@ UNGATED: frozenset[str] = frozenset(
         "Explorer's ring 3",
         "Explorer's ring 4",
         "Lightbearer",
-        "Book of law",
         "Staff of air",
         "Blue wizard hat",
         "Blue wizard robe",
         "Zamorak monk bottom",
         "Combat bracelet",
-        "Saradomin cape",
         "Amulet of magic",
         "Seers ring (i)",
-        "Book of darkness",
     }
 )
 

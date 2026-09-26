@@ -515,8 +515,8 @@ def app(
     settings = Settings(
         bind_address="127.0.0.1",
         api_token="ui-test-token-1234567890",
-        # The advisor's own throttles would otherwise refuse the second browser test to ask a
-        # question — §22.7's interval is measured against a real clock this fixture does not own.
+        # The advisor's own throttles would otherwise make browser question checks depend on
+        # test order — §22.7's interval is measured against a real clock this fixture does not own.
         integrations={"llm": {"advisor": {"min_interval_seconds": 0}}},
     )
     return create_app(

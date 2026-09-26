@@ -6,7 +6,22 @@ import pytest
 from tracker.mcp import healthcheck
 
 
-def test_probe_validates_tools():
+@pytest.mark.parametrize(
+    "tool_names",
+    [
+        {
+            "get_account_summary",
+            "get_goal_status",
+            "get_available_actions",
+            "evaluate_action",
+            "get_gear_progression",
+            "get_gear_candidates",
+            "get_item_details",
+            "evaluate_gear_change",
+        },
+    ],
+)
+def test_probe_validates_tools(tool_names):
     def respond(request):
         assert request.url.path == "/mcp"
         return httpx.Response(
@@ -14,7 +29,7 @@ def test_probe_validates_tools():
             json={
                 "jsonrpc": "2.0",
                 "id": 1,
-                "result": {"tools": [{"name": n} for n in healthcheck.EXPECTED_TOOLS]},
+                "result": {"tools": [{"name": n} for n in tool_names]},
             },
         )
 
@@ -28,6 +43,9 @@ def test_probe_validates_tools():
         {},
         {"result": {"tools": []}},
         {"result": {"tools": [{"name": "other"}]}},
+        {"result": {"tools": [{"name": n} for n in healthcheck.BASE_TOOLS]}},
+        {"result": {"tools": [{"name": n} for n in healthcheck.BASE_TOOLS | {"get_item_details"}]}},
+        {"result": {"tools": [{"name": n} for n in healthcheck.BASE_TOOLS] * 2}},
         {"result": {"tools": None}},
         {"result": {"tools": [None]}},
     ],

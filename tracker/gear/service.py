@@ -1,0 +1,431 @@
+"""Read-only account-aware facts about the authored gear progression corpus.
+
+Ladder order is editorial progression, not measured combat strength. This service
+does not choose a setup, infer current equipment slots, or validate joint loadouts.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
+from typing import Any
+
+from tracker.accounts.requirements import evaluate_requirement
+from tracker.accounts.snapshot import AccountSnapshot
+from tracker.content.loader import Content
+from tracker.content.schema import Item
+from tracker.domain.types import Container, Tri
+from tracker.estimation.prices import PriceRecord, resolve_price
+from tracker.gear.ladders import build_ladders
+
+_STYLES = frozenset({"melee", "ranged", "magic"})
+_OWNERSHIP = frozenset({"owned", "unowned", "unknown"})
+_WEAR = frozenset({status.value for status in Tri})
+_ACQUISITION = frozenset({"tradeable", "untradeable", "unknown"})
+_LIMITATIONS = (
+    "Joint loadout validity is not evaluated, including two-handed/offhand and "
+    "ammunition compatibility.",
+    "Exact replaced items and combat stat or DPS deltas are unavailable from current "
+    "observations and catalog.",
+)
+
+
+class GearService:
+    """Pure gear projection over one immutable snapshot and injected price rows."""
+
+    def __init__(self, content: Content) -> None:
+        self.content = content
+        self._ladders = build_ladders(content)
+        self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
+
+    def progression(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        slot: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """An authored ladder page, with no selected or recommended rung."""
+        self._validate_style_slot(style, slot)
+        self._validate_page(offset, limit)
+        entries = self._entries(style, slot)
+        return self._page(
+            snapshot,
+            entries,
+            offset,
+            limit,
+            price_records or {},
+            now or datetime.now(UTC),
+            style=style,
+            slot=slot,
+        )
+
+    def candidates(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        slot: str | None = None,
+        ownership: str | None = None,
+        wear_status: str | None = None,
+        acquisition: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Filter only on facts; do not rank items by utility or price."""
+        self._validate_style_slot(style, slot)
+        self._validate_page(offset, limit)
+        for label, value, choices in (
+            ("ownership", ownership, _OWNERSHIP),
+            ("wear_status", wear_status, _WEAR),
+            ("acquisition", acquisition, _ACQUISITION),
+        ):
+            if value is not None and value not in choices:
+                raise ValueError(f"invalid {label}: {value!r}")
+        records = price_records or {}
+        evaluated_at = now or datetime.now(UTC)
+        items = [
+            self._item_fact(snapshot, item, records, evaluated_at)
+            for item in self._entries(style, slot)
+        ]
+        filtered = [
+            item
+            for item in items
+            if (ownership is None or item["ownership"]["status"] == ownership)
+            and (wear_status is None or item["wear"]["status"] == wear_status)
+            and (acquisition is None or item["acquisition"] == acquisition)
+        ]
+        return self._slice(snapshot, filtered, offset, limit, style=style, slot=slot)
+
+    def item_details(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        content_id: str | None = None,
+        numeric_item_id: int | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        if (content_id is None) == (numeric_item_id is None):
+            raise ValueError("provide exactly one of content_id or numeric_item_id")
+        if content_id is not None:
+            item = self.content.items.get(content_id)
+            if item is None:
+                raise ValueError(f"unknown content_id: {content_id}")
+            matches = [item]
+        else:
+            if (
+                isinstance(numeric_item_id, bool)
+                or not isinstance(numeric_item_id, int)
+                or numeric_item_id <= 0
+            ):
+                raise ValueError("numeric_item_id must be a positive integer")
+            matches = [
+                item
+                for item in self.content.items.values()
+                if numeric_item_id in item.owned_item_ids
+            ]
+            if not matches:
+                raise ValueError(f"unknown numeric_item_id: {numeric_item_id}")
+        ordered = sorted(
+            matches, key=lambda item: (item.style or "", item.slot or "", item.tier or 0, item.id)
+        )
+        records = price_records or {}
+        evaluated_at = now or datetime.now(UTC)
+        return {
+            **self._metadata(snapshot),
+            "query": {"content_id": content_id, "numeric_item_id": numeric_item_id},
+            "ambiguous": len(ordered) > 1,
+            "items": [self._item_fact(snapshot, item, records, evaluated_at) for item in ordered],
+        }
+
+    def evaluate_change(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        changes: Sequence[Mapping[str, str]],
+        expected_snapshot_id: str | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        self._validate_style_slot(style, None)
+        if expected_snapshot_id is not None and expected_snapshot_id != snapshot.fingerprint:
+            raise ValueError("snapshot_changed: retrieve current gear progression and candidates")
+        if (
+            isinstance(changes, str | bytes)
+            or not isinstance(changes, Sequence)
+            or not 1 <= len(changes) <= 5
+        ):
+            raise ValueError("changes must contain 1 to 5 items")
+        items: list[Item] = []
+        used_slots: set[str] = set()
+        used_ids: set[int] = set()
+        for change in changes:
+            if not isinstance(change, Mapping):
+                raise ValueError("each change requires string slot and content_id")
+            slot, content_id = change.get("slot"), change.get("content_id")
+            if not isinstance(slot, str) or not isinstance(content_id, str):
+                raise ValueError("each change requires string slot and content_id")
+            item = self.content.items.get(content_id)
+            if item is None or item.style != style or item.slot != slot or item.tier is None:
+                raise ValueError(f"item {content_id!r} is not an authored {style}/{slot} rung")
+            if slot in used_slots:
+                raise ValueError(f"duplicate slot: {slot}")
+            if used_ids.intersection(item.owned_item_ids):
+                raise ValueError(f"duplicate physical item: {content_id}")
+            used_slots.add(str(slot))
+            used_ids.update(item.owned_item_ids)
+            items.append(item)
+
+        records = price_records or {}
+        evaluated_at = now or datetime.now(UTC)
+        facts = [self._item_fact(snapshot, item, records, evaluated_at) for item in items]
+        subtotal = 0
+        reasons: set[str] = set()
+        proposal_facts = []
+        for fact in facts:
+            held = fact["ownership"]["status"]
+            if held == "owned":
+                proposal_facts.append({**fact, "purchase_status": "unnecessary"})
+                continue
+            if held == "unknown":
+                reasons.add("unknown_ownership")
+                proposal_facts.append({**fact, "purchase_status": "unknown"})
+                continue
+            if fact["acquisition"] == "untradeable":
+                reasons.add("unowned_untradeable")
+                proposal_facts.append({**fact, "purchase_status": "not_applicable"})
+            elif fact["acquisition"] == "unknown":
+                reasons.add("unknown_acquisition")
+                proposal_facts.append({**fact, "purchase_status": "unknown"})
+            else:
+                proposal_facts.append({**fact, "purchase_status": "necessary"})
+                if fact["price"]["amount_gp"] is None:
+                    reasons.add("unknown_price")
+                else:
+                    subtotal += fact["price"]["amount_gp"]
+        return {
+            **self._metadata(snapshot),
+            "style": style,
+            "items": proposal_facts,
+            "purchase_subtotal_gp": subtotal if not reasons else None,
+            "subtotal_unknown_reasons": sorted(reasons),
+            "joint_loadout_validity": "not_evaluated",
+            "limitations": list(_LIMITATIONS),
+        }
+
+    def _entries(self, style: str, slot: str | None) -> list[Item]:
+        return [
+            item
+            for ladder in self._ladders
+            if ladder.style == style and (slot is None or ladder.slot == slot)
+            for item in ladder.rungs
+        ]
+
+    def _page(
+        self,
+        snapshot: AccountSnapshot,
+        entries: list[Item],
+        offset: int,
+        limit: int,
+        records: Mapping[int, PriceRecord],
+        now: datetime,
+        *,
+        style: str,
+        slot: str | None,
+    ) -> dict[str, Any]:
+        page = [
+            self._item_fact(snapshot, item, records, now)
+            for item in entries[offset : offset + limit]
+        ]
+        return {
+            **self._metadata(snapshot),
+            "style": style,
+            "slot": slot,
+            "items": page,
+            "total": len(entries),
+            "offset": offset,
+            "limit": limit,
+            "next_offset": offset + limit if offset + limit < len(entries) else None,
+        }
+
+    def _slice(
+        self,
+        snapshot: AccountSnapshot,
+        items: list[dict[str, Any]],
+        offset: int,
+        limit: int,
+        *,
+        style: str,
+        slot: str | None,
+    ) -> dict[str, Any]:
+        return {
+            **self._metadata(snapshot),
+            "style": style,
+            "slot": slot,
+            "items": items[offset : offset + limit],
+            "total": len(items),
+            "offset": offset,
+            "limit": limit,
+            "next_offset": offset + limit if offset + limit < len(items) else None,
+        }
+
+    def _item_fact(
+        self,
+        snapshot: AccountSnapshot,
+        item: Item,
+        records: Mapping[int, PriceRecord],
+        now: datetime,
+    ) -> dict[str, Any]:
+        if item.gate_unknown:
+            known_requirements = (
+                evaluate_requirement(snapshot, item.requires, item_ids_by_key=self._item_ids_by_key)
+                if item.requires is not None
+                else None
+            )
+            wear = {
+                "status": "unknown",
+                "gate_unknown": True,
+                "requirements": known_requirements.model_dump(mode="json")
+                if known_requirements
+                else None,
+                "unmet": [leaf.model_dump(mode="json") for leaf in known_requirements.unmet()]
+                if known_requirements
+                else [],
+            }
+        elif item.requires is None:
+            wear = {
+                "status": "satisfied",
+                "gate_unknown": False,
+                "requirements": None,
+                "unmet": [],
+            }
+        else:
+            result = evaluate_requirement(
+                snapshot, item.requires, item_ids_by_key=self._item_ids_by_key
+            )
+            wear = {
+                "status": result.status.value,
+                "gate_unknown": False,
+                "requirements": result.model_dump(mode="json"),
+                "unmet": [leaf.model_dump(mode="json") for leaf in result.unmet()],
+            }
+        ownership = self._ownership(snapshot, item)
+        record = (
+            records.get(item.item_id)
+            if item.acquisition == "tradeable" and item.item_id is not None
+            else None
+        )
+        price = resolve_price(item, record, now=now) if item.acquisition == "tradeable" else None
+        return {
+            "content_id": item.id,
+            "name": item.name,
+            "numeric_item_id": item.item_id,
+            "variant_item_ids": list(item.variant_item_ids),
+            "curated_progression_member": (
+                item.style is not None and item.slot is not None and item.tier is not None
+            ),
+            "style": item.style,
+            "slot": item.slot,
+            "tier": item.tier,
+            "ownership": ownership,
+            "wear": wear,
+            "acquisition": item.acquisition or "unknown",
+            "acquired_from": item.acquired_from,
+            "price": {
+                "amount_gp": price.gp if price else None,
+                "layer": price.layer.value if price else "not_tradeable",
+                "selection_reason": price.selection_reason if price else "not a GE purchase",
+                "confidence": price.confidence.value if price else None,
+                "policy": price.policy.value if price else None,
+                "selected_trade_at": price.trade_at.isoformat()
+                if price and price.trade_at
+                else None,
+                "fetched_at": record.fetched_at.isoformat() if record else None,
+                "provider": getattr(record, "provider", None) if record else None,
+            },
+        }
+
+    @staticmethod
+    def _ownership(snapshot: AccountSnapshot, item: Item) -> dict[str, Any]:
+        scans = {
+            container.value: (
+                {"scanned_at": scan.scanned_at.isoformat(), "source": scan.source}
+                if (scan := snapshot.container_scans.get(container)) is not None
+                else None
+            )
+            for container in Container
+        }
+        # A newer accepted full scan supersedes earlier sightings in the same container.
+        sightings = [
+            fact
+            for (item_id, container), fact in snapshot.observed_items.items()
+            if item_id in item.owned_item_ids
+            and fact.quantity > 0
+            and (
+                (scan := snapshot.container_scans.get(container)) is None
+                or fact.observed_at >= scan.scanned_at
+            )
+        ]
+        status = (
+            "owned"
+            if sightings
+            else ("unowned" if all(value is not None for value in scans.values()) else "unknown")
+        )
+        return {
+            "status": status,
+            "meaning": "not observed in the latest accepted scans"
+            if status == "unowned"
+            else "observed item sighting"
+            if status == "owned"
+            else "incomplete container scan coverage",
+            "observed_containers": sorted({fact.container.value for fact in sightings}),
+            "sightings": [
+                {
+                    "numeric_item_id": fact.item_id,
+                    "container": fact.container.value,
+                    "quantity": fact.quantity,
+                    "source": fact.source,
+                    "observed_at": fact.observed_at.isoformat(),
+                }
+                for fact in sorted(sightings, key=lambda f: (f.container.value, f.item_id))
+            ],
+            "container_scans": scans,
+        }
+
+    @staticmethod
+    def _metadata(snapshot: AccountSnapshot) -> dict[str, Any]:
+        return {
+            "snapshot_id": snapshot.fingerprint,
+            "last_sync_at": snapshot.last_sync_at.isoformat() if snapshot.last_sync_at else None,
+            "container_scans": {
+                container.value: (
+                    {"scanned_at": scan.scanned_at.isoformat(), "source": scan.source}
+                    if (scan := snapshot.container_scans.get(container)) is not None
+                    else None
+                )
+                for container in Container
+            },
+        }
+
+    def _validate_style_slot(self, style: str, slot: str | None) -> None:
+        if style not in _STYLES:
+            raise ValueError(f"invalid style: {style!r}")
+        if slot is not None and not any(
+            ladder.style == style and ladder.slot == slot for ladder in self._ladders
+        ):
+            raise ValueError(f"unknown authored slot for {style}: {slot!r}")
+
+    @staticmethod
+    def _validate_page(offset: int, limit: int) -> None:
+        if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+            raise ValueError("offset must be a nonnegative integer")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")

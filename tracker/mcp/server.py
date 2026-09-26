@@ -1,19 +1,23 @@
-"""Four read-only tools. Every result comes from transport-independent services."""
+"""Read-only Account Companion tools backed by transport-independent services."""
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import asynccontextmanager
-from typing import Annotated, Any
+from datetime import UTC, datetime
+from typing import Annotated, Any, Literal, Protocol
 
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from starlette.routing import Mount, Route
 
+from tracker.accounts.snapshot import AccountSnapshot
+from tracker.estimation.prices import PriceRecord
 from tracker.mcp.accounts import SnapshotProvider
 from tracker.mcp.settings import MCPSettings
 from tracker.quest_cape.service import (
@@ -25,8 +29,80 @@ from tracker.quest_cape.service import (
     QuestCapeService,
 )
 
+GearStyle = Literal["melee", "ranged", "magic"]
+OwnershipFilter = Literal["owned", "unowned", "unknown"]
+WearFilter = Literal["satisfied", "unsatisfied", "unknown"]
+AcquisitionFilter = Literal["tradeable", "untradeable", "unknown"]
 
-def build_server(accounts: SnapshotProvider, quests: QuestCapeService) -> MCPServer[Any]:
+
+class GearChange(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    slot: str
+    content_id: str
+
+
+class GearToolService(Protocol):
+    def progression(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        slot: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+    def candidates(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        slot: str | None = None,
+        ownership: str | None = None,
+        wear_status: str | None = None,
+        acquisition: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+    def item_details(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        content_id: str | None = None,
+        numeric_item_id: int | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+    def evaluate_change(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str,
+        changes: Sequence[Mapping[str, str]],
+        expected_snapshot_id: str | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+
+class GearPriceProvider(Protocol):
+    def get_prices(self) -> Mapping[int, PriceRecord]: ...
+
+
+def build_server(
+    accounts: SnapshotProvider,
+    quests: QuestCapeService,
+    gear: GearToolService | None = None,
+    prices: GearPriceProvider | None = None,
+) -> MCPServer[Any]:
+    if (gear is None) != (prices is None):
+        raise ValueError("gear service and price provider must be configured together")
     server: MCPServer[Any] = MCPServer(
         "OSRS Account Companion",
         instructions="Tools return deterministic observations, not guaranteed current state. "
@@ -49,7 +125,10 @@ def build_server(accounts: SnapshotProvider, quests: QuestCapeService) -> MCPSer
         "evaluate_action is hypothetical and never saves changes. No XP rewards, item rewards, "
         "costs, or elapsed time are simulated. Distinguish these MCP facts from general OSRS "
         "knowledge and qualitative tradeoffs; do not attribute unsimulated efficiency "
-        "to the tools.",
+        "to the tools. Gear tools report curated progression, not DPS or objective best gear. "
+        "Ownership is dated: unowned means absent in each container's latest accepted scan, "
+        "which may be old or taken at different times. evaluate_gear_change does not check "
+        "joint loadout validity, replaced items, or combat stat deltas.",
     )
     annotations = ToolAnnotations(
         readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False
@@ -143,6 +222,96 @@ def build_server(accounts: SnapshotProvider, quests: QuestCapeService) -> MCPSer
         to detect intervening account changes.
         """
         return quests.evaluate_action(accounts.get_snapshot(), action, goal, expected_snapshot_id)
+
+    if gear is not None and prices is not None:
+
+        @server.tool(annotations=annotations)
+        def get_gear_progression(
+            style: GearStyle,
+            slot: str | None = None,
+            offset: Annotated[int, Field(ge=0)] = 0,
+            limit: Annotated[int, Field(ge=1, le=100)] = 50,
+        ) -> dict[str, Any]:
+            """Curated style/slot progression facts, in authored order, never a best-item choice.
+
+            Ownership and equipment-container sightings are dated observations. A page may
+            omit rungs; follow next_offset for the remainder.
+            """
+            return gear.progression(
+                accounts.get_snapshot(),
+                style=style,
+                slot=slot,
+                offset=offset,
+                limit=limit,
+                price_records=prices.get_prices(),
+                now=datetime.now(UTC),
+            )
+
+        @server.tool(annotations=annotations)
+        def get_gear_candidates(
+            style: GearStyle,
+            slot: str | None = None,
+            ownership: OwnershipFilter | None = None,
+            wear_status: WearFilter | None = None,
+            acquisition: AcquisitionFilter | None = None,
+            offset: Annotated[int, Field(ge=0)] = 0,
+            limit: Annotated[int, Field(ge=1, le=100)] = 50,
+        ) -> dict[str, Any]:
+            """Bounded curated items matching factual filters; order is not desirability."""
+            return gear.candidates(
+                accounts.get_snapshot(),
+                style=style,
+                slot=slot,
+                ownership=ownership,
+                wear_status=wear_status,
+                acquisition=acquisition,
+                offset=offset,
+                limit=limit,
+                price_records=prices.get_prices(),
+                now=datetime.now(UTC),
+            )
+
+        @server.tool(annotations=annotations)
+        def get_item_details(
+            content_id: str | None = None,
+            numeric_item_id: Annotated[int | None, Field(gt=0)] = None,
+        ) -> dict[str, Any]:
+            """Catalog memberships, requirements, ownership and cached price for one ID.
+
+            Supply exactly one identifier. Numeric IDs can match several authored entries;
+            the result reports all matches rather than guessing a style.
+            """
+            try:
+                return gear.item_details(
+                    accounts.get_snapshot(),
+                    content_id=content_id,
+                    numeric_item_id=numeric_item_id,
+                    price_records=prices.get_prices(),
+                    now=datetime.now(UTC),
+                )
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+
+        @server.tool(annotations=annotations)
+        def evaluate_gear_change(
+            style: GearStyle,
+            changes: Annotated[Sequence[GearChange], Field(min_length=1, max_length=5)],
+            expected_snapshot_id: str | None = None,
+        ) -> dict[str, Any]:
+            """Read-only facts and known purchase cost for 1–5 proposed catalog items.
+
+            A successful response explicitly says joint_loadout_validity=not_evaluated.
+            It does not establish that the proposed items can be worn together, identify
+            replaced gear, or calculate combat-stat or DPS changes.
+            """
+            return gear.evaluate_change(
+                accounts.get_snapshot(),
+                style=style,
+                changes=[change.model_dump() for change in changes],
+                expected_snapshot_id=expected_snapshot_id,
+                price_records=prices.get_prices(),
+                now=datetime.now(UTC),
+            )
 
     return server
 

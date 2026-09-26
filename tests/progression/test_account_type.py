@@ -15,11 +15,11 @@ from __future__ import annotations
 
 import pytest
 
+from tracker.content.errors import RequirementSyntaxError
 from tracker.content.loader import Content
 from tracker.content.requirements import (
     AccountTypeLeaf,
     MembersLeaf,
-    RequirementSyntaxError,
 )
 from tracker.content.requirements import parse as parse_requirement
 from tracker.content.validate import load_and_validate
@@ -40,9 +40,15 @@ def corpus() -> Content:
     return load_and_validate()
 
 
-def _evaluate(corpus: Content, requirement: object, **state: object) -> Tri:
+def _evaluate(
+    corpus: Content,
+    requirement: object,
+    *,
+    account_type: AccountType | None = None,
+    members: bool | None = None,
+) -> Tri:
     return (
-        Evaluator(PlayerState(player_id=1, **state), corpus)
+        Evaluator(PlayerState(player_id=1, account_type=account_type, members=members), corpus)
         .evaluate(parse_requirement(requirement))
         .value
     )

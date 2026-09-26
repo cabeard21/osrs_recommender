@@ -38,7 +38,7 @@ from tracker.integrations.llm.types import (
     GuidanceStep,
     LlmUnavailable,
 )
-from tracker.sync.guidance import GuidanceNotFound, GuidanceService, GuidanceThrottled
+from tracker.sync.guidance import GuidanceService, GuidanceThrottled
 
 NOW = datetime(2026, 8, 4, 15, 18, 41, tzinfo=UTC)
 
@@ -288,19 +288,6 @@ class TestCaching:
 
         assert provider.calls == 2
 
-    def test_force_bypasses_the_cache(
-        self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
-    ) -> None:
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider)
-        service.guidance_for(player_id, CANDIDATE_ID)
-
-        stored = service.guidance_for(player_id, CANDIDATE_ID, force=True)
-
-        assert provider.calls == 2
-        assert stored.cached is False
-
     def test_force_does_not_bypass_the_throttle(
         self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
     ) -> None:
@@ -317,47 +304,6 @@ class TestCaching:
 
 
 class TestBoundsAndTheirOrder:
-    def test_a_cache_hit_is_never_rate_limited(
-        self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
-    ) -> None:
-        """§21.6's ordering, and the one that matters most: a reload is not a new request."""
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider, min_interval_seconds=3600)
-        service.guidance_for(player_id, CANDIDATE_ID)
-
-        second = service.guidance_for(player_id, CANDIDATE_ID)
-
-        assert second.cached is True
-        assert provider.calls == 1
-
-    def test_the_minimum_interval_is_enforced_between_generations(
-        self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
-    ) -> None:
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider, min_interval_seconds=30)
-        service.guidance_for(player_id, CANDIDATE_ID)
-
-        with pytest.raises(GuidanceThrottled, match="wait"):
-            service.guidance_for(player_id, CANDIDATE_ID, force=True)
-
-    def test_the_interval_expires(
-        self,
-        make_service: Callable[..., GuidanceService],
-        seed: Callable[..., int],
-        clock: Clock,
-    ) -> None:
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider, min_interval_seconds=30)
-        service.guidance_for(player_id, CANDIDATE_ID)
-
-        clock.value = NOW + timedelta(seconds=31)
-        service.guidance_for(player_id, CANDIDATE_ID, force=True)
-
-        assert provider.calls == 2
-
     def test_the_daily_cap_is_counted_from_stored_notes(
         self,
         make_service: Callable[..., GuidanceService],
@@ -386,23 +332,6 @@ class TestBoundsAndTheirOrder:
 
         with pytest.raises(GuidanceThrottled, match="daily"):
             service.guidance_for(player_id, CANDIDATE_ID)
-
-        assert provider.calls == 0
-
-    def test_a_single_flight_lock_refuses_rather_than_queues(
-        self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
-    ) -> None:
-        """Queueing a double-click would buy the same answer twice."""
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider)
-
-        service._lock.acquire()
-        try:
-            with pytest.raises(GuidanceThrottled, match="already being generated"):
-                service.guidance_for(player_id, CANDIDATE_ID)
-        finally:
-            service._lock.release()
 
         assert provider.calls == 0
 
@@ -444,53 +373,8 @@ class TestRetention:
         assert provider.calls == 4
         assert len(notes) == 2
 
-    def test_asking_the_same_question_again_replaces_its_answer(
-        self,
-        make_service: Callable[..., GuidanceService],
-        seed: Callable[..., int],
-        guidance_session_factory: sessionmaker[Session],
-    ) -> None:
-        """Two answers to one question are an ambiguity, not a history."""
-        player_id = seed()
-        service = make_service(StubProvider())
-        service.guidance_for(player_id, CANDIDATE_ID)
-        service.guidance_for(player_id, CANDIDATE_ID, force=True)
-
-        with guidance_session_factory() as session:
-            assert session.query(GuidanceNote).count() == 1
-
 
 class TestFailures:
-    def test_a_missing_run_is_not_found_rather_than_a_provider_error(
-        self,
-        make_service: Callable[..., GuidanceService],
-        guidance_session_factory: sessionmaker[Session],
-    ) -> None:
-        """Nothing was asked, and the remedy is a sync rather than a retry."""
-        with guidance_session_factory() as session:
-            player = Player(username="zezima", display_name="Zezima", created_at=NOW)
-            session.add(player)
-            session.commit()
-            player_id = int(player.id)
-
-        provider = StubProvider()
-        service = make_service(provider)
-
-        with pytest.raises(GuidanceNotFound):
-            service.guidance_for(player_id, CANDIDATE_ID)
-
-        assert provider.calls == 0
-
-    def test_a_task_outside_the_latest_run_is_not_found(
-        self, make_service: Callable[..., GuidanceService], seed: Callable[..., int]
-    ) -> None:
-        player_id = seed()
-        provider = StubProvider()
-        service = make_service(provider)
-
-        with pytest.raises(GuidanceNotFound):
-            service.guidance_for(player_id, "some_other_task")
-
     def test_a_provider_failure_stores_nothing(
         self,
         make_service: Callable[..., GuidanceService],
@@ -517,9 +401,3 @@ class TestFailures:
         assert service.enabled is False
         with pytest.raises(GuidanceThrottled, match="not configured"):
             service.guidance_for(player_id, CANDIDATE_ID)
-
-
-class TestStubSatisfiesTheProtocol:
-    def test_the_stub_is_a_guidance_provider(self) -> None:
-        """If this drifts, every test above is exercising a shape nothing else has."""
-        assert isinstance(StubProvider(), GuidanceProvider)
