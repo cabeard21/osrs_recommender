@@ -100,6 +100,7 @@ PROBE = """
 import json
 import urllib.error
 import urllib.request
+from tracker.mcp.healthcheck import EXPECTED_TOOLS
 
 def call(method, params=None):
     request = urllib.request.Request(
@@ -110,9 +111,8 @@ def call(method, params=None):
     with urllib.request.urlopen(request, timeout=2) as response:
         return json.load(response)['result']
 
-assert {tool['name'] for tool in call('tools/list')['tools']} == {
-    'get_account_summary', 'get_goal_status', 'get_available_actions', 'evaluate_action'
-}
+names = [tool['name'] for tool in call('tools/list')['tools']]
+assert len(names) == len(EXPECTED_TOOLS) and set(names) == EXPECTED_TOOLS, names
 summary = call('tools/call', {'name':'get_account_summary','arguments':{}})
 assert not summary.get('isError'), summary
 assert 'container_smoke' in json.dumps(summary), summary
