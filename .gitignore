@@ -24,6 +24,7 @@ plugin/build/
 spike/*/build/
 .gradle/
 .pytest_cache/
+backups/
 .mypy_cache/
 .ruff_cache/
 .coverage

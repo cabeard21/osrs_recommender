@@ -227,3 +227,36 @@ sqlite3 tracker.db ".backup 'tracker-backup.db'"
 
 Use `.backup` rather than `cp` — the app runs SQLite in WAL mode, so a plain copy taken
 while it is running can miss committed transactions still sitting in the write-ahead log.
+
+### Refresh dev DB from production
+
+On Windows, stop the local app and MCP, keep the repo's `.venv` and `config.yaml`
+configured, and ensure `ssh pi@pi.local` (or your SSH alias) works in PowerShell. The
+script uses the same SSH authentication and may prompt for your password. The Pi stack
+must be at `/opt/stacks/osrs-recommender`, with the running `osrs-recommender` service
+using `./data:/data` and `sqlite:////data/tracker.db`. From the repository root:
+
+```powershell
+.\scripts\refresh-dev-db.ps1 -DryRun
+.\scripts\refresh-dev-db.ps1                 # or -ProductionHost pi@pi.local
+```
+
+The script verifies Compose identity, uses SQLite's online backup API inside the running
+container, streams the complete snapshot over SSH, checks size/SHA-256 and SQLite
+`quick_check`, and verifies core account tables. It migrates the **staged Windows copy**
+with the repository's Alembic head, then backs up the existing dev DB to
+`backups/dev-before-refresh-YYYYMMDD-HHMMSS.sqlite` before installing it. The previous
+physical DB and any WAL sidecars are also retained beside that backup with an
+`.original-` suffix. A snapshot or migration failure leaves the current dev DB alone.
+No production migration, upload, container restart, or raw live-DB copy occurs.
+
+To restore, stop the local app/MCP again and use the retained backup (adjust timestamp):
+
+```powershell
+Copy-Item .\backups\dev-before-refresh-YYYYMMDD-HHMMSS.sqlite .\tracker.db
+```
+
+Remove or move aside any `tracker.db-wal` and `tracker.db-shm` from the refreshed DB
+before restoring. If `config.yaml` selects another database path inside the repository,
+restore to that path instead. Treat backups as private account data; `backups/` is ignored
+by Git.
