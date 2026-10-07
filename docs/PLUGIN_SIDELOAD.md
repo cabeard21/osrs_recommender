@@ -27,11 +27,28 @@ property in the contract, the plugin stops compiling — that is deliberate (§1
 ./gradlew runClient
 ```
 
-This launches RuneLite with the plugin loaded, using `-ea` (which
-`ExternalPluginManager.loadBuiltin` asserts on) and `--developer-mode`.
+This launches RuneLite with the plugin loaded and `--developer-mode`. Assertions are enabled
+for our plugin, the `RuneLite` developer-mode startup check, and `ExternalPluginManager`
+(whose `loadBuiltin` requires them), rather than globally. RuneLite's built-in plugins retain
+normal-launcher assertion settings: a built-in `AssertionError` can escape the event bus and
+freeze the game loop while audio keeps playing.
+Before launch, Gradle checks RuneLite's published release in its Maven repository and warns if
+`plugin/build.gradle` is pinned to a different version. The check leaves the pin unchanged so the
+collector and payload contract can be reviewed before an update. If the check is unavailable,
+the pinned client still launches; `--offline` skips the check.
+
+The version check only compares release numbers; it does not check client stability.
+`runClient` uses a separate RuneLite runtime dependency graph so contract-test libraries cannot
+replace the client's logging dependencies. `./gradlew verifyRunClientRuntime` checks that logging
+works, assertions are scoped correctly, and test-only libraries are absent; `build` runs this
+check too.
+
+If the client freezes or closes shortly after startup, retain the `runClient` console output and check
+`~/.runelite/logs/client.log`. The normal launcher uses its bundled Java runtime while Gradle
+uses your configured JDK, so matching client versions can still behave differently.
 
 > **You cannot side-load into a launcher-started client, and this is by design.** Verified against
-> `client-1.12.35`:
+> `client-1.12.39`:
 >
 > ```
 > developerMode = options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null
@@ -81,11 +98,15 @@ app/plugin versions**"*. Three numbers have to stay in step:
 
 | Number | Where | Today |
 |---|---|---|
-| RuneLite client | `plugin/build.gradle` → `runeLiteVersion` | `1.12.35` |
+| RuneLite client | `plugin/build.gradle` → `runeLiteVersion` | `1.13.1` |
 | Payload contract | `AccountSnapshot.PAYLOAD_VERSION` and `tracker/api/sync.py` → `SUPPORTED_PAYLOAD_VERSIONS` | `1` |
-| Contract findings | `docs/CONTRACT_RECONCILIATION.md` | reconciled against 1.12.35 |
+| Contract findings | `docs/CONTRACT_RECONCILIATION.md` | captured against 1.12.35; recheck on 1.13.1 |
 
-**If your client auto-updates past 1.12.35**, bump `runeLiteVersion` and re-read the reconciliation
+The 1.13.1 plugin build and tests pass. The developer-mode launcher rule was checked against
+1.12.39 source. The live-account collector findings in `CONTRACT_RECONCILIATION.md` have not
+yet been recaptured on 1.13.1; verify a fresh sync before relying on them for this release.
+
+**If your client auto-updates past 1.13.1**, bump `runeLiteVersion` and re-read the reconciliation
 doc rather than just changing the number. Its four rulings are facts about a specific client build —
 particularly that `getItemContainer` returns null and containers must come from
 `ItemContainerChanged`. A client update is exactly when that could change, for better or worse.

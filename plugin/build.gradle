@@ -13,12 +13,23 @@ repositories {
     mavenCentral()
 }
 
-// §13.1 stage 1 is "manually matched app/plugin versions". This is the client the contract was
-// reconciled against (docs/CONTRACT_RECONCILIATION.md); bumping it means re-checking that doc's
-// findings, not just the number.
-def runeLiteVersion = '1.12.35'
+// §13.1 stage 1 is "manually matched app/plugin versions". The contract was captured against
+// 1.12.35 (docs/CONTRACT_RECONCILIATION.md); a new client pin needs its findings re-checked.
+def runeLiteVersion = '1.13.1'
+
+// Launch with RuneLite's dependency graph, independent of contract-test libraries.
+configurations {
+    runeLiteRuntime {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+    }
+}
 
 dependencies {
+    runeLiteRuntime group: 'net.runelite', name: 'client', version: runeLiteVersion
     compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
@@ -140,14 +151,63 @@ tasks.named('test').configure {
     testLogging { exceptionFormat = 'full' }
 }
 
-// Developer-mode launcher. `-ea` is mandatory: ExternalPluginManager.loadBuiltin asserts on it.
+// Developer-mode launcher. RuneLite and ExternalPluginManager require assertions enabled.
 // Note this is the only way to run the plugin from source — a launcher-started client forces
 // developer mode off, so it can never side-load. See docs/PLUGIN_SIDELOAD.md (step 12c).
+tasks.register('checkRuneLiteVersion') {
+    group = 'application'
+    description = 'Check whether the pinned RuneLite client matches the latest published release.'
+
+    doLast {
+        if (gradle.startParameter.offline) {
+            logger.lifecycle("RuneLite version check skipped in Gradle offline mode (pinned ${runeLiteVersion}).")
+            return
+        }
+
+        try {
+            def metadataUrl = new URL('https://repo.runelite.net/net/runelite/client/maven-metadata.xml')
+            def connection = metadataUrl.openConnection()
+            connection.connectTimeout = 3000
+            connection.readTimeout = 3000
+            def metadata = connection.inputStream.withCloseable { it.getText('UTF-8') }
+            def release = (metadata =~ /<release>([^<]+)<\/release>/)
+            if (!release.find()) {
+                throw new IOException('Maven metadata has no release version')
+            }
+
+            def latestRelease = release.group(1)
+            if (latestRelease == runeLiteVersion) {
+                logger.lifecycle("RuneLite ${runeLiteVersion} is the latest published release.")
+            } else {
+                logger.warn("RuneLite ${latestRelease} is available; this plugin is pinned to ${runeLiteVersion}. " +
+                    'Review docs/CONTRACT_RECONCILIATION.md and plugin tests before updating plugin/build.gradle.')
+            }
+        } catch (IOException ex) {
+            logger.warn("Could not check RuneLite releases (${ex.message}); launching pinned ${runeLiteVersion}.")
+        }
+    }
+}
+
 tasks.register('runClient', JavaExec) {
     group = 'application'
     description = 'Launch RuneLite with the tracker plugin loaded (developer mode).'
-    classpath = sourceSets.test.runtimeClasspath
+    dependsOn 'checkRuneLiteVersion'
+    classpath = sourceSets.main.output + sourceSets.test.output + configurations.runeLiteRuntime
     mainClass = 'com.osrstracker.plugin.TrackerPluginLauncher'
-    jvmArgs = ['-ea']
+    // Global -ea can turn a recoverable built-in plugin exception into an AssertionError
+    // escaping EventBus and stopping the game loop. Keep checks on our code and startup gates.
+    jvmArgs = ['-ea:com.osrstracker.plugin...',
+        '-ea:net.runelite.client.RuneLite',
+        '-ea:net.runelite.client.externalplugins.ExternalPluginManager']
     args = ['--developer-mode']
 }
+
+tasks.register('verifyRunClientRuntime', JavaExec) {
+    group = 'verification'
+    description = 'Verify logging and dependency isolation on the developer-client classpath.'
+    classpath = tasks.named('runClient', JavaExec).get().classpath
+    jvmArgs = tasks.named('runClient', JavaExec).get().jvmArgs
+    mainClass = 'com.osrstracker.plugin.RuneLiteRuntimeCheck'
+}
+
+tasks.named('check').configure { dependsOn 'verifyRunClientRuntime' }
