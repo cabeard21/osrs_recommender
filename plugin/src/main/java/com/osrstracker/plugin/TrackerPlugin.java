@@ -1,6 +1,14 @@
 package com.osrstracker.plugin;
 
 import com.google.gson.Gson;
+import com.osrstracker.plugin.statusbars.EnhancedStatusBarsOverlay;
+import com.osrstracker.plugin.statusbars.HpScalingDiagnostics;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.ProfileChanged;
+import net.runelite.client.events.PluginChanged;
+import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.plugins.statusbars.StatusBarsPlugin;
+import net.runelite.client.ui.overlay.OverlayManager;
 import com.google.inject.Provides;
 import com.osrstracker.plugin.collect.ContainerObserver;
 import com.osrstracker.plugin.collect.LoginSyncTrigger;
@@ -65,6 +73,19 @@ public class TrackerPlugin extends Plugin
 	@Inject
 	private TrackerConfig config;
 
+	@Inject
+	private OverlayManager overlayManager;
+	@Inject
+	private PluginManager pluginManager;
+	@Inject
+	private EnhancedStatusBarsOverlay enhancedStatusBarsOverlay;
+	@Inject
+	private HpScalingDiagnostics hpScalingDiagnostics;
+
+	private final Object enhancedBarsLock = new Object();
+	private boolean enhancedBarsRegistered;
+	private volatile boolean active;
+	private volatile long lifecycleGeneration;
 	private TrackerPanel panel;
 	private NavigationButton navButton;
 	private TrackerSyncClient syncClient;
@@ -87,6 +108,11 @@ public class TrackerPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		synchronized (enhancedBarsLock)
+		{
+			active = true;
+			lifecycleGeneration++;
+		}
 		panel = new TrackerPanel(this::syncNow);
 		syncClient = new HttpTrackerSyncClient(okHttpClient, gson, config, panel::update);
 
@@ -98,11 +124,20 @@ public class TrackerPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navButton);
+		queueEnhancedBarsReconcile();
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		synchronized (enhancedBarsLock)
+		{
+			active = false;
+			lifecycleGeneration++;
+			overlayManager.remove(enhancedStatusBarsOverlay);
+			enhancedBarsRegistered = false;
+			hpScalingDiagnostics.reset();
+		}
 		clientToolbar.removeNavigation(navButton);
 		panel = null;
 		syncClient = null;
@@ -112,6 +147,7 @@ public class TrackerPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		tickHpDiagnostics();
 		if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
 			// A different account may be about to log in, and container evidence is per-session
@@ -134,6 +170,7 @@ public class TrackerPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		tickHpDiagnostics();
 		if (loginSync.onTick())
 		{
 			syncNow();
@@ -161,6 +198,78 @@ public class TrackerPlugin extends Plugin
 		if (event.getGroupId() == InterfaceID.BANKMAIN)
 		{
 			containers.onBankClosed(Instant.now());
+		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (TrackerConfig.GROUP.equals(event.getGroup()))
+		{
+			queueEnhancedBarsReconcile();
+		}
+	}
+
+	@Subscribe
+	public void onProfileChanged(ProfileChanged event)
+	{
+		queueEnhancedBarsReconcile();
+	}
+
+	@Subscribe
+	public void onPluginChanged(PluginChanged event)
+	{
+		queueEnhancedBarsReconcile();
+	}
+
+	private void queueEnhancedBarsReconcile()
+	{
+		final long generation = lifecycleGeneration;
+		clientThread.invokeLater(() -> {
+			synchronized (enhancedBarsLock)
+			{
+				if (active && lifecycleGeneration == generation)
+				{
+					reconcileEnhancedBars();
+					hpScalingDiagnostics.tick();
+				}
+			}
+		});
+	}
+
+	/** Runs on the client thread; registration is independent of account synchronization. */
+	void reconcileEnhancedBars()
+	{
+		synchronized (enhancedBarsLock)
+		{
+			final boolean enabled = config.enhancedBarsEnabled();
+			final boolean conflict = enabled && pluginManager.getPlugins().stream()
+				.anyMatch(plugin -> plugin instanceof StatusBarsPlugin && pluginManager.isPluginActive(plugin));
+			enhancedStatusBarsOverlay.setSuppressed(conflict);
+			if (enabled && !enhancedBarsRegistered)
+			{
+				overlayManager.add(enhancedStatusBarsOverlay);
+				enhancedBarsRegistered = true;
+			}
+			else if (!enabled && enhancedBarsRegistered)
+			{
+				overlayManager.remove(enhancedStatusBarsOverlay);
+				enhancedBarsRegistered = false;
+			}
+			if (panel != null)
+			{
+				panel.updateBarsWarning(conflict);
+			}
+		}
+	}
+	private void tickHpDiagnostics()
+	{
+		synchronized (enhancedBarsLock)
+		{
+			if (active)
+			{
+				hpScalingDiagnostics.tick();
+			}
 		}
 	}
 

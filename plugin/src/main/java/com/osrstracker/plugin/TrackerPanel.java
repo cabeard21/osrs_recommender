@@ -32,6 +32,7 @@ final class TrackerPanel extends PluginPanel
 	private final JLabel stateLabel = new JLabel();
 	private final JLabel detailLabel = new JLabel();
 	private final JLabel timeLabel = new JLabel();
+	private final JLabel barsWarning = new JLabel();
 
 	TrackerPanel(Runnable onSyncNow)
 	{
@@ -54,6 +55,10 @@ final class TrackerPanel extends PluginPanel
 		status.add(stateLabel);
 		status.add(detailLabel);
 		status.add(timeLabel);
+		barsWarning.setForeground(Color.YELLOW);
+		barsWarning.setAlignmentX(Component.LEFT_ALIGNMENT);
+		barsWarning.setVisible(false);
+		status.add(barsWarning);
 
 		final JButton syncNow = new JButton("Sync now");
 		syncNow.addActionListener(event -> onSyncNow.run());
@@ -69,6 +74,19 @@ final class TrackerPanel extends PluginPanel
 	void update(SyncStatus status)
 	{
 		SwingUtilities.invokeLater(() -> render(status));
+	}
+
+	/** Kept separate from synchronization status and marshalled onto Swing's EDT. */
+	void updateBarsWarning(boolean conflict)
+	{
+		SwingUtilities.invokeLater(() -> {
+			barsWarning.setText(conflict
+				? "<html><body style='width:150px'>Disable RuneLite's built-in Status Bars to show enhanced bars.</body></html>"
+				: "");
+			barsWarning.setVisible(conflict);
+			revalidate();
+			repaint();
+		});
 	}
 
 	private void render(SyncStatus status)
