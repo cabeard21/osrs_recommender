@@ -22,7 +22,8 @@ public final class RuneLiteRuntimeCheck
 		checkAssertions(loader, "net.runelite.client.plugins.menuentryswapper.MenuEntrySwapperPlugin", false);
 		checkAssertions(loader, "net.runelite.client.RuneLite", true);
 		if (loader.getResource("com/networknt/schema/JsonSchema.class") != null
-			|| loader.getResource("org/junit/Test.class") != null)
+			|| loader.getResource("org/junit/Test.class") != null
+			|| loader.getResource("org/mockito/Mockito.class") != null)
 		{
 			throw new IllegalStateException("Test-only dependencies leaked into the RuneLite client");
 		}
