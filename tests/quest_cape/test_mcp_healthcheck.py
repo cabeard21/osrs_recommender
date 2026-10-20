@@ -18,6 +18,7 @@ from tracker.mcp import healthcheck
             "get_gear_candidates",
             "get_item_details",
             "evaluate_gear_change",
+            "optimize_gear",
         },
     ],
 )

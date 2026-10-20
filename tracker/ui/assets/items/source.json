@@ -1,0 +1,8 @@
+{
+  "source_template": "https://static.runelite.net/cache/item/icon/{item_id}.png",
+  "retrieved_on": "2026-10-19",
+  "scope": "231 reviewed concrete equipment forms from the bundled catalog",
+  "attribution": "Old School RuneScape game artwork is copyright Jagex Ltd. Sprites served by RuneLite's public item-icon cache.",
+  "purpose": "Recognizable equipment illustrations; local capture avoids external runtime requests.",
+  "fallback": "Items without a bundled sprite retain their exact textual name and a generic equipment symbol."
+}

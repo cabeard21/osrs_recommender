@@ -39,16 +39,12 @@ class RecordingPricesClient:
         }
 
 
-def test_price_scope_contains_only_authored_tradeable_gear() -> None:
+def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
     content = load_content()
     expected = frozenset(
         item.item_id
         for item in content.items.values()
-        if item.item_id is not None
-        and item.style is not None
-        and item.slot is not None
-        and item.tier is not None
-        and item.acquisition == "tradeable"
+        if item.item_id is not None and item.slot is not None and item.acquisition == "tradeable"
     )
     assert expected
     assert _price_scope(content) == expected

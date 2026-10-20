@@ -54,7 +54,7 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
         return loaded
 
     quests = QuestCapeService(load_catalog(settings().content_dir / "quest_cape/catalog.json"))
-    gear = GearService(content())
+    gear = GearService(content(), equipment_root=settings().content_dir / "equipment")
 
     @ui.page("/")
     def dashboard_page() -> None:
@@ -106,17 +106,19 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
     def gear_page() -> None:
         with sessions()() as session:
             player_id = read_model.first_player_id(session)
-        views = None
-        if player_id is not None:
-            snapshot = AccountService(sessions()).get_snapshot(player_id)
-            prices = DatabaseGearPrices(sessions()).get_prices()
-            evaluated_at = now()
-            views = gear_view.progression_views(gear, snapshot, prices, evaluated_at)
         with page("Gear", path="/gear"):
-            if views is None:
+            if player_id is None:
                 empty_state(NO_PLAYER)
             else:
-                gear_view.render(views)
+
+                def gear_context():
+                    return (
+                        AccountService(sessions()).get_snapshot(player_id),
+                        DatabaseGearPrices(sessions()).get_prices(),
+                        now(),
+                    )
+
+                gear_view.render_optimizer(gear, gear_context)
 
     @ui.page("/settings")
     def settings_page() -> None:

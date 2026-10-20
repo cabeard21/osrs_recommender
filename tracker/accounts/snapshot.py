@@ -49,6 +49,7 @@ class AccountSnapshot:
     combat_level: int | None = None
     members: bool | None = None
     last_sync_at: datetime | None = None
+    _fingerprint: str | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         # Frozen dataclasses alone do not freeze dictionaries or detach caller-owned data.
@@ -90,6 +91,11 @@ class AccountSnapshot:
 
     @property
     def fingerprint(self) -> str:
+        # Every fact and mapping is immutable and detached in __post_init__. Cache
+        # only this instance's identity; a new read or dataclasses.replace starts
+        # with an empty cache, preserving observation freshness and what-if IDs.
+        if self._fingerprint is not None:
+            return self._fingerprint
         identity = self.summary() | {
             "observed_items": [
                 (item_id, container.value, item.quantity, item.source, item.observed_at.isoformat())
@@ -104,4 +110,6 @@ class AccountSnapshot:
                 )
             ],
         }
-        return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        object.__setattr__(self, "_fingerprint", fingerprint)
+        return fingerprint

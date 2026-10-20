@@ -14,11 +14,15 @@ See [current architecture](docs/ARCHITECTURE.md) for the product boundary and
   bank/inventory/equipment scans, sync freshness, and cached market observations.
 - **Quest Cape:** goal status, available quest and skill actions, and read-only
   hypothetical action evaluation.
-- **Gear:** authored progression, factual candidate filters, item details, and
-  read-only gear-change evaluation through one `GearService` used by both MCP and the
-  dashboard. Prices include their source and age; unknown ownership or compatibility
-  remains unknown.
-- **Private MCP:** eight factual tools for ChatGPT at exact `/mcp`. The MCP sidecar has
+- **Gear optimizer:** single-style and joint multi-style equipment search, item locks,
+  additional GP budget, explicit future assumptions, inventory reservations, directional
+  equipment actions, and a selectable swap-efficiency curve. One `GearService` serves
+  the dashboard and MCP. Results are bounded **best found**, with supported-mechanics
+  limits and dated ownership/price evidence. Dagannoth Kings and Zulrah presets describe
+  a limited ordinary-attack model rather than complete fight simulations.
+- **Private MCP:** nine read-only tools, including `optimize_gear`, at exact `/mcp`.
+  Legacy factual gear operations remain compatibility adapters during migration.
+  The MCP sidecar has
   no dashboard or sync routes.
 
 The dashboard shows account, sync, goal, Gear, skill, unlock, and settings facts.
@@ -47,5 +51,11 @@ repository's existing 80% supported-core coverage gate. Run content validation,
 lint, and production type checks before committing changes.
 
 Current authoring rules are in [content authoring](docs/CONTENT_AUTHORING.md).
+Equipment metadata is bundled under `content/equipment`; optimization makes no network
+requests and saves no computed recommendations. Missing requirements and unvalidated
+effects remain inspectable and are excluded from quantified ranking. Prayers, boosts,
+complex weapon/set effects, special utility, and damage-cap rerolls remain unsupported.
+The preset templates state their phase/order assumptions explicitly. Phase-clear time
+and final removal of compatibility tools remain follow-up work after acceptance.
 The former weighted recommender design is preserved only as a
 [historical specification](docs/SDD.md).

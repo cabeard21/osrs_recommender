@@ -70,6 +70,7 @@ def test_gear_tools_delegate_with_fresh_snapshot_and_cached_prices(service, snap
             "get_gear_candidates",
             "get_item_details",
             "evaluate_gear_change",
+            "optimize_gear",
         }
         assert all(tool["annotations"]["readOnlyHint"] for tool in tools)
         for name, arguments in (

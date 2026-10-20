@@ -32,7 +32,7 @@ class PipelineResult:
 
 
 def _price_scope(content: Content) -> frozenset[int]:
-    """Primary IDs of authored, tradeable Gear ladder members only."""
+    """Primary IDs with reviewed equipment and tradeability metadata."""
     return scoped_item_ids(content)
 
 

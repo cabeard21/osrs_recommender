@@ -32,7 +32,7 @@ if errorlevel 1 (
         if not errorlevel 1 goto :ready
         timeout /t 1 /nobreak >nul
     )
-    echo [run-mcp] MCP server did not expose all eight tools. Check the server window.
+    echo [run-mcp] MCP server did not expose the current tool contract. Check the server window.
     echo [run-mcp] If an older MCP process owns port 8503, stop it and retry.
     goto :fail
 )

@@ -51,7 +51,7 @@ class PricesSettings(BaseModel):
     """
 
     provider: str = "osrs_wiki"
-    base_url: str = "https://prices.runescape.wiki/api/v1/osrs"
+    base_url: str = "https://prices.runescape.wiki/api/v2/osrs"
     user_agent: str = "osrs-account-companion/0.1 (private local account companion)"
     ttl_hours: int = Field(default=12, gt=0)
     manual_refresh_min_interval_seconds: int = Field(default=60, ge=0)

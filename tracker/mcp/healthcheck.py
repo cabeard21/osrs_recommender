@@ -11,7 +11,13 @@ BASE_TOOLS = frozenset(
     {"get_account_summary", "get_goal_status", "get_available_actions", "evaluate_action"}
 )
 GEAR_TOOLS = frozenset(
-    {"get_gear_progression", "get_gear_candidates", "get_item_details", "evaluate_gear_change"}
+    {
+        "get_gear_progression",
+        "get_gear_candidates",
+        "get_item_details",
+        "evaluate_gear_change",
+        "optimize_gear",
+    }
 )
 EXPECTED_TOOLS = BASE_TOOLS | GEAR_TOOLS
 

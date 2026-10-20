@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from starlette.routing import Mount, Route
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.estimation.prices import PriceRecord
+from tracker.gear.optimizer import OptimizationRequest
 from tracker.mcp.accounts import SnapshotProvider
 from tracker.mcp.settings import MCPSettings
 from tracker.quest_cape.service import (
@@ -42,6 +44,30 @@ class GearChange(BaseModel):
 
 
 class GearToolService(Protocol):
+    def optimize(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest,
+        *,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+    def optimizer_catalog(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str | None = None,
+        slot: str | None = None,
+        ownership: str | None = None,
+        wear_status: str | None = None,
+        acquisition: str | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
     def progression(
         self,
         snapshot: AccountSnapshot,
@@ -125,7 +151,12 @@ def build_server(
         "evaluate_action is hypothetical and never saves changes. No XP rewards, item rewards, "
         "costs, or elapsed time are simulated. Distinguish these MCP facts from general OSRS "
         "knowledge and qualitative tradeoffs; do not attribute unsimulated efficiency "
-        "to the tools. Gear tools report curated progression, not DPS or objective best gear. "
+        "to the tools. Legacy gear progression is editorial order, not DPS. "
+        "Use optimize_gear for complete compatible loadouts, directional equipment actions, "
+        "inventory constraints and a swap curve. Its bounded best-found results are not "
+        "globally optimal claims. Read supported mechanics, assumptions and limitations. "
+        "Special roles are unscored unless explicitly supported. Use optimizer catalog "
+        "browsing to inspect locked or unsupported equipment. "
         "Ownership is dated: unowned means absent in each container's latest accepted scan, "
         "which may be old or taken at different times. evaluate_gear_change does not check "
         "joint loadout validity, replaced items, or combat stat deltas.",
@@ -226,6 +257,24 @@ def build_server(
     if gear is not None and prices is not None:
 
         @server.tool(annotations=annotations)
+        async def optimize_gear(request: OptimizationRequest) -> dict[str, Any]:
+            """Find compatible account-aware equipment and a bounded swap-efficiency curve.
+
+            Equipment actions include explicit unequips; automatic removals are not extra
+            actions. Time-share DPS is a supported-mechanics proxy, not predicted kill time.
+            Future assumptions are request-local. Inspect limitations and search quality.
+            """
+            account = accounts.get_snapshot()
+            records = prices.get_prices()
+            evaluated_at = datetime.now(UTC)
+            try:
+                return await asyncio.to_thread(
+                    gear.optimize, account, request, price_records=records, now=evaluated_at
+                )
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+
+        @server.tool(annotations=annotations)
         def get_gear_progression(
             style: GearStyle,
             slot: str | None = None,
@@ -256,8 +305,26 @@ def build_server(
             acquisition: AcquisitionFilter | None = None,
             offset: Annotated[int, Field(ge=0)] = 0,
             limit: Annotated[int, Field(ge=1, le=100)] = 50,
+            catalog: Literal["authored", "optimizer"] = "authored",
         ) -> dict[str, Any]:
-            """Bounded curated items matching factual filters; order is not desirability."""
+            """Browse dated item facts; optimizer catalog includes locked/unsupported gear.
+
+            The authored catalog is retained for compatibility. Neither browsing order
+            is a performance ranking; use optimize_gear for complete setups.
+            """
+            if catalog == "optimizer":
+                return gear.optimizer_catalog(
+                    accounts.get_snapshot(),
+                    style=style,
+                    slot=slot,
+                    ownership=ownership,
+                    wear_status=wear_status,
+                    acquisition=acquisition,
+                    offset=offset,
+                    limit=limit,
+                    price_records=prices.get_prices(),
+                    now=datetime.now(UTC),
+                )
             return gear.candidates(
                 accounts.get_snapshot(),
                 style=style,

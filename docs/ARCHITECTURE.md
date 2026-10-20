@@ -31,14 +31,15 @@ claims.
   unlocks, item sightings and container scans, sync audit, and cached raw price facts.
 - **Quest Cape:** catalog and requirement checks, goal status, available actions, and
   read-only hypothetical quest or skill action evaluation.
-- **Gear:** curated progression ladders, factual candidate filtering, item details,
-  ownership and requirement reporting, on-demand price resolution with provenance, and
-  read-only hypothetical gear changes. A gear-change result does not establish joint
-  loadout validity unless that was actually evaluated.
+- **Gear:** account-aware equipment optimization, factual candidate filtering, item
+  details, ownership and requirement reporting, and price resolution with provenance.
+  Existing curated progression and hypothetical item-change operations remain
+  compatibility adapters; an item-change result does not establish joint loadout validity.
 
 The private MCP sidecar exposes `get_account_summary`, `get_goal_status`,
 `get_available_actions`, `evaluate_action`, `get_gear_progression`,
-`get_gear_candidates`, `get_item_details`, and `evaluate_gear_change` at exact `/mcp`.
+`get_gear_candidates`, `get_item_details`, `evaluate_gear_change`, and `optimize_gear`
+at exact `/mcp`.
 The dashboard presents account, sync, goal, Gear, skill, unlock, and settings facts. Its
 Gear view uses `GearService`, the same domain service as MCP. The RuneLite sync API
 reports synchronization results, not recommendation counts.
@@ -57,6 +58,59 @@ stored historical preference; current Account, Quest Cape, Gear, and price opera
 not apply it.
 
 ## Operations and compatibility
+
+### Equipment optimizer
+
+`tracker.gear` owns one deterministic calculation boundary shared by the dashboard
+and MCP. The optimizer consumes a frozen account snapshot, reviewed equipment metadata,
+cached price observations, explicit role/target constraints, and evaluation time. It
+does not fetch prices, persist recommendations, or change synchronized account facts.
+Hypothetical skills, quests and acquisition assumptions apply only to that request.
+
+Eligibility, observed ownership, usable physical form and purchasability are separate
+facts. Existing shared requirement evaluation remains authoritative. Ownership aliases
+do not establish equivalent bonuses, charges or readiness. Unknown prices are not zero,
+and sightings from different container times are not independent copies of an item.
+
+The offensive objective is a declared weighted active-time DPS proxy, not a universal
+gear score or predicted encounter completion time. Combat results expose intermediate
+rolls and supported-mechanic limitations. Unimplemented effects and target mechanics
+block numeric ranking rather than silently contributing zero or being ignored.
+
+Joint search constrains explicit directed transitions. A swap limit counts equipment
+actions: equipping an item costs one, explicit unequipping costs one, and automatic
+hand-slot removal adds no action. Changed slots and carried equipment are reported
+separately. Every returned action sequence must respect the 28-slot inventory and
+reserved supplies. Buying one item reused across roles is one purchase.
+
+Bounded search returns the best solution found under the supported model. Candidate
+truncation, search limits and infeasibility scope must remain visible; beam exhaustion
+does not prove no solution exists. Curve points share frozen non-swap assumptions and
+reuse incumbents, with normalization against the corresponding unrestricted baseline.
+Computed results are ephemeral and CPU work runs outside the UI event loop.
+
+### Encounter templates and validation boundary
+
+`tracker.gear.encounters` contains two versioned conveniences that convert to ordinary
+custom requests: an illustrative Dagannoth Kings cycle and a Zulrah form comparison.
+They introduce no encounter framework, measured phase durations, or new account state.
+Their target statistics are pinned to Wiki calculator revision
+`89c3e25b344aea90d0189746e4b5f73dde0f0383`. The Zulrah form order is explicitly **not**
+a published rotation; equal role weights are user-editable modeling assumptions.
+
+The supported subset includes matching standard-spell elemental weakness: earth 35%
+for the Kings and fire 50% for Zulrah. Accuracy and maximum-hit adjustments use explicit
+integer rounding, checked against independent intermediate calculations. Zulrah attacks
+whose modeled maximum hit exceeds 50 remain unsupported: its above-cap damage reroll
+distribution is not approximated. Individual unsupported equipment still blocks scoring.
+Target defence bonuses use a dedicated model, not equipment attack/defence fields.
+Respawns, movement, survival, Jad phases, venom, snakelings and supply endurance remain
+outside these templates. Do not market them as full boss simulation.
+
+Compatibility tool retirement is separate from the dashboard replacement. Preserve
+existing factual MCP meanings during migration; remove ladder-only operations only
+with replacement parity, a documented contract change, and matching MCP instructions,
+readiness and container-smoke updates. Historical database migrations stay intact.
 
 The app accepts version 1 RuneLite sync payloads. Its optional `practice_events` field
 remains schema-validated for deployed clients, but ingestion ignores it; new plugin

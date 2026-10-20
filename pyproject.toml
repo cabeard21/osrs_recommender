@@ -42,6 +42,7 @@ include = ["contracts", "tracker*"]
 
 [tool.setuptools.package-data]
 contracts = ["*.json"]
+"tracker.ui" = ["assets/items/*.png", "assets/items/*.json"]
 
 # --------------------------------------------------------------------------
 # ruff — lint + format

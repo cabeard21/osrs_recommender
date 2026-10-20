@@ -24,7 +24,9 @@ def main() -> None:
         account = ConfiguredAccount(AccountService(sessions), settings.mcp.player_id)
         account.get_snapshot()  # Fail before listening if the configured player does not exist.
         quests = QuestCapeService(load_catalog(settings.content_dir / "quest_cape/catalog.json"))
-        gear = GearService(load_content(settings.content_dir))
+        gear = GearService(
+            load_content(settings.content_dir), equipment_root=settings.content_dir / "equipment"
+        )
         app = create_http_app(
             build_server(account, quests, gear, DatabaseGearPrices(sessions)), settings.mcp
         )

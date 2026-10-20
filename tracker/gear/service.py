@@ -6,8 +6,10 @@ does not choose a setup, infer current equipment slots, or validate joint loadou
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
+from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from tracker.accounts.requirements import evaluate_requirement
@@ -16,7 +18,10 @@ from tracker.content.loader import Content
 from tracker.content.schema import Item
 from tracker.domain.types import Container, Tri
 from tracker.estimation.prices import PriceRecord, resolve_price
+from tracker.gear.catalog import EquipmentCatalog, load_catalog
+from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
+from tracker.gear.optimizer import OptimizationRequest
 
 _STYLES = frozenset({"melee", "ranged", "magic"})
 _OWNERSHIP = frozenset({"owned", "unowned", "unknown"})
@@ -33,10 +38,105 @@ _LIMITATIONS = (
 class GearService:
     """Pure gear projection over one immutable snapshot and injected price rows."""
 
-    def __init__(self, content: Content) -> None:
+    def __init__(self, content: Content, *, equipment_root: Path | None = None) -> None:
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
+        self._equipment_root = equipment_root
+        self._equipment: EquipmentCatalog | None = None
+        self._optimization_lock = Lock()
+
+    def equipment_catalog(self) -> EquipmentCatalog:
+        """Load bundled metadata once; no network, database session or refresh."""
+        if self._equipment is None:
+            self._equipment = load_catalog(self.content, self._equipment_root)
+        return self._equipment
+
+    def optimize(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest | Mapping[str, Any],
+        *,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
+        """Shared complete-loadout optimizer, separate from legacy factual change tools."""
+        from tracker.gear.optimizer import optimize
+
+        if not self._optimization_lock.acquire(blocking=False):
+            raise ValueError("optimizer_busy: another equipment search is running")
+        try:
+            return optimize(
+                snapshot,
+                request,
+                self.equipment_catalog(),
+                self.content,
+                dict(price_records or {}),
+                now or datetime.now(UTC),
+                cancelled=cancelled,
+            )
+        finally:
+            self._optimization_lock.release()
+
+    def optimizer_catalog(
+        self,
+        snapshot: AccountSnapshot,
+        *,
+        style: str | None = None,
+        slot: str | None = None,
+        ownership: str | None = None,
+        wear_status: str | None = None,
+        acquisition: str | None = None,
+        offset: int = 0,
+        limit: int | None = None,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Inspectable physical equipment, including locked and unsupported upgrades."""
+        for label, value, choices in (
+            ("ownership", ownership, _OWNERSHIP),
+            ("wear_status", wear_status, _WEAR),
+            ("acquisition", acquisition, _ACQUISITION),
+        ):
+            if value is not None and value not in choices:
+                raise ValueError(f"invalid {label}: {value!r}")
+        if offset < 0 or (limit is not None and not 1 <= limit <= 1000):
+            raise ValueError("invalid catalog pagination")
+        if style is not None and style not in _STYLES:
+            raise ValueError("invalid catalog style")
+        catalog = self.equipment_catalog()
+        if slot is not None and slot not in {item.slot for item in catalog.items.values()}:
+            raise ValueError("unknown equipment slot")
+        evaluated_at = now or datetime.now(UTC)
+        facts = []
+        for item in sorted(catalog.items.values(), key=lambda row: (row.name, row.id)):
+            if slot is not None and item.slot != slot:
+                continue
+            if style is not None and item.slot == "weapon":
+                attacks = {"stab", "slash", "crush"} if style == "melee" else {style}
+                if style != "magic" and not attacks.intersection(item.attack_styles):
+                    continue
+            fact = equipment_fact(snapshot, item, self.content, price_records or {}, evaluated_at)
+            if (
+                (ownership is not None and ownership != fact["ownership"]["status"])
+                or (wear_status is not None and wear_status != fact["wear"]["status"])
+                or (acquisition is not None and acquisition != fact["acquisition"])
+            ):
+                continue
+            facts.append(
+                {**fact, "numeric_item_id": item.id, "equipment": item.model_dump(mode="json")}
+            )
+        end = offset + limit if limit is not None else len(facts)
+        return {
+            **self._metadata(snapshot),
+            "items": facts[offset:end],
+            "total": len(facts),
+            "offset": offset,
+            "limit": limit,
+            "catalog_version": catalog.revision,
+            "next_offset": end if end < len(facts) else None,
+        }
 
     def progression(
         self,
@@ -132,7 +232,25 @@ class GearService:
                 if numeric_item_id in item.owned_item_ids
             ]
             if not matches:
-                raise ValueError(f"unknown numeric_item_id: {numeric_item_id}")
+                physical = self.equipment_catalog().items.get(numeric_item_id)
+                if physical is None:
+                    raise ValueError(f"unknown numeric_item_id: {numeric_item_id}")
+                fact = equipment_fact(
+                    snapshot, physical, self.content, price_records or {}, now or datetime.now(UTC)
+                )
+                return {
+                    **self._metadata(snapshot),
+                    "query": {"content_id": None, "numeric_item_id": numeric_item_id},
+                    "ambiguous": False,
+                    "items": [
+                        {
+                            **fact,
+                            "numeric_item_id": physical.id,
+                            "equipment": physical.model_dump(mode="json"),
+                        }
+                    ],
+                    "catalog_version": self.equipment_catalog().revision,
+                }
         ordered = sorted(
             matches, key=lambda item: (item.style or "", item.slot or "", item.tier or 0, item.id)
         )

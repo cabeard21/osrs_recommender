@@ -1,6 +1,6 @@
 """OSRS Wiki real-time prices client — the live layer of the §8.3 cascade.
 
-Provider: ``https://prices.runescape.wiki/api/v1/osrs`` (§7.5, D10). Response shape
+Provider: ``https://prices.runescape.wiki/api/v2/osrs`` (§7.5, D10). Response shape
 verified against the live ``/latest`` endpoint at implementation time (2026-08-04),
 via ``id=<item_id>``::
 
@@ -19,18 +19,9 @@ via ``id=<item_id>``::
 seconds for *when that trade happened* — a different fact from when we called the API
 (D10, §6.8). Either pair may be absent (no recent trade) rather than present-but-null.
 
-**Why one request per scoped item id, not one unfiltered request for the whole
-catalog.** The wiki's own documentation discourages looping the ``id`` filter over
-*every* tradeable item, and does not support a comma-separated multi-id filter — only
-a single id per request. That guidance is written for clients that mirror the whole
-G.E., which is exactly what §8.3 forbids here: *"Only items referenced by the active
-roadmap's capabilities, candidates and training methods are fetched. The full item
-economy is never pulled — that would recreate the item database §3 rules out."* §11.6
-is more specific still: *"Outbound requests carry only what the provider needs: ...
-item ids for prices."* A roadmap-scoped set is a handful of items, not the catalog, so
-one request per id keeps both rules literally true without meaningfully increasing
-provider load. Fetching the unfiltered snapshot and discarding most of it client-side
-would satisfy neither rule despite costing one HTTP call instead of several.
+Small lookups remain scoped by numeric ID. Catalog-sized refreshes (32 or more
+IDs) fetch one bulk snapshot and retain only the requested equipment IDs. This
+follows the provider's bulk-use guidance without persisting the whole economy.
 
 A per-item failure (after the §7.5 retry schedule, or while the breaker is open) is
 swallowed and that id is simply absent from the returned mapping — never raised past
@@ -148,6 +139,15 @@ class PricesClient:
         the breaker they injected rather than this return value.
         """
         scoped = sorted(frozenset(item_ids))
+        # Keep tiny lookups scoped; a catalog refresh must not make hundreds of requests.
+        if len(scoped) >= 32:
+            data = self._fetch_data()
+            fetched_at = self._clock()
+            return {
+                item_id: self._record(item_id, data[str(item_id)], fetched_at)
+                for item_id in scoped
+                if isinstance(data.get(str(item_id)), dict)
+            }
         result: dict[int, PriceDTO] = {}
         for item_id in scoped:
             entry = self._fetch_one(item_id)
@@ -156,25 +156,29 @@ class PricesClient:
         return result
 
     def _fetch_one(self, item_id: int) -> PriceDTO | None:
+        data = self._fetch_data(item_id)
+        entry = data.get(str(item_id))
+        if not isinstance(entry, dict):
+            return None
+        return self._record(item_id, entry, self._clock())
+
+    def _fetch_data(self, item_id: int | None = None) -> dict[str, Any]:
         try:
             response = get_with_retry(
                 self._client,
                 "/latest",
-                params={"id": item_id},
+                params={"id": item_id} if item_id is not None else {},
                 breaker=self._breaker,
                 sleep=self._sleep,
             )
-        except (RequestFailed, CircuitBreakerOpen) as exc:
-            logger.warning("price fetch failed for item %d: %s", item_id, exc)
-            return None
+            payload = response.json()
+        except (RequestFailed, CircuitBreakerOpen, ValueError) as exc:
+            logger.warning("price fetch failed (%s): %s", item_id or "catalog", exc)
+            return {}
+        data = payload.get("data") if isinstance(payload, dict) else None
+        return data if isinstance(data, dict) else {}
 
-        fetched_at = self._clock()
-        payload: dict[str, Any] = response.json()
-        data = payload.get("data", {})
-        entry = data.get(str(item_id))
-        if not isinstance(entry, dict):
-            return None
-
+    def _record(self, item_id: int, entry: dict[str, Any], fetched_at: datetime) -> PriceDTO:
         return PriceDTO(
             item_id=item_id,
             high_price_gp=_as_int(entry.get("high")),
@@ -188,7 +192,7 @@ class PricesClient:
 
 
 def _as_int(value: object) -> int | None:
-    if isinstance(value, bool) or not isinstance(value, int):
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         return None
     return value
 
@@ -196,4 +200,7 @@ def _as_int(value: object) -> int | None:
 def _epoch_to_datetime(value: object) -> datetime | None:
     if isinstance(value, bool) or not isinstance(value, int | float):
         return None
-    return datetime.fromtimestamp(value, tz=UTC)
+    try:
+        return datetime.fromtimestamp(value, tz=UTC)
+    except (ValueError, OverflowError, OSError):
+        return None

@@ -43,7 +43,7 @@ def test_loads_from_yaml(tmp_path: Path) -> None:
     assert settings.port == 8502
     assert settings.database_url == "sqlite:///./tracker.db"
     assert settings.integrations.prices.ttl_hours == 6
-    assert settings.integrations.prices.base_url == "https://prices.runescape.wiki/api/v1/osrs"
+    assert settings.integrations.prices.base_url == "https://prices.runescape.wiki/api/v2/osrs"
     assert settings.integrations.wise_old_man.base_url == "https://api.wiseoldman.net/v2"
     assert settings.content_dir == Path("content")
 

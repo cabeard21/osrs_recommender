@@ -182,7 +182,7 @@ Deployed version 1 RuneLite clients may still send the optional `practice_events
 field. The server validates and ignores it; new clients omit it.
 
 When the optional MCP profile is enabled, the separate tunnel makes outbound HTTPS
-connections to OpenAI and delivers the eight Account/Quest Cape/Gear tools to
+connections to OpenAI and delivers the nine Account/Quest Cape/Gear tools to
 ChatGPT. This does not publish the dashboard or synchronization API. Its runtime key
 is a tunnel-only file secret, separate from the RuneLite bearer token; never put it in
 the stack's `.env`, which the existing application imports wholesale.
