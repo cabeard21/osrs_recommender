@@ -93,10 +93,38 @@ at a loopback or Tailscale address, never a forwarded port.
 
 ## Version compatibility — §13.1 stage 1
 
+### Upgrade shortcut (Windows)
+
+Double-click **`upgrade-runelite.bat`** in the repository root. It uses the app's `.venv`
+Python and your configured JDK to fetch the latest stable release from RuneLite's Maven
+repository, update `runeLiteVersion`, and run the plugin build, tests, runtime check, and
+coverage gate. The window stays open to show the result. An already-current pin is unchanged;
+a failed build or Ctrl+C cancellation restores the previous pin. Network/metadata errors leave it
+unchanged. Test fixture output goes under `plugin/build/upgrade-fixtures/`.
+
+For a preview or a specific upgrade, run from the repository root:
+
+```powershell
+.\upgrade-runelite.bat --check
+.\upgrade-runelite.bat --version 1.13.2
+```
+
+The explicit version above is an example; the default always resolves the latest published
+release. Downgrades and snapshot versions are rejected. After a successful upgrade, launch
+the dev client with `cd plugin; .\gradlew.bat runClient` from the repository root, verify
+a fresh account sync, and recheck `CONTRACT_RECONCILIATION.md` before updating the historical
+compatibility findings below. The shortcut verifies the build; live collector acceptance
+still requires that check. It does not change the payload contract version.
+
+### Recorded compatibility
+
+These are historical verification results. For the current client pin, read `runeLiteVersion`
+in `plugin/build.gradle`; running the shortcut does not recapture live-account findings.
+
 Stage 1 of the §13.1 ladder is *"local checkout, Gradle build, side-load, **manually matched
 app/plugin versions**"*. Three numbers have to stay in step:
 
-| Number | Where | Today |
+| Number | Where | Recorded version |
 |---|---|---|
 | RuneLite client | `plugin/build.gradle` → `runeLiteVersion` | `1.13.1` |
 | Payload contract | `AccountSnapshot.PAYLOAD_VERSION` and `tracker/api/sync.py` → `SUPPORTED_PAYLOAD_VERSIONS` | `1` |
