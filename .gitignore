@@ -35,3 +35,10 @@ snapshot.json
 # Cygwin/MSYS crash dumps. A crashed shell drops these into the repo root; they are
 # machine-local debris, not a record of anything the project needs.
 *.stackdump
+
+# React Gear preview (build locally with npm run build)
+frontend/gear/node_modules/
+frontend/gear/test-results/
+frontend/gear/playwright-report/
+tracker/ui/gear_static/
+*.tsbuildinfo

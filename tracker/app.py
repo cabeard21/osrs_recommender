@@ -56,6 +56,10 @@ def create_app(
     )
     setattr(app.state, PRICES_CLIENT_ATTR, prices_client)
 
+    from tracker.ui.gear_preview import mount_gear_preview
+
+    mount_gear_preview(app)
+
     if mount_ui:
         _mount_ui(app, resolved)
 
