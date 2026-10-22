@@ -16,6 +16,7 @@ import type { FixtureFailure } from "./api/contracts";
 export default function App() {
   const {
     state,
+    liveMode,
     current,
     itemById,
     dispatch,
@@ -78,7 +79,9 @@ export default function App() {
           <Settings size={18} />
           Settings
         </a>
-        <div className="badge">Fixture mode · offline data</div>
+        <div className="badge">
+          {liveMode ? "Live account mode" : "Fixture mode · offline data"}
+        </div>
       </div>
     </>
   );
@@ -89,7 +92,9 @@ export default function App() {
     current.draft.assumptions.acquired;
   const handoffText = JSON.stringify(
     {
-      source: "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
+      source: liveMode
+        ? "LIVE MODE DRAFT — NO OPTIMIZATION RESULT"
+        : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
       submitted: current.result?.scenario ?? null,
       draft: current.draft,
       result: current.result,
@@ -101,7 +106,7 @@ export default function App() {
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      setCopyStatus("Copied fixture text");
+      setCopyStatus(liveMode ? "Copied scenario draft" : "Copied fixture text");
     } catch {
       setCopyStatus("Clipboard unavailable. Select and copy the text below.");
     }
@@ -132,7 +137,11 @@ export default function App() {
             <strong className="header-title">
               RUNIC LEDGER <span className="gold">// GEAR</span>
             </strong>
-            <small className="blue">FIXTURE PREVIEW · NO LIVE CONNECTION</small>
+            <small className="blue">
+              {liveMode
+                ? "ACCOUNT OBSERVATIONS · READ ONLY"
+                : "FIXTURE PREVIEW · NO LIVE CONNECTION"}
+            </small>
           </div>
           <div className="header-modes">
             <button
@@ -149,15 +158,35 @@ export default function App() {
             </button>
           </div>
           <span className="account">
-            <strong>{state.context?.displayName ?? "Loading demo…"}</strong>
-            <small>Account fixture</small>
+            <strong>
+              {state.context?.displayName ??
+                (liveMode
+                  ? contextError
+                    ? "Account unavailable"
+                    : "Loading account…"
+                  : "Loading demo…")}
+            </strong>
+            <small>
+              {liveMode ? "Last synchronized observations" : "Account fixture"}
+            </small>
           </span>
           <button onClick={() => setHandoff(true)}>ChatGPT handoff</button>
         </header>
         <main id="main" tabIndex={-1}>
           <div className="demo-banner">
-            DEMO DATA · Deterministic fixtures only. No live account data,
-            optimizer output, or account changes.
+            {liveMode ? (
+              <>
+                Live account observations · Optimization unavailable in
+                Milestone 2.{" "}
+                <a href="?mode=fixture">Open separate fixture demonstration</a>
+              </>
+            ) : (
+              <>
+                DEMO DATA · Deterministic fixtures only. No live account data,
+                optimizer output, or account changes.{" "}
+                <a href="?mode=live">Open live account</a>
+              </>
+            )}
           </div>
           {hypothetical && (
             <div role="status" className="notice">
@@ -181,20 +210,24 @@ export default function App() {
                   ? "Running deterministic fixture…"
                   : current.result
                     ? "Inspect equipment and refine your scenario"
-                    : "Configure your scenario and inspect the demo loadout"}
+                    : liveMode
+                      ? "Inspect synchronized equipment and physical item facts"
+                      : "Configure your scenario and inspect the demo loadout"}
               </p>
             </div>
             <div className="button-row">
               <button
                 className="primary"
-                disabled={!state.context || current.pending}
+                disabled={liveMode || !state.context || current.pending}
                 onClick={() => void run()}
               >
-                {current.pending
-                  ? "Simulating…"
-                  : current.result
-                    ? "Re-run fixture optimization"
-                    : "Run fixture optimization"}
+                {liveMode
+                  ? "Live optimization · Milestone 3"
+                  : current.pending
+                    ? "Simulating…"
+                    : current.result
+                      ? "Re-run fixture optimization"
+                      : "Run fixture optimization"}
               </button>
               {current.pending && (
                 <button onClick={cancel}>Cancel simulation</button>
@@ -208,8 +241,11 @@ export default function App() {
             </div>
           )}
           {!state.context && !contextError && (
-            <p role="status">Loading fixture context…</p>
+            <p role="status">
+              {liveMode ? "Loading account data…" : "Loading fixture context…"}
+            </p>
           )}
+          {liveMode && <LiveAccountContext />}
           {current.error && (
             <div role="alert" className="notice error">
               {current.error}
@@ -238,50 +274,56 @@ export default function App() {
                         : "Awaiting execution"}
                   </h3>
                   <p>
-                    Deterministic UI fixtures demonstrate the workflow.
-                    Configuration is recorded, but no search or calculation
-                    runs.
+                    {liveMode
+                      ? "Account and item facts come from the Python backend. No optimization or equipment evaluation runs in this milestone."
+                      : "Deterministic UI fixtures demonstrate the workflow. Configuration is recorded, but no search or calculation runs."}
                   </p>
                 </div>
                 <h3 className="eyebrow">Preview capabilities</h3>
                 <p className="green">✓ Eleven selectable equipment slots</p>
                 <p className="green">✓ Persistent workspace drafts</p>
                 <p className="blue">
-                  Contextual item inspection and isolated comparison trials
+                  {liveMode
+                    ? "Physical item inspection and observation timestamps"
+                    : "Contextual item inspection and isolated comparison trials"}
                 </p>
                 <p>
                   Production locks require a future Gear API. Exclusions and
                   exact evaluations require backend work.
                 </p>
-                <label>
-                  Demo outcome
-                  <select
-                    value={failure}
-                    onChange={(e) =>
-                      setFailure(e.target.value as FixtureFailure)
-                    }
-                  >
-                    <option value="none">Success fixture</option>
-                    <option value="busy">Busy fixture</option>
-                    <option value="no-solution">No solution fixture</option>
-                    <option value="error">Error fixture</option>
-                  </select>
-                </label>
-                <label>
-                  Demo equipment observations
-                  <select
-                    value={equipmentStatus}
-                    onChange={(e) =>
-                      changeEquipmentStatus(
-                        e.target.value as typeof equipmentStatus,
-                      )
-                    }
-                  >
-                    <option value="observed">Complete fixture scan</option>
-                    <option value="partial">Partial fixture scan</option>
-                    <option value="unknown">Missing fixture scan</option>
-                  </select>
-                </label>
+                {!liveMode && (
+                  <>
+                    <label>
+                      Demo outcome
+                      <select
+                        value={failure}
+                        onChange={(e) =>
+                          setFailure(e.target.value as FixtureFailure)
+                        }
+                      >
+                        <option value="none">Success fixture</option>
+                        <option value="busy">Busy fixture</option>
+                        <option value="no-solution">No solution fixture</option>
+                        <option value="error">Error fixture</option>
+                      </select>
+                    </label>
+                    <label>
+                      Demo equipment observations
+                      <select
+                        value={equipmentStatus}
+                        onChange={(e) =>
+                          changeEquipmentStatus(
+                            e.target.value as typeof equipmentStatus,
+                          )
+                        }
+                      >
+                        <option value="observed">Complete fixture scan</option>
+                        <option value="partial">Partial fixture scan</option>
+                        <option value="unknown">Missing fixture scan</option>
+                      </select>
+                    </label>
+                  </>
+                )}
               </section>
               {current.result && (
                 <section className="panel">
@@ -339,9 +381,10 @@ export default function App() {
             </aside>
           </div>
           <footer>
-            RUNIC LEDGER // MILESTONE 1{" "}
+            RUNIC LEDGER // MILESTONE 2{" "}
             <span>
-              Fixture observations: {state.context?.observedAt ?? "not loaded"}
+              {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
+              {state.context?.observedAt ?? "not loaded"}
             </span>
           </footer>
         </main>
@@ -350,8 +393,9 @@ export default function App() {
       {handoff && (
         <Dialog title="ChatGPT handoff" onClose={() => setHandoff(false)}>
           <p>
-            Fixture-only context for your existing ChatGPT MCP workflow. No chat
-            connection is created.
+            {liveMode
+              ? "Uncalculated scenario draft for discussion. Account observations and optimization results are not exported."
+              : "Fixture-only context for your existing ChatGPT MCP workflow. No chat connection is created."}
           </p>
           <textarea
             aria-label="Scenario handoff text"
@@ -360,11 +404,58 @@ export default function App() {
             value={handoffText}
           />
           <button onClick={() => void copy(handoffText)}>
-            Copy fixture scenario
+            {liveMode ? "Copy scenario draft" : "Copy fixture scenario"}
           </button>
           <p role="status">{copyStatus}</p>
         </Dialog>
       )}
     </div>
+  );
+}
+
+function LiveAccountContext() {
+  const { state, loadContext } = useGear();
+  const live = state.context?.live;
+  if (!live) return null;
+  return (
+    <section className="panel account-context">
+      <h2>
+        {live.account?.last_sync_at
+          ? "Account observations"
+          : "No synchronized account"}
+      </h2>
+      {!live.account && (
+        <p>
+          Configure your account in Settings and synchronize with RuneLite.
+          Equipment remains unknown.
+        </p>
+      )}
+      <p>
+        Last synchronization: {live.account?.last_sync_at ?? "Never"}.
+        Observations describe the last accepted sync; they are not a live
+        connection.
+      </p>
+      {live.account && (
+        <p>
+          {Object.entries(live.account.skills)
+            .map(([key, skill]) => `${key}: ${skill.level}`)
+            .join(" · ") || "No skill observations"}
+        </p>
+      )}
+      {Object.entries(live.container_scans).map(([container, scan]) => (
+        <p key={container}>
+          {container}:{" "}
+          {scan
+            ? `${scan.note ?? "Last observed"} ${scan.scanned_at} (${scan.source})`
+            : "No scan — unknown"}
+        </p>
+      ))}
+      <p>
+        Older observations may be stale. Sync again to confirm current equipment
+        and ownership.
+      </p>
+      <p>Snapshot: {live.account?.snapshot_id ?? "Unavailable"}</p>
+      <button onClick={() => void loadContext()}>Refresh account</button>
+    </section>
   );
 }

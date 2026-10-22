@@ -3,7 +3,7 @@ import { useGear } from "../state/GearProvider";
 import { newRole } from "../state/scenario";
 import type { Draft, Role, Style } from "../api/contracts";
 export function ConfigurationPanel() {
-  const { state, current, edit } = useGear(),
+  const { state, current, edit, liveMode } = useGear(),
     draft = current.draft;
   const change = (patch: Partial<Draft>) => edit({ ...draft, ...patch });
   const roleChange = (id: string, patch: Partial<Role>) =>
@@ -251,8 +251,9 @@ export function ConfigurationPanel() {
           onChange={(e) => change({ budget: e.target.value })}
         />
         <p>
-          Fixture quotes only. Shared purchases counted once in the demo
-          summary.
+          {liveMode
+            ? "Draft budget only. No account purchase estimate has been calculated."
+            : "Fixture quotes only. Shared purchases counted once in the demo summary."}
         </p>
       </div>
       <label>

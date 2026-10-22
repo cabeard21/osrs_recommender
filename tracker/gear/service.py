@@ -84,6 +84,7 @@ class GearService:
         snapshot: AccountSnapshot,
         *,
         style: str | None = None,
+        query: str = "",
         slot: str | None = None,
         ownership: str | None = None,
         wear_status: str | None = None,
@@ -111,6 +112,10 @@ class GearService:
         evaluated_at = now or datetime.now(UTC)
         facts = []
         for item in sorted(catalog.items.values(), key=lambda row: (row.name, row.id)):
+            if query.strip().casefold() not in item.name.casefold() and query.strip() != str(
+                item.id
+            ):
+                continue
             if slot is not None and item.slot != slot:
                 continue
             if style is not None and item.slot == "weapon":
@@ -136,6 +141,54 @@ class GearService:
             "limit": limit,
             "catalog_version": catalog.revision,
             "next_offset": end if end < len(facts) else None,
+        }
+
+    def physical_item(
+        self,
+        snapshot: AccountSnapshot | None,
+        item_id: int,
+        *,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Concrete physical identity; never resolve through curated ownership aliases."""
+        catalog = self.equipment_catalog()
+        item = catalog.items[item_id]
+        records = price_records or {}
+        evaluated_at = now or datetime.now(UTC)
+        fact = equipment_fact(
+            snapshot or AccountSnapshot(0, ""), item, self.content, records, evaluated_at
+        )
+        authored = [entry for entry in self.content.items.values() if entry.item_id == item_id]
+        record = records.get(item_id)
+        quote = resolve_price(authored[0] if authored else None, record, now=evaluated_at)
+        price = {
+            **fact["price"],
+            "confidence": quote.confidence.name.lower() if item.tradeable else None,
+            "policy": quote.policy.value if item.tradeable else None,
+            "source": record.source if record else None,
+            "provider": getattr(record, "provider", None),
+            "fetched_at": record.fetched_at.isoformat() if record else None,
+            "high_price_gp": record.high_price_gp if record else None,
+            "low_price_gp": record.low_price_gp if record else None,
+            "high_trade_at": record.high_trade_at.isoformat()
+            if record and record.high_trade_at
+            else None,
+            "low_trade_at": record.low_trade_at.isoformat()
+            if record and record.low_trade_at
+            else None,
+        }
+        if item.tradeable is None:
+            price.update(layer="unknown", selection_reason="Tradeability unknown")
+        return {
+            **fact,
+            "numeric_item_id": item.id,
+            "equipment": item.model_dump(mode="json"),
+            "price": price,
+            "catalog_version": catalog.revision,
+            "acquisition_descriptions": [
+                entry.acquired_from for entry in authored if entry.acquired_from
+            ],
         }
 
     def progression(

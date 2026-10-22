@@ -1,6 +1,6 @@
-# Runic Ledger Gear preview — Milestone 1
+# Runic Ledger Gear preview — Milestone 2
 
-Fixture-backed React/TypeScript/Vite/Tailwind preview. The architecture authority is
+Account-connected React/TypeScript/Vite/Tailwind preview with an isolated fixture mode. The architecture authority is
 [the redesign plan](../../docs/GEAR_OPTIMIZER_REDESIGN_PLAN.md); the visual authority is
 [the Stitch archive](../../docs/ui/runic-ledger.zip), especially its executable CSS.
 
@@ -39,13 +39,18 @@ Open `http://127.0.0.1:5173/gear-ui/`. Vite proxies local sprites to Python at
 GEAR_BACKEND_ORIGIN=http://127.0.0.1:8080 npm run dev
 ```
 
-All domain calls use `FixtureGearClient`, so Python is needed only for local
-sprites and navigation to existing pages. `HttpGearClient` is an **unselected
-transport seam**, not an enabled integration. Its preview DTOs must be mapped and
-validated against authoritative Python responses in later milestones. No Gear
-browser API endpoints have been added, and no API token is sent to React.
+Live mode is the default at `/gear-next/`. It uses the read-only Python endpoints
+under `/ui-api/gear` for account context, equipment observations, and physical item
+inspection. See [the API contract](../../docs/GEAR_BROWSER_API.md). No API token is
+sent to React; these endpoints share the private dashboard network boundary.
 
-## Interactive states
+Open `/gear-next/?mode=fixture` for the deterministic demonstrations below. The
+fixture adapter remains available for tests and local demonstrations. Live mode
+never falls back to fixtures and cannot execute optimization/evaluation. No fixture
+metrics or purchase estimates appear on live equipment. Account context refreshes
+on focus, every 30 seconds while visible, and on manual refresh.
+
+## Fixture interactive states
 
 1. Configure Single and inspect the demo equipment baseline.
 2. Run the fixture simulation and inspect an immutable result with its submitted context.
@@ -75,14 +80,14 @@ controls demonstrate state changes; production operations remain unavailable.
 
 ## State boundaries
 
-`GearProvider` owns read-only fixture context and separate Single/Multi workspaces.
+`GearProvider` owns read-only account or fixture context and separate Single/Multi workspaces.
 Each workspace keeps draft configuration, submitted scenario, accepted/previous
 results, manual trial, and UI selections separately. Draft edits invalidate an existing
 result, preserve its original context, clear trials, and invalidate pending generations.
 Cancel and superseded responses cannot publish. A changed context fingerprint rejects
 publication. Changing result views or active configuration changes visualization only.
 
-Only versioned draft configuration is saved in `sessionStorage`, keyed by the fixture
+Only versioned draft configuration is saved in `sessionStorage`, keyed by the mode and
 player ID. Results, account facts, and trial evaluations are not persisted. Reload
 restores incomplete draft fields and prominently labels hypothetical assumptions.
 Assumed skills, quest completion, and item acquisitions remain request-local.
@@ -117,7 +122,7 @@ unauthenticated sync rejection. It writes screenshots for each state at desktop
 
 ## Files and responsibilities
 
-- `src/api/`: typed preview contracts, client boundary, unselected HTTP transport seam.
+- `src/api/`: typed contracts, runtime validation, client boundary, and live HTTP adapter.
 - `src/fixtures/`: deterministic context, item, result, transition and trial examples.
 - `src/state/`: reducer, normalization, versioned draft persistence, context/provider.
 - `src/components/`: shared configuration, eleven-slot grid, telemetry, inspector,
@@ -153,12 +158,14 @@ cache bundle and retain [its attribution](../../tracker/ui/assets/items/source.j
 Fonts retain their notices in `public/fonts/`. No screenshot/HTML reference exports
 are copied into the runtime bundle.
 
-## Remaining Milestone 2 work
+## Milestone 2 delivery and remaining work
 
-Implement authoritative context and physical-item projections, item browsing and
-concrete-ID details, explicit missing/ambiguous equipment observations, requirements,
-ownership timestamps, complete quote provenance, typed server DTO validation/mapping,
-and context/items endpoints under the existing private dashboard boundary. Replace
-fixture account/item presentations and reconcile `GearClient` with those contracts.
-Real optimization, exact manual evaluation, exclusions, joint integration and cutover
-remain in their later milestones. Milestone 2 has not been started.
+See [the implementation report](../../docs/GEAR_MILESTONE_2.md) for verification,
+files changed, representative live-mode screenshots, and observation limitations.
+The screenshots use a disposable database and the real sync/read endpoints; they do
+not depict the operator's account.
+
+Milestone 3 remains separate: real single-style optimization, matching current-equipment
+comparison/evaluation, asynchronous execution, snapshot publication guards, cancellation,
+and real result/provenance rendering. Manual trials, exclusions, joint integration,
+packaging and `/gear` cutover remain in their designated later milestones.

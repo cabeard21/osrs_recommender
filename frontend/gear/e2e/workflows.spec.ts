@@ -7,7 +7,7 @@ test("five cohesive states, keyboard inspector, persistence, and responsive layo
 }, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/gear-next/");
+  await page.goto("/gear-next/?mode=fixture");
   await expect(
     page.getByText("Demo adventurer", { exact: true }),
   ).toBeVisible();
@@ -130,7 +130,7 @@ test("retained Gear, dashboard, health and API boundary remain available", async
 }) => {
   expect((await request.get("/healthz")).status()).toBe(200);
   expect((await request.post("/api/sync", { data: {} })).status()).toBe(401);
-  expect((await request.get("/ui-api/gear/context")).status()).toBe(404);
+  expect((await request.get("/ui-api/gear/context")).status()).toBe(200);
   await page.goto("/gear");
   await expect(page.locator("[data-testid=gear-optimizer]")).toBeVisible();
   await page.goto("/");

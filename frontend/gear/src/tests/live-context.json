@@ -1,0 +1,536 @@
+{
+  "api_version": "gear-ui-v1",
+  "evaluated_at": "2026-10-22T18:50:14.451027Z",
+  "account": {
+    "player_id": 1,
+    "username": "Synchronized ranger",
+    "skills": {},
+    "quests": {},
+    "quest_observations": {},
+    "unlocks": {},
+    "quest_points": null,
+    "combat_level": null,
+    "members": null,
+    "last_sync_at": "2026-10-22T12:00:00+00:00",
+    "missing_data_policy": "Absent observations are unknown, not negative facts.",
+    "snapshot_id": "da27abd771b750296a22c78b33046c75ab0c97d11f3d61e963df0f10b0c50792"
+  },
+  "container_scans": {
+    "bank": null,
+    "inventory": null,
+    "equipment": {
+      "scanned_at": "2026-10-22T12:00:00+00:00",
+      "source": "runelite"
+    }
+  },
+  "current_equipment": {
+    "status": "observed",
+    "scanned_at": "2026-10-22T12:00:00Z",
+    "equipment": {
+      "weapon": 4151
+    },
+    "slots": {
+      "weapon": {
+        "status": "observed",
+        "item_id": 4151,
+        "candidate_item_ids": [4151]
+      },
+      "shield": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "ammunition": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "head": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "cape": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "neck": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "body": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "legs": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "hands": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "feet": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      },
+      "ring": {
+        "status": "empty",
+        "item_id": null,
+        "candidate_item_ids": []
+      }
+    },
+    "unmapped_item_ids": [],
+    "warnings": []
+  },
+  "items": [
+    {
+      "item_id": 4151,
+      "name": "Abyssal whip",
+      "slot": "weapon",
+      "ownership": {
+        "status": "owned",
+        "quantity": 1,
+        "meaning": "observed concrete usable form",
+        "sightings": [
+          {
+            "container": "equipment",
+            "quantity": 1,
+            "observed_at": "2026-10-22T12:00:00+00:00",
+            "source": "runelite"
+          }
+        ],
+        "container_scans": {
+          "equipment": {
+            "scanned_at": "2026-10-22T12:00:00+00:00",
+            "source": "runelite"
+          }
+        }
+      },
+      "wear": {
+        "status": "unknown",
+        "requirements_complete": true,
+        "requirements": {
+          "kind": "skill",
+          "key": "attack",
+          "status": "unknown",
+          "current": null,
+          "required": 70,
+          "reason": "attack: unknown / 70",
+          "children": []
+        },
+        "unmet": [
+          {
+            "kind": "skill",
+            "key": "attack",
+            "status": "unknown",
+            "current": null,
+            "required": 70,
+            "reason": "attack: unknown / 70",
+            "children": []
+          }
+        ]
+      },
+      "acquisition": "tradeable",
+      "price": {
+        "amount_gp": 1500000,
+        "layer": "static_hint",
+        "selected_trade_at": null,
+        "selection_reason": "static content hint",
+        "confidence": "low",
+        "policy": "acquisition_cost",
+        "source": null,
+        "provider": null,
+        "fetched_at": null,
+        "high_price_gp": null,
+        "low_price_gp": null,
+        "high_trade_at": null,
+        "low_trade_at": null
+      },
+      "limitations": [],
+      "numeric_item_id": 4151,
+      "equipment": {
+        "id": 4151,
+        "name": "Abyssal whip",
+        "slot": "weapon",
+        "bonuses": {
+          "stab": 0,
+          "slash": 82,
+          "crush": 0,
+          "ranged": 0,
+          "magic": 0,
+          "melee_strength": 82,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_ranged": 0,
+          "defence_magic": 0,
+          "prayer": 0
+        },
+        "attack_speed": 4,
+        "attack_styles": ["slash"],
+        "attack_profiles": [
+          ["slash", "accurate"],
+          ["slash", "controlled"],
+          ["slash", "defensive"]
+        ],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false,
+        "requires": {
+          "type": "skill",
+          "skill": "attack",
+          "level": 70
+        },
+        "requirements_complete": true,
+        "unsupported_effects": [],
+        "tradeable": true,
+        "content_ids": ["abyssal_whip"]
+      },
+      "catalog_version": "df16ae83df6462b2607934f53e244ea8993d671849b9ff5ab485ea1342f03850",
+      "acquisition_descriptions": []
+    }
+  ],
+  "capabilities": {
+    "objectives": [
+      {
+        "id": "weighted_dps",
+        "available": false,
+        "reason": "Optimization integration begins in Milestone 3"
+      }
+    ],
+    "access_modes": ["owned", "usable", "future"],
+    "max_roles": 4,
+    "max_equipment_actions": 12,
+    "slots": [
+      "weapon",
+      "shield",
+      "ammunition",
+      "head",
+      "cape",
+      "neck",
+      "body",
+      "legs",
+      "hands",
+      "feet",
+      "ring"
+    ],
+    "spells": [
+      {
+        "id": "wind_strike",
+        "level": 1,
+        "base_max_hit": 2
+      },
+      {
+        "id": "water_strike",
+        "level": 5,
+        "base_max_hit": 4
+      },
+      {
+        "id": "earth_strike",
+        "level": 9,
+        "base_max_hit": 6
+      },
+      {
+        "id": "fire_strike",
+        "level": 13,
+        "base_max_hit": 8
+      },
+      {
+        "id": "wind_bolt",
+        "level": 17,
+        "base_max_hit": 9
+      },
+      {
+        "id": "water_bolt",
+        "level": 23,
+        "base_max_hit": 10
+      },
+      {
+        "id": "earth_bolt",
+        "level": 29,
+        "base_max_hit": 11
+      },
+      {
+        "id": "fire_bolt",
+        "level": 35,
+        "base_max_hit": 12
+      },
+      {
+        "id": "wind_blast",
+        "level": 41,
+        "base_max_hit": 13
+      },
+      {
+        "id": "water_blast",
+        "level": 47,
+        "base_max_hit": 14
+      },
+      {
+        "id": "earth_blast",
+        "level": 53,
+        "base_max_hit": 15
+      },
+      {
+        "id": "fire_blast",
+        "level": 59,
+        "base_max_hit": 16
+      },
+      {
+        "id": "wind_wave",
+        "level": 62,
+        "base_max_hit": 17
+      },
+      {
+        "id": "water_wave",
+        "level": 65,
+        "base_max_hit": 18
+      },
+      {
+        "id": "earth_wave",
+        "level": 70,
+        "base_max_hit": 19
+      },
+      {
+        "id": "fire_wave",
+        "level": 75,
+        "base_max_hit": 20
+      },
+      {
+        "id": "wind_surge",
+        "level": 81,
+        "base_max_hit": 21
+      },
+      {
+        "id": "water_surge",
+        "level": 85,
+        "base_max_hit": 22
+      },
+      {
+        "id": "earth_surge",
+        "level": 90,
+        "base_max_hit": 23
+      },
+      {
+        "id": "fire_surge",
+        "level": 95,
+        "base_max_hit": 24
+      }
+    ],
+    "encounter_presets": [
+      {
+        "id": "dagannoth_kings",
+        "name": "Dagannoth Kings \u2014 illustrative kill cycle",
+        "roles": [
+          {
+            "id": "supreme",
+            "style": "slash",
+            "stance": "accurate",
+            "spell": "fire_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Dagannoth Supreme",
+              "defence_level": 128,
+              "magic_level": 255,
+              "bonuses": {
+                "stab": 10,
+                "slash": 10,
+                "crush": 10,
+                "ranged": 550,
+                "magic": 255
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "earth",
+              "weakness_percent": 35,
+              "damage_cap": null,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          },
+          {
+            "id": "prime",
+            "style": "ranged",
+            "stance": "accurate",
+            "spell": "fire_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Dagannoth Prime",
+              "defence_level": 255,
+              "magic_level": 255,
+              "bonuses": {
+                "stab": 255,
+                "slash": 255,
+                "crush": 255,
+                "ranged": 10,
+                "magic": 255
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "earth",
+              "weakness_percent": 35,
+              "damage_cap": null,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          },
+          {
+            "id": "rex",
+            "style": "magic",
+            "stance": "accurate",
+            "spell": "earth_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Dagannoth Rex",
+              "defence_level": 255,
+              "magic_level": 0,
+              "bonuses": {
+                "stab": 255,
+                "slash": 255,
+                "crush": 255,
+                "ranged": 255,
+                "magic": 10
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "earth",
+              "weakness_percent": 35,
+              "damage_cap": null,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          }
+        ],
+        "ordered_roles": ["supreme", "prime", "rex"],
+        "loop": true,
+        "limitations": [
+          "This selected kill cycle does not require every pairwise transition.",
+          "Equal active-time weights are assumptions, not measured kill durations.",
+          "Respawns, travel, survival, Slayer bonuses and downtime are not simulated.",
+          "Ordinary attacks only; elemental weakness applies to matching standard spells."
+        ],
+        "version": 1,
+        "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/monsters.json"
+      },
+      {
+        "id": "zulrah_forms",
+        "name": "Zulrah \u2014 form comparison template (not a rotation)",
+        "roles": [
+          {
+            "id": "serpentine",
+            "style": "magic",
+            "stance": "accurate",
+            "spell": "fire_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Zulrah (serpentine)",
+              "defence_level": 300,
+              "magic_level": 300,
+              "bonuses": {
+                "stab": 0,
+                "slash": 0,
+                "crush": 0,
+                "ranged": 50,
+                "magic": -45
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "fire",
+              "weakness_percent": 50,
+              "damage_cap": 50,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          },
+          {
+            "id": "magma",
+            "style": "magic",
+            "stance": "accurate",
+            "spell": "fire_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Zulrah (magma)",
+              "defence_level": 300,
+              "magic_level": 300,
+              "bonuses": {
+                "stab": 0,
+                "slash": 0,
+                "crush": 0,
+                "ranged": 300,
+                "magic": 0
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "fire",
+              "weakness_percent": 50,
+              "damage_cap": 50,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          },
+          {
+            "id": "tanzanite",
+            "style": "ranged",
+            "stance": "accurate",
+            "spell": "fire_strike",
+            "weight": 1.0,
+            "target": {
+              "name": "Zulrah (tanzanite)",
+              "defence_level": 300,
+              "magic_level": 300,
+              "bonuses": {
+                "stab": 0,
+                "slash": 0,
+                "crush": 0,
+                "ranged": 0,
+                "magic": 300
+              },
+              "ranged_light": null,
+              "ranged_standard": null,
+              "ranged_heavy": null,
+              "weakness_element": "fire",
+              "weakness_percent": 50,
+              "damage_cap": 50,
+              "unsupported_mechanics": []
+            },
+            "locks": {},
+            "parent_role": null
+          }
+        ],
+        "ordered_roles": ["serpentine", "magma", "tanzanite"],
+        "loop": false,
+        "limitations": [
+          "Form order is illustrative, not one of Zulrah's timed rotations.",
+          "Equal active-time weights do not represent published phase durations.",
+          "Jad phases, submerging, movement, venom and snakelings are not simulated.",
+          "Attacks with maximum hit above 50 are blocked; the reroll is not approximated."
+        ],
+        "version": 1,
+        "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/monsters.json"
+      }
+    ],
+    "configurations": ["melee", "ranged", "magic"]
+  },
+  "catalog_version": "df16ae83df6462b2607934f53e244ea8993d671849b9ff5ab485ea1342f03850",
+  "model_version": "normal-attacks-v1",
+  "price_revision": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+}

@@ -56,6 +56,14 @@ def create_app(
     )
     setattr(app.state, PRICES_CLIENT_ATTR, prices_client)
 
+    from tracker.api.gear_ui import router as gear_router
+    from tracker.gear.service import GearService
+
+    app.state.gear_service = GearService(
+        getattr(app.state, CONTENT_ATTR), equipment_root=resolved.content_dir / "equipment"
+    )
+    app.include_router(gear_router)
+
     from tracker.ui.gear_preview import mount_gear_preview
 
     mount_gear_preview(app)

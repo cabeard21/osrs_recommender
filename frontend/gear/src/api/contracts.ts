@@ -65,7 +65,8 @@ export interface Item {
   id: number;
   name: string;
   slot: Slot;
-  owned: boolean;
+  owned: boolean | null;
+  facts?: PhysicalItem;
   price: number | null;
   requirement: string;
 }
@@ -77,7 +78,8 @@ export interface GearContext {
   equipment: Equipment;
   items: Item[];
   equipmentStatus: "observed" | "partial" | "unknown";
-  source: "fixture";
+  source: "fixture" | "live";
+  live?: ContextDTO;
 }
 export interface Metrics {
   dps: number;
@@ -133,6 +135,7 @@ export type FixtureFailure = "none" | "busy" | "no-solution" | "error";
 export interface GearClient {
   getContext(): Promise<GearContext>;
   getItem(id: number): Promise<Item>;
+  browseItems?(slot: Slot, query: string, offset?: number): Promise<ItemPage>;
   alternatives(slot: Slot, scenario: Scenario): Promise<Item[]>;
   optimize(scenario: Scenario, signal: AbortSignal): Promise<OptimizationReply>;
   evaluate(
@@ -145,3 +148,97 @@ export interface GearClient {
 
 export const emptyEquipment = (): Equipment =>
   Object.fromEntries(slots.map((slot) => [slot, null])) as Equipment;
+
+export interface PhysicalItem {
+  item_id: number;
+  numeric_item_id: number;
+  name: string;
+  slot: Slot;
+  equipment: {
+    bonuses: Record<string, number>;
+    requires: unknown;
+    two_handed: boolean;
+    attack_speed: number;
+    attack_styles: string[];
+  };
+  wear: {
+    status: string;
+    requirements_complete: boolean;
+    requirements: unknown;
+    unmet: unknown[];
+  };
+  ownership: {
+    status: string;
+    meaning: string;
+    quantity: number;
+    sightings: {
+      container: string;
+      quantity: number;
+      observed_at: string;
+      source: string;
+    }[];
+    container_scans: Record<string, { scanned_at: string; source: string }>;
+  };
+  acquisition: string;
+  acquisition_descriptions: string[];
+  price: {
+    amount_gp: number | null;
+    layer: string;
+    selected_trade_at: string | null;
+    fetched_at: string | null;
+    provider: string | null;
+    source: string | null;
+    confidence: string | null;
+    policy: string | null;
+    selection_reason: string;
+  };
+  limitations: string[];
+  catalog_version: string;
+}
+export interface SlotObservation {
+  status: "observed" | "empty" | "unknown" | "ambiguous";
+  item_id: number | null;
+  candidate_item_ids: number[];
+}
+export interface ContextDTO {
+  api_version: "gear-ui-v1";
+  evaluated_at: string;
+  account: {
+    player_id: number;
+    username: string;
+    snapshot_id: string;
+    skills: Record<
+      string,
+      { level: number; observed_at: string; source: string }
+    >;
+    last_sync_at: string | null;
+  } | null;
+  container_scans: Record<
+    string,
+    { scanned_at: string; source: string; note?: string } | null
+  >;
+  current_equipment: {
+    status: GearContext["equipmentStatus"];
+    scanned_at: string | null;
+    equipment: Record<string, number>;
+    slots: Record<string, SlotObservation>;
+    unmapped_item_ids: number[];
+    observations?: {
+      item_id: number;
+      quantity: number;
+      observed_at: string;
+      source: string;
+    }[];
+    warnings: string[];
+  };
+  items: PhysicalItem[];
+  capabilities: Record<string, unknown>;
+  catalog_version: string;
+  model_version: string;
+  price_revision: string;
+}
+export interface ItemPage {
+  items: Item[];
+  total: number;
+  nextOffset: number | null;
+}

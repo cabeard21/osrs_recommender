@@ -8,9 +8,11 @@ from tempfile import TemporaryDirectory
 import uvicorn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from tracker.app import create_app
+from sqlalchemy import delete, update
+
+from tracker.app import _mount_ui, create_app
 from tracker.config.settings import Settings
-from tracker.db.models import Base, Player
+from tracker.db.models import Base, ContainerScan, ObservedItem, Player, SkillSnapshot
 from tracker.db.session import build_engine, build_session_factory
 
 if __name__ == "__main__":
@@ -30,5 +32,18 @@ if __name__ == "__main__":
                 content_dir=Path(__file__).resolve().parents[3] / "content",
             ),
             session_factory=factory,
+            mount_ui=False,
         )
+
+        @app.post("/test/reset-gear")
+        def reset_gear():
+            # Test-only control over this disposable database; never mounted by create_app.
+            with factory() as session:
+                for model in (ObservedItem, ContainerScan, SkillSnapshot):
+                    session.execute(delete(model))
+                session.execute(update(Player).values(last_sync_at=None))
+                session.commit()
+            return {"status": "reset"}
+
+        _mount_ui(app, app.state.settings)
         uvicorn.run(app, host="127.0.0.1", port=8766, log_level="warning")

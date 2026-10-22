@@ -82,6 +82,8 @@ function useGearState(client: GearClient) {
       generation = current.generation + 1;
     let started = false;
     try {
+      if (!(client instanceof FixtureGearClient))
+        throw new Error("Live optimization is unavailable until Milestone 3.");
       if (!state.context) throw new Error("Fixture context has not loaded.");
       const scenario = normalize(current.draft, state.context.snapshotId);
       const controller = new AbortController();
@@ -108,6 +110,7 @@ function useGearState(client: GearClient) {
   }
   return {
     state,
+    liveMode: !(client instanceof FixtureGearClient),
     itemById: (id: number | null) =>
       state.context?.items.find((item) => item.id === id),
     current,

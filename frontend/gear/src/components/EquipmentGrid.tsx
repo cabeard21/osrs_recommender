@@ -31,31 +31,46 @@ export function EquipmentGrid({
   onSelect: (slot: Slot) => void;
   prefix?: string;
 }) {
-  const { itemById } = useGear();
+  const { itemById, state, liveMode } = useGear();
   return (
     <div className="equipment-grid" aria-label={`${prefix} equipment slots`}>
       {slots.map((slot) => {
         const item = itemById(equipment[slot]),
           isShared = shared.includes(equipment[slot] ?? -1);
+        const observation = liveMode
+          ? state.context?.live?.current_equipment.slots[slot]
+          : undefined;
+        const label = liveMode
+          ? (observation?.status ?? "unknown")
+          : isShared
+            ? "Shared"
+            : item
+              ? "Fixture"
+              : "Empty";
+        const name =
+          item?.name ??
+          (equipment[slot]
+            ? `Item #${equipment[slot]} · metadata unavailable`
+            : liveMode && label !== "empty"
+              ? `${label} equipment`
+              : "Empty slot");
         return (
           <button
             key={slot}
             className={`equipment-slot slot-${slot} ${selected === slot ? "selected" : ""}`}
-            aria-label={`${prefix}${slot} ${isShared ? "Shared" : item ? "Fixture" : "Empty"} ${item?.name ?? "Empty slot"}`}
+            aria-label={`${prefix}${slot} ${label} ${name}`}
             aria-pressed={selected === slot}
             onClick={() => onSelect(slot)}
           >
             <span className="slot-label">
               {slot}{" "}
-              <span className={isShared ? "green" : "blue"}>
-                {isShared ? "Shared" : item ? "Fixture" : "Empty"}
-              </span>
+              <span className={isShared ? "green" : "blue"}>{label}</span>
             </span>{" "}
             <span className="item-content">
               <span className="sprite">
                 <ItemSprite id={equipment[slot]} />
               </span>
-              <span>{item?.name ?? "Empty slot"}</span>
+              <span>{name}</span>
             </span>
           </button>
         );

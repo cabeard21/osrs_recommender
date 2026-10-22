@@ -1124,3 +1124,16 @@ li {
     margin-left: 0;
   }
 }
+.fact-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.account-context {
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+}
+
+.demo-banner a {
+  text-decoration: underline;
+}

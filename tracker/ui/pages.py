@@ -54,7 +54,9 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
         return loaded
 
     quests = QuestCapeService(load_catalog(settings().content_dir / "quest_cape/catalog.json"))
-    gear = GearService(content(), equipment_root=settings().content_dir / "equipment")
+    gear = getattr(app.state, "gear_service", None)
+    if gear is None:
+        gear = GearService(content(), equipment_root=settings().content_dir / "equipment")
 
     @ui.page("/")
     def dashboard_page() -> None:
