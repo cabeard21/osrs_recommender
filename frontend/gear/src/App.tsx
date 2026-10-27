@@ -178,7 +178,7 @@ export default function App() {
           <div className="demo-banner">
             {liveMode ? (
               <>
-                Live single-style optimization · ordinary-attack DPS from
+                Live single and joint optimization · ordinary-attack DPS from
                 Python.{" "}
                 <a href="?mode=fixture">Open separate fixture demonstration</a>
               </>
@@ -222,21 +222,15 @@ export default function App() {
             <div className="button-row">
               <button
                 className="primary"
-                disabled={
-                  !state.context?.snapshotId ||
-                  current.pending ||
-                  (liveMode && state.mode !== "single")
-                }
+                disabled={!state.context?.snapshotId || current.pending}
                 onClick={() => void run()}
               >
                 {liveMode
-                  ? state.mode !== "single"
-                    ? "Live Multi · Milestone 5"
-                    : current.pending
-                      ? "Optimizing…"
-                      : current.result
-                        ? "Reoptimize"
-                        : "Run optimization"
+                  ? current.pending
+                    ? "Optimizing…"
+                    : current.result
+                      ? "Reoptimize"
+                      : "Run optimization"
                   : current.pending
                     ? "Simulating…"
                     : current.result
@@ -306,12 +300,14 @@ export default function App() {
                 <p className="green">✓ Persistent workspace drafts</p>
                 <p className="blue">
                   {liveMode
-                    ? "Physical item inspection, exact manual trials, and equipment comparisons"
+                    ? state.mode === "multi"
+                      ? "Joint equipment comparisons, directed transitions, and physical item inspection"
+                      : "Physical item inspection, exact manual trials, and equipment comparisons"
                     : "Contextual item inspection and isolated comparison trials"}
                 </p>
                 <p>
                   {liveMode
-                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Live multi-style optimization remains unavailable."
+                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
                     : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for Python validation."}
                 </p>
                 {!liveMode && (
@@ -432,7 +428,7 @@ export default function App() {
             </aside>
           </div>
           <footer>
-            RUNIC LEDGER // MILESTONE 4{" "}
+            RUNIC LEDGER // MILESTONE 5{" "}
             <span>
               {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
               {state.context?.observedAt ?? "not loaded"}

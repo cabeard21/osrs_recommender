@@ -96,8 +96,11 @@ def test_validation_field_errors_and_sync_auth_unchanged(client, session_factory
     assert client.post("/api/sync", json={}).status_code == 401
 
 
-def test_stale_snapshot_rejected_before_service(client, app, session_factory, monkeypatch):
+@pytest.mark.parametrize("multi", [False, True])
+def test_stale_snapshot_rejected_before_service(client, app, session_factory, monkeypatch, multi):
     body = scenario(client, session_factory)
+    if multi:
+        body["roles"].append({"id": "second", "style": "slash"})
     body["expected_snapshot_id"] = "stale"
     monkeypatch.setattr(
         app.state.gear_service, "optimize", lambda *a, **k: pytest.fail("ran search")
@@ -107,10 +110,13 @@ def test_stale_snapshot_rejected_before_service(client, app, session_factory, mo
     assert reply.json()["error"]["code"] == "snapshot_changed"
 
 
+@pytest.mark.parametrize("multi", [False, True])
 def test_account_changes_during_optimization_not_published(
-    client, app, session_factory, monkeypatch
+    client, app, session_factory, monkeypatch, multi
 ):
     body = scenario(client, session_factory)
+    if multi:
+        body["roles"].append({"id": "second", "style": "slash"})
     original = app.state.gear_service.optimize
 
     def changed(*args, **kwargs):
@@ -127,8 +133,11 @@ def test_account_changes_during_optimization_not_published(
     assert reply.json()["error"]["code"] == "snapshot_changed"
 
 
-def test_busy_service_and_failure_are_structured(client, app, session_factory, monkeypatch):
+@pytest.mark.parametrize("multi", [False, True])
+def test_busy_service_and_failure_are_structured(client, app, session_factory, monkeypatch, multi):
     body = scenario(client, session_factory)
+    if multi:
+        body["roles"].append({"id": "second", "style": "slash"})
 
     def busy(*a, **k):
         raise ValueError("optimizer_busy: another equipment search is running")
@@ -251,14 +260,18 @@ def test_ambiguous_unmapped_or_conflicting_baseline_has_no_metrics(client, sessi
 
 
 @pytest.mark.parametrize("disconnect", [True, False])
+@pytest.mark.parametrize("multi", [False, True])
 def test_disconnect_and_task_cancel_signal_cooperative_worker(
-    client, app, session_factory, monkeypatch, disconnect
+    client, app, session_factory, monkeypatch, disconnect, multi
 ):
     from fastapi import HTTPException
 
     from tracker.api import gear_optimizations as api
 
-    body = api.BrowserOptimizationRequest.model_validate(scenario(client, session_factory))
+    raw = scenario(client, session_factory)
+    if multi:
+        raw["roles"].append({"id": "second", "style": "slash"})
+    body = api.BrowserOptimizationRequest.model_validate(raw)
     snapshot = AccountService(session_factory).get_snapshot(1)
     entered, stopped = Event(), Event()
 

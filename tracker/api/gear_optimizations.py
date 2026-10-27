@@ -1,4 +1,4 @@
-"""Bounded single-role browser execution over frozen authoritative inputs."""
+"""Bounded single and joint browser execution over frozen authoritative inputs."""
 
 from __future__ import annotations
 
@@ -13,7 +13,9 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import Field, model_validator
 
+from tracker.api.gear_scenario_validation import validate_browser_scenario
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, no_cache, project_equipment, resources
+from tracker.content.schema import ItemSlot
 from tracker.gear.combat import SPELLS
 from tracker.gear.evaluation import equipment_problems, evaluate_equipment
 from tracker.gear.facts import hypothetical_snapshot
@@ -35,77 +37,13 @@ def error(code: str, message: str, status: int = 422, field: str = "scenario") -
 
 
 class BrowserOptimizationRequest(OptimizationRequest):
-    roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=1)
+    roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     expected_snapshot_id: str = Field(min_length=1, max_length=128)
 
     @model_validator(mode="before")
     @classmethod
-    def strict_numbers(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        values = data.get("skill_overrides", {})
-        if isinstance(values, dict) and any(type(v) is not int for v in values.values()):
-            raise ValueError("skill_overrides requires integer levels")
-        roles = data.get("roles", [])
-        if not isinstance(roles, list | tuple):
-            return data
-        for role in roles:
-            if not isinstance(role, dict) or not isinstance(role.get("target"), dict):
-                continue
-            target = role["target"]
-            values = {
-                k: v
-                for k, v in target.items()
-                if k
-                in {
-                    "defence_level",
-                    "magic_level",
-                    "ranged_light",
-                    "ranged_standard",
-                    "ranged_heavy",
-                    "weakness_percent",
-                    "damage_cap",
-                }
-            }
-            bonuses = target.get("bonuses", {})
-            if isinstance(bonuses, dict):
-                values.update(bonuses)
-            if any(v is not None and type(v) is not int for v in values.values()):
-                raise ValueError("target values require integers")
-            if isinstance(bonuses, dict) and any(type(v) is not int for v in bonuses.values()):
-                raise ValueError("target defence bonuses require integers")
-            if isinstance(bonuses, dict) and any(not -64 <= v <= 10000 for v in bonuses.values()):
-                raise ValueError("target defence bonuses must be between -64 and 10000")
-            if any(
-                target.get(k) is not None and not -64 <= target[k] <= 10000
-                for k in ("ranged_light", "ranged_standard", "ranged_heavy")
-            ):
-                raise ValueError("target ranged defence must be between -64 and 10000")
-        return data
-
-    @model_validator(mode="after")
-    def ordinary_role(self) -> BrowserOptimizationRequest:
-        role = self.roles[0]
-        if role.style == "special" or role.parent_role is not None:
-            raise ValueError("Only one ordinary-attack combat role is supported")
-        if self.transitions or self.ordered_roles or self.loop:
-            raise ValueError("Multi-role transitions are unavailable")
-        allowed = (
-            {"accurate", "rapid", "longrange"}
-            if role.style == "ranged"
-            else (
-                {"accurate", "defensive"}
-                if role.style == "magic"
-                else {"accurate", "aggressive", "controlled", "defensive"}
-            )
-        )
-        if role.stance not in allowed:
-            raise ValueError("Selected attack type and stance are incompatible")
-        if role.style == "magic" and role.spell not in SPELLS:
-            raise ValueError("Unknown standard spell")
-        if role.target and role.target.unsupported_mechanics:
-            raise ValueError("Target mechanics are unsupported for ordinary attacks")
-        return self
+    def browser_constraints(cls, data: Any) -> Any:
+        return validate_browser_scenario(data)
 
 
 class Baseline(DTO):
@@ -126,10 +64,27 @@ class Purchase(DTO):
     conditional: bool
 
 
+class EquipmentAction(DTO):
+    operation: Literal["equip", "unequip"]
+    slot: ItemSlot
+    item_id: int
+    automatically_removed: list[int]
+    gear_inventory_slots: int
+
+
+class EquipmentTransition(DTO):
+    from_role: str
+    to_role: str
+    actions: list[EquipmentAction]
+    action_count: int
+    changed_slots: int
+    max_gear_inventory_slots: int
+
+
 class Solution(DTO):
     score: float
     loadouts: dict[str, Loadout]
-    transitions: list[dict[str, Any]]
+    transitions: list[EquipmentTransition]
     purchase_cost_gp: int
     purchases: list[Purchase]
     carried_item_ids: list[int]
@@ -209,16 +164,34 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
         raise error(
             "invalid_request", "Unknown excluded physical item ID", field="excluded_item_ids"
         )
-    locks = {**body.locks, **body.roles[0].locks}
-    problems = equipment_problems({s: i for s, i in locks.items() if i is not None}, catalog.items)
-    if problems:
-        raise error("invalid_request", " ".join(problems), field="locks")
-    role = body.roles[0]
-    level = body.skill_overrides.get(
-        "magic", snapshot.skills.get("magic").level if snapshot.skills.get("magic") else 0
-    )
-    if role.style == "magic" and level < SPELLS[role.spell][0]:
-        raise error("invalid_request", "Selected spell Magic level is unmet", field="roles.0.spell")
+    for index, role in enumerate(body.roles):
+        locks = {**body.locks, **role.locks}
+        for slot, item_id in locks.items():
+            if item_id is None:
+                continue
+            field = f"roles.{index}.locks.{slot}" if slot in role.locks else f"locks.{slot}"
+            item = catalog.items.get(item_id)
+            if item is None or item.slot != slot:
+                raise error(
+                    "invalid_request",
+                    "Locked physical item is unknown or occupies another slot",
+                    field=field,
+                )
+        problems = equipment_problems(
+            {s: i for s, i in locks.items() if i is not None}, catalog.items
+        )
+        if problems:
+            field = f"roles.{index}.locks.shield" if "shield" in role.locks else "locks.shield"
+            raise error("invalid_request", " ".join(problems), field=field)
+        level = body.skill_overrides.get(
+            "magic", snapshot.skills.get("magic").level if snapshot.skills.get("magic") else 0
+        )
+        if role.style == "magic" and level < SPELLS[role.spell][0]:
+            raise error(
+                "invalid_request",
+                "Selected spell Magic level is unmet",
+                field=f"roles.{index}.spell",
+            )
 
 
 def calculate(
@@ -245,6 +218,8 @@ def calculate(
     for item in baseline_items:
         if item["wear"]["status"] != "satisfied":
             reasons.append(f"{item['name']}: equipment requirements are {item['wear']['status']}.")
+    if len(body.roles) > 1:
+        reasons.append("Observed equipment has no joint multi-role baseline evaluation.")
     performance = None
     if not reasons:
         calculated = evaluate_equipment(

@@ -21,6 +21,7 @@ export function ItemSprite({ id }: { id: number | null }) {
 export function EquipmentGrid({
   equipment,
   shared = [],
+  differences = [],
   selected,
   onSelect,
   prefix = "",
@@ -28,6 +29,7 @@ export function EquipmentGrid({
 }: {
   equipment: Equipment;
   shared?: number[];
+  differences?: Slot[];
   selected: Slot | null;
   onSelect: (slot: Slot) => void;
   prefix?: string;
@@ -45,9 +47,11 @@ export function EquipmentGrid({
             : undefined;
         const label =
           liveMode && optimized
-            ? equipment[slot]
-              ? "selected"
-              : "empty"
+            ? isShared
+              ? "Shared"
+              : equipment[slot]
+                ? "selected"
+                : "empty"
             : liveMode
               ? (observation?.status ?? "unknown")
               : isShared
@@ -66,13 +70,16 @@ export function EquipmentGrid({
           <button
             key={slot}
             className={`equipment-slot slot-${slot} ${selected === slot ? "selected" : ""}`}
-            aria-label={`${prefix}${slot} ${label} ${name}`}
+            aria-label={`${prefix}${slot} ${label}${differences.includes(slot) ? " · Different" : ""} ${name}`}
             aria-pressed={selected === slot}
             onClick={() => onSelect(slot)}
           >
             <span className="slot-label">
               {slot}{" "}
               <span className={isShared ? "green" : "blue"}>{label}</span>
+              {differences.includes(slot) && (
+                <span className="blue"> · Different</span>
+              )}
             </span>{" "}
             <span className="item-content">
               <span className="sprite">

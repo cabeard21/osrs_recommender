@@ -1,10 +1,16 @@
 import { Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useGear } from "../state/GearProvider";
 import { newRole } from "../state/scenario";
 import type { CombatTarget, Draft, Role, Style } from "../api/contracts";
+import { RoleTargetEditor } from "./RoleTargetEditor";
+import { MultiTransitions } from "./MultiTransitions";
+import { MultiLockEditor } from "./MultiLockEditor";
+import { nextRoleIndex, removeMultiRole } from "./multiDraft";
 export function ConfigurationPanel() {
   const { state, current, edit, liveMode } = useGear(),
     draft = current.draft;
+  const [correction, setCorrection] = useState("");
   const change = (patch: Partial<Draft>) => edit({ ...draft, ...patch });
   const roleChange = (id: string, patch: Partial<Role>) =>
     change({
@@ -25,83 +31,85 @@ export function ConfigurationPanel() {
       <h2 id="parameters" className="eyebrow">
         <SlidersHorizontal size={17} /> Optimization parameters
       </h2>
-      <div className="raised">
-        <span className="eyebrow blue">Encounter target</span>
-        {liveMode && (
+      {state.mode === "single" && (
+        <div className="raised">
+          <span className="eyebrow blue">Encounter target</span>
+          {liveMode && (
+            <label>
+              Target selection
+              <select
+                value={
+                  targets.some(
+                    (target) => target.name === draft.combatTarget?.name,
+                  )
+                    ? draft.combatTarget!.name
+                    : "custom"
+                }
+                onChange={(e) => {
+                  const target = targets.find((t) => t.name === e.target.value);
+                  change({
+                    combatTarget: target ? structuredClone(target) : undefined,
+                    target: target?.name ?? "Custom ordinary-attack target",
+                    defence: String(target?.defence_level ?? 1),
+                  });
+                }}
+              >
+                <option value="custom">Custom ordinary-attack target</option>
+                {targets.map((target) => (
+                  <option key={target.name} value={target.name}>
+                    {target.name} · ordinary attacks
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
-            Target selection
-            <select
-              value={
-                targets.some(
-                  (target) => target.name === draft.combatTarget?.name,
-                )
-                  ? draft.combatTarget!.name
-                  : "custom"
-              }
-              onChange={(e) => {
-                const target = targets.find((t) => t.name === e.target.value);
+            Custom target
+            <input
+              value={draft.target}
+              onChange={(e) =>
                 change({
-                  combatTarget: target ? structuredClone(target) : undefined,
-                  target: target?.name ?? "Custom ordinary-attack target",
-                  defence: String(target?.defence_level ?? 1),
-                });
-              }}
-            >
-              <option value="custom">Custom ordinary-attack target</option>
-              {targets.map((target) => (
-                <option key={target.name} value={target.name}>
-                  {target.name} · ordinary attacks
-                </option>
-              ))}
-            </select>
+                  target: e.target.value,
+                  combatTarget: draft.combatTarget
+                    ? { ...draft.combatTarget, name: e.target.value }
+                    : undefined,
+                })
+              }
+            />
           </label>
-        )}
-        <label>
-          Custom target
-          <input
-            value={draft.target}
-            onChange={(e) =>
-              change({
-                target: e.target.value,
-                combatTarget: draft.combatTarget
-                  ? { ...draft.combatTarget, name: e.target.value }
-                  : undefined,
-              })
-            }
-          />
-        </label>
-        <label>
-          Target defence
-          <input
-            type="number"
-            min="0"
-            max="1000"
-            value={draft.defence}
-            onChange={(e) =>
-              change({
-                defence: e.target.value,
-                combatTarget: draft.combatTarget
-                  ? {
-                      ...draft.combatTarget,
-                      defence_level: Number(e.target.value),
-                    }
-                  : undefined,
-              })
-            }
-          />
-        </label>
-        <p>
-          Ordinary attacks only. User-supplied target assumptions; no encounter
-          mechanics.
-        </p>
-        {liveMode && (
+          <label>
+            Target defence
+            <input
+              type="number"
+              min="0"
+              max="1000"
+              value={draft.defence}
+              onChange={(e) =>
+                change({
+                  defence: e.target.value,
+                  combatTarget: draft.combatTarget
+                    ? {
+                        ...draft.combatTarget,
+                        defence_level: Number(e.target.value),
+                      }
+                    : undefined,
+                })
+              }
+            />
+          </label>
           <p>
-            {draft.combatTarget
-              ? `Preset metadata retained: Magic ${draft.combatTarget.magic_level}; ${JSON.stringify(draft.combatTarget.bonuses)} defence bonuses. Preset encounter mechanics are not simulated.`
-              : "Custom target assumes Magic level 1 and zero defence bonuses."}
+            Ordinary attacks only. User-supplied target assumptions; no
+            encounter mechanics.
           </p>
-        )}
-      </div>
+          {liveMode && (
+            <p>
+              {draft.combatTarget
+                ? `Preset metadata retained: Magic ${draft.combatTarget.magic_level}; ${JSON.stringify(draft.combatTarget.bonuses)} defence bonuses. Preset encounter mechanics are not simulated.`
+                : "Custom target assumes Magic level 1 and zero defence bonuses."}
+            </p>
+          )}
+        </div>
+      )}
       <span className="eyebrow">Combat configurations</span>
       {draft.roles.map((role, index) => (
         <fieldset key={role.id}>
@@ -111,112 +119,208 @@ export function ConfigurationPanel() {
               : `Configuration ${index + 1}`}
           </legend>
           {state.mode === "multi" && (
-            <label>
-              Name
-              <input
-                value={role.name}
-                onChange={(e) => roleChange(role.id, { name: e.target.value })}
-              />
-            </label>
-          )}
-          <div className="segmented" aria-label={`${role.name} discipline`}>
-            {(["melee", "ranged", "magic"] as Style[]).map((style) => (
-              <button
-                key={style}
-                aria-pressed={role.style === style}
-                onClick={() =>
-                  roleChange(role.id, {
-                    style,
-                    stance: style === "ranged" ? "rapid" : "accurate",
-                  })
-                }
-              >
-                {style}
-              </button>
-            ))}
-          </div>
-          {role.style === "melee" && (
-            <label>
-              Melee attack type
-              <select
-                value={role.attackType}
-                onChange={(e) =>
-                  roleChange(role.id, {
-                    attackType: e.target.value as Role["attackType"],
-                  })
-                }
-              >
-                {["stab", "slash", "crush"].map((type) => (
-                  <option key={type}>{type}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          <label>
-            Attack stance
-            <select
-              value={role.stance}
-              onChange={(e) => roleChange(role.id, { stance: e.target.value })}
-            >
-              {(role.style === "melee"
-                ? ["accurate", "aggressive", "controlled", "defensive"]
-                : role.style === "ranged"
-                  ? ["accurate", "rapid", "longrange"]
-                  : ["accurate", "defensive"]
-              ).map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-          {role.style === "magic" && (
-            <label>
-              Standard spell
-              <select
-                value={role.spell}
-                onChange={(e) => roleChange(role.id, { spell: e.target.value })}
-              >
-                {(liveMode
-                  ? (
-                      (state.context?.live?.capabilities.spells ?? []) as {
-                        id: string;
-                      }[]
-                    ).map((s) => s.id)
-                  : [
-                      "fire_strike",
-                      "wind_wave",
-                      "water_wave",
-                      "earth_wave",
-                      "fire_wave",
-                    ]
-                ).map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          {state.mode === "multi" && (
             <>
               <label>
-                Active-time weight
+                Name
                 <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={role.weight}
+                  value={role.name}
                   onChange={(e) =>
-                    roleChange(role.id, { weight: e.target.value })
+                    roleChange(role.id, { name: e.target.value })
                   }
                 />
               </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={role.utility ?? false}
+                  disabled={
+                    !role.utility &&
+                    draft.roles.some(
+                      (candidate) =>
+                        candidate.utility && candidate.parentRole === role.id,
+                    )
+                  }
+                  onChange={(event) =>
+                    roleChange(role.id, {
+                      utility: event.target.checked,
+                      parentRole: event.target.checked
+                        ? draft.roles.find(
+                            (candidate) =>
+                              candidate.id !== role.id && !candidate.utility,
+                          )?.id
+                        : undefined,
+                    })
+                  }
+                />
+                Unscored utility configuration
+              </label>
+              {role.utility ? (
+                <div className="raised">
+                  <p>
+                    Equipment carriage only. No special-attack damage or utility
+                    score is calculated.
+                  </p>
+                  <label>
+                    Parent configuration
+                    <select
+                      value={role.parentRole ?? ""}
+                      onChange={(event) =>
+                        roleChange(role.id, { parentRole: event.target.value })
+                      }
+                    >
+                      <option value="">Choose ordinary parent</option>
+                      {draft.roles
+                        .filter(
+                          (candidate) =>
+                            candidate.id !== role.id && !candidate.utility,
+                        )
+                        .map((candidate) => (
+                          <option value={candidate.id} key={candidate.id}>
+                            {candidate.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label>
+                    Utility weapon physical ID
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={role.locks.weapon ?? ""}
+                      onChange={(event) =>
+                        roleChange(role.id, {
+                          locks: {
+                            ...role.locks,
+                            weapon: event.target.value
+                              ? Number(event.target.value)
+                              : null,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              ) : (
+                <RoleTargetEditor
+                  role={role}
+                  draft={draft}
+                  targets={targets}
+                  onChange={(patch) => roleChange(role.id, patch)}
+                />
+              )}
+            </>
+          )}
+          {!role.utility && (
+            <>
+              <div className="segmented" aria-label={`${role.name} discipline`}>
+                {(["melee", "ranged", "magic"] as Style[]).map((style) => (
+                  <button
+                    key={style}
+                    aria-pressed={role.style === style}
+                    onClick={() =>
+                      roleChange(role.id, {
+                        style,
+                        stance: style === "ranged" ? "rapid" : "accurate",
+                      })
+                    }
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
+              {role.style === "melee" && (
+                <label>
+                  Melee attack type
+                  <select
+                    value={role.attackType}
+                    onChange={(e) =>
+                      roleChange(role.id, {
+                        attackType: e.target.value as Role["attackType"],
+                      })
+                    }
+                  >
+                    {["stab", "slash", "crush"].map((type) => (
+                      <option key={type}>{type}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                Attack stance
+                <select
+                  value={role.stance}
+                  onChange={(e) =>
+                    roleChange(role.id, { stance: e.target.value })
+                  }
+                >
+                  {(role.style === "melee"
+                    ? ["accurate", "aggressive", "controlled", "defensive"]
+                    : role.style === "ranged"
+                      ? ["accurate", "rapid", "longrange"]
+                      : ["accurate", "defensive"]
+                  ).map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
+              {role.style === "magic" && (
+                <label>
+                  Standard spell
+                  <select
+                    value={role.spell}
+                    onChange={(e) =>
+                      roleChange(role.id, { spell: e.target.value })
+                    }
+                  >
+                    {(liveMode
+                      ? (
+                          (state.context?.live?.capabilities.spells ?? []) as {
+                            id: string;
+                          }[]
+                        ).map((s) => s.id)
+                      : [
+                          "fire_strike",
+                          "wind_wave",
+                          "water_wave",
+                          "earth_wave",
+                          "fire_wave",
+                        ]
+                    ).map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </>
+          )}
+          {state.mode === "multi" && (
+            <>
+              {!role.utility && (
+                <label>
+                  Active-time weight
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000000"
+                    step="any"
+                    value={role.weight}
+                    onChange={(e) =>
+                      roleChange(role.id, { weight: e.target.value })
+                    }
+                  />
+                </label>
+              )}
               <button
                 disabled={draft.roles.length <= 2}
                 onClick={() => {
-                  const roles = draft.roles.filter((r) => r.id !== role.id);
-                  change({
-                    roles,
-                    baseRole:
-                      draft.baseRole === role.id ? roles[0].id : draft.baseRole,
-                  });
+                  try {
+                    const removed = removeMultiRole(draft, role.id);
+                    edit(removed.draft);
+                    setCorrection(removed.notice);
+                  } catch (error) {
+                    setCorrection((error as Error).message);
+                  }
                 }}
               >
                 <Trash2 size={14} /> Remove configuration
@@ -230,63 +334,19 @@ export function ConfigurationPanel() {
           <button
             disabled={draft.roles.length >= 4}
             onClick={() => {
-              const next =
-                Math.max(
-                  ...draft.roles.map((r) => Number(r.id.split("-")[1])),
-                ) + 1;
-              change({ roles: [...draft.roles, newRole(next)] });
+              change({
+                roles: [...draft.roles, newRole(nextRoleIndex(draft))],
+              });
             }}
           >
             <Plus size={16} /> Add configuration
           </button>
-          <p>
-            Removing a configuration removes its generated directed transitions.
-          </p>
-          <label>
-            Base configuration
-            <select
-              value={draft.baseRole}
-              onChange={(e) => change({ baseRole: e.target.value })}
-            >
-              {draft.roles.map((r) => (
-                <option value={r.id} key={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Transition topology
-            <select
-              value={draft.topology}
-              onChange={(e) =>
-                change({ topology: e.target.value as Draft["topology"] })
-              }
-            >
-              <option value="base">Base ↔ every configuration</option>
-              <option value="ordered">Ordered sequence →</option>
-            </select>
-          </label>
-          <label>
-            Maximum equipment actions
-            <input
-              type="number"
-              min="0"
-              max="12"
-              value={draft.maxActions}
-              onChange={(e) => change({ maxActions: e.target.value })}
-            />
-          </label>
-          <label>
-            Reserved supply slots
-            <input
-              type="number"
-              min="0"
-              max="28"
-              value={draft.supplies}
-              onChange={(e) => change({ supplies: e.target.value })}
-            />
-          </label>
+          {correction && (
+            <p role="status" className="notice">
+              {correction}
+            </p>
+          )}
+          <MultiTransitions draft={draft} change={change} />
         </>
       )}
       {state.mode === "single" && (
@@ -449,9 +509,14 @@ export function ConfigurationPanel() {
         </summary>
         <p>
           {liveMode
-            ? "Locks and exclusions apply on the next optimization. Inspect a slot to preview an alternative, lock a physical item or an empty slot, or exclude an item."
+            ? state.mode === "multi"
+              ? "Locks and exclusions apply on the next joint optimization. Inspect physical item facts or edit global and role constraints. Joint manual trials are unavailable."
+              : "Locks and exclusions apply on the next optimization. Inspect a slot to preview an alternative, lock a physical item or an empty slot, or exclude an item."
             : "These controls edit the fixture draft only. Fixture trials use authored examples."}
         </p>
+        {state.mode === "multi" && (
+          <MultiLockEditor draft={draft} change={change} />
+        )}
         {draft.roles.map((r) => (
           <div key={r.id}>
             <strong>{r.name}</strong>

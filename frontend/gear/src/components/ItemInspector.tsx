@@ -14,9 +14,11 @@ function retainInspectorFocus() {
     ?.focus();
 }
 export function ItemInspector() {
-  const { liveMode, current } = useGear();
+  const { liveMode, current, state } = useGear();
   return liveMode ? (
-    <LiveItemInspector key={current.slot} />
+    <LiveItemInspector
+      key={`${state.mode}:${current.slot}:${current.activeRole}:${current.solutionId}:${current.result?.fingerprint}`}
+    />
   ) : (
     <FixtureItemInspector />
   );
@@ -253,7 +255,18 @@ function LiveItemInspector() {
   } = useGear();
   const slot = current.slot!;
   const observation = state.context?.live?.current_equipment.slots[slot];
-  const optimized = current.result?.solutions[0]?.loadouts[0].equipment;
+  const multi = state.mode === "multi";
+  const solution = current.result?.solutions.find(
+    (row) => row.id === current.solutionId,
+  );
+  const optimized = solution?.loadouts.find(
+    (role) => role.roleId === current.activeRole,
+  )?.equipment;
+  const [lockScope, setLockScope] = useState<"role" | "global">("role");
+  const draftRoleExists = current.draft.roles.some(
+    (role) => role.id === current.activeRole,
+  );
+  const canLock = lockScope === "global" || draftRoleExists;
   const [selected, setSelected] = useState<number | null>(null);
   const id =
     selected ?? (optimized ? optimized[slot] : observation?.item_id) ?? null;
@@ -272,18 +285,28 @@ function LiveItemInspector() {
   const excluded = new Set(current.draft.exclusions);
   const contextual =
     current.result?.live?.result.alternatives?.[physicalSlot] ?? [];
-  const canPreview = !!optimized && !current.outdated && !current.pending;
+  const canPreview =
+    !multi && !!optimized && !current.outdated && !current.pending;
   const namedItem = (itemId: number) =>
     itemById(itemId)?.name ?? `Item #${itemId}`;
   const isLocked =
     id !== null &&
-    current.draft.roles.some((role) => Object.values(role.locks).includes(id));
+    (Object.values(current.draft.globalLocks ?? {}).includes(id) ||
+      current.draft.roles.some((role) =>
+        Object.values(role.locks).includes(id),
+      ));
   function lockItem(itemId: number | null) {
+    if (!canLock) return;
     retainInspectorFocus();
     edit({
       ...current.draft,
+      ...(lockScope === "global"
+        ? {
+            globalLocks: { ...current.draft.globalLocks, [slot]: itemId },
+          }
+        : {}),
       roles: current.draft.roles.map((role) =>
-        role.id === current.activeRole
+        lockScope === "role" && role.id === current.activeRole
           ? { ...role, locks: { ...role.locks, [slot]: itemId } }
           : role,
       ),
@@ -294,6 +317,11 @@ function LiveItemInspector() {
     retainInspectorFocus();
     edit({
       ...current.draft,
+      globalLocks: Object.fromEntries(
+        Object.entries(current.draft.globalLocks ?? {}).filter(
+          ([, value]) => value !== id,
+        ),
+      ),
       roles: current.draft.roles.map((role) => ({
         ...role,
         locks: Object.fromEntries(
@@ -311,7 +339,12 @@ function LiveItemInspector() {
     setSelected(null);
     setQuery("");
     setOffset(0);
-  }, [slot, current.result?.fingerprint]);
+  }, [
+    slot,
+    current.result?.fingerprint,
+    current.solutionId,
+    current.activeRole,
+  ]);
   useEffect(() => {
     let active = true;
     setItem(null);
@@ -371,6 +404,33 @@ function LiveItemInspector() {
             ? "Selected Python optimization result · submitted scenario retained."
             : `Equipment observation: ${observation?.status ?? "unknown"}`}
       </p>
+      {multi && (
+        <>
+          <p className="notice">
+            Exact multi-role manual evaluation is unavailable. Inspect facts or
+            edit draft constraints and rerun the joint optimizer; single-role
+            alternatives do not measure joint contributions.
+          </p>
+          <label>
+            Lock scope
+            <select
+              value={lockScope}
+              onChange={(event) =>
+                setLockScope(event.target.value as "role" | "global")
+              }
+            >
+              <option value="role">Selected role</option>
+              <option value="global">All roles (global)</option>
+            </select>
+          </label>
+          {!draftRoleExists && (
+            <p className="notice">
+              This submitted role no longer exists in the draft. Choose global
+              scope or configure a current role.
+            </p>
+          )}
+        </>
+      )}
       {(state.context?.live?.current_equipment.unmapped_item_ids.length ?? 0) >
         0 && (
         <div>
@@ -418,7 +478,9 @@ function LiveItemInspector() {
           <div className="button-row">
             <button
               disabled={
-                facts.slot !== physicalSlot || (id !== null && excluded.has(id))
+                !canLock ||
+                facts.slot !== physicalSlot ||
+                (id !== null && excluded.has(id))
               }
               onClick={() => lockItem(id)}
             >
@@ -430,7 +492,7 @@ function LiveItemInspector() {
             >
               {isLocked ? "Unlock and exclude" : "Exclude item"} in draft
             </button>
-            {optimized && (
+            {optimized && !multi && (
               <button
                 disabled={
                   !canPreview ||
@@ -544,7 +606,7 @@ function LiveItemInspector() {
           <p>Catalog: {facts.catalog_version}</p>
         </>
       )}
-      {optimized && (
+      {optimized && !multi && (
         <section aria-label="Contextual alternatives">
           <h3>Contextual alternatives</h3>
           <p>
@@ -619,7 +681,9 @@ function LiveItemInspector() {
         </section>
       )}
       <h3>Browse physical items</h3>
-      <button onClick={() => lockItem(null)}>Lock {slot} empty</button>
+      <button disabled={!canLock} onClick={() => lockItem(null)}>
+        Lock {slot} empty
+      </button>
       <label>
         Search name or numeric ID
         <input

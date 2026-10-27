@@ -129,11 +129,13 @@ export function LiveResultWorkspace() {
             onSelect={select}
             optimized
           />
-          <PerformanceSummary
-            metrics={loadout.metrics}
-            live
-            title="Calculated combat performance"
-          />
+          {loadout.metrics && (
+            <PerformanceSummary
+              metrics={loadout.metrics}
+              live
+              title="Calculated combat performance"
+            />
+          )}
           <details>
             <summary>Equipment bonuses</summary>
             <dl>
@@ -172,7 +174,7 @@ export function LiveResultWorkspace() {
               live
               title="Observed equipment performance"
             />
-            {loadout && (
+            {loadout?.metrics && (
               <p>
                 Current equipment DPS {baseline.performance.dps?.toFixed(2)} →
                 best configuration found {loadout.metrics.dps.toFixed(2)}
@@ -252,7 +254,9 @@ export function LiveResultWorkspace() {
             <p>Prices: {previous.priceRevision}</p>
             <p>Evaluated: {previous.evaluatedAt}</p>
           </details>
-          {comparable(previous, result) && previous.solutions[0] && solution ? (
+          {comparable(previous, result) &&
+          previous.solutions[0]?.loadouts[0]?.metrics &&
+          solution?.loadouts[0]?.metrics ? (
             <p>
               Calculated DPS:{" "}
               {previous.solutions[0].loadouts[0].metrics.dps.toFixed(2)} →{" "}

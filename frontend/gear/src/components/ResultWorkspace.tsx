@@ -5,6 +5,7 @@ import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import type { Loadout, Solution } from "../api/contracts";
 import { LiveResultWorkspace } from "./LiveResultWorkspace";
+import { LiveMultiResultWorkspace } from "./LiveMultiResultWorkspace";
 export function ResultWorkspace() {
   const { state, current, dispatch, itemById, liveMode } = useGear();
   const [transitionKey, setTransitionKey] = useState("");
@@ -41,11 +42,16 @@ export function ResultWorkspace() {
             })
           }
         />
-        <PerformanceSummary metrics={loadout.metrics} />
+        {loadout.metrics && <PerformanceSummary metrics={loadout.metrics} />}
       </section>
     );
   }
-  if (liveMode) return <LiveResultWorkspace />;
+  if (liveMode)
+    return state.mode === "multi" ? (
+      <LiveMultiResultWorkspace />
+    ) : (
+      <LiveResultWorkspace />
+    );
   if (
     !current.result &&
     state.context &&

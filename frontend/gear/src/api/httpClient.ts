@@ -1,3 +1,14 @@
+import {
+  object,
+  requireFields,
+  strings,
+  equipmentMap,
+  performanceMetrics,
+  sameValue,
+  uiSlot,
+} from "./runtime";
+import { parseJointSolution } from "./jointResults";
+export { performanceMetrics } from "./runtime";
 import { emptyEquipment, slots } from "./contracts";
 import { parseAlternatives } from "./contextualAlternatives";
 import type {
@@ -10,78 +21,21 @@ import type {
   OptimizationReply,
   OptimizationDTO,
   CombatPerformance,
-  Metrics,
   PhysicalItem,
   Scenario,
   Slot,
   Trial,
   EvaluationDTO,
   FixedEvaluation,
+  Solution,
 } from "./contracts";
 
 const apiSlot = (slot: Slot) => (slot === "ammo" ? "ammunition" : slot);
-const uiSlot = (slot: unknown) => (slot === "ammunition" ? "ammo" : slot);
-function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Invalid Gear API response");
-  return value as Record<string, unknown>;
-}
-function requireFields(value: unknown, fields: Record<string, string>) {
-  const row = object(value);
-  for (const [key, type] of Object.entries(fields)) {
-    if (typeof row[key] !== type)
-      throw new Error(`Invalid Gear API field: ${key}`);
-  }
-  return row;
-}
-function strings(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) && value.every((entry) => typeof entry === "string")
-  );
-}
 function scans(value: unknown) {
   for (const scan of Object.values(object(value))) {
     if (scan !== null)
       requireFields(scan, { scanned_at: "string", source: "string" });
   }
-}
-export function performanceMetrics(value: CombatPerformance): Metrics {
-  if (
-    value.supported !== true ||
-    [value.dps, value.max_hit, value.accuracy, value.attack_interval].some(
-      (n) => typeof n !== "number" || !Number.isFinite(n),
-    )
-  )
-    throw new Error("Unsupported or invalid combat performance");
-  if (
-    value.dps! < 0 ||
-    !Number.isSafeInteger(value.max_hit) ||
-    value.max_hit! < 0 ||
-    value.accuracy! < 0 ||
-    value.accuracy! > 1 ||
-    value.attack_interval! <= 0 ||
-    !strings(value.limitations) ||
-    Object.values(object(value.bonuses)).some(
-      (bonus) => typeof bonus !== "number" || !Number.isFinite(bonus),
-    )
-  )
-    throw new Error("Invalid combat performance metadata");
-  return {
-    dps: value.dps!,
-    maxHit: value.max_hit!,
-    accuracy: value.accuracy!,
-    seconds: value.attack_interval!,
-  };
-}
-function equipmentMap(value: unknown): Equipment {
-  const equipment = emptyEquipment();
-  for (const [key, id] of Object.entries(object(value))) {
-    const slot = uiSlot(key) as Slot;
-    if (!slots.includes(slot) || !Number.isSafeInteger(id) || Number(id) <= 0)
-      throw new Error("Invalid result equipment assignment");
-    equipment[slot] = id as number;
-  }
-  return equipment;
 }
 export function parseOptimization(
   value: unknown,
@@ -118,23 +72,33 @@ export function parseOptimization(
       "Optimization scenario does not match the submitted constraints",
     );
   const serverScenario = object(envelope.scenario);
+  const submittedConstraints = object(submitted);
   if (
-    Object.keys(object(serverScenario.locks ?? {})).length ||
-    (serverScenario.transitions as unknown[] | undefined)?.length ||
-    (serverScenario.ordered_roles as unknown[] | undefined)?.length
+    !sameValue(serverScenario.locks ?? {}, submitted.locks ?? {}) ||
+    !sameValue(
+      serverScenario.transitions ?? [],
+      submittedConstraints.transitions ?? [],
+    ) ||
+    !sameValue(
+      serverScenario.ordered_roles ?? [],
+      submittedConstraints.ordered_roles ?? [],
+    ) ||
+    (serverScenario.loop ?? false) !== (submittedConstraints.loop ?? false)
   )
     throw new Error("Optimization scenario contains unsubmitted constraints");
-  const serverRole = object((serverScenario.roles as unknown[])[0]);
-  const serverTarget = object(serverRole.target);
-  const expectedBonuses = submitted.roles[0].target.bonuses;
-  if (
-    Object.entries(object(serverTarget.bonuses)).some(
-      ([key, bonus]) => bonus !== (expectedBonuses[key] ?? 0),
+  for (const [index, role] of submitted.roles.entries()) {
+    const serverRole = object((serverScenario.roles as unknown[])[index]);
+    const serverTarget = object(serverRole.target);
+    if (
+      !sameValue(serverRole.locks, role.locks) ||
+      Object.entries(object(serverTarget.bonuses)).some(
+        ([key, bonus]) => bonus !== (role.target.bonuses[key] ?? 0),
+      )
     )
-  )
-    throw new Error(
-      "Optimization target bonuses do not match the submitted target",
-    );
+      throw new Error(
+        "Optimization target bonuses or locks do not match the submitted target",
+      );
+  }
   const result = requireFields(envelope.result, {
     snapshot_id: "string",
     catalog_version: "string",
@@ -156,8 +120,80 @@ export function parseOptimization(
   else if (baseline.performance !== null)
     throw new Error("Unavailable baseline must withhold combat metrics");
   const items = envelope.items.map(parseItem);
-  const solutions = [];
-  if (result.selected_solution !== null) {
+  const joint = scenario.request.roles.length > 1;
+  const solutions: Solution[] = [];
+  let unrestricted: Solution | null = null;
+  if (joint) {
+    if (!Array.isArray(result.curve))
+      throw new Error("Missing joint swap-efficiency curve");
+    const limits = new Set<number>();
+    for (const point of result.curve) {
+      const row = requireFields(point, {
+        swap_limit: "number",
+        status: "string",
+      });
+      if (
+        !["best_found", "no_feasible_solution_found"].includes(
+          String(row.status),
+        ) ||
+        (row.solution !== null && row.status !== "best_found")
+      )
+        throw new Error("Invalid curve point status");
+      if (
+        !Number.isSafeInteger(row.swap_limit) ||
+        Number(row.swap_limit) < 0 ||
+        Number(row.swap_limit) > scenario.request.max_swaps ||
+        limits.has(Number(row.swap_limit))
+      )
+        throw new Error("Invalid curve action limit");
+      limits.add(Number(row.swap_limit));
+      if (row.solution !== null)
+        solutions.push(
+          parseJointSolution(
+            row.solution,
+            scenario,
+            items,
+            `curve-${row.swap_limit}`,
+            Number(row.swap_limit),
+          ),
+        );
+      else if (row.status !== "no_feasible_solution_found")
+        throw new Error("Invalid missing curve solution status");
+      if (
+        row.relative_performance !== null &&
+        (typeof row.relative_performance !== "number" ||
+          !Number.isFinite(row.relative_performance))
+      )
+        throw new Error("Invalid curve performance ratio");
+    }
+    if (result.unrestricted !== null)
+      unrestricted = parseJointSolution(
+        result.unrestricted,
+        scenario,
+        items,
+        "unrestricted",
+        12,
+      );
+    for (const [id, share] of Object.entries(object(result.active_time_shares)))
+      if (
+        !scenario.request.roles.some((r) => r.id === id && !r.utility) ||
+        typeof share !== "number" ||
+        !Number.isFinite(share) ||
+        share < 0 ||
+        share > 1
+      )
+        throw new Error("Invalid active-time share");
+    if (
+      !sameValue(
+        solutions.find((s) => s.actionLimit === scenario.request.max_swaps)
+          ?.live ?? null,
+        result.selected_solution,
+      )
+    )
+      throw new Error(
+        "Selected solution does not match the requested curve point",
+      );
+  } else if (result.selected_solution !== null) {
     const selected = requireFields(result.selected_solution, {
       score: "number",
       purchase_cost_gp: "number",
@@ -229,6 +265,10 @@ export function parseOptimization(
     modelVersion: result.model_version as string,
     priceRevision: envelope.price_revision as string,
     solutions,
+    unrestricted,
+    selectedSolutionId: joint
+      ? `curve-${scenario.request.max_swaps}`
+      : "best-found",
     warnings: dto.result.limitations,
     items,
     live: dto,
@@ -236,31 +276,56 @@ export function parseOptimization(
 }
 export function optimizationRequest(scenario: Scenario) {
   const r = scenario.request;
-  if (r.roles.length !== 1)
-    throw new Error("Live optimization supports one style.");
-  const role = r.roles[0];
+  if (r.roles.length < 1 || r.roles.length > 4)
+    throw new Error(
+      "Live optimization supports one through four configurations.",
+    );
   return {
-    roles: [
-      {
-        id: role.id,
-        style: role.style === "melee" ? role.attackType : role.style,
-        stance: role.stance,
-        spell: role.spell,
-        weight: role.weight,
-        locks: Object.fromEntries(
-          Object.entries(role.locks).map(([slot, id]) => [
-            apiSlot(slot as Slot),
-            id,
-          ]),
-        ),
-        target: r.target.definition ?? {
+    roles: r.roles.map((role) => ({
+      id: role.id,
+      style: role.utility
+        ? "special"
+        : role.style === "melee"
+          ? role.attackType
+          : role.style,
+      stance: role.stance,
+      spell: role.spell,
+      weight: role.weight,
+      locks: Object.fromEntries(
+        Object.entries(role.locks).map(([slot, id]) => [
+          apiSlot(slot as Slot),
+          id,
+        ]),
+      ),
+      ...(role.parentRole ? { parent_role: role.parentRole } : {}),
+      target: role.combatTarget ??
+        r.target.definition ?? {
           name: r.target.name,
           defence_level: r.target.defence,
           magic_level: 1,
           bonuses: {},
         },
-      },
-    ],
+    })),
+    ...(Object.keys(r.locks ?? {}).length
+      ? {
+          locks: Object.fromEntries(
+            Object.entries(r.locks ?? {}).map(([slot, id]) => [
+              apiSlot(slot as Slot),
+              id,
+            ]),
+          ),
+        }
+      : {}),
+    ...(r.roles.length > 1
+      ? {
+          base_role: r.base_role,
+          ...(r.ordered_roles?.length
+            ? { ordered_roles: r.ordered_roles, loop: !!r.loop }
+            : r.transitions.length
+              ? { transitions: r.transitions }
+              : {}),
+        }
+      : {}),
     mode: r.mode,
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,
@@ -281,23 +346,6 @@ export class GearApiError extends Error {
   ) {
     super(message);
   }
-}
-function sameValue(expected: unknown, actual: unknown): boolean {
-  if (Array.isArray(expected))
-    return (
-      Array.isArray(actual) &&
-      expected.length === actual.length &&
-      expected.every((v, i) => sameValue(v, actual[i]))
-    );
-  if (expected && typeof expected === "object") {
-    const left = object(expected),
-      right = object(actual);
-    return (
-      Object.keys(left).length === Object.keys(right).length &&
-      Object.entries(left).every(([k, v]) => sameValue(v, right[k]))
-    );
-  }
-  return expected === actual;
 }
 function concreteEquipment(equipment: Equipment): Record<string, number> {
   return Object.fromEntries(
@@ -751,6 +799,10 @@ export class HttpGearClient implements GearClient {
     equipment: Equipment,
     signal?: AbortSignal,
   ): Promise<Trial> {
+    if (result.scenario.request.roles.length !== 1)
+      throw new Error(
+        "Exact multi-role manual evaluation is unavailable. Edit constraints and reoptimize the joint scenario.",
+      );
     const baseline = result.solutions
       .find((s) => s.id === solution)
       ?.loadouts.find((l) => l.roleId === role)?.equipment;

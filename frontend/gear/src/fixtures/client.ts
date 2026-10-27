@@ -221,6 +221,8 @@ export class FixtureGearClient implements GearClient {
     const loadout = result.solutions
       .find((s) => s.id === solutionId)!
       .loadouts.find((l) => l.roleId === roleId)!;
+    if (!loadout.metrics)
+      throw new Error("Unscored configurations cannot be manually evaluated.");
     return {
       source: "fixture" as const,
       resultFingerprint: result.fingerprint,

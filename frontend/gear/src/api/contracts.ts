@@ -24,6 +24,10 @@ export interface Role {
   spell: string;
   weight: string;
   locks: Partial<Equipment>;
+  combatTarget?: CombatTarget;
+  targetInputs?: Record<string, string>;
+  utility?: boolean;
+  parentRole?: string;
 }
 export interface Assumptions {
   attack: string;
@@ -47,8 +51,12 @@ export interface Draft {
   roles: Role[];
   maxActions: string;
   supplies: string;
-  topology: "base" | "ordered";
+  topology: "base" | "ordered" | "explicit";
   baseRole: string;
+  globalLocks?: Partial<Equipment>;
+  transitions?: [string, string][];
+  orderedRoles?: string[];
+  loop?: boolean;
   exclusions: number[];
   assumptions: Assumptions;
   combatTarget?: CombatTarget;
@@ -64,6 +72,9 @@ export interface Scenario {
     reserved_supply_slots: number;
     transitions: [string, string][];
     base_role: string;
+    locks?: Partial<Equipment>;
+    ordered_roles?: string[];
+    loop?: boolean;
     excluded_item_ids: number[];
     skill_overrides: Record<string, number>;
     quest_overrides: Record<string, string>;
@@ -102,7 +113,8 @@ export interface Loadout {
   roleId: string;
   name: string;
   equipment: Equipment;
-  metrics: Metrics;
+  metrics: Metrics | null;
+  performance?: CombatPerformance;
 }
 export interface Transition {
   from: string;
@@ -120,6 +132,45 @@ export interface Solution {
   cost: number;
   shared: number[];
   transitions: Transition[];
+  live?: JointSolutionDTO;
+}
+export interface PurchaseDTO {
+  item_id: number;
+  cost_gp: number | null;
+  conditional: boolean;
+}
+export interface EquipmentActionDTO {
+  operation: "equip" | "unequip";
+  slot: string;
+  item_id: number;
+  automatically_removed: number[];
+  gear_inventory_slots: number;
+}
+export interface JointTransitionDTO {
+  from_role: string;
+  to_role: string;
+  actions: EquipmentActionDTO[];
+  action_count: number;
+  changed_slots: number;
+  max_gear_inventory_slots: number;
+}
+export interface JointSolutionDTO {
+  score: number;
+  loadouts: Record<
+    string,
+    { equipment: Record<string, number>; performance: CombatPerformance }
+  >;
+  purchases: PurchaseDTO[];
+  purchase_cost_gp: number;
+  transitions: JointTransitionDTO[];
+  carried_item_ids: number[];
+  distinct_items: number;
+  gear_inventory_slots: number;
+  max_gear_inventory_slots: number;
+  remaining_supply_slots: number;
+  remaining_inventory_slots: number;
+  reserved_supply_slots: number;
+  maximum_actions: number;
 }
 export interface OptimizationReply {
   source: "fixture" | "live";
@@ -134,6 +185,8 @@ export interface OptimizationReply {
   warnings: string[];
   items?: Item[];
   live?: OptimizationDTO;
+  unrestricted?: Solution | null;
+  selectedSolutionId?: string;
 }
 export interface CombatPerformance {
   supported: boolean;
@@ -164,6 +217,20 @@ export interface OptimizationDTO {
     assumptions_fingerprint: string;
     search: Record<string, unknown>;
     limitations: string[];
+    curve?: {
+      swap_limit: number;
+      status: string;
+      solution: JointSolutionDTO | null;
+      relative_performance: number | null;
+    }[];
+    unrestricted?: JointSolutionDTO | null;
+    active_time_shares?: Record<string, number>;
+    suggested_swap_limit?: number | null;
+    catalog_summary?: {
+      total_items: number;
+      eligible_items: number;
+      [key: string]: unknown;
+    };
     alternatives?: Record<
       string,
       {
@@ -173,19 +240,7 @@ export interface OptimizationDTO {
         purchase_cost_gp: number;
       }[]
     >;
-    selected_solution: {
-      score: number;
-      loadouts: Record<
-        string,
-        { equipment: Record<string, number>; performance: CombatPerformance }
-      >;
-      purchases: {
-        item_id: number;
-        cost_gp: number | null;
-        conditional: boolean;
-      }[];
-      purchase_cost_gp: number;
-    } | null;
+    selected_solution: JointSolutionDTO | null;
   };
 }
 interface TrialIdentity {

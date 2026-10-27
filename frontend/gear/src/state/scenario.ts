@@ -42,10 +42,114 @@ export function normalize(
       throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
     return n;
   };
-  const roles = draft.roles.map((r) => ({
-    ...structuredClone(r),
-    weight: integer(r.weight, "Active-time weight", 1, 100),
-  }));
+  const roles = draft.roles.map((r) => {
+    const role = { ...structuredClone(r), weight: Number(r.weight) };
+    if (role.combatTarget) {
+      for (const [key, value] of Object.entries(role.targetInputs ?? {})) {
+        const optional = [
+          "ranged_light",
+          "ranged_standard",
+          "ranged_heavy",
+          "damage_cap",
+        ].includes(key);
+        if (optional && !value.trim()) {
+          delete role.combatTarget[key];
+          continue;
+        }
+        const n = Number(value);
+        const min =
+          key.startsWith("bonuses.") || key.startsWith("ranged_")
+            ? -64
+            : key === "damage_cap"
+              ? 1
+              : 0;
+        if (
+          !value.trim() ||
+          !Number.isSafeInteger(n) ||
+          n < min ||
+          n >
+            (key === "weakness_percent"
+              ? 1000
+              : key === "damage_cap"
+                ? Number.MAX_SAFE_INTEGER
+                : 10000)
+        )
+          throw new Error(
+            `${role.name} target ${key} requires a valid whole number.`,
+          );
+        if (key.startsWith("bonuses."))
+          role.combatTarget.bonuses[key.slice(8)] = n;
+        else role.combatTarget[key] = n;
+      }
+      if (
+        !role.combatTarget.name.trim() ||
+        !Number.isSafeInteger(role.combatTarget.defence_level) ||
+        !Number.isSafeInteger(role.combatTarget.magic_level)
+      )
+        throw new Error(`${role.name} target is incomplete.`);
+    }
+    return role;
+  });
+  if (
+    roles.length < 1 ||
+    roles.length > 4 ||
+    new Set(roles.map((r) => r.id)).size !== roles.length
+  )
+    throw new Error("Configure one through four roles with unique IDs.");
+  if (
+    draft.roles.some((r) => !r.weight.trim()) ||
+    roles.some(
+      (r) => !Number.isFinite(r.weight) || r.weight < 0 || r.weight > 1000000,
+    ) ||
+    !roles.some((r) => !r.utility && r.weight > 0)
+  )
+    throw new Error(
+      "Active-time weights must be finite numbers from 0 to 1000000, with a positive scored role.",
+    );
+  const ids = new Set(roles.map((r) => r.id));
+  if (!ids.has(draft.baseRole))
+    throw new Error("Base configuration must reference a configured role.");
+  for (const role of roles) {
+    const stances =
+      role.style === "melee"
+        ? ["accurate", "aggressive", "controlled", "defensive"]
+        : role.style === "ranged"
+          ? ["accurate", "rapid", "longrange"]
+          : ["accurate", "defensive"];
+    if (!role.utility && !stances.includes(role.stance))
+      throw new Error(
+        `${role.name} attack stance is unsupported for its discipline.`,
+      );
+    if (
+      role.combatTarget &&
+      ([role.combatTarget.defence_level, role.combatTarget.magic_level].some(
+        (n) => !Number.isSafeInteger(n) || n < 0 || n > 10000,
+      ) ||
+        Object.values(role.combatTarget.bonuses).some(
+          (n) => !Number.isSafeInteger(n),
+        ))
+    )
+      throw new Error(`${role.name} target configuration is invalid.`);
+    if (
+      role.utility &&
+      (!role.parentRole ||
+        !roles.some(
+          (r) => r.id === role.parentRole && !r.utility && r.id !== role.id,
+        ) ||
+        !role.locks.weapon)
+    )
+      throw new Error(
+        "Utility configuration requires an ordinary parent role and a weapon lock.",
+      );
+    if (
+      Object.entries(role.locks).some(
+        ([slot, id]) =>
+          slot in (draft.globalLocks ?? {}) &&
+          draft.globalLocks?.[slot as Slot] !== id,
+      )
+    )
+      throw new Error("Conflicting global and role locks.");
+  }
   if (!draft.target.trim() || roles.some((r) => !r.name.trim()))
     throw new Error("Target and configuration names are required.");
   if (
@@ -58,6 +162,12 @@ export function normalize(
     throw new Error(
       "A locked item is excluded. Unlock it or remove the exclusion.",
     );
+  if (
+    Object.values(draft.globalLocks ?? {}).some(
+      (id) => id !== null && id !== undefined && draft.exclusions.includes(id),
+    )
+  )
+    throw new Error("A globally locked item is excluded.");
   const hypothetical =
     draft.assumptions.attack !== "" ||
     draft.assumptions.quest ||
@@ -98,7 +208,7 @@ export function normalize(
   const edges: [string, string][] =
     draft.topology === "base"
       ? roles
-          .filter((r) => r.id !== draft.baseRole)
+          .filter((r) => r.id !== draft.baseRole && !r.utility)
           .flatMap(
             (r) =>
               [
@@ -106,7 +216,30 @@ export function normalize(
                 [r.id, draft.baseRole],
               ] as [string, string][],
           )
-      : roles.slice(1).map((r, i) => [roles[i].id, r.id]);
+      : draft.topology === "explicit"
+        ? structuredClone(draft.transitions ?? [])
+        : [];
+  const ordered =
+    draft.topology === "ordered"
+      ? [...(draft.orderedRoles ?? roles.map((r) => r.id))]
+      : [];
+  if (
+    edges.length > 16 ||
+    edges.some(([a, b]) => !ids.has(a) || !ids.has(b) || a === b)
+  )
+    throw new Error(
+      "Directed transitions must reference different configured roles (maximum 16).",
+    );
+  if (draft.topology === "explicit" && !edges.length)
+    throw new Error("Choose at least one directed transition.");
+  if (
+    ordered.length > 100 ||
+    (draft.topology === "ordered" && ordered.length < 2) ||
+    ordered.some((id) => !ids.has(id))
+  )
+    throw new Error(
+      "Ordered phases must reference configured roles, with two through 100 phases.",
+    );
   return {
     objective: "weighted_dps",
     request: {
@@ -124,6 +257,8 @@ export function normalize(
       reserved_supply_slots: integer(draft.supplies, "Supply slots", 0, 28),
       transitions: edges,
       base_role: draft.baseRole,
+      locks: structuredClone(draft.globalLocks ?? {}),
+      ...(ordered.length ? { ordered_roles: ordered, loop: !!draft.loop } : {}),
       excluded_item_ids: [...draft.exclusions],
       skill_overrides: draft.assumptions.attack
         ? {
@@ -166,6 +301,8 @@ export interface WorkspaceState {
   slot: Slot | null;
   solutionId: string;
   view: "side" | "interactive";
+  comparisonRoles: [string, string];
+  selectedTransition: string;
 }
 const workspace = (): WorkspaceState => ({
   draft: newDraft(),
@@ -186,6 +323,8 @@ const workspace = (): WorkspaceState => ({
   slot: null,
   solutionId: "best-found",
   view: "side",
+  comparisonRoles: ["role-1", "role-2"],
+  selectedTransition: "",
 });
 export interface State {
   context: GearContext | null;
@@ -223,7 +362,15 @@ export type Action =
       type: "ui";
       mode: Workspace;
       patch: Partial<
-        Pick<WorkspaceState, "activeRole" | "slot" | "view" | "solutionId">
+        Pick<
+          WorkspaceState,
+          | "activeRole"
+          | "slot"
+          | "view"
+          | "solutionId"
+          | "comparisonRoles"
+          | "selectedTransition"
+        >
       >;
     }
   | { type: "trial"; mode: Workspace; trial: Trial | null }
@@ -268,7 +415,7 @@ export function reducer(state: State, action: Action): State {
               ? clearedTrial(state[mode])
               : {}),
             ...(state.context &&
-            state.context.snapshotId !== action.context.snapshotId
+            contextIdentity(state.context) !== contextIdentity(action.context)
               ? {
                   generation: state[mode].generation + 1,
                   pending: false,
@@ -300,12 +447,24 @@ export function reducer(state: State, action: Action): State {
     const draft = structuredClone(
       state.multiSeeded ? state.multi.draft : state.single.draft,
     );
+    const sourceScenario = state.single.result!.scenario.request;
+    const sourceRole = sourceScenario.roles[0];
     draft.roles[0] = {
-      ...state.single.result!.scenario.request.roles[0],
+      ...sourceRole,
       weight: String(state.single.result!.scenario.request.roles[0].weight),
       id: "role-1",
       name: "Single result (locked)",
       locks: structuredClone(loadout.equipment),
+      combatTarget: structuredClone(
+        sourceRole.combatTarget ??
+          sourceScenario.target.definition ?? {
+            name: sourceScenario.target.name,
+            defence_level: sourceScenario.target.defence,
+            magic_level: 1,
+            bonuses: {},
+          },
+      ),
+      targetInputs: {},
     };
     if (draft.roles.length === 1) draft.roles.push(newRole(2));
     return {
@@ -407,8 +566,17 @@ export function reducer(state: State, action: Action): State {
             action.result.modelVersion !== state.context.live.model_version ||
             action.result.priceRevision !== state.context.live.price_revision),
         ...clearedTrial(current),
-        solutionId: "best-found",
+        solutionId:
+          action.result.selectedSolutionId ??
+          action.result.solutions[0]?.id ??
+          "best-found",
         activeRole: action.result.scenario.request.roles[0].id,
+        comparisonRoles: [
+          action.result.scenario.request.roles[0].id,
+          action.result.scenario.request.roles[1]?.id ??
+            action.result.scenario.request.roles[0].id,
+        ],
+        selectedTransition: "",
       };
       break;
     case "error":
@@ -523,7 +691,7 @@ export function reducer(state: State, action: Action): State {
   }
   return { ...state, [action.mode]: next };
 }
-const version = 1;
+const version = 2;
 export const storageKey = (player: string) =>
   `gear-drafts-v${version}:${player}`;
 export function saveDrafts(state: State, storage: Storage) {
@@ -547,8 +715,12 @@ export function readDrafts(
   storage: Storage,
 ): { single: Draft; multi: Draft; multiSeeded: boolean } | null {
   try {
-    const data = JSON.parse(storage.getItem(storageKey(player)) ?? "null");
-    if (data?.version !== version) return null;
+    const data = JSON.parse(
+      storage.getItem(storageKey(player)) ??
+        storage.getItem(`gear-drafts-v1:${player}`) ??
+        "null",
+    );
+    if (![1, version].includes(data?.version)) return null;
     for (const draft of [data.single, data.multi]) {
       if (
         typeof draft.target !== "string" ||
@@ -561,7 +733,7 @@ export function readDrafts(
         typeof draft.assumptions.acquired !== "string" ||
         typeof draft.maxActions !== "string" ||
         typeof draft.supplies !== "string" ||
-        !["base", "ordered"].includes(draft.topology) ||
+        !["base", "ordered", "explicit"].includes(draft.topology) ||
         !Array.isArray(draft.exclusions) ||
         !draft.exclusions.every((id: unknown) => Number.isSafeInteger(id)) ||
         !Array.isArray(draft.roles) ||
@@ -584,6 +756,27 @@ export function readDrafts(
         )
       )
         return null;
+    }
+    if (data.version === 1) {
+      data.multi.roles = data.multi.roles.map(
+        (role: import("../api/contracts").Role) =>
+          role.combatTarget
+            ? role
+            : {
+                ...role,
+                combatTarget: structuredClone(
+                  data.multi.combatTarget ?? {
+                    name: data.multi.target,
+                    defence_level: Number(data.multi.defence) || 1,
+                    magic_level: 1,
+                    bonuses: {},
+                  },
+                ),
+                targetInputs: data.multi.combatTarget
+                  ? {}
+                  : { defence_level: data.multi.defence },
+              },
+      );
     }
     return data;
   } catch {

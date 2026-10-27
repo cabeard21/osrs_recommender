@@ -41,6 +41,16 @@ class EquipmentEvaluationRequest(DTO):
 
     @model_validator(mode="after")
     def exact_role(self) -> EquipmentEvaluationRequest:
+        if (
+            len(self.scenario.roles) != 1
+            or self.scenario.roles[0].style == "special"
+            or self.scenario.transitions
+            or self.scenario.ordered_roles
+            or self.scenario.loop
+        ):
+            raise ValueError(
+                "Exact evaluation supports one ordinary-attack role without transitions"
+            )
         expected = {self.scenario.roles[0].id}
         if set(self.baseline_loadouts) != expected or set(self.proposed_loadouts) != expected:
             raise ValueError("Both fixed configurations must contain exactly the submitted role")

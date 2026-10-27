@@ -92,7 +92,7 @@ function useGearState(client: GearClient) {
       if (generation !== contextGeneration.current) return;
       if (
         snapshotId.current !== null &&
-        snapshotId.current !== context.snapshotId
+        contextIdentity(stateRef.current.context) !== contextIdentity(context)
       )
         Object.values(controllers.current).forEach((c) => c.abort());
       snapshotId.current = context.snapshotId;
@@ -152,10 +152,6 @@ function useGearState(client: GearClient) {
     try {
       if (current.pending) return;
       const live = !(client instanceof FixtureGearClient);
-      if (live && mode !== "single")
-        throw new Error(
-          "Live multi-style optimization is unavailable until Milestone 5.",
-        );
       if (!state.context?.snapshotId)
         throw new Error("Synchronize an account before optimizing.");
       const scenario = normalize(current.draft, state.context.snapshotId, live);
@@ -194,6 +190,8 @@ function useGearState(client: GearClient) {
       result = workspace.result;
     if (
       !result ||
+      (result.source === "live" &&
+        result.scenario.request.roles.length !== 1) ||
       workspace.outdated ||
       workspace.pending ||
       workspace.slot === null

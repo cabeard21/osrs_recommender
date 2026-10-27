@@ -1,4 +1,4 @@
-# Runic Ledger Gear preview — Milestone 4
+# Runic Ledger Gear preview — Milestone 5
 
 Account-connected React/TypeScript/Vite/Tailwind preview with an isolated fixture mode. The architecture authority is
 [the redesign plan](../../docs/GEAR_OPTIMIZER_REDESIGN_PLAN.md); the visual authority is
@@ -41,14 +41,14 @@ GEAR_BACKEND_ORIGIN=http://127.0.0.1:8080 npm run dev
 
 Live mode is the default at `/gear-next/`. It uses Python endpoints
 under `/ui-api/gear` for account context, equipment observations, physical item
-inspection, and real single-style optimization. See [the API contract](../../docs/GEAR_BROWSER_API.md). No API token is
+inspection, and real single-style and joint optimization. See [the API contract](../../docs/GEAR_BROWSER_API.md). No API token is
 sent to React; these endpoints share the private dashboard network boundary.
 
 Open `/gear-next/?mode=fixture` for the deterministic demonstrations below. The
 fixture adapter remains available for tests and local demonstrations. Live mode
 never falls back to fixtures. All live optimization metrics and purchase estimates
 come from Python. Manual trials use exact Python fixed-loadout evaluation. Live
-Multi remains unavailable.
+Multi uses the same Python joint optimizer for two through four configurations.
 Account context refreshes
 on focus, every 30 seconds while visible, and on manual refresh.
 
@@ -120,8 +120,53 @@ Assumed skills, quest completion, and item acquisitions remain request-local.
 
 The synced account panel is a compact identity/sync/equipment summary with important
 warnings visible. Expand **Detailed account observations** for container times, skills,
-snapshot identity and diagnostics. Live Multi, alternate objectives, prayers and potions
-remain unavailable. Fixture demos keep their existing scope.
+snapshot identity and diagnostics. Alternate objectives, prayers and potions remain
+unavailable. Fixture demos keep their existing scope.
+
+## Live joint multi-style workflow
+
+1. Select **Multi-style**, then edit two through four configurations. Repeated combat
+   disciplines are supported. Each ordinary role has its own target, attack style,
+   stance, supported standard spell and active-time weight.
+2. Set the additional acquisition budget and access mode. Expand **Equipment locks & exclusions**
+   for global and role-specific physical-ID locks; missing means optimize, empty means
+   force empty. Exclusions apply globally. Hypotheses remain request-local.
+3. Expand **Transitions & inventory** to select a base configuration, base round trips,
+   explicit directed edges, or ordered phases with repetitions and optional looping.
+   Set 0–12 maximum equipment actions per transition and 0–28 reserved supply slots.
+4. Run one joint optimization. Every selected loadout comes from that single Python
+   result; no independent per-role recommendations are combined in React.
+5. Inspect two equipment grids and role metrics. With three or four roles, choose
+   which two to compare. Shared indicators use exact physical IDs; differences remain
+   distinct from directed equipment actions.
+6. Select a returned **Swap-efficiency curve point**. Equipment, weighted aggregate
+   DPS, purchases, transitions and inventory update together without another request.
+   Missing solutions are explicit. The unrestricted reference means **best found
+   without the swap-action limit**, with the other constraints still enforced.
+7. Select **Interactive switching**, choose the active configuration and a directed
+   transition, and inspect the backend's ordered equip/unequip actions, automatic
+   removals and transient inventory occupancy. Returning to side-by-side retains the
+   selected curve point.
+8. Inspect physical facts and edit draft locks/exclusions. Multi contextual alternatives
+   and exact manual trials are unavailable: a single-role trial is not a joint
+   contribution calculation. Reoptimize to evaluate new joint constraints.
+
+Advanced unscored utility configurations require an ordinary parent and a weapon
+lock. Their equipment affects acquisitions, transitions and inventory; they have no
+scored damage or active-time share. Remove or reparent dependent utility roles before
+deleting their parent. Role removal reports removed transition/phase references and
+any replacement base role, and invalid remaining configuration blocks submission.
+
+Results retain their submitted targets and provenance after draft edits. Comparison
+roles, active role, transition and curve selection are workspace state; changing views
+does not optimize again. Draft storage is version 2 and migrates version 1 shared
+targets into independent role targets. Results remain ephemeral.
+
+Four different quantities are displayed: **changed equipment slots**, **equipment
+actions**, **gear inventory slots**, and **unique required items**. The backend
+`carried_item_ids` union includes equipped equipment; gear inventory lists only the
+union outside the active role's equipped slots. Supplies reserve capacity without
+simulating consumption.
 
 Account, catalog/model and price revisions are retained with results. Refreshes invalidate
 changed account/results and acquisition estimates; a changed account during a solve returns
@@ -216,5 +261,10 @@ revert, newer previews and relevant context changes invalidate pending responses
 Only draft configuration is persisted. Purchase lists can be copied with explicit
 clipboard success/failure feedback.
 
-Live joint optimization belongs to Milestone 5. Packaging and `/gear` cutover remain
-later work; Milestone 4 does not change the production Gear entry point.
+See [the Milestone 5 report](../../docs/GEAR_MILESTONE_5.md) for joint contracts,
+verification, screenshots and full-catalog performance measurements. Joint browser
+acceptance uses `/test/seed-joint` only in the disposable test server; production does
+not register that route. Run `npm.cmd run test:e2e -- joint.spec.ts` for that journey.
+
+Packaging and `/gear` cutover remain later work; Milestone 5 does not change the
+production Gear entry point.

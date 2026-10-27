@@ -30,6 +30,7 @@ from tracker.gear.evaluation import (
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatTarget, EquipmentDefinition
+from tracker.gear.refinement import refine_ammunition
 from tracker.gear.transitions import inventory_slots, plan_transition
 
 SLOTS: tuple[ItemSlot, ...] = (
@@ -631,6 +632,29 @@ def optimize(
             previous = winners[limit]
             if previous is None or _solution_key(solution) < _solution_key(previous):
                 winners[limit] = solution
+    # Irrelevant-slot beam ties can evict the ranged role's ammunition from a
+    # melee/magic beam. Revalidate equivalent sharing on the small finalist set,
+    # then offer lower-action variants to every compatible curve point.
+    refinement = {"evaluated_assignments": 0, "improved_finalists": 0}
+    refined: dict[str, dict[str, Any]] = {}
+
+    def refine(solution: dict[str, Any] | None) -> dict[str, Any] | None:
+        if solution is None:
+            return None
+        identity = json.dumps(solution["loadouts"], sort_keys=True)
+        if identity not in refined:
+            refined[identity] = refine_ammunition(search, solution, _solution_key, refinement)
+        return refined[identity]
+
+    winners = [refine(solution) for solution in winners]
+    unrestricted = refine(unrestricted)
+    for solution in refined.values():
+        if unrestricted is None or _solution_key(solution) < _solution_key(unrestricted):
+            unrestricted = solution
+        for limit in range(solution["maximum_actions"], request.max_swaps + 1):
+            previous = winners[limit]
+            if previous is None or _solution_key(solution) < _solution_key(previous):
+                winners[limit] = solution
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -697,6 +721,7 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            "ammunition_refinement": refinement,
             "explored_nodes": search.nodes,
             "candidate_truncation": search.truncated,
             "beam_width": BEAM_WIDTH,

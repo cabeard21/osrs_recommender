@@ -182,8 +182,9 @@ A failed or malformed response cannot select the fixture adapter.
 ## POST /ui-api/gear/optimizations
 
 Runs the existing `GearService.optimize` against frozen account, catalog and cached
-price inputs. JSON is the existing domain `OptimizationRequest`, restricted to exactly
-one ordinary-attack role. Fixed-loadout comparisons use the evaluation endpoint below.
+price inputs. JSON is the existing domain `OptimizationRequest`, supporting one through
+four roles. React Single submits one ordinary role; Multi submits two through four
+configurations in one joint search. Fixed-loadout comparisons remain Single-only.
 
 ```json
 {
@@ -203,8 +204,50 @@ one ordinary-attack role. Fixed-loadout comparisons use the evaluation endpoint 
 Role styles are `stab`, `slash`, `crush`, `ranged`, or `magic`. Stances and standard
 spells must be supported by the model. Targets reuse `CombatTarget`, including Magic
 level, defence bonuses, ranged subtype bonuses and supported elemental weaknesses.
-Unsupported mechanics, prayers, boosts, special scoring, objective fields
-and multi-role transitions are rejected. Names do not confer verified boss mechanics.
+Unsupported mechanics, prayers, boosts, special scoring and objective fields are
+rejected. Names do not confer verified boss mechanics. Multiple configurations may
+use the same combat discipline with distinct IDs, targets, stances and weights.
+
+### Joint roles and directed topology
+
+Each role retains its own `target`, `weight` and `locks`. Weights are finite values
+from 0 through 1,000,000; at least one ordinary role must have positive active time.
+The domain normalizes ordinary-role weights into `result.active_time_shares`.
+
+Optional advanced `style: "special"` roles require an ordinary `parent_role` and an
+explicit role weapon lock. They are **unscored utility configurations**, not scored
+special attacks. They consume acquisitions, inventory and equipment actions, return
+null combat metrics and have no active-time share. They count toward the four-role limit.
+
+Topology uses the existing domain fields:
+
+| Field | Meaning |
+| --- | --- |
+| `base_role` | Configured role initially equipped; defaults to the first role |
+| `transitions` | Up to 16 explicit directed `[from_role, to_role]` edges |
+| `ordered_roles` | Up to 100 ordered phase references, including repeated roles |
+| `loop` | Add the final-to-first edge for ordered phases |
+| `max_swaps` | Maximum equipment **actions per required directed transition**, 0–12 |
+
+Choose explicit edges or ordered phases, never both. With neither, the optimizer
+uses base↔ordinary-role round trips. Utility roles receive their existing parent
+round trips unless included in ordered phases. Repeated required edges and ordered
+self-steps are normalized by the existing backend; no all-pairs topology is added.
+Malformed references, conflicting locks/exclusions and unsupported role inputs return
+422 with editable paths such as `roles.2.spell`, `transitions.1.0`, or `ordered_roles.3`.
+
+```json
+{
+  "roles": [
+    {"id": "melee", "style": "slash", "stance": "accurate", "weight": 1},
+    {"id": "range", "style": "ranged", "stance": "rapid", "weight": 3}
+  ],
+  "base_role": "melee", "ordered_roles": ["melee", "range", "melee"],
+  "loop": false, "mode": "usable", "budget_gp": 100000,
+  "max_swaps": 4, "reserved_supply_slots": 12,
+  "expected_snapshot_id": "<current account fingerprint>"
+}
+```
 
 Access modes preserve domain semantics: `owned` uses observed owned equipment;
 `usable` also permits eligible, priced purchases within the additional integer GP
@@ -238,7 +281,7 @@ single-role results have no equipment transitions. No search limits or scoring c
 | `price_revision` | Fingerprint of the frozen cached price inputs |
 | `result` | Existing domain output preserved, including selected/unrestricted solutions, curve, alternatives, assumptions, facts and diagnostics |
 | `items` | Typed concrete `ItemResponse` rows for referenced and baseline equipment, with complete price provenance |
-| `baseline` | `{status, equipment, performance, reasons}` for this single role |
+| `baseline` | Single observed baseline; unavailable with an explicit explanation for joint scenarios |
 
 `result.selected_solution` is null when no feasible configuration was found. Otherwise
 its role-keyed `loadouts` contain concrete slot assignments and `CombatPerformance`:
@@ -253,6 +296,46 @@ assumptions fingerprint and search diagnostics remain available. Search output i
 **best found**, with candidate truncation and termination reasons; it is not a proof
 of global optimality or infeasibility. No prayer/potion, survival, special-attack,
 boss-completion or encounter-duration metrics are supplied.
+
+### Joint solutions and curve selection
+
+`result.curve` contains only computed points: `swap_limit`, `status`, nullable
+`solution`, and nullable `relative_performance`. `selected_solution` corresponds to
+the submitted action limit. `unrestricted` is the **best found without the swap-action
+limit**; account, budget, inventory and model constraints still apply. It is neither
+a global optimum nor an unconstrained reference. Missing solutions remain explicit.
+
+Each solution preserves Python `score` (weighted aggregate DPS), role-keyed `loadouts`
+with complete `CombatPerformance`, purchase union and `purchase_cost_gp`, and:
+
+| Field | Meaning |
+| --- | --- |
+| `carried_item_ids`, `distinct_items` | Complete distinct physical equipment union, **including equipped items** |
+| `gear_inventory_slots` | Equipment outside active slots in the submitted base role |
+| `max_gear_inventory_slots` | Maximum occupancy across roles and transient transition states |
+| `reserved_supply_slots` | Reserved capacity, without supply-consumption simulation |
+| `remaining_supply_slots` | Total capacity available for supplies at peak gear occupancy |
+| `remaining_inventory_slots` | Capacity remaining after peak gear and reserved supplies |
+| `maximum_actions` | Largest equipment-action count across required transitions |
+| `transitions` | Exact directed backend transition plans |
+
+Each transition contains `from_role`, `to_role`, `changed_slots`, `action_count`,
+`max_gear_inventory_slots`, and ordered `actions`. Each action preserves `operation`
+(`equip`/`unequip`), physical `slot`, `item_id`, `automatically_removed` IDs and resulting
+`gear_inventory_slots`. Automatic hand displacement does not add extra actions.
+
+Changed equipment slots, equipment actions, gear inventory slots and unique required
+items are different quantities. Shared markers use exact physical-ID intersections;
+inventory outside a role is the required union minus that role's equipped IDs.
+The browser does not calculate combat metrics, infer transition sequences or synthesize
+intermediate curve points. Curve/view/role selection requires no new optimization.
+
+Before publishing the curve, Python applies bounded performance-neutral ammunition
+sharing to found finalists. It only tries already-required ammunition IDs or empty,
+preserves locks, utility equipment, exact ordinary-role attack metrics and defensive/
+prayer bonuses, and revalidates complete purchase/transition/inventory semantics.
+Improvements can populate lower-action curve points. Search diagnostics include
+`ammunition_refinement` assignment/improvement counts; bounded-search caveats remain.
 
 ### Exact current-equipment baseline
 
@@ -371,16 +454,23 @@ existing deterministic adapter and visibly labels all demonstration data. Mode c
 reload the application; draft storage keys distinguish fixture and live account IDs.
 Live mode never calls the fixture optimizer/evaluator. Fixture workflows remain available
 in both Single and Multi workspaces. Live single-style results, valid baselines and
-manual trials use Python POSTs; live Multi remains unavailable.
+manual trials use Python POSTs. Live Multi submits one joint request and presents its
+selected computed curve solution in both comparison and switching views.
 
 Context refreshes on focus and every 30 seconds while visible, and has a manual refresh
 button. Errors have retry guidance; previously loaded observations retain their dates.
 All eleven live slots remain selectable during missing, partial and ambiguous scans.
 The inspector supports candidate inspection, missing metadata, physical name/ID search,
 pagination, eligibility, ownership timestamps, prices/provenance, and unsupported effects.
-Accepted results retain contextual alternatives for their submitted surrounding
+Single accepted results retain contextual alternatives for their submitted surrounding
 equipment. Manual previews change one slot and leave accepted results and drafts
 untouched. Revert discards the trial; lock/exclude updates the draft and marks the
 accepted result outdated until reoptimization. Trial generations and abort signals
 prevent stale responses from publishing. Account, catalog, model and price changes
 invalidate dependent trials. Results and evaluations are never persisted.
+
+Multi inspection reuses physical facts, ownership, requirements and prices. Global
+and role-specific lock edits and global exclusions modify only the draft and mark
+accepted results outdated. Single-role contextual alternatives and manual trial DPS
+comparisons are unavailable for Multi. `/evaluations` independently rejects joint
+scenarios; it never evaluates only the first role as a joint comparison.

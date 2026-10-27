@@ -93,7 +93,9 @@ function setupInspector({
     source: "live",
     scenario: normalize(draft, context.account.snapshot_id),
     items: [item, alternative],
-    solutions: [{ loadouts: [{ equipment }] }],
+    solutions: [
+      { id: "best-found", loadouts: [{ roleId: "role-1", equipment }] },
+    ],
     live: {
       result: {
         alternatives: {
@@ -115,6 +117,7 @@ function setupInspector({
     current: {
       slot: "weapon",
       activeRole: "role-1",
+      solutionId: "best-found",
       draft,
       result,
       pending: false,

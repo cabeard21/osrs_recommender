@@ -106,5 +106,32 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-joint")
+        def seed_joint():
+            seed_optimization()
+            # Reviewed bundled definitions, with actual hand/ammunition metadata.
+            # This subset exercises the unchanged joint optimizer, not a mock solve.
+            item_ids = (1331, 1333, 861, 892, 1381, 12954, 6585)
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in item_ids},
+                revision="browser-acceptance-joint-bundled-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                for item_id in (861, 892, 1381, 12954):
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=100 if item_id == 892 else 1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded", "catalog_items": len(item_ids)}
+
         _mount_ui(app, app.state.settings)
         uvicorn.run(app, host="127.0.0.1", port=8766, log_level="warning")
