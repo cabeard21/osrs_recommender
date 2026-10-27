@@ -40,5 +40,6 @@ snapshot.json
 frontend/gear/node_modules/
 frontend/gear/test-results/
 frontend/gear/playwright-report/
+frontend/gear/coverage/
 tracker/ui/gear_static/
 *.tsbuildinfo

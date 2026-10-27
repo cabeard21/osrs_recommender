@@ -1,4 +1,4 @@
-# Runic Ledger Gear preview — Milestone 2
+# Runic Ledger Gear preview — Milestone 3
 
 Account-connected React/TypeScript/Vite/Tailwind preview with an isolated fixture mode. The architecture authority is
 [the redesign plan](../../docs/GEAR_OPTIMIZER_REDESIGN_PLAN.md); the visual authority is
@@ -39,15 +39,16 @@ Open `http://127.0.0.1:5173/gear-ui/`. Vite proxies local sprites to Python at
 GEAR_BACKEND_ORIGIN=http://127.0.0.1:8080 npm run dev
 ```
 
-Live mode is the default at `/gear-next/`. It uses the read-only Python endpoints
-under `/ui-api/gear` for account context, equipment observations, and physical item
-inspection. See [the API contract](../../docs/GEAR_BROWSER_API.md). No API token is
+Live mode is the default at `/gear-next/`. It uses Python endpoints
+under `/ui-api/gear` for account context, equipment observations, physical item
+inspection, and real single-style optimization. See [the API contract](../../docs/GEAR_BROWSER_API.md). No API token is
 sent to React; these endpoints share the private dashboard network boundary.
 
 Open `/gear-next/?mode=fixture` for the deterministic demonstrations below. The
 fixture adapter remains available for tests and local demonstrations. Live mode
-never falls back to fixtures and cannot execute optimization/evaluation. No fixture
-metrics or purchase estimates appear on live equipment. Account context refreshes
+never falls back to fixtures. All live optimization metrics and purchase estimates
+come from Python. Arbitrary manual evaluation and live Multi remain unavailable.
+Account context refreshes
 on focus, every 30 seconds while visible, and on manual refresh.
 
 ## Fixture interactive states
@@ -75,8 +76,9 @@ The banner, account identity, item facts, metrics, comparisons, and provenance a
 identify fixture data. Numbers are authored deterministic examples, not actual combat
 calculations. Inputs are recorded in the submitted scenario; the adapter does not
 execute optimization, validate production eligibility, or promise that its sample
-loadouts satisfy budgets, supply reservations, or action limits. Draft lock/exclusion
-controls demonstrate state changes; production operations remain unavailable.
+loadouts satisfy budgets, supply reservations, or action limits. Fixture lock/exclusion
+controls demonstrate state changes; live locks are enforced by Python, while live
+exclusions and manual trials remain unavailable.
 
 ## State boundaries
 
@@ -92,6 +94,33 @@ player ID. Results, account facts, and trial evaluations are not persisted. Relo
 restores incomplete draft fields and prominently labels hypothetical assumptions.
 Assumed skills, quest completion, and item acquisitions remain request-local.
 
+## Live single-style workflow
+
+1. Synchronize an account through the existing RuneLite integration and open `/gear-next/`.
+2. Choose an ordinary-attack target, discipline, supported stance/spell, equipment access,
+   additional integer GP budget and reserved supply slots. Requirements always apply.
+3. Optional locks use exact physical IDs: a missing lock optimizes the slot and an empty
+   lock forces it empty. In hypothetical mode, enter explicit skill levels, completed
+   quest IDs and acquired physical IDs; these never modify the account.
+4. Run optimization. Progress is indeterminate; cancel/edit aborts obsolete requests and
+   signals cooperative backend cancellation. Busy and validation errors retain the draft.
+5. Inspect the **Best configuration found**, Python DPS/max hit/accuracy/interval in
+   seconds, equipment bonuses, required purchases, reused owned equipment and provenance.
+6. Compare current equipment only when its projection and metadata support exact Python
+   evaluation. Missing/ambiguous equipment produces reasons and unavailable metrics.
+7. Change the budget or constraints and reoptimize. Old results retain their submitted
+   scenario and are marked outdated. Compatible previous results can be compared.
+
+The synced account panel is a compact identity/sync/equipment summary with important
+warnings visible. Expand **Detailed account observations** for container times, skills,
+snapshot identity and diagnostics. Live Multi, exclusions, manual replacements, alternate
+objectives, prayers and potions remain unavailable. Fixture demos keep their existing scope.
+
+Account, catalog/model and price revisions are retained with results. Refreshes invalidate
+changed account/results and acquisition estimates; a changed account during a solve returns
+a stale-context error. An HTTP abort does not forcibly terminate Python computation; the
+existing optimizer checks cancellation cooperatively and holds its service lock until exit.
+
 ## Checks and screenshots
 
 ```bash
@@ -99,6 +128,7 @@ cd frontend/gear
 npm test                 # Reducer, validation, persistence, UI and fixture failures
 npm run check            # Strict TypeScript and formatting
 npm run build
+npm run test:coverage    # Coverage for live transport, result, provider and scenario state
 npx playwright install chromium  # Once, if the pinned browser is not installed
 npm run test:e2e          # Real FastAPI + NiceGUI, desktop and 390px Chromium, axe
 cd ../..
@@ -158,14 +188,18 @@ cache bundle and retain [its attribution](../../tracker/ui/assets/items/source.j
 Fonts retain their notices in `public/fonts/`. No screenshot/HTML reference exports
 are copied into the runtime bundle.
 
-## Milestone 2 delivery and remaining work
+## Milestone deliveries and remaining work
 
 See [the implementation report](../../docs/GEAR_MILESTONE_2.md) for verification,
 files changed, representative live-mode screenshots, and observation limitations.
 The screenshots use a disposable database and the real sync/read endpoints; they do
 not depict the operator's account.
 
-Milestone 3 remains separate: real single-style optimization, matching current-equipment
-comparison/evaluation, asynchronous execution, snapshot publication guards, cancellation,
-and real result/provenance rendering. Manual trials, exclusions, joint integration,
-packaging and `/gear` cutover remain in their designated later milestones.
+See [the Milestone 3 report](../../docs/GEAR_MILESTONE_3.md) for the real optimization
+contract, exact baseline foundation, verification and screenshots. The disposable browser
+server uses bundled equipment definitions and fixed cached prices; its test-only seed/reset
+routes are never mounted by the production application. Windows and Unix virtual-environment
+Python paths are supported by the Playwright launcher.
+
+Manual trials, exclusions and replacement evaluation belong to Milestone 4; live joint
+optimization belongs to Milestone 5. Packaging and `/gear` cutover remain later work.

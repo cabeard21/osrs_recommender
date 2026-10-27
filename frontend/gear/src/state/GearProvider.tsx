@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Draft, FixtureFailure, GearClient } from "../api/contracts";
 import { FixtureGearClient } from "../fixtures/client";
+import { GearApiError } from "../api/httpClient";
 import {
   initialState,
   normalize,
@@ -24,12 +25,22 @@ function useGearState(client: GearClient) {
   >("observed");
   const [failure, setFailure] = useState<FixtureFailure>("none");
   const restored = useRef(false);
+  const contextGeneration = useRef(0);
+  const snapshotId = useRef<string | null>(null);
   const controllers = useRef<
     Partial<Record<"single" | "multi", AbortController>>
   >({});
   async function loadContext() {
+    const generation = ++contextGeneration.current;
     try {
       const context = await client.getContext();
+      if (generation !== contextGeneration.current) return;
+      if (
+        snapshotId.current !== null &&
+        snapshotId.current !== context.snapshotId
+      )
+        Object.values(controllers.current).forEach((c) => c.abort());
+      snapshotId.current = context.snapshotId;
       if (!restored.current) {
         const drafts = readDrafts(context.playerId, sessionStorage);
         if (drafts) dispatch({ type: "restore", drafts });
@@ -38,7 +49,8 @@ function useGearState(client: GearClient) {
       dispatch({ type: "context", context });
       setContextError(null);
     } catch (error) {
-      setContextError((error as Error).message);
+      if (generation === contextGeneration.current)
+        setContextError((error as Error).message);
     }
   }
   useEffect(() => {
@@ -82,10 +94,15 @@ function useGearState(client: GearClient) {
       generation = current.generation + 1;
     let started = false;
     try {
-      if (!(client instanceof FixtureGearClient))
-        throw new Error("Live optimization is unavailable until Milestone 3.");
-      if (!state.context) throw new Error("Fixture context has not loaded.");
-      const scenario = normalize(current.draft, state.context.snapshotId);
+      if (current.pending) return;
+      const live = !(client instanceof FixtureGearClient);
+      if (live && mode !== "single")
+        throw new Error(
+          "Live multi-style optimization is unavailable until Milestone 5.",
+        );
+      if (!state.context?.snapshotId)
+        throw new Error("Synchronize an account before optimizing.");
+      const scenario = normalize(current.draft, state.context.snapshotId, live);
       const controller = new AbortController();
       controllers.current[mode]?.abort();
       controllers.current[mode] = controller;
@@ -93,8 +110,14 @@ function useGearState(client: GearClient) {
       started = true;
       if (client instanceof FixtureGearClient) client.failure = failure;
       const result = await client.optimize(scenario, controller.signal);
+      if (controller.signal.aborted) return;
       dispatch({ type: "success", mode, generation, result });
     } catch (error) {
+      if (
+        error instanceof GearApiError &&
+        ["snapshot_changed", "stale_context"].includes(error.code)
+      )
+        void loadContext();
       if ((error as Error).name !== "AbortError")
         dispatch({
           type: "error",
@@ -112,6 +135,7 @@ function useGearState(client: GearClient) {
     state,
     liveMode: !(client instanceof FixtureGearClient),
     itemById: (id: number | null) =>
+      state[state.mode].result?.items?.find((item) => item.id === id) ??
       state.context?.items.find((item) => item.id === id),
     current,
     dispatch,

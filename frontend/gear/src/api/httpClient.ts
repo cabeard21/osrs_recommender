@@ -7,6 +7,9 @@ import type {
   Item,
   ItemPage,
   OptimizationReply,
+  OptimizationDTO,
+  CombatPerformance,
+  Metrics,
   PhysicalItem,
   Scenario,
   Slot,
@@ -37,6 +40,233 @@ function scans(value: unknown) {
   for (const scan of Object.values(object(value))) {
     if (scan !== null)
       requireFields(scan, { scanned_at: "string", source: "string" });
+  }
+}
+export function performanceMetrics(value: CombatPerformance): Metrics {
+  if (
+    value.supported !== true ||
+    [value.dps, value.max_hit, value.accuracy, value.attack_interval].some(
+      (n) => typeof n !== "number" || !Number.isFinite(n),
+    )
+  )
+    throw new Error("Unsupported or invalid combat performance");
+  if (
+    value.dps! < 0 ||
+    !Number.isSafeInteger(value.max_hit) ||
+    value.max_hit! < 0 ||
+    value.accuracy! < 0 ||
+    value.accuracy! > 1 ||
+    value.attack_interval! <= 0 ||
+    !strings(value.limitations) ||
+    Object.values(object(value.bonuses)).some(
+      (bonus) => typeof bonus !== "number" || !Number.isFinite(bonus),
+    )
+  )
+    throw new Error("Invalid combat performance metadata");
+  return {
+    dps: value.dps!,
+    maxHit: value.max_hit!,
+    accuracy: value.accuracy!,
+    seconds: value.attack_interval!,
+  };
+}
+function equipmentMap(value: unknown): Equipment {
+  const equipment = emptyEquipment();
+  for (const [key, id] of Object.entries(object(value))) {
+    const slot = uiSlot(key) as Slot;
+    if (!slots.includes(slot) || !Number.isSafeInteger(id) || Number(id) <= 0)
+      throw new Error("Invalid result equipment assignment");
+    equipment[slot] = id as number;
+  }
+  return equipment;
+}
+export function parseOptimization(
+  value: unknown,
+  scenario: Scenario,
+): OptimizationReply {
+  const envelope = requireFields(value, {
+    api_version: "string",
+    evaluated_at: "string",
+    price_revision: "string",
+    scenario_fingerprint: "string",
+  });
+  if (envelope.api_version !== "gear-ui-v1" || !Array.isArray(envelope.items))
+    throw new Error("Unsupported optimization response");
+  const submitted = optimizationRequest(scenario);
+  function matches(expected: unknown, actual: unknown): boolean {
+    if (Array.isArray(expected))
+      return (
+        Array.isArray(actual) &&
+        expected.length === actual.length &&
+        expected.every((entry, index) => matches(entry, actual[index]))
+      );
+    if (expected && typeof expected === "object")
+      return (
+        !!actual &&
+        typeof actual === "object" &&
+        Object.entries(expected).every(([key, entry]) =>
+          matches(entry, (actual as Record<string, unknown>)[key]),
+        )
+      );
+    return expected === actual;
+  }
+  if (!matches(submitted, object(envelope.scenario)))
+    throw new Error(
+      "Optimization scenario does not match the submitted constraints",
+    );
+  const serverScenario = object(envelope.scenario);
+  if (
+    Object.keys(object(serverScenario.locks ?? {})).length ||
+    (serverScenario.transitions as unknown[] | undefined)?.length ||
+    (serverScenario.ordered_roles as unknown[] | undefined)?.length
+  )
+    throw new Error("Optimization scenario contains unsubmitted constraints");
+  const serverRole = object((serverScenario.roles as unknown[])[0]);
+  const serverTarget = object(serverRole.target);
+  const expectedBonuses = submitted.roles[0].target.bonuses;
+  if (
+    Object.entries(object(serverTarget.bonuses)).some(
+      ([key, bonus]) => bonus !== (expectedBonuses[key] ?? 0),
+    )
+  )
+    throw new Error(
+      "Optimization target bonuses do not match the submitted target",
+    );
+  const result = requireFields(envelope.result, {
+    snapshot_id: "string",
+    catalog_version: "string",
+    model_version: "string",
+    assumptions_fingerprint: "string",
+  });
+  object(result.search);
+  if (!strings(result.limitations))
+    throw new Error("Invalid result limitations");
+  const baseline = requireFields(envelope.baseline, { status: "string" });
+  if (
+    !["available", "unavailable"].includes(baseline.status as string) ||
+    !strings(baseline.reasons)
+  )
+    throw new Error("Invalid current equipment baseline");
+  equipmentMap(baseline.equipment);
+  if (baseline.status === "available")
+    performanceMetrics(baseline.performance as CombatPerformance);
+  else if (baseline.performance !== null)
+    throw new Error("Unavailable baseline must withhold combat metrics");
+  const items = envelope.items.map(parseItem);
+  const solutions = [];
+  if (result.selected_solution !== null) {
+    const selected = requireFields(result.selected_solution, {
+      score: "number",
+      purchase_cost_gp: "number",
+    });
+    if (
+      !Number.isFinite(selected.score) ||
+      !Number.isSafeInteger(selected.purchase_cost_gp) ||
+      Number(selected.purchase_cost_gp) < 0 ||
+      !Array.isArray(selected.purchases)
+    )
+      throw new Error("Invalid acquisition result");
+    const role = scenario.request.roles[0];
+    const loadout = object(object(selected.loadouts)[role.id]);
+    const equipment = equipmentMap(loadout.equipment);
+    for (const id of Object.values(equipment))
+      if (id !== null && !items.some((i) => i.id === id))
+        throw new Error("Missing physical result item metadata");
+    const purchases = selected.purchases.map((p) => {
+      const row = requireFields(p, {
+        item_id: "number",
+        conditional: "boolean",
+      });
+      if (
+        !Number.isSafeInteger(row.item_id) ||
+        Number(row.item_id) <= 0 ||
+        (row.cost_gp !== null &&
+          (!Number.isSafeInteger(row.cost_gp) || Number(row.cost_gp) < 0))
+      )
+        throw new Error("Invalid purchase fact");
+      return row.item_id as number;
+    });
+    solutions.push({
+      id: "best-found",
+      actionLimit: scenario.request.max_swaps,
+      loadouts: [
+        {
+          roleId: role.id,
+          name: "Best configuration found",
+          equipment,
+          metrics: performanceMetrics(loadout.performance as CombatPerformance),
+        },
+      ],
+      weightedDps: selected.score as number,
+      purchases,
+      cost: selected.purchase_cost_gp as number,
+      shared: [],
+      transitions: [],
+    });
+  }
+  if (result.snapshot_id !== scenario.request.expected_snapshot_id)
+    throw new Error("Account changed during optimization. Refresh and rerun.");
+  const dto = structuredClone(value) as OptimizationDTO;
+  return {
+    source: "live",
+    scenario: structuredClone(scenario),
+    fingerprint: envelope.scenario_fingerprint as string,
+    snapshotId: result.snapshot_id as string,
+    evaluatedAt: envelope.evaluated_at as string,
+    catalogVersion: result.catalog_version as string,
+    modelVersion: result.model_version as string,
+    priceRevision: envelope.price_revision as string,
+    solutions,
+    warnings: dto.result.limitations,
+    items,
+    live: dto,
+  };
+}
+export function optimizationRequest(scenario: Scenario) {
+  const r = scenario.request;
+  if (r.roles.length !== 1 || r.excluded_item_ids.length)
+    throw new Error(
+      "Live optimization supports one style without item exclusions.",
+    );
+  const role = r.roles[0];
+  return {
+    roles: [
+      {
+        id: role.id,
+        style: role.style === "melee" ? role.attackType : role.style,
+        stance: role.stance,
+        spell: role.spell,
+        weight: role.weight,
+        locks: Object.fromEntries(
+          Object.entries(role.locks).map(([slot, id]) => [
+            apiSlot(slot as Slot),
+            id,
+          ]),
+        ),
+        target: r.target.definition ?? {
+          name: r.target.name,
+          defence_level: r.target.defence,
+          magic_level: 1,
+          bonuses: {},
+        },
+      },
+    ],
+    mode: r.mode,
+    budget_gp: r.budget_gp,
+    reserved_supply_slots: r.reserved_supply_slots,
+    max_swaps: r.max_swaps,
+    skill_overrides: r.skill_overrides,
+    quest_overrides: r.quest_overrides,
+    assumed_item_ids: r.assumed_item_ids,
+    expected_snapshot_id: r.expected_snapshot_id,
+  };
+}
+export class GearApiError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+  ) {
+    super(message);
   }
 }
 export function parseItem(value: unknown): Item {
@@ -262,12 +492,35 @@ export class HttpGearClient implements GearClient {
     return (await this.browseItems(slot, "")).items;
   }
   async optimize(
-    _scenario: Scenario,
-    _signal: AbortSignal,
+    scenario: Scenario,
+    signal: AbortSignal,
   ): Promise<OptimizationReply> {
-    throw new Error(
-      "Live optimization is unavailable until Milestone 3. Open fixture mode for demonstrations.",
-    );
+    const submitted = structuredClone(scenario);
+    const response = await this.transport(`${this.base}/optimizations`, {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(optimizationRequest(submitted)),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      const error = object(object(body).error);
+      const fields = Array.isArray(error.fields)
+        ? error.fields
+            .map((f) => {
+              const row = object(f);
+              return `${row.field ?? row.path ?? "scenario"}: ${row.message}`;
+            })
+            .join("; ")
+        : "";
+      throw new GearApiError(
+        `${typeof error.message === "string" ? error.message : `Optimization failed (${response.status})`}${fields ? ` · ${fields}` : ""}`,
+        String(error.code ?? "optimization_failed"),
+      );
+    }
+    return parseOptimization(body, submitted);
   }
   async evaluate(
     _result: OptimizationReply,

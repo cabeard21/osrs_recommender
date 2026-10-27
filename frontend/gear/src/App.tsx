@@ -89,11 +89,13 @@ export default function App() {
     current.draft.mode === "future" ||
     current.draft.assumptions.attack ||
     current.draft.assumptions.quest ||
-    current.draft.assumptions.acquired;
+    current.draft.assumptions.acquired ||
+    current.draft.assumptions.skillLevels ||
+    current.draft.assumptions.completedQuests;
   const handoffText = JSON.stringify(
     {
       source: liveMode
-        ? "LIVE MODE DRAFT — NO OPTIMIZATION RESULT"
+        ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
         : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
       submitted: current.result?.scenario ?? null,
       draft: current.draft,
@@ -139,7 +141,7 @@ export default function App() {
             </strong>
             <small className="blue">
               {liveMode
-                ? "ACCOUNT OBSERVATIONS · READ ONLY"
+                ? "PYTHON OPTIMIZER · ACCOUNT OBSERVATIONS"
                 : "FIXTURE PREVIEW · NO LIVE CONNECTION"}
             </small>
           </div>
@@ -176,8 +178,8 @@ export default function App() {
           <div className="demo-banner">
             {liveMode ? (
               <>
-                Live account observations · Optimization unavailable in
-                Milestone 2.{" "}
+                Live single-style optimization · ordinary-attack DPS from
+                Python.{" "}
                 <a href="?mode=fixture">Open separate fixture demonstration</a>
               </>
             ) : (
@@ -207,22 +209,34 @@ export default function App() {
               </h1>
               <p>
                 {current.pending
-                  ? "Running deterministic fixture…"
+                  ? liveMode
+                    ? "Searching supported configurations…"
+                    : "Running deterministic fixture…"
                   : current.result
                     ? "Inspect equipment and refine your scenario"
                     : liveMode
-                      ? "Inspect synchronized equipment and physical item facts"
+                      ? "Configure supported ordinary attacks and optimize your equipment"
                       : "Configure your scenario and inspect the demo loadout"}
               </p>
             </div>
             <div className="button-row">
               <button
                 className="primary"
-                disabled={liveMode || !state.context || current.pending}
+                disabled={
+                  !state.context?.snapshotId ||
+                  current.pending ||
+                  (liveMode && state.mode !== "single")
+                }
                 onClick={() => void run()}
               >
                 {liveMode
-                  ? "Live optimization · Milestone 3"
+                  ? state.mode !== "single"
+                    ? "Live Multi · Milestone 5"
+                    : current.pending
+                      ? "Optimizing…"
+                      : current.result
+                        ? "Reoptimize"
+                        : "Run optimization"
                   : current.pending
                     ? "Simulating…"
                     : current.result
@@ -230,7 +244,9 @@ export default function App() {
                       : "Run fixture optimization"}
               </button>
               {current.pending && (
-                <button onClick={cancel}>Cancel simulation</button>
+                <button onClick={cancel}>
+                  {liveMode ? "Cancel optimization" : "Cancel simulation"}
+                </button>
               )}
             </div>
           </section>
@@ -249,7 +265,9 @@ export default function App() {
           {current.error && (
             <div role="alert" className="notice error">
               {current.error}
-              <button onClick={() => void run()}>Retry simulation</button>
+              <button onClick={() => void run()}>
+                {liveMode ? "Retry optimization" : "Retry simulation"}
+              </button>
             </div>
           )}
           <div
@@ -268,14 +286,18 @@ export default function App() {
                 <div className="raised">
                   <h3 className="blue">
                     {current.pending
-                      ? "Simulation pending"
+                      ? liveMode
+                        ? "Optimization in progress"
+                        : "Simulation pending"
                       : current.result
-                        ? "Fixture ready"
+                        ? liveMode
+                          ? "Python result ready"
+                          : "Fixture ready"
                         : "Awaiting execution"}
                   </h3>
                   <p>
                     {liveMode
-                      ? "Account and item facts come from the Python backend. No optimization or equipment evaluation runs in this milestone."
+                      ? "Python evaluates ordinary-attack DPS with account requirements, concrete equipment identities, locks, and purchase budgets. Search is bounded; results are the best configurations found."
                       : "Deterministic UI fixtures demonstrate the workflow. Configuration is recorded, but no search or calculation runs."}
                   </p>
                 </div>
@@ -288,8 +310,9 @@ export default function App() {
                     : "Contextual item inspection and isolated comparison trials"}
                 </p>
                 <p>
-                  Production locks require a future Gear API. Exclusions and
-                  exact evaluations require backend work.
+                  {liveMode
+                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi-style, manual replacement and exclusions remain unavailable."
+                    : "Production locks require the live Gear API. Exclusions and manual evaluations remain fixture demonstrations."}
                 </p>
                 {!liveMode && (
                   <>
@@ -328,7 +351,10 @@ export default function App() {
               {current.result && (
                 <section className="panel">
                   <h2>Result provenance</h2>
-                  <p>Fixture snapshot: {current.result.snapshotId}</p>
+                  <p>
+                    {liveMode ? "Account" : "Fixture"} snapshot:{" "}
+                    {current.result.snapshotId}
+                  </p>
                   <p>Evaluated: {current.result.evaluatedAt}</p>
                   <p>
                     {current.result.catalogVersion}
@@ -340,9 +366,32 @@ export default function App() {
                   {current.result.warnings.map((w) => (
                     <p key={w}>{w}</p>
                   ))}
+                  {current.result.live?.result.search.candidate_truncation ===
+                    true && (
+                    <p className="notice">
+                      Candidate pruning truncated the search. Global optimality
+                      is not established.
+                    </p>
+                  )}
+                  {current.result.live && (
+                    <details>
+                      <summary>Search diagnostics</summary>
+                      <pre className="fact-json">
+                        {JSON.stringify(
+                          current.result.live.result.search,
+                          null,
+                          2,
+                        )}
+                      </pre>
+                    </details>
+                  )}
                   {solution && (
                     <>
-                      <h3 className="eyebrow">Additional purchase example</h3>
+                      <h3 className="eyebrow">
+                        {liveMode
+                          ? "Additional purchase estimate"
+                          : "Additional purchase example"}
+                      </h3>
                       <strong className="gold numeric">
                         {solution.cost.toLocaleString()} GP
                       </strong>
@@ -350,7 +399,9 @@ export default function App() {
                         {solution.purchases
                           .map((id) => itemById(id)?.name)
                           .join(", ") ||
-                          "No additional purchases in this fixture"}
+                          (liveMode
+                            ? "No additional purchases required"
+                            : "No additional purchases in this fixture")}
                       </p>
                       <button
                         onClick={() => {
@@ -381,7 +432,7 @@ export default function App() {
             </aside>
           </div>
           <footer>
-            RUNIC LEDGER // MILESTONE 2{" "}
+            RUNIC LEDGER // MILESTONE 3{" "}
             <span>
               {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
               {state.context?.observedAt ?? "not loaded"}
@@ -394,7 +445,7 @@ export default function App() {
         <Dialog title="ChatGPT handoff" onClose={() => setHandoff(false)}>
           <p>
             {liveMode
-              ? "Uncalculated scenario draft for discussion. Account observations and optimization results are not exported."
+              ? "Submitted Python result and separate current draft for discussion. Account observations describe the last synchronization."
               : "Fixture-only context for your existing ChatGPT MCP workflow. No chat connection is created."}
           </p>
           <textarea
@@ -431,31 +482,49 @@ function LiveAccountContext() {
         </p>
       )}
       <p>
-        Last synchronization: {live.account?.last_sync_at ?? "Never"}.
-        Observations describe the last accepted sync; they are not a live
-        connection.
+        {live.account?.username ?? "No account"} · Last synchronization:{" "}
+        {live.account?.last_sync_at ?? "Never"} · Equipment:{" "}
+        {live.current_equipment.status}
       </p>
-      {live.account && (
-        <p>
-          {Object.entries(live.account.skills)
-            .map(([key, skill]) => `${key}: ${skill.level}`)
-            .join(" · ") || "No skill observations"}
-        </p>
-      )}
-      {Object.entries(live.container_scans).map(([container, scan]) => (
-        <p key={container}>
-          {container}:{" "}
-          {scan
-            ? `${scan.note ?? "Last observed"} ${scan.scanned_at} (${scan.source})`
-            : "No scan — unknown"}
+      {live.current_equipment.warnings.map((warning) => (
+        <p className="notice" key={warning}>
+          {warning}
         </p>
       ))}
-      <p>
-        Older observations may be stale. Sync again to confirm current equipment
-        and ownership.
-      </p>
-      <p>Snapshot: {live.account?.snapshot_id ?? "Unavailable"}</p>
+      {live.current_equipment.unmapped_item_ids.length > 0 && (
+        <p className="notice">
+          Missing physical metadata for equipped IDs:{" "}
+          {live.current_equipment.unmapped_item_ids.join(", ")}
+        </p>
+      )}
       <button onClick={() => void loadContext()}>Refresh account</button>
+      <details>
+        <summary>Detailed account observations</summary>
+        <p>
+          Observations describe the last accepted sync; they are not a live
+          connection.
+        </p>
+        {live.account && (
+          <p>
+            {Object.entries(live.account.skills)
+              .map(([key, skill]) => `${key}: ${skill.level}`)
+              .join(" · ") || "No skill observations"}
+          </p>
+        )}
+        {Object.entries(live.container_scans).map(([container, scan]) => (
+          <p key={container}>
+            {container}:{" "}
+            {scan
+              ? `${scan.note ?? "Last observed"} ${scan.scanned_at} (${scan.source})`
+              : "No scan — unknown"}
+          </p>
+        ))}
+        <p>
+          Older observations may be stale. Sync again to confirm current
+          equipment and ownership.
+        </p>
+        <p>Snapshot: {live.account?.snapshot_id ?? "Unavailable"}</p>
+      </details>
     </section>
   );
 }

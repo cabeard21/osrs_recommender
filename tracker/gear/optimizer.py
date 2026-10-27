@@ -20,7 +20,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
-from tracker.gear.combat import evaluate_loadout
+from tracker.gear.evaluation import evaluate_equipment
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.transitions import inventory_slots, plan_transition
@@ -229,9 +229,9 @@ class _Search:
                     ],
                 }
             else:
-                result = evaluate_loadout(
-                    {s: self.items[i] for s, i in equipment.items()}, role, self.levels, role.target
-                ).model_dump(mode="json")
+                result = evaluate_equipment(equipment, self.items, role, self.levels).model_dump(
+                    mode="json"
+                )
             self.performance_cache[key] = result
         return self.performance_cache[key]
 

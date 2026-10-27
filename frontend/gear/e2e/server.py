@@ -12,8 +12,10 @@ from sqlalchemy import delete, update
 
 from tracker.app import _mount_ui, create_app
 from tracker.config.settings import Settings
-from tracker.db.models import Base, ContainerScan, ObservedItem, Player, SkillSnapshot
+from tracker.db.models import Base, ContainerScan, ItemPrice, ObservedItem, Player, SkillSnapshot
 from tracker.db.session import build_engine, build_session_factory
+from tracker.domain.types import Container, PriceSourceLayer, Source
+from tracker.gear.catalog import EquipmentCatalog
 
 if __name__ == "__main__":
     with TemporaryDirectory(prefix="gear-preview-browser-") as directory:
@@ -34,16 +36,74 @@ if __name__ == "__main__":
             session_factory=factory,
             mount_ui=False,
         )
+        original_catalog = app.state.gear_service.equipment_catalog()
 
         @app.post("/test/reset-gear")
         def reset_gear():
             # Test-only control over this disposable database; never mounted by create_app.
+            app.state.gear_service._equipment = original_catalog
             with factory() as session:
                 for model in (ObservedItem, ContainerScan, SkillSnapshot):
                     session.execute(delete(model))
                 session.execute(update(Player).values(last_sync_at=None))
                 session.commit()
             return {"status": "reset"}
+
+        @app.post("/test/seed-optimization")
+        def seed_optimization():
+            reset_gear()
+            now = datetime.now(UTC)
+            # Real bundled definitions and unchanged optimizer, deliberately tiny search.
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in (1333, 6585)},
+                revision="browser-acceptance-bundled-subset-v1",
+            )
+            with factory() as session:
+                player = session.query(Player).first()
+                player.last_sync_at = now
+                for skill in ("attack", "strength", "defence", "ranged", "magic", "hitpoints"):
+                    session.add(
+                        SkillSnapshot(
+                            player_id=player.id,
+                            skill=skill,
+                            level=75,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                for container in Container:
+                    session.add(
+                        ContainerScan(
+                            player_id=player.id,
+                            container=container,
+                            scanned_at=now,
+                            source=Source.RUNELITE,
+                        )
+                    )
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=1333,
+                        quantity=1,
+                        container=Container.EQUIPMENT,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                session.merge(
+                    ItemPrice(
+                        item_id=6585,
+                        high_price_gp=10000,
+                        low_price_gp=9000,
+                        high_trade_at=now,
+                        low_trade_at=now,
+                        fetched_at=now,
+                        provider="deterministic-browser-fixture",
+                        source=PriceSourceLayer.CACHED,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
 
         _mount_ui(app, app.state.settings)
         uvicorn.run(app, host="127.0.0.1", port=8766, log_level="warning")

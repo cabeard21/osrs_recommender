@@ -24,12 +24,14 @@ export function EquipmentGrid({
   selected,
   onSelect,
   prefix = "",
+  optimized = false,
 }: {
   equipment: Equipment;
   shared?: number[];
   selected: Slot | null;
   onSelect: (slot: Slot) => void;
   prefix?: string;
+  optimized?: boolean;
 }) {
   const { itemById, state, liveMode } = useGear();
   return (
@@ -37,16 +39,22 @@ export function EquipmentGrid({
       {slots.map((slot) => {
         const item = itemById(equipment[slot]),
           isShared = shared.includes(equipment[slot] ?? -1);
-        const observation = liveMode
-          ? state.context?.live?.current_equipment.slots[slot]
-          : undefined;
-        const label = liveMode
-          ? (observation?.status ?? "unknown")
-          : isShared
-            ? "Shared"
-            : item
-              ? "Fixture"
-              : "Empty";
+        const observation =
+          liveMode && !optimized
+            ? state.context?.live?.current_equipment.slots[slot]
+            : undefined;
+        const label =
+          liveMode && optimized
+            ? equipment[slot]
+              ? "selected"
+              : "empty"
+            : liveMode
+              ? (observation?.status ?? "unknown")
+              : isShared
+                ? "Shared"
+                : item
+                  ? "Fixture"
+                  : "Empty";
         const name =
           item?.name ??
           (equipment[slot]

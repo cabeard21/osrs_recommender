@@ -29,6 +29,15 @@ export interface Assumptions {
   attack: string;
   quest: boolean;
   acquired: string;
+  skillLevels?: string;
+  completedQuests?: string;
+}
+export interface CombatTarget {
+  name: string;
+  defence_level: number;
+  magic_level: number;
+  bonuses: Record<string, number>;
+  [key: string]: unknown;
 }
 export interface Draft {
   target: string;
@@ -42,12 +51,13 @@ export interface Draft {
   baseRole: string;
   exclusions: number[];
   assumptions: Assumptions;
+  combatTarget?: CombatTarget;
 }
 export interface Scenario {
   objective: "weighted_dps";
   request: {
     roles: (Omit<Role, "weight"> & { weight: number })[];
-    target: { name: string; defence: number };
+    target: { name: string; defence: number; definition?: CombatTarget };
     budget_gp: number;
     mode: Draft["mode"];
     max_swaps: number;
@@ -85,7 +95,8 @@ export interface Metrics {
   dps: number;
   maxHit: number;
   accuracy: number;
-  ticks: number;
+  ticks?: number;
+  seconds?: number;
 }
 export interface Loadout {
   roleId: string;
@@ -111,7 +122,7 @@ export interface Solution {
   transitions: Transition[];
 }
 export interface OptimizationReply {
-  source: "fixture";
+  source: "fixture" | "live";
   scenario: Scenario;
   fingerprint: string;
   snapshotId: string;
@@ -121,6 +132,52 @@ export interface OptimizationReply {
   priceRevision: string;
   solutions: Solution[];
   warnings: string[];
+  items?: Item[];
+  live?: OptimizationDTO;
+}
+export interface CombatPerformance {
+  supported: boolean;
+  dps: number | null;
+  max_hit: number | null;
+  accuracy: number | null;
+  attack_interval: number | null;
+  bonuses: Record<string, number>;
+  limitations: string[];
+}
+export interface OptimizationDTO {
+  api_version: "gear-ui-v1";
+  evaluated_at: string;
+  scenario: Record<string, unknown>;
+  scenario_fingerprint: string;
+  price_revision: string;
+  baseline: {
+    status: "available" | "unavailable";
+    equipment: Record<string, number>;
+    performance: CombatPerformance | null;
+    reasons: string[];
+  };
+  items: PhysicalItem[];
+  result: {
+    snapshot_id: string;
+    catalog_version: string;
+    model_version: string;
+    assumptions_fingerprint: string;
+    search: Record<string, unknown>;
+    limitations: string[];
+    selected_solution: {
+      score: number;
+      loadouts: Record<
+        string,
+        { equipment: Record<string, number>; performance: CombatPerformance }
+      >;
+      purchases: {
+        item_id: number;
+        cost_gp: number | null;
+        conditional: boolean;
+      }[];
+      purchase_cost_gp: number;
+    } | null;
+  };
 }
 export interface Trial {
   resultFingerprint: string;

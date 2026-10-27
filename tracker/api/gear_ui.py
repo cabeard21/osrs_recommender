@@ -51,7 +51,9 @@ class GearRoute(APIRoute):
                 return JSONResponse(
                     status_code=exc.status_code,
                     content={
-                        "error": {
+                        "error": exc.detail
+                        if isinstance(exc.detail, dict)
+                        else {
                             "code": "item_not_found"
                             if exc.status_code == 404
                             else "invalid_request",
@@ -60,13 +62,20 @@ class GearRoute(APIRoute):
                     },
                     headers={"Cache-Control": "no-store"},
                 )
-            except RequestValidationError:
+            except RequestValidationError as exc:
                 return JSONResponse(
                     status_code=422,
                     content={
                         "error": {
                             "code": "invalid_request",
                             "message": "Invalid Gear browser request",
+                            "fields": [
+                                {
+                                    "path": ".".join(str(v) for v in entry["loc"] if v != "body"),
+                                    "message": entry["msg"],
+                                }
+                                for entry in exc.errors()
+                            ],
                         }
                     },
                     headers={"Cache-Control": "no-store"},
@@ -311,8 +320,8 @@ def context(request: Request) -> ContextResponse:
             "objectives": [
                 {
                     "id": "weighted_dps",
-                    "available": False,
-                    "reason": "Optimization integration begins in Milestone 3",
+                    "available": True,
+                    "reason": "Single-style ordinary-attack DPS optimization",
                 }
             ],
             "access_modes": ["owned", "usable", "future"],

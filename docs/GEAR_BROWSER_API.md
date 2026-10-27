@@ -1,8 +1,8 @@
-# Gear browser API — Milestone 2
+# Gear browser API — Milestone 3
 
 The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_PLAN.md).
-This document describes the implemented read-only contract. Live optimization and
-manual equipment evaluation are unavailable.
+This document describes account/item reads and real single-style optimization.
+Arbitrary manual equipment evaluation and live multi-style optimization remain unavailable.
 
 ## Access and lifecycle
 
@@ -13,7 +13,8 @@ bearer token; React receives no token. The MCP sidecar does not register these r
 
 Routes precede NiceGUI's root mount. NiceGUI and the browser API share an app-scoped
 `GearService`; account reads use `AccountService` and prices use `DatabaseGearPrices`.
-No endpoint refreshes external prices, writes account observations, or runs optimization.
+No endpoint refreshes external prices or writes account observations. Milestone 3 adds
+the synchronous-response optimization POST described below; computation runs in a worker thread.
 Successful and handled error responses specify `Cache-Control: no-store`.
 
 The selected player is the first player ID, matching the existing dashboard. An empty
@@ -41,9 +42,10 @@ observations, unlocks, quest points, combat level, membership, last sync, and th
 missing-data policy. `snapshot_id` is the immutable account fingerprint; it includes
 item/container observations, not just the summary.
 
-The only supported eventual optimization objective is weighted DPS. Its `available`
-flag is false during this milestone, with an explicit reason. Encounter presets and
-spell metadata describe the existing model; exposing them does not execute a solve.
+The supported optimization objective is ordinary-attack DPS (`weighted_dps` in the
+existing domain vocabulary), with `available: true` for single-style requests. Other
+objectives remain unavailable. Encounter presets and spell metadata describe the
+existing model; a target name does not imply complete encounter simulation.
 
 ### Equipment projection
 
@@ -168,7 +170,7 @@ Handled errors use:
 {"error":{"code":"item_not_found","message":"Physical item metadata unavailable"}}
 ```
 
-Unknown item IDs return 404; invalid query/path input returns 422 (`invalid_request`).
+Unknown item IDs return 404; invalid query/path/scenario input returns 422 (`invalid_request`).
 Unexpected failures return 500 (`gear_unavailable`) with a generic message and server
 logging. The route-specific handler leaves existing `/api/*` behavior intact.
 
@@ -177,13 +179,124 @@ and response structure. `/openapi.json` exposes their schemas. The HTTP adapter 
 identity, slot assignments, required structures and quote types before storing context.
 A failed or malformed response cannot select the fixture adapter.
 
+## POST /ui-api/gear/optimizations
+
+Runs the existing `GearService.optimize` against frozen account, catalog and cached
+price inputs. JSON is the existing domain `OptimizationRequest`, restricted to exactly
+one ordinary-attack role. There is no public arbitrary-loadout evaluation endpoint.
+
+```json
+{
+  "roles": [{
+    "id": "role-1", "style": "slash", "stance": "accurate",
+    "spell": "fire_strike", "weight": 1,
+    "target": {"name": "Custom ordinary-attack target", "defence_level": 1},
+    "locks": {}
+  }],
+  "mode": "usable", "budget_gp": 0,
+  "reserved_supply_slots": 12, "max_swaps": 8,
+  "skill_overrides": {}, "quest_overrides": {}, "assumed_item_ids": [],
+  "expected_snapshot_id": "<current account fingerprint>"
+}
+```
+
+Role styles are `stab`, `slash`, `crush`, `ranged`, or `magic`. Stances and standard
+spells must be supported by the model. Targets reuse `CombatTarget`, including Magic
+level, defence bonuses, ranged subtype bonuses and supported elemental weaknesses.
+Unsupported mechanics, prayers, boosts, special scoring, objective/exclusion fields
+and multi-role transitions are rejected. Names do not confer verified boss mechanics.
+
+Access modes preserve domain semantics: `owned` uses observed owned equipment;
+`usable` also permits eligible, priced purchases within the additional integer GP
+budget; `future` additionally permits explicit hypothetical assumptions. Skill/quest
+keys and concrete acquired IDs are validated. Overrides never write observations.
+Requirements remain enforced in every mode. Unknown prices cannot fund purchases.
+
+Global and role `locks` use physical slot names: absent key means optimize, `null`
+means force empty, and a positive numeric ID means force that exact item. Conflicting
+locks, wrong slots, unknown IDs and two-handed/offhand conflicts are rejected. Inventory
+reservations retain the existing 0–28 range. `max_swaps` retains its domain wire name;
+single-role results have no equipment transitions. No search limits or scoring changed.
+
+### Response
+
+`OptimizationResponse` is exposed in OpenAPI:
+
+| Field | Meaning |
+| --- | --- |
+| `api_version` | `gear-ui-v1` |
+| `evaluated_at` | Frozen calculation time |
+| `scenario` | Server-normalized domain request, including role target and snapshot |
+| `scenario_fingerprint` | SHA-256 of normalized serialized scenario |
+| `price_revision` | Fingerprint of the frozen cached price inputs |
+| `result` | Existing domain output preserved, including selected/unrestricted solutions, curve, alternatives, assumptions, facts and diagnostics |
+| `items` | Typed concrete `ItemResponse` rows for referenced and baseline equipment, with complete price provenance |
+| `baseline` | `{status, equipment, performance, reasons}` for this single role |
+
+`result.selected_solution` is null when no feasible configuration was found. Otherwise
+its role-keyed `loadouts` contain concrete slot assignments and `CombatPerformance`:
+`dps`, `max_hit`, `accuracy`, `attack_interval` (seconds), rolls, equipment bonuses,
+supported flag and limitations. Missing equipment keys are empty selected slots.
+Unsupported metrics remain null; they are not synthetic zeros. The browser only
+formats Python numbers. Acquisition retains distinct purchases, conditional ownership
+flags, purchase subtotal, assumed acquisitions, and concrete shared-item semantics.
+
+The result's `snapshot_id`, `catalog_version`, `model_version`, `evaluated_at`,
+assumptions fingerprint and search diagnostics remain available. Search output is
+**best found**, with candidate truncation and termination reasons; it is not a proof
+of global optimality or infeasibility. No prayer/potion, survival, special-attack,
+boss-completion or encounter-duration metrics are supplied.
+
+### Exact current-equipment baseline
+
+Only a complete, unambiguous equipment projection with supported metadata and
+requirements is evaluated. `baseline.status: "available"` includes the same Python
+combat model's performance against the submitted role, target and hypothetical skill/
+quest assumptions. Optimization locks, purchase budget and acquisition restrictions
+do not disqualify observed equipment. Slot identity and combat legality reuse the
+shared `tracker.gear.evaluation` foundation also called by the optimizer.
+
+Missing scans, ambiguous slots, unmapped IDs, unknown requirements or unsupported
+combat produce `status: "unavailable"`, `performance: null` and explicit reasons.
+Known equipment remains identified without treating unresolved slots as empty. An
+unavailable baseline does not prevent optimization.
+
+### Execution and errors
+
+Account/price reads and CPU work run outside the FastAPI event loop. The app-scoped
+service's nonblocking lock rejects overlapping searches. No result/job persistence or
+external queue is introduced. A fresh account read after the worker completes must
+match the submitted snapshot before any result is returned.
+
+| Status | Code / behavior |
+| --- | --- |
+| 200 | Completed search, including a null selected solution |
+| 403 | `origin_rejected` for cross-origin browser POSTs |
+| 409 | `snapshot_changed` or `account_unavailable`; refresh and rerun |
+| 422 | `invalid_request`; `error.fields` contains `{path, message}` entries |
+| 499 | `optimization_cancelled` when a disconnected request is observed |
+| 503 | `optimizer_busy`; retry after the active search finishes |
+| 500 | Generic `gear_unavailable`; details logged server-side |
+
+Same-origin browser POSTs are required; Vite's documented proxy preserves the browser
+Host/Origin pair. Non-browser calls without Origin retain the private network boundary.
+There is no permissive CORS configuration or sync-token delivery to JavaScript.
+
+Disconnects and request-task cancellation signal a thread-safe cancellation event to
+the existing cooperative optimizer callback. HTTP abort does not kill a Python thread.
+Cancellation can wait until the optimizer reaches a supported checkpoint, including
+after candidate preparation; the lock remains held until the search exits. The client
+also aborts obsolete requests and rejects superseded generations. Progress is
+indeterminate, with no percentage-complete claim.
+
 ## React modes
 
 `/gear-next/` defaults to live account mode. `?mode=fixture` explicitly selects the
 existing deterministic adapter and visibly labels all demonstration data. Mode changes
 reload the application; draft storage keys distinguish fixture and live account IDs.
 Live mode never calls the fixture optimizer/evaluator. Fixture workflows remain available
-in both Single and Multi workspaces. Current live equipment has no calculated metrics.
+in both Single and Multi workspaces. Live single-style results and valid baselines use
+the Python POST; live Multi, manual replacements and exclusions remain unavailable.
 
 Context refreshes on focus and every 30 seconds while visible, and has a manual refresh
 button. Errors have retry guidance; previously loaded observations retain their dates.

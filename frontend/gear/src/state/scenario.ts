@@ -30,7 +30,11 @@ export const newDraft = (): Draft => ({
   exclusions: [],
   assumptions: { attack: "", quest: false, acquired: "" },
 });
-export function normalize(draft: Draft, snapshotId: string): Scenario {
+export function normalize(
+  draft: Draft,
+  snapshotId: string,
+  live = false,
+): Scenario {
   const integer = (value: string, name: string, min: number, max: number) => {
     const n = Number(value);
     if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
@@ -64,6 +68,29 @@ export function normalize(draft: Draft, snapshotId: string): Scenario {
         .split(",")
         .map((v) => integer(v.trim(), "Assumed item ID", 1, 100000))
     : [];
+  const skills: Record<string, number> = {};
+  for (const entry of (draft.assumptions.skillLevels ?? "")
+    .split(",")
+    .filter((v) => v.trim())) {
+    const [skill, level, extra] = entry.trim().split("=");
+    if (!skill || !level || extra)
+      throw new Error("Assumed skills use skill=level, separated by commas.");
+    skills[skill.trim()] = integer(level.trim(), "Assumed skill", 1, 99);
+  }
+  const quests = (draft.assumptions.completedQuests ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if ((Object.keys(skills).length || quests.length) && draft.mode !== "future")
+    throw new Error("Select hypothetical access to submit assumptions.");
+  if (live && draft.exclusions.length)
+    throw new Error(
+      "Live item exclusions are unavailable until Milestone 4. Remove restored exclusions before optimizing.",
+    );
+  if (live && draft.assumptions.quest)
+    throw new Error(
+      "Replace the restored demo quest assumption with explicit quest IDs.",
+    );
   const edges: [string, string][] =
     draft.topology === "base"
       ? roles
@@ -83,6 +110,9 @@ export function normalize(draft: Draft, snapshotId: string): Scenario {
       target: {
         name: draft.target,
         defence: integer(draft.defence, "Target defence", 0, 1000),
+        ...(draft.combatTarget
+          ? { definition: structuredClone(draft.combatTarget) }
+          : {}),
       },
       budget_gp: integer(draft.budget, "Budget", 0, 2147483647),
       mode: draft.mode,
@@ -92,11 +122,15 @@ export function normalize(draft: Draft, snapshotId: string): Scenario {
       base_role: draft.baseRole,
       excluded_item_ids: [...draft.exclusions],
       skill_overrides: draft.assumptions.attack
-        ? { attack: integer(draft.assumptions.attack, "Assumed Attack", 1, 99) }
-        : {},
-      quest_overrides: draft.assumptions.quest
-        ? { "fixture-quest": "complete" }
-        : {},
+        ? {
+            ...skills,
+            attack: integer(draft.assumptions.attack, "Assumed Attack", 1, 99),
+          }
+        : skills,
+      quest_overrides: {
+        ...Object.fromEntries(quests.map((id) => [id, "complete"])),
+        ...(draft.assumptions.quest ? { "fixture-quest": "complete" } : {}),
+      },
       assumed_item_ids: assumed,
       expected_snapshot_id: snapshotId,
     },
@@ -184,10 +218,28 @@ export function reducer(state: State, action: Action): State {
           mode,
           {
             ...state[mode],
+            ...(state.context &&
+            state.context.snapshotId !== action.context.snapshotId
+              ? {
+                  generation: state[mode].generation + 1,
+                  pending: false,
+                  trial: null,
+                  error: state[mode].pending
+                    ? "Account changed during optimization. Refresh and rerun."
+                    : state[mode].error,
+                }
+              : {}),
             outdated:
               state[mode].outdated ||
               (!!state[mode].result &&
-                state[mode].result.snapshotId !== action.context.snapshotId),
+                (state[mode].result.snapshotId !== action.context.snapshotId ||
+                  (!!action.context.live &&
+                    (state[mode].result.catalogVersion !==
+                      action.context.live.catalog_version ||
+                      state[mode].result.modelVersion !==
+                        action.context.live.model_version ||
+                      state[mode].result.priceRevision !==
+                        action.context.live.price_revision)))),
           },
         ]),
       ),
@@ -282,7 +334,7 @@ export function reducer(state: State, action: Action): State {
             pending: false,
             outdated: !!current.result,
             error:
-              "Fixture context changed during the run. Re-run with the current context.",
+              "Account context changed during the run. Re-run with the current context.",
           },
         };
       next = {
@@ -291,7 +343,12 @@ export function reducer(state: State, action: Action): State {
         previous: current.result,
         result: structuredClone(action.result),
         submitted: structuredClone(action.result.scenario),
-        outdated: false,
+        outdated:
+          !!state.context?.live &&
+          (action.result.catalogVersion !==
+            state.context.live.catalog_version ||
+            action.result.modelVersion !== state.context.live.model_version ||
+            action.result.priceRevision !== state.context.live.price_revision),
         trial: null,
         solutionId: "best-found",
         activeRole: action.result.scenario.request.roles[0].id,

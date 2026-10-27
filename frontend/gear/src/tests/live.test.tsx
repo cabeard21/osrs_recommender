@@ -18,7 +18,7 @@ const transport = (status = 200) =>
     return new Response(JSON.stringify(body), { status });
   }) as unknown as typeof fetch;
 
-it("renders live account facts without fixture metrics, prices, or optimization", async () => {
+it("renders live account facts without fixture metrics or automatic optimization", async () => {
   const user = userEvent.setup();
   const fetcher = transport();
   render(
@@ -28,8 +28,8 @@ it("renders live account facts without fixture metrics, prices, or optimization"
   );
   await screen.findByText("Synchronized ranger", { exact: true });
   expect(
-    screen.getByRole("button", { name: "Live optimization · Milestone 3" }),
-  ).toBeDisabled();
+    screen.getByRole("button", { name: "Run optimization" }),
+  ).toBeEnabled();
   expect(
     screen.queryByText(/Demo adventurer|5.66 DPS|Current demo loadout/),
   ).not.toBeInTheDocument();
@@ -128,11 +128,11 @@ it("validates API identity, slots, prices and missing metadata", () => {
   ).toBeNull();
 });
 
-it("live adapter rejects fixture optimizations without sending a request", async () => {
+it("live adapter rejects malformed scenarios without sending a request", async () => {
   const fetcher = transport();
   const client = new HttpGearClient("/ui-api/gear", fetcher);
   await expect(
     client.optimize({} as never, new AbortController().signal),
-  ).rejects.toThrow("Milestone 3");
+  ).rejects.toThrow();
   expect(fetcher).not.toHaveBeenCalled();
 });

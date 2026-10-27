@@ -219,11 +219,13 @@ function FixtureItemInspector() {
 }
 
 function LiveItemInspector() {
-  const { state, current, client, dispatch } = useGear();
+  const { state, current, client, dispatch, edit } = useGear();
   const slot = current.slot!;
   const observation = state.context?.live?.current_equipment.slots[slot];
+  const optimized = current.result?.solutions[0]?.loadouts[0].equipment;
   const [selected, setSelected] = useState<number | null>(null);
-  const id = selected ?? observation?.item_id ?? null;
+  const id =
+    selected ?? (optimized ? optimized[slot] : observation?.item_id) ?? null;
   const [item, setItem] = useState<Item | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -295,7 +297,9 @@ function LiveItemInspector() {
       <p className="notice">
         {selected !== null
           ? "Catalog inspection · observed equipment is unchanged."
-          : `Equipment observation: ${observation?.status ?? "unknown"}`}
+          : optimized
+            ? "Selected Python optimization result · submitted scenario retained."
+            : `Equipment observation: ${observation?.status ?? "unknown"}`}
       </p>
       {(state.context?.live?.current_equipment.unmapped_item_ids.length ?? 0) >
         0 && (
@@ -312,9 +316,11 @@ function LiveItemInspector() {
       )}
       {id === null && (
         <p>
-          {observation?.status === "empty"
-            ? "No item observed in this slot at the equipment scan."
-            : "Equipment information is incomplete. No item identity can be assigned to this slot."}
+          {optimized
+            ? "Selected result leaves this slot empty."
+            : observation?.status === "empty"
+              ? "No item observed in this slot at the equipment scan."
+              : "Equipment information is incomplete. No item identity can be assigned to this slot."}
         </p>
       )}
       {observation?.status === "ambiguous" && (
@@ -339,6 +345,22 @@ function LiveItemInspector() {
       {error && <p role="alert">{error}</p>}
       {facts && (
         <>
+          <div className="button-row">
+            <button
+              onClick={() =>
+                edit({
+                  ...current.draft,
+                  roles: current.draft.roles.map((role) =>
+                    role.id === current.activeRole
+                      ? { ...role, locks: { ...role.locks, [slot]: id } }
+                      : role,
+                  ),
+                })
+              }
+            >
+              Lock {slot} to #{id}
+            </button>
+          </div>
           <dl>
             <dt>Concrete ID</dt>
             <dd>{facts.item_id}</dd>
@@ -441,6 +463,20 @@ function LiveItemInspector() {
         </>
       )}
       <h3>Browse physical items</h3>
+      <button
+        onClick={() =>
+          edit({
+            ...current.draft,
+            roles: current.draft.roles.map((role) =>
+              role.id === current.activeRole
+                ? { ...role, locks: { ...role.locks, [slot]: null } }
+                : role,
+            ),
+          })
+        }
+      >
+        Lock {slot} empty
+      </button>
       <label>
         Search name or numeric ID
         <input

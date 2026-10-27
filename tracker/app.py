@@ -63,6 +63,9 @@ def create_app(
         getattr(app.state, CONTENT_ATTR), equipment_root=resolved.content_dir / "equipment"
     )
     app.include_router(gear_router)
+    from tracker.api.gear_optimizations import router as optimization_router
+
+    app.include_router(optimization_router)
 
     from tracker.ui.gear_preview import mount_gear_preview
 

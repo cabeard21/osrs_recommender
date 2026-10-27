@@ -11,8 +11,8 @@ test("live browser uses real account endpoints, preserves uncertain equipment an
   await page.request.post("/test/reset-gear");
   await page.goto("/gear-next/");
   await expect(
-    page.getByRole("button", { name: "Live optimization · Milestone 3" }),
-  ).toBeDisabled();
+    page.getByRole("button", { name: "Run optimization" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "No synchronized account" }),
   ).toBeVisible();

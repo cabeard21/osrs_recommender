@@ -3,8 +3,8 @@ import { ArrowRightLeft, Shield } from "lucide-react";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
-import { emptyEquipment } from "../api/contracts";
 import type { Loadout, Solution } from "../api/contracts";
+import { LiveResultWorkspace } from "./LiveResultWorkspace";
 export function ResultWorkspace() {
   const { state, current, dispatch, itemById, liveMode } = useGear();
   const [transitionKey, setTransitionKey] = useState("");
@@ -45,52 +45,7 @@ export function ResultWorkspace() {
       </section>
     );
   }
-  if (liveMode)
-    return (
-      <div className="result-column">
-        <section className="panel equipment-panel">
-          <div className="section-title">
-            <h2>
-              <Shield size={19} />
-              Observed equipment
-            </h2>
-            <span className="badge">
-              {state.context?.equipmentStatus ?? "unknown"}
-            </span>
-          </div>
-          <p>
-            Last observed:{" "}
-            {state.context?.live?.current_equipment.scanned_at ??
-              "No equipment scan"}
-            . Select any slot to inspect.
-          </p>
-          {state.context?.live?.current_equipment.warnings.map((w) => (
-            <p className="notice" key={w}>
-              {w}
-            </p>
-          ))}
-          {(state.context?.live?.current_equipment.unmapped_item_ids.length ??
-            0) > 0 && (
-            <p>
-              Missing physical metadata for equipped IDs:{" "}
-              {state.context?.live?.current_equipment.unmapped_item_ids.join(
-                ", ",
-              )}
-            </p>
-          )}
-          <EquipmentGrid
-            equipment={state.context?.equipment ?? emptyEquipment()}
-            selected={current.slot}
-            onSelect={(slot) =>
-              dispatch({ type: "ui", mode: state.mode, patch: { slot } })
-            }
-          />
-          <p>
-            Combat metrics unavailable. Live optimization begins in Milestone 3.
-          </p>
-        </section>
-      </div>
-    );
+  if (liveMode) return <LiveResultWorkspace />;
   if (
     !current.result &&
     state.context &&

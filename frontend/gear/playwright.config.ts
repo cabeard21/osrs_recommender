@@ -4,7 +4,10 @@ export default defineConfig({
   workers: 1,
   use: { baseURL: "http://127.0.0.1:8766", browserName: "chromium" },
   webServer: {
-    command: "../../.venv/bin/python e2e/server.py",
+    command:
+      process.platform === "win32"
+        ? '"..\\..\\.venv\\Scripts\\python.exe" e2e/server.py'
+        : "../../.venv/bin/python e2e/server.py",
     url: "http://127.0.0.1:8766/healthz",
     reuseExistingServer: false,
   },

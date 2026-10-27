@@ -1,7 +1,7 @@
 import { Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useGear } from "../state/GearProvider";
 import { newRole } from "../state/scenario";
-import type { Draft, Role, Style } from "../api/contracts";
+import type { CombatTarget, Draft, Role, Style } from "../api/contracts";
 export function ConfigurationPanel() {
   const { state, current, edit, liveMode } = useGear(),
     draft = current.draft;
@@ -10,6 +10,16 @@ export function ConfigurationPanel() {
     change({
       roles: draft.roles.map((r) => (r.id === id ? { ...r, ...patch } : r)),
     });
+  const presets = (state.context?.live?.capabilities.encounter_presets ??
+    []) as { name: string; roles: { target?: CombatTarget }[] }[];
+  const targets = presets.flatMap((preset) =>
+    preset.roles.flatMap((role) =>
+      role.target &&
+      !(role.target.unsupported_mechanics as string[] | undefined)?.length
+        ? [role.target]
+        : [],
+    ),
+  );
   return (
     <section className="panel configuration" aria-labelledby="parameters">
       <h2 id="parameters" className="eyebrow">
@@ -17,11 +27,47 @@ export function ConfigurationPanel() {
       </h2>
       <div className="raised">
         <span className="eyebrow blue">Encounter target</span>
+        {liveMode && (
+          <label>
+            Target selection
+            <select
+              value={
+                targets.some(
+                  (target) => target.name === draft.combatTarget?.name,
+                )
+                  ? draft.combatTarget!.name
+                  : "custom"
+              }
+              onChange={(e) => {
+                const target = targets.find((t) => t.name === e.target.value);
+                change({
+                  combatTarget: target ? structuredClone(target) : undefined,
+                  target: target?.name ?? "Custom ordinary-attack target",
+                  defence: String(target?.defence_level ?? 1),
+                });
+              }}
+            >
+              <option value="custom">Custom ordinary-attack target</option>
+              {targets.map((target) => (
+                <option key={target.name} value={target.name}>
+                  {target.name} · ordinary attacks
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Custom target
           <input
             value={draft.target}
-            onChange={(e) => change({ target: e.target.value })}
+            onChange={(e) =>
+              change({
+                target: e.target.value,
+                combatTarget: draft.combatTarget
+                  ? { ...draft.combatTarget, name: e.target.value }
+                  : undefined,
+              })
+            }
           />
         </label>
         <label>
@@ -31,13 +77,30 @@ export function ConfigurationPanel() {
             min="0"
             max="1000"
             value={draft.defence}
-            onChange={(e) => change({ defence: e.target.value })}
+            onChange={(e) =>
+              change({
+                defence: e.target.value,
+                combatTarget: draft.combatTarget
+                  ? {
+                      ...draft.combatTarget,
+                      defence_level: Number(e.target.value),
+                    }
+                  : undefined,
+              })
+            }
           />
         </label>
         <p>
           Ordinary attacks only. User-supplied target assumptions; no encounter
           mechanics.
         </p>
+        {liveMode && (
+          <p>
+            {draft.combatTarget
+              ? `Preset metadata retained: Magic ${draft.combatTarget.magic_level}; ${JSON.stringify(draft.combatTarget.bonuses)} defence bonuses. Preset encounter mechanics are not simulated.`
+              : "Custom target assumes Magic level 1 and zero defence bonuses."}
+          </p>
+        )}
       </div>
       <span className="eyebrow">Combat configurations</span>
       {draft.roles.map((role, index) => (
@@ -112,13 +175,20 @@ export function ConfigurationPanel() {
                 value={role.spell}
                 onChange={(e) => roleChange(role.id, { spell: e.target.value })}
               >
-                {[
-                  "fire_strike",
-                  "wind_wave",
-                  "water_wave",
-                  "earth_wave",
-                  "fire_wave",
-                ].map((s) => (
+                {(liveMode
+                  ? (
+                      (state.context?.live?.capabilities.spells ?? []) as {
+                        id: string;
+                      }[]
+                    ).map((s) => s.id)
+                  : [
+                      "fire_strike",
+                      "wind_wave",
+                      "water_wave",
+                      "earth_wave",
+                      "fire_wave",
+                    ]
+                ).map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
@@ -219,6 +289,18 @@ export function ConfigurationPanel() {
           </label>
         </>
       )}
+      {state.mode === "single" && (
+        <label>
+          Reserved supply slots
+          <input
+            type="number"
+            min="0"
+            max="28"
+            value={draft.supplies}
+            onChange={(e) => change({ supplies: e.target.value })}
+          />
+        </label>
+      )}
       <span className="eyebrow">Optimization objective</span>
       <div className="objective-grid">
         <button aria-pressed="true">ϟ Max DPS</button>
@@ -252,7 +334,7 @@ export function ConfigurationPanel() {
         />
         <p>
           {liveMode
-            ? "Draft budget only. No account purchase estimate has been calculated."
+            ? "Additional purchases only. Existing owned equipment is reused; estimates come from Python cached price facts."
             : "Fixture quotes only. Shared purchases counted once in the demo summary."}
         </p>
       </div>
@@ -267,13 +349,16 @@ export function ConfigurationPanel() {
           <option value="future">Hypothetical access</option>
         </select>
       </label>
-      <p className="green">✓ Requirements always enforced in production</p>
+      <p className="green">✓ Requirements enforced by Python</p>
       <label className="check">
         <input type="checkbox" disabled /> Ban degradables · unavailable
       </label>
       <details>
         <summary>⚗ What-if assumptions</summary>
-        <p>Draft-only hypotheses. No account changes.</p>
+        <p>
+          Explicit request-local hypotheses. Select hypothetical access to apply
+          them; no account changes.
+        </p>
         <label>
           Assumed Attack level
           <input
@@ -288,18 +373,61 @@ export function ConfigurationPanel() {
             }
           />
         </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={draft.assumptions.quest}
-            onChange={(e) =>
-              change({
-                assumptions: { ...draft.assumptions, quest: e.target.checked },
-              })
-            }
-          />{" "}
-          Assume demo quest complete
-        </label>
+        {!liveMode && (
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={draft.assumptions.quest}
+              onChange={(e) =>
+                change({
+                  assumptions: {
+                    ...draft.assumptions,
+                    quest: e.target.checked,
+                  },
+                })
+              }
+            />{" "}
+            Assume demo quest complete
+          </label>
+        )}
+        {liveMode && (
+          <>
+            <label>
+              Other assumed skill levels
+              <input
+                placeholder="strength=80, ranged=75"
+                value={draft.assumptions.skillLevels ?? ""}
+                onChange={(e) =>
+                  change({
+                    assumptions: {
+                      ...draft.assumptions,
+                      skillLevels: e.target.value,
+                    },
+                  })
+                }
+              />
+            </label>
+            <label>
+              Assumed completed quest IDs
+              <input
+                placeholder="monkey_madness_i"
+                value={draft.assumptions.completedQuests ?? ""}
+                onChange={(e) =>
+                  change({
+                    assumptions: {
+                      ...draft.assumptions,
+                      completedQuests: e.target.value,
+                    },
+                  })
+                }
+              />
+            </label>
+            <p>
+              Use canonical quest IDs separated by commas. Python validates
+              skill and quest identities.
+            </p>
+          </>
+        )}
         <label>
           Assumed acquired item IDs
           <input
@@ -314,10 +442,13 @@ export function ConfigurationPanel() {
         </label>
       </details>
       <details>
-        <summary>Draft locks & exclusions</summary>
+        <summary>
+          {liveMode ? "Equipment locks" : "Draft locks & exclusions"}
+        </summary>
         <p>
-          Production exclusions and manual evaluation are unavailable. These
-          controls edit the preview draft only.
+          {liveMode
+            ? "Locks apply on the next optimization. Select a slot to lock a physical item or an empty slot. Manual replacement and exclusions remain unavailable."
+            : "Production exclusions and manual evaluation are unavailable. These controls edit the preview draft only."}
         </p>
         {draft.roles.map((r) => (
           <div key={r.id}>

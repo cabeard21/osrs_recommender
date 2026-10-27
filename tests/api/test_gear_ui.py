@@ -72,7 +72,7 @@ def test_account_serialization_and_equipment(client, session_factory):
     assert data["current_equipment"]["status"] == "observed"
     assert data["items"][0]["numeric_item_id"] == 4151
     assert data["catalog_version"] and data["model_version"] and data["price_revision"]
-    assert data["capabilities"]["objectives"][0]["available"] is False
+    assert data["capabilities"]["objectives"][0]["available"] is True
 
 
 @pytest.mark.parametrize(
