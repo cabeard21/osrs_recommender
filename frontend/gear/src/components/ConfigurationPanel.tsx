@@ -443,12 +443,14 @@ export function ConfigurationPanel() {
       </details>
       <details>
         <summary>
-          {liveMode ? "Equipment locks" : "Draft locks & exclusions"}
+          {liveMode
+            ? "Equipment locks & exclusions"
+            : "Draft locks & exclusions"}
         </summary>
         <p>
           {liveMode
-            ? "Locks apply on the next optimization. Select a slot to lock a physical item or an empty slot. Manual replacement and exclusions remain unavailable."
-            : "Production exclusions and manual evaluation are unavailable. These controls edit the preview draft only."}
+            ? "Locks and exclusions apply on the next optimization. Inspect a slot to preview an alternative, lock a physical item or an empty slot, or exclude an item."
+            : "These controls edit the fixture draft only. Fixture trials use authored examples."}
         </p>
         {draft.roles.map((r) => (
           <div key={r.id}>

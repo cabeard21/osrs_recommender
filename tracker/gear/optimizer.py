@@ -20,7 +20,14 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
-from tracker.gear.evaluation import evaluate_equipment
+from tracker.gear.evaluation import (
+    evaluate_equipment,
+    item_problems,
+    loadout_problems,
+    purchase_cost,
+    purchases,
+    validate_request_context,
+)
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.transitions import inventory_slots, plan_transition
@@ -82,6 +89,7 @@ class OptimizationRequest(BaseModel):
     skill_overrides: Mapping[str, int] = Field(default_factory=dict)
     quest_overrides: Mapping[str, str] = Field(default_factory=dict)
     assumed_item_ids: tuple[ItemId, ...] = ()
+    excluded_item_ids: tuple[ItemId, ...] = Field(default=(), max_length=500)
     expected_snapshot_id: str | None = None
 
     @model_validator(mode="after")
@@ -126,8 +134,12 @@ class OptimizationRequest(BaseModel):
                 raise ValueError("conflicting global and role locks")
             if any(v is not None and v <= 0 for v in role.locks.values()):
                 raise ValueError("locked item IDs must be positive")
+            if any(v is not None and v in self.excluded_item_ids for v in role.locks.values()):
+                raise ValueError("role lock conflicts with excluded_item_ids")
         if any(v is not None and v <= 0 for v in self.locks.values()):
             raise ValueError("locked item IDs must be positive")
+        if any(v is not None and v in self.excluded_item_ids for v in self.locks.values()):
+            raise ValueError("global lock conflicts with excluded_item_ids")
         if any(not 1 <= v <= 99 for v in self.skill_overrides.values()):
             raise ValueError("future skill levels must be 1 to 99")
         if self.mode != "future" and (
@@ -198,24 +210,10 @@ class _Search:
         return True
 
     def allowed(self, item_id: int) -> bool:
-        fact = self.facts[item_id]
-        if fact["wear"]["status"] != "satisfied":
-            return False
-        if fact["ownership"]["status"] == "owned":
-            return True
-        if self.request.mode == "owned":
-            return False
-        if item_id in self.request.assumed_item_ids:
-            return True
-        return fact["acquisition"] == "tradeable" and fact["price"]["amount_gp"] is not None
+        return not item_problems(item_id, self.facts[item_id], self.request)
 
     def cost(self, ids: set[int]) -> int:
-        return sum(
-            self.facts[i]["price"]["amount_gp"] or 0
-            for i in ids
-            if self.facts[i]["ownership"]["status"] != "owned"
-            and i not in self.request.assumed_item_ids
-        )
+        return purchase_cost(ids, self.facts, self.request)
 
     def performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
         key = (role.id, tuple(sorted(equipment.items())))
@@ -428,13 +426,7 @@ class _Search:
             return None
         for role in self.request.roles:
             equipment = loadouts[role.id]
-            locks = {**self.request.locks, **role.locks}
-            if any(equipment.get(slot) != item_id for slot, item_id in locks.items()):
-                return None
-            if not self.compatible(equipment) or any(
-                i not in self.eligible or self.items[i].slot != slot
-                for slot, i in equipment.items()
-            ):
+            if loadout_problems(equipment, self.items, self.facts, self.request, role):
                 return None
         carried = {i for equipment in loadouts.values() for i in equipment.values()}
         cost = self.cost(carried)
@@ -471,16 +463,7 @@ class _Search:
             },
             "transitions": transitions,
             "purchase_cost_gp": cost,
-            "purchases": [
-                {
-                    "item_id": i,
-                    "cost_gp": self.facts[i]["price"]["amount_gp"],
-                    "conditional": self.facts[i]["ownership"]["status"] == "unknown",
-                }
-                for i in sorted(carried)
-                if self.facts[i]["ownership"]["status"] != "owned"
-                and i not in self.request.assumed_item_ids
-            ],
+            "purchases": purchases(carried, self.facts, self.request),
             "carried_item_ids": sorted(carried),
             "distinct_items": len(carried),
             "gear_inventory_slots": inventory_slots(loadouts[base], carried, self.items),
@@ -564,18 +547,7 @@ def optimize(
         if isinstance(request, OptimizationRequest)
         else OptimizationRequest.model_validate(request)
     )
-    if request.expected_snapshot_id and request.expected_snapshot_id != snapshot.fingerprint:
-        raise ValueError("snapshot_changed: retrieve current account facts")
-    if any(k not in content.skills for k in request.skill_overrides):
-        raise ValueError("unknown skill assumption")
-    if any(k not in content.quests for k in request.quest_overrides):
-        raise ValueError("unknown quest assumption")
-    for role in request.roles:
-        for slot, item_id in {**request.locks, **role.locks}.items():
-            if item_id is not None and item_id not in catalog.items:
-                raise ValueError(f"unknown locked item ID: {item_id}")
-            if item_id is not None and catalog.items[item_id].slot != slot:
-                raise ValueError(f"locked item {item_id} does not occupy {slot}")
+    validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
         snapshot, request.skill_overrides, request.quest_overrides, now
     )

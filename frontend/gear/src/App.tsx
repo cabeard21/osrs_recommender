@@ -297,7 +297,7 @@ export default function App() {
                   </h3>
                   <p>
                     {liveMode
-                      ? "Python evaluates ordinary-attack DPS with account requirements, concrete equipment identities, locks, and purchase budgets. Search is bounded; results are the best configurations found."
+                      ? "Python evaluates ordinary-attack DPS with account requirements, concrete equipment identities, locks, exclusions, and purchase budgets. Search is bounded; results are the best configurations found."
                       : "Deterministic UI fixtures demonstrate the workflow. Configuration is recorded, but no search or calculation runs."}
                   </p>
                 </div>
@@ -306,13 +306,13 @@ export default function App() {
                 <p className="green">✓ Persistent workspace drafts</p>
                 <p className="blue">
                   {liveMode
-                    ? "Physical item inspection and observation timestamps"
+                    ? "Physical item inspection, exact manual trials, and equipment comparisons"
                     : "Contextual item inspection and isolated comparison trials"}
                 </p>
                 <p>
                   {liveMode
-                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi-style, manual replacement and exclusions remain unavailable."
-                    : "Production locks require the live Gear API. Exclusions and manual evaluations remain fixture demonstrations."}
+                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Live multi-style optimization remains unavailable."
+                    : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for Python validation."}
                 </p>
                 {!liveMode && (
                   <>
@@ -432,7 +432,7 @@ export default function App() {
             </aside>
           </div>
           <footer>
-            RUNIC LEDGER // MILESTONE 3{" "}
+            RUNIC LEDGER // MILESTONE 4{" "}
             <span>
               {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
               {state.context?.observedAt ?? "not loaded"}

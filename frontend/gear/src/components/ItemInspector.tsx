@@ -4,6 +4,15 @@ import { useGear } from "../state/GearProvider";
 import { Dialog } from "./Dialog";
 import { ItemSprite } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
+import { TrialComparison } from "./TrialComparison";
+function retainInspectorFocus() {
+  document.activeElement
+    ?.closest("dialog")
+    ?.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close Item inspector"]',
+    )
+    ?.focus();
+}
 export function ItemInspector() {
   const { liveMode, current } = useGear();
   return liveMode ? (
@@ -13,7 +22,17 @@ export function ItemInspector() {
   );
 }
 function FixtureItemInspector() {
-  const { state, current, dispatch, edit, client, itemById } = useGear(),
+  const {
+      state,
+      current,
+      dispatch,
+      edit,
+      client,
+      itemById,
+      previewTrial,
+      revertTrial,
+      cancelTrial,
+    } = useGear(),
     slot = current.slot!;
   const solution = current.result?.solutions.find(
     (s) => s.id === current.solutionId,
@@ -27,8 +46,7 @@ function FixtureItemInspector() {
   const [details, setDetails] = useState<Item | null>(null);
   const item = details?.id === id ? details : itemById(id);
   const [alternatives, setAlternatives] = useState<Item[]>([]),
-    [error, setError] = useState<string | null>(null),
-    [pending, setPending] = useState(false);
+    [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     setDetails(null);
@@ -65,6 +83,7 @@ function FixtureItemInspector() {
   const close = () =>
     dispatch({ type: "ui", mode: state.mode, patch: { slot: null } });
   function lock(exclude = false) {
+    retainInspectorFocus();
     const roles = current.draft.roles.map((r) => {
       if (r.id !== current.activeRole) return r;
       const locks = { ...r.locks };
@@ -84,23 +103,9 @@ function FixtureItemInspector() {
   const locked = current.draft.roles.some((r) =>
     Object.values(r.locks).includes(id),
   );
-  async function preview(replacement: number | null) {
+  function preview(replacement: number | null) {
     if (!current.result || !solution) return;
-    setPending(true);
-    setError(null);
-    try {
-      const trial = await client.evaluate(
-        current.result,
-        solution.id,
-        current.activeRole,
-        { ...equipment, [slot]: replacement },
-      );
-      dispatch({ type: "trial", mode: state.mode, trial });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setPending(false);
-    }
+    void previewTrial({ ...equipment, [slot]: replacement });
   }
   return (
     <Dialog contextual title="Item inspector" onClose={close}>
@@ -153,8 +158,8 @@ function FixtureItemInspector() {
         </button>
       </div>
       <p>
-        Draft controls only. Production exclusions and exact manual evaluations
-        are unavailable.
+        Fixture draft controls and authored comparisons demonstrate refinement.
+        Live requests use authoritative Python validation.
       </p>
       <h3>Equipment alternatives</h3>
       {!current.result && (
@@ -170,7 +175,9 @@ function FixtureItemInspector() {
               <small>{a.owned ? "Fixture owned" : "Fixture purchase"}</small>
             </span>
             <button
-              disabled={current.outdated || current.pending || pending}
+              disabled={
+                current.outdated || current.pending || current.trialPending
+              }
               onClick={() => void preview(a.id)}
             >
               Preview comparison
@@ -179,7 +186,7 @@ function FixtureItemInspector() {
         ))}
       {current.result && (
         <button
-          disabled={current.outdated || current.pending || pending}
+          disabled={current.outdated || current.pending || current.trialPending}
           onClick={() => void preview(null)}
         >
           Preview empty slot
@@ -190,9 +197,22 @@ function FixtureItemInspector() {
           Result outdated. Re-run before previewing alternatives.
         </p>
       )}
-      {pending && <p role="status">Loading fixture comparison…</p>}
+      {current.trialPending && (
+        <>
+          <p role="status">Loading fixture comparison…</p>
+          <button
+            onClick={() => {
+              retainInspectorFocus();
+              cancelTrial();
+            }}
+          >
+            Cancel evaluation
+          </button>
+        </>
+      )}
       {error && <p role="alert">{error}</p>}
-      {current.trial && (
+      {current.trialError && <p role="alert">{current.trialError}</p>}
+      {current.trial?.source === "fixture" && (
         <section className="trial">
           <h3>Manual trial · fixture preview</h3>
           <p>Original result and draft equipment remain unchanged.</p>
@@ -206,9 +226,10 @@ function FixtureItemInspector() {
             title="Trial telemetry"
           />
           <button
-            onClick={() =>
-              dispatch({ type: "trial", mode: state.mode, trial: null })
-            }
+            onClick={() => {
+              retainInspectorFocus();
+              revertTrial();
+            }}
           >
             Revert trial
           </button>
@@ -219,7 +240,17 @@ function FixtureItemInspector() {
 }
 
 function LiveItemInspector() {
-  const { state, current, client, dispatch, edit } = useGear();
+  const {
+    state,
+    current,
+    client,
+    dispatch,
+    edit,
+    previewTrial,
+    revertTrial,
+    cancelTrial,
+    itemById,
+  } = useGear();
   const slot = current.slot!;
   const observation = state.context?.live?.current_equipment.slots[slot];
   const optimized = current.result?.solutions[0]?.loadouts[0].equipment;
@@ -237,11 +268,50 @@ function LiveItemInspector() {
   }>({ items: [], total: 0, nextOffset: null });
   const [offset, setOffset] = useState(0);
   const [browseError, setBrowseError] = useState("");
+  const physicalSlot = slot === "ammo" ? "ammunition" : slot;
+  const excluded = new Set(current.draft.exclusions);
+  const contextual =
+    current.result?.live?.result.alternatives?.[physicalSlot] ?? [];
+  const canPreview = !!optimized && !current.outdated && !current.pending;
+  const namedItem = (itemId: number) =>
+    itemById(itemId)?.name ?? `Item #${itemId}`;
+  const isLocked =
+    id !== null &&
+    current.draft.roles.some((role) => Object.values(role.locks).includes(id));
+  function lockItem(itemId: number | null) {
+    retainInspectorFocus();
+    edit({
+      ...current.draft,
+      roles: current.draft.roles.map((role) =>
+        role.id === current.activeRole
+          ? { ...role, locks: { ...role.locks, [slot]: itemId } }
+          : role,
+      ),
+    });
+  }
+  function excludeItem() {
+    if (id === null) return;
+    retainInspectorFocus();
+    edit({
+      ...current.draft,
+      roles: current.draft.roles.map((role) => ({
+        ...role,
+        locks: Object.fromEntries(
+          Object.entries(role.locks).filter(([, value]) => value !== id),
+        ),
+      })),
+      exclusions: [...new Set([...current.draft.exclusions, id])],
+    });
+  }
+  function preview(replacement: number | null) {
+    if (optimized && canPreview)
+      void previewTrial({ ...optimized, [slot]: replacement });
+  }
   useEffect(() => {
     setSelected(null);
     setQuery("");
     setOffset(0);
-  }, [slot]);
+  }, [slot, current.result?.fingerprint]);
   useEffect(() => {
     let active = true;
     setItem(null);
@@ -347,19 +417,31 @@ function LiveItemInspector() {
         <>
           <div className="button-row">
             <button
-              onClick={() =>
-                edit({
-                  ...current.draft,
-                  roles: current.draft.roles.map((role) =>
-                    role.id === current.activeRole
-                      ? { ...role, locks: { ...role.locks, [slot]: id } }
-                      : role,
-                  ),
-                })
+              disabled={
+                facts.slot !== physicalSlot || (id !== null && excluded.has(id))
               }
+              onClick={() => lockItem(id)}
             >
               Lock {slot} to #{id}
             </button>
+            <button
+              disabled={id === null || excluded.has(id)}
+              onClick={excludeItem}
+            >
+              {isLocked ? "Unlock and exclude" : "Exclude item"} in draft
+            </button>
+            {optimized && (
+              <button
+                disabled={
+                  !canPreview ||
+                  facts.slot !== physicalSlot ||
+                  (id !== null && excluded.has(id))
+                }
+                onClick={() => preview(id)}
+              >
+                Preview selected alternative
+              </button>
+            )}
           </div>
           <dl>
             <dt>Concrete ID</dt>
@@ -462,21 +544,82 @@ function LiveItemInspector() {
           <p>Catalog: {facts.catalog_version}</p>
         </>
       )}
+      {optimized && (
+        <section aria-label="Contextual alternatives">
+          <h3>Contextual alternatives</h3>
+          <p>
+            Validated against the accepted result's surrounding equipment and
+            submitted constraints.
+          </p>
+          {contextual
+            .filter((row) => row.item_id !== null && !excluded.has(row.item_id))
+            .map((row) => {
+              const name =
+                row.item_id === null ? "empty slot" : namedItem(row.item_id);
+              return (
+                <article className="alternative" key={row.item_id ?? "empty"}>
+                  <ItemSprite id={row.item_id} />
+                  <span>{name}</span>
+                  {row.item_id !== null && (
+                    <button
+                      aria-label={`Inspect ${name}`}
+                      onClick={() => setSelected(row.item_id)}
+                    >
+                      Inspect
+                    </button>
+                  )}
+                  <button
+                    disabled={!canPreview}
+                    onClick={() => preview(row.item_id)}
+                  >
+                    Preview {name}
+                  </button>
+                </article>
+              );
+            })}
+          <button disabled={!canPreview} onClick={() => preview(null)}>
+            Preview empty slot
+          </button>
+          {current.outdated && (
+            <p className="notice">
+              Result outdated. Re-run before previewing alternatives.
+            </p>
+          )}
+          {current.trialPending && (
+            <p role="status">
+              Evaluating manual trial…{" "}
+              <button
+                onClick={() => {
+                  retainInspectorFocus();
+                  cancelTrial();
+                }}
+              >
+                Cancel evaluation
+              </button>
+            </p>
+          )}
+          {current.trialError && <p role="alert">{current.trialError}</p>}
+          {current.trial?.source === "live" && (
+            <TrialComparison
+              trial={current.trial}
+              onRevert={() => {
+                retainInspectorFocus();
+                revertTrial();
+              }}
+              onLock={() => lockItem(current.trial!.equipment[slot])}
+              itemName={(itemId) =>
+                current.trial?.source === "live"
+                  ? (current.trial.live.items.find(
+                      (row) => row.item_id === itemId,
+                    )?.name ?? namedItem(itemId))
+                  : namedItem(itemId)
+              }
+            />
+          )}
+        </section>
+      )}
       <h3>Browse physical items</h3>
-      <button
-        onClick={() =>
-          edit({
-            ...current.draft,
-            roles: current.draft.roles.map((role) =>
-              role.id === current.activeRole
-                ? { ...role, locks: { ...role.locks, [slot]: null } }
-                : role,
-            ),
-          })
-        }
-      >
-        Lock {slot} empty
-      </button>
+      <button onClick={() => lockItem(null)}>Lock {slot} empty</button>
       <label>
         Search name or numeric ID
         <input
@@ -489,18 +632,25 @@ function LiveItemInspector() {
       </label>
       {browseError && <p role="alert">{browseError}</p>}
       <p>{page.total} matching items · inspection only</p>
-      {page.items.map((row) => (
-        <article className="alternative" key={row.id}>
-          <ItemSprite id={row.id} />
-          <span>
-            {row.name}
-            <small>
-              #{row.id} · {row.requirement}
-            </small>
-          </span>
-          <button onClick={() => setSelected(row.id)}>Inspect</button>
-        </article>
-      ))}
+      {page.items
+        .filter((row) => !excluded.has(row.id))
+        .map((row) => (
+          <article className="alternative" key={row.id}>
+            <ItemSprite id={row.id} />
+            <span>
+              {row.name}
+              <small>
+                #{row.id} · {row.requirement}
+              </small>
+            </span>
+            <button
+              aria-label={`Inspect ${row.name}`}
+              onClick={() => setSelected(row.id)}
+            >
+              Inspect
+            </button>
+          </article>
+        ))}
       <div className="button-row">
         <button
           disabled={offset === 0}

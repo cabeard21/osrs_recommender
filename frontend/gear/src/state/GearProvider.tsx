@@ -7,7 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Draft, FixtureFailure, GearClient } from "../api/contracts";
+import type {
+  Draft,
+  Equipment,
+  FixtureFailure,
+  GearClient,
+  Workspace,
+} from "../api/contracts";
 import { FixtureGearClient } from "../fixtures/client";
 import { GearApiError } from "../api/httpClient";
 import {
@@ -16,9 +22,13 @@ import {
   readDrafts,
   reducer,
   saveDrafts,
+  contextIdentity,
+  type Action,
 } from "./scenario";
 function useGearState(client: GearClient) {
-  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+  const [state, rawDispatch] = useReducer(reducer, undefined, initialState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [contextError, setContextError] = useState<string | null>(null);
   const [equipmentStatus, setEquipmentStatus] = useState<
     "observed" | "partial" | "unknown"
@@ -30,6 +40,51 @@ function useGearState(client: GearClient) {
   const controllers = useRef<
     Partial<Record<"single" | "multi", AbortController>>
   >({});
+  const trialControllers = useRef<Partial<Record<Workspace, AbortController>>>(
+    {},
+  );
+  const trialSequence = useRef<Record<Workspace, number>>({
+    single: 0,
+    multi: 0,
+  });
+  function abortTrial(mode: Workspace) {
+    trialControllers.current[mode]?.abort();
+    delete trialControllers.current[mode];
+  }
+  function dispatch(action: Action) {
+    const latest = stateRef.current;
+    if (action.type === "context") {
+      if (contextIdentity(latest.context) !== contextIdentity(action.context)) {
+        abortTrial("single");
+        abortTrial("multi");
+      }
+    } else if (
+      action.type === "navigate" ||
+      action.type === "use-single-in-multi"
+    ) {
+      abortTrial(latest.mode);
+    } else if ("mode" in action) {
+      const workspace = latest[action.mode];
+      if (
+        [
+          "edit",
+          "start",
+          "success",
+          "cancel",
+          "trial-cancel",
+          "trial",
+        ].includes(action.type) ||
+        (action.type === "ui" &&
+          Object.entries(action.patch).some(
+            ([key, value]) =>
+              key !== "view" &&
+              value !== workspace[key as "slot" | "activeRole" | "solutionId"],
+          ))
+      )
+        abortTrial(action.mode);
+    }
+    rawDispatch(action);
+  }
   async function loadContext() {
     const generation = ++contextGeneration.current;
     try {
@@ -64,6 +119,7 @@ function useGearState(client: GearClient) {
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
       Object.values(controllers.current).forEach((c) => c.abort());
+      Object.values(trialControllers.current).forEach((c) => c.abort());
     };
   }, [client]); // client is stable for the provider lifetime
   useEffect(() => {
@@ -131,6 +187,60 @@ function useGearState(client: GearClient) {
     controllers.current[state.mode]?.abort();
     dispatch({ type: "cancel", mode: state.mode });
   }
+  async function previewTrial(equipment: Equipment): Promise<void> {
+    const latest = stateRef.current,
+      mode = latest.mode,
+      workspace = latest[mode],
+      result = workspace.result;
+    if (
+      !result ||
+      workspace.outdated ||
+      workspace.pending ||
+      workspace.slot === null
+    )
+      return;
+    abortTrial(mode);
+    const controller = new AbortController(),
+      proposal = structuredClone(equipment);
+    trialControllers.current[mode] = controller;
+    const generation = Math.max(
+      ++trialSequence.current[mode],
+      workspace.trialGeneration + 1,
+    );
+    trialSequence.current[mode] = generation;
+    dispatch({ type: "trial-start", mode, generation, equipment: proposal });
+    try {
+      const trial = await client.evaluate(
+        result,
+        workspace.solutionId,
+        workspace.activeRole,
+        proposal,
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      dispatch({ type: "trial-success", mode, generation, trial });
+    } catch (error) {
+      if (controller.signal.aborted || (error as Error).name === "AbortError")
+        return;
+      if (
+        error instanceof GearApiError &&
+        ["snapshot_changed", "stale_context"].includes(error.code)
+      )
+        void loadContext();
+      dispatch({
+        type: "trial-error",
+        mode,
+        generation,
+        error: (error as Error).message,
+      });
+    }
+  }
+  function revertTrial() {
+    dispatch({ type: "trial-cancel", mode: stateRef.current.mode });
+  }
+  function cancelTrial() {
+    revertTrial();
+  }
   return {
     state,
     liveMode: !(client instanceof FixtureGearClient),
@@ -143,6 +253,9 @@ function useGearState(client: GearClient) {
     edit,
     run,
     cancel,
+    previewTrial,
+    revertTrial,
+    cancelTrial,
     contextError,
     loadContext,
     failure,

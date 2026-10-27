@@ -1,8 +1,8 @@
-# Gear browser API — Milestone 3
+# Gear browser API — Milestone 4
 
 The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_PLAN.md).
-This document describes account/item reads and real single-style optimization.
-Arbitrary manual equipment evaluation and live multi-style optimization remain unavailable.
+This document describes account/item reads, real single-style optimization, and
+exact fixed-loadout comparisons. Live multi-style optimization remains unavailable.
 
 ## Access and lifecycle
 
@@ -13,8 +13,8 @@ bearer token; React receives no token. The MCP sidecar does not register these r
 
 Routes precede NiceGUI's root mount. NiceGUI and the browser API share an app-scoped
 `GearService`; account reads use `AccountService` and prices use `DatabaseGearPrices`.
-No endpoint refreshes external prices or writes account observations. Milestone 3 adds
-the synchronous-response optimization POST described below; computation runs in a worker thread.
+No endpoint refreshes external prices or writes account observations. Optimization
+and evaluation return their results directly; computation runs in a worker thread.
 Successful and handled error responses specify `Cache-Control: no-store`.
 
 The selected player is the first player ID, matching the existing dashboard. An empty
@@ -183,7 +183,7 @@ A failed or malformed response cannot select the fixture adapter.
 
 Runs the existing `GearService.optimize` against frozen account, catalog and cached
 price inputs. JSON is the existing domain `OptimizationRequest`, restricted to exactly
-one ordinary-attack role. There is no public arbitrary-loadout evaluation endpoint.
+one ordinary-attack role. Fixed-loadout comparisons use the evaluation endpoint below.
 
 ```json
 {
@@ -203,7 +203,7 @@ one ordinary-attack role. There is no public arbitrary-loadout evaluation endpoi
 Role styles are `stab`, `slash`, `crush`, `ranged`, or `magic`. Stances and standard
 spells must be supported by the model. Targets reuse `CombatTarget`, including Magic
 level, defence bonuses, ranged subtype bonuses and supported elemental weaknesses.
-Unsupported mechanics, prayers, boosts, special scoring, objective/exclusion fields
+Unsupported mechanics, prayers, boosts, special scoring, objective fields
 and multi-role transitions are rejected. Names do not confer verified boss mechanics.
 
 Access modes preserve domain semantics: `owned` uses observed owned equipment;
@@ -211,6 +211,13 @@ Access modes preserve domain semantics: `owned` uses observed owned equipment;
 budget; `future` additionally permits explicit hypothetical assumptions. Skill/quest
 keys and concrete acquired IDs are validated. Overrides never write observations.
 Requirements remain enforced in every mode. Unknown prices cannot fund purchases.
+
+Optional `excluded_item_ids` contains up to 500 concrete physical IDs. The default
+is empty. Unknown IDs and overlap with any global or role lock are rejected with
+structured field errors. Exclusions apply to candidate preparation, every search
+path, final validation, curve/unrestricted results, and contextual alternatives.
+Physical variants retain separate identities. An assumed acquisition does not
+override an exclusion.
 
 Global and role `locks` use physical slot names: absent key means optimize, `null`
 means force empty, and a positive numeric ID means force that exact item. Conflicting
@@ -289,17 +296,91 @@ after candidate preparation; the lock remains held until the search exits. The c
 also aborts obsolete requests and rejects superseded generations. Progress is
 indeterminate, with no percentage-complete claim.
 
+## POST /ui-api/gear/evaluations
+
+Evaluates fixed baseline and proposed equipment without running candidate search.
+The baseline here is a supplied configuration, usually the accepted optimized
+result; it is distinct from the observed current-equipment baseline above.
+
+```json
+{
+  "scenario": {
+    "roles": [{"id": "role-1", "style": "slash", "stance": "accurate"}],
+    "mode": "usable", "budget_gp": 100000,
+    "expected_snapshot_id": "<current account fingerprint>"
+  },
+  "baseline_loadouts": {"role-1": {"weapon": 1333}},
+  "proposed_loadouts": {"role-1": {"weapon": 1331}}
+}
+```
+
+`scenario` is the same domain request shape returned by optimization, including
+its locks, exclusions, target, access mode and assumptions. Exactly one ordinary
+role is supported, and both loadout maps must contain exactly that role ID.
+Equipment keys are physical slots, including `ammunition`; values are strict
+positive physical IDs. Omitted slots are empty. A proposal is never repaired by
+removing a shield, selecting ammunition, or substituting another item.
+
+The response contains `api_version`, `evaluated_at`, normalized `scenario`,
+`scenario_fingerprint`, `snapshot_id`, `catalog_version`, `model_version`,
+`assumptions_fingerprint`, `price_revision`, physical `items`, `baseline`,
+`proposed`, and nullable `deltas`.
+
+Each fixed evaluation contains:
+
+| Field | Meaning |
+| --- | --- |
+| `status` | `valid`, `invalid`, or `unsupported` |
+| `equipment` | Exact submitted physical slot assignments |
+| `performance` | Existing Python `CombatPerformance` when valid; otherwise null |
+| `reasons` | Structured `{path, message}` explanations |
+| `purchase_cost_gp` | Additional purchase estimate, or null when prices are unavailable |
+| `purchases` | Distinct `{item_id, cost_gp, conditional}` purchase requirements |
+| `assumed_item_ids` | Explicit hypothetical acquisitions used by this configuration |
+
+Both configurations share one frozen snapshot, hypothetical projection, catalog,
+price set and time. Requirements, ownership/access, locks, exclusions, budget and
+supported combat constraints apply to both. Owned equipment does not require a
+purchase quote; unknown ownership remains a conditional purchase. Assumed
+acquisitions require future mode and never modify observations.
+
+When both sides are valid and supported, `deltas` contains signed **proposed minus
+baseline** `dps`, `max_hit`, `accuracy`, `attack_interval` (seconds), and
+`purchase_cost_gp`, plus `equipment_changes` (`slot`, `baseline_item_id`,
+`proposed_item_id`), `added_purchase_ids`, and `removed_purchase_ids`.
+Purchase differences are additional acquisition costs, with no assumed resale
+proceeds or per-item damage attribution. Both sides are recalculated together;
+stored optimization metrics are not used as a stale subtraction baseline.
+
+Malformed shapes, slots, role keys, unknown IDs and contradictory scenario
+constraints return 422 `invalid_request` with field paths. Recognized equipment
+that violates configuration constraints returns 200 with an invalid/unsupported
+status and no performance or comparison deltas. A successful HTTP response alone
+does not imply a valid trial.
+
+Evaluation retains optimization's same-origin checks (403), pre/post account
+fingerprint checks (409), non-cacheable responses, generic unexpected errors
+(500), worker execution and service concurrency guard (`optimizer_busy`, 503).
+Disconnected/cancelled evaluations signal cooperative cancellation
+(`evaluation_cancelled`, 499); a browser abort does not forcibly stop a thread.
+
 ## React modes
 
 `/gear-next/` defaults to live account mode. `?mode=fixture` explicitly selects the
 existing deterministic adapter and visibly labels all demonstration data. Mode changes
 reload the application; draft storage keys distinguish fixture and live account IDs.
 Live mode never calls the fixture optimizer/evaluator. Fixture workflows remain available
-in both Single and Multi workspaces. Live single-style results and valid baselines use
-the Python POST; live Multi, manual replacements and exclusions remain unavailable.
+in both Single and Multi workspaces. Live single-style results, valid baselines and
+manual trials use Python POSTs; live Multi remains unavailable.
 
 Context refreshes on focus and every 30 seconds while visible, and has a manual refresh
 button. Errors have retry guidance; previously loaded observations retain their dates.
 All eleven live slots remain selectable during missing, partial and ambiguous scans.
 The inspector supports candidate inspection, missing metadata, physical name/ID search,
 pagination, eligibility, ownership timestamps, prices/provenance, and unsupported effects.
+Accepted results retain contextual alternatives for their submitted surrounding
+equipment. Manual previews change one slot and leave accepted results and drafts
+untouched. Revert discards the trial; lock/exclude updates the draft and marks the
+accepted result outdated until reoptimization. Trial generations and abort signals
+prevent stale responses from publishing. Account, catalog, model and price changes
+invalidate dependent trials. Results and evaluations are never persisted.

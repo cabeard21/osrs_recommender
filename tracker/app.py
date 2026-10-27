@@ -66,6 +66,9 @@ def create_app(
     from tracker.api.gear_optimizations import router as optimization_router
 
     app.include_router(optimization_router)
+    from tracker.api.gear_evaluations import router as evaluation_router
+
+    app.include_router(evaluation_router)
 
     from tracker.ui.gear_preview import mount_gear_preview
 

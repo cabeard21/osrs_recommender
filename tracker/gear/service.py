@@ -79,6 +79,48 @@ class GearService:
         finally:
             self._optimization_lock.release()
 
+    def evaluate(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest | Mapping[str, Any],
+        baseline: Mapping[str, int],
+        proposed: Mapping[str, int],
+        *,
+        price_records: Mapping[int, PriceRecord] | None = None,
+        now: datetime | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate two fixed single-role loadouts without running candidate search."""
+        from tracker.gear.evaluation import evaluate_configurations
+
+        normalized = (
+            request
+            if isinstance(request, OptimizationRequest)
+            else OptimizationRequest.model_validate(request)
+        )
+        if len(normalized.roles) != 1 or normalized.roles[0].style == "special":
+            raise ValueError("Exact evaluation supports one ordinary-attack role")
+        if not self._optimization_lock.acquire(blocking=False):
+            raise ValueError("optimizer_busy: another equipment calculation is running")
+        try:
+            if cancelled and cancelled():
+                raise ValueError("evaluation_cancelled")
+            result = evaluate_configurations(
+                snapshot,
+                normalized,
+                baseline,
+                proposed,
+                self.equipment_catalog(),
+                self.content,
+                dict(price_records or {}),
+                now or datetime.now(UTC),
+            )
+            if cancelled and cancelled():
+                raise ValueError("evaluation_cancelled")
+            return result
+        finally:
+            self._optimization_lock.release()
+
     def optimizer_catalog(
         self,
         snapshot: AccountSnapshot,

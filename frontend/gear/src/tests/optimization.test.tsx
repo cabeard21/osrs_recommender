@@ -351,9 +351,9 @@ it("supports explicit hypothetical skills and quests while keeping requests loca
   expect(request.skill_overrides).toEqual({ strength: 90, ranged: 75 });
   expect(request.quest_overrides).toEqual({ monkey_madness_i: "complete" });
   expect(context.account).not.toHaveProperty("skill_overrides");
-  expect(() => normalize({ ...draft, exclusions: [4151] }, "x", true)).toThrow(
-    "exclusions",
-  );
+  expect(
+    optimizationRequest(normalize({ ...draft, exclusions: [4151] }, "x", true)),
+  ).toHaveProperty("excluded_item_ids", [4151]);
 });
 it("retains backend target metadata when editing preset defence", async () => {
   const user = userEvent.setup();

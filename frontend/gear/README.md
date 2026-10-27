@@ -1,4 +1,4 @@
-# Runic Ledger Gear preview — Milestone 3
+# Runic Ledger Gear preview — Milestone 4
 
 Account-connected React/TypeScript/Vite/Tailwind preview with an isolated fixture mode. The architecture authority is
 [the redesign plan](../../docs/GEAR_OPTIMIZER_REDESIGN_PLAN.md); the visual authority is
@@ -47,7 +47,8 @@ sent to React; these endpoints share the private dashboard network boundary.
 Open `/gear-next/?mode=fixture` for the deterministic demonstrations below. The
 fixture adapter remains available for tests and local demonstrations. Live mode
 never falls back to fixtures. All live optimization metrics and purchase estimates
-come from Python. Arbitrary manual evaluation and live Multi remain unavailable.
+come from Python. Manual trials use exact Python fixed-loadout evaluation. Live
+Multi remains unavailable.
 Account context refreshes
 on focus, every 30 seconds while visible, and on manual refresh.
 
@@ -77,8 +78,8 @@ identify fixture data. Numbers are authored deterministic examples, not actual c
 calculations. Inputs are recorded in the submitted scenario; the adapter does not
 execute optimization, validate production eligibility, or promise that its sample
 loadouts satisfy budgets, supply reservations, or action limits. Fixture lock/exclusion
-controls demonstrate state changes; live locks are enforced by Python, while live
-exclusions and manual trials remain unavailable.
+controls demonstrate state changes. Live locks, exclusions and manual trials use
+authoritative Python validation.
 
 ## State boundaries
 
@@ -108,13 +109,19 @@ Assumed skills, quest completion, and item acquisitions remain request-local.
    seconds, equipment bonuses, required purchases, reused owned equipment and provenance.
 6. Compare current equipment only when its projection and metadata support exact Python
    evaluation. Missing/ambiguous equipment produces reasons and unavailable metrics.
-7. Change the budget or constraints and reoptimize. Old results retain their submitted
+7. Inspect a slot, choose a contextual alternative or browse another physical item,
+   and preview an exact manual trial. Compare DPS, max hit, accuracy, attack interval,
+   equipment changes and additional purchase GP against a freshly evaluated original
+   configuration. Invalid or unsupported trials show reasons with unavailable metrics.
+8. Revert without changing the result or draft, or lock the alternative into the draft.
+   Exclude items globally; a locked item requires explicit unlock-and-exclude.
+9. Change the budget or constraints and reoptimize. Old results retain their submitted
    scenario and are marked outdated. Compatible previous results can be compared.
 
 The synced account panel is a compact identity/sync/equipment summary with important
 warnings visible. Expand **Detailed account observations** for container times, skills,
-snapshot identity and diagnostics. Live Multi, exclusions, manual replacements, alternate
-objectives, prayers and potions remain unavailable. Fixture demos keep their existing scope.
+snapshot identity and diagnostics. Live Multi, alternate objectives, prayers and potions
+remain unavailable. Fixture demos keep their existing scope.
 
 Account, catalog/model and price revisions are retained with results. Refreshes invalidate
 changed account/results and acquisition estimates; a changed account during a solve returns
@@ -201,5 +208,13 @@ server uses bundled equipment definitions and fixed cached prices; its test-only
 routes are never mounted by the production application. Windows and Unix virtual-environment
 Python paths are supported by the Playwright launcher.
 
-Manual trials, exclusions and replacement evaluation belong to Milestone 4; live joint
-optimization belongs to Milestone 5. Packaging and `/gear` cutover remain later work.
+See [the Milestone 4 report](../../docs/GEAR_MILESTONE_4.md) for exact manual trials,
+global exclusions, verification, representative screenshots and limitations. Each trial
+changes only its selected slot. Other equipment, including shields and ammunition,
+stays fixed; conflicts produce reasons rather than silent repairs. Trial cancellation,
+revert, newer previews and relevant context changes invalidate pending responses.
+Only draft configuration is persisted. Purchase lists can be copied with explicit
+clipboard success/failure feedback.
+
+Live joint optimization belongs to Milestone 5. Packaging and `/gear` cutover remain
+later work; Milestone 4 does not change the production Gear entry point.

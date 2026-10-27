@@ -5,6 +5,7 @@ import type {
   Scenario,
   Slot,
   Trial,
+  Equipment,
   Workspace,
 } from "../api/contracts";
 export const newRole = (index: number) => ({
@@ -83,9 +84,12 @@ export function normalize(
     .filter(Boolean);
   if ((Object.keys(skills).length || quests.length) && draft.mode !== "future")
     throw new Error("Select hypothetical access to submit assumptions.");
-  if (live && draft.exclusions.length)
+  if (
+    draft.exclusions.length > 500 ||
+    draft.exclusions.some((id) => !Number.isSafeInteger(id) || id <= 0)
+  )
     throw new Error(
-      "Live item exclusions are unavailable until Milestone 4. Remove restored exclusions before optimizing.",
+      "Exclusions require at most 500 positive physical item IDs.",
     );
   if (live && draft.assumptions.quest)
     throw new Error(
@@ -143,6 +147,17 @@ export interface WorkspaceState {
   result: OptimizationReply | null;
   previous: OptimizationReply | null;
   trial: Trial | null;
+  trialGeneration: number;
+  trialPending: boolean;
+  trialError: string | null;
+  trialRequest: {
+    equipment: Equipment;
+    resultFingerprint: string;
+    solutionId: string;
+    roleId: string;
+    slot: Slot | null;
+    revision: number;
+  } | null;
   generation: number;
   pending: boolean;
   error: string | null;
@@ -159,6 +174,10 @@ const workspace = (): WorkspaceState => ({
   result: null,
   previous: null,
   trial: null,
+  trialGeneration: 0,
+  trialPending: false,
+  trialError: null,
+  trialRequest: null,
   generation: 0,
   pending: false,
   error: null,
@@ -207,7 +226,33 @@ export type Action =
         Pick<WorkspaceState, "activeRole" | "slot" | "view" | "solutionId">
       >;
     }
-  | { type: "trial"; mode: Workspace; trial: Trial | null };
+  | { type: "trial"; mode: Workspace; trial: Trial | null }
+  | {
+      type: "trial-start";
+      mode: Workspace;
+      generation: number;
+      equipment: Equipment;
+    }
+  | { type: "trial-success"; mode: Workspace; generation: number; trial: Trial }
+  | { type: "trial-error"; mode: Workspace; generation: number; error: string }
+  | { type: "trial-cancel"; mode: Workspace };
+export function contextIdentity(context: GearContext | null) {
+  return JSON.stringify([
+    context?.snapshotId,
+    context?.live?.catalog_version,
+    context?.live?.model_version,
+    context?.live?.price_revision,
+  ]);
+}
+function clearedTrial(current: WorkspaceState) {
+  return {
+    trial: null,
+    trialPending: false,
+    trialError: null,
+    trialRequest: null,
+    trialGeneration: current.trialGeneration + 1,
+  };
+}
 export function reducer(state: State, action: Action): State {
   if (action.type === "context")
     return {
@@ -219,11 +264,14 @@ export function reducer(state: State, action: Action): State {
           {
             ...state[mode],
             ...(state.context &&
+            contextIdentity(state.context) !== contextIdentity(action.context)
+              ? clearedTrial(state[mode])
+              : {}),
+            ...(state.context &&
             state.context.snapshotId !== action.context.snapshotId
               ? {
                   generation: state[mode].generation + 1,
                   pending: false,
-                  trial: null,
                   error: state[mode].pending
                     ? "Account changed during optimization. Refresh and rerun."
                     : state[mode].error,
@@ -264,6 +312,7 @@ export function reducer(state: State, action: Action): State {
       ...state,
       mode: "multi",
       multiSeeded: true,
+      single: { ...state.single, ...clearedTrial(state.single) },
       multi: {
         ...state.multi,
         draft,
@@ -271,7 +320,7 @@ export function reducer(state: State, action: Action): State {
         generation: state.multi.generation + 1,
         pending: false,
         outdated: !!state.multi.result,
-        trial: null,
+        ...clearedTrial(state.multi),
       },
     };
   }
@@ -290,10 +339,18 @@ export function reducer(state: State, action: Action): State {
         ...state,
         mode: "multi",
         multiSeeded: true,
+        single: { ...state.single, ...clearedTrial(state.single) },
         multi: { ...state.multi, draft },
       };
     }
-    return { ...state, mode: action.mode };
+    return {
+      ...state,
+      mode: action.mode,
+      [state.mode]: {
+        ...state[state.mode],
+        ...clearedTrial(state[state.mode]),
+      },
+    };
   }
   const current = state[action.mode];
   let next = current;
@@ -307,7 +364,7 @@ export function reducer(state: State, action: Action): State {
         pending: false,
         error: null,
         outdated: !!current.result,
-        trial: null,
+        ...clearedTrial(current),
       };
       break;
     case "start":
@@ -317,7 +374,7 @@ export function reducer(state: State, action: Action): State {
         generation: action.generation,
         pending: true,
         error: null,
-        trial: null,
+        ...clearedTrial(current),
       };
       break;
     case "success":
@@ -349,7 +406,7 @@ export function reducer(state: State, action: Action): State {
             state.context.live.catalog_version ||
             action.result.modelVersion !== state.context.live.model_version ||
             action.result.priceRevision !== state.context.live.price_revision),
-        trial: null,
+        ...clearedTrial(current),
         solutionId: "best-found",
         activeRole: action.result.scenario.request.roles[0].id,
       };
@@ -359,16 +416,24 @@ export function reducer(state: State, action: Action): State {
       next = { ...current, pending: false, error: action.error };
       break;
     case "cancel":
-      next = { ...current, pending: false, generation: current.generation + 1 };
+      next = {
+        ...current,
+        pending: false,
+        generation: current.generation + 1,
+        ...clearedTrial(current),
+      };
       break;
     case "ui":
       next = {
         ...current,
         ...action.patch,
-        trial:
-          action.patch.solutionId || action.patch.activeRole
-            ? null
-            : current.trial,
+        ...((action.patch.solutionId !== undefined &&
+          action.patch.solutionId !== current.solutionId) ||
+        (action.patch.activeRole !== undefined &&
+          action.patch.activeRole !== current.activeRole) ||
+        (action.patch.slot !== undefined && action.patch.slot !== current.slot)
+          ? clearedTrial(current)
+          : {}),
       };
       break;
     case "trial":
@@ -377,11 +442,83 @@ export function reducer(state: State, action: Action): State {
         (current.pending ||
           current.outdated ||
           action.trial.resultFingerprint !== current.result?.fingerprint ||
+          action.trial.source !== current.result?.source ||
           action.trial.solutionId !== current.solutionId ||
           action.trial.roleId !== current.activeRole)
       )
         return state;
-      next = { ...current, trial: action.trial };
+      next = { ...current, ...clearedTrial(current), trial: action.trial };
+      break;
+    case "trial-start":
+      if (
+        !current.result ||
+        current.outdated ||
+        current.pending ||
+        current.slot === null ||
+        action.generation <= current.trialGeneration
+      )
+        return state;
+      next = {
+        ...current,
+        trial: null,
+        trialError: null,
+        trialPending: true,
+        trialGeneration: action.generation,
+        trialRequest: {
+          equipment: structuredClone(action.equipment),
+          resultFingerprint: current.result.fingerprint,
+          solutionId: current.solutionId,
+          roleId: current.activeRole,
+          slot: current.slot,
+          revision: current.revision,
+        },
+      };
+      break;
+    case "trial-success": {
+      const request = current.trialRequest;
+      if (
+        !current.trialPending ||
+        current.trialGeneration !== action.generation ||
+        !request ||
+        current.outdated ||
+        current.pending ||
+        request.resultFingerprint !== current.result?.fingerprint ||
+        request.solutionId !== current.solutionId ||
+        request.roleId !== current.activeRole ||
+        request.slot !== current.slot ||
+        request.revision !== current.revision ||
+        action.trial.resultFingerprint !== request.resultFingerprint ||
+        action.trial.solutionId !== request.solutionId ||
+        action.trial.roleId !== request.roleId ||
+        Object.entries(request.equipment).some(
+          ([slot, id]) => action.trial.equipment[slot as Slot] !== id,
+        ) ||
+        action.trial.source !== current.result?.source
+      )
+        return state;
+      next = {
+        ...current,
+        trialPending: false,
+        trialRequest: null,
+        trial: structuredClone(action.trial),
+      };
+      break;
+    }
+    case "trial-error":
+      if (
+        !current.trialPending ||
+        current.trialGeneration !== action.generation
+      )
+        return state;
+      next = {
+        ...current,
+        trialPending: false,
+        trialRequest: null,
+        trialError: action.error,
+      };
+      break;
+    case "trial-cancel":
+      next = { ...current, ...clearedTrial(current) };
       break;
   }
   return { ...state, [action.mode]: next };

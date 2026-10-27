@@ -5,6 +5,7 @@ import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
+import { PurchaseListCopy } from "./PurchaseListCopy";
 
 function comparable(a: OptimizationReply, b: OptimizationReply) {
   const combat = (r: OptimizationReply) => {
@@ -117,7 +118,9 @@ export function LiveResultWorkspace() {
               <Shield size={19} />
               Best configuration found
             </h2>
-            <span className="badge">Python result</span>
+            <span className="badge">
+              {previous ? "Reoptimized result" : "Optimized result"}
+            </span>
           </div>
           <p>Bounded search · select any slot to inspect its physical item.</p>
           <EquipmentGrid
@@ -209,6 +212,11 @@ export function LiveResultWorkspace() {
                 : ""}
             </p>
           ))}
+          <PurchaseListCopy
+            key={`${result.fingerprint}:${result.priceRevision}`}
+            purchases={result.live?.result.selected_solution?.purchases ?? []}
+            itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
+          />
           <h3 className="eyebrow">Reused observed owned equipment</h3>
           <p>
             {Object.values(loadout!.equipment)

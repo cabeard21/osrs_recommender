@@ -205,6 +205,10 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
             "Unknown hypothetically acquired physical item ID",
             field="assumed_item_ids",
         )
+    if any(i not in catalog.items for i in body.excluded_item_ids):
+        raise error(
+            "invalid_request", "Unknown excluded physical item ID", field="excluded_item_ids"
+        )
     locks = {**body.locks, **body.roles[0].locks}
     problems = equipment_problems({s: i for s, i in locks.items() if i is not None}, catalog.items)
     if problems:

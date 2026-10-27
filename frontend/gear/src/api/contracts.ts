@@ -164,6 +164,15 @@ export interface OptimizationDTO {
     assumptions_fingerprint: string;
     search: Record<string, unknown>;
     limitations: string[];
+    alternatives?: Record<
+      string,
+      {
+        item_id: number | null;
+        score: number;
+        score_delta: number;
+        purchase_cost_gp: number;
+      }[]
+    >;
     selected_solution: {
       score: number;
       loadouts: Record<
@@ -179,15 +188,63 @@ export interface OptimizationDTO {
     } | null;
   };
 }
-export interface Trial {
+interface TrialIdentity {
   resultFingerprint: string;
   solutionId: string;
   roleId: string;
   equipment: Equipment;
-  baseline: Metrics;
-  proposed: Metrics;
-  source: "fixture";
 }
+export interface FixedEvaluation {
+  status: "valid" | "invalid" | "unsupported";
+  equipment: Record<string, number>;
+  performance: CombatPerformance | null;
+  reasons: { path: string; message: string }[];
+  purchase_cost_gp: number | null;
+  purchases: {
+    item_id: number;
+    cost_gp: number | null;
+    conditional: boolean;
+  }[];
+  assumed_item_ids: number[];
+}
+export interface EvaluationDTO {
+  api_version: "gear-ui-v1";
+  evaluated_at: string;
+  scenario: Record<string, unknown>;
+  scenario_fingerprint: string;
+  snapshot_id: string;
+  catalog_version: string;
+  model_version: string;
+  assumptions_fingerprint: string;
+  price_revision: string;
+  items: PhysicalItem[];
+  baseline: FixedEvaluation;
+  proposed: FixedEvaluation;
+  deltas: {
+    dps: number;
+    max_hit: number;
+    accuracy: number;
+    attack_interval: number;
+    purchase_cost_gp: number;
+    equipment_changes: {
+      slot: string;
+      baseline_item_id: number | null;
+      proposed_item_id: number | null;
+    }[];
+    added_purchase_ids: number[];
+    removed_purchase_ids: number[];
+  } | null;
+}
+export type Trial = TrialIdentity &
+  (
+    | { source: "fixture"; baseline: Metrics; proposed: Metrics }
+    | {
+        source: "live";
+        baseline: Metrics | null;
+        proposed: Metrics | null;
+        live: EvaluationDTO;
+      }
+  );
 export type FixtureFailure = "none" | "busy" | "no-solution" | "error";
 export interface GearClient {
   getContext(): Promise<GearContext>;
@@ -200,6 +257,7 @@ export interface GearClient {
     solutionId: string,
     roleId: string,
     equipment: Equipment,
+    signal?: AbortSignal,
   ): Promise<Trial>;
 }
 

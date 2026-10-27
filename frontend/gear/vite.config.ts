@@ -20,7 +20,10 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/api/httpClient.ts",
+        "src/api/contextualAlternatives.ts",
         "src/components/LiveResultWorkspace.tsx",
+        "src/components/TrialComparison.tsx",
+        "src/components/PurchaseListCopy.tsx",
         "src/state/scenario.ts",
         "src/state/GearProvider.tsx",
       ],

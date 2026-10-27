@@ -1,4 +1,5 @@
 import { emptyEquipment, slots } from "./contracts";
+import { parseAlternatives } from "./contextualAlternatives";
 import type {
   ContextDTO,
   Equipment,
@@ -14,6 +15,8 @@ import type {
   Scenario,
   Slot,
   Trial,
+  EvaluationDTO,
+  FixedEvaluation,
 } from "./contracts";
 
 const apiSlot = (slot: Slot) => (slot === "ammo" ? "ammunition" : slot);
@@ -170,7 +173,11 @@ export function parseOptimization(
     const loadout = object(object(selected.loadouts)[role.id]);
     const equipment = equipmentMap(loadout.equipment);
     for (const id of Object.values(equipment))
-      if (id !== null && !items.some((i) => i.id === id))
+      if (
+        id !== null &&
+        (!items.some((i) => i.id === id) ||
+          scenario.request.excluded_item_ids.includes(id))
+      )
         throw new Error("Missing physical result item metadata");
     const purchases = selected.purchases.map((p) => {
       const row = requireFields(p, {
@@ -207,6 +214,11 @@ export function parseOptimization(
   if (result.snapshot_id !== scenario.request.expected_snapshot_id)
     throw new Error("Account changed during optimization. Refresh and rerun.");
   const dto = structuredClone(value) as OptimizationDTO;
+  dto.result.alternatives = parseAlternatives(
+    result.alternatives,
+    items,
+    scenario.request.excluded_item_ids,
+  );
   return {
     source: "live",
     scenario: structuredClone(scenario),
@@ -224,10 +236,8 @@ export function parseOptimization(
 }
 export function optimizationRequest(scenario: Scenario) {
   const r = scenario.request;
-  if (r.roles.length !== 1 || r.excluded_item_ids.length)
-    throw new Error(
-      "Live optimization supports one style without item exclusions.",
-    );
+  if (r.roles.length !== 1)
+    throw new Error("Live optimization supports one style.");
   const role = r.roles[0];
   return {
     roles: [
@@ -258,6 +268,9 @@ export function optimizationRequest(scenario: Scenario) {
     skill_overrides: r.skill_overrides,
     quest_overrides: r.quest_overrides,
     assumed_item_ids: r.assumed_item_ids,
+    ...(r.excluded_item_ids.length
+      ? { excluded_item_ids: [...r.excluded_item_ids] }
+      : {}),
     expected_snapshot_id: r.expected_snapshot_id,
   };
 }
@@ -268,6 +281,215 @@ export class GearApiError extends Error {
   ) {
     super(message);
   }
+}
+function sameValue(expected: unknown, actual: unknown): boolean {
+  if (Array.isArray(expected))
+    return (
+      Array.isArray(actual) &&
+      expected.length === actual.length &&
+      expected.every((v, i) => sameValue(v, actual[i]))
+    );
+  if (expected && typeof expected === "object") {
+    const left = object(expected),
+      right = object(actual);
+    return (
+      Object.keys(left).length === Object.keys(right).length &&
+      Object.entries(left).every(([k, v]) => sameValue(v, right[k]))
+    );
+  }
+  return expected === actual;
+}
+function concreteEquipment(equipment: Equipment): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(equipment)
+      .filter(([, id]) => id !== null)
+      .map(([slot, id]) => [apiSlot(slot as Slot), id as number]),
+  );
+}
+function parseFixedEvaluation(
+  value: unknown,
+  expected: Equipment,
+  items: Item[],
+): FixedEvaluation {
+  const row = requireFields(value, { status: "string" });
+  if (
+    !["valid", "invalid", "unsupported"].includes(String(row.status)) ||
+    !Array.isArray(row.reasons) ||
+    !Array.isArray(row.purchases) ||
+    !Array.isArray(row.assumed_item_ids)
+  )
+    throw new Error("Invalid fixed-equipment evaluation");
+  const equipment = equipmentMap(row.equipment);
+  if (!sameValue(equipment, expected))
+    throw new Error(
+      "Evaluation equipment does not match the requested configuration",
+    );
+  for (const [slot, id] of Object.entries(equipment))
+    if (
+      id !== null &&
+      !items.some(
+        (i) => i.id === id && (row.status !== "valid" || i.slot === slot),
+      )
+    )
+      throw new Error("Missing physical evaluation item metadata");
+  for (const reason of row.reasons)
+    requireFields(reason, { path: "string", message: "string" });
+  if (row.status === "valid")
+    performanceMetrics(row.performance as CombatPerformance);
+  else if (row.performance !== null || row.reasons.length === 0)
+    throw new Error(
+      "Invalid evaluations must withhold metrics and explain why",
+    );
+  if (
+    row.purchase_cost_gp !== null &&
+    (!Number.isSafeInteger(row.purchase_cost_gp) ||
+      Number(row.purchase_cost_gp) < 0)
+  )
+    throw new Error("Invalid evaluation acquisition total");
+  const purchased = new Set<number>();
+  for (const entry of row.purchases) {
+    const purchase = requireFields(entry, {
+      item_id: "number",
+      conditional: "boolean",
+    });
+    if (
+      !Number.isSafeInteger(purchase.item_id) ||
+      !Object.values(equipment).includes(Number(purchase.item_id)) ||
+      purchased.has(Number(purchase.item_id)) ||
+      (purchase.cost_gp !== null &&
+        (!Number.isSafeInteger(purchase.cost_gp) ||
+          Number(purchase.cost_gp) < 0))
+    )
+      throw new Error("Invalid evaluation purchase fact");
+    purchased.add(Number(purchase.item_id));
+  }
+  if (
+    row.assumed_item_ids.some(
+      (id) =>
+        !Number.isSafeInteger(id) || !Object.values(equipment).includes(id),
+    )
+  )
+    throw new Error("Invalid evaluation assumed acquisitions");
+  if (row.status === "valid" && row.purchase_cost_gp === null)
+    throw new Error("Valid evaluation requires acquisition total");
+  return structuredClone(value) as FixedEvaluation;
+}
+export function parseEvaluation(
+  value: unknown,
+  result: OptimizationReply,
+  solutionId: string,
+  roleId: string,
+  equipment: Equipment,
+): Trial {
+  const baselineEquipment = result.solutions
+    .find((s) => s.id === solutionId)
+    ?.loadouts.find((l) => l.roleId === roleId)?.equipment;
+  if (result.source !== "live" || !result.live || !baselineEquipment)
+    throw new Error("Live evaluation requires an accepted live configuration");
+  const envelope = requireFields(value, {
+    api_version: "string",
+    evaluated_at: "string",
+    scenario_fingerprint: "string",
+    snapshot_id: "string",
+    catalog_version: "string",
+    model_version: "string",
+    assumptions_fingerprint: "string",
+    price_revision: "string",
+  });
+  if (
+    envelope.api_version !== "gear-ui-v1" ||
+    !Array.isArray(envelope.items) ||
+    !sameValue(result.live.scenario, envelope.scenario) ||
+    envelope.scenario_fingerprint !== result.fingerprint
+  )
+    throw new Error(
+      "Evaluation scenario does not match the original recommendation",
+    );
+  if (
+    envelope.snapshot_id !== result.snapshotId ||
+    envelope.catalog_version !== result.catalogVersion ||
+    envelope.model_version !== result.modelVersion ||
+    envelope.assumptions_fingerprint !==
+      result.live.result.assumptions_fingerprint ||
+    envelope.price_revision !== result.priceRevision
+  )
+    throw new GearApiError(
+      "Evaluation context changed; refresh and reoptimize",
+      "stale_context",
+    );
+  const items = envelope.items.map(parseItem);
+  if (items.some((i) => i.facts?.catalog_version !== result.catalogVersion))
+    throw new Error(
+      "Evaluation item catalog does not match calculation provenance",
+    );
+  const baseline = parseFixedEvaluation(
+      envelope.baseline,
+      baselineEquipment,
+      items,
+    ),
+    proposed = parseFixedEvaluation(envelope.proposed, equipment, items);
+  const valid = baseline.status === "valid" && proposed.status === "valid";
+  if (valid) {
+    const deltas = requireFields(envelope.deltas, {
+      dps: "number",
+      max_hit: "number",
+      accuracy: "number",
+      attack_interval: "number",
+      purchase_cost_gp: "number",
+    });
+    if (
+      [
+        deltas.dps,
+        deltas.max_hit,
+        deltas.accuracy,
+        deltas.attack_interval,
+        deltas.purchase_cost_gp,
+      ].some((n) => !Number.isFinite(n)) ||
+      !Number.isSafeInteger(deltas.max_hit) ||
+      !Number.isSafeInteger(deltas.purchase_cost_gp) ||
+      !Array.isArray(deltas.equipment_changes) ||
+      !Array.isArray(deltas.added_purchase_ids) ||
+      !Array.isArray(deltas.removed_purchase_ids)
+    )
+      throw new Error("Invalid evaluation comparison");
+    for (const change of deltas.equipment_changes) {
+      const row = requireFields(change, { slot: "string" }),
+        slot = uiSlot(row.slot) as Slot;
+      if (
+        !slots.includes(slot) ||
+        row.baseline_item_id !== baselineEquipment[slot] ||
+        row.proposed_item_id !== equipment[slot]
+      )
+        throw new Error("Invalid equipment comparison");
+    }
+    for (const [key, purchases] of [
+      ["added_purchase_ids", proposed.purchases],
+      ["removed_purchase_ids", baseline.purchases],
+    ] as const)
+      if (
+        (deltas[key] as unknown[]).some(
+          (id) =>
+            !Number.isSafeInteger(id) ||
+            !purchases.some((p) => p.item_id === id),
+        )
+      )
+        throw new Error("Invalid purchase comparison");
+  } else if (envelope.deltas !== null)
+    throw new Error("Invalid evaluations cannot provide numeric differences");
+  return {
+    source: "live",
+    resultFingerprint: result.fingerprint,
+    solutionId,
+    roleId,
+    equipment: structuredClone(equipment),
+    baseline: baseline.performance
+      ? performanceMetrics(baseline.performance)
+      : null,
+    proposed: proposed.performance
+      ? performanceMetrics(proposed.performance)
+      : null,
+    live: structuredClone(value) as EvaluationDTO,
+  };
 }
 export function parseItem(value: unknown): Item {
   const row = requireFields(value, {
@@ -523,11 +745,48 @@ export class HttpGearClient implements GearClient {
     return parseOptimization(body, submitted);
   }
   async evaluate(
-    _result: OptimizationReply,
-    _solution: string,
-    _role: string,
-    _equipment: Equipment,
+    result: OptimizationReply,
+    solution: string,
+    role: string,
+    equipment: Equipment,
+    signal?: AbortSignal,
   ): Promise<Trial> {
-    throw new Error("Live equipment evaluation is unavailable.");
+    const baseline = result.solutions
+      .find((s) => s.id === solution)
+      ?.loadouts.find((l) => l.roleId === role)?.equipment;
+    if (result.source !== "live" || !result.live || !baseline)
+      throw new Error(
+        "Live evaluation requires an accepted live configuration",
+      );
+    const proposal = structuredClone(equipment);
+    const response = await this.transport(`${this.base}/evaluations`, {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scenario: result.live.scenario,
+        baseline_loadouts: { [role]: concreteEquipment(baseline) },
+        proposed_loadouts: { [role]: concreteEquipment(proposal) },
+      }),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      const error = object(object(body).error),
+        fields = Array.isArray(error.fields)
+          ? error.fields
+              .map((f) => {
+                const row = object(f);
+                return `${row.path ?? row.field ?? "scenario"}: ${row.message}`;
+              })
+              .join("; ")
+          : "";
+      throw new GearApiError(
+        `${typeof error.message === "string" ? error.message : `Evaluation failed (${response.status})`}${fields ? ` · ${fields}` : ""}`,
+        String(error.code ?? "evaluation_failed"),
+      );
+    }
+    return parseEvaluation(body, result, solution, role, proposal);
   }
 }

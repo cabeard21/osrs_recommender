@@ -55,8 +55,8 @@ if __name__ == "__main__":
             now = datetime.now(UTC)
             # Real bundled definitions and unchanged optimizer, deliberately tiny search.
             app.state.gear_service._equipment = EquipmentCatalog(
-                {item_id: original_catalog.items[item_id] for item_id in (1333, 6585)},
-                revision="browser-acceptance-bundled-subset-v1",
+                {item_id: original_catalog.items[item_id] for item_id in (1331, 1333, 6585)},
+                revision="browser-acceptance-bundled-subset-v2",
             )
             with factory() as session:
                 player = session.query(Player).first()
@@ -90,18 +90,19 @@ if __name__ == "__main__":
                         observed_at=now,
                     )
                 )
-                session.merge(
-                    ItemPrice(
-                        item_id=6585,
-                        high_price_gp=10000,
-                        low_price_gp=9000,
-                        high_trade_at=now,
-                        low_trade_at=now,
-                        fetched_at=now,
-                        provider="deterministic-browser-fixture",
-                        source=PriceSourceLayer.CACHED,
+                for item_id, high, low in ((1331, 1000, 900), (6585, 10000, 9000)):
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=high,
+                            low_price_gp=low,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
                     )
-                )
                 session.commit()
             return {"status": "seeded"}
 
