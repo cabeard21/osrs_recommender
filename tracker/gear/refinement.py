@@ -116,3 +116,77 @@ def refine_ammunition(
     if best is not solution:
         diagnostics["improved_finalists"] += 1
     return best
+
+
+def refine_shared_slots(
+    search: _Search,
+    solution: dict[str, Any],
+    solution_key: Callable[[dict[str, Any]], tuple[Any, ...]],
+) -> dict[str, Any]:
+    """Fill slots empty in every role with one shared eligible item.
+
+    The complete validator retains action, inventory, purchase, and combat rules.
+    Only pool candidates are tried, so this remains bounded with the main search.
+    """
+    best = solution
+    for slot, choices in search.pools.items():
+        if search.cancelled and search.cancelled():
+            raise ValueError("optimization_cancelled")
+        if any(
+            slot in {**search.request.locks, **role.locks}
+            or slot in best["loadouts"][role.id]["equipment"]
+            for role in search.request.roles
+        ):
+            continue
+        for item_id in choices:
+            if item_id is None:
+                continue
+            bonuses = search.eligible[item_id].bonuses.model_dump().values()
+            if not any(value > 0 for value in bonuses):
+                continue
+            proposed = {
+                role.id: {**best["loadouts"][role.id]["equipment"], slot: item_id}
+                for role in search.request.roles
+            }
+            candidate = search.solution(proposed, solution["maximum_actions"])
+            if candidate is not None and solution_key(candidate) < solution_key(best):
+                best = candidate
+    return best
+
+
+def refine_magic_staves(
+    search: _Search,
+    solution: dict[str, Any],
+    solution_key: Callable[[dict[str, Any]], tuple[Any, ...]],
+) -> dict[str, Any]:
+    """Recheck eligible staves for magic finalists.
+
+    Weapon pools and beams can omit a useful staff. Evaluate each physical
+    candidate against the complete joint solution so directional action and
+    inventory limits remain authoritative.
+    """
+    best = solution
+    staves = [
+        item_id
+        for item_id, item in search.eligible.items()
+        if item.slot == "weapon" and "magic" in item.attack_styles
+    ]
+    for role in search.request.roles:
+        if role.style != "magic" or "weapon" in {**search.request.locks, **role.locks}:
+            continue
+        for item_id in staves:
+            if search.cancelled and search.cancelled():
+                raise ValueError("optimization_cancelled")
+            if best["loadouts"][role.id]["equipment"].get("weapon") == item_id:
+                continue
+            proposed = {
+                candidate_role.id: {
+                    **best["loadouts"][candidate_role.id]["equipment"],
+                    **({"weapon": item_id} if candidate_role.id == role.id else {}),
+                }
+                for candidate_role in search.request.roles
+            }
+            candidate = search.solution(proposed, solution["maximum_actions"])
+            if candidate is not None and solution_key(candidate) < solution_key(best):
+                best = candidate
+    return best

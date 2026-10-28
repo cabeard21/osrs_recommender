@@ -1,4 +1,7 @@
 from tracker.gear.catalog import load_catalog
+from tracker.gear.combat import SPELLS
+from tracker.gear.combat_options import eligible_combat_options
+from tests.gear.test_combat_options import account
 
 
 def test_reviewed_catalog_has_stats_and_preserves_dragon_gate(make_content, make_item):
@@ -33,3 +36,12 @@ def test_magic_damage_source_tenths_are_converted_to_percent(make_content):
     assert catalog.items[12002].bonuses.magic_damage == 5
     assert catalog.items[21018].bonuses.magic_damage == 3
     assert 7800 not in catalog.items
+
+
+def test_reviewed_elemental_staves_expose_standard_spells(make_content):
+    catalog = load_catalog(make_content())
+    for item_id in (1381, 1387, 1405):
+        staff = catalog.items[item_id]
+        assert set(staff.spell_compatibility) == set(SPELLS)
+        options = eligible_combat_options(staff, account(), discipline="magic", levels={})
+        assert {option.spell for option in options} == set(SPELLS)

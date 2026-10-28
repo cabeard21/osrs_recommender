@@ -12,7 +12,7 @@ from tracker.gear.evaluation import evaluate_equipment
 from tracker.gear.facts import equipment_fact
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 from tracker.gear.optimizer import OptimizationRequest, RoleConfig, _Search, _solution_key, optimize
-from tracker.gear.refinement import refine_ammunition
+from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.integrations.prices.client import PriceDTO, PriceSource
 
 
@@ -197,6 +197,112 @@ def refine_finalist(search, loadouts):
     assert original is not None
     diagnostics = {"evaluated_assignments": 0, "improved_finalists": 0}
     return original, refine_ammunition(search, original, _solution_key, diagnostics), diagnostics
+
+
+def test_shared_neutral_slots_can_improve_a_one_action_finalist():
+    items = [
+        weapon(100, "slash", 30),
+        weapon(200, "ranged", 30),
+        EquipmentDefinition(
+            id=300, name="Shared cloak", slot="cape", requirements_complete=True,
+            bonuses=EquipmentBonuses(defence_slash=5),
+        ),
+        EquipmentDefinition(
+            id=400, name="Shared blessing", slot="ammunition", requirements_complete=True,
+            bonuses=EquipmentBonuses(prayer=2),
+        ),
+    ]
+    roles = (
+        RoleConfig(id="melee", style="slash", locks={"weapon": 100}),
+        RoleConfig(id="ranged", style="ranged", locks={"weapon": 200}),
+    )
+    catalog = {item.id: item for item in items}
+    snapshot = AccountSnapshot(
+        1, "shared", skills={
+            key: SkillState(70, None, Source.MANUAL, NOW)
+            for key in ("attack", "strength", "defence", "ranged", "magic")
+        },
+        observed_items={
+            (item.id, Container.BANK): ObservedItemFact(item.id, Container.BANK, 1, "test", NOW)
+            for item in items
+        },
+    )
+    request = OptimizationRequest(roles=roles, mode="owned", max_swaps=1,
+                                  secondary_priority="balanced_defence")
+    facts = {i: equipment_fact(snapshot, item, Content(), {}, NOW) for i, item in catalog.items()}
+    search = _Search(snapshot, request, catalog, facts, None)
+    original = search.solution({"melee": {"weapon": 100}, "ranged": {"weapon": 200}}, None)
+    assert original is not None and original["maximum_actions"] == 1
+
+    improved = refine_shared_slots(search, original, _solution_key)
+
+    assert improved["maximum_actions"] == 1
+    assert all(row["equipment"].get("cape") == 300 for row in improved["loadouts"].values())
+    assert all(row["equipment"].get("ammunition") == 400 for row in improved["loadouts"].values())
+    assert _solution_key(improved) < _solution_key(original)
+
+    result = run(items, roles, max_swaps=1, secondary_priority="balanced_defence")
+    selected = result["curve"][1]["solution"]
+    assert selected is not None
+    assert all(row["equipment"].get("cape") == 300 for row in selected["loadouts"].values())
+    assert all(
+        row["equipment"].get("ammunition") == 400 for row in selected["loadouts"].values()
+    )
+
+
+def test_missing_magic_staff_can_improve_a_one_action_finalist(monkeypatch):
+    items = [
+        weapon(100, "slash", 30),
+        weapon(200, "ranged", 30),
+        EquipmentDefinition(
+            id=300, name="Staff of air", slot="weapon", attack_styles=("magic",),
+            requirements_complete=True, bonuses=EquipmentBonuses(magic=10),
+        ),
+    ]
+    roles = (
+        RoleConfig(id="melee", style="slash"),
+        RoleConfig(id="ranged", style="ranged"),
+        RoleConfig(id="mage", style="magic", spell="wind_blast"),
+    )
+    catalog = {item.id: item for item in items}
+    snapshot = AccountSnapshot(
+        1, "staff", skills={
+            key: SkillState(70, None, Source.MANUAL, NOW)
+            for key in ("attack", "strength", "defence", "ranged", "magic")
+        },
+        observed_items={
+            (item.id, Container.BANK): ObservedItemFact(item.id, Container.BANK, 1, "test", NOW)
+            for item in items
+        },
+    )
+    request = OptimizationRequest(roles=roles, mode="owned", max_swaps=1, base_role="melee")
+    facts = {i: equipment_fact(snapshot, item, Content(), {}, NOW) for i, item in catalog.items()}
+    search = _Search(snapshot, request, catalog, facts, None)
+    original = search.solution(
+        {"melee": {"weapon": 100}, "ranged": {"weapon": 200}, "mage": {}}, None
+    )
+    assert original is not None and original["maximum_actions"] == 1
+
+    improved = refine_magic_staves(search, original, _solution_key)
+
+    assert improved["loadouts"]["mage"]["equipment"]["weapon"] == 300
+    assert improved["maximum_actions"] == 1
+    assert improved["score"] > original["score"]
+
+    candidate_pools = _Search.candidate_pools
+
+    def pools_without_staff(current):
+        pools = candidate_pools(current)
+        return {**pools, "weapon": [item for item in pools["weapon"] if item != 300]}
+
+    monkeypatch.setattr(_Search, "candidate_pools", pools_without_staff)
+    result = run(items, roles, max_swaps=1, base_role="melee")
+    selected = result["curve"][1]["solution"]
+    assert selected is not None
+    assert selected["loadouts"]["mage"]["equipment"]["weapon"] == 300
+    assert selected["maximum_actions"] == 1
+    zero_action = result["curve"][0]["solution"]
+    assert zero_action is None or zero_action["maximum_actions"] == 0
 
 
 @pytest.mark.parametrize("ammunition", [884, None])

@@ -13,6 +13,7 @@ from typing import Any
 
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf
+from tracker.gear.combat import SPELLS
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.requirements_source import requirement_from_levels
 
@@ -20,6 +21,11 @@ from tracker.gear.requirements_source import requirement_from_levels
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
 # Their physical rows must still match before sharing requirements/effects review.
 REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 26770: 11773})
+
+# Exact physical elemental staves with reviewed Standard spellbook autocast.
+# https://oldschool.runescape.wiki/w/Autocast
+# https://oldschool.runescape.wiki/w/Mystic_air_staff
+REVIEWED_STANDARD_STAVES = frozenset({1381, 1387, 1405})
 
 
 def _reviewed_equivalent(
@@ -112,6 +118,11 @@ def load_catalog(
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
                 **row,
+                "spell_compatibility": (
+                    tuple(SPELLS)
+                    if row["id"] in REVIEWED_STANDARD_STAVES
+                    else row.get("spell_compatibility", ())
+                ),
                 "requires": requirement,
                 "requirements_complete": bool(entries) and not any(i.gate_unknown for i in entries),
                 "tradeable": (
@@ -133,10 +144,14 @@ def load_catalog(
         and bool(source_payload)
         and evidence.get("requirements_sha256") == sha256(source_payload).hexdigest()
     )
+    reviewed_spells = json.dumps(
+        {str(item_id): list(SPELLS) for item_id in sorted(REVIEWED_STANDARD_STAVES)},
+        sort_keys=True,
+    ).encode("utf-8")
     revision = (
-        sha256(payload + source_payload + community_payload).hexdigest()
+        sha256(payload + source_payload + community_payload + reviewed_spells).hexdigest()
         if source_payload or community_payload
-        else manifest["catalog_sha256"]
+        else sha256(payload + reviewed_spells).hexdigest()
     )
     return EquipmentCatalog(
         result,

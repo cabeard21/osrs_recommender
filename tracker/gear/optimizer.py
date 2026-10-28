@@ -33,7 +33,7 @@ from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.priorities import SecondaryPriority, secondary_value
-from tracker.gear.refinement import refine_ammunition
+from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.transitions import inventory_slots, plan_transition
@@ -808,7 +808,9 @@ def optimize(
             return None
         identity = json.dumps(solution["loadouts"], sort_keys=True)
         if identity not in refined:
-            refined[identity] = refine_ammunition(search, solution, _solution_key, refinement)
+            equipped = refine_magic_staves(search, solution, _solution_key)
+            shared = refine_shared_slots(search, equipped, _solution_key)
+            refined[identity] = refine_ammunition(search, shared, _solution_key, refinement)
         return refined[identity]
 
     winners = [refine(solution) for solution in winners]
