@@ -1,0 +1,226 @@
+# Exact physical-ID review, 2026-10-27. This is an authored wear/acquisition overlay,
+# not a second statistics database or progression ladder. No ownership aliases.
+# See docs/GEAR_CATALOG_COVERAGE_PHASE_1.md for the complete field/effect review.
+# Physical bonuses remain the pinned Wiki calculator capture identified by
+# content/equipment/manifest.json; requirement rules below are independently read.
+# Quest use, crafting, drop-source and shop-access conditions are not wear gates.
+
+# Batch 1. Ordinary unpoisoned arrows only. Arrows oldid=15367680 explicitly
+# labels its level column Ranged requirement: Bronze 1 (skill floor), Steel 5.
+# https://oldschool.runescape.wiki/w/Bronze_arrow?oldid=15182782
+# https://oldschool.runescape.wiki/w/Arrows?oldid=15367680
+- id: bronze_arrow_reviewed
+  name: Bronze arrow
+  item_id: 882
+  slot: ammunition
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Steel_arrow?oldid=15182875
+- id: steel_arrow_reviewed
+  name: Steel arrow
+  item_id: 886
+  slot: ammunition
+  requires:
+    skill:
+      ranged: 5
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Staff_of_fire?oldid=15351469
+# https://oldschool.runescape.wiki/w/Elemental_staff?oldid=15351475
+# Basic elemental staves are explicitly ungated. Infinite fire runes do not
+# change ordinary outgoing damage; supply endurance and incoming PvP pearl-bolt
+# fiery-attribute interactions are outside this model's advertised scope.
+- id: staff_of_fire_reviewed
+  name: Staff of fire
+  item_id: 1387
+  slot: weapon
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# Batch 2. Each black piece independently states Defence 10. Their use during
+# King's Ransom/Heroes' Quest does not make those quests a wear prerequisite.
+# https://oldschool.runescape.wiki/w/Black_platelegs?oldid=15211048
+- id: black_platelegs_reviewed
+  name: Black platelegs
+  item_id: 1077
+  slot: legs
+  requires:
+    skill:
+      defence: 10
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Black_platebody?oldid=15322398
+- id: black_platebody_reviewed
+  name: Black platebody
+  item_id: 1125
+  slot: body
+  requires:
+    skill:
+      defence: 10
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Black_full_helm?oldid=15183647
+- id: black_full_helm_reviewed
+  name: Black full helm
+  item_id: 1165
+  slot: head
+  requires:
+    skill:
+      defence: 10
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Rune_kiteshield?oldid=15320217
+# The unpainted concrete form only; heraldic variants receive no inheritance.
+- id: rune_kiteshield_reviewed
+  name: Rune kiteshield
+  item_id: 1201
+  slot: shield
+  requires:
+    skill:
+      defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Yew_shortbow?oldid=15183551
+# Ranged 40 is wear; Fletching 65 is manufacture. Arrow compatibility is reviewed
+# explicitly in the existing importer, without granting poisoned/seeking forms.
+- id: yew_shortbow_reviewed
+  name: Yew shortbow
+  item_id: 857
+  slot: weapon
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# Batch 3. Hat identity/bonuses are independently checked against this exact row;
+# Wizard robes explicitly lists the black hat and states no wear requirements.
+# https://oldschool.runescape.wiki/w/Wizard_hat?oldid=15183735
+# https://oldschool.runescape.wiki/w/Wizard_robes?oldid=15327965
+- id: wizard_hat_reviewed
+  name: Wizard hat
+  item_id: 1017
+  slot: head
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Wizard_boots?oldid=15324172
+# The boots are NOT ungated wizard robes: the exact item requires Magic 20.
+- id: wizard_boots_reviewed
+  name: Wizard boots
+  item_id: 2579
+  slot: feet
+  requires:
+    skill:
+      magic: 20
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Warrior_helm?oldid=15183261
+- id: warrior_helm_reviewed
+  name: Warrior helm
+  item_id: 3753
+  slot: head
+  requires:
+    all_of:
+      - skill:
+          defence: 45
+      - quest: the_fremennik_trials
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Farseer_helm?oldid=15318286
+- id: farseer_helm_reviewed
+  name: Farseer helm
+  item_id: 3755
+  slot: head
+  requires:
+    all_of:
+      - skill:
+          defence: 45
+      - quest: the_fremennik_trials
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# Batch 4. Defence 50 AND Strength 50 independently stated on every exact page.
+# Monster Slayer levels and minigame reward-shop access are acquisition paths,
+# not wear gates; no set multiplier or outgoing conditional effect is documented.
+# https://oldschool.runescape.wiki/w/Granite_legs?oldid=15183056
+- id: granite_legs_reviewed
+  name: Granite legs
+  item_id: 6809
+  slot: legs
+  requires:
+    all_of:
+      - skill:
+          defence: 50
+      - skill:
+          strength: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Granite_body?oldid=15379148
+# Penance Queen kill is required only to buy from Commander Connad. Tradeable.
+- id: granite_body_reviewed
+  name: Granite body
+  item_id: 10564
+  slot: body
+  requires:
+    all_of:
+      - skill:
+          defence: 50
+      - skill:
+          strength: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Granite_helm?oldid=15183055
+- id: granite_helm_reviewed
+  name: Granite helm
+  item_id: 10589
+  slot: head
+  requires:
+    all_of:
+      - skill:
+          defence: 50
+      - skill:
+          strength: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Granite_boots?oldid=15184787
+# Karuulm ground-heat protection is a hazard interaction, outside ordinary damage.
+- id: granite_boots_reviewed
+  name: Granite boots
+  item_id: 21643
+  slot: feet
+  requires:
+    all_of:
+      - skill:
+          defence: 50
+      - skill:
+          strength: 50
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30

@@ -1,0 +1,517 @@
+{
+  "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+  "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d",
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "wiki_review": [
+    {
+      "item_id": 3105,
+      "title": "Climbing boots",
+      "revision": 15359845,
+      "revision_timestamp": "2026-10-01T18:47:57Z",
+      "content_sha256": "74e4cd8c69d78f45dce6cad79ed03d2ea20a835f17ccdafec1a4d466a4a5efa7",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15359845"
+    },
+    {
+      "item_id": 23413,
+      "title": "Climbing boots (g)",
+      "revision": 15324095,
+      "revision_timestamp": "2026-08-28T23:10:56Z",
+      "content_sha256": "62cf366ce2cb8e9e1bb5458a6357d103d4b9d587c6e9c095de79499c11bfc235",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324095"
+    },
+    {
+      "item_id": 7400,
+      "title": "Enchanted hat",
+      "revision": 15324861,
+      "revision_timestamp": "2026-08-29T21:02:42Z",
+      "content_sha256": "abcf63821bb6c1c66b69aa3fcc7f3fb56bf9c4495ca11edbefc33205604c6621",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324861"
+    },
+    {
+      "item_id": 7398,
+      "title": "Enchanted robe",
+      "revision": 15324863,
+      "revision_timestamp": "2026-08-29T21:03:00Z",
+      "content_sha256": "e9fc99e97ad1ecd065f160c73d32097ea759af8ff866047d9ddb4fb91f378858",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324863"
+    },
+    {
+      "item_id": 7399,
+      "title": "Enchanted top",
+      "revision": 15324862,
+      "revision_timestamp": "2026-08-29T21:02:53Z",
+      "content_sha256": "6be281c7c9f340888017328564480802cf2d790378febd88763d4469d53d3a6a",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324862"
+    },
+    {
+      "item_id": 21736,
+      "title": "Granite gloves",
+      "revision": 15365323,
+      "revision_timestamp": "2026-10-05T14:01:54Z",
+      "content_sha256": "8d7e468bef62441a3f82da7243297eb524ea797a08893cba1cc31c1c9fde6475",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15365323"
+    },
+    {
+      "item_id": 33101,
+      "title": "Mooleta",
+      "revision": 15279216,
+      "revision_timestamp": "2026-07-29T05:35:14Z",
+      "content_sha256": "6d8df83ece61bf9de0c377bf802ee4add0767c4f178e80f45dca68bbeac3a1d1",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15279216"
+    },
+    {
+      "item_id": 4103,
+      "title": "Mystic robe bottom (dark)",
+      "revision": 15322426,
+      "revision_timestamp": "2026-08-27T21:51:03Z",
+      "content_sha256": "b52112539a0acc729009c38b5a7d5d15f7e410e4bff40c1ac6f006a179799b84",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15322426"
+    },
+    {
+      "item_id": 4113,
+      "title": "Mystic robe bottom (light)",
+      "revision": 15250409,
+      "revision_timestamp": "2026-07-03T16:59:11Z",
+      "content_sha256": "ecb077066b32afe0b53573d07c8a4006cb750f89b5e06338b9857d96be71862f",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15250409"
+    },
+    {
+      "item_id": 4101,
+      "title": "Mystic robe top (dark)",
+      "revision": 15322453,
+      "revision_timestamp": "2026-08-27T21:56:04Z",
+      "content_sha256": "dc6208ac944ac7b19f585edc46898a701613bf76dd5d9653eb17b1911925079f",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15322453"
+    },
+    {
+      "item_id": 4111,
+      "title": "Mystic robe top (light)",
+      "revision": 15250408,
+      "revision_timestamp": "2026-07-03T16:59:07Z",
+      "content_sha256": "d0fc564a1cc286e65c81a8ec903f9a060e99e997ff252653456427905a6bb62d",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15250408"
+    },
+    {
+      "item_id": 19994,
+      "title": "Ranger gloves",
+      "revision": 15325124,
+      "revision_timestamp": "2026-08-29T23:37:19Z",
+      "content_sha256": "5238a9571ddcc8a5a706fda42531430ea2a44965210220b817ea40e24b4d219f",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15325124"
+    },
+    {
+      "item_id": 23249,
+      "title": "Rangers' tights",
+      "revision": 15325123,
+      "revision_timestamp": "2026-08-29T23:37:13Z",
+      "content_sha256": "df1eecc31226e97c78a99d5af0807a67706b1ba9feecf61fbf32833ebc8e88d5",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15325123"
+    }
+  ],
+  "rows": [
+    {
+      "name": "Climbing boots",
+      "id": 3105,
+      "weight": 0.34,
+      "version": "",
+      "slot": "feet",
+      "image": "Climbing boots.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 2,
+        "crush": 2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Climbing boots (g)",
+      "id": 23413,
+      "weight": 0.34,
+      "version": "",
+      "slot": "feet",
+      "image": "Climbing boots (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 2,
+        "crush": 2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Enchanted hat",
+      "id": 7400,
+      "weight": 0.453,
+      "version": "",
+      "slot": "head",
+      "image": "Enchanted hat.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 4,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 4,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Enchanted robe",
+      "id": 7398,
+      "weight": 1.814,
+      "version": "",
+      "slot": "legs",
+      "image": "Enchanted robe.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Enchanted top",
+      "id": 7399,
+      "weight": 2.721,
+      "version": "",
+      "slot": "body",
+      "image": "Enchanted top.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Granite gloves",
+      "id": 21736,
+      "weight": 1,
+      "version": "",
+      "slot": "hands",
+      "image": "Granite gloves.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 7,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 5,
+        "slash": 5,
+        "crush": 9,
+        "magic": -3,
+        "ranged": -1
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": -3,
+        "ranged": 5
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mooleta",
+      "id": 33101,
+      "weight": 0.453,
+      "version": "",
+      "slot": "shield",
+      "image": "Mooleta.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 1,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 5,
+        "slash": 7,
+        "crush": 7,
+        "magic": -1,
+        "ranged": -1
+      },
+      "defensive": {
+        "stab": 4,
+        "slash": 8,
+        "crush": 8,
+        "magic": -2,
+        "ranged": -1
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mystic robe bottom (dark)",
+      "id": 4103,
+      "weight": 1.814,
+      "version": "",
+      "slot": "legs",
+      "image": "Mystic robe bottom (dark).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mystic robe bottom (light)",
+      "id": 4113,
+      "weight": 1.814,
+      "version": "",
+      "slot": "legs",
+      "image": "Mystic robe bottom (light).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 15,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mystic robe top (dark)",
+      "id": 4101,
+      "weight": 2.721,
+      "version": "",
+      "slot": "body",
+      "image": "Mystic robe top (dark).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mystic robe top (light)",
+      "id": 4111,
+      "weight": 2.721,
+      "version": "",
+      "slot": "body",
+      "image": "Mystic robe top (light).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 20,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ranger gloves",
+      "id": 19994,
+      "weight": 0.226,
+      "version": "",
+      "slot": "hands",
+      "image": "Ranger gloves.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -10,
+        "ranged": 11
+      },
+      "defensive": {
+        "stab": 1,
+        "slash": 2,
+        "crush": 1,
+        "magic": 2,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rangers' tights",
+      "id": 23249,
+      "weight": 5.443,
+      "version": "",
+      "slot": "legs",
+      "image": "Rangers' tights.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -10,
+        "ranged": 15
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    }
+  ]
+}

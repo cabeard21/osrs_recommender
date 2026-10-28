@@ -1,0 +1,400 @@
+{
+  "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+  "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d",
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "wiki_review": [
+    {
+      "item_id": 7459,
+      "title": "Adamant gloves",
+      "revision": 15213297,
+      "revision_timestamp": "2026-05-20T05:33:08Z",
+      "content_sha256": "80e746fcd6bb4dce4e60b21a9456ba4b73ddc4411bffaffc7df4a9571f9951bc",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15213297"
+    },
+    {
+      "item_id": 6733,
+      "title": "Archers ring",
+      "revision": 15355140,
+      "revision_timestamp": "2026-09-24T05:44:35Z",
+      "content_sha256": "ac41033356c10308a5c6df7f05d0eac4fc0e427dfb495b909d2bd67c72f5b607",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15355140"
+    },
+    {
+      "item_id": 7458,
+      "title": "Mithril gloves",
+      "revision": 15213296,
+      "revision_timestamp": "2026-05-20T05:32:59Z",
+      "content_sha256": "12fbd772a86f6d165f548abc24ff3d214e6d9f4b7e73fc497609df35e0906054",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15213296"
+    },
+    {
+      "item_id": 29286,
+      "title": "Mixed hide boots",
+      "revision": 15344258,
+      "revision_timestamp": "2026-09-15T21:00:34Z",
+      "content_sha256": "bbb3d9ff8589e7b8d80da2bd3aeaa66e334c9540ffb2a737abfefc78c9f611a2",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15344258"
+    },
+    {
+      "item_id": 29289,
+      "title": "Mixed hide cape",
+      "revision": 15350309,
+      "revision_timestamp": "2026-09-18T12:14:49Z",
+      "content_sha256": "458da2f9be4046841c675c7158aa9b5027136b083ba3dd7121c115c7110869f8",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15350309"
+    },
+    {
+      "item_id": 29280,
+      "title": "Mixed hide top",
+      "revision": 15271149,
+      "revision_timestamp": "2026-07-21T05:01:20Z",
+      "content_sha256": "413ed44777ce23a92b5c22d0ca892b91fd39f00dab7c85109f29970be60bd005",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15271149"
+    },
+    {
+      "item_id": 2577,
+      "title": "Ranger boots",
+      "revision": 15379383,
+      "revision_timestamp": "2026-10-22T15:05:00Z",
+      "content_sha256": "2efded576b4aba3b41b0e4a220d9f32177a504bbdb51cc2408cb0f3d53fc895f",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15379383"
+    },
+    {
+      "item_id": 2501,
+      "title": "Red d'hide body",
+      "revision": 15356812,
+      "revision_timestamp": "2026-09-27T05:11:14Z",
+      "content_sha256": "5ca52c6b644a70f978883ade2d6cd219ec25a3c28e5c6b148b45fffd76ac1595",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15356812"
+    },
+    {
+      "item_id": 2495,
+      "title": "Red d'hide chaps",
+      "revision": 15356693,
+      "revision_timestamp": "2026-09-27T02:03:25Z",
+      "content_sha256": "bf6e0be51df26c45eb52e37365d4498b8d6896b31ad0c1816e9e567bdb47a6c1",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15356693"
+    },
+    {
+      "item_id": 7460,
+      "title": "Rune gloves",
+      "revision": 15213298,
+      "revision_timestamp": "2026-05-20T05:33:28Z",
+      "content_sha256": "b6e8e119ef96270efdc21733ecee557931d76532c6d6c12f35f152e10fa7331a",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15213298"
+    }
+  ],
+  "rows": [
+    {
+      "name": "Adamant gloves",
+      "id": 7459,
+      "weight": 0.226,
+      "version": "",
+      "slot": "hands",
+      "image": "Adamant gloves.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 7,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 7,
+        "crush": 7,
+        "magic": 4,
+        "ranged": 7
+      },
+      "defensive": {
+        "stab": 7,
+        "slash": 7,
+        "crush": 7,
+        "magic": 4,
+        "ranged": 7
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Archers ring",
+      "id": 6733,
+      "weight": 0.004,
+      "version": "",
+      "slot": "ring",
+      "image": "Archers ring.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 4
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 4
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril gloves",
+      "id": 7458,
+      "weight": 0.226,
+      "version": "",
+      "slot": "hands",
+      "image": "Mithril gloves.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 6,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 6,
+        "slash": 6,
+        "crush": 6,
+        "magic": 3,
+        "ranged": 6
+      },
+      "defensive": {
+        "stab": 6,
+        "slash": 6,
+        "crush": 6,
+        "magic": 3,
+        "ranged": 6
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mixed hide boots",
+      "id": 29286,
+      "weight": 2,
+      "version": "",
+      "slot": "feet",
+      "image": "Mixed hide boots.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -10,
+        "ranged": 5
+      },
+      "defensive": {
+        "stab": 4,
+        "slash": 5,
+        "crush": 6,
+        "magic": 3,
+        "ranged": 3
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mixed hide cape",
+      "id": 29289,
+      "weight": 3,
+      "version": "",
+      "slot": "cape",
+      "image": "Mixed hide cape.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 1,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 5
+      },
+      "defensive": {
+        "stab": 2,
+        "slash": 2,
+        "crush": 2,
+        "magic": 5,
+        "ranged": 1
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mixed hide top",
+      "id": 29280,
+      "weight": 3,
+      "version": "",
+      "slot": "body",
+      "image": "Mixed hide top.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 4,
+        "slash": -2,
+        "crush": -3,
+        "magic": -15,
+        "ranged": 27
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 39,
+        "crush": 43,
+        "magic": 30,
+        "ranged": 32
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ranger boots",
+      "id": 2577,
+      "weight": 0.283,
+      "version": "",
+      "slot": "feet",
+      "image": "Ranger boots.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -10,
+        "ranged": 8
+      },
+      "defensive": {
+        "stab": 2,
+        "slash": 3,
+        "crush": 4,
+        "magic": 2,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Red d'hide body",
+      "id": 2501,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Red d'hide body.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 25
+      },
+      "defensive": {
+        "stab": 26,
+        "slash": 34,
+        "crush": 36,
+        "magic": 36,
+        "ranged": 45
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Red d'hide chaps",
+      "id": 2495,
+      "weight": 5.443,
+      "version": "",
+      "slot": "legs",
+      "image": "Red d'hide chaps.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -10,
+        "ranged": 14
+      },
+      "defensive": {
+        "stab": 15,
+        "slash": 18,
+        "crush": 22,
+        "magic": 18,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune gloves",
+      "id": 7460,
+      "weight": 0.226,
+      "version": "",
+      "slot": "hands",
+      "image": "Rune gloves.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 8,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": 4,
+        "ranged": 8
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": 4,
+        "ranged": 8
+      },
+      "isTwoHanded": false
+    }
+  ]
+}

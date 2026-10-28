@@ -1,0 +1,6819 @@
+{
+  "provenance": {
+    "assessment_snapshot_id": "dab5fd94ac2f1af7df69947250f45661ee9d536acdd91fd172f2aec89f5b0bca",
+    "catalog_revision": "b8cb3949f6707e5604fea77b59dea84d80782054ad7f8d81d03dde4af87d6b67",
+    "at": "2026-10-28T02:14:30.010365+00:00",
+    "policy": "Redacted derivative: access-eligible physical equipment only; combat levels, requirement quest facts, observed ownership and cached prices preserved. No account name, XP, unrelated observations or database."
+  },
+  "skills": {
+    "agility": 60,
+    "attack": 60,
+    "construction": 38,
+    "cooking": 51,
+    "crafting": 51,
+    "defence": 56,
+    "farming": 41,
+    "firemaking": 51,
+    "fishing": 51,
+    "fletching": 50,
+    "herblore": 55,
+    "hitpoints": 60,
+    "hunter": 39,
+    "magic": 55,
+    "mining": 52,
+    "prayer": 46,
+    "ranged": 60,
+    "runecraft": 38,
+    "sailing": 42,
+    "slayer": 48,
+    "smithing": 66,
+    "strength": 60,
+    "thieving": 53,
+    "woodcutting": 52
+  },
+  "quests": {
+    "death_plateau": "complete",
+    "desert_treasure_i": "complete",
+    "dragon_slayer_i": "complete",
+    "horror_from_the_deep": "complete",
+    "monkey_madness_i": "complete",
+    "the_fremennik_isles": "complete",
+    "the_fremennik_trials": "complete"
+  },
+  "quest_points": 265,
+  "combat_level": 73,
+  "members": true,
+  "owned_ids": [
+    577,
+    843,
+    853,
+    857,
+    882,
+    884,
+    886,
+    890,
+    892,
+    1017,
+    1019,
+    1033,
+    1059,
+    1061,
+    1063,
+    1065,
+    1077,
+    1079,
+    1097,
+    1099,
+    1125,
+    1127,
+    1133,
+    1135,
+    1163,
+    1165,
+    1169,
+    1201,
+    1333,
+    1381,
+    1387,
+    1704,
+    1725,
+    1727,
+    1731,
+    2499,
+    2579,
+    3105,
+    3749,
+    3751,
+    3753,
+    3755,
+    4089,
+    4091,
+    4093,
+    4097,
+    4131,
+    4587,
+    4675,
+    6326,
+    6328,
+    6585,
+    6809,
+    7398,
+    7399,
+    8880,
+    8882,
+    9006,
+    10499,
+    10551,
+    10564,
+    10589,
+    10828,
+    11126,
+    12610,
+    12612,
+    12788,
+    13121,
+    13125,
+    13385,
+    13387,
+    13389,
+    19994,
+    20226,
+    21326,
+    21643,
+    21736,
+    22275,
+    23249,
+    26770,
+    29280,
+    29286,
+    29289,
+    33101
+  ],
+  "equipment": [
+    {
+      "id": 577,
+      "name": "Blue wizard robe",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 3,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "blue_wizard_robe"
+      ]
+    },
+    {
+      "id": 579,
+      "name": "Blue wizard hat",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 2,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "blue_wizard_hat"
+      ]
+    },
+    {
+      "id": 841,
+      "name": "Shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 8,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884"
+      ],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "shortbow"
+      ]
+    },
+    {
+      "id": 843,
+      "name": "Oak shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 14,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "oak_shortbow"
+      ]
+    },
+    {
+      "id": 849,
+      "name": "Willow shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 20,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886",
+        "arrow:888"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "willow_shortbow"
+      ]
+    },
+    {
+      "id": 853,
+      "name": "Maple shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 29,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886",
+        "arrow:888",
+        "arrow:890"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 30
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "maple_shortbow"
+      ]
+    },
+    {
+      "id": 857,
+      "name": "Yew shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 47,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886",
+        "arrow:888",
+        "arrow:890",
+        "arrow:892"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "yew_shortbow_reviewed"
+      ]
+    },
+    {
+      "id": 861,
+      "name": "Magic shortbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 69,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886",
+        "arrow:888",
+        "arrow:890",
+        "arrow:892",
+        "arrow:21326"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "magic_shortbow"
+      ]
+    },
+    {
+      "id": 882,
+      "name": "Bronze arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 7,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:882",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "bronze_arrow_reviewed"
+      ]
+    },
+    {
+      "id": 884,
+      "name": "Iron arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 10,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:884",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "iron_arrow"
+      ]
+    },
+    {
+      "id": 886,
+      "name": "Steel arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 16,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:886",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "steel_arrow_reviewed"
+      ]
+    },
+    {
+      "id": 888,
+      "name": "Mithril arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 22,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:888",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mithril_arrow"
+      ]
+    },
+    {
+      "id": 890,
+      "name": "Adamant arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 31,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:890",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "adamant_arrow"
+      ]
+    },
+    {
+      "id": 892,
+      "name": "Rune arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 49,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:892",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_arrow"
+      ]
+    },
+    {
+      "id": 1017,
+      "name": "Wizard hat",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 2,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "wizard_hat_reviewed"
+      ]
+    },
+    {
+      "id": 1019,
+      "name": "Black cape",
+      "slot": "cape",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 1,
+        "defence_ranged": 2,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "black_cape"
+      ]
+    },
+    {
+      "id": 1033,
+      "name": "Zamorak monk bottom",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 2,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 3,
+        "prayer": 3
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "zamorak_monk_bottom"
+      ]
+    },
+    {
+      "id": 1059,
+      "name": "Leather gloves",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 2,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_gloves"
+      ]
+    },
+    {
+      "id": 1061,
+      "name": "Leather boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_boots"
+      ]
+    },
+    {
+      "id": 1063,
+      "name": "Leather vambraces",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 4,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 2,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_vambraces"
+      ]
+    },
+    {
+      "id": 1065,
+      "name": "Green d'hide vambraces",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 8,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 1,
+        "defence_slash": 2,
+        "defence_crush": 2,
+        "defence_ranged": 0,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "green_dhide_vambraces"
+      ]
+    },
+    {
+      "id": 1067,
+      "name": "Iron platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 11,
+        "defence_slash": 10,
+        "defence_crush": 10,
+        "defence_ranged": 10,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "iron_platelegs"
+      ]
+    },
+    {
+      "id": 1069,
+      "name": "Steel platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 17,
+        "defence_slash": 16,
+        "defence_crush": 15,
+        "defence_ranged": 16,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "steel_platelegs"
+      ]
+    },
+    {
+      "id": 1071,
+      "name": "Mithril platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 24,
+        "defence_slash": 22,
+        "defence_crush": 20,
+        "defence_ranged": 22,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mithril_platelegs"
+      ]
+    },
+    {
+      "id": 1073,
+      "name": "Adamant platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 33,
+        "defence_slash": 31,
+        "defence_crush": 29,
+        "defence_ranged": 31,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 30
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "adamant_platelegs"
+      ]
+    },
+    {
+      "id": 1077,
+      "name": "Black platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 21,
+        "defence_slash": 20,
+        "defence_crush": 19,
+        "defence_ranged": 20,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 10
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "black_platelegs_reviewed"
+      ]
+    },
+    {
+      "id": 1079,
+      "name": "Rune platelegs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -11,
+        "magic": -21,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 51,
+        "defence_slash": 49,
+        "defence_crush": 47,
+        "defence_ranged": 49,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_platelegs"
+      ]
+    },
+    {
+      "id": 1095,
+      "name": "Leather chaps",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 4,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 2,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_chaps"
+      ]
+    },
+    {
+      "id": 1097,
+      "name": "Studded chaps",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 6,
+        "magic": -5,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 15,
+        "defence_slash": 16,
+        "defence_crush": 17,
+        "defence_ranged": 16,
+        "defence_magic": 6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "studded_chaps"
+      ]
+    },
+    {
+      "id": 1099,
+      "name": "Green d'hide chaps",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 8,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 12,
+        "defence_slash": 15,
+        "defence_crush": 18,
+        "defence_ranged": 17,
+        "defence_magic": 8,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "green_dhide_chaps"
+      ]
+    },
+    {
+      "id": 1115,
+      "name": "Iron platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 21,
+        "defence_slash": 20,
+        "defence_crush": 12,
+        "defence_ranged": 20,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "iron_platebody"
+      ]
+    },
+    {
+      "id": 1119,
+      "name": "Steel platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 32,
+        "defence_slash": 31,
+        "defence_crush": 24,
+        "defence_ranged": 31,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "steel_platebody"
+      ]
+    },
+    {
+      "id": 1121,
+      "name": "Mithril platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 46,
+        "defence_slash": 44,
+        "defence_crush": 38,
+        "defence_ranged": 44,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mithril_platebody"
+      ]
+    },
+    {
+      "id": 1123,
+      "name": "Adamant platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 65,
+        "defence_slash": 63,
+        "defence_crush": 55,
+        "defence_ranged": 63,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 30
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "adamant_platebody"
+      ]
+    },
+    {
+      "id": 1125,
+      "name": "Black platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 41,
+        "defence_slash": 40,
+        "defence_crush": 30,
+        "defence_ranged": 40,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 10
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "black_platebody_reviewed"
+      ]
+    },
+    {
+      "id": 1127,
+      "name": "Rune platebody",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -15,
+        "magic": -30,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 82,
+        "defence_slash": 80,
+        "defence_crush": 72,
+        "defence_ranged": 80,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 40
+          },
+          {
+            "type": "quest",
+            "quest_id": "dragon_slayer_i"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_platebody"
+      ]
+    },
+    {
+      "id": 1129,
+      "name": "Leather body",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 2,
+        "magic": -2,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 8,
+        "defence_slash": 9,
+        "defence_crush": 10,
+        "defence_ranged": 9,
+        "defence_magic": 4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_body"
+      ]
+    },
+    {
+      "id": 1133,
+      "name": "Studded body",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 8,
+        "magic": -4,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 18,
+        "defence_slash": 25,
+        "defence_crush": 22,
+        "defence_ranged": 25,
+        "defence_magic": 8,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "studded_body"
+      ]
+    },
+    {
+      "id": 1135,
+      "name": "Green d'hide body",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 15,
+        "magic": -15,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 18,
+        "defence_slash": 27,
+        "defence_crush": 24,
+        "defence_ranged": 35,
+        "defence_magic": 20,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "all_of",
+            "children": [
+              {
+                "type": "skill",
+                "skill": "ranged",
+                "level": 40
+              },
+              {
+                "type": "skill",
+                "skill": "defence",
+                "level": 40
+              }
+            ]
+          },
+          {
+            "type": "quest",
+            "quest_id": "dragon_slayer_i"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "green_dhide_body"
+      ]
+    },
+    {
+      "id": 1153,
+      "name": "Iron full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 6,
+        "defence_slash": 7,
+        "defence_crush": 5,
+        "defence_ranged": 6,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "iron_full_helm"
+      ]
+    },
+    {
+      "id": 1157,
+      "name": "Steel full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 9,
+        "defence_slash": 10,
+        "defence_crush": 7,
+        "defence_ranged": 9,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "steel_full_helm"
+      ]
+    },
+    {
+      "id": 1159,
+      "name": "Mithril full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 13,
+        "defence_slash": 14,
+        "defence_crush": 11,
+        "defence_ranged": 13,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mithril_full_helm"
+      ]
+    },
+    {
+      "id": 1161,
+      "name": "Adamant full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 19,
+        "defence_slash": 21,
+        "defence_crush": 16,
+        "defence_ranged": 19,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 30
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "adamant_full_helm"
+      ]
+    },
+    {
+      "id": 1163,
+      "name": "Rune full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 30,
+        "defence_slash": 32,
+        "defence_crush": 27,
+        "defence_ranged": 30,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_full_helm"
+      ]
+    },
+    {
+      "id": 1165,
+      "name": "Black full helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 12,
+        "defence_slash": 13,
+        "defence_crush": 10,
+        "defence_ranged": 12,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 10
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "black_full_helm_reviewed"
+      ]
+    },
+    {
+      "id": 1167,
+      "name": "Leather cowl",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 1,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 3,
+        "defence_crush": 4,
+        "defence_ranged": 3,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "leather_cowl"
+      ]
+    },
+    {
+      "id": 1169,
+      "name": "Coif",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 2,
+        "magic": -1,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 4,
+        "defence_slash": 6,
+        "defence_crush": 8,
+        "defence_ranged": 4,
+        "defence_magic": 4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "coif"
+      ]
+    },
+    {
+      "id": 1201,
+      "name": "Rune kiteshield",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -3,
+        "magic": -8,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 44,
+        "defence_slash": 48,
+        "defence_crush": 46,
+        "defence_ranged": 46,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_kiteshield_reviewed"
+      ]
+    },
+    {
+      "id": 1323,
+      "name": "Iron scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 2,
+        "slash": 10,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 9,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "iron_scimitar"
+      ]
+    },
+    {
+      "id": 1325,
+      "name": "Steel scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 3,
+        "slash": 15,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 14,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "attack",
+        "level": 5
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "steel_scimitar"
+      ]
+    },
+    {
+      "id": 1329,
+      "name": "Mithril scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 5,
+        "slash": 21,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 20,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "attack",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mithril_scimitar"
+      ]
+    },
+    {
+      "id": 1331,
+      "name": "Adamant scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 6,
+        "slash": 29,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 28,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "attack",
+        "level": 30
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "adamant_scimitar"
+      ]
+    },
+    {
+      "id": 1333,
+      "name": "Rune scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 44,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "attack",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_scimitar"
+      ]
+    },
+    {
+      "id": 1381,
+      "name": "Staff of air",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": -1,
+        "crush": 7,
+        "ranged": 0,
+        "magic": 10,
+        "melee_strength": 3,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 3,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 10,
+        "prayer": 0
+      },
+      "attack_speed": 5,
+      "attack_styles": [
+        "crush",
+        "magic"
+      ],
+      "attack_profiles": [
+        [
+          "crush",
+          "accurate"
+        ],
+        [
+          "crush",
+          "aggressive"
+        ],
+        [
+          "crush",
+          "defensive"
+        ],
+        [
+          "magic",
+          "accurate"
+        ],
+        [
+          "magic",
+          "aggressive"
+        ],
+        [
+          "magic",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "staff_of_air"
+      ]
+    },
+    {
+      "id": 1387,
+      "name": "Staff of fire",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 3,
+        "slash": -1,
+        "crush": 9,
+        "ranged": 0,
+        "magic": 10,
+        "melee_strength": 6,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 3,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 10,
+        "prayer": 0
+      },
+      "attack_speed": 5,
+      "attack_styles": [
+        "crush",
+        "magic"
+      ],
+      "attack_profiles": [
+        [
+          "crush",
+          "accurate"
+        ],
+        [
+          "crush",
+          "aggressive"
+        ],
+        [
+          "crush",
+          "defensive"
+        ],
+        [
+          "magic",
+          "accurate"
+        ],
+        [
+          "magic",
+          "aggressive"
+        ],
+        [
+          "magic",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "staff_of_fire_reviewed"
+      ]
+    },
+    {
+      "id": 1704,
+      "name": "Amulet of glory",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 10,
+        "slash": 10,
+        "crush": 10,
+        "ranged": 10,
+        "magic": 10,
+        "melee_strength": 6,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 3,
+        "defence_slash": 3,
+        "defence_crush": 3,
+        "defence_ranged": 3,
+        "defence_magic": 3,
+        "prayer": 3
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_glory"
+      ]
+    },
+    {
+      "id": 1725,
+      "name": "Amulet of strength",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 10,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_strength"
+      ]
+    },
+    {
+      "id": 1727,
+      "name": "Amulet of magic",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_magic"
+      ]
+    },
+    {
+      "id": 1731,
+      "name": "Amulet of power",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 6,
+        "slash": 6,
+        "crush": 6,
+        "ranged": 6,
+        "magic": 6,
+        "melee_strength": 6,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 6,
+        "defence_slash": 6,
+        "defence_crush": 6,
+        "defence_ranged": 6,
+        "defence_magic": 6,
+        "prayer": 1
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_power"
+      ]
+    },
+    {
+      "id": 2493,
+      "name": "Blue d'hide chaps",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 11,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 13,
+        "defence_slash": 16,
+        "defence_crush": 20,
+        "defence_ranged": 20,
+        "defence_magic": 14,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "blue_dhide_chaps"
+      ]
+    },
+    {
+      "id": 2499,
+      "name": "Blue d'hide body",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 20,
+        "magic": -15,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 23,
+        "defence_slash": 30,
+        "defence_crush": 30,
+        "defence_ranged": 40,
+        "defence_magic": 28,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "all_of",
+            "children": [
+              {
+                "type": "skill",
+                "skill": "ranged",
+                "level": 50
+              },
+              {
+                "type": "skill",
+                "skill": "defence",
+                "level": 40
+              }
+            ]
+          },
+          {
+            "type": "quest",
+            "quest_id": "dragon_slayer_i"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "blue_dhide_body"
+      ]
+    },
+    {
+      "id": 2579,
+      "name": "Wizard boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 4,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "magic",
+        "level": 20
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "wizard_boots_reviewed"
+      ]
+    },
+    {
+      "id": 3105,
+      "name": "Climbing boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 2,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 2,
+        "defence_crush": 2,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "quest",
+        "quest_id": "death_plateau"
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "climbing_boots_reviewed"
+      ]
+    },
+    {
+      "id": 3749,
+      "name": "Archer helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": -5,
+        "slash": -5,
+        "crush": -5,
+        "ranged": 6,
+        "magic": -5,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 6,
+        "defence_slash": 8,
+        "defence_crush": 10,
+        "defence_ranged": 6,
+        "defence_magic": 6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 45
+          },
+          {
+            "type": "quest",
+            "quest_id": "the_fremennik_trials"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "archer_helm"
+      ]
+    },
+    {
+      "id": 3751,
+      "name": "Berserker helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -5,
+        "magic": -5,
+        "melee_strength": 3,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 31,
+        "defence_slash": 29,
+        "defence_crush": 33,
+        "defence_ranged": 30,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 45
+          },
+          {
+            "type": "quest",
+            "quest_id": "the_fremennik_trials"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "berserker_helm"
+      ]
+    },
+    {
+      "id": 3753,
+      "name": "Warrior helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 5,
+        "crush": 0,
+        "ranged": -5,
+        "magic": -5,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 31,
+        "defence_slash": 33,
+        "defence_crush": 29,
+        "defence_ranged": 30,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 45
+          },
+          {
+            "type": "quest",
+            "quest_id": "the_fremennik_trials"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "warrior_helm_reviewed"
+      ]
+    },
+    {
+      "id": 3755,
+      "name": "Farseer helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": -5,
+        "slash": -5,
+        "crush": -5,
+        "ranged": -5,
+        "magic": 6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 8,
+        "defence_slash": 10,
+        "defence_crush": 12,
+        "defence_ranged": 0,
+        "defence_magic": 6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 45
+          },
+          {
+            "type": "quest",
+            "quest_id": "the_fremennik_trials"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "farseer_helm_reviewed"
+      ]
+    },
+    {
+      "id": 4089,
+      "name": "Mystic hat",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 4,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mystic_hat"
+      ]
+    },
+    {
+      "id": 4091,
+      "name": "Mystic robe top",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 20,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 20,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mystic_robe_top"
+      ]
+    },
+    {
+      "id": 4093,
+      "name": "Mystic robe bottom",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 15,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 15,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mystic_robe_bottom"
+      ]
+    },
+    {
+      "id": 4097,
+      "name": "Mystic boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 3,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "mystic_boots"
+      ]
+    },
+    {
+      "id": 4131,
+      "name": "Rune boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -1,
+        "magic": -3,
+        "melee_strength": 2,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 12,
+        "defence_slash": 13,
+        "defence_crush": 14,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rune_boots"
+      ]
+    },
+    {
+      "id": 4587,
+      "name": "Dragon scimitar",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 8,
+        "slash": 67,
+        "crush": -2,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 66,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "stab",
+        "slash"
+      ],
+      "attack_profiles": [
+        [
+          "stab",
+          "controlled"
+        ],
+        [
+          "slash",
+          "accurate"
+        ],
+        [
+          "slash",
+          "aggressive"
+        ],
+        [
+          "slash",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "attack",
+            "level": 60
+          },
+          {
+            "type": "quest",
+            "quest_id": "monkey_madness_i"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "dragon_scimitar"
+      ]
+    },
+    {
+      "id": 4675,
+      "name": "Ancient staff",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 10,
+        "slash": -1,
+        "crush": 40,
+        "ranged": 0,
+        "magic": 15,
+        "melee_strength": 50,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 3,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 15,
+        "prayer": -1
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "crush",
+        "magic"
+      ],
+      "attack_profiles": [
+        [
+          "crush",
+          "accurate"
+        ],
+        [
+          "crush",
+          "aggressive"
+        ],
+        [
+          "crush",
+          "defensive"
+        ],
+        [
+          "magic",
+          "accurate"
+        ],
+        [
+          "magic",
+          "aggressive"
+        ],
+        [
+          "magic",
+          "defensive"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "all_of",
+            "children": [
+              {
+                "type": "skill",
+                "skill": "magic",
+                "level": 50
+              },
+              {
+                "type": "skill",
+                "skill": "attack",
+                "level": 50
+              }
+            ]
+          },
+          {
+            "type": "quest",
+            "quest_id": "desert_treasure_i"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "ancient_staff"
+      ]
+    },
+    {
+      "id": 6326,
+      "name": "Snakeskin bandana",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 4,
+        "magic": -5,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 4,
+        "defence_crush": 4,
+        "defence_ranged": 2,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 30
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 30
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "snakeskin_bandana"
+      ]
+    },
+    {
+      "id": 6328,
+      "name": "Snakeskin boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 3,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 1,
+        "defence_slash": 1,
+        "defence_crush": 2,
+        "defence_ranged": 0,
+        "defence_magic": 1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 30
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 30
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "snakeskin_boots"
+      ]
+    },
+    {
+      "id": 6585,
+      "name": "Amulet of fury",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 10,
+        "slash": 10,
+        "crush": 10,
+        "ranged": 10,
+        "magic": 10,
+        "melee_strength": 8,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 15,
+        "defence_slash": 15,
+        "defence_crush": 15,
+        "defence_ranged": 15,
+        "defence_magic": 15,
+        "prayer": 5
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_fury"
+      ]
+    },
+    {
+      "id": 6737,
+      "name": "Berserker ring",
+      "slot": "ring",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 4,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 4,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "berserker_ring"
+      ]
+    },
+    {
+      "id": 6809,
+      "name": "Granite legs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -18,
+        "magic": -31,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 43,
+        "defence_slash": 45,
+        "defence_crush": 41,
+        "defence_ranged": 68,
+        "defence_magic": -4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "strength",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "granite_legs_reviewed"
+      ]
+    },
+    {
+      "id": 6920,
+      "name": "Infinity boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 5,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 5,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 25
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "infinity_boots"
+      ]
+    },
+    {
+      "id": 7398,
+      "name": "Enchanted robe",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 15,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 15,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          },
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "enchanted_robe_reviewed"
+      ]
+    },
+    {
+      "id": 7399,
+      "name": "Enchanted top",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 20,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 20,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 20
+          },
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 40
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "enchanted_top_reviewed"
+      ]
+    },
+    {
+      "id": 8880,
+      "name": "Dorgeshuun crossbow",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 42,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 5,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [
+        "bolt:8882"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 28
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "dorgeshuun_crossbow"
+      ]
+    },
+    {
+      "id": 8882,
+      "name": "Bone bolts",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 49,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "bolt:8882",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 28
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "bone_bolts"
+      ]
+    },
+    {
+      "id": 9006,
+      "name": "Fighting boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -1,
+        "magic": -3,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 1,
+        "defence_slash": 2,
+        "defence_crush": 3,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "fighting_boots"
+      ]
+    },
+    {
+      "id": 10034,
+      "name": "Red chinchompa",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 70,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 15,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 55
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "red_chinchompa"
+      ]
+    },
+    {
+      "id": 10499,
+      "name": "Ava's accumulator",
+      "slot": "cape",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 4,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 1,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 4,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "avas_accumulator"
+      ]
+    },
+    {
+      "id": 10551,
+      "name": "Fighter torso",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": -40,
+        "melee_strength": 4,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 62,
+        "defence_slash": 85,
+        "defence_crush": 62,
+        "defence_ranged": 67,
+        "defence_magic": -10,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "defence",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "fighter_torso"
+      ]
+    },
+    {
+      "id": 10564,
+      "name": "Granite body",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -5,
+        "magic": -22,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 87,
+        "defence_slash": 84,
+        "defence_crush": 79,
+        "defence_ranged": 97,
+        "defence_magic": -6,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "strength",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "granite_body_reviewed"
+      ]
+    },
+    {
+      "id": 10589,
+      "name": "Granite helm",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -7,
+        "magic": -9,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 31,
+        "defence_slash": 33,
+        "defence_crush": 29,
+        "defence_ranged": 39,
+        "defence_magic": -1,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "strength",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "granite_helm_reviewed"
+      ]
+    },
+    {
+      "id": 10828,
+      "name": "Helm of Neitiznot",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 3,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 31,
+        "defence_slash": 29,
+        "defence_crush": 34,
+        "defence_ranged": 30,
+        "defence_magic": 3,
+        "prayer": 3
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 55
+          },
+          {
+            "type": "quest",
+            "quest_id": "the_fremennik_isles"
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "helm_of_neitiznot"
+      ]
+    },
+    {
+      "id": 11126,
+      "name": "Combat bracelet",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 7,
+        "slash": 7,
+        "crush": 7,
+        "ranged": 7,
+        "magic": 3,
+        "melee_strength": 6,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 5,
+        "defence_slash": 5,
+        "defence_crush": 5,
+        "defence_ranged": 5,
+        "defence_magic": 3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "combat_bracelet",
+        "combat_bracelet_magic"
+      ]
+    },
+    {
+      "id": 12610,
+      "name": "Book of Law",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 10,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 5
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "quest",
+        "quest_id": "horror_from_the_deep"
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "book_of_law"
+      ]
+    },
+    {
+      "id": 12612,
+      "name": "Book of Darkness",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 5
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "quest",
+        "quest_id": "horror_from_the_deep"
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "book_of_darkness"
+      ]
+    },
+    {
+      "id": 12788,
+      "name": "Magic shortbow (i)",
+      "slot": "weapon",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 75,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 4,
+      "attack_styles": [
+        "ranged"
+      ],
+      "attack_profiles": [
+        [
+          "ranged",
+          "accurate"
+        ],
+        [
+          "ranged",
+          "rapid"
+        ],
+        [
+          "ranged",
+          "longrange"
+        ]
+      ],
+      "two_handed": true,
+      "ammo_type": null,
+      "ammo_for": [
+        "arrow:882",
+        "arrow:884",
+        "arrow:886",
+        "arrow:888",
+        "arrow:890",
+        "arrow:892",
+        "arrow:21326"
+      ],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "magic_shortbow_i"
+      ]
+    },
+    {
+      "id": 13121,
+      "name": "Ardougne cloak 1",
+      "slot": "cape",
+      "bonuses": {
+        "stab": 2,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 2,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 2,
+        "prayer": 2
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "ardougne_cloak_1"
+      ]
+    },
+    {
+      "id": 13125,
+      "name": "Explorer's ring 1",
+      "slot": "ring",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 1
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "explorers_ring_1",
+        "explorers_ring_1_ranged"
+      ]
+    },
+    {
+      "id": 13385,
+      "name": "Xerician hat",
+      "slot": "head",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 3,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 20
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 10
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "xerician_hat"
+      ]
+    },
+    {
+      "id": 13387,
+      "name": "Xerician top",
+      "slot": "body",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 6,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 10,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 20
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 10
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "xerician_top"
+      ]
+    },
+    {
+      "id": 13389,
+      "name": "Xerician robe",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 4,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 7,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "magic",
+            "level": 20
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 10
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "xerician_robe"
+      ]
+    },
+    {
+      "id": 19994,
+      "name": "Ranger gloves",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 11,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 1,
+        "defence_slash": 2,
+        "defence_crush": 1,
+        "defence_ranged": 0,
+        "defence_magic": 2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "ranger_gloves_reviewed"
+      ]
+    },
+    {
+      "id": 20226,
+      "name": "Peaceful blessing",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 1
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "bolt:20226",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "peaceful_blessing"
+      ]
+    },
+    {
+      "id": 20716,
+      "name": "Tome of Fire",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 8,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 8,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "magic",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "tome_of_fire"
+      ]
+    },
+    {
+      "id": 21326,
+      "name": "Amethyst arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 55,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": "arrow:21326",
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "amethyst_arrow"
+      ]
+    },
+    {
+      "id": 21643,
+      "name": "Granite boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": -1,
+        "magic": -3,
+        "melee_strength": 3,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 15,
+        "defence_slash": 16,
+        "defence_crush": 17,
+        "defence_ranged": 8,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "strength",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "granite_boots_reviewed"
+      ]
+    },
+    {
+      "id": 21736,
+      "name": "Granite gloves",
+      "slot": "hands",
+      "bonuses": {
+        "stab": 5,
+        "slash": 5,
+        "crush": 9,
+        "ranged": -1,
+        "magic": -3,
+        "melee_strength": 7,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 8,
+        "defence_slash": 8,
+        "defence_crush": 8,
+        "defence_ranged": 5,
+        "defence_magic": -3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          },
+          {
+            "type": "skill",
+            "skill": "strength",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "granite_gloves_reviewed"
+      ]
+    },
+    {
+      "id": 21944,
+      "name": "Ruby dragon bolts (e)",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 122,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "ruby_dragon_bolts_e"
+      ]
+    },
+    {
+      "id": 22275,
+      "name": "Green d'hide shield",
+      "slot": "shield",
+      "bonuses": {
+        "stab": -15,
+        "slash": -15,
+        "crush": -11,
+        "ranged": 4,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 14,
+        "defence_slash": 12,
+        "defence_crush": 11,
+        "defence_ranged": 11,
+        "defence_magic": 9,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 40
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 40
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "green_dhide_shield"
+      ]
+    },
+    {
+      "id": 23249,
+      "name": "Rangers' tights",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 15,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 40
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "rangers_tights_reviewed"
+      ]
+    },
+    {
+      "id": 24780,
+      "name": "Amulet of blood fury",
+      "slot": "neck",
+      "bonuses": {
+        "stab": 10,
+        "slash": 10,
+        "crush": 10,
+        "ranged": 10,
+        "magic": 10,
+        "melee_strength": 8,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 15,
+        "defence_slash": 15,
+        "defence_crush": 15,
+        "defence_ranged": 15,
+        "defence_magic": 15,
+        "prayer": 5
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "amulet_of_blood_fury"
+      ]
+    },
+    {
+      "id": 25576,
+      "name": "Tome of Water",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 8,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 8,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "magic",
+        "level": 50
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "tome_of_water"
+      ]
+    },
+    {
+      "id": 25975,
+      "name": "Lightbearer",
+      "slot": "ring",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": true,
+      "content_ids": [
+        "lightbearer"
+      ]
+    },
+    {
+      "id": 26770,
+      "name": "Berserker ring (i)",
+      "slot": "ring",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 0,
+        "magic": 0,
+        "melee_strength": 8,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 8,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "berserker_ring_i"
+      ]
+    },
+    {
+      "id": 29280,
+      "name": "Mixed hide top",
+      "slot": "body",
+      "bonuses": {
+        "stab": 4,
+        "slash": -2,
+        "crush": -3,
+        "ranged": 27,
+        "magic": -15,
+        "melee_strength": 2,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 33,
+        "defence_slash": 39,
+        "defence_crush": 43,
+        "defence_ranged": 32,
+        "defence_magic": 30,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 60
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "mixed_hide_top"
+      ]
+    },
+    {
+      "id": 29283,
+      "name": "Mixed hide legs",
+      "slot": "legs",
+      "bonuses": {
+        "stab": 3,
+        "slash": -1,
+        "crush": -2,
+        "ranged": 14,
+        "magic": -10,
+        "melee_strength": 0,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 20,
+        "defence_slash": 23,
+        "defence_crush": 22,
+        "defence_ranged": 20,
+        "defence_magic": 16,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "skill",
+        "skill": "ranged",
+        "level": 60
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "mixed_hide_legs"
+      ]
+    },
+    {
+      "id": 29286,
+      "name": "Mixed hide boots",
+      "slot": "feet",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 5,
+        "magic": -10,
+        "melee_strength": 2,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 4,
+        "defence_slash": 5,
+        "defence_crush": 6,
+        "defence_ranged": 3,
+        "defence_magic": 3,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 60
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "mixed_hide_boots"
+      ]
+    },
+    {
+      "id": 29289,
+      "name": "Mixed hide cape",
+      "slot": "cape",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 5,
+        "magic": -15,
+        "melee_strength": 1,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 2,
+        "defence_slash": 2,
+        "defence_crush": 2,
+        "defence_ranged": 1,
+        "defence_magic": 5,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": {
+        "type": "all_of",
+        "children": [
+          {
+            "type": "skill",
+            "skill": "ranged",
+            "level": 60
+          },
+          {
+            "type": "skill",
+            "skill": "defence",
+            "level": 50
+          }
+        ]
+      },
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "mixed_hide_cape"
+      ]
+    },
+    {
+      "id": 33101,
+      "name": "Mooleta",
+      "slot": "shield",
+      "bonuses": {
+        "stab": 5,
+        "slash": 7,
+        "crush": 7,
+        "ranged": -1,
+        "magic": -1,
+        "melee_strength": 1,
+        "ranged_strength": 0,
+        "magic_damage": 0.0,
+        "defence_stab": 4,
+        "defence_slash": 8,
+        "defence_crush": 8,
+        "defence_ranged": -1,
+        "defence_magic": -2,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": false,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [],
+      "tradeable": false,
+      "content_ids": [
+        "mooleta"
+      ]
+    },
+    {
+      "id": 33595,
+      "name": "Seeking dragon arrow",
+      "slot": "ammunition",
+      "bonuses": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "ranged": 20,
+        "magic": 0,
+        "melee_strength": 0,
+        "ranged_strength": 60,
+        "magic_damage": 0.0,
+        "defence_stab": 0,
+        "defence_slash": 0,
+        "defence_crush": 0,
+        "defence_ranged": 0,
+        "defence_magic": 0,
+        "prayer": 0
+      },
+      "attack_speed": 1,
+      "attack_styles": [],
+      "attack_profiles": [],
+      "two_handed": false,
+      "ammo_type": null,
+      "ammo_for": [],
+      "stackable": true,
+      "requires": null,
+      "requirements_complete": true,
+      "unsupported_effects": [
+        "Offensive effects have not been validated."
+      ],
+      "tradeable": true,
+      "content_ids": [
+        "seeking_dragon_arrow"
+      ]
+    }
+  ],
+  "prices": {
+    "577": {
+      "item_id": 577,
+      "high_price_gp": 1383,
+      "high_trade_at": "2026-10-27 14:36:49+00:00",
+      "low_price_gp": 1269,
+      "low_trade_at": "2026-10-27 14:38:40+00:00",
+      "fetched_at": "2026-10-27 14:40:43.575669+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "579": {
+      "item_id": 579,
+      "high_price_gp": 375,
+      "high_trade_at": "2026-10-27 14:36:40+00:00",
+      "low_price_gp": 325,
+      "low_trade_at": "2026-10-27 14:34:56+00:00",
+      "fetched_at": "2026-10-27 14:40:43.662582+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "841": {
+      "item_id": 841,
+      "high_price_gp": 53,
+      "high_trade_at": "2026-10-28 00:25:56+00:00",
+      "low_price_gp": 50,
+      "low_trade_at": "2026-10-28 00:40:57+00:00",
+      "fetched_at": "2026-10-28 00:41:11.065091+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "843": {
+      "item_id": 843,
+      "high_price_gp": 28,
+      "high_trade_at": "2026-10-27 23:40:05+00:00",
+      "low_price_gp": 15,
+      "low_trade_at": "2026-10-27 23:36:01+00:00",
+      "fetched_at": "2026-10-27 23:41:08.505204+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "849": {
+      "item_id": 849,
+      "high_price_gp": 129,
+      "high_trade_at": "2026-10-28 01:40:57+00:00",
+      "low_price_gp": 107,
+      "low_trade_at": "2026-10-28 01:38:49+00:00",
+      "fetched_at": "2026-10-28 01:41:12.985722+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "853": {
+      "item_id": 853,
+      "high_price_gp": 117,
+      "high_trade_at": "2026-10-28 00:40:47+00:00",
+      "low_price_gp": 112,
+      "low_trade_at": "2026-10-28 00:30:44+00:00",
+      "fetched_at": "2026-10-28 00:41:11.137547+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "861": {
+      "item_id": 861,
+      "high_price_gp": 708,
+      "high_trade_at": "2026-10-27 23:39:13+00:00",
+      "low_price_gp": 681,
+      "low_trade_at": "2026-10-27 23:39:37+00:00",
+      "fetched_at": "2026-10-27 23:41:08.562446+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "884": {
+      "item_id": 884,
+      "high_price_gp": 4,
+      "high_trade_at": "2026-10-27 14:37:01+00:00",
+      "low_price_gp": 3,
+      "low_trade_at": "2026-10-27 14:38:38+00:00",
+      "fetched_at": "2026-10-27 14:40:43.767094+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "888": {
+      "item_id": 888,
+      "high_price_gp": 5,
+      "high_trade_at": "2026-10-27 23:40:58+00:00",
+      "low_price_gp": 4,
+      "low_trade_at": "2026-10-27 23:38:15+00:00",
+      "fetched_at": "2026-10-27 23:41:08.636737+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "890": {
+      "item_id": 890,
+      "high_price_gp": 22,
+      "high_trade_at": "2026-10-28 01:40:04+00:00",
+      "low_price_gp": 21,
+      "low_trade_at": "2026-10-28 01:40:43+00:00",
+      "fetched_at": "2026-10-28 01:41:13.051127+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "892": {
+      "item_id": 892,
+      "high_price_gp": 35,
+      "high_trade_at": "2026-10-27 23:39:51+00:00",
+      "low_price_gp": 34,
+      "low_trade_at": "2026-10-27 23:39:55+00:00",
+      "fetched_at": "2026-10-27 23:41:08.697090+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1019": {
+      "item_id": 1019,
+      "high_price_gp": 296,
+      "high_trade_at": "2026-10-27 23:39:33+00:00",
+      "low_price_gp": 250,
+      "low_trade_at": "2026-10-27 23:30:09+00:00",
+      "fetched_at": "2026-10-27 23:41:08.762975+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1033": {
+      "item_id": 1033,
+      "high_price_gp": 2505,
+      "high_trade_at": "2026-10-28 00:37:13+00:00",
+      "low_price_gp": 2767,
+      "low_trade_at": "2026-10-28 00:35:28+00:00",
+      "fetched_at": "2026-10-28 00:41:11.201896+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1059": {
+      "item_id": 1059,
+      "high_price_gp": 15,
+      "high_trade_at": "2026-10-27 23:40:49+00:00",
+      "low_price_gp": 12,
+      "low_trade_at": "2026-10-27 23:33:54+00:00",
+      "fetched_at": "2026-10-27 23:41:08.827382+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1061": {
+      "item_id": 1061,
+      "high_price_gp": 64,
+      "high_trade_at": "2026-10-27 14:37:04+00:00",
+      "low_price_gp": 57,
+      "low_trade_at": "2026-10-27 14:31:25+00:00",
+      "fetched_at": "2026-10-27 14:40:43.862050+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1063": {
+      "item_id": 1063,
+      "high_price_gp": 27,
+      "high_trade_at": "2026-10-28 01:39:08+00:00",
+      "low_price_gp": 19,
+      "low_trade_at": "2026-10-28 01:39:21+00:00",
+      "fetched_at": "2026-10-28 01:41:13.125393+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1065": {
+      "item_id": 1065,
+      "high_price_gp": 1313,
+      "high_trade_at": "2026-10-28 00:40:23+00:00",
+      "low_price_gp": 1207,
+      "low_trade_at": "2026-10-28 00:36:57+00:00",
+      "fetched_at": "2026-10-28 00:41:11.283339+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1067": {
+      "item_id": 1067,
+      "high_price_gp": 165,
+      "high_trade_at": "2026-10-28 01:40:04+00:00",
+      "low_price_gp": 127,
+      "low_trade_at": "2026-10-28 01:40:47+00:00",
+      "fetched_at": "2026-10-28 01:41:13.185881+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1069": {
+      "item_id": 1069,
+      "high_price_gp": 257,
+      "high_trade_at": "2026-10-27 14:35:35+00:00",
+      "low_price_gp": 257,
+      "low_trade_at": "2026-10-27 14:39:34+00:00",
+      "fetched_at": "2026-10-27 14:40:43.950355+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1071": {
+      "item_id": 1071,
+      "high_price_gp": 1375,
+      "high_trade_at": "2026-10-27 14:38:52+00:00",
+      "low_price_gp": 1346,
+      "low_trade_at": "2026-10-27 14:38:27+00:00",
+      "fetched_at": "2026-10-27 14:40:44.031648+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1073": {
+      "item_id": 1073,
+      "high_price_gp": 3550,
+      "high_trade_at": "2026-10-28 01:40:35+00:00",
+      "low_price_gp": 3546,
+      "low_trade_at": "2026-10-28 01:40:53+00:00",
+      "fetched_at": "2026-10-28 01:41:13.259424+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1079": {
+      "item_id": 1079,
+      "high_price_gp": 38000,
+      "high_trade_at": "2026-10-27 15:38:50+00:00",
+      "low_price_gp": 37600,
+      "low_trade_at": "2026-10-27 15:39:56+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1095": {
+      "item_id": 1095,
+      "high_price_gp": 6,
+      "high_trade_at": "2026-10-27 14:38:36+00:00",
+      "low_price_gp": 5,
+      "low_trade_at": "2026-10-27 14:39:30+00:00",
+      "fetched_at": "2026-10-27 14:40:44.122093+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1097": {
+      "item_id": 1097,
+      "high_price_gp": 286,
+      "high_trade_at": "2026-10-28 01:40:48+00:00",
+      "low_price_gp": 269,
+      "low_trade_at": "2026-10-28 01:40:54+00:00",
+      "fetched_at": "2026-10-28 01:41:13.325865+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1099": {
+      "item_id": 1099,
+      "high_price_gp": 2154,
+      "high_trade_at": "2026-10-28 01:40:44+00:00",
+      "low_price_gp": 2059,
+      "low_trade_at": "2026-10-28 01:39:26+00:00",
+      "fetched_at": "2026-10-28 01:41:13.392770+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1115": {
+      "item_id": 1115,
+      "high_price_gp": 119,
+      "high_trade_at": "2026-10-27 15:39:51+00:00",
+      "low_price_gp": 85,
+      "low_trade_at": "2026-10-27 15:39:03+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1119": {
+      "item_id": 1119,
+      "high_price_gp": 854,
+      "high_trade_at": "2026-10-28 01:40:56+00:00",
+      "low_price_gp": 850,
+      "low_trade_at": "2026-10-28 01:40:17+00:00",
+      "fetched_at": "2026-10-28 01:41:13.456654+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1121": {
+      "item_id": 1121,
+      "high_price_gp": 2722,
+      "high_trade_at": "2026-10-27 14:38:25+00:00",
+      "low_price_gp": 2700,
+      "low_trade_at": "2026-10-27 14:36:00+00:00",
+      "fetched_at": "2026-10-27 14:40:44.199665+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1123": {
+      "item_id": 1123,
+      "high_price_gp": 9153,
+      "high_trade_at": "2026-10-28 01:40:35+00:00",
+      "low_price_gp": 9120,
+      "low_trade_at": "2026-10-28 01:40:55+00:00",
+      "fetched_at": "2026-10-28 01:41:13.523372+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1127": {
+      "item_id": 1127,
+      "high_price_gp": 38299,
+      "high_trade_at": "2026-10-27 14:37:04+00:00",
+      "low_price_gp": 38299,
+      "low_trade_at": "2026-10-27 14:39:54+00:00",
+      "fetched_at": "2026-10-27 14:40:44.284519+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1129": {
+      "item_id": 1129,
+      "high_price_gp": 35,
+      "high_trade_at": "2026-10-28 01:39:51+00:00",
+      "low_price_gp": 30,
+      "low_trade_at": "2026-10-28 01:40:04+00:00",
+      "fetched_at": "2026-10-28 01:41:13.587819+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1133": {
+      "item_id": 1133,
+      "high_price_gp": 342,
+      "high_trade_at": "2026-10-27 14:31:44+00:00",
+      "low_price_gp": 324,
+      "low_trade_at": "2026-10-27 14:39:24+00:00",
+      "fetched_at": "2026-10-27 14:40:44.368592+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1135": {
+      "item_id": 1135,
+      "high_price_gp": 4350,
+      "high_trade_at": "2026-10-27 14:39:40+00:00",
+      "low_price_gp": 4285,
+      "low_trade_at": "2026-10-27 14:37:14+00:00",
+      "fetched_at": "2026-10-27 14:40:44.454738+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1153": {
+      "item_id": 1153,
+      "high_price_gp": 154,
+      "high_trade_at": "2026-10-28 01:23:32+00:00",
+      "low_price_gp": 117,
+      "low_trade_at": "2026-10-28 01:38:45+00:00",
+      "fetched_at": "2026-10-28 01:41:13.655496+00:00",
+      "source": "live",
+      "provider": "osrs_wiki"
+    },
+    "1157": {
+      "item_id": 1157,
+      "high_price_gp": 115,
+      "high_trade_at": "2026-10-27 15:39:41+00:00",
+      "low_price_gp": 100,
+      "low_trade_at": "2026-10-27 15:33:00+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1159": {
+      "item_id": 1159,
+      "high_price_gp": 574,
+      "high_trade_at": "2026-10-27 15:38:23+00:00",
+      "low_price_gp": 520,
+      "low_trade_at": "2026-10-27 15:39:53+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1161": {
+      "item_id": 1161,
+      "high_price_gp": 1850,
+      "high_trade_at": "2026-10-27 15:39:31+00:00",
+      "low_price_gp": 1754,
+      "low_trade_at": "2026-10-27 15:39:35+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1163": {
+      "item_id": 1163,
+      "high_price_gp": 20997,
+      "high_trade_at": "2026-10-27 15:39:28+00:00",
+      "low_price_gp": 20450,
+      "low_trade_at": "2026-10-27 15:39:55+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1167": {
+      "item_id": 1167,
+      "high_price_gp": 17,
+      "high_trade_at": "2026-10-27 15:39:12+00:00",
+      "low_price_gp": 16,
+      "low_trade_at": "2026-10-27 15:39:43+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1169": {
+      "item_id": 1169,
+      "high_price_gp": 99,
+      "high_trade_at": "2026-10-27 15:38:38+00:00",
+      "low_price_gp": 95,
+      "low_trade_at": "2026-10-27 15:36:51+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1323": {
+      "item_id": 1323,
+      "high_price_gp": 299,
+      "high_trade_at": "2026-10-27 15:39:34+00:00",
+      "low_price_gp": 221,
+      "low_trade_at": "2026-10-27 15:35:37+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1325": {
+      "item_id": 1325,
+      "high_price_gp": 200,
+      "high_trade_at": "2026-10-27 15:39:50+00:00",
+      "low_price_gp": 78,
+      "low_trade_at": "2026-10-27 15:35:52+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1329": {
+      "item_id": 1329,
+      "high_price_gp": 500,
+      "high_trade_at": "2026-10-27 15:39:13+00:00",
+      "low_price_gp": 425,
+      "low_trade_at": "2026-10-27 15:34:42+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1331": {
+      "item_id": 1331,
+      "high_price_gp": 1503,
+      "high_trade_at": "2026-10-27 15:37:18+00:00",
+      "low_price_gp": 1480,
+      "low_trade_at": "2026-10-27 15:38:07+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1333": {
+      "item_id": 1333,
+      "high_price_gp": 15149,
+      "high_trade_at": "2026-10-27 18:39:47+00:00",
+      "low_price_gp": 15068,
+      "low_trade_at": "2026-10-27 18:39:56+00:00",
+      "fetched_at": "2026-10-27 18:40:53.465037+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1381": {
+      "item_id": 1381,
+      "high_price_gp": 988,
+      "high_trade_at": "2026-10-27 15:39:09+00:00",
+      "low_price_gp": 982,
+      "low_trade_at": "2026-10-27 15:37:22+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1704": {
+      "item_id": 1704,
+      "high_price_gp": 10966,
+      "high_trade_at": "2026-10-27 15:33:23+00:00",
+      "low_price_gp": 10870,
+      "low_trade_at": "2026-10-27 15:39:36+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1725": {
+      "item_id": 1725,
+      "high_price_gp": 1352,
+      "high_trade_at": "2026-10-27 15:37:38+00:00",
+      "low_price_gp": 1351,
+      "low_trade_at": "2026-10-27 15:38:18+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1727": {
+      "item_id": 1727,
+      "high_price_gp": 507,
+      "high_trade_at": "2026-10-27 15:38:35+00:00",
+      "low_price_gp": 533,
+      "low_trade_at": "2026-10-27 15:39:44+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "1731": {
+      "item_id": 1731,
+      "high_price_gp": 2345,
+      "high_trade_at": "2026-10-27 15:38:05+00:00",
+      "low_price_gp": 2273,
+      "low_trade_at": "2026-10-27 15:39:58+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "2493": {
+      "item_id": 2493,
+      "high_price_gp": 2306,
+      "high_trade_at": "2026-10-27 15:37:18+00:00",
+      "low_price_gp": 2227,
+      "low_trade_at": "2026-10-27 15:39:40+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "2499": {
+      "item_id": 2499,
+      "high_price_gp": 4911,
+      "high_trade_at": "2026-10-27 15:38:15+00:00",
+      "low_price_gp": 4860,
+      "low_trade_at": "2026-10-27 15:35:29+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "3749": {
+      "item_id": 3749,
+      "high_price_gp": 42000,
+      "high_trade_at": "2026-10-27 15:30:54+00:00",
+      "low_price_gp": 41000,
+      "low_trade_at": "2026-10-27 15:39:29+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "3751": {
+      "item_id": 3751,
+      "high_price_gp": 41105,
+      "high_trade_at": "2026-10-27 15:28:27+00:00",
+      "low_price_gp": 41000,
+      "low_trade_at": "2026-10-27 15:39:13+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4089": {
+      "item_id": 4089,
+      "high_price_gp": 9099,
+      "high_trade_at": "2026-10-27 15:38:02+00:00",
+      "low_price_gp": 7803,
+      "low_trade_at": "2026-10-27 15:28:41+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4091": {
+      "item_id": 4091,
+      "high_price_gp": 70968,
+      "high_trade_at": "2026-10-27 16:36:50+00:00",
+      "low_price_gp": 70505,
+      "low_trade_at": "2026-10-27 16:39:20+00:00",
+      "fetched_at": "2026-10-27 16:40:47.693552+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4093": {
+      "item_id": 4093,
+      "high_price_gp": 47258,
+      "high_trade_at": "2026-10-27 15:37:02+00:00",
+      "low_price_gp": 46019,
+      "low_trade_at": "2026-10-27 15:39:00+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4097": {
+      "item_id": 4097,
+      "high_price_gp": 6000,
+      "high_trade_at": "2026-10-27 15:37:31+00:00",
+      "low_price_gp": 5250,
+      "low_trade_at": "2026-10-27 15:36:10+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4131": {
+      "item_id": 4131,
+      "high_price_gp": 7200,
+      "high_trade_at": "2026-10-27 15:39:21+00:00",
+      "low_price_gp": 6938,
+      "low_trade_at": "2026-10-27 15:39:43+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4587": {
+      "item_id": 4587,
+      "high_price_gp": 61294,
+      "high_trade_at": "2026-10-27 17:39:56+00:00",
+      "low_price_gp": 59100,
+      "low_trade_at": "2026-10-27 17:39:45+00:00",
+      "fetched_at": "2026-10-27 17:40:49.963313+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "4675": {
+      "item_id": 4675,
+      "high_price_gp": 61285,
+      "high_trade_at": "2026-10-27 15:39:11+00:00",
+      "low_price_gp": 58300,
+      "low_trade_at": "2026-10-27 15:34:23+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "6326": {
+      "item_id": 6326,
+      "high_price_gp": 205,
+      "high_trade_at": "2026-10-27 15:38:00+00:00",
+      "low_price_gp": 147,
+      "low_trade_at": "2026-10-27 15:34:48+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "6328": {
+      "item_id": 6328,
+      "high_price_gp": 349,
+      "high_trade_at": "2026-10-27 15:39:06+00:00",
+      "low_price_gp": 347,
+      "low_trade_at": "2026-10-27 15:34:50+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "6585": {
+      "item_id": 6585,
+      "high_price_gp": 2136998,
+      "high_trade_at": "2026-10-27 22:39:39+00:00",
+      "low_price_gp": 2077362,
+      "low_trade_at": "2026-10-27 22:39:57+00:00",
+      "fetched_at": "2026-10-27 22:41:03.648380+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "6737": {
+      "item_id": 6737,
+      "high_price_gp": 3068860,
+      "high_trade_at": "2026-10-27 22:38:44+00:00",
+      "low_price_gp": 2992931,
+      "low_trade_at": "2026-10-27 22:39:47+00:00",
+      "fetched_at": "2026-10-27 22:41:03.648380+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "6920": {
+      "item_id": 6920,
+      "high_price_gp": 999000,
+      "high_trade_at": "2026-10-27 15:14:01+00:00",
+      "low_price_gp": 953447,
+      "low_trade_at": "2026-10-27 15:31:12+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "8880": {
+      "item_id": 8880,
+      "high_price_gp": 2573,
+      "high_trade_at": "2026-10-27 16:31:53+00:00",
+      "low_price_gp": 1600,
+      "low_trade_at": "2026-10-27 16:34:06+00:00",
+      "fetched_at": "2026-10-27 16:40:47.827537+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "8882": {
+      "item_id": 8882,
+      "high_price_gp": 8,
+      "high_trade_at": "2026-10-27 15:25:50+00:00",
+      "low_price_gp": 6,
+      "low_trade_at": "2026-10-27 15:31:56+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "10034": {
+      "item_id": 10034,
+      "high_price_gp": 1182,
+      "high_trade_at": "2026-10-27 15:39:09+00:00",
+      "low_price_gp": 1150,
+      "low_trade_at": "2026-10-27 15:39:44+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "10828": {
+      "item_id": 10828,
+      "high_price_gp": 33900,
+      "high_trade_at": "2026-10-27 19:39:46+00:00",
+      "low_price_gp": 33592,
+      "low_trade_at": "2026-10-27 19:39:40+00:00",
+      "fetched_at": "2026-10-27 19:40:56.394272+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "11126": {
+      "item_id": 11126,
+      "high_price_gp": 12000,
+      "high_trade_at": "2026-10-27 15:38:41+00:00",
+      "low_price_gp": 11712,
+      "low_trade_at": "2026-10-27 15:39:52+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "13385": {
+      "item_id": 13385,
+      "high_price_gp": 4760,
+      "high_trade_at": "2026-10-27 15:36:55+00:00",
+      "low_price_gp": 4257,
+      "low_trade_at": "2026-10-27 15:26:24+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "13387": {
+      "item_id": 13387,
+      "high_price_gp": 6377,
+      "high_trade_at": "2026-10-27 15:39:41+00:00",
+      "low_price_gp": 5101,
+      "low_trade_at": "2026-10-27 15:32:22+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "13389": {
+      "item_id": 13389,
+      "high_price_gp": 6884,
+      "high_trade_at": "2026-10-27 15:37:19+00:00",
+      "low_price_gp": 4863,
+      "low_trade_at": "2026-10-27 15:32:36+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "20226": {
+      "item_id": 20226,
+      "high_price_gp": 1854,
+      "high_trade_at": "2026-10-27 15:28:42+00:00",
+      "low_price_gp": 2000,
+      "low_trade_at": "2026-10-27 15:36:12+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "20716": {
+      "item_id": 20716,
+      "high_price_gp": 1611000,
+      "high_trade_at": "2026-10-27 15:36:33+00:00",
+      "low_price_gp": 1597000,
+      "low_trade_at": "2026-10-27 15:39:18+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "21326": {
+      "item_id": 21326,
+      "high_price_gp": 117,
+      "high_trade_at": "2026-10-27 15:39:50+00:00",
+      "low_price_gp": 113,
+      "low_trade_at": "2026-10-27 15:37:11+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "21944": {
+      "item_id": 21944,
+      "high_price_gp": 2834,
+      "high_trade_at": "2026-10-27 15:39:43+00:00",
+      "low_price_gp": 2782,
+      "low_trade_at": "2026-10-27 15:38:54+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "22275": {
+      "item_id": 22275,
+      "high_price_gp": 3300,
+      "high_trade_at": "2026-10-27 14:47:51+00:00",
+      "low_price_gp": 3007,
+      "low_trade_at": "2026-10-27 14:07:51+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "24780": {
+      "item_id": 24780,
+      "high_price_gp": 12000000,
+      "high_trade_at": null,
+      "low_price_gp": null,
+      "low_trade_at": null,
+      "fetched_at": "2026-10-27 22:41:02.326557+00:00",
+      "source": "cached",
+      "provider": "static_hint"
+    },
+    "25576": {
+      "item_id": 25576,
+      "high_price_gp": 424216,
+      "high_trade_at": "2026-10-27 15:31:40+00:00",
+      "low_price_gp": 402000,
+      "low_trade_at": "2026-10-27 15:39:28+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "25975": {
+      "item_id": 25975,
+      "high_price_gp": 3148641,
+      "high_trade_at": "2026-10-27 15:39:46+00:00",
+      "low_price_gp": 3102000,
+      "low_trade_at": "2026-10-27 15:38:58+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "29280": {
+      "item_id": 29280,
+      "high_price_gp": 18000,
+      "high_trade_at": "2026-10-27 15:38:37+00:00",
+      "low_price_gp": 17000,
+      "low_trade_at": "2026-10-27 15:34:37+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "29283": {
+      "item_id": 29283,
+      "high_price_gp": 23793,
+      "high_trade_at": "2026-10-27 15:28:46+00:00",
+      "low_price_gp": 23086,
+      "low_trade_at": "2026-10-27 15:38:49+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "29286": {
+      "item_id": 29286,
+      "high_price_gp": 17600,
+      "high_trade_at": "2026-10-27 15:39:44+00:00",
+      "low_price_gp": 17418,
+      "low_trade_at": "2026-10-27 15:35:12+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "29289": {
+      "item_id": 29289,
+      "high_price_gp": 19398,
+      "high_trade_at": "2026-10-27 22:37:45+00:00",
+      "low_price_gp": 17883,
+      "low_trade_at": "2026-10-27 22:37:12+00:00",
+      "fetched_at": "2026-10-27 22:41:03.648380+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    },
+    "33595": {
+      "item_id": 33595,
+      "high_price_gp": 2800,
+      "high_trade_at": "2026-10-27 15:39:47+00:00",
+      "low_price_gp": 2783,
+      "low_trade_at": "2026-10-27 15:38:29+00:00",
+      "fetched_at": "2026-10-27 15:40:46.304401+00:00",
+      "source": "cached",
+      "provider": "osrs_wiki"
+    }
+  },
+  "requests": {
+    "owned_slash": {
+      "roles": [
+        {
+          "id": "melee",
+          "style": "slash",
+          "stance": "accurate",
+          "spell": "fire_strike",
+          "weight": 1.0,
+          "target": {
+            "name": "Generic ordinary target: Defence/Magic 80, zero bonuses",
+            "defence_level": 80,
+            "magic_level": 80,
+            "bonuses": {
+              "stab": 0,
+              "slash": 0,
+              "crush": 0,
+              "ranged": 0,
+              "magic": 0
+            },
+            "ranged_light": null,
+            "ranged_standard": null,
+            "ranged_heavy": null,
+            "weakness_element": null,
+            "weakness_percent": 0,
+            "damage_cap": null,
+            "unsupported_mechanics": []
+          },
+          "locks": {},
+          "parent_role": null
+        }
+      ],
+      "mode": "owned",
+      "budget_gp": 0,
+      "locks": {},
+      "base_role": null,
+      "transitions": [],
+      "ordered_roles": [],
+      "loop": false,
+      "reserved_supply_slots": 12,
+      "max_swaps": 8,
+      "skill_overrides": {},
+      "quest_overrides": {},
+      "assumed_item_ids": [],
+      "excluded_item_ids": [],
+      "expected_snapshot_id": null
+    },
+    "melee_1m": {
+      "roles": [
+        {
+          "id": "melee",
+          "style": "slash",
+          "stance": "accurate",
+          "spell": "fire_strike",
+          "weight": 1.0,
+          "target": {
+            "name": "Generic ordinary target: Defence/Magic 80, zero bonuses",
+            "defence_level": 80,
+            "magic_level": 80,
+            "bonuses": {
+              "stab": 0,
+              "slash": 0,
+              "crush": 0,
+              "ranged": 0,
+              "magic": 0
+            },
+            "ranged_light": null,
+            "ranged_standard": null,
+            "ranged_heavy": null,
+            "weakness_element": null,
+            "weakness_percent": 0,
+            "damage_cap": null,
+            "unsupported_mechanics": []
+          },
+          "locks": {},
+          "parent_role": null
+        }
+      ],
+      "mode": "usable",
+      "budget_gp": 1000000,
+      "locks": {},
+      "base_role": null,
+      "transitions": [],
+      "ordered_roles": [],
+      "loop": false,
+      "reserved_supply_slots": 12,
+      "max_swaps": 8,
+      "skill_overrides": {},
+      "quest_overrides": {},
+      "assumed_item_ids": [],
+      "excluded_item_ids": [],
+      "expected_snapshot_id": null
+    },
+    "melee_5m": {
+      "roles": [
+        {
+          "id": "melee",
+          "style": "slash",
+          "stance": "accurate",
+          "spell": "fire_strike",
+          "weight": 1.0,
+          "target": {
+            "name": "Generic ordinary target: Defence/Magic 80, zero bonuses",
+            "defence_level": 80,
+            "magic_level": 80,
+            "bonuses": {
+              "stab": 0,
+              "slash": 0,
+              "crush": 0,
+              "ranged": 0,
+              "magic": 0
+            },
+            "ranged_light": null,
+            "ranged_standard": null,
+            "ranged_heavy": null,
+            "weakness_element": null,
+            "weakness_percent": 0,
+            "damage_cap": null,
+            "unsupported_mechanics": []
+          },
+          "locks": {},
+          "parent_role": null
+        }
+      ],
+      "mode": "usable",
+      "budget_gp": 5000000,
+      "locks": {},
+      "base_role": null,
+      "transitions": [],
+      "ordered_roles": [],
+      "loop": false,
+      "reserved_supply_slots": 12,
+      "max_swaps": 8,
+      "skill_overrides": {},
+      "quest_overrides": {},
+      "assumed_item_ids": [],
+      "excluded_item_ids": [],
+      "expected_snapshot_id": null
+    },
+    "joint_four": {
+      "roles": [
+        {
+          "id": "melee",
+          "style": "slash",
+          "stance": "accurate",
+          "spell": "fire_strike",
+          "weight": 1.0,
+          "target": {
+            "name": "Generic ordinary target: Defence/Magic 80, zero bonuses",
+            "defence_level": 80,
+            "magic_level": 80,
+            "bonuses": {
+              "stab": 0,
+              "slash": 0,
+              "crush": 0,
+              "ranged": 0,
+              "magic": 0
+            },
+            "ranged_light": null,
+            "ranged_standard": null,
+            "ranged_heavy": null,
+            "weakness_element": null,
+            "weakness_percent": 0,
+            "damage_cap": null,
+            "unsupported_mechanics": []
+          },
+          "locks": {},
+          "parent_role": null
+        },
+        {
+          "id": "ranged",
+          "style": "ranged",
+          "stance": "rapid",
+          "spell": "fire_strike",
+          "weight": 1.0,
+          "target": {
+            "name": "Generic ordinary target: Defence/Magic 80, zero bonuses",
+            "defence_level": 80,
+            "magic_level": 80,
+            "bonuses": {
+              "stab": 0,
+              "slash": 0,
+              "crush": 0,
+              "ranged": 0,
+              "magic": 0
+            },
+            "ranged_light": null,
+            "ranged_standard": null,
+            "ranged_heavy": null,
+            "weakness_element": null,
+            "weakness_percent": 0,
+            "damage_cap": null,
+            "unsupported_mechanics": []
+          },
+          "locks": {},
+          "parent_role": null
+        }
+      ],
+      "mode": "owned",
+      "budget_gp": 0,
+      "locks": {},
+      "base_role": "melee",
+      "transitions": [],
+      "ordered_roles": [],
+      "loop": false,
+      "reserved_supply_slots": 12,
+      "max_swaps": 4,
+      "skill_overrides": {},
+      "quest_overrides": {},
+      "assumed_item_ids": [],
+      "excluded_item_ids": [],
+      "expected_snapshot_id": null
+    }
+  },
+  "expected": {
+    "owned_slash": {
+      "score": 2.642031114341672,
+      "loadouts": {
+        "melee": {
+          "equipment": {
+            "weapon": 4587,
+            "shield": 33101,
+            "head": 3751,
+            "cape": 1019,
+            "neck": 6585,
+            "body": 10551,
+            "legs": 1033,
+            "hands": 11126,
+            "feet": 21643,
+            "ring": 26770
+          },
+          "performance": {
+            "supported": true,
+            "limitations": [
+              "No prayers, boosts, combat downtime or consumable endurance are modeled."
+            ],
+            "accuracy": 0.7411411957114301,
+            "max_hit": 17,
+            "attack_interval": 2.4,
+            "dps": 2.642031114341672,
+            "attack_roll": 11005,
+            "defence_roll": 5696,
+            "bonuses": {
+              "stab": 30,
+              "slash": 91,
+              "crush": 22,
+              "ranged": 10,
+              "magic": -34,
+              "melee_strength": 99,
+              "ranged_strength": 0,
+              "magic_damage": 0.0,
+              "defence_stab": 132,
+              "defence_slash": 160,
+              "defence_crush": 149,
+              "defence_ranged": 126,
+              "defence_magic": 9,
+              "prayer": 8
+            }
+          }
+        }
+      },
+      "transitions": [],
+      "purchase_cost_gp": 0,
+      "purchases": [],
+      "carried_item_ids": [
+        1019,
+        1033,
+        3751,
+        4587,
+        6585,
+        10551,
+        11126,
+        21643,
+        26770,
+        33101
+      ],
+      "distinct_items": 10,
+      "gear_inventory_slots": 0,
+      "max_gear_inventory_slots": 0,
+      "remaining_supply_slots": 28,
+      "remaining_inventory_slots": 16,
+      "reserved_supply_slots": 12,
+      "maximum_actions": 0
+    },
+    "melee_1m": {
+      "score": 2.659550762100009,
+      "loadouts": {
+        "melee": {
+          "equipment": {
+            "weapon": 4587,
+            "shield": 33101,
+            "head": 3753,
+            "cape": 1019,
+            "neck": 6585,
+            "body": 1125,
+            "legs": 1033,
+            "hands": 21736,
+            "feet": 21643,
+            "ring": 26770
+          },
+          "performance": {
+            "supported": true,
+            "limitations": [
+              "No prayers, boosts, combat downtime or consumable endurance are modeled."
+            ],
+            "accuracy": 0.7460557981994831,
+            "max_hit": 17,
+            "attack_interval": 2.4,
+            "dps": 2.659550762100009,
+            "attack_roll": 11218,
+            "defence_roll": 5696,
+            "bonuses": {
+              "stab": 28,
+              "slash": 94,
+              "crush": 24,
+              "ranged": -13,
+              "magic": -30,
+              "melee_strength": 93,
+              "ranged_strength": 0,
+              "magic_damage": 0.0,
+              "defence_stab": 114,
+              "defence_slash": 122,
+              "defence_crush": 116,
+              "defence_ranged": 99,
+              "defence_magic": 7,
+              "prayer": 8
+            }
+          }
+        }
+      },
+      "transitions": [],
+      "purchase_cost_gp": 0,
+      "purchases": [],
+      "carried_item_ids": [
+        1019,
+        1033,
+        1125,
+        3753,
+        4587,
+        6585,
+        21643,
+        21736,
+        26770,
+        33101
+      ],
+      "distinct_items": 10,
+      "gear_inventory_slots": 0,
+      "max_gear_inventory_slots": 0,
+      "remaining_supply_slots": 28,
+      "remaining_inventory_slots": 16,
+      "reserved_supply_slots": 12,
+      "maximum_actions": 0
+    },
+    "melee_5m": {
+      "score": 2.659550762100009,
+      "loadouts": {
+        "melee": {
+          "equipment": {
+            "weapon": 4587,
+            "shield": 33101,
+            "head": 3753,
+            "cape": 1019,
+            "neck": 6585,
+            "body": 1125,
+            "legs": 1033,
+            "hands": 21736,
+            "feet": 21643,
+            "ring": 26770
+          },
+          "performance": {
+            "supported": true,
+            "limitations": [
+              "No prayers, boosts, combat downtime or consumable endurance are modeled."
+            ],
+            "accuracy": 0.7460557981994831,
+            "max_hit": 17,
+            "attack_interval": 2.4,
+            "dps": 2.659550762100009,
+            "attack_roll": 11218,
+            "defence_roll": 5696,
+            "bonuses": {
+              "stab": 28,
+              "slash": 94,
+              "crush": 24,
+              "ranged": -13,
+              "magic": -30,
+              "melee_strength": 93,
+              "ranged_strength": 0,
+              "magic_damage": 0.0,
+              "defence_stab": 114,
+              "defence_slash": 122,
+              "defence_crush": 116,
+              "defence_ranged": 99,
+              "defence_magic": 7,
+              "prayer": 8
+            }
+          }
+        }
+      },
+      "transitions": [],
+      "purchase_cost_gp": 0,
+      "purchases": [],
+      "carried_item_ids": [
+        1019,
+        1033,
+        1125,
+        3753,
+        4587,
+        6585,
+        21643,
+        21736,
+        26770,
+        33101
+      ],
+      "distinct_items": 10,
+      "gear_inventory_slots": 0,
+      "max_gear_inventory_slots": 0,
+      "remaining_supply_slots": 28,
+      "remaining_inventory_slots": 16,
+      "reserved_supply_slots": 12,
+      "maximum_actions": 0
+    },
+    "joint_four": {
+      "score": 2.7103056531234073,
+      "loadouts": {
+        "melee": {
+          "equipment": {
+            "weapon": 4587,
+            "shield": 33101,
+            "ammunition": 21326,
+            "head": 3753,
+            "cape": 10499,
+            "neck": 6585,
+            "body": 2499,
+            "legs": 23249,
+            "hands": 21736,
+            "feet": 6328,
+            "ring": 26770
+          },
+          "performance": {
+            "supported": true,
+            "limitations": [
+              "No prayers, boosts, combat downtime or consumable endurance are modeled."
+            ],
+            "accuracy": 0.7460557981994831,
+            "max_hit": 16,
+            "attack_interval": 2.4,
+            "dps": 2.505138341993362,
+            "attack_roll": 11218,
+            "defence_roll": 5696,
+            "bonuses": {
+              "stab": 28,
+              "slash": 94,
+              "crush": 24,
+              "ranged": 45,
+              "magic": -34,
+              "melee_strength": 90,
+              "ranged_strength": 55,
+              "magic_damage": 0.0,
+              "defence_stab": 82,
+              "defence_slash": 97,
+              "defence_crush": 100,
+              "defence_ranged": 89,
+              "defence_magic": 43,
+              "prayer": 5
+            }
+          }
+        },
+        "ranged": {
+          "equipment": {
+            "weapon": 12788,
+            "ammunition": 21326,
+            "head": 3749,
+            "cape": 10499,
+            "neck": 6585,
+            "body": 2499,
+            "legs": 23249,
+            "hands": 19994,
+            "feet": 6328,
+            "ring": 26770
+          },
+          "performance": {
+            "supported": true,
+            "limitations": [
+              "No prayers, boosts, combat downtime or consumable endurance are modeled."
+            ],
+            "accuracy": 0.7985860728172499,
+            "max_hit": 13,
+            "attack_interval": 1.7999999999999998,
+            "dps": 2.9154729642534525,
+            "attack_roll": 14144,
+            "defence_roll": 5696,
+            "bonuses": {
+              "stab": 5,
+              "slash": 5,
+              "crush": 5,
+              "ranged": 144,
+              "magic": -40,
+              "melee_strength": 16,
+              "ranged_strength": 55,
+              "magic_damage": 0.0,
+              "defence_stab": 46,
+              "defence_slash": 57,
+              "defence_crush": 66,
+              "defence_ranged": 61,
+              "defence_magic": 56,
+              "prayer": 5
+            }
+          }
+        }
+      },
+      "transitions": [
+        {
+          "from_role": "melee",
+          "to_role": "ranged",
+          "actions": [
+            {
+              "operation": "equip",
+              "slot": "hands",
+              "item_id": 19994,
+              "automatically_removed": [
+                21736
+              ],
+              "gear_inventory_slots": 3
+            },
+            {
+              "operation": "equip",
+              "slot": "head",
+              "item_id": 3749,
+              "automatically_removed": [
+                3753
+              ],
+              "gear_inventory_slots": 3
+            },
+            {
+              "operation": "equip",
+              "slot": "weapon",
+              "item_id": 12788,
+              "automatically_removed": [
+                4587,
+                33101
+              ],
+              "gear_inventory_slots": 4
+            }
+          ],
+          "action_count": 3,
+          "changed_slots": 4,
+          "max_gear_inventory_slots": 4
+        },
+        {
+          "from_role": "ranged",
+          "to_role": "melee",
+          "actions": [
+            {
+              "operation": "equip",
+              "slot": "hands",
+              "item_id": 21736,
+              "automatically_removed": [
+                19994
+              ],
+              "gear_inventory_slots": 4
+            },
+            {
+              "operation": "equip",
+              "slot": "head",
+              "item_id": 3753,
+              "automatically_removed": [
+                3749
+              ],
+              "gear_inventory_slots": 4
+            },
+            {
+              "operation": "equip",
+              "slot": "shield",
+              "item_id": 33101,
+              "automatically_removed": [
+                12788
+              ],
+              "gear_inventory_slots": 4
+            },
+            {
+              "operation": "equip",
+              "slot": "weapon",
+              "item_id": 4587,
+              "automatically_removed": [],
+              "gear_inventory_slots": 3
+            }
+          ],
+          "action_count": 4,
+          "changed_slots": 4,
+          "max_gear_inventory_slots": 4
+        }
+      ],
+      "purchase_cost_gp": 0,
+      "purchases": [],
+      "carried_item_ids": [
+        2499,
+        3749,
+        3753,
+        4587,
+        6328,
+        6585,
+        10499,
+        12788,
+        19994,
+        21326,
+        21736,
+        23249,
+        26770,
+        33101
+      ],
+      "distinct_items": 14,
+      "gear_inventory_slots": 3,
+      "max_gear_inventory_slots": 4,
+      "remaining_supply_slots": 24,
+      "remaining_inventory_slots": 12,
+      "reserved_supply_slots": 12,
+      "maximum_actions": 4
+    }
+  }
+}

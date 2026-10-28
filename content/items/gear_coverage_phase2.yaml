@@ -1,0 +1,191 @@
+# Exact physical-ID review, 2026-10-27. No ownership aliases or ladder tiers.
+# Statistics remain the pinned calculator capture. Independently reviewed wear,
+# acquisition, compatibility and effects: docs/GEAR_CATALOG_COVERAGE_PHASE_2.md.
+
+# Batch 1. Mooleta 33101 already has an authored ungated, untradeable entry in
+# items.yaml. Its post-quest Brutus drop is acquisition, not a wear prerequisite.
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15279216
+# Both boots explicitly require Death Plateau COMPLETE to wear, including pairs
+# bought from other players. Neither has skill requirements. Gold is independent.
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15359845
+- id: climbing_boots_reviewed
+  name: Climbing boots
+  item_id: 3105
+  slot: feet
+  requires:
+    quest: death_plateau
+  acquisition: tradeable
+# Acquisition source: Tenzing after Death Plateau, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15324095
+- id: climbing_boots_gold_reviewed
+  name: Climbing boots (g)
+  item_id: 23413
+  slot: feet
+  requires:
+    quest: death_plateau
+  acquisition: tradeable
+# Acquisition source: Medium Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# Batch 2. Clue tiers and Slayer/boss access describe acquisition, not wear.
+# Ranger gloves/tights require Ranged 40 without a Defence or quest gate.
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15325124
+- id: ranger_gloves_reviewed
+  name: Ranger gloves
+  item_id: 19994
+  slot: hands
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
+# Acquisition source: Elite Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15365323
+# Strength AND Defence 50; no universal Grotesque Guardians kill-count wear gate.
+- id: granite_gloves_reviewed
+  name: Granite gloves
+  item_id: 21736
+  slot: hands
+  requires:
+    all_of:
+      - skill:
+          defence: 50
+      - skill:
+          strength: 50
+  acquisition: tradeable
+# Acquisition source: Grotesque Guardians drop, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15324863
+- id: enchanted_robe_reviewed
+  name: Enchanted robe
+  item_id: 7398
+  slot: legs
+  requires:
+    all_of:
+      - skill:
+          defence: 20
+      - skill:
+          magic: 40
+  acquisition: tradeable
+# Acquisition source: Hard Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15324862
+- id: enchanted_top_reviewed
+  name: Enchanted top
+  item_id: 7399
+  slot: body
+  requires:
+    all_of:
+      - skill:
+          defence: 20
+      - skill:
+          magic: 40
+  acquisition: tradeable
+# Acquisition source: Hard Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15325123
+- id: rangers_tights_reviewed
+  name: Rangers' tights
+  item_id: 23249
+  slot: legs
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
+# Acquisition source: Elite Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# Batch 3. Exact purchasable forms: no alias/inheritance from blue mystic robes.
+# Every piece independently states Magic 40 AND Defence 20; no quest wear gate.
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15324861
+- id: enchanted_hat_reviewed
+  name: Enchanted hat
+  item_id: 7400
+  slot: head
+  requires:
+    all_of:
+      - skill:
+          magic: 40
+      - skill:
+          defence: 20
+  acquisition: tradeable
+# Acquisition source: Hard Treasure Trails, or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15322453
+- id: mystic_robe_top_dark_reviewed
+  name: Mystic robe top (dark)
+  item_id: 4101
+  slot: body
+  requires:
+    all_of:
+      - skill:
+          magic: 40
+      - skill:
+          defence: 20
+  acquisition: tradeable
+# Acquisition source: Monster drops (dark mystic), or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15322426
+- id: mystic_robe_bottom_dark_reviewed
+  name: Mystic robe bottom (dark)
+  item_id: 4103
+  slot: legs
+  requires:
+    all_of:
+      - skill:
+          magic: 40
+      - skill:
+          defence: 20
+  acquisition: tradeable
+# Acquisition source: Monster drops (dark mystic), or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15250408
+- id: mystic_robe_top_light_reviewed
+  name: Mystic robe top (light)
+  item_id: 4111
+  slot: body
+  requires:
+    all_of:
+      - skill:
+          magic: 40
+      - skill:
+          defence: 20
+  acquisition: tradeable
+# Acquisition source: Monster drops (light mystic), or player trade
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15250409
+- id: mystic_robe_bottom_light_reviewed
+  name: Mystic robe bottom (light)
+  item_id: 4113
+  slot: legs
+  requires:
+    all_of:
+      - skill:
+          magic: 40
+      - skill:
+          defence: 20
+  acquisition: tradeable
+# Acquisition source: Monster drops (light mystic), or player trade
+  price_mode: live
+  price_staleness_days: 30

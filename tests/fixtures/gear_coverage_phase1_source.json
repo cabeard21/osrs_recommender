@@ -1,0 +1,505 @@
+{
+  "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+  "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d",
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "license": "See content/equipment/LICENSE.export.txt",
+  "purpose": "Independent pinned source-shaped test inputs, never runtime equipment metadata.",
+  "rows": [
+    {
+      "name": "Black full helm",
+      "id": 1165,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Black full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 12,
+        "slash": 13,
+        "crush": 10,
+        "magic": -1,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black platebody",
+      "id": 1125,
+      "weight": 9.979,
+      "version": "",
+      "slot": "body",
+      "image": "Black platebody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -30,
+        "ranged": -15
+      },
+      "defensive": {
+        "stab": 41,
+        "slash": 40,
+        "crush": 30,
+        "magic": -6,
+        "ranged": 40
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black platelegs",
+      "id": 1077,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Black platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 21,
+        "slash": 20,
+        "crush": 19,
+        "magic": -4,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze arrow",
+      "id": 882,
+      "weight": 0,
+      "version": "Unpoisoned",
+      "slot": "ammo",
+      "image": "Bronze arrow 5.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 7,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Farseer helm",
+      "id": 3755,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Farseer helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": -5,
+        "slash": -5,
+        "crush": -5,
+        "magic": 6,
+        "ranged": -5
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 10,
+        "crush": 12,
+        "magic": 6,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Granite body",
+      "id": 10564,
+      "weight": 22.679,
+      "version": "",
+      "slot": "body",
+      "image": "Granite body.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -22,
+        "ranged": -5
+      },
+      "defensive": {
+        "stab": 87,
+        "slash": 84,
+        "crush": 79,
+        "magic": -6,
+        "ranged": 97
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Granite boots",
+      "id": 21643,
+      "weight": 2.721,
+      "version": "",
+      "slot": "feet",
+      "image": "Granite boots.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 3,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -3,
+        "ranged": -1
+      },
+      "defensive": {
+        "stab": 15,
+        "slash": 16,
+        "crush": 17,
+        "magic": 0,
+        "ranged": 8
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Granite helm",
+      "id": 10589,
+      "weight": 4.535,
+      "version": "",
+      "slot": "head",
+      "image": "Granite helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -9,
+        "ranged": -7
+      },
+      "defensive": {
+        "stab": 31,
+        "slash": 33,
+        "crush": 29,
+        "magic": -1,
+        "ranged": 39
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Granite legs",
+      "id": 6809,
+      "weight": 15.875,
+      "version": "",
+      "slot": "legs",
+      "image": "Granite legs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -31,
+        "ranged": -18
+      },
+      "defensive": {
+        "stab": 43,
+        "slash": 45,
+        "crush": 41,
+        "magic": -4,
+        "ranged": 68
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune kiteshield",
+      "id": 1201,
+      "weight": 5.443,
+      "version": "",
+      "slot": "shield",
+      "image": "Rune kiteshield.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -8,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 44,
+        "slash": 48,
+        "crush": 46,
+        "magic": -1,
+        "ranged": 46
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Staff of fire",
+      "id": 1387,
+      "weight": 2.267,
+      "version": "",
+      "slot": "weapon",
+      "image": "Staff of fire.png",
+      "speed": 5,
+      "category": "Staff",
+      "bonuses": {
+        "str": 6,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 3,
+        "slash": -1,
+        "crush": 9,
+        "magic": 10,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 2,
+        "slash": 3,
+        "crush": 1,
+        "magic": 10,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel arrow",
+      "id": 886,
+      "weight": 0,
+      "version": "Unpoisoned",
+      "slot": "ammo",
+      "image": "Steel arrow 5.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 16,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Warrior helm",
+      "id": 3753,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Warrior helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 5,
+        "crush": 0,
+        "magic": -5,
+        "ranged": -5
+      },
+      "defensive": {
+        "stab": 31,
+        "slash": 33,
+        "crush": 29,
+        "magic": 0,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Wizard boots",
+      "id": 2579,
+      "weight": 0.283,
+      "version": "",
+      "slot": "feet",
+      "image": "Wizard boots.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 4,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 4,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Wizard hat",
+      "id": 1017,
+      "weight": 0.453,
+      "version": "",
+      "slot": "head",
+      "image": "Wizard hat.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 2,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 2,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Yew shortbow",
+      "id": 857,
+      "weight": 1.36,
+      "version": "",
+      "slot": "weapon",
+      "image": "Yew shortbow.png",
+      "speed": 4,
+      "category": "Bow",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 47
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": true
+    }
+  ]
+}

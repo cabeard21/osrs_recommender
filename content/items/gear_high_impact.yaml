@@ -1,0 +1,90 @@
+# Exact physical-ID review; see docs/GEAR_HIGH_IMPACT_COVERAGE.md.
+# RFD glove subquest counts unlock acquisition, not a universal wear gate.
+# Rune gloves additionally need explicit Daero training OR the final subquest.
+# Missing training is unknown; Monkey Madness I completion is not equivalent.
+# Existing Mixed hide entries retain independently verified Ranged 60/Defence 50.
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15213297
+- id: adamant_gloves_reviewed
+  name: Adamant gloves
+  item_id: 7459
+  slot: hands
+  requires:
+    skill:
+      defence: 13
+  acquisition: untradeable
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15355140
+- id: archers_ring_reviewed
+  name: Archers ring
+  item_id: 6733
+  slot: ring
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15213296
+- id: mithril_gloves_reviewed
+  name: Mithril gloves
+  item_id: 7458
+  slot: hands
+  acquisition: untradeable
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15344258
+# Mixed hide boots: existing exact-ID authored requirement retained.
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15350309
+# Mixed hide cape: existing exact-ID authored requirement retained.
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15271149
+# Mixed hide top: existing exact-ID authored requirement retained.
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15379383
+- id: ranger_boots_reviewed
+  name: Ranger boots
+  item_id: 2577
+  slot: feet
+  requires:
+    skill:
+      ranged: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15356812
+- id: red_dhide_body_reviewed
+  name: Red d'hide body
+  item_id: 2501
+  slot: body
+  requires:
+    all_of:
+    - skill:
+        ranged: 60
+    - skill:
+        defence: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15356693
+- id: red_dhide_chaps_reviewed
+  name: Red d'hide chaps
+  item_id: 2495
+  slot: legs
+  requires:
+    skill:
+      ranged: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Special:PermanentLink/15213298
+- id: rune_gloves_reviewed
+  name: Rune gloves
+  item_id: 7460
+  slot: hands
+  requires:
+    any_of:
+    - unlock: daero_training_complete
+    - quest: recipe_for_disaster_culinaromancer
+  acquisition: untradeable

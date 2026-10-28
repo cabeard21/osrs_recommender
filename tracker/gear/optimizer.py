@@ -29,6 +29,7 @@ from tracker.gear.evaluation import (
     validate_request_context,
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
+from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.refinement import refine_ammunition
 from tracker.gear.targeted_retention import refine_omitted_heads
@@ -544,8 +545,9 @@ def optimize(
     cancelled: Callable[[], bool] | None = None,
     *,
     targeted_head_refinement: bool = False,
+    local_refinement: bool = False,
 ) -> dict[str, Any]:
-    """Return a frozen-context curve; targeted head refinement is Python-only opt-in."""
+    """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     request = (
         request
         if isinstance(request, OptimizationRequest)
@@ -663,6 +665,11 @@ def optimize(
         winners, unrestricted, targeted_diagnostics = refine_omitted_heads(
             search, winners, unrestricted, _solution_key
         )
+    local_diagnostics = None
+    if local_refinement:
+        winners, unrestricted, local_diagnostics = refine_completed(
+            search, winners, unrestricted, _solution_key
+        )
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -694,8 +701,10 @@ def optimize(
         for row in rows
         if row["item_id"] is not None
     }
-    if targeted_diagnostics is not None:
-        originals = targeted_diagnostics["baseline"]
+    for diagnostics in (targeted_diagnostics, local_diagnostics):
+        if diagnostics is None:
+            continue
+        originals = diagnostics["baseline"]
         referenced |= {
             i
             for solution in [*originals["curve_solutions"], originals["unrestricted"]]
@@ -738,6 +747,7 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),
             **(
                 {"targeted_head_refinement": targeted_diagnostics}
                 if targeted_diagnostics is not None

@@ -24,6 +24,50 @@ MANUAL_IDS = {7800}
 # Explicit ordinary-mechanics review. An unfamiliar item always remains inspectable
 # but is not numerically ranked; adding an item requires effects review and tests.
 REVIEWED = {
+    # Exact high-impact review: docs/GEAR_HIGH_IMPACT_COVERAGE.md.
+    7460,
+    7459,
+    7458,
+    29280,
+    29286,
+    29289,
+    2501,
+    2495,
+    6733,
+    2577,
+    # Phase 2 batch 1: each exact form independently reviewed, including the
+    # Death Plateau wear gate on both boots. No approval for spiked boots.
+    # Sources: docs/GEAR_CATALOG_COVERAGE_PHASE_2.md.
+    33101,
+    3105,
+    23413,
+    # Phase 2 batch 2: ordinary observed gloves, enchanted robes and tights.
+    19994,
+    21736,
+    7398,
+    7399,
+    23249,
+    # Phase 2 batch 3: purchasable hat and independently reviewed robe colours.
+    7400,
+    4101,
+    4103,
+    4111,
+    4113,
+    # Phase 1 exact ordinary forms; source revisions and field review are recorded
+    # in docs/GEAR_CATALOG_COVERAGE_PHASE_1.md and the authored overlay comments.
+    1077,
+    1125,
+    1165,
+    1201,
+    857,
+    1017,
+    2579,
+    3753,
+    3755,
+    6809,
+    10564,
+    10589,
+    21643,
     1323,
     1325,
     1329,
@@ -202,6 +246,7 @@ ARROW_LIMITS = {
     843: (882, 884, 886),
     849: (882, 884, 886, 888),
     853: (882, 884, 886, 888, 890),
+    857: (882, 884, 886, 888, 890, 892),
     861: (882, 884, 886, 888, 890, 892, 21326),
     12788: (882, 884, 886, 888, 890, 892, 21326),
 }
