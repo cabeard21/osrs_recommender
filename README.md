@@ -52,10 +52,10 @@ lint, and production type checks before committing changes.
 
 CI runs static validation, frontend validation, full Python coverage, and container
 smoke checks as independent jobs; all must pass before image publication. Coverage
-uses two workers with module-scoped scheduling to reuse catalog/browser fixtures,
-combines worker coverage for the same 80% gate, and reports the 25 slowest tests.
-To use the same parallel coverage lane locally after installing dev dependencies:
-`make test-cov ARGS="-n 2 --dist=loadscope --durations=25"`. The local default stays serial.
+uses two workers for non-browser tests, then runs browser tests in a separate pytest
+process because Playwright and AnyIO retain incompatible session event loops. It
+combines both runs for the same 80% gate and reports the 25 slowest tests. The local
+`make test-cov` command stays serial.
 
 Current authoring rules are in [content authoring](docs/CONTENT_AUTHORING.md).
 Equipment metadata is bundled under `content/equipment`; optimization makes no network

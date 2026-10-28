@@ -54,9 +54,15 @@ def test_ci_runs_complete_parallel_coverage_independently_of_other_checks() -> N
     assert any(
         "playwright install --with-deps chromium" in command for command in coverage_commands
     )
-    command = next(c for c in coverage_commands if c.startswith("make test-cov"))
-    assert "-n 2 --dist=loadscope --durations=25" in command
-    assert "--ignore" not in command and "--no-cov" not in command
+    coverage_runs = [c for c in coverage_commands if c.startswith("make test-cov")]
+    assert len(coverage_runs) == 2
+    assert "-n 2 --dist=loadscope --durations=25" in coverage_runs[0]
+    assert "not browser and not llm_live" in coverage_runs[0]
+    assert "--cov-fail-under=0" in coverage_runs[0]
+    assert "browser and not llm_live" in coverage_runs[1]
+    assert "--cov-append" in coverage_runs[1]
+    assert "--cov-fail-under=0" not in coverage_runs[1]
+    assert all("--ignore" not in c and "--no-cov" not in c for c in coverage_runs)
     assert not any("npm" in c for c in coverage_commands)
     assert any("npm run build" in c and "npm test" in c for c in _run_commands(frontend))
     assert any("mypy tracker" in c for c in _run_commands(checks))
