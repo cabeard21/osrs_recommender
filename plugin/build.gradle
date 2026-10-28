@@ -16,7 +16,7 @@ repositories {
 
 // §13.1 stage 1 is "manually matched app/plugin versions". The contract was captured against
 // 1.12.35 (docs/CONTRACT_RECONCILIATION.md); a new client pin needs its findings re-checked.
-def runeLiteVersion = '1.13.1'
+def runeLiteVersion = '1.13.4'
 
 // Launch with RuneLite's dependency graph, independent of contract-test libraries.
 configurations {
