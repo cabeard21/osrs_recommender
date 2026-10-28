@@ -81,7 +81,15 @@ def test_joint_helm_witness_preserves_complete_joint_legality():
     exact = search.solution(assignments, 4)
     assert exact is not None
     assert exact["score"] == pytest.approx(2.772721328442114, rel=0, abs=1e-12)
-    assert exact["loadouts"]["ranged"] == before["loadouts"]["ranged"]
+    assert {
+        key: exact["loadouts"]["ranged"][key] for key in ("equipment", "performance")
+    } == before["loadouts"]["ranged"]
+    assert exact["loadouts"]["ranged"]["combat_option"] == {
+        "attack_type": "ranged",
+        "stance": "rapid",
+        "spell": None,
+        "powered_attack": None,
+    }
     assert exact["purchase_cost_gp"] == 0
     assert exact["maximum_actions"] <= 4
     assert exact["remaining_inventory_slots"] >= 0

@@ -175,7 +175,9 @@ def _calculate(
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
             # the same ordinary magic model as standard spells.
-            base = weapon.powered_attack_base_max_hit if weapon else 0
+            if weapon is None or weapon.powered_attack_base_max_hit is None:
+                raise ValueError("Powered attack requires reviewed weapon damage metadata")
+            base = weapon.powered_attack_base_max_hit
         else:
             tier = spell.split("_")[1]
             base = max(

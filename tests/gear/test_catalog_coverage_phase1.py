@@ -388,7 +388,15 @@ def test_nonbatch_definitions_and_unreviewed_variants_are_unchanged(reviewed):
     phase2 = {33101, 3105, 23413, 19994, 21736, 7398, 7399, 23249, 7400, 4101, 4103, 4111, 4113}
     high_impact = {7460, 7459, 7458, 29280, 29286, 29289, 2501, 2495, 6733, 2577}
     payload = {
-        i: v.model_dump(mode="json")
+        i: v.model_dump(
+            mode="json",
+            exclude={
+                "spell_compatibility",
+                "powered_attack",
+                "powered_attack_base_max_hit",
+                "powered_attack_stances",
+            },
+        )
         for i, v in catalog.items.items()
         if i not in RULES and i not in phase2 and i not in high_impact
     }

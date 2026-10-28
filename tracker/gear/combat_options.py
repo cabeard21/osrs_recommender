@@ -113,6 +113,7 @@ def enumerate_combat_options(
     """
     _ = levels
     if discipline == "melee":
+        profiles: tuple[tuple[str, str], ...]
         if weapon is None:
             profiles = (("crush", "accurate"), ("crush", "aggressive"), ("crush", "defensive"))
         else:

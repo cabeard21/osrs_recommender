@@ -312,8 +312,8 @@ def combat_option_capabilities(
         and "longrange" in weapon.powered_attack_stances
         for weapon in gear.equipment_catalog().items.values()
     )
-    attack_types = []
-    stances = []
+    attack_types: list[dict[str, Any]] = []
+    stances: list[dict[str, Any]] = []
     for category, names, skill in (
         ("melee", ("stab", "slash", "crush"), "attack"),
         ("ranged", ("light", "standard", "heavy"), "ranged"),
@@ -355,7 +355,7 @@ def combat_option_capabilities(
                     "reason": stance_reason,
                 }
             )
-    spells = []
+    spells: list[dict[str, Any]] = []
     for option in enumerate_combat_options(None, account, discipline="magic", levels=levels):
         if option.spell is None:
             continue
@@ -375,14 +375,16 @@ def combat_option_capabilities(
         ):
             continue
         options = enumerate_combat_options(weapon, account, discipline="magic", levels=levels)
-        option = next((row for row in options if row.powered_attack == weapon.powered_attack), None)
-        if option is not None:
+        powered_option = next(
+            (row for row in options if row.powered_attack == weapon.powered_attack), None
+        )
+        if powered_option is not None:
             spells.append(
                 {
                     "id": f"powered:{weapon.id}",
                     "level": 1,
-                    "available": option.available,
-                    "reason": option.reason,
+                    "available": powered_option.available,
+                    "reason": powered_option.reason,
                 }
             )
     return {"attack_types": attack_types, "stances": stances, "spells": spells}
