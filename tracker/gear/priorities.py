@@ -45,4 +45,4 @@ def secondary_value(
         return float(performance.get("accuracy") or 0)
     fields = _DEFENCES if priority == "balanced_defence" else (_BONUSES[priority],)
     bonuses = performance.get("bonuses", {})
-    return sum(bonuses.get(field, 0) for field in fields) / len(fields)
+    return float(sum(bonuses.get(field, 0) for field in fields) / len(fields))
