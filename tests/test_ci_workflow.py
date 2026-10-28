@@ -32,26 +32,44 @@ def test_makefile_exposes_fast_and_complete_lanes() -> None:
     assert "--cov-fail-under=80" in makefile
 
 
-def test_ci_runs_complete_suite_and_parallelizes_container_smoke() -> None:
+def test_ci_runs_complete_parallel_coverage_independently_of_other_checks() -> None:
     workflow = _workflow()
     jobs = workflow["jobs"]
     assert isinstance(jobs, dict)
 
     validate = jobs["validate"]
+    checks = jobs["checks"]
+    coverage = jobs["coverage"]
+    frontend = jobs["frontend"]
     smoke = jobs["container-smoke"]
     publish = jobs["publish"]
     assert isinstance(validate, dict)
+    assert isinstance(checks, dict)
+    assert isinstance(coverage, dict)
+    assert isinstance(frontend, dict)
     assert isinstance(smoke, dict)
     assert isinstance(publish, dict)
 
-    validate_commands = _run_commands(validate)
+    coverage_commands = _run_commands(coverage)
     assert any(
-        "playwright install --with-deps chromium" in command for command in validate_commands
+        "playwright install --with-deps chromium" in command for command in coverage_commands
     )
-    assert any(command.startswith("make test-cov") for command in validate_commands)
+    command = next(c for c in coverage_commands if c.startswith("make test-cov"))
+    assert "-n 2 --dist=loadscope --durations=25" in command
+    assert "--ignore" not in command and "--no-cov" not in command
+    assert not any("npm" in c for c in coverage_commands)
+    assert any("npm run build" in c and "npm test" in c for c in _run_commands(frontend))
+    assert any("mypy tracker" in c for c in _run_commands(checks))
 
-    assert "needs" not in validate
+    assert "needs" not in checks
+    assert "needs" not in coverage
+    assert "needs" not in frontend
     assert "needs" not in smoke
+    assert set(validate["needs"]) == {"checks", "coverage", "frontend"}
+    assert validate["if"] == "always()"
+    validation_gate = " ".join(_run_commands(validate))
+    for job in validate["needs"]:
+        assert f"test '${{{{ needs.{job}.result }}}}' = success" in validation_gate
     assert set(publish["needs"]) == {"validate", "container-smoke"}
     assert publish["if"] == "github.event_name != 'pull_request'"
 

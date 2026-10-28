@@ -30,6 +30,7 @@ dev = [
     "wheel",
     "pytest",
     "pytest-cov",
+    "pytest-xdist>=3.6,<4",
     "pytest-playwright",
     "nicegui[testing]",
     "ruff",

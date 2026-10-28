@@ -50,6 +50,13 @@ player ID and is disabled by default; see [deployment](docs/DEPLOYMENT.md).
 repository's existing 80% supported-core coverage gate. Run content validation,
 lint, and production type checks before committing changes.
 
+CI runs static validation, frontend validation, full Python coverage, and container
+smoke checks as independent jobs; all must pass before image publication. Coverage
+uses two workers with module-scoped scheduling to reuse catalog/browser fixtures,
+combines worker coverage for the same 80% gate, and reports the 25 slowest tests.
+To use the same parallel coverage lane locally after installing dev dependencies:
+`make test-cov ARGS="-n 2 --dist=loadscope --durations=25"`. The local default stays serial.
+
 Current authoring rules are in [content authoring](docs/CONTENT_AUTHORING.md).
 Equipment metadata is bundled under `content/equipment`; optimization makes no network
 requests and saves no computed recommendations. Missing requirements and unvalidated
