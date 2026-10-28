@@ -1,7 +1,7 @@
+from tests.gear.test_combat_options import account
 from tracker.gear.catalog import load_catalog
 from tracker.gear.combat import SPELLS
 from tracker.gear.combat_options import eligible_combat_options
-from tests.gear.test_combat_options import account
 
 
 def test_reviewed_catalog_has_stats_and_preserves_dragon_gate(make_content, make_item):
