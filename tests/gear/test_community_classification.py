@@ -250,6 +250,7 @@ def test_generator_binds_pinned_inputs_and_is_deterministic(ordinary, monkeypatc
     ]
     tool.main(argv)
     before = output.read_bytes()
+    assert b"\r\n" not in before
     tool.main(argv)
     assert before == output.read_bytes()
     data = json.loads(before)
@@ -267,3 +268,16 @@ def test_generator_binds_pinned_inputs_and_is_deterministic(ordinary, monkeypatc
     source.write_text("{}")
     with pytest.raises(SystemExit):
         tool.main(argv)
+
+
+def test_repository_community_provenance_matches_portable_inputs():
+    import hashlib
+
+    root = Path("content/equipment")
+    payload = (root / "community.json").read_bytes()
+    assert b"\r\n" not in payload
+    provenance = json.loads(payload)["provenance"]
+    for name in ("catalog", "requirements"):
+        raw = (root / f"{name}.json").read_bytes()
+        assert b"\r\n" not in raw
+        assert provenance[f"{name}_sha256"] == hashlib.sha256(raw).hexdigest()

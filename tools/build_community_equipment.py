@@ -105,7 +105,7 @@ def main(argv=None):
         "summary": summary,
         "exceptions": exceptions,
     }
-    args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(summary, indent=2))
 
 

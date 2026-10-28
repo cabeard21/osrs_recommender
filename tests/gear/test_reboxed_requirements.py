@@ -171,6 +171,7 @@ def test_cli_import_report_and_repeatability(tmp_path, capsys):
     ]
     main(args)
     first = output.read_bytes(), report_path.read_bytes()
+    assert all(b"\r\n" not in raw for raw in first)
     main(args)
     assert first == (output.read_bytes(), report_path.read_bytes())
     report = json.loads(report_path.read_text())
