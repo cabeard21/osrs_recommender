@@ -10,8 +10,7 @@ results continue to say `best_found`, not globally optimal.
 The Python API is explicitly opt-in:
 
 ```python
-optimize(snapshot, request, catalog, content, prices, now,
-         targeted_head_refinement=True)
+optimize(snapshot, request, catalog, content, prices, now, targeted_head_refinement=True)
 ```
 
 The new keyword is keyword-only and defaults to `False`. Existing positional
