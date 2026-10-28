@@ -7,7 +7,9 @@ import type { Loadout, Solution } from "../api/contracts";
 import { LiveResultWorkspace } from "./LiveResultWorkspace";
 import { LiveMultiResultWorkspace } from "./LiveMultiResultWorkspace";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
+import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
+import { matchesOptimizationPolicy } from "../api/optimizationModes";
 export function ResultWorkspace() {
   const { state, current, dispatch, itemById, liveMode } = useGear();
   const [transitionKey, setTransitionKey] = useState("");
@@ -103,6 +105,7 @@ export function ResultWorkspace() {
   return (
     <div className="result-column">
       <SecondaryPrioritySummary result={current.result} />
+      <OptimizationModeSummary result={current.result} />
       {state.mode === "single" && (
         <button
           onClick={() => {
@@ -289,10 +292,11 @@ export function ResultWorkspace() {
           </p>
           <p>
             Authored weighted DPS:{" "}
-            {matchesSecondaryPriority(current.previous, current.result)
+            {matchesSecondaryPriority(current.previous, current.result) &&
+            matchesOptimizationPolicy(current.previous, current.result)
               ? (current.previous.solutions[0]?.weightedDps.toFixed(2) ??
                 "Unavailable")
-              : "Comparison unavailable: secondary priority differs"}{" "}
+              : "Comparison unavailable: optimization mode or work budget differs"}{" "}
             → {solution.weightedDps.toFixed(2)}. Contexts may differ; no
             improvement claim.
           </p>

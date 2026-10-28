@@ -22,9 +22,11 @@ def test_default_priority_preserves_omitted_behavior(client, session_factory):
 
 
 @pytest.mark.parametrize("count", [1, 2, 3, 4])
-def test_priority_provenance_and_weighted_value(client, app, session_factory, count):
+@pytest.mark.parametrize("mode", ["fast", "thorough"])
+def test_priority_provenance_and_weighted_value(client, app, session_factory, count, mode):
     body = {
         **joint_scenario(client, app, session_factory, count),
+        "optimization_mode": mode,
         "secondary_priority": "balanced_defence",
     }
     response = client.post("/ui-api/gear/optimizations", json=body)
@@ -57,6 +59,7 @@ def test_priority_provenance_and_weighted_value(client, app, session_factory, co
     )
     assert switched.status_code == 200, switched.text
     assert switched.json()["scenario_fingerprint"] != data["scenario_fingerprint"]
+    assert switched.json()["work_budget_policy"] == data["work_budget_policy"]
 
 
 @pytest.mark.parametrize("priority", ["unknown", "Default", None, True, 1, {}, []])
@@ -87,7 +90,8 @@ def test_trial_retains_selected_priority_identity(client, session_factory):
     assert response.json()["scenario_fingerprint"] == data["scenario_fingerprint"]
 
 
-def test_equal_dps_priority_switch_changes_equipment(client, app, session_factory):
+@pytest.mark.parametrize("mode", ["fast", "thorough"])
+def test_equal_dps_priority_switch_changes_equipment(client, app, session_factory, mode):
     # Synthetic bonus fixtures isolate tie behavior from catalog review decisions.
     original = app.state.gear_service.equipment_catalog()
     helmets = [
@@ -111,6 +115,7 @@ def test_equal_dps_priority_switch_changes_equipment(client, app, session_factor
     )
     body = {
         **scenario(client, session_factory, ids=(4151, 900001, 900002)),
+        "optimization_mode": mode,
         "locks": {"weapon": 4151},
     }
     solutions = {}

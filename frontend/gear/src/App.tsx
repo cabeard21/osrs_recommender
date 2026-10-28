@@ -210,7 +210,9 @@ export default function App() {
               <p>
                 {current.pending
                   ? liveMode
-                    ? "Searching supported configurations…"
+                    ? current.draft.optimizationMode === "thorough"
+                      ? "Searching supported configurations and additional complete combinations… Thorough can take substantially longer."
+                      : "Searching supported configurations…"
                     : "Running deterministic fixture…"
                   : current.result
                     ? "Inspect equipment and refine your scenario"

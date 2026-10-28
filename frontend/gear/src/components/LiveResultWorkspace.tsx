@@ -7,7 +7,9 @@ import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
+import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
+import { matchesOptimizationPolicy } from "../api/optimizationModes";
 
 function comparable(a: OptimizationReply, b: OptimizationReply) {
   const combat = (r: OptimizationReply) => {
@@ -24,9 +26,11 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
   };
   return (
     matchesSecondaryPriority(a, b) &&
+    matchesOptimizationPolicy(a, b) &&
     a.snapshotId === b.snapshotId &&
     a.catalogVersion === b.catalogVersion &&
     a.modelVersion === b.modelVersion &&
+    a.priceRevision === b.priceRevision &&
     a.live?.result.assumptions_fingerprint ===
       b.live?.result.assumptions_fingerprint &&
     combat(a) === combat(b)
@@ -79,6 +83,10 @@ export function LiveResultWorkspace() {
   return (
     <div className="result-column">
       <SecondaryPrioritySummary
+        result={result}
+        solution={result.live?.result.selected_solution}
+      />
+      <OptimizationModeSummary
         result={result}
         solution={result.live?.result.selected_solution}
       />
@@ -272,8 +280,8 @@ export function LiveResultWorkspace() {
           ) : (
             <p>
               Performance comparison unavailable: account, target, combat
-              assumptions, catalog, model or secondary priority differ, or a
-              result has no feasible solution.
+              assumptions, catalog, model, optimization mode or work budget
+              differ, or a result has no feasible solution.
             </p>
           )}
           <details>

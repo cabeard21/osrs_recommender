@@ -33,6 +33,28 @@ export function ConfigurationPanel() {
         <SlidersHorizontal size={17} /> Optimization parameters
       </h2>
       <label>
+        Optimization mode
+        <select
+          value={draft.optimizationMode ?? "fast"}
+          onChange={(e) =>
+            change({
+              optimizationMode: e.target.value as Draft["optimizationMode"],
+            })
+          }
+        >
+          <option value="fast">Fast</option>
+          <option value="thorough">Thorough</option>
+        </select>
+      </label>
+      <p>
+        Fast uses the existing bounded search. Thorough searches additional
+        equipment combinations and can take substantially longer. Neither mode
+        guarantees globally optimal equipment.
+      </p>
+      {!liveMode && (
+        <p>Fixture mode records this selection; it does not run refinement.</p>
+      )}
+      <label>
         Secondary priority
         <select
           value={draft.secondaryPriority ?? "default"}

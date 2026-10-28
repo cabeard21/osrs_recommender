@@ -60,6 +60,7 @@ class GearService:
         price_records: Mapping[int, PriceRecord] | None = None,
         now: datetime | None = None,
         cancelled: Callable[[], bool] | None = None,
+        local_refinement: bool = False,
     ) -> dict[str, Any]:
         """Shared complete-loadout optimizer, separate from legacy factual change tools."""
         from tracker.gear.optimizer import optimize
@@ -75,6 +76,7 @@ class GearService:
                 dict(price_records or {}),
                 now or datetime.now(UTC),
                 cancelled=cancelled,
+                **({"local_refinement": True} if local_refinement else {}),
             )
         finally:
             self._optimization_lock.release()

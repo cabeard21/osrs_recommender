@@ -13,6 +13,7 @@ export const slots = [
 ] as const;
 export type Slot = (typeof slots)[number];
 export type Workspace = "single" | "multi";
+export type OptimizationMode = "fast" | "thorough";
 export type SecondaryPriority =
   | "default"
   | "balanced_defence"
@@ -26,6 +27,11 @@ export type SecondaryPriority =
   | "ranged_strength_bonus"
   | "magic_damage_bonus"
   | "accuracy";
+export interface WorkBudgetPolicy {
+  policy: "baseline-v1" | "local-refinement-v1";
+  complete_assignment_limit: 0 | 2000;
+  targeted_head_refinement: false;
+}
 export type Style = "melee" | "ranged" | "magic";
 export type Equipment = Record<Slot, number | null>;
 export interface Role {
@@ -58,6 +64,7 @@ export interface CombatTarget {
 }
 export interface Draft {
   secondaryPriority?: SecondaryPriority;
+  optimizationMode?: OptimizationMode;
   target: string;
   defence: string;
   budget: string;
@@ -79,6 +86,7 @@ export interface Scenario {
   objective: "weighted_dps";
   request: {
     secondary_priority?: SecondaryPriority;
+    optimization_mode?: OptimizationMode;
     roles: (Omit<Role, "weight"> & { weight: number })[];
     target: { name: string; defence: number; definition?: CombatTarget };
     budget_gp: number;
@@ -216,6 +224,8 @@ export interface CombatPerformance {
 }
 export interface OptimizationDTO {
   secondary_priority?: SecondaryPriority;
+  optimization_mode?: OptimizationMode;
+  work_budget_policy?: WorkBudgetPolicy;
   api_version: "gear-ui-v1";
   evaluated_at: string;
   scenario: Record<string, unknown>;
@@ -230,6 +240,8 @@ export interface OptimizationDTO {
   items: PhysicalItem[];
   result: {
     secondary_priority?: SecondaryPriority;
+    optimization_mode?: OptimizationMode;
+    work_budget_policy?: WorkBudgetPolicy;
     snapshot_id: string;
     catalog_version: string;
     model_version: string;

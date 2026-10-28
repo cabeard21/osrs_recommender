@@ -19,6 +19,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/api/optimizationModes.ts",
+        "src/components/OptimizationModeSummary.tsx",
         "src/api/httpClient.ts",
         "src/api/runtime.ts",
         "src/api/jointResults.ts",

@@ -18,6 +18,7 @@ from tracker.api.gear_optimizations import (
     consume,
     error,
     same_origin,
+    scenario_fingerprint,
     validate_scenario,
 )
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, no_cache, resources
@@ -153,11 +154,7 @@ def calculate_evaluation(
     return EquipmentEvaluationResponse(
         evaluated_at=now,
         scenario=scenario,
-        scenario_fingerprint=hashlib.sha256(
-            json.dumps(
-                scenario.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
-            ).encode()
-        ).hexdigest(),
+        scenario_fingerprint=scenario_fingerprint(scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
         model_version="normal-attacks-v1",

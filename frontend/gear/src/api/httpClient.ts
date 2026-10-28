@@ -9,6 +9,10 @@ import {
 } from "./runtime";
 import { parseJointSolution } from "./jointResults";
 import { validateSecondaryPriority } from "./secondaryPriorities";
+import {
+  validateOptimizationPolicy,
+  validateRefinementDiagnostics,
+} from "./optimizationModes";
 export { performanceMetrics } from "./runtime";
 import { emptyEquipment, slots } from "./contracts";
 import { parseAlternatives } from "./contextualAlternatives";
@@ -70,6 +74,7 @@ export function parseOptimization(
   }
   const normalizedServerScenario = {
     ...object(envelope.scenario),
+    optimization_mode: object(envelope.scenario).optimization_mode ?? "fast",
     secondary_priority:
       object(envelope.scenario).secondary_priority ?? "default",
   };
@@ -111,10 +116,20 @@ export function parseOptimization(
     model_version: "string",
     assumptions_fingerprint: "string",
   });
+  validateOptimizationPolicy(
+    envelope,
+    result,
+    scenario.request.optimization_mode ?? "fast",
+  );
   const priority = scenario.request.secondary_priority ?? "default";
   validateSecondaryPriority(envelope, priority);
   validateSecondaryPriority(result, priority);
   object(result.search);
+  if (scenario.request.optimization_mode === "thorough")
+    validateRefinementDiagnostics(
+      object(result.search).local_refinement,
+      scenario.request.max_swaps,
+    );
   if (!strings(result.limitations))
     throw new Error("Invalid result limitations");
   const baseline = requireFields(envelope.baseline, { status: "string" });
@@ -337,6 +352,7 @@ export function optimizationRequest(scenario: Scenario) {
         }
       : {}),
     mode: r.mode,
+    optimization_mode: r.optimization_mode ?? "fast",
     secondary_priority: r.secondary_priority ?? "default",
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,

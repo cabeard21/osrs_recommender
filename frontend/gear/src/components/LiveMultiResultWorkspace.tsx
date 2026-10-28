@@ -6,6 +6,7 @@ import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
+import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import {
   JointInventory,
   JointPurchases,
@@ -175,6 +176,12 @@ export function LiveMultiResultWorkspace() {
   return (
     <div className="result-column">
       <SecondaryPrioritySummary result={result} solution={solution} />
+      <OptimizationModeSummary
+        result={result}
+        solution={solution}
+        actionLimit={point?.swap_limit}
+        unrestricted={current.solutionId === "unrestricted"}
+      />
       <section className="panel result-context">
         <span className="eyebrow gold">
           Submitted joint scenario // Python optimizer

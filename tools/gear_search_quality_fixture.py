@@ -16,14 +16,12 @@ from tracker.integrations.prices.client import PriceDTO, PriceSource
 
 
 @lru_cache
-def fixture_data():
-    return json.loads(
-        (Path(__file__).parents[1] / "tests/fixtures/gear_search_quality_account.json").read_text()
-    )
+def fixture_data(fixture_name="gear_search_quality_account.json"):
+    return json.loads((Path(__file__).parents[1] / "tests/fixtures" / fixture_name).read_text())
 
 
-def load_case(name):
-    data = fixture_data()
+def load_case(name, *, fixture_name="gear_search_quality_account.json"):
+    data = fixture_data(fixture_name)
     at = datetime.fromisoformat(data["provenance"]["at"])
     snapshot = AccountSnapshot(
         1,

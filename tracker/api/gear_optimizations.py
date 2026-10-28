@@ -40,6 +40,7 @@ def error(code: str, message: str, status: int = 422, field: str = "scenario") -
 class BrowserOptimizationRequest(OptimizationRequest):
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     expected_snapshot_id: str = Field(min_length=1, max_length=128)
+    optimization_mode: Literal["fast", "thorough"] = "fast"
 
     @model_validator(mode="before")
     @classmethod
@@ -52,6 +53,34 @@ class Baseline(DTO):
     equipment: dict[str, int]
     performance: CombatPerformance | None
     reasons: list[str]
+
+
+class WorkBudgetPolicy(DTO):
+    policy: Literal["baseline-v1", "local-refinement-v1"]
+    complete_assignment_limit: Literal[0, 2000]
+    targeted_head_refinement: Literal[False] = False
+
+
+def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
+    thorough = body.optimization_mode == "thorough"
+    return WorkBudgetPolicy(
+        policy="local-refinement-v1" if thorough else "baseline-v1",
+        complete_assignment_limit=2000 if thorough else 0,
+    )
+
+
+def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
+    """Identify both requested inputs and the effective, server-owned search policy."""
+    return hashlib.sha256(
+        json.dumps(
+            {
+                "scenario": body.model_dump(mode="json"),
+                "work_budget_policy": work_budget_policy(body).model_dump(mode="json"),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
 
 
 class Loadout(DTO):
@@ -108,7 +137,9 @@ class CurvePoint(DTO):
 
 
 class OptimizationResult(DTO):
+    optimization_mode: Literal["fast", "thorough"]
     secondary_priority: SecondaryPriority
+    work_budget_policy: WorkBudgetPolicy
     snapshot_id: str
     evaluated_at: datetime
     catalog_version: str
@@ -128,9 +159,11 @@ class OptimizationResult(DTO):
 
 
 class OptimizationResponse(DTO):
-    secondary_priority: SecondaryPriority
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
+    optimization_mode: Literal["fast", "thorough"]
+    secondary_priority: SecondaryPriority
+    work_budget_policy: WorkBudgetPolicy
     scenario: BrowserOptimizationRequest
     scenario_fingerprint: str
     price_revision: str
@@ -206,7 +239,20 @@ def calculate(
     if stopped.is_set():
         raise ValueError("optimization_cancelled")
     validate_scenario(body, gear, snapshot)
-    result = gear.optimize(snapshot, body, price_records=prices, now=now, cancelled=stopped.is_set)
+    result = gear.optimize(
+        snapshot,
+        body,
+        price_records=prices,
+        now=now,
+        cancelled=stopped.is_set,
+        **({"local_refinement": True} if body.optimization_mode == "thorough" else {}),
+    )
+    policy = work_budget_policy(body)
+    result = {
+        **result,
+        "optimization_mode": body.optimization_mode,
+        "work_budget_policy": policy.model_dump(mode="json"),
+    }
     if stopped.is_set():
         raise ValueError("optimization_cancelled")
     projection = project_equipment(snapshot, gear)
@@ -240,11 +286,11 @@ def calculate(
     referenced = {r["item_id"] for r in result["items"]} | set(projection.equipment.values())
     return OptimizationResponse(
         evaluated_at=now,
+        optimization_mode=body.optimization_mode,
         secondary_priority=body.secondary_priority,
+        work_budget_policy=policy,
         scenario=body,
-        scenario_fingerprint=hashlib.sha256(
-            json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest(),
+        scenario_fingerprint=scenario_fingerprint(body),
         price_revision=hashlib.sha256(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),

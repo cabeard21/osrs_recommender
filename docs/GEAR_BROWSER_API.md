@@ -1,8 +1,50 @@
 # Gear browser API — Milestone 4
 
 The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_PLAN.md).
-This document describes account/item reads, real single-style optimization, and
-exact fixed-loadout comparisons. Live multi-style optimization remains unavailable.
+This document describes account/item reads, real single/joint optimization, and
+exact fixed-loadout comparisons.
+
+## Fast and Thorough search modes
+
+`POST /ui-api/gear/optimizations` accepts optional `optimization_mode`, strictly
+`"fast"` (default) or `"thorough"`. This is separate from equipment access `mode`
+(`owned`, `usable`, `future`). Omitted and explicit Fast run the unchanged baseline;
+Thorough opts into existing complete-assignment local refinement with a limit of
+2,000 additional assignments. Targeted head refinement is not enabled. Both return
+bounded `best_found` results, including when the refinement limit is reached.
+
+The normalized `scenario` includes `optimization_mode`. Both response and `result`
+include `optimization_mode` and server-owned `work_budget_policy`:
+
+```json
+{"policy":"local-refinement-v1","complete_assignment_limit":2000,"targeted_head_refinement":false}
+```
+
+Fast uses `policy: "baseline-v1"` and `complete_assignment_limit: 0`. These limits
+describe additional local-refinement work, not total baseline search nodes. Clients
+cannot override this policy. `scenario_fingerprint` hashes the normalized scenario
+and effective policy together; fixed `/evaluations` uses the same identity so manual
+trials against accepted Thorough results remain compatible. Account, catalog,
+model, assumptions and price provenance retain their existing fields and checks.
+
+Thorough retains `result.search.local_refinement`, including `triggered`, `reason`,
+`assignment_attempts`, `valid_assignments`, `work_budget_exhausted`, objective and
+tie replacement counts, elapsed duration, and preserved `baseline.curve_solutions`
+and `baseline.unrestricted`. Baseline curve solutions correspond by action-limit
+index. Actual score, acquisition GP, actions and inventory deltas must compare the
+chosen result to its matching preserved baseline; replacement counts are not DPS
+deltas or request progress. Equal-DPS ordering changes must not be labeled damage
+improvements. Cap exhaustion is successful bounded termination, not search failure.
+
+Existing browser callers without a mode and existing NiceGUI/Python/MCP callers
+retain Fast behavior. The MCP `optimize_gear` public request remains unchanged:
+there is no concrete MCP use case justifying a broader schema in this milestone.
+`GearService.optimize` exposes a Python-only `local_refinement=False` keyword used
+by the browser adapter. Busy rejection, worker-thread execution, cooperative
+cancellation and pre/post snapshot checks retain their existing behavior. No queue,
+job persistence, background storage or progress-percentage contract is added.
+
+See [optimization mode acceptance](GEAR_OPTIMIZATION_MODES.md) for deployment limits.
 
 ## Access and lifecycle
 

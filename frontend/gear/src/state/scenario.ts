@@ -21,6 +21,7 @@ export const newRole = (index: number) => ({
 });
 export const newDraft = (): Draft => ({
   secondaryPriority: "default",
+  optimizationMode: "fast",
   target: "Custom ordinary-attack target",
   defence: "1",
   budget: "0",
@@ -44,6 +45,8 @@ export function normalize(
     )
   )
     throw new Error("Choose a valid secondary priority.");
+  if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
+    throw new Error("Choose Fast or Thorough optimization.");
   const integer = (value: string, name: string, min: number, max: number) => {
     const n = Number(value);
     if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
@@ -252,6 +255,7 @@ export function normalize(
     objective: "weighted_dps",
     request: {
       secondary_priority: draft.secondaryPriority ?? "default",
+      optimization_mode: draft.optimizationMode ?? "fast",
       roles,
       target: {
         name: draft.target,
@@ -561,6 +565,18 @@ export function reducer(state: State, action: Action): State {
           },
         };
       if (
+        (current.submitted?.request.optimization_mode ?? "fast") !==
+        (action.result.scenario.request.optimization_mode ?? "fast")
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "Optimization mode changed; rerun the selected mode.",
+          },
+        };
+      if (
         state.context &&
         state.context.snapshotId !== action.result.snapshotId
       )
@@ -743,12 +759,14 @@ export function readDrafts(
     );
     if (![1, version].includes(data?.version)) return null;
     for (const draft of [data.single, data.multi]) {
+      if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
       if (draft.secondaryPriority === undefined)
         draft.secondaryPriority = "default";
       if (
         !secondaryPriorities.some(
           ([priority]) => priority === draft.secondaryPriority,
         ) ||
+        !["fast", "thorough"].includes(draft.optimizationMode) ||
         typeof draft.target !== "string" ||
         typeof draft.budget !== "string" ||
         typeof draft.defence !== "string" ||
