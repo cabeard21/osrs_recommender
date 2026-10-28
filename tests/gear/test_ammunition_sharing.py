@@ -204,11 +204,17 @@ def test_shared_neutral_slots_can_improve_a_one_action_finalist():
         weapon(100, "slash", 30),
         weapon(200, "ranged", 30),
         EquipmentDefinition(
-            id=300, name="Shared cloak", slot="cape", requirements_complete=True,
+            id=300,
+            name="Shared cloak",
+            slot="cape",
+            requirements_complete=True,
             bonuses=EquipmentBonuses(defence_slash=5),
         ),
         EquipmentDefinition(
-            id=400, name="Shared blessing", slot="ammunition", requirements_complete=True,
+            id=400,
+            name="Shared blessing",
+            slot="ammunition",
+            requirements_complete=True,
             bonuses=EquipmentBonuses(prayer=2),
         ),
     ]
@@ -218,7 +224,9 @@ def test_shared_neutral_slots_can_improve_a_one_action_finalist():
     )
     catalog = {item.id: item for item in items}
     snapshot = AccountSnapshot(
-        1, "shared", skills={
+        1,
+        "shared",
+        skills={
             key: SkillState(70, None, Source.MANUAL, NOW)
             for key in ("attack", "strength", "defence", "ranged", "magic")
         },
@@ -227,8 +235,9 @@ def test_shared_neutral_slots_can_improve_a_one_action_finalist():
             for item in items
         },
     )
-    request = OptimizationRequest(roles=roles, mode="owned", max_swaps=1,
-                                  secondary_priority="balanced_defence")
+    request = OptimizationRequest(
+        roles=roles, mode="owned", max_swaps=1, secondary_priority="balanced_defence"
+    )
     facts = {i: equipment_fact(snapshot, item, Content(), {}, NOW) for i, item in catalog.items()}
     search = _Search(snapshot, request, catalog, facts, None)
     original = search.solution({"melee": {"weapon": 100}, "ranged": {"weapon": 200}}, None)
@@ -245,9 +254,7 @@ def test_shared_neutral_slots_can_improve_a_one_action_finalist():
     selected = result["curve"][1]["solution"]
     assert selected is not None
     assert all(row["equipment"].get("cape") == 300 for row in selected["loadouts"].values())
-    assert all(
-        row["equipment"].get("ammunition") == 400 for row in selected["loadouts"].values()
-    )
+    assert all(row["equipment"].get("ammunition") == 400 for row in selected["loadouts"].values())
 
 
 def test_missing_magic_staff_can_improve_a_one_action_finalist(monkeypatch):
@@ -255,8 +262,12 @@ def test_missing_magic_staff_can_improve_a_one_action_finalist(monkeypatch):
         weapon(100, "slash", 30),
         weapon(200, "ranged", 30),
         EquipmentDefinition(
-            id=300, name="Staff of air", slot="weapon", attack_styles=("magic",),
-            requirements_complete=True, bonuses=EquipmentBonuses(magic=10),
+            id=300,
+            name="Staff of air",
+            slot="weapon",
+            attack_styles=("magic",),
+            requirements_complete=True,
+            bonuses=EquipmentBonuses(magic=10),
         ),
     ]
     roles = (
@@ -266,7 +277,9 @@ def test_missing_magic_staff_can_improve_a_one_action_finalist(monkeypatch):
     )
     catalog = {item.id: item for item in items}
     snapshot = AccountSnapshot(
-        1, "staff", skills={
+        1,
+        "staff",
+        skills={
             key: SkillState(70, None, Source.MANUAL, NOW)
             for key in ("attack", "strength", "defence", "ranged", "magic")
         },
