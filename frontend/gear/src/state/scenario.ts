@@ -8,6 +8,7 @@ import type {
   Equipment,
   Workspace,
 } from "../api/contracts";
+import { secondaryPriorities } from "../api/secondaryPriorities";
 export const newRole = (index: number) => ({
   id: `role-${index}`,
   name: `Configuration ${index}`,
@@ -19,6 +20,7 @@ export const newRole = (index: number) => ({
   locks: {},
 });
 export const newDraft = (): Draft => ({
+  secondaryPriority: "default",
   target: "Custom ordinary-attack target",
   defence: "1",
   budget: "0",
@@ -36,6 +38,12 @@ export function normalize(
   snapshotId: string,
   live = false,
 ): Scenario {
+  if (
+    !secondaryPriorities.some(
+      ([priority]) => priority === (draft.secondaryPriority ?? "default"),
+    )
+  )
+    throw new Error("Choose a valid secondary priority.");
   const integer = (value: string, name: string, min: number, max: number) => {
     const n = Number(value);
     if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
@@ -243,6 +251,7 @@ export function normalize(
   return {
     objective: "weighted_dps",
     request: {
+      secondary_priority: draft.secondaryPriority ?? "default",
       roles,
       target: {
         name: draft.target,
@@ -540,6 +549,18 @@ export function reducer(state: State, action: Action): State {
       if (current.generation !== action.generation || !current.pending)
         return state;
       if (
+        (current.submitted?.request.secondary_priority ?? "default") !==
+        (action.result.scenario.request.secondary_priority ?? "default")
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "Secondary priority changed; rerun the selected priority.",
+          },
+        };
+      if (
         state.context &&
         state.context.snapshotId !== action.result.snapshotId
       )
@@ -722,7 +743,12 @@ export function readDrafts(
     );
     if (![1, version].includes(data?.version)) return null;
     for (const draft of [data.single, data.multi]) {
+      if (draft.secondaryPriority === undefined)
+        draft.secondaryPriority = "default";
       if (
+        !secondaryPriorities.some(
+          ([priority]) => priority === draft.secondaryPriority,
+        ) ||
         typeof draft.target !== "string" ||
         typeof draft.budget !== "string" ||
         typeof draft.defence !== "string" ||

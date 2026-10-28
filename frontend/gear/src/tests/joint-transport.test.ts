@@ -89,6 +89,30 @@ function example(count = 2) {
   return { scenario, reply };
 }
 it.each([2, 3, 4])(
+  "validates %i-role secondary priority provenance and values",
+  (count) => {
+    const { scenario, reply } = example(count);
+    scenario.request.secondary_priority = "prayer_bonus";
+    reply.scenario = optimizationRequest(scenario);
+    Object.assign(reply, { secondary_priority: "prayer_bonus" });
+    Object.assign(reply.result, { secondary_priority: "prayer_bonus" });
+    Object.assign(reply.result.selected_solution, {
+      secondary_priority: "prayer_bonus",
+      secondary_value: 12.5,
+    });
+    expect(
+      parseOptimization(reply, scenario).solutions[0].live?.secondary_value,
+    ).toBe(12.5);
+    for (const row of [reply, reply.result, reply.result.selected_solution]) {
+      Object.assign(row, { secondary_priority: "accuracy" });
+      expect(() => parseOptimization(reply, scenario)).toThrow(/priority/);
+      Object.assign(row, { secondary_priority: "prayer_bonus" });
+    }
+    Object.assign(reply.result.selected_solution, { secondary_value: null });
+    expect(() => parseOptimization(reply, scenario)).toThrow(/value/);
+  },
+);
+it.each([2, 3, 4])(
   "retains all %i joint roles, curve points and unrestricted reference",
   (count) => {
     const { scenario, reply } = example(count);

@@ -1,4 +1,5 @@
 import { slots } from "./contracts";
+import { validateSecondaryPriority } from "./secondaryPriorities";
 import type {
   Item,
   JointSolutionDTO,
@@ -27,6 +28,11 @@ export function parseJointSolution(
     score: "number",
     purchase_cost_gp: "number",
   });
+  validateSecondaryPriority(
+    row,
+    scenario.request.secondary_priority ?? "default",
+    true,
+  );
   const integer = (n: unknown) => Number.isSafeInteger(n) && Number(n) >= 0;
   for (const field of [
     "purchase_cost_gp",

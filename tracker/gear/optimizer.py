@@ -31,6 +31,7 @@ from tracker.gear.evaluation import (
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import CombatTarget, EquipmentDefinition
+from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition
 from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.transitions import inventory_slots, plan_transition
@@ -82,6 +83,7 @@ class OptimizationRequest(BaseModel):
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     mode: Literal["owned", "usable", "future"] = "usable"
     budget_gp: int = Field(default=0, ge=0, strict=True)
+    secondary_priority: SecondaryPriority = "default"
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
     base_role: str | None = None
     transitions: tuple[tuple[str, str], ...] = ()
@@ -202,6 +204,7 @@ class _Search:
         self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
         self.eligible = {i: item for i, item in items.items() if self.allowed(i)}
         self.marginals: dict[tuple[str, int], float] = {}
+        self.secondary_marginals: dict[tuple[str, int], float] = {}
         self.pools = self.candidate_pools()
 
     def tick(self) -> bool:
@@ -236,6 +239,18 @@ class _Search:
             self.performance_cache[key] = result
         return self.performance_cache[key]
 
+    def secondary(self, loadouts: Mapping[str, Mapping[str, int]]) -> float:
+        """Normalize active time across scored roles; utility roles contribute nothing."""
+        if self.request.secondary_priority == "default":
+            return 0.0
+        roles = [r for r in self.request.roles if r.style != "special" and r.id in loadouts]
+        weight = sum(r.weight for r in roles)
+        return sum(
+            secondary_value(self.request.secondary_priority, self.performance(loadouts[r.id], r))
+            * r.weight
+            for r in roles
+        ) / (weight or 1)
+
     def compatible(self, equipment: Mapping[str, int]) -> bool:
         weapon = self.items.get(equipment.get("weapon", -1))
         return not (weapon and weapon.two_handed and "shield" in equipment)
@@ -254,17 +269,30 @@ class _Search:
 
                 def marginal(i: int, role: RoleConfig = role, slot: str = slot) -> float:
                     scores = []
+                    secondary_scores = []
                     for base in baselines[role.id]:
                         equipment = {**base, slot: i}
                         if self.compatible(equipment):
                             performance = self.performance(equipment, role)
                             if performance["supported"]:
                                 scores.append(performance.get("dps") or 0)
+                                secondary_scores.append(
+                                    (scores[-1], self.secondary({role.id: equipment}))
+                                )
                     value = max(scores, default=-1)
                     self.marginals[role.id, i] = value
+                    self.secondary_marginals[role.id, i] = max(
+                        (secondary for score, secondary in secondary_scores if score == value),
+                        default=0,
+                    )
                     return value
 
-                by_role.append(sorted(candidates, key=lambda i: (-marginal(i), i)))
+                by_role.append(
+                    sorted(
+                        candidates,
+                        key=lambda i: (-marginal(i), -self.secondary_marginals[role.id, i], i),
+                    )
+                )
             cheap = sorted(candidates, key=lambda i: (self.cost({i}), i))
             ordered = sorted(locked & set(candidates))
             for row in zip(
@@ -308,6 +336,11 @@ class _Search:
                 candidates,
                 key=lambda i: (
                     -sum(self.marginals.get((r.id, i), -1) * r.weight for r in roles),
+                    -sum(
+                        self.secondary_marginals.get((r.id, i), 0) * r.weight
+                        for r in roles
+                        if r.style != "special"
+                    ),
                     i,
                 ),
             )[:1]
@@ -315,7 +348,12 @@ class _Search:
             for role in roles:
                 locks = {**self.request.locks, **role.locks}
                 ranked = sorted(
-                    candidates, key=lambda i: (-self.marginals.get((role.id, i), -1), i)
+                    candidates,
+                    key=lambda i: (
+                        -self.marginals.get((role.id, i), -1),
+                        -self.secondary_marginals.get((role.id, i), 0),
+                        i,
+                    ),
                 )
                 options = (
                     [locks[slot]]
@@ -365,7 +403,13 @@ class _Search:
                     for i in c[r.id].values()
                 )
                 union = {i for e in c.values() for i in e.values()}
-                return (-score, len(union), self.cost(union), json.dumps(c, sort_keys=True))
+                return (
+                    -score,
+                    -self.secondary(c),
+                    len(union),
+                    self.cost(union),
+                    json.dumps(c, sort_keys=True),
+                )
 
             beam = sorted(expanded, key=rank)[:16]
             if not beam:
@@ -415,7 +459,13 @@ class _Search:
                     if all(r.style in {"stab", "slash", "crush"} for r in roles)
                     else 0
                 )
-                return (-score, self.cost(set(e.values())), -strength, tuple(sorted(e.items())))
+                return (
+                    -score,
+                    -self.secondary({r.id: e for r in roles}),
+                    self.cost(set(e.values())),
+                    -strength,
+                    tuple(sorted(e.items())),
+                )
 
             states = sorted(expanded, key=rank)[:BEAM_WIDTH]
             if not states:
@@ -457,6 +507,10 @@ class _Search:
         peak = max([*occupancies, *(t["max_gear_inventory_slots"] for t in transitions)], default=0)
         return {
             "score": score,
+            "secondary_priority": self.request.secondary_priority,
+            "secondary_value": self.secondary(loadouts)
+            if self.request.secondary_priority != "default"
+            else None,
             "loadouts": {
                 r.id: {
                     "equipment": loadouts[r.id],
@@ -481,6 +535,7 @@ class _Search:
 def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
     return (
         -solution["score"],
+        -(solution.get("secondary_value") or 0),
         solution["max_gear_inventory_slots"],
         solution["purchase_cost_gp"],
         sum(t["action_count"] for t in solution["transitions"]),
@@ -526,11 +581,18 @@ def _slot_alternatives(search: _Search, solution: dict[str, Any] | None) -> dict
                         "item_id": item_id,
                         "score": candidate["score"],
                         "score_delta": candidate["score"] - solution["score"],
+                        "secondary_value": candidate["secondary_value"],
                         "purchase_cost_gp": candidate["purchase_cost_gp"],
                     }
                 )
         alternatives[slot] = sorted(
-            rows, key=lambda r: (-r["score"], r["purchase_cost_gp"], r["item_id"] or 0)
+            rows,
+            key=lambda r: (
+                -r["score"],
+                -(r["secondary_value"] or 0),
+                r["purchase_cost_gp"],
+                r["item_id"] or 0,
+            ),
         )[:5]
     return alternatives
 
@@ -596,6 +658,7 @@ def optimize(
         )
         return (
             -score,
+            -search.secondary(c),
             len({i for e in c.values() for i in e.values()}),
             json.dumps(c, sort_keys=True),
         )
@@ -715,6 +778,7 @@ def optimize(
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
     return {
         "snapshot_id": snapshot.fingerprint,
+        "secondary_priority": request.secondary_priority,
         "evaluated_at": now.isoformat(),
         "catalog_version": getattr(catalog, "revision", "unknown"),
         "model_version": "normal-attacks-v1",
@@ -765,6 +829,8 @@ def optimize(
         },
         "limitations": [
             "Best found within bounded candidates and beams; global optimum is not proven.",
+            "Secondary priority orders exact modeled DPS ties; bounded search does not "
+            "guarantee the best secondary value.",
             "Active-time weighted DPS excludes movement, survival, supply endurance "
             "and special utility.",
             "Budget uses cached quoted acquisition prices, not guaranteed market fills.",

@@ -6,6 +6,8 @@ import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { PurchaseListCopy } from "./PurchaseListCopy";
+import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
+import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 
 function comparable(a: OptimizationReply, b: OptimizationReply) {
   const combat = (r: OptimizationReply) => {
@@ -21,6 +23,7 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
     });
   };
   return (
+    matchesSecondaryPriority(a, b) &&
     a.snapshotId === b.snapshotId &&
     a.catalogVersion === b.catalogVersion &&
     a.modelVersion === b.modelVersion &&
@@ -75,6 +78,10 @@ export function LiveResultWorkspace() {
     );
   return (
     <div className="result-column">
+      <SecondaryPrioritySummary
+        result={result}
+        solution={result.live?.result.selected_solution}
+      />
       <section className="panel result-context">
         <span className="eyebrow gold">
           Submitted scenario // Python optimizer
@@ -265,8 +272,8 @@ export function LiveResultWorkspace() {
           ) : (
             <p>
               Performance comparison unavailable: account, target, combat
-              assumptions, catalog or model differ, or a result has no feasible
-              solution.
+              assumptions, catalog, model or secondary priority differ, or a
+              result has no feasible solution.
             </p>
           )}
           <details>

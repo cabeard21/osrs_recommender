@@ -7,6 +7,7 @@ import { RoleTargetEditor } from "./RoleTargetEditor";
 import { MultiTransitions } from "./MultiTransitions";
 import { MultiLockEditor } from "./MultiLockEditor";
 import { nextRoleIndex, removeMultiRole } from "./multiDraft";
+import { secondaryPriorities } from "../api/secondaryPriorities";
 export function ConfigurationPanel() {
   const { state, current, edit, liveMode } = useGear(),
     draft = current.draft;
@@ -31,6 +32,23 @@ export function ConfigurationPanel() {
       <h2 id="parameters" className="eyebrow">
         <SlidersHorizontal size={17} /> Optimization parameters
       </h2>
+      <label>
+        Secondary priority
+        <select
+          value={draft.secondaryPriority ?? "default"}
+          onChange={(e) =>
+            change({
+              secondaryPriority: e.target.value as Draft["secondaryPriority"],
+            })
+          }
+        >
+          {secondaryPriorities.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
       {state.mode === "single" && (
         <div className="raised">
           <span className="eyebrow blue">Encounter target</span>

@@ -8,6 +8,7 @@ import {
   uiSlot,
 } from "./runtime";
 import { parseJointSolution } from "./jointResults";
+import { validateSecondaryPriority } from "./secondaryPriorities";
 export { performanceMetrics } from "./runtime";
 import { emptyEquipment, slots } from "./contracts";
 import { parseAlternatives } from "./contextualAlternatives";
@@ -67,7 +68,12 @@ export function parseOptimization(
       );
     return expected === actual;
   }
-  if (!matches(submitted, object(envelope.scenario)))
+  const normalizedServerScenario = {
+    ...object(envelope.scenario),
+    secondary_priority:
+      object(envelope.scenario).secondary_priority ?? "default",
+  };
+  if (!matches(submitted, normalizedServerScenario))
     throw new Error(
       "Optimization scenario does not match the submitted constraints",
     );
@@ -105,6 +111,9 @@ export function parseOptimization(
     model_version: "string",
     assumptions_fingerprint: "string",
   });
+  const priority = scenario.request.secondary_priority ?? "default";
+  validateSecondaryPriority(envelope, priority);
+  validateSecondaryPriority(result, priority);
   object(result.search);
   if (!strings(result.limitations))
     throw new Error("Invalid result limitations");
@@ -198,6 +207,7 @@ export function parseOptimization(
       score: "number",
       purchase_cost_gp: "number",
     });
+    validateSecondaryPriority(selected, priority, true);
     if (
       !Number.isFinite(selected.score) ||
       !Number.isSafeInteger(selected.purchase_cost_gp) ||
@@ -327,6 +337,7 @@ export function optimizationRequest(scenario: Scenario) {
         }
       : {}),
     mode: r.mode,
+    secondary_priority: r.secondary_priority ?? "default",
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,
     max_swaps: r.max_swaps,

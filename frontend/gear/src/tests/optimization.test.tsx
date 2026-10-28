@@ -55,6 +55,30 @@ const response = () => ({
     },
   },
 });
+it("validates single-role secondary priority provenance and measurements", () => {
+  const scenario = normalize(
+    { ...newDraft(), secondaryPriority: "accuracy" },
+    context.account.snapshot_id,
+  );
+  const reply = response();
+  reply.scenario = optimizationRequest(scenario);
+  Object.assign(reply, { secondary_priority: "accuracy" });
+  Object.assign(reply.result, { secondary_priority: "accuracy" });
+  Object.assign(reply.result.selected_solution, {
+    secondary_priority: "accuracy",
+    secondary_value: 0.78,
+  });
+  expect(parseOptimization(reply, scenario).solutions[0].weightedDps).toBe(
+    performance.dps,
+  );
+  for (const row of [reply, reply.result, reply.result.selected_solution]) {
+    Object.assign(row, { secondary_priority: "default" });
+    expect(() => parseOptimization(reply, scenario)).toThrow(/priority/);
+    Object.assign(row, { secondary_priority: "accuracy" });
+  }
+  Object.assign(reply.result.selected_solution, { secondary_value: null });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/value/);
+});
 function setup(
   reply = response(),
   optimize?: (init?: RequestInit) => Promise<Response>,

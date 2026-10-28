@@ -21,6 +21,7 @@ from tracker.gear.evaluation import equipment_problems, evaluate_equipment
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import OptimizationRequest, RoleConfig
+from tracker.gear.priorities import SecondaryPriority
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -83,6 +84,8 @@ class EquipmentTransition(DTO):
 
 class Solution(DTO):
     score: float
+    secondary_priority: SecondaryPriority
+    secondary_value: float | None
     loadouts: dict[str, Loadout]
     transitions: list[EquipmentTransition]
     purchase_cost_gp: int
@@ -105,6 +108,7 @@ class CurvePoint(DTO):
 
 
 class OptimizationResult(DTO):
+    secondary_priority: SecondaryPriority
     snapshot_id: str
     evaluated_at: datetime
     catalog_version: str
@@ -124,6 +128,7 @@ class OptimizationResult(DTO):
 
 
 class OptimizationResponse(DTO):
+    secondary_priority: SecondaryPriority
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
     scenario: BrowserOptimizationRequest
@@ -235,6 +240,7 @@ def calculate(
     referenced = {r["item_id"] for r in result["items"]} | set(projection.equipment.values())
     return OptimizationResponse(
         evaluated_at=now,
+        secondary_priority=body.secondary_priority,
         scenario=body,
         scenario_fingerprint=hashlib.sha256(
             json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()

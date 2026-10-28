@@ -5,6 +5,7 @@ import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
+import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import {
   JointInventory,
   JointPurchases,
@@ -173,6 +174,7 @@ export function LiveMultiResultWorkspace() {
   }
   return (
     <div className="result-column">
+      <SecondaryPrioritySummary result={result} solution={solution} />
       <section className="panel result-context">
         <span className="eyebrow gold">
           Submitted joint scenario // Python optimizer
