@@ -1,0 +1,836 @@
+{
+  "schema_version": 1,
+  "family": "metal_chainbodies",
+  "inputs": {
+    "family_sha256": "7d211dfe14fcfbe253d29c0f241eb53b651af821d5a316267762c98da64dc690",
+    "source_sha256": "3fcdb90ec0e3a5fda4979470fd192523f60bde51a1ed73920b9b6a4f32db9527",
+    "physical_catalog_sha256": "7f52a0a7014dea07db9b1d3b1bef0c8eb511c70fd909865ee41a4c9a7c5f3739",
+    "authored_sha256": "64fa10d01abc7a2d74fecac0960bbf2d546089d9109908aa410f4d7419082622",
+    "equipment_source": {
+      "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+      "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+      "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+    }
+  },
+  "entries": [
+    {
+      "item_id": 1101,
+      "physical": {
+        "id": 1101,
+        "name": "Iron chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 10,
+          "defence_slash": 15,
+          "defence_crush": 19,
+          "defence_magic": -3,
+          "defence_ranged": 12,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1101",
+        "name": "Iron chainbody",
+        "item_id": 1101,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 1
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320142",
+          "revision": 15320142,
+          "sha256": "5727ab80ed609fb044706d7784191af420ebb652c90a5bb4b9204c086c99c110"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded. Black Knights' Fortress, King's Ransom and While Guthix Sleeps are uses, not equip requirements."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1103,
+      "physical": {
+        "id": 1103,
+        "name": "Bronze chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 7,
+          "defence_slash": 11,
+          "defence_crush": 13,
+          "defence_magic": -3,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1103",
+        "name": "Bronze chainbody",
+        "item_id": 1103,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 1
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320183",
+          "revision": 15320183,
+          "sha256": "fb482d28b57a039bb26a226a5a6d1c6a871eab4bcc7ca20e559713a22c9f7241"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1105,
+      "physical": {
+        "id": 1105,
+        "name": "Steel chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 25,
+          "defence_crush": 30,
+          "defence_magic": -3,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1105",
+        "name": "Steel chainbody",
+        "item_id": 1105,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 5
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182585",
+          "revision": 15182585,
+          "sha256": "379436a1375e7a047273ed3f17ef02fd3b8c49757e6266850510a7c53bd6994a"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1107,
+      "physical": {
+        "id": 1107,
+        "name": "Black chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 22,
+          "defence_slash": 32,
+          "defence_crush": 39,
+          "defence_magic": -3,
+          "defence_ranged": 24,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1107",
+        "name": "Black chainbody",
+        "item_id": 1107,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 10
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182608",
+          "revision": 15182608,
+          "sha256": "43c3f4b7b708928a7367c0aa412487a12da6fd23e6cd5c3d8ef8817bcfcbbb28"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1109,
+      "physical": {
+        "id": 1109,
+        "name": "Mithril chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 25,
+          "defence_slash": 35,
+          "defence_crush": 42,
+          "defence_magic": -3,
+          "defence_ranged": 27,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1109",
+        "name": "Mithril chainbody",
+        "item_id": 1109,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 20
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320194",
+          "revision": 15320194,
+          "sha256": "dd93945093cd1eaa83b79b8d2e91549666b4573df52e53c974502abac2c01a92"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1111,
+      "physical": {
+        "id": 1111,
+        "name": "Adamant chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 36,
+          "defence_slash": 50,
+          "defence_crush": 61,
+          "defence_magic": -3,
+          "defence_ranged": 38,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1111",
+        "name": "Adamant chainbody",
+        "item_id": 1111,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 30
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182714",
+          "revision": 15182714,
+          "sha256": "ea58efaf3fdc130f72cbe114b17cdff9815239fd904ed22d933990b8c2f105af"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded. Song of the Elves is an item use, not an equip requirement."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 1113,
+      "physical": {
+        "id": 1113,
+        "name": "Rune chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 63,
+          "defence_slash": 72,
+          "defence_crush": 78,
+          "defence_magic": -3,
+          "defence_ranged": 65,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_chainbodies_1113",
+        "name": "Rune chainbody",
+        "item_id": 1113,
+        "slot": "body",
+        "requires": {
+          "skill": {
+            "defence": 40
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182848",
+          "revision": 15182848,
+          "sha256": "9cbb46925a838e716467475c996273b02ade7c93b531f3a1823c0e655a752f9b"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Reviewed pinned exact-ID page, Defence wear statement, tradeability and static armour bonuses; no conditional outgoing combat effects."
+    },
+    {
+      "item_id": 3140,
+      "physical": {
+        "id": 3140,
+        "name": "Dragon chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 81,
+          "defence_slash": 93,
+          "defence_crush": 98,
+          "defence_magic": -3,
+          "defence_ranged": 82,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Dragon chainbody needs its own wear/acquisition review; no metal-tier inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 6615,
+      "physical": {
+        "id": 6615,
+        "name": "White chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 22,
+          "defence_slash": 32,
+          "defence_crush": 39,
+          "defence_magic": -3,
+          "defence_ranged": 24,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "White chainbody needs independent wear and acquisition review; no black-equipment inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 12414,
+      "physical": {
+        "id": 12414,
+        "name": "Dragon chainbody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 81,
+          "defence_slash": 93,
+          "defence_crush": 98,
+          "defence_magic": -3,
+          "defence_ranged": 82,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Gold dragon form needs independent exact-ID variant and wear review."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 20149,
+      "physical": {
+        "id": 20149,
+        "name": "Gilded chainbody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 63,
+          "defence_slash": 72,
+          "defence_crush": 78,
+          "defence_magic": -3,
+          "defence_ranged": 65,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Gilded physical identity needs source-backed variant review; no rune alias approval."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 22616,
+      "physical": {
+        "id": 22616,
+        "name": "Vesta's chainbody (Deadman Mode)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 35,
+          "slash": 35,
+          "crush": 6,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 5,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 35,
+          "defence_slash": 38,
+          "defence_crush": 36,
+          "defence_magic": -10,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Deadman form: suspected mode restrictions or conditional mechanics; manual source/effect review required."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 27831,
+      "physical": {
+        "id": 27831,
+        "name": "Vesta's chainbody (bh)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 14,
+          "slash": 14,
+          "crush": 4,
+          "magic": -32,
+          "ranged": -15,
+          "melee_strength": 6,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 55,
+          "defence_slash": 59,
+          "defence_crush": 62,
+          "defence_magic": -18,
+          "defence_ranged": 85,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Bounty Hunter form: suspected mode restrictions or conditional mechanics; manual source/effect review required."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 27842,
+      "physical": {
+        "id": 27842,
+        "name": "Corrupted vesta's chainbody (bh)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 14,
+          "slash": 14,
+          "crush": 4,
+          "magic": -28,
+          "ranged": -14,
+          "melee_strength": 5,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 18,
+          "defence_slash": 21,
+          "defence_crush": 23,
+          "defence_magic": -10,
+          "defence_ranged": 21,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Corrupted Bounty Hunter form: suspected restrictions or conditional mechanics; manual source/effect review required."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    },
+    {
+      "item_id": 28065,
+      "physical": {
+        "id": 28065,
+        "name": "Dragon chainbody (cr)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -15,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 81,
+          "defence_slash": 93,
+          "defence_crush": 98,
+          "defence_magic": -3,
+          "defence_ranged": 82,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Crater form needs independent exact-ID mechanics and wear review."
+      ],
+      "decision": "rejected",
+      "review_reason": "Outside the seven plain metal chainbodies; no clearance or wear approval."
+    }
+  ],
+  "proposed_effect_clearance": [
+    1101,
+    1103,
+    1105,
+    1107,
+    1109,
+    1111,
+    1113
+  ],
+  "approved_effect_clearance": [
+    1101,
+    1103,
+    1105,
+    1107,
+    1109,
+    1111,
+    1113
+  ]
+}

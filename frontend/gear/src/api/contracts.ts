@@ -13,6 +13,7 @@ export const slots = [
 ] as const;
 export type Slot = (typeof slots)[number];
 export type Workspace = "single" | "multi";
+export type SupportPolicy = "verified_only" | "community_best_effort";
 export type OptimizationMode = "fast" | "thorough";
 export type SecondaryPriority =
   | "default"
@@ -63,6 +64,7 @@ export interface CombatTarget {
   [key: string]: unknown;
 }
 export interface Draft {
+  supportPolicy?: SupportPolicy;
   secondaryPriority?: SecondaryPriority;
   optimizationMode?: OptimizationMode;
   target: string;
@@ -85,6 +87,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    support_policy?: SupportPolicy;
     secondary_priority?: SecondaryPriority;
     optimization_mode?: OptimizationMode;
     roles: (Omit<Role, "weight"> & { weight: number })[];
@@ -239,6 +242,8 @@ export interface OptimizationDTO {
   };
   items: PhysicalItem[];
   result: {
+    support_policy?: SupportPolicy;
+    support_provenance?: string;
     secondary_priority?: SecondaryPriority;
     optimization_mode?: OptimizationMode;
     work_budget_policy?: WorkBudgetPolicy;
@@ -334,8 +339,13 @@ export type Trial = TrialIdentity &
 export type FixtureFailure = "none" | "busy" | "no-solution" | "error";
 export interface GearClient {
   getContext(): Promise<GearContext>;
-  getItem(id: number): Promise<Item>;
-  browseItems?(slot: Slot, query: string, offset?: number): Promise<ItemPage>;
+  getItem(id: number, supportPolicy?: SupportPolicy): Promise<Item>;
+  browseItems?(
+    slot: Slot,
+    query: string,
+    offset?: number,
+    supportPolicy?: SupportPolicy,
+  ): Promise<ItemPage>;
   alternatives(slot: Slot, scenario: Scenario): Promise<Item[]>;
   optimize(scenario: Scenario, signal: AbortSignal): Promise<OptimizationReply>;
   evaluate(
@@ -351,6 +361,13 @@ export const emptyEquipment = (): Equipment =>
   Object.fromEntries(slots.map((slot) => [slot, null])) as Equipment;
 
 export interface PhysicalItem {
+  support_status?: "verified" | "community_assumed" | "unreviewed";
+  support_assumptions?: string[];
+  effect_status?:
+    | "generic_unreviewed"
+    | "unsupported_mechanic"
+    | "reviewed_ordinary"
+    | "community_assumed";
   item_id: number;
   numeric_item_id: number;
   name: string;

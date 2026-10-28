@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "equipment_source": {
+    "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+    "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+    "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+  },
+  "equipment_rows": [
+    {
+      "name": "Adamant chainbody",
+      "id": 1111,
+      "weight": 7.711,
+      "version": "",
+      "slot": "body",
+      "image": "Adamant chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 36,
+        "slash": 50,
+        "crush": 61,
+        "magic": -3,
+        "ranged": 38
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black chainbody",
+      "id": 1107,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Black chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 22,
+        "slash": 32,
+        "crush": 39,
+        "magic": -3,
+        "ranged": 24
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze chainbody",
+      "id": 1103,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Bronze chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 7,
+        "slash": 11,
+        "crush": 13,
+        "magic": -3,
+        "ranged": 9
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron chainbody",
+      "id": 1101,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Iron chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 10,
+        "slash": 15,
+        "crush": 19,
+        "magic": -3,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril chainbody",
+      "id": 1109,
+      "weight": 5.896,
+      "version": "",
+      "slot": "body",
+      "image": "Mithril chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 25,
+        "slash": 35,
+        "crush": 42,
+        "magic": -3,
+        "ranged": 27
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune chainbody",
+      "id": 1113,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Rune chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 63,
+        "slash": 72,
+        "crush": 78,
+        "magic": -3,
+        "ranged": 65
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel chainbody",
+      "id": 1105,
+      "weight": 6.803,
+      "version": "",
+      "slot": "body",
+      "image": "Steel chainbody.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 17,
+        "slash": 25,
+        "crush": 30,
+        "magic": -3,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    }
+  ],
+  "pages": {
+    "1111": {
+      "title": "Adamant chainbody",
+      "revision": 15182714,
+      "timestamp": "2026-04-22T02:47:35Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182714",
+      "sha256": "ea58efaf3fdc130f72cbe114b17cdff9815239fd904ed22d933990b8c2f105af",
+      "wikitext": "{{External|rsc=Adamantite Chain Mail Body|rs}}\n{{Infobox Item\n|name = Adamant chainbody\n|image = [[File:Adamant chainbody.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 4800\n|weight = 7.711\n|exchange = Yes\n|id = 1111\n}}\n[[File:Adamant chainbody detail.png|120px|left]]\n'''Adamant chainbody''' is piece of [[armour]] made from [[adamant equipment|adamantite]]. A player can create an adamant chainbody by using an [[adamant bar|adamantite bar]] on an [[anvil]] while a [[hammer]] and 3 adamantite bars are in the player's inventory. A [[Smithing]] level of 81 is required to make an adamant chainbody and doing so will grant the player 187.5 Smithing experience. Level 30 [[Defence]] is required to wear an adamant chainbody. It can also be bought from [[Wayne's Chains]] in south [[Falador]]. One adamant chainbody is required for [[Song of the Elves]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +36\n|dslash = +50\n|dcrush = +61\n|dmagic = -3\n|drange = +38\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Adamant chainbody equipped male.png]]\n|altimage = [[File:Adamant chainbody equipped female.png|150px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 81\n|skill1boostable = Yes\n|skill1exp = 187.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Adamantite bar\n|mat1quantity = 3\n|output1 = Adamant chainbody\n}}\n\n==Item sources==\n{{Drop sources|Adamant chainbody}}\n\n===Shop locations===\n{{Store locations list|Adamant chainbody}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Adamant chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Adamant chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Adamant chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Adamant chainbody detail.png|center|300x150px]]\n|-\n|[[File:Adamant chainbody (historical, v1).png|center]]\n|[[File:Adamant chainbody (historical, v2).png|center]]\n|[[File:Adamant chainbody.png|center]]\n|-\n|[[File:Adamant chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Adamant chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Adamant chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Adamant equipment}}\n[[Category:Melee armour]]"
+    },
+    "1107": {
+      "title": "Black chainbody",
+      "revision": 15182608,
+      "timestamp": "2026-04-22T02:44:51Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182608",
+      "sha256": "43c3f4b7b708928a7367c0aa412487a12da6fd23e6cd5c3d8ef8817bcfcbbb28",
+      "wikitext": "{{External|rs|rsc=Black Chain Mail Body}}\n{{Infobox Item\n|name = Black chainbody\n|image = [[File:Black chainbody.png]]\n|release = [[8 December]] [[2001]]\n|update = Latest RuneScape News (8 December 2001)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 1440\n|weight = 6.803\n|exchange = Yes\n|id = 1107\n}}\n[[File:Black chainbody detail.png|120px|left]]\nThe '''black chainbody''' is stronger than the [[steel chainbody]], and can be worn by players with 10 [[Defence]]. Players can purchase this item at the [[Keldagrim]] and [[Falador]] [[Chainmail shops]]. This item cannot be made using the [[Smithing]] skill, and has the same bonuses as a [[white chainbody]], except it lacks a [[prayer bonus]].\n\nSold at [[Wayne's Chains]] shop in southern Falador for 1,440 coins, and at [[Saro]]'s armour shop in Keldagrim for 1,872 coins.\n\nAs with all [[Black equipment|black]] and [[white equipment]], the black chainbody cannot be made from raw materials using the [[Smithing]] skill.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +22\n|dslash = +32\n|dcrush = +39\n|dmagic = -3\n|drange = +24\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Black chainbody equipped male.png]]\n|altimage = [[File:Black chainbody equipped female.png]]\n}}\n\n==Item sources==\n{{Drop sources|Black chainbody}}\n\n===Shop locations===\n{{Store locations list|Black chainbody}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Black chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Black chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Black chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Black chainbody detail.png|center|300x150px]]\n|-\n|[[File:Black chainbody (historical, v1).png|center]]\n|[[File:Black chainbody (historical, v2).png|center]]\n|[[File:Black chainbody.png|center]]\n|-\n|[[File:Black chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Black chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Black chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Black equipment}}\n[[Category:Melee armour]]"
+    },
+    "1103": {
+      "title": "Bronze chainbody",
+      "revision": 15320183,
+      "timestamp": "2026-08-25T22:41:44Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320183",
+      "sha256": "fb482d28b57a039bb26a226a5a6d1c6a871eab4bcc7ca20e559713a22c9f7241",
+      "wikitext": "{{External|rs|rsc=Bronze Chain Mail Body}}\n{{Infobox Item\n|name = Bronze chainbody\n|image = [[File:Bronze chainbody.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 60\n|weight = 6.803\n|respawn = 700\n|exchange = Yes\n|id = 1103\n}}\n[[File:Bronze chainbody detail.png|120px|left]]\nThe '''bronze chainbody''' is a chainbody that can be made at an anvil with 3 [[bronze bar]]s and a hammer with a [[Smithing]] level of 11, granting 37.5 Smithing experience. Since it requires a [[Defence]] level of 1 to wear, it can be worn by any player. It is one of the weakest armour chest pieces in the game and is seldom worn. The bronze chainbody can be obtained through a spawn located in the [[Dwarven Mine]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +7\n|dslash = +11\n|dcrush = +13\n|dmagic = -3\n|drange = +9\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Bronze chainbody equipped male.png]]\n|altimage = [[File:Bronze chainbody equipped female.png|150px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 11\n|skill1boostable = Yes\n|skill1exp = 37.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Bronze bar\n|mat1quantity = 3\n|output1 = Bronze chainbody\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Bronze chainbody}}\n\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Bronze chainbody|location=[[Dwarven Mines]] - western end|members=No|mapID=6\n|2985,9817|leagueRegion = Asgarnia}}\n{{ItemSpawnLine|name=Bronze chainbody|location=North-east of [[Twilight Temple]]|members=Yes|1694,3270|leagueRegion = Varlamore}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Bronze chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Bronze chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Bronze chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Bronze chainbody detail.png|center|300x150px]]\n|-\n|[[File:Bronze chainbody (historical, v1).png|center]]\n|[[File:Bronze chainbody (historical, v2).png|center]]\n|[[File:Bronze chainbody.png|center]]\n|-\n|[[File:Bronze chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Bronze chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Bronze chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Bronze equipment}}\n[[Category:Melee armour]]"
+    },
+    "1101": {
+      "title": "Iron chainbody",
+      "revision": 15320142,
+      "timestamp": "2026-08-25T22:32:59Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320142",
+      "sha256": "5727ab80ed609fb044706d7784191af420ebb652c90a5bb4b9204c086c99c110",
+      "wikitext": "{{External|rs|rsc=Iron Chain Mail Body}}\n{{Infobox Item\n|name = Iron chainbody\n|image = [[File:Iron chainbody.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 210\n|weight = 6.803\n|exchange = Yes\n|id = 1101\n}}\n[[File:Iron chainbody detail.png|120px|left]]\nThe '''iron chainbody''' is the second weakest [[chainbody]], and can be worn by a player with 1 [[Defence]]. A player with 26 [[Smithing]] can make the chainbody by using three [[iron bar]]s on an [[anvil]] while carrying a [[hammer]], granting 75 Smithing [[experience]].\n\nAn iron chainbody is required for the [[Black Knights' Fortress]], [[King's Ransom]], and [[While Guthix Sleeps]] quests.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +10\n|dslash = +15\n|dcrush = +19\n|dmagic = -3\n|drange = +12\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Iron chainbody equipped male.png|150px]]\n|altimage = [[File:Iron chainbody equipped female.png|150px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 26\n|skill1boostable = Yes\n|skill1exp = 75\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Iron bar\n|mat1quantity = 3\n|output1 = Iron chainbody\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Iron chainbody}}\n\n===Shop locations===\n{{Store locations list|Iron chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Iron chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Iron chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Iron chainbody detail.png|center|300x150px]]\n|-\n|[[File:Iron chainbody (historical, v1).png|center]]\n|[[File:Iron chainbody (historical, v2).png|center]]\n|[[File:Iron chainbody.png|center]]\n|-\n|[[File:Iron chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Iron chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Iron chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Iron equipment}}\n[[Category:Melee armour]]"
+    },
+    "1109": {
+      "title": "Mithril chainbody",
+      "revision": 15320194,
+      "timestamp": "2026-08-25T22:45:23Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320194",
+      "sha256": "dd93945093cd1eaa83b79b8d2e91549666b4573df52e53c974502abac2c01a92",
+      "wikitext": "{{External|rs|rsc=Mithril_Chain_Mail_Body}}\n{{Infobox Item\n|name = Mithril chainbody\n|image = [[File:Mithril chainbody.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 1950\n|weight = 5.896\n|exchange = Yes\n|id = 1109\n}}\n[[File:Mithril chainbody detail.png|120px|left]]\nThe '''Mithril chainbody''' is a [[chainbody]] made out of [[mithril equipment|mithril]]. As with all mithril armour, it requires 20 [[Defence]] to wear.\n\nLike all chainbodies, it provides better Crush defence than a [[Mithril platebody|platebody]] made of the same material, at the cost of lower Stab and Slash defence.\n\nThe Mithril chainbody can be made with level 61 [[Smithing]] using 3 [[mithril bar]]s, and grants 150 Smithing experience.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +25\n|dslash = +35\n|dcrush = +42\n|dmagic = -3\n|drange = +27\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Mithril chainbody equipped male.png|130px]]\n|altimage = [[File:Mithril chainbody equipped female.png|150px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 61\n|skill1boostable = Yes\n|skill1exp = 150\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Mithril bar\n|mat1quantity = 3\n|output1 = Mithril chainbody\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Mithril chainbody}}\n\n===Shop locations===\n{{Store locations list|Mithril chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Mithril chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Mithril chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Mithril chainbody detail.png|center|300x150px]]\n|-\n|[[File:Mithril chainbody (historical, v1).png|center]]\n|[[File:Mithril chainbody (historical, v2).png|center]]\n|[[File:Mithril chainbody.png|center]]\n|-\n|[[File:Mithril chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Mithril chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Mithril chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Mithril equipment}}\n[[Category:Melee armour]]"
+    },
+    "1113": {
+      "title": "Rune chainbody",
+      "revision": 15182848,
+      "timestamp": "2026-04-22T02:48:51Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182848",
+      "sha256": "9cbb46925a838e716467475c996273b02ade7c93b531f3a1823c0e655a752f9b",
+      "wikitext": "{{External|rs|rsc=Rune Chain Mail Body}}\n{{Infobox Item\n|name = Rune chainbody\n|image = [[File:Rune chainbody.png]]\n|release = [[26 July]] [[2001]]\n|update = Runescape updated (26 July 2001)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 50000\n|weight = 6.803\n|exchange = Yes\n|id = 1113\n}}\n[[File:Rune chainbody detail.png|120px|left]]\nA '''rune chainbody''' is a [[chainbody]] made of [[Rune equipment|runite]]. To wear this chainbody, a player needs at least level 40 [[Defence]]. This piece of body armour is less resistant than the [[rune platebody]] in all stats except [[Crush weapons|crush]] and [[magic]] and wearing it does not require completion of [[Dragon Slayer I]]. For this reason it is commonly worn by players who have not finished said quest or who are fighting against [[monster]]s that use crush attacks. It is also useful for rangers since it has higher defence bonuses than the [[green d'hide body]] and it does not penalise ranged attack.\n\nA player with 96 [[Smithing]] can make the chainbody by using three [[runite bar]]s on an [[anvil]], granting 225 Smithing [[experience]]. It can also be bought at [[Scavvo's Rune Store]] in the [[Champions' Guild]], or for [[members]], at [[Seddu's Adventurer's Store]] in [[Nardah]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +63\n|dslash = +72\n|dcrush = +78\n|dmagic = -3\n|drange = +65\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Rune chainbody equipped male.png]]\n|altimage = [[File:Rune chainbody equipped female.png]]\n}}\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 96\n|skill1boostable = Yes\n|skill1exp = 225\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Runite bar\n|mat1quantity = 3\n|output1 = Rune chainbody\n}}\n==Item sources==\n{{Drop sources|Rune chainbody}}\n===Shop locations===\n{{Store locations list|Rune chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Rune chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Rune chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Rune chainbody detail.png|center|300x150px]]\n|-\n|[[File:Rune chainbody (historical, v1).png|center]]\n|[[File:Rune chainbody (historical, v2).png|center]]\n|[[File:Rune chainbody.png|center]]\n|-\n|[[File:Rune chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Rune chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Rune chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Rune equipment}}\n[[Category:Melee armour]]\n[[Category:Armour]]"
+    },
+    "1105": {
+      "title": "Steel chainbody",
+      "revision": 15182585,
+      "timestamp": "2026-04-22T02:44:38Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182585",
+      "sha256": "379436a1375e7a047273ed3f17ef02fd3b8c49757e6266850510a7c53bd6994a",
+      "wikitext": "{{External|rs|rsc=Steel Chain Mail Body}}\n{{Infobox Item\n|name = Steel chainbody\n|image = [[File:Steel chainbody.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A series of connected metal rings.\n|value = 750\n|weight = 6.803\n|exchange = Yes\n|id = 1105\n}}\n\n[[File:Steel chainbody detail.png|120px|left]]\nThe '''Steel chainbody''' is the third weakest chainbody, and it can be worn by a player with level 5 [[Defence]].\n\nA player with level 41 [[Smithing]] can forge the steel chainbody by using three [[steel bar]]s on an [[anvil]] with a [[hammer]] in their inventory, granting 112.5 [[Smithing]] [[experience]]. It can also be bought from [[Wayne's Chains]] in [[Falador]], or [[Horvik's Armour Shop]] in [[Varrock]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -15\n|arange = 0\n|dstab = +17\n|dslash = +25\n|dcrush = +30\n|dmagic = -3\n|drange = +19\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = body\n|image = [[File:Steel chainbody equipped male.png]]\n|altimage = [[File:Steel chainbody equipped female.png]]\n}}\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 41\n|skill1boostable = Yes\n|skill1exp = 112.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Steel bar\n|mat1quantity = 3\n|output1 = Steel chainbody\n}}\n==Item sources==\n{{Drop sources|Steel chainbody}}\n===Shop locations===\n{{Store locations list|Steel chainbody}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 10 April 2006\n|update = Rag and Bone Man\n|change = *The item was graphically updated.\n*The item's equip model was graphically updated.\n}}\n{{Subject changes\n|daterange = 17 – 24 November 2004\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Steel chainbody detail (historical, v1).png|center|300x150px]]\n|[[File:Steel chainbody detail (historical, v2).png|center|300x150px]]\n|[[File:Steel chainbody detail.png|center|300x150px]]\n|-\n|[[File:Steel chainbody (historical, v1).png|center]]\n|[[File:Steel chainbody (historical, v2).png|center]]\n|[[File:Steel chainbody.png|center]]\n|-\n|[[File:Steel chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Steel chainbody equipped male (historical).png|center|300x300px]]\n|[[File:Steel chainbody equipped male.png|center|300x300px]]\n|-\n|29 March 2004 –<br/>17-24 November 2004\n|17-24 November 2004 –<br/>10 April 2006\n|10 April 2006 –<br/>present\n|}\n\n{{Chainbody}}\n{{Steel equipment}}\n[[Category:Melee armour]]\n[[Category:Armour]]"
+    }
+  },
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "license_urls": [
+    "https://github.com/weirdgloop/osrs-dps-calc/blob/main/LICENSE",
+    "https://meta.weirdgloop.org/w/Licensing"
+  ]
+}

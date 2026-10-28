@@ -1,0 +1,4260 @@
+{
+  "schema_version": 1,
+  "family": "metal_platebodies_extended",
+  "inputs": {
+    "family_sha256": "7f124acd5c092f21a627817cc26a3365645a679ec231c141d1e2e1b332fd95b1",
+    "source_sha256": "872b90b5fcc0a19bfef18dc59cccd5d56ff6a1d33a9a65fbae4ae21e427a42c8",
+    "physical_catalog_sha256": "7f52a0a7014dea07db9b1d3b1bef0c8eb511c70fd909865ee41a4c9a7c5f3739",
+    "authored_sha256": "8fd254301fd3849d957beb16cfe41e10ac689e8faa1cf2e61d3b986f7e873696",
+    "equipment_source": {
+      "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+      "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+      "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+    }
+  },
+  "entries": [
+    {
+      "item_id": 2583,
+      "physical": {
+        "id": 2583,
+        "name": "Black platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2591,
+      "physical": {
+        "id": 2591,
+        "name": "Black platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2599,
+      "physical": {
+        "id": 2599,
+        "name": "Adamant platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2607,
+      "physical": {
+        "id": 2607,
+        "name": "Adamant platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2615,
+      "physical": {
+        "id": 2615,
+        "name": "Rune platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2623,
+      "physical": {
+        "id": 2623,
+        "name": "Rune platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2653,
+      "physical": {
+        "id": 2653,
+        "name": "Zamorak platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2661,
+      "physical": {
+        "id": 2661,
+        "name": "Saradomin platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2669,
+      "physical": {
+        "id": 2669,
+        "name": "Guthix platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 3481,
+      "physical": {
+        "id": 3481,
+        "name": "Gilded platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4069,
+      "physical": {
+        "id": 4069,
+        "name": "Decorative armour (red platebody)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 32,
+          "defence_slash": 31,
+          "defence_crush": 24,
+          "defence_magic": -6,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4504,
+      "physical": {
+        "id": 4504,
+        "name": "Decorative armour (white platebody)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 46,
+          "defence_slash": 44,
+          "defence_crush": 38,
+          "defence_magic": -6,
+          "defence_ranged": 44,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4509,
+      "physical": {
+        "id": 4509,
+        "name": "Decorative armour (gold platebody)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4720,
+      "physical": {
+        "id": 4720,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4728,
+      "physical": {
+        "id": 4728,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4749,
+      "physical": {
+        "id": 4749,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4892,
+      "physical": {
+        "id": 4892,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4893,
+      "physical": {
+        "id": 4893,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4894,
+      "physical": {
+        "id": 4894,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4895,
+      "physical": {
+        "id": 4895,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4896,
+      "physical": {
+        "id": 4896,
+        "name": "Dharok's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4916,
+      "physical": {
+        "id": 4916,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4917,
+      "physical": {
+        "id": 4917,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4918,
+      "physical": {
+        "id": 4918,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4919,
+      "physical": {
+        "id": 4919,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4920,
+      "physical": {
+        "id": 4920,
+        "name": "Guthan's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4964,
+      "physical": {
+        "id": 4964,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4965,
+      "physical": {
+        "id": 4965,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4966,
+      "physical": {
+        "id": 4966,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4967,
+      "physical": {
+        "id": 4967,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -10,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 122,
+          "defence_slash": 120,
+          "defence_crush": 107,
+          "defence_magic": -6,
+          "defence_ranged": 132,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4968,
+      "physical": {
+        "id": 4968,
+        "name": "Torag's platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 6617,
+      "physical": {
+        "id": 6617,
+        "name": "White platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_platebodies_extended_6617",
+        "name": "White platebody",
+        "item_id": 6617,
+        "slot": "body",
+        "requires": {
+          "all_of": [
+            {
+              "skill": {
+                "defence": 10
+              }
+            },
+            {
+              "quest": "wanted"
+            }
+          ]
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234504",
+          "revision": 15234504,
+          "sha256": "6761c4f92d0fc1c42b877e4b8732f9a9da6a2ed272aa1ec578f3eb37f8dfdbd3"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Full exact-ID captured page reviewed; static armour/prayer bonuses only. requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. Tradeable Yes. Smithing/Dragon Slayer II creation or White Knight shop rank are acquisition facts, not additional wear gates; related ornamented identities remain excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Full exact-ID captured page reviewed; static armour/prayer bonuses only. requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. Tradeable Yes. Smithing/Dragon Slayer II creation or White Knight shop rank are acquisition facts, not additional wear gates; related ornamented identities remain excluded."
+    },
+    {
+      "item_id": 10348,
+      "physical": {
+        "id": 10348,
+        "name": "3rd Age platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -20,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 96,
+          "defence_slash": 108,
+          "defence_crush": 113,
+          "defence_magic": -4,
+          "defence_ranged": 97,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12205,
+      "physical": {
+        "id": 12205,
+        "name": "Bronze platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 15,
+          "defence_slash": 14,
+          "defence_crush": 9,
+          "defence_magic": -6,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12215,
+      "physical": {
+        "id": 12215,
+        "name": "Bronze platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 15,
+          "defence_slash": 14,
+          "defence_crush": 9,
+          "defence_magic": -6,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12225,
+      "physical": {
+        "id": 12225,
+        "name": "Iron platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12235,
+      "physical": {
+        "id": 12235,
+        "name": "Iron platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12277,
+      "physical": {
+        "id": 12277,
+        "name": "Mithril platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 46,
+          "defence_slash": 44,
+          "defence_crush": 38,
+          "defence_magic": -6,
+          "defence_ranged": 44,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12287,
+      "physical": {
+        "id": 12287,
+        "name": "Mithril platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 46,
+          "defence_slash": 44,
+          "defence_crush": 38,
+          "defence_magic": -6,
+          "defence_ranged": 44,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12460,
+      "physical": {
+        "id": 12460,
+        "name": "Ancient platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12470,
+      "physical": {
+        "id": 12470,
+        "name": "Armadyl platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12480,
+      "physical": {
+        "id": 12480,
+        "name": "Bandos platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12811,
+      "physical": {
+        "id": 12811,
+        "name": "Ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12814,
+      "physical": {
+        "id": 12814,
+        "name": "Ultimate ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 13361,
+      "physical": {
+        "id": 13361,
+        "name": "Shayzien platebody (1)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -5,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 16,
+          "defence_slash": 20,
+          "defence_crush": 22,
+          "defence_magic": -2,
+          "defence_ranged": 16,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 13366,
+      "physical": {
+        "id": 13366,
+        "name": "Shayzien platebody (2)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -7,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 20,
+          "defence_slash": 25,
+          "defence_crush": 30,
+          "defence_magic": -3,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 13371,
+      "physical": {
+        "id": 13371,
+        "name": "Shayzien platebody (3)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 25,
+          "defence_slash": 32,
+          "defence_crush": 35,
+          "defence_magic": -3,
+          "defence_ranged": 22,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 13376,
+      "physical": {
+        "id": 13376,
+        "name": "Shayzien platebody (4)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -9,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 28,
+          "defence_slash": 35,
+          "defence_crush": 37,
+          "defence_magic": -4,
+          "defence_ranged": 25,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20169,
+      "physical": {
+        "id": 20169,
+        "name": "Steel platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 32,
+          "defence_slash": 31,
+          "defence_crush": 24,
+          "defence_magic": -6,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20184,
+      "physical": {
+        "id": 20184,
+        "name": "Steel platebody (t)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 32,
+          "defence_slash": 31,
+          "defence_crush": 24,
+          "defence_magic": -6,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20485,
+      "physical": {
+        "id": 20485,
+        "name": "Decorative armour (gold platebody)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20794,
+      "physical": {
+        "id": 20794,
+        "name": "Hardcore ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20840,
+      "physical": {
+        "id": 20840,
+        "name": "Corrupted platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 21301,
+      "physical": {
+        "id": 21301,
+        "name": "Obsidian platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 3,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 55,
+          "defence_slash": 78,
+          "defence_crush": 56,
+          "defence_magic": -15,
+          "defence_ranged": 60,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 21892,
+      "physical": {
+        "id": 21892,
+        "name": "Dragon platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 109,
+          "defence_slash": 107,
+          "defence_crush": 97,
+          "defence_magic": -6,
+          "defence_ranged": 106,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_platebodies_extended_21892",
+        "name": "Dragon platebody",
+        "item_id": 21892,
+        "slot": "body",
+        "requires": {
+          "all_of": [
+            {
+              "skill": {
+                "defence": 60
+              }
+            },
+            {
+              "quest": "dragon_slayer_i"
+            }
+          ]
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346808",
+          "revision": 15346808,
+          "sha256": "2f29005cae35e0f16fd996fcffa796865c46582b5b35b2f59a4a0e089842fac5"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Full exact-ID captured page reviewed; static armour/prayer bonuses only. It requires 60 [[Defence]] and completion of the [[quest]] [[Dragon Slayer I]] to equip. Tradeable Yes. Smithing/Dragon Slayer II creation or White Knight shop rank are acquisition facts, not additional wear gates; related ornamented identities remain excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Full exact-ID captured page reviewed; static armour/prayer bonuses only. It requires 60 [[Defence]] and completion of the [[quest]] [[Dragon Slayer I]] to equip. Tradeable Yes. Smithing/Dragon Slayer II creation or White Knight shop rank are acquisition facts, not additional wear gates; related ornamented identities remain excluded."
+    },
+    {
+      "item_id": 22242,
+      "physical": {
+        "id": 22242,
+        "name": "Dragon platebody (g)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 109,
+          "defence_slash": 107,
+          "defence_crush": 97,
+          "defence_magic": -6,
+          "defence_ranged": 106,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22351,
+      "physical": {
+        "id": 22351,
+        "name": "Eggshell platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22628,
+      "physical": {
+        "id": 22628,
+        "name": "Statius's platebody (Deadman Mode)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 6,
+          "slash": 6,
+          "crush": 35,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 5,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 35,
+          "defence_slash": 38,
+          "defence_crush": 36,
+          "defence_magic": -10,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23209,
+      "physical": {
+        "id": 23209,
+        "name": "Rune platebody (h1)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23212,
+      "physical": {
+        "id": 23212,
+        "name": "Rune platebody (h2)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23215,
+      "physical": {
+        "id": 23215,
+        "name": "Rune platebody (h3)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23218,
+      "physical": {
+        "id": 23218,
+        "name": "Rune platebody (h4)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23221,
+      "physical": {
+        "id": 23221,
+        "name": "Rune platebody (h5)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23366,
+      "physical": {
+        "id": 23366,
+        "name": "Black platebody (h1)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23369,
+      "physical": {
+        "id": 23369,
+        "name": "Black platebody (h2)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23372,
+      "physical": {
+        "id": 23372,
+        "name": "Black platebody (h3)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23375,
+      "physical": {
+        "id": 23375,
+        "name": "Black platebody (h4)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23378,
+      "physical": {
+        "id": 23378,
+        "name": "Black platebody (h5)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 41,
+          "defence_slash": 40,
+          "defence_crush": 30,
+          "defence_magic": -6,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23392,
+      "physical": {
+        "id": 23392,
+        "name": "Adamant platebody (h1)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23395,
+      "physical": {
+        "id": 23395,
+        "name": "Adamant platebody (h2)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23398,
+      "physical": {
+        "id": 23398,
+        "name": "Adamant platebody (h3)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23401,
+      "physical": {
+        "id": 23401,
+        "name": "Adamant platebody (h4)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23404,
+      "physical": {
+        "id": 23404,
+        "name": "Adamant platebody (h5)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23787,
+      "physical": {
+        "id": 23787,
+        "name": "Ardougne knight platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 24037,
+      "physical": {
+        "id": 24037,
+        "name": "Dragonstone platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 82,
+          "defence_slash": 80,
+          "defence_crush": 72,
+          "defence_magic": -6,
+          "defence_ranged": 80,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 24158,
+      "physical": {
+        "id": 24158,
+        "name": "Decorative armour (gold platebody)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 65,
+          "defence_slash": 63,
+          "defence_crush": 55,
+          "defence_magic": -6,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26158,
+      "physical": {
+        "id": 26158,
+        "name": "Group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26160,
+      "physical": {
+        "id": 26160,
+        "name": "Group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26162,
+      "physical": {
+        "id": 26162,
+        "name": "Group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26164,
+      "physical": {
+        "id": 26164,
+        "name": "Group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26172,
+      "physical": {
+        "id": 26172,
+        "name": "Hardcore group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26174,
+      "physical": {
+        "id": 26174,
+        "name": "Hardcore group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26176,
+      "physical": {
+        "id": 26176,
+        "name": "Hardcore group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26178,
+      "physical": {
+        "id": 26178,
+        "name": "Hardcore group ironman platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27048,
+      "physical": {
+        "id": 27048,
+        "name": "Group ironman platebody (unranked)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27050,
+      "physical": {
+        "id": 27050,
+        "name": "Group ironman platebody (unranked)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27052,
+      "physical": {
+        "id": 27052,
+        "name": "Group ironman platebody (unranked)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27054,
+      "physical": {
+        "id": 27054,
+        "name": "Group ironman platebody (unranked)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 12,
+          "defence_magic": -6,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27834,
+      "physical": {
+        "id": 27834,
+        "name": "Statius's platebody (bh)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 2,
+          "slash": 2,
+          "crush": 14,
+          "magic": -38,
+          "ranged": -17,
+          "melee_strength": 5,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 102,
+          "defence_slash": 97,
+          "defence_crush": 94,
+          "defence_magic": -16,
+          "defence_ranged": 105,
+          "prayer": 3
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27845,
+      "physical": {
+        "id": 27845,
+        "name": "Corrupted statius's platebody (bh)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 2,
+          "slash": 2,
+          "crush": 14,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 4,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 35,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -12,
+          "defence_ranged": 33,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 28256,
+      "physical": {
+        "id": 28256,
+        "name": "Sanguine torva platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -18,
+          "ranged": -14,
+          "melee_strength": 6,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 117,
+          "defence_slash": 111,
+          "defence_crush": 117,
+          "defence_magic": -11,
+          "defence_ranged": 142,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 29562,
+      "physical": {
+        "id": 29562,
+        "name": "Elite black platebody",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -30,
+          "ranged": -15,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 46,
+          "defence_slash": 44,
+          "defence_crush": 38,
+          "defence_magic": -6,
+          "defence_ranged": 44,
+          "prayer": 8
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 30303,
+      "physical": {
+        "id": 30303,
+        "name": "Torva platebody (unobtainable item)",
+        "slot": "body",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this plain-metal batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    }
+  ],
+  "proposed_effect_clearance": [
+    6617,
+    21892
+  ],
+  "approved_effect_clearance": [
+    6617,
+    21892
+  ]
+}

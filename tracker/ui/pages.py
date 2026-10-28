@@ -104,7 +104,7 @@ def register_pages(app: FastAPI, *, clock: Callable[[], datetime] | None = None)
             else:
                 skills_view.render(rows)
 
-    @ui.page("/gear")
+    @ui.page("/gear-legacy")
     def gear_page() -> None:
         with sessions()() as session:
             player_id = read_model.first_player_id(session)

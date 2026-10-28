@@ -1,0 +1,47 @@
+[
+  {
+    "id": "bulk_metal_full_helms_1155",
+    "name": "Bronze full helm",
+    "item_id": 1155,
+    "slot": "head",
+    "requires": null,
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_full_helms_6623",
+    "name": "White full helm",
+    "item_id": 6623,
+    "slot": "head",
+    "requires": {
+      "all_of": [
+        {
+          "skill": {
+            "defence": 10
+          }
+        },
+        {
+          "quest": "wanted"
+        }
+      ]
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_full_helms_11335",
+    "name": "Dragon full helm",
+    "item_id": 11335,
+    "slot": "head",
+    "requires": {
+      "skill": {
+        "defence": 60
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

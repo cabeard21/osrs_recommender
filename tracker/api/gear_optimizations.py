@@ -22,6 +22,7 @@ from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import OptimizationRequest, RoleConfig
 from tracker.gear.priorities import SecondaryPriority
+from tracker.gear.support import SupportPolicy
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -137,6 +138,8 @@ class CurvePoint(DTO):
 
 
 class OptimizationResult(DTO):
+    support_policy: SupportPolicy = "verified_only"
+    support_provenance: str = ""
     optimization_mode: Literal["fast", "thorough"]
     secondary_priority: SecondaryPriority
     work_budget_policy: WorkBudgetPolicy
@@ -263,7 +266,9 @@ def calculate(
     ):
         reasons.append("Complete, unambiguous equipment observations are required.")
     baseline_items = [
-        gear.physical_item(projected, i, price_records=prices, now=now)
+        gear.physical_item(
+            projected, i, price_records=prices, now=now, support_policy=body.support_policy
+        )
         for i in projection.equipment.values()
     ]
     for item in baseline_items:
@@ -275,7 +280,7 @@ def calculate(
     if not reasons:
         calculated = evaluate_equipment(
             projection.equipment,
-            gear.equipment_catalog().items,
+            gear.supported_catalog(body.support_policy).items,
             body.roles[0],
             {k: v.level for k, v in projected.skills.items()},
         )
@@ -302,7 +307,9 @@ def calculate(
             reasons=list(dict.fromkeys(reasons)),
         ),
         items=[
-            gear.physical_item(projected, i, price_records=prices, now=now)
+            gear.physical_item(
+                projected, i, price_records=prices, now=now, support_policy=body.support_policy
+            )
             for i in sorted(referenced)
         ],
     )

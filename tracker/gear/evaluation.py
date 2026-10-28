@@ -12,6 +12,7 @@ from tracker.estimation.prices import PriceRecord
 from tracker.gear.combat import evaluate_loadout
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
+from tracker.gear.support import project_catalog
 
 
 def equipment_problems(
@@ -203,6 +204,7 @@ def evaluate_configurations(
         or request.loop
     ):
         raise ValueError("Exact evaluation supports one ordinary-attack role without transitions")
+    catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     role = request.roles[0]
     referenced = set(baseline.values()) | set(proposed.values())
@@ -214,7 +216,14 @@ def evaluate_configurations(
         snapshot, request.skill_overrides, request.quest_overrides, now
     )
     facts = {
-        i: equipment_fact(projected, catalog.items[i], content, price_records, now)
+        i: equipment_fact(
+            projected,
+            catalog.items[i],
+            content,
+            price_records,
+            now,
+            support_assumptions=getattr(catalog, "community_assumptions", {}).get(i, ()),
+        )
         for i in referenced
     }
     levels = {k: v.level for k, v in projected.skills.items()}

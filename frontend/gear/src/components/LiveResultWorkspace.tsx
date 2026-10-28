@@ -1,3 +1,4 @@
+import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment } from "../api/contracts";
 import type { OptimizationReply } from "../api/contracts";
@@ -82,6 +83,7 @@ export function LiveResultWorkspace() {
     );
   return (
     <div className="result-column">
+      <SupportPolicySummary result={result} />
       <SecondaryPrioritySummary
         result={result}
         solution={result.live?.result.selected_solution}

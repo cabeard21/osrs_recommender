@@ -131,7 +131,17 @@ test("retained Gear, dashboard, health and API boundary remain available", async
   expect((await request.get("/healthz")).status()).toBe(200);
   expect((await request.post("/api/sync", { data: {} })).status()).toBe(401);
   expect((await request.get("/ui-api/gear/context")).status()).toBe(200);
-  await page.goto("/gear");
+  await page.goto("/gear/?mode=fixture");
+  await expect(page).toHaveURL(/\/gear\?mode=fixture$/);
+  await expect(
+    page.getByRole("button", { name: "Run fixture optimization", exact: true }),
+  ).toBeVisible();
+  await page.goto("/gear/results/example?mode=fixture");
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Run fixture optimization", exact: true }),
+  ).toBeVisible();
+  await page.goto("/gear-legacy");
   await expect(page.locator("[data-testid=gear-optimizer]")).toBeVisible();
   await page.goto("/");
   await expect(

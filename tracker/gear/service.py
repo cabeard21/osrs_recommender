@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, cast
 
 from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
@@ -22,6 +22,7 @@ from tracker.gear.catalog import EquipmentCatalog, load_catalog
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
+from tracker.gear.support import SupportPolicy, project_catalog
 
 _STYLES = frozenset({"melee", "ranged", "magic"})
 _OWNERSHIP = frozenset({"owned", "unowned", "unknown"})
@@ -51,6 +52,11 @@ class GearService:
         if self._equipment is None:
             self._equipment = load_catalog(self.content, self._equipment_root)
         return self._equipment
+
+    def supported_catalog(
+        self, support_policy: SupportPolicy = "verified_only"
+    ) -> EquipmentCatalog:
+        return cast(EquipmentCatalog, project_catalog(self.equipment_catalog(), support_policy))
 
     def optimize(
         self,
@@ -137,6 +143,7 @@ class GearService:
         limit: int | None = None,
         price_records: Mapping[int, PriceRecord] | None = None,
         now: datetime | None = None,
+        support_policy: SupportPolicy = "verified_only",
     ) -> dict[str, Any]:
         """Inspectable physical equipment, including locked and unsupported upgrades."""
         for label, value, choices in (
@@ -150,7 +157,7 @@ class GearService:
             raise ValueError("invalid catalog pagination")
         if style is not None and style not in _STYLES:
             raise ValueError("invalid catalog style")
-        catalog = self.equipment_catalog()
+        catalog = self.supported_catalog(support_policy)
         if slot is not None and slot not in {item.slot for item in catalog.items.values()}:
             raise ValueError("unknown equipment slot")
         evaluated_at = now or datetime.now(UTC)
@@ -166,7 +173,14 @@ class GearService:
                 attacks = {"stab", "slash", "crush"} if style == "melee" else {style}
                 if style != "magic" and not attacks.intersection(item.attack_styles):
                     continue
-            fact = equipment_fact(snapshot, item, self.content, price_records or {}, evaluated_at)
+            fact = equipment_fact(
+                snapshot,
+                item,
+                self.content,
+                price_records or {},
+                evaluated_at,
+                support_assumptions=getattr(catalog, "community_assumptions", {}).get(item.id, ()),
+            )
             if (
                 (ownership is not None and ownership != fact["ownership"]["status"])
                 or (wear_status is not None and wear_status != fact["wear"]["status"])
@@ -194,14 +208,20 @@ class GearService:
         *,
         price_records: Mapping[int, PriceRecord] | None = None,
         now: datetime | None = None,
+        support_policy: SupportPolicy = "verified_only",
     ) -> dict[str, Any]:
         """Concrete physical identity; never resolve through curated ownership aliases."""
-        catalog = self.equipment_catalog()
+        catalog = self.supported_catalog(support_policy)
         item = catalog.items[item_id]
         records = price_records or {}
         evaluated_at = now or datetime.now(UTC)
         fact = equipment_fact(
-            snapshot or AccountSnapshot(0, ""), item, self.content, records, evaluated_at
+            snapshot or AccountSnapshot(0, ""),
+            item,
+            self.content,
+            records,
+            evaluated_at,
+            support_assumptions=getattr(catalog, "community_assumptions", {}).get(item.id, ()),
         )
         authored = [entry for entry in self.content.items.values() if entry.item_id == item_id]
         record = records.get(item_id)

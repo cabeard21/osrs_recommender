@@ -1,3 +1,11 @@
+FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS frontend
+
+WORKDIR /build/frontend/gear
+COPY frontend/gear/package.json frontend/gear/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/gear ./
+RUN npm run build
+
 FROM python:3.12-slim-bookworm AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -7,6 +15,7 @@ WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY tracker ./tracker
 COPY contracts ./contracts
+COPY --from=frontend /build/tracker/ui/gear_static ./tracker/ui/gear_static
 RUN python -m pip wheel --wheel-dir /wheels .
 
 FROM python:3.12-slim-bookworm AS runtime

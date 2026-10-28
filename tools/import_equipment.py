@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
@@ -252,7 +253,27 @@ ARROW_LIMITS = {
 }
 
 
-def normalize(row: dict) -> dict:
+@lru_cache(maxsize=1)
+def bulk_reviewed_rows() -> dict[int, str]:
+    """Maintenance-time approvals only; never infer review from names/aliases."""
+    reviewed = {}
+    root = Path(__file__).resolve().parents[1] / "content/equipment/reviews/applied"
+    for path in sorted(root.glob("*.json")):
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        approved = set(manifest["approved_effect_clearance"])
+        for entry in manifest["entries"]:
+            if entry["decision"] == "approved" and entry["item_id"] in approved:
+                if entry["classification"] not in ("ordinary", "verified_variant"):
+                    raise ValueError("Unsupported bulk review approval")
+                payload = json.dumps(entry["physical"], sort_keys=True, separators=(",", ":"))
+                fingerprint = hashlib.sha256(payload.encode()).hexdigest()
+                if entry["item_id"] in reviewed and reviewed[entry["item_id"]] != fingerprint:
+                    raise ValueError("Conflicting bulk review fingerprints")
+                reviewed[entry["item_id"]] = fingerprint
+    return reviewed
+
+
+def normalize(row: dict, *, bulk_reviews: dict[int, str] | None = None) -> dict:
     item_id = int(row["id"])
     slot = "ammunition" if row["slot"] == "ammo" else row["slot"]
     supported = item_id in REVIEWED
@@ -286,7 +307,7 @@ def normalize(row: dict) -> dict:
         else:
             stances = ("accurate", "aggressive", "defensive")
         profiles.extend((style, stance) for stance in stances)
-    return {
+    result = {
         "id": item_id,
         "name": row["name"],
         "slot": slot,
@@ -308,6 +329,14 @@ def normalize(row: dict) -> dict:
         "stackable": slot == "ammunition" or category == "Thrown",
         "unsupported_effects": [] if supported else ["Offensive effects have not been validated."],
     }
+    reviews = bulk_reviewed_rows() if bulk_reviews is None else bulk_reviews
+    if item_id in reviews:
+        physical = {k: v for k, v in result.items() if k != "unsupported_effects"}
+        payload = json.dumps(physical, sort_keys=True, separators=(",", ":"))
+        if hashlib.sha256(payload.encode()).hexdigest() != reviews[item_id]:
+            raise ValueError(f"Bulk-reviewed physical item changed: {item_id}")
+        result = {**result, "unsupported_effects": []}
+    return result
 
 
 def main() -> None:

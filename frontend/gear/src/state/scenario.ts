@@ -20,6 +20,7 @@ export const newRole = (index: number) => ({
   locks: {},
 });
 export const newDraft = (): Draft => ({
+  supportPolicy: "community_best_effort",
   secondaryPriority: "default",
   optimizationMode: "fast",
   target: "Custom ordinary-attack target",
@@ -39,6 +40,12 @@ export function normalize(
   snapshotId: string,
   live = false,
 ): Scenario {
+  if (
+    !["verified_only", "community_best_effort"].includes(
+      draft.supportPolicy ?? "community_best_effort",
+    )
+  )
+    throw new Error("Choose a valid equipment support policy.");
   if (
     !secondaryPriorities.some(
       ([priority]) => priority === (draft.secondaryPriority ?? "default"),
@@ -254,6 +261,7 @@ export function normalize(
   return {
     objective: "weighted_dps",
     request: {
+      support_policy: draft.supportPolicy ?? "community_best_effort",
       secondary_priority: draft.secondaryPriority ?? "default",
       optimization_mode: draft.optimizationMode ?? "fast",
       roles,
@@ -553,6 +561,19 @@ export function reducer(state: State, action: Action): State {
       if (current.generation !== action.generation || !current.pending)
         return state;
       if (
+        (current.submitted?.request.support_policy ?? "verified_only") !==
+        (action.result.scenario.request.support_policy ?? "verified_only")
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error:
+              "Equipment support policy changed; rerun the selected policy.",
+          },
+        };
+      if (
         (current.submitted?.request.secondary_priority ?? "default") !==
         (action.result.scenario.request.secondary_priority ?? "default")
       )
@@ -759,6 +780,8 @@ export function readDrafts(
     );
     if (![1, version].includes(data?.version)) return null;
     for (const draft of [data.single, data.multi]) {
+      if (draft.supportPolicy === undefined)
+        draft.supportPolicy = "community_best_effort";
       if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
       if (draft.secondaryPriority === undefined)
         draft.secondaryPriority = "default";
@@ -767,6 +790,9 @@ export function readDrafts(
           ([priority]) => priority === draft.secondaryPriority,
         ) ||
         !["fast", "thorough"].includes(draft.optimizationMode) ||
+        !["verified_only", "community_best_effort"].includes(
+          draft.supportPolicy,
+        ) ||
         typeof draft.target !== "string" ||
         typeof draft.budget !== "string" ||
         typeof draft.defence !== "string" ||

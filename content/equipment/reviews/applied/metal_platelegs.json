@@ -1,0 +1,2723 @@
+{
+  "schema_version": 1,
+  "family": "metal_platelegs",
+  "inputs": {
+    "family_sha256": "db78d32e3752a6982faac11c5e850b19914703be4c2cf021d3dd323ce5524034",
+    "source_sha256": "2064c3bb346ceac01e4b18c46b2df5657b7f5f61fb3fccca42bdfdce2ce26f80",
+    "physical_catalog_sha256": "7f52a0a7014dea07db9b1d3b1bef0c8eb511c70fd909865ee41a4c9a7c5f3739",
+    "authored_sha256": "da42f81587c74e83a466031a67ce5c6c7bb0764e6f366c7fac4994b41d6e3ea4",
+    "equipment_source": {
+      "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+      "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+      "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+    }
+  },
+  "entries": [
+    {
+      "item_id": 1075,
+      "physical": {
+        "id": 1075,
+        "name": "Bronze platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -4,
+          "defence_ranged": 7,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_platelegs_1075",
+        "name": "Bronze platelegs",
+        "item_id": 1075,
+        "slot": "legs",
+        "requires": {
+          "skill": {
+            "defence": 1
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320189",
+          "revision": 15320189,
+          "sha256": "f70535e74110d3d052d53f9146abae062a28aabb91c3ccbf9b87992159a7391c"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact bronze1075 page reviewed in full; explicit Defence1 wear gate, no quest wear gate. Static armour bonuses only; Smithing16 is creation only. Tradeable Yes; no plateskirt identity inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact bronze1075 page reviewed in full; explicit Defence1 wear gate, no quest wear gate. Static armour bonuses only; Smithing16 is creation only. Tradeable Yes; no plateskirt identity inheritance."
+    },
+    {
+      "item_id": 2585,
+      "physical": {
+        "id": 2585,
+        "name": "Black platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 19,
+          "defence_magic": -4,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2593,
+      "physical": {
+        "id": 2593,
+        "name": "Black platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 19,
+          "defence_magic": -4,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2601,
+      "physical": {
+        "id": 2601,
+        "name": "Adamant platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 33,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -4,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2609,
+      "physical": {
+        "id": 2609,
+        "name": "Adamant platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 33,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -4,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2617,
+      "physical": {
+        "id": 2617,
+        "name": "Rune platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2625,
+      "physical": {
+        "id": 2625,
+        "name": "Rune platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2655,
+      "physical": {
+        "id": 2655,
+        "name": "Zamorak platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2663,
+      "physical": {
+        "id": 2663,
+        "name": "Saradomin platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2671,
+      "physical": {
+        "id": 2671,
+        "name": "Guthix platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 3483,
+      "physical": {
+        "id": 3483,
+        "name": "Gilded platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4070,
+      "physical": {
+        "id": 4070,
+        "name": "Decorative armour (red platelegs)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 16,
+          "defence_crush": 15,
+          "defence_magic": -4,
+          "defence_ranged": 16,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4505,
+      "physical": {
+        "id": 4505,
+        "name": "Decorative armour (white platelegs)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 24,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -4,
+          "defence_ranged": 22,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4510,
+      "physical": {
+        "id": 4510,
+        "name": "Decorative armour (gold platelegs)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 33,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -4,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4722,
+      "physical": {
+        "id": 4722,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4898,
+      "physical": {
+        "id": 4898,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4899,
+      "physical": {
+        "id": 4899,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4900,
+      "physical": {
+        "id": 4900,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4901,
+      "physical": {
+        "id": 4901,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4902,
+      "physical": {
+        "id": 4902,
+        "name": "Dharok's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4970,
+      "physical": {
+        "id": 4970,
+        "name": "Torag's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4971,
+      "physical": {
+        "id": 4971,
+        "name": "Torag's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4972,
+      "physical": {
+        "id": 4972,
+        "name": "Torag's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4973,
+      "physical": {
+        "id": 4973,
+        "name": "Torag's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 85,
+          "defence_slash": 82,
+          "defence_crush": 83,
+          "defence_magic": -4,
+          "defence_ranged": 92,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 4974,
+      "physical": {
+        "id": 4974,
+        "name": "Torag's platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 6625,
+      "physical": {
+        "id": 6625,
+        "name": "White platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 21,
+          "defence_slash": 20,
+          "defence_crush": 19,
+          "defence_magic": -4,
+          "defence_ranged": 20,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_platelegs_6625",
+        "name": "White platelegs",
+        "item_id": 6625,
+        "slot": "legs",
+        "requires": {
+          "all_of": [
+            {
+              "skill": {
+                "defence": 10
+              }
+            },
+            {
+              "quest": "wanted"
+            }
+          ]
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234506",
+          "revision": 15234506,
+          "sha256": "904fa3eb972e7a81094160e97973672de75d0d1305eece3dc7318375d54ad2b9"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact white6625 page reviewed in full; Defence10 and Wanted! are explicit wear gates. Static armour/prayer bonuses only. Novice100 kill shop rank is acquisition only; tradeable Yes. No plateskirt identity inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact white6625 page reviewed in full; Defence10 and Wanted! are explicit wear gates. Static armour/prayer bonuses only. Novice100 kill shop rank is acquisition only; tradeable Yes. No plateskirt identity inheritance."
+    },
+    {
+      "item_id": 10346,
+      "physical": {
+        "id": 10346,
+        "name": "3rd Age platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -25,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 78,
+          "defence_slash": 76,
+          "defence_crush": 83,
+          "defence_magic": -5,
+          "defence_ranged": 75,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12207,
+      "physical": {
+        "id": 12207,
+        "name": "Bronze platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -4,
+          "defence_ranged": 7,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12217,
+      "physical": {
+        "id": 12217,
+        "name": "Bronze platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -4,
+          "defence_ranged": 7,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12227,
+      "physical": {
+        "id": 12227,
+        "name": "Iron platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12237,
+      "physical": {
+        "id": 12237,
+        "name": "Iron platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12279,
+      "physical": {
+        "id": 12279,
+        "name": "Mithril platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 24,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -4,
+          "defence_ranged": 22,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12289,
+      "physical": {
+        "id": 12289,
+        "name": "Mithril platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 24,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -4,
+          "defence_ranged": 22,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12415,
+      "physical": {
+        "id": 12415,
+        "name": "Dragon platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 68,
+          "defence_slash": 66,
+          "defence_crush": 63,
+          "defence_magic": -4,
+          "defence_ranged": 65,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12462,
+      "physical": {
+        "id": 12462,
+        "name": "Ancient platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12472,
+      "physical": {
+        "id": 12472,
+        "name": "Armadyl platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12482,
+      "physical": {
+        "id": 12482,
+        "name": "Bandos platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12812,
+      "physical": {
+        "id": 12812,
+        "name": "Ironman platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12815,
+      "physical": {
+        "id": 12815,
+        "name": "Ultimate ironman platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20172,
+      "physical": {
+        "id": 20172,
+        "name": "Steel platelegs (g)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 16,
+          "defence_crush": 15,
+          "defence_magic": -4,
+          "defence_ranged": 16,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20187,
+      "physical": {
+        "id": 20187,
+        "name": "Steel platelegs (t)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 16,
+          "defence_crush": 15,
+          "defence_magic": -4,
+          "defence_ranged": 16,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20487,
+      "physical": {
+        "id": 20487,
+        "name": "Decorative armour (gold platelegs)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 33,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -4,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20796,
+      "physical": {
+        "id": 20796,
+        "name": "Hardcore ironman platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20842,
+      "physical": {
+        "id": 20842,
+        "name": "Corrupted platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 21304,
+      "physical": {
+        "id": 21304,
+        "name": "Obsidian platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 1,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 46,
+          "defence_slash": 43,
+          "defence_crush": 41,
+          "defence_magic": -10,
+          "defence_ranged": 40,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22353,
+      "physical": {
+        "id": 22353,
+        "name": "Eggshell platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22631,
+      "physical": {
+        "id": 22631,
+        "name": "Statius's platelegs (Deadman Mode)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 6,
+          "slash": 6,
+          "crush": 30,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 3,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 30,
+          "defence_crush": 28,
+          "defence_magic": -7,
+          "defence_ranged": 34,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 23789,
+      "physical": {
+        "id": 23789,
+        "name": "Ardougne knight platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 24040,
+      "physical": {
+        "id": 24040,
+        "name": "Dragonstone platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 51,
+          "defence_slash": 49,
+          "defence_crush": 47,
+          "defence_magic": -4,
+          "defence_ranged": 49,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 24159,
+      "physical": {
+        "id": 24159,
+        "name": "Decorative armour (gold platelegs)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 33,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -4,
+          "defence_ranged": 31,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26166,
+      "physical": {
+        "id": 26166,
+        "name": "Group ironman platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 26180,
+      "physical": {
+        "id": 26180,
+        "name": "Hardcore group ironman platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27044,
+      "physical": {
+        "id": 27044,
+        "name": "Group ironman platelegs (unranked)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 11,
+          "defence_slash": 10,
+          "defence_crush": 10,
+          "defence_magic": -4,
+          "defence_ranged": 10,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27835,
+      "physical": {
+        "id": 27835,
+        "name": "Statius's platelegs (bh)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 1,
+          "slash": 1,
+          "crush": 10,
+          "magic": -30,
+          "ranged": -12,
+          "melee_strength": 3,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 73,
+          "defence_slash": 71,
+          "defence_crush": 68,
+          "defence_magic": -14,
+          "defence_ranged": 95,
+          "prayer": 3
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 27846,
+      "physical": {
+        "id": 27846,
+        "name": "Corrupted statius's platelegs (bh)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 1,
+          "slash": 1,
+          "crush": 10,
+          "magic": -26,
+          "ranged": -13,
+          "melee_strength": 2,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 25,
+          "defence_slash": 23,
+          "defence_crush": 21,
+          "defence_magic": -10,
+          "defence_ranged": 22,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 28061,
+      "physical": {
+        "id": 28061,
+        "name": "Dragon platelegs (cr)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 68,
+          "defence_slash": 66,
+          "defence_crush": 63,
+          "defence_magic": -4,
+          "defence_ranged": 65,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 28258,
+      "physical": {
+        "id": 28258,
+        "name": "Sanguine torva platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -24,
+          "ranged": -11,
+          "melee_strength": 4,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 87,
+          "defence_slash": 78,
+          "defence_crush": 79,
+          "defence_magic": -9,
+          "defence_ranged": 102,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 29564,
+      "physical": {
+        "id": 29564,
+        "name": "Elite black platelegs",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -21,
+          "ranged": -11,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 24,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -4,
+          "defence_ranged": 22,
+          "prayer": 6
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 30304,
+      "physical": {
+        "id": 30304,
+        "name": "Torva platelegs (unobtainable item)",
+        "slot": "legs",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    }
+  ],
+  "proposed_effect_clearance": [
+    1075,
+    6625
+  ],
+  "approved_effect_clearance": [
+    1075,
+    6625
+  ]
+}

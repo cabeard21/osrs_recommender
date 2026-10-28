@@ -1,0 +1,3788 @@
+{
+  "schema_version": 1,
+  "family": "metal_kiteshields",
+  "inputs": {
+    "family_sha256": "1f97169a7bfd26f761356fe6bd98a6564f352d41155b60564881061cb6507dc8",
+    "source_sha256": "f0a765219fbd7f70f68ad1d5df23f3ac242ba2dca87c865e8c7c4e17c8f21cd2",
+    "physical_catalog_sha256": "7f52a0a7014dea07db9b1d3b1bef0c8eb511c70fd909865ee41a4c9a7c5f3739",
+    "authored_sha256": "32b5fcf1f1cc444ae6a5f641175e92da3179da2188fa35a7e39efdb101f2ca51",
+    "equipment_source": {
+      "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+      "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+      "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+    }
+  },
+  "entries": [
+    {
+      "item_id": 1189,
+      "physical": {
+        "id": 1189,
+        "name": "Bronze kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 5,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -1,
+          "defence_ranged": 6,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1189",
+        "name": "Bronze kiteshield",
+        "item_id": 1189,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 1
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182543",
+          "revision": 15182543,
+          "sha256": "42c4426b5a06eae9b34d7fe3181a5c4fcd0283e11795d6a6ebdf121ac90f707a"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1189 full captured page reviewed; requiring 1 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1189 full captured page reviewed; requiring 1 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 1191,
+      "physical": {
+        "id": 1191,
+        "name": "Iron kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 10,
+          "defence_crush": 9,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1191",
+        "name": "Iron kiteshield",
+        "item_id": 1191,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 1
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320145",
+          "revision": 15320145,
+          "sha256": "aa6d3b4fc8457b04c29cde37b2e0142c4bb4d588217df6b51b3f90b1fdd8c255"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1191 full captured page reviewed; requiring 1 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1191 full captured page reviewed; requiring 1 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 1193,
+      "physical": {
+        "id": 1193,
+        "name": "Steel kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1193",
+        "name": "Steel kiteshield",
+        "item_id": 1193,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 5
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320256",
+          "revision": 15320256,
+          "sha256": "a9273f876511c980236e7e4462d1f1eb0a27108bb82ada097f08eed289d03f5f"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1193 full captured page reviewed; requiring 5 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1193 full captured page reviewed; requiring 5 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 1195,
+      "physical": {
+        "id": 1195,
+        "name": "Black kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 19,
+          "defence_crush": 18,
+          "defence_magic": -1,
+          "defence_ranged": 18,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1195",
+        "name": "Black kiteshield",
+        "item_id": 1195,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 10
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182605",
+          "revision": 15182605,
+          "sha256": "ab6aea696da21d8b5607e5d78e24d6300b65be3081114b184c651ab7b5bd1844"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1195 full captured page reviewed; requires 10 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1195 full captured page reviewed; requires 10 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 1197,
+      "physical": {
+        "id": 1197,
+        "name": "Mithril kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 18,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -1,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1197",
+        "name": "Mithril kiteshield",
+        "item_id": 1197,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 20
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182828",
+          "revision": 15182828,
+          "sha256": "abb147c15c472e12d8fb97ae043aaf78236c00334f9bfe44072e187656b5c67f"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1197 full captured page reviewed; requiring 20 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1197 full captured page reviewed; requiring 20 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 1199,
+      "physical": {
+        "id": 1199,
+        "name": "Adamant kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_1199",
+        "name": "Adamant kiteshield",
+        "item_id": 1199,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 30
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182727",
+          "revision": 15182727,
+          "sha256": "a6700744db5dd534567a536669bf9b178975f8f18eba290c5791ec70e327e5d2"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 1199 full captured page reviewed; requiring 30 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 1199 full captured page reviewed; requiring 30 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance."
+    },
+    {
+      "item_id": 2589,
+      "physical": {
+        "id": 2589,
+        "name": "Black kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 19,
+          "defence_crush": 18,
+          "defence_magic": -1,
+          "defence_ranged": 18,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2597,
+      "physical": {
+        "id": 2597,
+        "name": "Black kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 19,
+          "defence_crush": 18,
+          "defence_magic": -1,
+          "defence_ranged": 18,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2603,
+      "physical": {
+        "id": 2603,
+        "name": "Adamant kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2611,
+      "physical": {
+        "id": 2611,
+        "name": "Adamant kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2621,
+      "physical": {
+        "id": 2621,
+        "name": "Rune kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2629,
+      "physical": {
+        "id": 2629,
+        "name": "Rune kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2659,
+      "physical": {
+        "id": 2659,
+        "name": "Zamorak kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2667,
+      "physical": {
+        "id": 2667,
+        "name": "Saradomin kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 2675,
+      "physical": {
+        "id": 2675,
+        "name": "Guthix kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 3488,
+      "physical": {
+        "id": 3488,
+        "name": "Gilded kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 6633,
+      "physical": {
+        "id": 6633,
+        "name": "White kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 17,
+          "defence_slash": 19,
+          "defence_crush": 18,
+          "defence_magic": -1,
+          "defence_ranged": 18,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_6633",
+        "name": "White kiteshield",
+        "item_id": 6633,
+        "slot": "shield",
+        "requires": {
+          "all_of": [
+            {
+              "skill": {
+                "defence": 10
+              }
+            },
+            {
+              "quest": "wanted"
+            }
+          ]
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234502",
+          "revision": 15234502,
+          "sha256": "24549161d4b79343a61f4f3a58203e4049b76eab6a0545cbb3264bfd0630a59a"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 6633 full captured page reviewed; requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance. Wanted! explicitly required to wield; Adept800 kill rank only restricts Sir Vyvin purchase."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 6633 full captured page reviewed; requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance. Wanted! explicitly required to wield; Adept800 kill rank only restricts Sir Vyvin purchase."
+    },
+    {
+      "item_id": 8714,
+      "physical": {
+        "id": 8714,
+        "name": "Rune kiteshield (Arrav)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8716,
+      "physical": {
+        "id": 8716,
+        "name": "Rune kiteshield (Asgarnia)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8718,
+      "physical": {
+        "id": 8718,
+        "name": "Rune kiteshield (Dorgeshuun)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8720,
+      "physical": {
+        "id": 8720,
+        "name": "Rune kiteshield (Dragon)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8722,
+      "physical": {
+        "id": 8722,
+        "name": "Rune kiteshield (Fairy)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8724,
+      "physical": {
+        "id": 8724,
+        "name": "Rune kiteshield (Guthix)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8726,
+      "physical": {
+        "id": 8726,
+        "name": "Rune kiteshield (HAM)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8728,
+      "physical": {
+        "id": 8728,
+        "name": "Rune kiteshield (Horse)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8730,
+      "physical": {
+        "id": 8730,
+        "name": "Rune kiteshield (Jogre)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8732,
+      "physical": {
+        "id": 8732,
+        "name": "Rune kiteshield (Kandarin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8734,
+      "physical": {
+        "id": 8734,
+        "name": "Rune kiteshield (Misthalin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8736,
+      "physical": {
+        "id": 8736,
+        "name": "Rune kiteshield (Money)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8738,
+      "physical": {
+        "id": 8738,
+        "name": "Rune kiteshield (Saradomin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8740,
+      "physical": {
+        "id": 8740,
+        "name": "Rune kiteshield (Skull)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8742,
+      "physical": {
+        "id": 8742,
+        "name": "Rune kiteshield (Varrock)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8744,
+      "physical": {
+        "id": 8744,
+        "name": "Rune kiteshield (Zamorak)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8746,
+      "physical": {
+        "id": 8746,
+        "name": "Steel kiteshield (Arrav)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8748,
+      "physical": {
+        "id": 8748,
+        "name": "Steel kiteshield (Asgarnia)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8750,
+      "physical": {
+        "id": 8750,
+        "name": "Steel kiteshield (Dorgeshuun)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8752,
+      "physical": {
+        "id": 8752,
+        "name": "Steel kiteshield (Dragon)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8754,
+      "physical": {
+        "id": 8754,
+        "name": "Steel kiteshield (Fairy)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8756,
+      "physical": {
+        "id": 8756,
+        "name": "Steel kiteshield (Guthix)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8758,
+      "physical": {
+        "id": 8758,
+        "name": "Steel kiteshield (HAM)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8760,
+      "physical": {
+        "id": 8760,
+        "name": "Steel kiteshield (Horse)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8762,
+      "physical": {
+        "id": 8762,
+        "name": "Steel kiteshield (Jogre)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8764,
+      "physical": {
+        "id": 8764,
+        "name": "Steel kiteshield (Kandarin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8766,
+      "physical": {
+        "id": 8766,
+        "name": "Steel kiteshield (Misthalin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8768,
+      "physical": {
+        "id": 8768,
+        "name": "Steel kiteshield (Money)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8770,
+      "physical": {
+        "id": 8770,
+        "name": "Steel kiteshield (Saradomin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8772,
+      "physical": {
+        "id": 8772,
+        "name": "Steel kiteshield (Skull)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8774,
+      "physical": {
+        "id": 8774,
+        "name": "Steel kiteshield (Varrock)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 8776,
+      "physical": {
+        "id": 8776,
+        "name": "Steel kiteshield (Zamorak)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 10352,
+      "physical": {
+        "id": 10352,
+        "name": "3rd Age kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -10,
+          "ranged": -4,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 63,
+          "defence_slash": 65,
+          "defence_crush": 61,
+          "defence_magic": -3,
+          "defence_ranged": 63,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12213,
+      "physical": {
+        "id": 12213,
+        "name": "Bronze kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 5,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -1,
+          "defence_ranged": 6,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12223,
+      "physical": {
+        "id": 12223,
+        "name": "Bronze kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 5,
+          "defence_slash": 7,
+          "defence_crush": 6,
+          "defence_magic": -1,
+          "defence_ranged": 6,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12233,
+      "physical": {
+        "id": 12233,
+        "name": "Iron kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 10,
+          "defence_crush": 9,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12243,
+      "physical": {
+        "id": 12243,
+        "name": "Iron kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 10,
+          "defence_crush": 9,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12281,
+      "physical": {
+        "id": 12281,
+        "name": "Mithril kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 18,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -1,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12291,
+      "physical": {
+        "id": 12291,
+        "name": "Mithril kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 18,
+          "defence_slash": 22,
+          "defence_crush": 20,
+          "defence_magic": -1,
+          "defence_ranged": 20,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12468,
+      "physical": {
+        "id": 12468,
+        "name": "Ancient kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12478,
+      "physical": {
+        "id": 12478,
+        "name": "Armadyl kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 12488,
+      "physical": {
+        "id": 12488,
+        "name": "Bandos kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 44,
+          "defence_slash": 48,
+          "defence_crush": 46,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20181,
+      "physical": {
+        "id": 20181,
+        "name": "Steel kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20196,
+      "physical": {
+        "id": 20196,
+        "name": "Steel kiteshield (t)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 15,
+          "defence_crush": 14,
+          "defence_magic": -1,
+          "defence_ranged": 14,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 20846,
+      "physical": {
+        "id": 20846,
+        "name": "Corrupted kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 8,
+          "defence_slash": 10,
+          "defence_crush": 9,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 21895,
+      "physical": {
+        "id": 21895,
+        "name": "Dragon kiteshield",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 56,
+          "defence_slash": 60,
+          "defence_crush": 58,
+          "defence_magic": -1,
+          "defence_ranged": 58,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_kiteshields_21895",
+        "name": "Dragon kiteshield",
+        "item_id": 21895,
+        "slot": "shield",
+        "requires": {
+          "skill": {
+            "defence": 60
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346817",
+          "revision": 15346817,
+          "sha256": "a73e34ba33303309a86655ffe962da9f06b5afc0b77b67b04d48959f32bfcd1f"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact 21895 full captured page reviewed; requires 60 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance. Dragon Slayer II/Smithing75 creation only; explicitly no Legends Quest wear gate and no dragonfire protection. Ornament has a different ranged penalty and remains excluded."
+      ],
+      "decision": "approved",
+      "review_reason": "Exact 21895 full captured page reviewed; requires 60 [[Defence]] to wield. Tradeable Yes; static armour/prayer bonuses only, conventional one-handed shield compatibility. Smithing and shop access are acquisition only; no related-form or tier inheritance. Dragon Slayer II/Smithing75 creation only; explicitly no Legends Quest wear gate and no dragonfire protection. Ornament has a different ranged penalty and remains excluded."
+    },
+    {
+      "item_id": 22127,
+      "physical": {
+        "id": 22127,
+        "name": "Adamant kiteshield (Arrav)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22129,
+      "physical": {
+        "id": 22129,
+        "name": "Adamant kiteshield (Asgarnia)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22131,
+      "physical": {
+        "id": 22131,
+        "name": "Adamant kiteshield (Dorgeshuun)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22133,
+      "physical": {
+        "id": 22133,
+        "name": "Adamant kiteshield (Dragon)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22135,
+      "physical": {
+        "id": 22135,
+        "name": "Adamant kiteshield (Fairy)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22137,
+      "physical": {
+        "id": 22137,
+        "name": "Adamant kiteshield (Guthix)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22139,
+      "physical": {
+        "id": 22139,
+        "name": "Adamant kiteshield (HAM)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22141,
+      "physical": {
+        "id": 22141,
+        "name": "Adamant kiteshield (Horse)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22143,
+      "physical": {
+        "id": 22143,
+        "name": "Adamant kiteshield (Jogre)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22145,
+      "physical": {
+        "id": 22145,
+        "name": "Adamant kiteshield (Kandarin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22147,
+      "physical": {
+        "id": 22147,
+        "name": "Adamant kiteshield (Misthalin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22149,
+      "physical": {
+        "id": 22149,
+        "name": "Adamant kiteshield (Money)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22151,
+      "physical": {
+        "id": 22151,
+        "name": "Adamant kiteshield (Saradomin)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22153,
+      "physical": {
+        "id": 22153,
+        "name": "Adamant kiteshield (Skull)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22155,
+      "physical": {
+        "id": 22155,
+        "name": "Adamant kiteshield (Varrock)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22157,
+      "physical": {
+        "id": 22157,
+        "name": "Adamant kiteshield (Zamorak)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 27,
+          "defence_slash": 31,
+          "defence_crush": 29,
+          "defence_magic": -1,
+          "defence_ranged": 29,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    },
+    {
+      "item_id": 22244,
+      "physical": {
+        "id": 22244,
+        "name": "Dragon kiteshield (g)",
+        "slot": "shield",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -8,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 56,
+          "defence_slash": 60,
+          "defence_crush": 58,
+          "defence_magic": -1,
+          "defence_ranged": 58,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "rejected",
+      "review_reason": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+    }
+  ],
+  "proposed_effect_clearance": [
+    1189,
+    1191,
+    1193,
+    1195,
+    1197,
+    1199,
+    6633,
+    21895
+  ],
+  "approved_effect_clearance": [
+    1189,
+    1191,
+    1193,
+    1195,
+    1197,
+    1199,
+    6633,
+    21895
+  ]
+}

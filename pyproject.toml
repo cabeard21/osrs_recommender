@@ -26,6 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "setuptools>=68",
+    "wheel",
     "pytest",
     "pytest-cov",
     "pytest-playwright",
@@ -42,7 +44,7 @@ include = ["contracts", "tracker*"]
 
 [tool.setuptools.package-data]
 contracts = ["*.json"]
-"tracker.ui" = ["assets/items/*.png", "assets/items/*.json"]
+"tracker.ui" = ["assets/items/*.png", "assets/items/*.json", "gear_static/**/*"]
 
 # --------------------------------------------------------------------------
 # ruff — lint + format

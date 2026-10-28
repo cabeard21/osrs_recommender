@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "id": "metal_chainbodies",
+  "name_pattern": "chainbody",
+  "slots": [
+    "body"
+  ],
+  "source_file": "content/equipment/reviews/sources/metal_chainbodies.json",
+  "source_sha256": "3fcdb90ec0e3a5fda4979470fd192523f60bde51a1ed73920b9b6a4f32db9527",
+  "items": {
+    "1101": {
+      "requires": {
+        "skill": {
+          "defence": 1
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "can be worn by a player with 1 [[Defence]]"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded. Black Knights' Fortress, King's Ransom and While Guthix Sleeps are uses, not equip requirements."
+    },
+    "1103": {
+      "requires": {
+        "skill": {
+          "defence": 1
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "requires a [[Defence]] level of 1 to wear"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+    },
+    "1105": {
+      "requires": {
+        "skill": {
+          "defence": 5
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "can be worn by a player with level 5 [[Defence]]"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+    },
+    "1107": {
+      "requires": {
+        "skill": {
+          "defence": 10
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "can be worn by players with 10 [[Defence]]"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+    },
+    "1109": {
+      "requires": {
+        "skill": {
+          "defence": 20
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "requires 20 [[Defence]] to wear"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+    },
+    "1111": {
+      "requires": {
+        "skill": {
+          "defence": 30
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "Level 30 [[Defence]] is required to wear an adamant chainbody"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded. Song of the Elves is an item use, not an equip requirement."
+    },
+    "1113": {
+      "requires": {
+        "skill": {
+          "defence": 40
+        }
+      },
+      "acquisition": "tradeable",
+      "wear_evidence": [
+        "To wear this chainbody, a player needs at least level 40 [[Defence]]",
+        "wearing it does not require completion of [[Dragon Slayer I]]"
+      ],
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "review_reason": "Exact unornamented physical ID; explicit Defence wear gate; static armour bonuses only. No quest wear gate; crafting and quest-use facts excluded."
+    }
+  },
+  "wear_patterns": [
+    {
+      "skill": "defence",
+      "pattern": "requires (?:a )?Defence level of (?P<level>\\d+) to wear"
+    },
+    {
+      "skill": "defence",
+      "pattern": "(?:worn by (?:a player|players) with (?:level )?|requires )(?P<level>\\d+) Defence"
+    },
+    {
+      "skill": "defence",
+      "pattern": "Level (?P<level>\\d+) Defence is required to wear"
+    },
+    {
+      "skill": "defence",
+      "pattern": "To wear this chainbody, a player needs at least level (?P<level>\\d+) Defence"
+    }
+  ],
+  "exceptions": {
+    "3140": "Dragon chainbody needs its own wear/acquisition review; no metal-tier inheritance.",
+    "6615": "White chainbody needs independent wear and acquisition review; no black-equipment inheritance.",
+    "12414": "Gold dragon form needs independent exact-ID variant and wear review.",
+    "20149": "Gilded physical identity needs source-backed variant review; no rune alias approval.",
+    "22616": "Deadman form: suspected mode restrictions or conditional mechanics; manual source/effect review required.",
+    "27831": "Bounty Hunter form: suspected mode restrictions or conditional mechanics; manual source/effect review required.",
+    "27842": "Corrupted Bounty Hunter form: suspected restrictions or conditional mechanics; manual source/effect review required.",
+    "28065": "Crater form needs independent exact-ID mechanics and wear review."
+  }
+}

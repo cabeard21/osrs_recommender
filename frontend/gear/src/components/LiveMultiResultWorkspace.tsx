@@ -1,3 +1,4 @@
+import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment, slots } from "../api/contracts";
 import type { Equipment, JointSolutionDTO, Slot } from "../api/contracts";
@@ -175,6 +176,7 @@ export function LiveMultiResultWorkspace() {
   }
   return (
     <div className="result-column">
+      <SupportPolicySummary result={result} />
       <SecondaryPrioritySummary result={result} solution={solution} />
       <OptimizationModeSummary
         result={result}

@@ -1,2 +1,7 @@
 # The Linux image executes this file directly through sh, including Windows builds.
 docker-entrypoint.sh text eol=lf
+# Pinned bulk review captures and generated checksum-bearing artifacts.
+content/equipment/reviews/** text eol=lf
+content/equipment/catalog.json text eol=lf
+content/equipment/manifest.json text eol=lf
+content/items/bulk_*.yaml text eol=lf

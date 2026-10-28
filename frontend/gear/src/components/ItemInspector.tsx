@@ -55,7 +55,12 @@ function FixtureItemInspector() {
     setError(null);
     if (id !== null)
       client
-        .getItem(id)
+        .getItem(
+          id,
+          current.result?.scenario?.request.support_policy ??
+            current.draft.supportPolicy ??
+            "community_best_effort",
+        )
         .then((item) => {
           if (active) setDetails(item);
         })
@@ -352,7 +357,12 @@ function LiveItemInspector() {
     setLoading(id !== null);
     if (id !== null)
       client
-        .getItem(id)
+        .getItem(
+          id,
+          current.result?.scenario?.request.support_policy ??
+            current.draft.supportPolicy ??
+            "community_best_effort",
+        )
         .then((value) => {
           if (active) setItem(value);
         })
@@ -365,14 +375,27 @@ function LiveItemInspector() {
     return () => {
       active = false;
     };
-  }, [id, client, state.context?.snapshotId]);
+  }, [
+    id,
+    client,
+    state.context?.snapshotId,
+    current.result?.scenario?.request.support_policy,
+    current.draft.supportPolicy,
+  ]);
   useEffect(() => {
     let active = true;
     setPage({ items: [], total: 0, nextOffset: null });
     setBrowseError("");
     const timer = setTimeout(() => {
       client
-        .browseItems?.(slot, query, offset)
+        .browseItems?.(
+          slot,
+          query,
+          offset,
+          current.result?.scenario?.request.support_policy ??
+            current.draft.supportPolicy ??
+            "community_best_effort",
+        )
         .then((value) => {
           if (active) setPage(value);
         })
@@ -384,7 +407,15 @@ function LiveItemInspector() {
       active = false;
       clearTimeout(timer);
     };
-  }, [slot, query, offset, client, state.context?.snapshotId]);
+  }, [
+    slot,
+    query,
+    offset,
+    client,
+    state.context?.snapshotId,
+    current.result?.scenario?.request.support_policy,
+    current.draft.supportPolicy,
+  ]);
   const facts = item?.id === id ? item.facts : undefined;
   return (
     <Dialog
@@ -564,6 +595,17 @@ function LiveItemInspector() {
               </p>
             ),
           )}
+          <h3>Equipment support</h3>
+          <p>
+            {facts.support_status === "community_assumed"
+              ? "Community-assumed"
+              : facts.support_status === "verified"
+                ? "Verified"
+                : "Unreviewed"}
+          </p>
+          {facts.support_assumptions?.map((assumption) => (
+            <p key={assumption}>{assumption}</p>
+          ))}
           <h3>Requirements</h3>
           <p>{item?.requirement}</p>
           <pre className="fact-json">
@@ -598,6 +640,18 @@ function LiveItemInspector() {
             <p key={d}>{d}</p>
           ))}
           <h3>Unsupported effects</h3>
+          {facts.effect_status === "generic_unreviewed" && (
+            <p>
+              Generic unreviewed marker: ordinary-equipment classification is
+              missing.
+            </p>
+          )}
+          {facts.effect_status === "unsupported_mechanic" && (
+            <p>
+              Known unsupported mechanic: ordinary DPS is incomplete for this
+              equipment.
+            </p>
+          )}
           {facts.limitations.length ? (
             facts.limitations.map((l) => <p key={l}>{l}</p>)
           ) : (

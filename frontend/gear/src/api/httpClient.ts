@@ -33,6 +33,7 @@ import type {
   EvaluationDTO,
   FixedEvaluation,
   Solution,
+  SupportPolicy,
 } from "./contracts";
 
 const apiSlot = (slot: Slot) => (slot === "ammo" ? "ammunition" : slot);
@@ -116,6 +117,18 @@ export function parseOptimization(
     model_version: "string",
     assumptions_fingerprint: "string",
   });
+  if (
+    result.support_policy !== undefined &&
+    result.support_policy !== submitted.support_policy
+  )
+    throw new Error(
+      "Equipment support policy does not match the submitted request",
+    );
+  if (
+    result.support_provenance !== undefined &&
+    typeof result.support_provenance !== "string"
+  )
+    throw new Error("Invalid equipment support provenance");
   validateOptimizationPolicy(
     envelope,
     result,
@@ -351,6 +364,7 @@ export function optimizationRequest(scenario: Scenario) {
               : {}),
         }
       : {}),
+    support_policy: r.support_policy ?? "verified_only",
     mode: r.mode,
     optimization_mode: r.optimization_mode ?? "fast",
     secondary_priority: r.secondary_priority ?? "default",
@@ -620,6 +634,17 @@ export function parseItem(value: unknown): Item {
     typeof row.acquisition !== "string"
   )
     throw new Error("Invalid item observation status");
+  if (
+    row.support_status !== undefined &&
+    (!["verified", "community_assumed", "unreviewed"].includes(
+      String(row.support_status),
+    ) ||
+      !strings(row.support_assumptions) ||
+      (row.support_status === "community_assumed" &&
+        (!Array.isArray(row.support_assumptions) ||
+          row.support_assumptions.length === 0)))
+  )
+    throw new Error("Invalid equipment support provenance");
   scans(ownership.container_scans);
   for (const key of [
     "selected_trade_at",
@@ -652,7 +677,7 @@ export function parseItem(value: unknown): Item {
     slot: uiSlot(row.slot) as Slot,
     owned: ownership.status === "unknown" ? null : ownership.status === "owned",
     price: price.amount_gp as number | null,
-    requirement: `Eligibility: ${wear.status}${wear.requirements_complete ? "" : " · metadata incomplete"}`,
+    requirement: `${row.support_status === "community_assumed" ? "Community-assumed � " : row.support_status === "verified" ? "Verified � " : ""}Eligibility: ${wear.status}${wear.requirements_complete ? "" : " · metadata incomplete"}`,
     facts: value as PhysicalItem,
   };
 }
@@ -761,16 +786,23 @@ export class HttpGearClient implements GearClient {
   async getContext() {
     return parseContext(await this.request("/context"));
   }
-  async getItem(id: number) {
-    const item = parseItem(await this.request(`/items/${id}`));
+  async getItem(id: number, supportPolicy: SupportPolicy = "verified_only") {
+    const item = parseItem(
+      await this.request(`/items/${id}?support_policy=${supportPolicy}`),
+    );
     if (item.id !== id)
       throw new Error("Item response identity does not match request");
     return item;
   }
-  async browseItems(slot: Slot, query: string, offset = 0): Promise<ItemPage> {
+  async browseItems(
+    slot: Slot,
+    query: string,
+    offset = 0,
+    supportPolicy: SupportPolicy = "verified_only",
+  ): Promise<ItemPage> {
     const row = object(
       await this.request(
-        `/items?${new URLSearchParams({ slot: apiSlot(slot), q: query, offset: String(offset), limit: "20" })}`,
+        `/items?${new URLSearchParams({ slot: apiSlot(slot), q: query, offset: String(offset), limit: "20", support_policy: supportPolicy })}`,
       ),
     );
     if (
@@ -786,7 +818,9 @@ export class HttpGearClient implements GearClient {
     };
   }
   async alternatives(slot: Slot, _scenario: Scenario) {
-    return (await this.browseItems(slot, "")).items;
+    return (
+      await this.browseItems(slot, "", 0, _scenario.request.support_policy)
+    ).items;
   }
   async optimize(
     scenario: Scenario,

@@ -1,0 +1,665 @@
+{
+  "schema_version": 1,
+  "equipment_source": {
+    "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+    "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+    "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+  },
+  "equipment_rows": [
+    {
+      "name": "Adamant scimitar",
+      "id": 1331,
+      "weight": 2.041,
+      "version": "",
+      "slot": "weapon",
+      "image": "Adamant scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 28,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 6,
+        "slash": 29,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black scimitar",
+      "id": 1327,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Black scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 14,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 4,
+        "slash": 19,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze scimitar",
+      "id": 1321,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Bronze scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 6,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 1,
+        "slash": 7,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Crate of scimitars",
+      "id": 32529,
+      "weight": 1.285,
+      "version": "Corsair Cove",
+      "slot": "weapon",
+      "image": "Crate of scimitars (Corsair Cove).png",
+      "speed": 4,
+      "category": "Unarmed",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": true
+    },
+    {
+      "name": "Crate of scimitars",
+      "id": 32627,
+      "weight": 1.285,
+      "version": "Port Khazard",
+      "slot": "weapon",
+      "image": "Crate of scimitars (Port Khazard).png",
+      "speed": 4,
+      "category": "Unarmed",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": true
+    },
+    {
+      "name": "Dragon scimitar",
+      "id": 4587,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Dragon scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 66,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 67,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon scimitar (cr)",
+      "id": 28031,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Dragon scimitar (cr).png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 66,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 67,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon scimitar (or)",
+      "id": 20000,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Dragon scimitar (or).png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 66,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 67,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Gilded scimitar",
+      "id": 12389,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Gilded scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 44,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron scimitar",
+      "id": 1323,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Iron scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 9,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 2,
+        "slash": 10,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril scimitar",
+      "id": 1329,
+      "weight": 1.587,
+      "version": "",
+      "slot": "weapon",
+      "image": "Mithril scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 20,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 5,
+        "slash": 21,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune scimitar",
+      "id": 1333,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Rune scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 44,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune scimitar (guthix)",
+      "id": 23330,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Rune scimitar (guthix).png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 44,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune scimitar (saradomin)",
+      "id": 23332,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Rune scimitar (saradomin).png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 44,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune scimitar (zamorak)",
+      "id": 23334,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Rune scimitar (zamorak).png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 44,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 7,
+        "slash": 45,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel scimitar",
+      "id": 1325,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "Steel scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 14,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 3,
+        "slash": 15,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "White scimitar",
+      "id": 6611,
+      "weight": 1.814,
+      "version": "",
+      "slot": "weapon",
+      "image": "White scimitar.png",
+      "speed": 4,
+      "category": "Slash Sword",
+      "bonuses": {
+        "str": 14,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 4,
+        "slash": 19,
+        "crush": -2,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 1,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    }
+  ],
+  "pages": {
+    "1323": {
+      "title": "Iron scimitar",
+      "revision": 15320139,
+      "timestamp": "2026-08-25T22:32:20Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320139",
+      "sha256": "2d7ce739bd5cf82362fba04afb14acbbe942ea85d8ee056d5afc6a18979ceec0",
+      "wikitext": "{{External|rs|rsc=Iron Scimitar}}\n{{Infobox Item\n|name = Iron scimitar\n|image = [[File:Iron scimitar.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 112\n|weight = 1.814\n|respawn = 500\n|exchange = Yes\n|id = 1323\n}}\n\n[[File:Iron scimitar detail.png|left|130px]]\nThe '''iron scimitar''' is a [[melee weapon]] that can be used in [[combat]]. It is stronger than the [[bronze scimitar]]. Players can make an iron scimitar with 20 [[Smithing]] using 2 [[iron bar]]s, giving 50 [[experience]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +2\n|aslash = +10\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +9\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Iron scimitar equipped male.png|120px]]\n|altimage = [[File:Iron scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 20\n|skill1boostable = Yes\n|skill1exp = 50\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Iron bar\n|mat1quantity = 2\n|output1 = Iron scimitar\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Iron scimitar}}\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Iron scimitar|location=[[Wilderness]] - [[Bone Yard]]|members=No|3214,3730|leagueRegion = Wilderness}}\n{{ItemSpawnLine|name=Iron scimitar|location=[[Ruins of Morra]] (must be [[telegrab]]bed)|members=Yes|1466,3513|leagueRegion = Kourend}}\n{{ItemSpawnLine|name=Iron scimitar|location=South-west corner of the south-western temple in [[the Stranglewood]] (must be [[telegrab]]bed)|members=Yes|1098,3339|leagueRegion = Varlamore}}\n{{ItemSpawnLine|name=Iron scimitar|location=West of [[Ortus Farm]]|members=Yes|1500,3131|leagueRegion = Varlamore}}\n{{ItemSpawnLine|name=Iron scimitar|location=Northern most villa in [[Aldarin]] - {{FloorNumber|uk=2}}|members=yes|1398,2977|plane=2|leagueRegion = Varlamore}}\n{{ItemSpawnLine|name=Iron scimitar|location=[[Buccaneers' Haven]]|members=yes|2065,3692|spawns=1|leagueRegion = N/A}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Iron scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Iron equipment}}"
+    },
+    "1327": {
+      "title": "Black scimitar",
+      "revision": 15182628,
+      "timestamp": "2026-04-22T02:45:03Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182628",
+      "sha256": "2394e82646b6d97e8873fde691639c8baa353d83b2be5fa9accd78d67cbc5729",
+      "wikitext": "{{External|rs|rsc=Black Scimitar}}\n{{Infobox Item\n|name = Black scimitar\n|image = [[File:Black scimitar.png]]\n|release = [[30 April]] [[2002]]\n|update = Latest RuneScape News (30 April 2002)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 768\n|weight = 1.814\n|respawn = 1500\n|exchange = Yes\n|id = 1327\n}}\n[[File:Black scimitar detail.png|left|140px]]\nThe '''black scimitar''' is a [[scimitar]] with a slightly higher attack bonus than the [[steel scimitar]]. It requires level 10 [[Attack]] to wield.\n\nA black scimitar can be found in [[King Lathas]]' [[Ardougne Castle|castle]] in [[East Ardougne]]. The respawn rate of a black scimitar here is about 12 minutes and 30 seconds. It requires level 61 [[Thieving]] to access. It can also be bought from [[Briget's Weapons]].\n\nAs with all [[Black equipment|black]] and [[white equipment]], the black scimitar cannot be made from raw materials using the [[Smithing]] skill.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +4\n|aslash = +19\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +14\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Black scimitar equipped male.png|120px]]\n|altimage = [[File:Black scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Money making==\n{{Mmgsection|Collecting black scimitars from Ardougne Castle}}\n\n==Item sources==\n{{Drop sources|Black scimitar}}\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Black scimitar|location=[[Ardougne Castle]] ({{FloorNumber|uk=1}})|members=Yes|plane=1\n|2572,3284|leagueRegion=Kandarin}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Black scimitar}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Black scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Black scimitar detail (beta).png|center|300x150px]]\n|[[File:Black scimitar detail.png|center|300x150px]]\n|-\n|[[File:Black scimitar (beta).png|center]]\n|[[File:Black scimitar.png|center]]\n|-\n|RuneScape 2<br/>Beta\n|29 March 2004 –<br/>present\n|}\n\n{{Slash weapons}}\n{{Black equipment}}"
+    },
+    "4587": {
+      "title": "Dragon scimitar",
+      "revision": 15346820,
+      "timestamp": "2026-09-16T17:40:13Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346820",
+      "sha256": "2f98d66a03d386d19f5508ee6b01016775da22938e06e8ad5da01b026860685b",
+      "wikitext": "{{External|rs|dw=Dragon Scimitar}}\n{{Infobox Item\n|name = Dragon scimitar\n|image = [[File:Dragon scimitar.png]]\n|release = [[29 March]] [[2005]]\n|update = Weapons Update\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 100000\n|weight = 1.814\n|exchange = Yes\n|id = 4587\n|leagueRegion = kandarin\n}}\n[[File:Dragon scimitar detail.png|left|140px]]\nThe '''dragon scimitar''' is the strongest [[scimitar]] available in ''[[Old School RuneScape]]''. It can only be wielded by players who have 60 [[Attack]] and have completed the [[Monkey Madness I]] quest.\n\nIt may be purchased from [[Daga]] on [[Ape Atoll]] for 100,000 coins. A [[monkeyspeak amulet]] does not need to be worn, as players can just right-click 'Trade' on Daga; however, you still must be in [[Greegree|monkey form]], unless you have completed [[Monkey Madness II]] after which the monkey form is no longer required. Players who have freed [[King Awowogei]] in [[Recipe for Disaster]] can easily reach [[Marim]] through the [[Ape Atoll Teleport (standard)|Ape Atoll Teleport]] spell (requires 64 [[Magic]]) to access [[Daga's Scimitar Smithy|Daga's shop]] on Ape Atoll quicker. The scimitar is also a rare drop from the [[Wilderness]] boss [[Scorpia]] or the [[Zombie Pirate's Locker]].\n\nAs with most [[dragon equipment]], the dragon scimitar '''cannot''' be made from raw materials using the [[Smithing]] skill.\n\nOne good alternative is the [[Arkan blade]], which has very similar stats, the same 4-tick attack speed, and a great special attack, and is earned as a reward for completing [[The Final Dawn]] quest. This saves players the 100,000 coins used for purchasing the Dragon Scimitar.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +8\n|aslash = +67\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +66\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Dragon scimitar equipped male.png|150px]]\n|altimage = [[File:Dragon scimitar equipped female.png|150px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Special attack==\n[[File:Sever.gif|frame|A player performing the dragon scimitar's special attack, ''Sever''.]]\nThe dragon scimitar has a [[special attacks|special attack]], ''Sever'', costing 55% of the player's special attack energy and rolls against the target's slash defence with 25% higher accuracy.{{CiteDiscord|author=Mod Rice|url=https://discord.com/channels/177206626514632704/269673599554551808/1430505068922142741|date=2025-10-22|quote=The dscim rolls with a maximum accuracy roll equal to its maximum accuracy roll + it's maximum accuracy roll divided by 4|archiveurl=|archivedate=|ctxquote=|notes=|name=}} In PvP fights, this special attack has an additional effect that, upon a [[successful hit]], disables the targeted player's active [[protection prayers]] ([[Protect from Magic]], [[Protect from Missiles]], and [[Protect from Melee]]) and prevents the targeted player from using said prayers for 8 ticks (4.8 seconds). \n\n==Comparison==\nThe dragon scimitar is one of the most easily attainable one-handed training weapons in the game. Its power is surpassed by weapons like the [[abyssal whip]] and the [[Ghrazi rapier]]. Due to [[whip]]s and [[hasta]]e being unable to solely train Strength, the dragon scimitar is often used to do so, and is therefore one of the most commonly used weapons in the game to train Strength.\n\nIt shares similar bonuses with [[Viggora's chainmace]], with the chainmace being a [[crush weapon]] rather than a [[slash weapon]].\n\n==Ornament kit==\nPlayers can attach a [[dragon scimitar ornament kit]] or a [[Bounty Hunter ornament kit]] to cosmetically enhance the scimitar, creating a [[dragon scimitar (or)]] or [[dragon scimitar (cr)]] respectively. This only alters its appearance, and gives no stat enhancements. It can be dismantled, returning the scimitar and ornament kit.\n\n==Products==\n{{Uses material list|Dragon scimitar}}\n\n==Treasure Trails==\n* {{SherlockChallenge|Equipping a dragon scimitar|elite}}\n* {{FaloItem|Dragon scimitar|A blood red weapon, a strong curved sword, found on the island of primate lords.}}\n\n==Item sources==\n{{Drop sources|Dragon scimitar}}\n\n===Shop locations===\n{{Store locations list|Dragon scimitar}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Dragon scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 4 April 2005\n|update = Dragon Scimitar Change\n|change = The Dragon scimitar special attack was changed to use 55% special attack energy and now prevents your opponent from using protection prayers for 5 seconds.\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*The dragon scimitar was not actually released until almost four months after the release of the [[Monkey Madness I]] quest on [[29 March]] [[2005]].\n*If the player asks [[Zeke]] to sell them a dragon scimitar before completing Monkey Madness I, he will say \"Seriously, you'll be a monkey's uncle before you'll ever hold a dragon scimitar.\" This is an {{wp|Monkey's uncle|idiom}}, but also a literal reference to Monkey Madness I in which the player plays the role of a monkey's uncle to complete the quest, as completing the quest is required to wield the dragon scimitar.\n*The Dragon scimitar originally had a [[Special attacks|special attack]] that stopped your opponent from moving for a short period of time but Jagex later changed it in [[Update:Dragon Scimitar Change|an update]] to stop protection prayers instead.\n\n==References==\n{{Reflist}}\n\n{{Slash weapons}}\n{{Dragon equipment}}\n[[Category:Weapons with Special attacks]]"
+    },
+    "1331": {
+      "title": "Adamant scimitar",
+      "revision": 15242604,
+      "timestamp": "2026-06-30T06:58:35Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15242604",
+      "sha256": "c2700fde767c7a6e0ddbc10c8fe61cfb837408b905fe539bc14058b918b3b304",
+      "wikitext": "{{External|rsc=Adamantite Scimitar|rs|dw=Adamant Scimitar}}\n{{Infobox Item\n|name = Adamant scimitar\n|image = [[File:Adamant scimitar.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 2560\n|weight = 2.041\n|exchange = Yes\n|id = 1331\n}}\n[[File:Adamant scimitar detail.png|left|130px]]\nThe '''adamant scimitar''' is the fourth strongest [[scimitar]] in the game, behind [[Rune scimitar|rune]], [[Gilded scimitar|gilded]] and [[Dragon scimitar|dragon]]. Like most [[adamant weapons]], it requires {{SCP|Attack|30|link=yes}} to wield. \n\nPlayers can make it with {{SCP|Smithing|75|link=yes}} using two [[adamantite bar]]s, earning 125 [[experience]]. The scimitar can also be obtained from killing [[monsters]], and is a reward from the quest [[The Feud]]. \n\nSmithing an adamant scimitar in the [[Resource Area]] is a task for the [[Wilderness Hard Diary]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 6\n|aslash = 29\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = 1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = 28\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Adamant scimitar equipped male.png|120px]]\n|altimage = [[File:Adamant scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 75\n|skill1boostable = Yes\n|skill1exp = 125\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Adamantite bar\n|mat1quantity = 2\n|output1 = Adamant scimitar\n}}\n\n==Item sources==\n{{Drop sources|Adamant scimitar}}\n\n===Shop locations===\n{{Store locations list|Adamant scimitar}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Adamant scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Adamant equipment}}"
+    },
+    "1321": {
+      "title": "Bronze scimitar",
+      "revision": 15320200,
+      "timestamp": "2026-08-25T22:46:53Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320200",
+      "sha256": "9b93a336fb29a257b1ff680527eae147b67925abf321affdc3bc8af2afcc2ba9",
+      "wikitext": "{{External|rs|rsc=Bronze Scimitar}}\n{{Infobox Item\n|name = Bronze scimitar\n|image = [[File:Bronze scimitar.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 32\n|weight = 1.814\n|respawn = 100\n|exchange = Yes\n|id = 1321\n}}\n[[File:Bronze scimitar detail.png|left|120px]]\nThe '''bronze scimitar''' is a [[scimitar]] made of [[Bronze equipment|bronze]]. The weakest scimitar in the game, it requires level 1 [[Attack]] to wield. Players can make a bronze scimitar with level 5 [[Smithing]] using 2 [[bronze bar]]s, granting 25 Smithing [[experience]]. Players can purchase this scimitar from [[Zeke's Superior Scimitars]] in [[Al Kharid]].\n\nOne can be found for free on the top floor of a house in [[Rimmington]].\n\nThere is also a bronze scimitar spawn in [[Corsair Cove]], in the hut with [[Arsen the Thief]] and [[Cabin Boy Colin]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +1\n|aslash = +7\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +6\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Bronze scimitar equipped male.png|120px]]\n|altimage = [[File:Bronze scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 5\n|skill1boostable = Yes\n|skill1exp = 25\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Bronze bar\n|mat1quantity = 2\n|output1 = Bronze scimitar\n}}\n\n==Item sources==\n{{Drop sources|Bronze scimitar}}\n\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Bronze scimitar|location=[[Corsair Cove]] - [[Arsen the Thief]]'s house ({{FloorNumber|uk=1}})|members=No|plane=1\n|2557,2855|leagueRegion=Kandarin}}\n{{ItemSpawnLine|name=Bronze scimitar|location=[[Giants' Plateau]]|members=No|3362,3154|leagueRegion=Desert}}\n{{ItemSpawnLine|name=Bronze scimitar|location=[[Rimmington]] - [[Anja]] and [[Hengel]]'s house ({{FloorNumber|uk=1}})|members=No|plane=1\n|2965,3211|leagueRegion=Asgarnia}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Bronze scimitar}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Bronze equipment}}"
+    },
+    "1325": {
+      "title": "Steel scimitar",
+      "revision": 15182882,
+      "timestamp": "2026-04-22T02:49:12Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15182882",
+      "sha256": "ca43d3c3f6f10e44ac564a2fe40196870728c379423aa2c8a77cb6eb1a221a35",
+      "wikitext": "{{External|rs|rsc=Steel Scimitar|dw=Steel Scimitar}}\n{{Infobox Item\n|name = Steel scimitar\n|image = [[File:Steel scimitar.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 400\n|weight = 1.814\n|respawn = 1000\n|exchange = Yes\n|id = 1325\n}}\n[[File:Steel scimitar detail.png|left|120px]]\nThe '''steel scimitar''' is a [[scimitar]] made by using 2 [[steel bar]]s on an [[anvil]], as long as you have a [[hammer]] and at least level 35 [[Smithing]], granting 75 experience. Players can purchase this scimitar from [[Zeke's Superior Scimitars]] in [[Al Kharid]].\n\nPlayers require 5 [[Attack]] to wield [[steel weapons]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +3\n|aslash = +15\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +14\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Steel scimitar equipped male.png|120px]]\n|altimage = [[File:Steel scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 35\n|skill1boostable = Yes\n|skill1exp = 75\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Steel bar\n|mat1quantity = 2\n|output1 = Steel scimitar\n}}\n\n==Item sources==\n{{Drop sources|Steel scimitar}}\n\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Steel scimitar|location=[[Prifddinas]] - on a table in [[Iorwerth's Arms]]|members=Yes|mapID=-1|3258,6057|leagueRegion=Tirannwn}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Steel scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Steel equipment}}"
+    },
+    "6611": {
+      "title": "White scimitar",
+      "revision": 15234516,
+      "timestamp": "2026-06-17T08:31:09Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234516",
+      "sha256": "6e4759957bffc0889f8f3c9efb85c3a89b0bfb09f622dab5b94f40eee68fc232",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = White scimitar\n|image = [[File:White scimitar.png]]\n|release = [[17 October]] [[2005]]\n|update = Wanted!\n|members = Yes\n|quest = [[Wanted!]]\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 768\n|weight = 1.814\n|exchange = Yes\n|id = 6611\n}}\n[[File:White scimitar detail.png|left|130px]]\nThe '''white scimitar''' is a [[White Knight equipment|White Knight]] [[weapon]] that requires 10 [[Attack]] and the completion of the [[Wanted!]] [[quest]] to wield. It has the same bonuses as a [[black scimitar]], with an added +1 [[Prayer bonus]].\n\nPlayers can purchase it from [[Sir Vyvin]] after achieving the [[White Knight rank|rank]] of Master (1,300 [[black knight]] kills). It can also be bought on the [[Grand Exchange]] or obtained through trading other players.\n\nAs with all [[white weapons]], it '''cannot''' be made using the [[Smithing]] [[Skills|skill]].{{clear|left}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +4\n|aslash = +19\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +14\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:White scimitar equipped male.png|120px]]\n|altimage = [[File:White scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Shop locations==\n{{Store locations list|White scimitar}}\n\n{{Slash weapons}}\n{{White equipment}}\n{{Prayer items}}"
+    },
+    "1333": {
+      "title": "Rune scimitar",
+      "revision": 15346885,
+      "timestamp": "2026-09-16T17:57:31Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346885",
+      "sha256": "04e83d974a083df2ef39c91bd26a0a671a0166045127f4bff1234b774aa527e1",
+      "wikitext": "{{External|rs|rsc=Rune Scimitar|dw=Rune Scimitar}}\n{{Infobox Item\n|name = Rune scimitar\n|image = [[File:Rune scimitar.png]]\n|release = [[13 August]] [[2001]]\n|update = Wilderness system online\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 25600\n|weight = 1.814\n|exchange = Yes\n|id = 1333\n}}\n[[File:Rune scimitar detail.png|left|130px]]\nThe '''rune scimitar''' is a [[scimitar]] requiring level 40 [[Attack]] to wield. It can be created with 2 [[runite bar]]s at level 90 [[Smithing]], or dropped by various monsters such as [[Zamorak warrior]]s or [[Fire giant]]s. \n\nIt is the second strongest scimitar available behind the [[Dragon scimitar]], and the strongest scimitar in [[free-to-play]]. Furthermore, it is considered the strongest [[melee weapon]] in most situations in free-to-play due to its unmatched attack and strength bonuses for its attack speed.\n\n[[Ironmen]] may prefer to create a [[barronite mace]] or purchase a [[rune sword]] from the [[Champions' Guild]] (requiring 32 [[Quest points]]). [[Members]]-only alternatives to the rune scimitar include the [[rapier]] (after [[Cabin Fever]]), [[brine sabre]], and [[ancient staff]] (after [[Desert Treasure I]]). \n\nPlayers can attach a [[Rune scimitar ornament kit (Guthix)|Guthix]], [[Rune scimitar ornament kit (Saradomin)|Saradomin]] or [[Rune scimitar ornament kit (Zamorak)|Zamorak ornament kit]], obtained from [[Clue scroll (beginner)|beginner]] [[Treasure Trails]], to create a [[rune scimitar (guthix)|Guthix]], [[Rune scimitar (saradomin)|Saradomin]] and [[Rune scimitar (zamorak)|Zamorak rune scimitar]], respectively. This only alters its appearance, and gives no stat enhancements, though the Saradomin and Zamorak variants will provide protection from the respective factions in the [[God Wars Dungeon]]. It can be dismantled at any time, returning the scimitar and ornament kit.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +7\n|aslash = +45\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +44\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Rune scimitar equipped male.png|120px]]\n|altimage = [[File:Rune scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 90\n|skill1boostable = Yes\n|skill1exp = 150\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Runite bar\n|mat1quantity = 2\n|output1 = Rune scimitar\n}}\n\n==Products==\n{{Uses material list|Rune scimitar}}\n\n==Item sources==\n{{Drop sources|Rune scimitar}}\n\n===Shop locations===\n{{Store locations list|Rune scimitar}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Rune scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*The rune scimitar matches the [[Adamant 2h sword]]'s strength bonus, and is much faster, whilst having a marginally higher slash bonus.\n\n{{Slash weapons}}\n{{Rune equipment}}"
+    },
+    "1329": {
+      "title": "Mithril scimitar",
+      "revision": 15322372,
+      "timestamp": "2026-08-27T21:26:39Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15322372",
+      "sha256": "38f5c4ebb15ac1b2d11c037cedeb5417a4bd4f39c3ce850c7d2fa9bcc897bc18",
+      "wikitext": "{{External|rs|rsc=Mithril Scimitar|dw=Mithril Scimitar}}\n{{Infobox Item\n|name = Mithril scimitar\n|image = [[File:Mithril scimitar.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = A vicious, curved sword.\n|value = 1040\n|weight = 1.587\n|exchange = Yes\n|id = 1329\n}}\n\n[[File:Mithril scimitar detail.png|left|150px]]\nThe '''Mithril scimitar''' is a [[scimitar]] stronger than the [[black scimitar]]. Like all [[mithril weapons]], it requires 20 [[Attack]] to wield. It can only be used in combat. Players can make a mithril scimitar with the [[Smithing]] skill at level 55 using 2 [[mithril bar]]s, giving 100 [[experience]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +5\n|aslash = +21\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +20\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Mithril scimitar equipped male.png|120px]]\n|altimage = [[File:Mithril scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 55\n|skill1boostable = Yes\n|skill1exp = 100\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Mithril bar\n|mat1quantity = 2\n|output1 = Mithril scimitar\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Mithril scimitar}}\n===Shop locations===\n{{Store locations list|Mithril scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 13 June 2005\n|update = RuneCraft Update and Tweaks\n|change = The item's examine was changed from \"''A vicious curved sword.''\" to \"''A vicious, curved sword.''\"\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Mithril equipment}}"
+    },
+    "12389": {
+      "title": "Gilded scimitar",
+      "revision": 15366137,
+      "timestamp": "2026-10-05T21:23:32Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15366137",
+      "sha256": "1ad983e03bc863b6188fb096457a48878c55b27a9b7f5126eed477b6d177002c",
+      "wikitext": "{{Infobox Item\n|name = Gilded scimitar\n|image = [[File:Gilded scimitar.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wield, Drop\n|examine = Rune scimitar with gold plate.\n|value = 25600\n|weight = 1.814\n|exchange = Yes\n|id = 12389\n|leagueRegion = General\n}}\n[[File:Gilded scimitar detail.png|left|120px]]\nThe '''Gilded scimitar''' is a possible reward from [[Clue scroll (elite)|elite]] and [[Clue scroll (master)|master]] [[Treasure Trail]]s.\n\nIt has the same stats as a [[rune scimitar]], requiring 40 [[Attack]] to wield.\n\n{{Costume storage|treasure chest|tier=elite}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +7\n|aslash = +45\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +44\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Gilded scimitar equipped male.png|120px]]\n|altimage = [[File:Gilded scimitar equipped female.png|120px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Item sources==\n{{Drop sources|Gilded scimitar}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 11 April 2019\n|update = Treasure Trails Expansion and Easter 2019\n|change = The gilded scimitar can now be stored in a player's [[treasure chest]].\n}}\n{{Subject changes\n|date = 19 May 2016\n|update = Sand Crabs & Soul Bearers\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Slash weapons}}\n{{Rune equipment}}\n{{Elite clue rewards}}\n{{Master clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20000": {
+      "title": "Dragon scimitar (or)",
+      "revision": 15361980,
+      "timestamp": "2026-10-03T12:36:53Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15361980",
+      "sha256": "7fd84f4cd7844b6e08a1c72ddae5570461f6d9dc112313de19f92cf04971d8c6",
+      "wikitext": "{{Infobox Item\n|name = Dragon scimitar (or)\n|image = [[File:Dragon scimitar (or).png]]\n|release = [[6 July]] [[2016]]\n|update = Treasure Trail Expansion (2016)\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wield, Dismantle\n|examine = A vicious, curved and stylish sword.\n|value = 100000\n|weight = 1.814\n|id = 20000\n}}\n[[File:Dragon scimitar (or) detail.png|left|145px]]\nThe '''dragon scimitar (or)''' is a [[dragon scimitar]] with a [[dragon scimitar ornament kit]] attached to it. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the scimitar. It costs {{Coins|{{GEP|Dragon scimitar}}+{{GEP|Dragon scimitar ornament kit}}}} for both the parts to make the dragon scimitar (or). It can only be wielded by players who have 60 [[Attack]] and have completed the [[Monkey Madness I]] quest. It also shares similar bonuses with [[Viggora's chainmace]], with the chainmace being a [[crush weapon]] rather than a [[slash weapon]].\n\nWhile the scimitar is untradeable in its ornamented state, it can be dismantled anytime, returning the tradeable scimitar and ornament kit.\n\n{{Costume storage|treasure chest|tier=elite}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +8\n|aslash = +67\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +66\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Dragon scimitar (or) equipped male.png|150px]]\n|altimage = [[File:Dragon scimitar (or) equipped female.png|150px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|members = Yes\n|ticks = \n|mat1 = Dragon scimitar\n|mat2 = Dragon scimitar ornament kit\n|output1 = Dragon scimitar (or)\n|output1cost = No\n}}\n\n==Treasure Trails==\n{{FaloItem|Dragon scimitar|A blood red weapon, a strong curved sword, found on the island of primate lords.}} This ornamental version is also accepted.\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 17 November 2016\n|update = Great Kourend Rework\n|change = The Dragon Scimitar (or)'s drop value has been updated to include the value of the kit.\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*Despite being gold-trimmed, the item's name is inconsistent with most other ornamented dragon equipment, which have (g) at the end of their names rather than (or). The scimitar shares this inconsistency with the [[dragon defender (t)]].\n\n{{Slash weapons}}\n{{Dragon equipment}}\n[[Category:Items storable in the costume room]]"
+    },
+    "23330": {
+      "title": "Rune scimitar (guthix)",
+      "revision": 15323854,
+      "timestamp": "2026-08-28T21:12:46Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323854",
+      "sha256": "75af63badfb56c807810e8557132a93a4715eeca46f818d75aae6ad4b4f54456",
+      "wikitext": "{{Infobox Item\n|name = Rune scimitar\n|image = [[File:Rune scimitar (guthix).png]]\n|release = [[11 April]] [[2019]]\n|update = Treasure Trails Expansion and Easter 2019\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wield, Dismantle\n|examine = A vicious, curved sword.\n|value = 25600\n|weight = 1.814\n|id = 23330\n}}\n[[File:Rune scimitar (guthix) detail.png|left|130px]]\nThe '''rune scimitar (guthix)''' is a [[rune scimitar]] with a [[rune scimitar ornament kit (Guthix)]] attached to it. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the scimitar. It costs {{Coins|{{GEP|Rune scimitar}}+{{GEP|Rune scimitar ornament kit (Guthix)}}}} for both the items required to make the ornamented scimitar.\n\nWhile the scimitar is untradeable in its ornamented state, the weapon can be dismantled anytime, returning the tradeable ornament kit and scimitar.\n\n{{Costume storage|treasure chest|tier=beginner}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +7\n|aslash = +45\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +44\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Rune scimitar (guthix) equipped.png|160px]]\n|altimage = [[File:Rune scimitar (guthix) equipped female.png|160px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|members = No\n|ticks = \n|mat1 = Rune scimitar\n|mat2 = Rune scimitar ornament kit (Guthix)\n|output1 = Rune scimitar (guthix)\n|output1cost = No\n}}\n\n{{Slash weapons}}\n{{Rune equipment}}\n[[Category:Items storable in the costume room]]"
+    },
+    "23332": {
+      "title": "Rune scimitar (saradomin)",
+      "revision": 15323855,
+      "timestamp": "2026-08-28T21:13:01Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323855",
+      "sha256": "21405345254c3ebf918d4e2b87ec950209d18a9d677bc635f5f8fdf854935c63",
+      "wikitext": "{{Infobox Item\n|name = Rune scimitar\n|image = [[File:Rune scimitar (saradomin).png]]\n|release = [[11 April]] [[2019]]\n|update = Treasure Trails Expansion and Easter 2019\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wield, Dismantle\n|examine = A vicious, curved sword.\n|value = 25600\n|weight = 1.814\n|id = 23332\n}}\n[[File:Rune scimitar (saradomin) detail.png|left|130px]]\nThe '''rune scimitar (saradomin)''' is a [[rune scimitar]] with a [[rune scimitar ornament kit (Saradomin)]] attached to it. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the scimitar. It costs {{Coins|{{GEP|Rune scimitar}}+{{GEP|Rune scimitar ornament kit (Saradomin)}}}} for both the items required to make the ornamented scimitar. This item will provide protection from Saradominist forces in the [[God Wars Dungeon]] when equipped. \n\nWhile the scimitar is untradeable in its ornamented state, the weapon can be dismantled anytime, returning the tradeable ornament kit and scimitar.\n\n{{Costume storage|treasure chest|tier=beginner}}\n\n* Ultimate Ironman will retain this in their inventory after death.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +7\n|aslash = +45\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +44\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Rune scimitar (saradomin) equipped.png|160px]]\n|altimage = [[File:Rune scimitar (saradomin) equipped female.png|160px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|members = No\n|ticks = \n|mat1 = Rune scimitar\n|mat2 = Rune scimitar ornament kit (Saradomin)\n|output1 = Rune scimitar (saradomin)\n|output1cost = No\n}}\n\n{{Slash weapons}}\n{{Rune equipment}}"
+    },
+    "23334": {
+      "title": "Rune scimitar (zamorak)",
+      "revision": 15323856,
+      "timestamp": "2026-08-28T21:13:16Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323856",
+      "sha256": "0ceefb8064a9432a9391ba223a471841d45c82ca72a826cfa7af9cefcf3236d2",
+      "wikitext": "{{Infobox Item\n|name = Rune scimitar\n|image = [[File:Rune scimitar (zamorak).png]]\n|release = [[11 April]] [[2019]]\n|update = Treasure Trails Expansion and Easter 2019\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wield, Dismantle\n|examine = A vicious, curved sword.\n|value = 25600\n|weight = 1.814\n|id = 23334\n}}\n[[File:Rune scimitar (zamorak) detail.png|left|130px]]\nThe '''rune scimitar (zamorak)''' is a [[rune scimitar]] with a [[rune scimitar ornament kit (Zamorak)]] attached to it. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the scimitar. It costs {{Coins|{{GEP|Rune scimitar}}+{{GEP|Rune scimitar ornament kit (Zamorak)}}}} for both the items required to make the ornamented scimitar. This item will provide protection from Zamorakian forces in the [[God Wars Dungeon]] when equipped.\n\nWhile the scimitar is untradeable in its ornamented state, the weapon can be dismantled anytime, returning the tradeable ornament kit and scimitar.\n\n{{Costume storage|treasure chest|tier=beginner}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +7\n|aslash = +45\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +44\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Rune scimitar (zamorak) equipped.png|160px]]\n|altimage = [[File:Rune scimitar (zamorak) equipped female.png|160px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Creation==\n{{Recipe\n|members = No\n|ticks = \n|mat1 = Rune scimitar\n|mat2 = Rune scimitar ornament kit (Zamorak)\n|output1 = Rune scimitar (zamorak)\n|output1cost = No\n}}\n\n{{Slash weapons}}\n{{Rune equipment}}\n[[Category:Items storable in the costume room]]"
+    },
+    "28031": {
+      "title": "Dragon scimitar (cr)",
+      "revision": 15191332,
+      "timestamp": "2026-04-22T04:43:45Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15191332",
+      "sha256": "c4b66bdfa265a65f23c471792109397bcb5a7160489b2e5bb871c8f59301af10",
+      "wikitext": "{{Infobox Item\n|name = Dragon scimitar (cr)\n|image = [[File:Dragon scimitar (cr).png]]\n|release = [[24 May]] [[2023]]\n|update = Bounty Hunter is Back!\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wield, Dismantle\n|examine = A vicious, curved sword.\n|value = 101000\n|weight = 1.814\n|id = 28031\n}}\n[[File:Dragon scimitar (cr) detail.png|left|120px]]\nThe '''dragon scimitar (cr)''' is a cosmetic variant of the [[dragon scimitar]] with a [[Bounty hunter ornament kit]] added to it. The colour scheme is that of a corrupt dragon aesthetic meant to imitate the original appearance of {{RSL|corrupt dragon equipment}} from ''RuneScape 3''.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +8\n|aslash = +67\n|acrush = -2\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = +1\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = +66\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = weapon\n|speed = 4\n|attackrange = 1\n|combatstyle = Slash Sword\n|image = [[File:Dragon scimitar (cr) equipped male.png|150px]]\n|altimage = [[File:Dragon scimitar (cr) equipped female.png|150px]]\n}}\n\n{{CombatStyles|Slash Sword|speed=4|attackrange=1}}\n\n==Treasure Trails==\n{{FaloItem|Dragon scimitar|A blood red weapon, a strong curved sword, found on the island of primate lords.}} This ornamental version is also accepted.\n\n==Creation==\n{{Recipe\n|members = Yes\n|ticks = 0\n|mat1 = Dragon scimitar\n|mat2 = Bounty hunter ornament kit\n|mat2cost = 0\n|output1 = Dragon scimitar (cr)\n|output1cost = No\n}}\n\n{{Bounty Hunter}}\n{{Dragon equipment}}\n{{Slash weapons}}"
+    }
+  },
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "license_urls": [
+    "https://github.com/weirdgloop/osrs-dps-calc/blob/main/LICENSE",
+    "https://meta.weirdgloop.org/w/Licensing"
+  ]
+}

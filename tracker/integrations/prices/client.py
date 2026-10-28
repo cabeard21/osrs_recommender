@@ -130,17 +130,22 @@ class PricesClient:
     def __exit__(self, *exc_info: object) -> None:
         self.close()
 
-    def latest(self, item_ids: Iterable[int]) -> dict[int, PriceDTO]:
+    def latest(self, item_ids: Iterable[int], *, bulk: bool = False) -> dict[int, PriceDTO]:
         """Live prices for exactly the given ids — never more (§8.3, §11.6).
 
         Best-effort: an id whose fetch fails is simply absent from the result, so one
         provider hiccup does not erase prices this run successfully fetched for other
         scoped items. Callers needing "did the request happen at all" should inspect
         the breaker they injected rather than this return value.
+
+        ``bulk=True`` forces the unparameterized endpoint for incremental catalog
+        refreshes; retention still includes only the requested exact IDs.
         """
         scoped = sorted(frozenset(item_ids))
         # Keep tiny lookups scoped; a catalog refresh must not make hundreds of requests.
-        if len(scoped) >= 32:
+        if not scoped:
+            return {}
+        if bulk or len(scoped) >= 32:
             data = self._fetch_data()
             fetched_at = self._clock()
             return {

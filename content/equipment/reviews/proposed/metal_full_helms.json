@@ -1,0 +1,1925 @@
+{
+  "schema_version": 1,
+  "family": "metal_full_helms",
+  "inputs": {
+    "family_sha256": "42bf789fc79d1810c03ca30bc3fcf06e758baf3e5d397ca955331df9e43b9f59",
+    "source_sha256": "aefa6507af3326fd1ec107559f86fffbc0a680c81d16580b9c40bfef2c0d57b5",
+    "physical_catalog_sha256": "7f52a0a7014dea07db9b1d3b1bef0c8eb511c70fd909865ee41a4c9a7c5f3739",
+    "authored_sha256": "10b8fcec90cca831df64d0079c20506c987148a66c5b64939a5bac139344ec0f",
+    "equipment_source": {
+      "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+      "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+      "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+    }
+  },
+  "entries": [
+    {
+      "item_id": 1155,
+      "physical": {
+        "id": 1155,
+        "name": "Bronze full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 4,
+          "defence_slash": 5,
+          "defence_crush": 3,
+          "defence_magic": -1,
+          "defence_ranged": 4,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_full_helms_1155",
+        "name": "Bronze full helm",
+        "item_id": 1155,
+        "slot": "head",
+        "requires": null,
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320135",
+          "revision": 15320135,
+          "sha256": "72c6545d0caed25066c44b15a1ac07fda34a4b72d7854f3573b1ebf5a21e9ac0"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact bronze1155 full page reviewed: explicitly no Defence wear requirement; static armour only. Smithing7 is creation only, no quest gate; tradeable Yes."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2587,
+      "physical": {
+        "id": 2587,
+        "name": "Black full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 12,
+          "defence_slash": 13,
+          "defence_crush": 10,
+          "defence_magic": -1,
+          "defence_ranged": 12,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2595,
+      "physical": {
+        "id": 2595,
+        "name": "Black full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 12,
+          "defence_slash": 13,
+          "defence_crush": 10,
+          "defence_magic": -1,
+          "defence_ranged": 12,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2605,
+      "physical": {
+        "id": 2605,
+        "name": "Adamant full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 19,
+          "defence_slash": 21,
+          "defence_crush": 16,
+          "defence_magic": -1,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2613,
+      "physical": {
+        "id": 2613,
+        "name": "Adamant full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 19,
+          "defence_slash": 21,
+          "defence_crush": 16,
+          "defence_magic": -1,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2619,
+      "physical": {
+        "id": 2619,
+        "name": "Rune full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2627,
+      "physical": {
+        "id": 2627,
+        "name": "Rune full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2657,
+      "physical": {
+        "id": 2657,
+        "name": "Zamorak full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2665,
+      "physical": {
+        "id": 2665,
+        "name": "Saradomin full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 2673,
+      "physical": {
+        "id": 2673,
+        "name": "Guthix full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 3486,
+      "physical": {
+        "id": 3486,
+        "name": "Gilded full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 6623,
+      "physical": {
+        "id": 6623,
+        "name": "White full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 12,
+          "defence_slash": 13,
+          "defence_crush": 10,
+          "defence_magic": -1,
+          "defence_ranged": 12,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_full_helms_6623",
+        "name": "White full helm",
+        "item_id": 6623,
+        "slot": "head",
+        "requires": {
+          "all_of": [
+            {
+              "skill": {
+                "defence": 10
+              }
+            },
+            {
+              "quest": "wanted"
+            }
+          ]
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234500",
+          "revision": 15234500,
+          "sha256": "af26747b3e714f88ba6bb64439fe7086c2d52671796f23ff556a9fc494ca2375"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact white6623 full page reviewed: Defence10 and Wanted! wear gates; static armour/prayer only. Adept800 kill shop rank is acquisition only; tradeable Yes."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 10350,
+      "physical": {
+        "id": 10350,
+        "name": "3rd Age full helmet",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -5,
+          "ranged": -2,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 47,
+          "defence_slash": 49,
+          "defence_crush": 43,
+          "defence_magic": -3,
+          "defence_ranged": 48,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 11335,
+      "physical": {
+        "id": 11335,
+        "name": "Dragon full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 45,
+          "defence_slash": 48,
+          "defence_crush": 41,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": {
+        "id": "bulk_metal_full_helms_11335",
+        "name": "Dragon full helm",
+        "item_id": 11335,
+        "slot": "head",
+        "requires": {
+          "skill": {
+            "defence": 60
+          }
+        },
+        "acquisition": "tradeable",
+        "price_mode": "live",
+        "price_staleness_days": 30
+      },
+      "classification": "ordinary",
+      "sources": [
+        {
+          "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15344497",
+          "revision": 15344497,
+          "sha256": "ba670dd190bb5111295b4630b72d2a520fdd9822309cc18520b2d866ad506861"
+        },
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Exact dragon11335 full page reviewed: Defence60 only; static armour bonuses. Barbarian Training/Ancient Cavern obtaining and Fremennik Isles development history are not wear gates; tradeable Yes. Ornament remains independently excluded."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12211,
+      "physical": {
+        "id": 12211,
+        "name": "Bronze full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 4,
+          "defence_slash": 5,
+          "defence_crush": 3,
+          "defence_magic": -1,
+          "defence_ranged": 4,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12221,
+      "physical": {
+        "id": 12221,
+        "name": "Bronze full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 4,
+          "defence_slash": 5,
+          "defence_crush": 3,
+          "defence_magic": -1,
+          "defence_ranged": 4,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12231,
+      "physical": {
+        "id": 12231,
+        "name": "Iron full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 6,
+          "defence_slash": 7,
+          "defence_crush": 5,
+          "defence_magic": -1,
+          "defence_ranged": 6,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12241,
+      "physical": {
+        "id": 12241,
+        "name": "Iron full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 6,
+          "defence_slash": 7,
+          "defence_crush": 5,
+          "defence_magic": -1,
+          "defence_ranged": 6,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12283,
+      "physical": {
+        "id": 12283,
+        "name": "Mithril full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 14,
+          "defence_crush": 11,
+          "defence_magic": -1,
+          "defence_ranged": 13,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12293,
+      "physical": {
+        "id": 12293,
+        "name": "Mithril full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 14,
+          "defence_crush": 11,
+          "defence_magic": -1,
+          "defence_ranged": 13,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12417,
+      "physical": {
+        "id": 12417,
+        "name": "Dragon full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 45,
+          "defence_slash": 48,
+          "defence_crush": 41,
+          "defence_magic": -1,
+          "defence_ranged": 46,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12466,
+      "physical": {
+        "id": 12466,
+        "name": "Ancient full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12476,
+      "physical": {
+        "id": 12476,
+        "name": "Armadyl full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 12486,
+      "physical": {
+        "id": 12486,
+        "name": "Bandos full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 20178,
+      "physical": {
+        "id": 20178,
+        "name": "Steel full helm (g)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 9,
+          "defence_slash": 10,
+          "defence_crush": 7,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 20193,
+      "physical": {
+        "id": 20193,
+        "name": "Steel full helm (t)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 9,
+          "defence_slash": 10,
+          "defence_crush": 7,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 22625,
+      "physical": {
+        "id": 22625,
+        "name": "Statius's full helm (Deadman Mode)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 15,
+          "slash": 15,
+          "crush": 15,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 5,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 20,
+          "defence_slash": 25,
+          "defence_crush": 23,
+          "defence_magic": -1,
+          "defence_ranged": 28,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 24034,
+      "physical": {
+        "id": 24034,
+        "name": "Dragonstone full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 30,
+          "defence_slash": 32,
+          "defence_crush": 27,
+          "defence_magic": -1,
+          "defence_ranged": 30,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 25157,
+      "physical": {
+        "id": 25157,
+        "name": "Decorative full helm (gold)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 19,
+          "defence_slash": 21,
+          "defence_crush": 16,
+          "defence_magic": -1,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 25165,
+      "physical": {
+        "id": 25165,
+        "name": "Decorative full helm (red)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 9,
+          "defence_slash": 10,
+          "defence_crush": 7,
+          "defence_magic": -1,
+          "defence_ranged": 9,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 25169,
+      "physical": {
+        "id": 25169,
+        "name": "Decorative full helm (white)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 14,
+          "defence_crush": 11,
+          "defence_magic": -1,
+          "defence_ranged": 13,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 25174,
+      "physical": {
+        "id": 25174,
+        "name": "Decorative full helm (gold)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 19,
+          "defence_slash": 21,
+          "defence_crush": 16,
+          "defence_magic": -1,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 25176,
+      "physical": {
+        "id": 25176,
+        "name": "Decorative full helm (gold)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 19,
+          "defence_slash": 21,
+          "defence_crush": 16,
+          "defence_magic": -1,
+          "defence_ranged": 19,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 26687,
+      "physical": {
+        "id": 26687,
+        "name": "Maoma's full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 8,
+          "slash": 8,
+          "crush": 8,
+          "magic": -40,
+          "ranged": -40,
+          "melee_strength": 2,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": -15,
+          "defence_ranged": 15,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 26745,
+      "physical": {
+        "id": 26745,
+        "name": "Maoma's full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 8,
+          "slash": 8,
+          "crush": 8,
+          "magic": -40,
+          "ranged": -40,
+          "melee_strength": 2,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": -15,
+          "defence_ranged": 15,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 26746,
+      "physical": {
+        "id": 26746,
+        "name": "Maoma's full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 8,
+          "slash": 8,
+          "crush": 8,
+          "magic": -40,
+          "ranged": -40,
+          "melee_strength": 2,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": -15,
+          "defence_ranged": 15,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 27833,
+      "physical": {
+        "id": 27833,
+        "name": "Statius's full helm (bh)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 1,
+          "slash": 1,
+          "crush": 6,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 3,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 52,
+          "defence_slash": 50,
+          "defence_crush": 47,
+          "defence_magic": -1,
+          "defence_ranged": 55,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 27844,
+      "physical": {
+        "id": 27844,
+        "name": "Corrupted statius's full helm (bh)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 1,
+          "slash": 1,
+          "crush": 6,
+          "magic": -6,
+          "ranged": -2,
+          "melee_strength": 2,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 10,
+          "defence_slash": 13,
+          "defence_crush": 8,
+          "defence_magic": -1,
+          "defence_ranged": 11,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 28254,
+      "physical": {
+        "id": 28254,
+        "name": "Sanguine torva full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -5,
+          "ranged": -5,
+          "melee_strength": 8,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 59,
+          "defence_slash": 60,
+          "defence_crush": 62,
+          "defence_magic": -2,
+          "defence_ranged": 57,
+          "prayer": 1
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 29560,
+      "physical": {
+        "id": 29560,
+        "name": "Elite black full helm",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": -6,
+          "ranged": -3,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 13,
+          "defence_slash": 14,
+          "defence_crush": 11,
+          "defence_magic": -1,
+          "defence_ranged": 13,
+          "prayer": 4
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    },
+    {
+      "item_id": 30302,
+      "physical": {
+        "id": 30302,
+        "name": "Torva full helm (unobtainable item)",
+        "slot": "head",
+        "bonuses": {
+          "stab": 0,
+          "slash": 0,
+          "crush": 0,
+          "magic": 0,
+          "ranged": 0,
+          "melee_strength": 0,
+          "ranged_strength": 0,
+          "magic_damage": 0.0,
+          "defence_stab": 0,
+          "defence_slash": 0,
+          "defence_crush": 0,
+          "defence_magic": 0,
+          "defence_ranged": 0,
+          "prayer": 0
+        },
+        "attack_speed": 1,
+        "attack_styles": [],
+        "attack_profiles": [],
+        "two_handed": false,
+        "ammo_type": null,
+        "ammo_for": [],
+        "stackable": false
+      },
+      "overlay": null,
+      "classification": "manual_review_exception",
+      "sources": [
+        {
+          "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+          "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+          "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+        }
+      ],
+      "reasons": [
+        "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+      ],
+      "decision": "pending",
+      "review_reason": ""
+    }
+  ],
+  "proposed_effect_clearance": [
+    1155,
+    6623,
+    11335
+  ],
+  "approved_effect_clearance": []
+}

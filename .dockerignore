@@ -34,3 +34,16 @@ config.yaml
 *.sqlite3
 snapshot.json
 credentials.properties
+frontend/gear/node_modules
+frontend/gear/test-results
+frontend/gear/playwright-report
+frontend/gear/coverage
+tracker/ui/gear_static
+*.tsbuildinfo
+# Local analysis, account snapshots, and temporary test artifacts are never build inputs.
+.pytest-*
+.tmp-*
+.coverage-*
+*.sqlite
+*.sqlite-*
+*.sqlite.*

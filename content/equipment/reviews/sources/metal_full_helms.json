@@ -1,0 +1,1818 @@
+{
+  "schema_version": 1,
+  "equipment_source": {
+    "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+    "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+    "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+  },
+  "equipment_rows": [
+    {
+      "name": "3rd Age full helmet",
+      "id": 10350,
+      "weight": 0.907,
+      "version": "",
+      "slot": "head",
+      "image": "3rd Age full helmet.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -5,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 47,
+        "slash": 49,
+        "crush": 43,
+        "magic": -3,
+        "ranged": 48
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant full helm",
+      "id": 1161,
+      "weight": 3.175,
+      "version": "",
+      "slot": "head",
+      "image": "Adamant full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant full helm (g)",
+      "id": 2613,
+      "weight": 3.175,
+      "version": "",
+      "slot": "head",
+      "image": "Adamant full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant full helm (t)",
+      "id": 2605,
+      "weight": 3.175,
+      "version": "",
+      "slot": "head",
+      "image": "Adamant full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ancient full helm",
+      "id": 12466,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Ancient full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Armadyl full helm",
+      "id": 12476,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Armadyl full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bandos full helm",
+      "id": 12486,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Bandos full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black full helm",
+      "id": 1165,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Black full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 12,
+        "slash": 13,
+        "crush": 10,
+        "magic": -1,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black full helm (g)",
+      "id": 2595,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Black full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 12,
+        "slash": 13,
+        "crush": 10,
+        "magic": -1,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black full helm (t)",
+      "id": 2587,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Black full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 12,
+        "slash": 13,
+        "crush": 10,
+        "magic": -1,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze full helm",
+      "id": 1155,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Bronze full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 4,
+        "slash": 5,
+        "crush": 3,
+        "magic": -1,
+        "ranged": 4
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze full helm (g)",
+      "id": 12211,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Bronze full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 4,
+        "slash": 5,
+        "crush": 3,
+        "magic": -1,
+        "ranged": 4
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze full helm (t)",
+      "id": 12221,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Bronze full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 4,
+        "slash": 5,
+        "crush": 3,
+        "magic": -1,
+        "ranged": 4
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Corrupted statius's full helm (bh)",
+      "id": 27844,
+      "weight": 2.721,
+      "version": "Activated",
+      "slot": "head",
+      "image": "Corrupted statius's full helm (bh).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 1,
+        "slash": 1,
+        "crush": 6,
+        "magic": -6,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 10,
+        "slash": 13,
+        "crush": 8,
+        "magic": -1,
+        "ranged": 11
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative full helm (gold)",
+      "id": 25157,
+      "weight": 2.721,
+      "version": "Broken",
+      "slot": "head",
+      "image": "Decorative full helm (broken) (gold).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative full helm (gold)",
+      "id": 25176,
+      "weight": 2.721,
+      "version": "Locked",
+      "slot": "head",
+      "image": "Decorative full helm (l) (gold).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative full helm (gold)",
+      "id": 25174,
+      "weight": 2.721,
+      "version": "Normal",
+      "slot": "head",
+      "image": "Decorative full helm (gold).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 19,
+        "slash": 21,
+        "crush": 16,
+        "magic": -1,
+        "ranged": 19
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative full helm (red)",
+      "id": 25165,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Decorative full helm (red).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 9,
+        "slash": 10,
+        "crush": 7,
+        "magic": -1,
+        "ranged": 9
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative full helm (white)",
+      "id": 25169,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Decorative full helm (white).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 13,
+        "slash": 14,
+        "crush": 11,
+        "magic": -1,
+        "ranged": 13
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon full helm",
+      "id": 11335,
+      "weight": 2,
+      "version": "",
+      "slot": "head",
+      "image": "Dragon full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 45,
+        "slash": 48,
+        "crush": 41,
+        "magic": -1,
+        "ranged": 46
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon full helm (g)",
+      "id": 12417,
+      "weight": 2,
+      "version": "",
+      "slot": "head",
+      "image": "Dragon full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 45,
+        "slash": 48,
+        "crush": 41,
+        "magic": -1,
+        "ranged": 46
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragonstone full helm",
+      "id": 24034,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Dragonstone full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Elite black full helm",
+      "id": 29560,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Elite black full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 4
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 13,
+        "slash": 14,
+        "crush": 11,
+        "magic": -1,
+        "ranged": 13
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Gilded full helm",
+      "id": 3486,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Gilded full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Guthix full helm",
+      "id": 2673,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Guthix full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron full helm",
+      "id": 1153,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Iron full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 6,
+        "slash": 7,
+        "crush": 5,
+        "magic": -1,
+        "ranged": 6
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron full helm (g)",
+      "id": 12241,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Iron full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 6,
+        "slash": 7,
+        "crush": 5,
+        "magic": -1,
+        "ranged": 6
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron full helm (t)",
+      "id": 12231,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Iron full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 6,
+        "slash": 7,
+        "crush": 5,
+        "magic": -1,
+        "ranged": 6
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Maoma's full helm",
+      "id": 26687,
+      "weight": 1.36,
+      "version": "Broken",
+      "slot": "head",
+      "image": "Maoma's full helm (broken).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": -40,
+        "ranged": -40
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 15
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Maoma's full helm",
+      "id": 26746,
+      "weight": 1.36,
+      "version": "Locked",
+      "slot": "head",
+      "image": "Maoma's full helm (l).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": -40,
+        "ranged": -40
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 15
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Maoma's full helm",
+      "id": 26745,
+      "weight": 1.36,
+      "version": "Normal",
+      "slot": "head",
+      "image": "Maoma's full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 8,
+        "slash": 8,
+        "crush": 8,
+        "magic": -40,
+        "ranged": -40
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -15,
+        "ranged": 15
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril full helm",
+      "id": 1159,
+      "weight": 2.267,
+      "version": "",
+      "slot": "head",
+      "image": "Mithril full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 13,
+        "slash": 14,
+        "crush": 11,
+        "magic": -1,
+        "ranged": 13
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril full helm (g)",
+      "id": 12283,
+      "weight": 2.267,
+      "version": "",
+      "slot": "head",
+      "image": "Mithril full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 13,
+        "slash": 14,
+        "crush": 11,
+        "magic": -1,
+        "ranged": 13
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril full helm (t)",
+      "id": 12293,
+      "weight": 2.267,
+      "version": "",
+      "slot": "head",
+      "image": "Mithril full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 13,
+        "slash": 14,
+        "crush": 11,
+        "magic": -1,
+        "ranged": 13
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune full helm",
+      "id": 1163,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Rune full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune full helm (g)",
+      "id": 2619,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Rune full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune full helm (t)",
+      "id": 2627,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Rune full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Sanguine torva full helm",
+      "id": 28254,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Sanguine torva full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 8,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -5,
+        "ranged": -5
+      },
+      "defensive": {
+        "stab": 59,
+        "slash": 60,
+        "crush": 62,
+        "magic": -2,
+        "ranged": 57
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Saradomin full helm",
+      "id": 2665,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Saradomin full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Statius's full helm (Deadman Mode)",
+      "id": 22625,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Statius's full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 5,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 15,
+        "slash": 15,
+        "crush": 15,
+        "magic": -6,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 20,
+        "slash": 25,
+        "crush": 23,
+        "magic": -1,
+        "ranged": 28
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Statius's full helm (bh)",
+      "id": 27833,
+      "weight": 2.721,
+      "version": "Activated",
+      "slot": "head",
+      "image": "Statius's full helm (bh).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 3,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 1,
+        "slash": 1,
+        "crush": 6,
+        "magic": -6,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 52,
+        "slash": 50,
+        "crush": 47,
+        "magic": -1,
+        "ranged": 55
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel full helm",
+      "id": 1157,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Steel full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 9,
+        "slash": 10,
+        "crush": 7,
+        "magic": -1,
+        "ranged": 9
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel full helm (g)",
+      "id": 20178,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Steel full helm (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 9,
+        "slash": 10,
+        "crush": 7,
+        "magic": -1,
+        "ranged": 9
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel full helm (t)",
+      "id": 20193,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Steel full helm (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 9,
+        "slash": 10,
+        "crush": 7,
+        "magic": -1,
+        "ranged": 9
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torva full helm",
+      "id": 26382,
+      "weight": 2.721,
+      "version": "Restored",
+      "slot": "head",
+      "image": "Torva full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 8,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -5,
+        "ranged": -5
+      },
+      "defensive": {
+        "stab": 59,
+        "slash": 60,
+        "crush": 62,
+        "magic": -2,
+        "ranged": 57
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torva full helm (unobtainable item)",
+      "id": 30302,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Torva full helm (unobtainable item).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "White full helm",
+      "id": 6623,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "White full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 12,
+        "slash": 13,
+        "crush": 10,
+        "magic": -1,
+        "ranged": 12
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Zamorak full helm",
+      "id": 2657,
+      "weight": 2.721,
+      "version": "",
+      "slot": "head",
+      "image": "Zamorak full helm.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -6,
+        "ranged": -3
+      },
+      "defensive": {
+        "stab": 30,
+        "slash": 32,
+        "crush": 27,
+        "magic": -1,
+        "ranged": 30
+      },
+      "isTwoHanded": false
+    }
+  ],
+  "pages": {
+    "1155": {
+      "title": "Bronze full helm",
+      "revision": 15320135,
+      "timestamp": "2026-08-25T22:29:36Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320135",
+      "sha256": "72c6545d0caed25066c44b15a1ac07fda34a4b72d7854f3573b1ebf5a21e9ac0",
+      "wikitext": "{{External|rs|rsc=Large_Bronze_Helmet}}\n{{Infobox Item\n|name = Bronze full helm\n|image = [[File:Bronze full helm.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 44\n|weight = 2.721\n|exchange = Yes\n|id = 1155\n}}\n[[File:Bronze full helm detail.png|left|130x200px]]\n[[File:Bronze full helm chathead.png|left]]\nThe '''bronze full helmet''' is the weakest [[full helmet]] in ''[[Old School RuneScape]]''. The bronze full helmet grants greater defensive bonuses than its [[Bronze medium helmet|medium helmet counterpart]], though at a cost of offensive bonuses for [[Ranged]] and [[Magic]]. There are no [[Defence]] requirements for wearing this helmet.\n\nTo create a bronze full helmet the player needs at least 7 Smithing, a [[hammer]] and 2 [[bronze bar]]s. To make a helmet use one of the bars on an [[anvil]] with the hammer in the inventory. This grants 25 Smithing experience.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +4\n|dslash = +5\n|dcrush = +3\n|dmagic = -1\n|drange = +4\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Bronze full helm equipped male.png|180px]]\n|altimage = [[File:Bronze full helm equipped female.png|180px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 7\n|skill1boostable = Yes\n|skill1exp = 25\n|members = No\n|ticks = 5\n|ticksnote = Make-X is 3, then 5 ticks\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Bronze bar\n|mat1quantity = 2\n|output1 = Bronze full helm\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Bronze full helm}}\n\n===Shop locations===\n{{Store locations list|Bronze full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Bronze equipment}}"
+    },
+    "1157": {
+      "title": "Steel full helm",
+      "revision": 15320156,
+      "timestamp": "2026-08-25T22:37:17Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320156",
+      "sha256": "f26076bbaa210062e2099c8800d74d45745ee22f2e5f74baa5f98dc692879477",
+      "wikitext": "{{External|rs|rsc=Large_Steel_Helmet}}\n{{Infobox Item\n|name = Steel full helm\n|image = [[File:Steel full helm.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 550\n|weight = 2.721\n|exchange = Yes\n|id = 1157\n}}\n\n[[File:Steel full helm detail.png|left|120px]]\n[[File:Steel full helm chathead.png|left]]\nThe '''steel full helm''' is the third weakest [[full helm]]. The steel full helm grants greater [[Defence|defensive]] bonuses than its [[Steel medium helmet|medium helmet]] counterpart, though at a cost of offensive bonuses for [[Ranged]] and [[Magic]]. Wearing this helmet requires at least 5 [[Defence]].\n\nTo create a steel full helmet you need at least 37 [[Smithing]], a [[hammer]], and two [[steel bar]]s. Then use one of the bars on an [[anvil]] with the hammer in your inventory. This will grant 75 Smithing experience.\n\nMembers with 16+ [[Construction]] can use a steel full helmet on a [[pluming stand]] to make a [[steel heraldic helm]], a steel full helm designed in the colours of the player's family crest. Family crests are obtained from [[Sir Renitee]] in [[Falador Castle]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +9\n|dslash = +10\n|dcrush = +7\n|dmagic = -1\n|drange = +9\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Steel full helm equipped male.png|170px]]\n|altimage = [[File:Steel full helm equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 37\n|skill1boostable = Yes\n|skill1exp = 75\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Steel bar\n|mat1quantity = 2\n|output1 = Steel full helm\n}}\n\n==Products==\n{{Uses material list|Steel full helm}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Steel full helm}}\n\n===Shop locations===\n{{Store locations list|Steel full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Steel equipment}}"
+    },
+    "11335": {
+      "title": "Dragon full helm",
+      "revision": 15344497,
+      "timestamp": "2026-09-16T02:03:21Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15344497",
+      "sha256": "ba670dd190bb5111295b4630b72d2a520fdd9822309cc18520b2d866ad506861",
+      "wikitext": "{{External|rs|dw=Dragon_Full_Helm}}\n{{Infobox Item\n|name = Dragon full helm\n|image = [[File:Dragon full helm.png]]\n|release = [[3 July]] [[2007]]\n|update = Barbarian Training\n|aka = DFH\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Protects your head and looks impressive too.\n|value = 150000\n|weight = 2.000\n|exchange = Yes\n|id = 11335\n|leagueRegion = Kandarin\n}}\n[[File:Dragon full helm detail.png|left|170px]]\n[[File:Dragon full helm chathead.png|left]]\nThe '''dragon full helm''' is a [[helmet]] that requires 60 [[Defence]] to equip. The dragon full helm gives better defence bonuses than its [[Dragon med helm|medium helm]] counterpart. Due to its high price, and lack of prayer or strength bonuses, it is more often used as a sign of wealth, rather than in combat.\n\nA dragon full helm can be combined with a [[dragon full helm ornament kit]] to make a gold-trimmed [[dragon full helm (g)]]. This cosmetic enhancement won't change the stats in any way.\n\nIt is considered a piece of the [[Dragon equipment#Armour|dragon armour]] set.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +45\n|dslash = +48\n|dcrush = +41\n|dmagic = -1\n|drange = +46\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Dragon armour set (lg) equipped.png|150px]]\n}}\n\n==Products==\n{{Uses material list|Dragon full helm}}\n\n==Obtaining==\nThe only way to obtain the dragon full helm is by killing [[mithril dragon]]s in the [[Ancient Cavern]]. The helm can be received from mithril dragons directly as a '''very rare''' drop, or from a [[barbarian spirit]] after lighting a [[pyre ship]] with [[chewed bones]] also obtained from mithril dragons.\n\nThe drop rate of a dragon full helm from mithril dragons directly is 1/32,768 while the drop rate from chewed bones is 1/256. Chewed bones themselves can only be obtained from mithril dragons as an uncommon drop with a drop rate of 3/128.\n\nCombining both the drop rate from chewed bones and the drop rate of the helm itself, the effective drop rate of the dragon full helm from a mithril dragon is 1/8,192.\n\n==Item sources==\n{{Drop sources|Dragon full helm}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Dragon full helm}}\n\n==Development history==\n[[File:Dragon full helm (The Fremennik Isles).png|The early dragon full helm item's model.|thumb|200px]]\nThe dragon full helm was originally intended to release alongside [[The Fremennik Isles]], but it was cut before release for unknown reasons. Despite this, its models remained unused in the game files, referred to as \"''fris_dragonhelm''\". Like the [[dragon sq shield]], it would have been obtained in halves which would have to be combined in some way.\n\nThe dragon full helm was given a new model when it was released a few months later with the original version of the [[Barbarian Training]] miniquest and the [[Ancient Cavern]].\n<gallery heights=\"120\">\nDragon full helm (The Fremennik Isles) left half.png|The model for the left half of the dragon full helm.\nDragon full helm (The Fremennik Isles) right half.png|The model for the right half of the dragon full helm.\nDragon full helm (The Fremennik Isles) chathead male.png|The chathead model for a player wearing the helm with body type A.\nDragon full helm (The Fremennik Isles) chathead female.png|The chathead model for a player wearing the helm with body type B.\nDragon full helm (The Fremennik Isles) equipped male.png|A player wearing the helm with body type A.\nDragon full helm (The Fremennik Isles) equipped female.png|A player wearing the helm with body type B.\nDragon full helm (The Fremennik Isles) alternate.png|An alternate model for the helmet, resembling a complete version of the left half.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 25 January 2018\n|poll = Vorkath's rewards and the Dragon Hunter Crossbow\n|update = Barbarian Assault Ranged Rework\n|change = The spikes on the helmet were [[Graphical updates|recoloured]] from a grey colour to match the white colour seen on other dragon armour.\n}}\n{{Subject changes\n|date = 13 July 2017\n|update = Lizardman Shaman Improvements\n|change = [[Brutal black dragon]]s no longer drop the dragon full helm, as a part of a balancing change. Their drop rate was 1/32,768.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Dragon full helm (v1) detail.png|center|300x150px]]\n|[[File:Dragon full helm detail.png|center|300x150px]]\n|-\n|[[File:Dragon full helm v1.png|center]]\n|[[File:Dragon full helm.png|center]]\n|-\n|3 July 2007 –<br/>25 January 2018\n|25 January 2018 –<br/>present\n|}\n\n==Trivia==\n* When the dragon full helm first came out, its stats beat the [[3rd Age full helmet]]'s original stats in each section. Jagex then updated the 3rd Age full helmet, which made it slightly stronger than the dragon full helm.\n\n{{Melee headgear}}\n{{Dragon equipment}}\n[[Category:Collection log items]]"
+    },
+    "1161": {
+      "title": "Adamant full helm",
+      "revision": 15320169,
+      "timestamp": "2026-08-25T22:39:39Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320169",
+      "sha256": "e6c8a777829a31273bb22204546d14147bba4da8f67e45d95ac1f30b087b78ee",
+      "wikitext": "{{External|rs|rsc=Large Adamantite Helmet|dw=Adamant Helmet}}\n{{Otheruses|def=no|other uses|Adamant helm (disambiguation)}}\n{{Infobox Item\n|name = Adamant full helm\n|image = [[File:Adamant full helm.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 3520\n|weight = 3.175\n|exchange = Yes\n|id = 1161\n}}\n[[File:Adamant full helm detail.png|left|120px]]\n[[File:Adamant full helm chathead.png|left]]\nAn '''adamant full helm''' is a full helmet made out of [[adamant]]. It can be worn with at least level 30 in [[Defence]] and can be smithed with at least level 77 [[Smithing]] using 2 [[adamantite bar]]s (this grants 125 Smithing [[experience]]). These helms are stronger than [[mithril full helm]]s but weaker than [[rune full helm]]s.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +19\n|dslash = +21\n|dcrush = +16\n|dmagic = -1\n|drange = +19\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Adamant full helm equipped male.png|170px]]\n|altimage = [[File:Adamant full helm equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 77\n|skill1boostable = Yes\n|skill1exp = 125\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Adamantite bar\n|mat1quantity = 2\n|output1 = Adamant full helm\n}}\n\n==Products==\n{{Uses material list|Adamant full helm}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Adamant full helm}}\n\n===Shop locations===\n{{Store locations list|Adamant full helm}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Adamant full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Adamant equipment}}"
+    },
+    "2613": {
+      "title": "Adamant full helm (g)",
+      "revision": 15324066,
+      "timestamp": "2026-08-28T23:03:00Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324066",
+      "sha256": "573f4d19ed7e2d43699e320faefb596e209f560622fc4435220bd4d0f92662de",
+      "wikitext": "{{External|rs}}\n{{Otheruses|def=no|other uses|Adamant helm (disambiguation)}}\n{{Infobox Item\n|name = Adamant full helm (g)\n|image = [[File:Adamant full helm (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Adamant full helmet with gold trim.\n|value = 3520\n|weight = 3.175\n|exchange = Yes\n|id = 2613\n|leagueRegion = General\n}}\n[[File:Adamant full helm (g) detail.png|left|120px]]\n[[File:Adamant full helm (g) chathead.png|left]]\n'''Adamant full helm (g)''' is a part of [[adamant gold-trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. It has the same stats as a normal [[Adamant full helm]], and requires level 30 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[adamant gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +19\n|dslash = +21\n|dcrush = +16\n|dmagic = -1\n|drange = +19\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Adamant full helm (g) equipped male.png|160px]]\n|altimage = [[File:Adamant full helm (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Adamant full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Adam full helm(g)\" to \"Adamant full helm (g)\".\n}}\n{{Subject changes\n|date = 5 December 2006\n|update = Treasure Trails, spiders and sheep\n|change = The item was renamed from \"Adam full helm (g)\" to \"Adam full helm(g)\".\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Adamant equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2605": {
+      "title": "Adamant full helm (t)",
+      "revision": 15324072,
+      "timestamp": "2026-08-28T23:03:58Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324072",
+      "sha256": "6926eb86b97e9de0101940935101fd02e48e0308118c3dbdb4f3ee72af5bb978",
+      "wikitext": "{{External|rs}}\n{{Otheruses|def=no|other uses|Adamant helm (disambiguation)}}\n{{Infobox Item\n|name = Adamant full helm (t)\n|image = [[File:Adamant full helm (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Adamant full helmet with trim.\n|value = 3520\n|weight = 3.175\n|exchange = Yes\n|id = 2605\n|leagueRegion = General\n}}\n[[File:Adamant full helm (t) detail.png|left|120px]]\n[[File:Adamant full helm (t) chathead.png|left]]\n'''Adamant full helm (t)''' is a part of [[adamant trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. It has the same stats as a normal [[Adamant full helm]], and requires level 30 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[adamant trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +19\n|dslash = +21\n|dcrush = +16\n|dmagic = -1\n|drange = +19\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Adamant full helm (t) equipped male.png|160px]]\n|altimage = [[File:Adamant full helm (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Adamant full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Adam full helm(t)\" to \"Adamant full helm (t)\".\n}}\n{{Subject changes\n|date = 5 December 2006\n|update = Treasure Trails, spiders and sheep\n|change = The item was renamed from \"Adam full helm (t)\" to \"Adam full helm(t)\".\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Adamant equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "1153": {
+      "title": "Iron full helm",
+      "revision": 15320185,
+      "timestamp": "2026-08-25T22:42:00Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320185",
+      "sha256": "4c3634f6c31aedfa5fad8e54ebef094611ab9716afd8e0a54c2b33a9cd3bc716",
+      "wikitext": "{{External|rs|rsc=Large Iron Helmet}}\n{{Infobox Item\n|name = Iron full helm\n|image = [[File:Iron full helm.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 154\n|weight = 2.721\n|respawn = 700\n|exchange = Yes\n|id = 1153\n}}\n\n[[File:Iron full helm detail.png|left|120px]]\n[[File:Iron full helm chathead.png|left]]\nThe '''Iron full helm''' is a [[full helm]] made of [[iron equipment|iron]]. It is the second weakest full helmet available. While it grants greater defensive stats than its [[iron med helm|medium helmet]] counterpart, it has worse [[magic]] and [[ranged]] attack stats. There are no [[Defence]] requirements for wearing this helmet.\n\nPlayers with level 22 Smithing can create an iron full helm by using two [[iron bar]]s on an [[anvil]] while having a [[hammer]] in their [[inventory]]. Doing so will grant the player 50 Smithing [[experience]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +6\n|dslash = +7\n|dcrush = +5\n|dmagic = -1\n|drange = +6\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Iron full helm equipped male.png|170px]]\n|altimage = [[File:Iron full helm equipped female.png]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 22\n|skill1boostable = Yes\n|skill1exp = 50\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Iron bar\n|mat1quantity = 2\n|output1 = Iron full helm\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Iron full helm}}\n\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Iron full helm|location=[[Wilderness]] - [[Lava Maze]]|members=No|3069,3831|leagueRegion=Wilderness}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Iron full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Iron equipment}}"
+    },
+    "1159": {
+      "title": "Mithril full helm",
+      "revision": 15320197,
+      "timestamp": "2026-08-25T22:46:19Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320197",
+      "sha256": "68f704c0147219ca9398bd95a9a0e6c94b8be4d6b308d52e6a5954bdaabd99ab",
+      "wikitext": "{{External|rs|rsc=Large_Mithril_Helmet|dw=Mithril Helmet}}\n{{Infobox Item\n|name = Mithril full helm\n|image = [[File:Mithril full helm.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 1430\n|weight = 2.267\n|exchange = Yes\n|id = 1159\n}}\n[[File:Mithril full helm detail.png|left|70px]]\n[[File:Mithril full helm chathead.png|left]]\nThe '''mithril full helm''' is the fourth best [[full helmet]]. It requires 20 [[Defence]] to equip. It offers better defensive stats than its [[mithril med helm|med helm]] counterpart, at the cost of having lower magic and ranged attack, and greater weight. One can be made by a player with level 57 [[Smithing]] at any anvil with a [[hammer]] and 2 [[mithril bar]]s.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +13\n|dslash = +14\n|dcrush = +11\n|dmagic = -1\n|drange = +13\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Mithril full helm equipped male.png|170px]]\n|altimage = [[File:Mithril full helm equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 57\n|skill1boostable = Yes\n|skill1exp = 100\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Mithril bar\n|mat1quantity = 2\n|output1 = Mithril full helm\n}}\n\n==Products==\n{{Uses material list|Mithril full helm}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Mithril full helm}}\n===Shop locations===\n{{Store locations list|Mithril full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Mithril equipment}}"
+    },
+    "1163": {
+      "title": "Rune full helm",
+      "revision": 15346892,
+      "timestamp": "2026-09-16T18:12:37Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346892",
+      "sha256": "4782667a2e240907f4ec8fd718ab25fa38ed3eb405e3cb510520a9699da6e759",
+      "wikitext": "{{External|rs|rsc=Large Rune Helmet|dw=Rune Helm}}\n{{Infobox Item\n|name = Rune full helm\n|image = [[File:Rune full helm.png]]\n|release = [[13 August]] [[2001]]\n|update = Wilderness system online\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 1163\n}}\n\n[[File:Rune full helm detail.png|left|120px]]\n[[File:Rune full helm chathead.png|left]]\nThe '''rune full helm''' is the best [[full helmet]] available to [[free-to-play]] players (excluding [[Rune god armour]] full helmets, which provide an additional +1 [[Prayer]] bonus). Equipping this helmet requires 40 [[Defence]]. It can be made at 92 [[Smithing]] with two [[runite bar]]s, granting 150 Smithing [[experience]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Rune full helm equipped male.png|170px]]\n|altimage = [[File:Rune full helm equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 92\n|skill1boostable = Yes\n|skill1exp = 150\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Runite bar\n|mat1quantity = 2\n|output1 = Rune full helm\n}}\n\n==Products==\n{{Uses material list|Rune full helm}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Rune full helm}}\n\n===Shop locations===\n{{Store locations list|Rune full helm}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Rune full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 5 May 2004\n|update = Bigger Banks & Treasure Trails\n|change = The item was graphically updated.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Rune full helm detail (historical).png|center|300x150px]]\n|[[File:Rune full helm detail.png|center|300x150px]]\n|-\n|[[File:Rune full helm (historical).png|center]]\n|[[File:Rune full helm.png|center]]\n|-\n|29 March 2004 –<br/>5 May 2004\n|5 May 2004 –<br/>present\n|}\n\n{{Melee headgear}}\n{{Rune equipment}}"
+    },
+    "2619": {
+      "title": "Rune full helm (g)",
+      "revision": 15324892,
+      "timestamp": "2026-08-29T21:09:32Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324892",
+      "sha256": "d758286727b417262d0f4c2c82ec89aab244620c459525becefb8cedd7edfa52",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Rune full helm (g)\n|image = [[File:Rune full helm (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet with gold trim.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 2619\n|leagueRegion = General\n}}\n[[File:Rune full helm (g) detail.png|left|120px]]\n[[File:Rune full helm (g) chathead.png|left]]\n'''Rune full helm (g)''' is a part of [[rune gold-trimmed armour]] and a reward from [[Clue scroll (hard)|hard]] [[Treasure Trails]]. It has the same stats as a normal [[Rune full helm]], and requires level 40 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard|[[rune gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Rune full helm (g) equipped male.png|160px]]\n|altimage = [[File:Rune full helm (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Rune full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Rune full helm(g)\" to \"Rune full helm (g)\".\n}}\n{{Subject changes\n|date = 5 December 2006\n|update = Treasure Trails, spiders and sheep\n|change = The item was renamed from \"Rune full helm (g)\" to \"Rune full helm(g)\".\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2627": {
+      "title": "Rune full helm (t)",
+      "revision": 15324909,
+      "timestamp": "2026-08-29T21:12:31Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324909",
+      "sha256": "8035014d4d7b3ee6fef16a312511b225c885345dbf0c2b42adb1a8afc92d771e",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Rune full helm (t)\n|image = [[File:Rune full helm (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet with trim.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 2627\n|leagueRegion = General\n}}\n[[File:Rune full helm (t) detail.png|left|120px]]\n[[File:Rune full helm (t) chathead.png|left]]\n'''Rune full helm (t)''' is a part of [[rune trimmed armour]] and a reward from [[Clue scroll (hard)|hard]] [[Treasure Trails]]. It has the same stats as a normal [[Rune full helm]], and requires level 40 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard|[[rune trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Rune full helm (t) equipped male.png|160px]]\n|altimage = [[File:Rune full helm (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Rune full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2665": {
+      "title": "Saradomin full helm",
+      "revision": 15324904,
+      "timestamp": "2026-08-29T21:11:36Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324904",
+      "sha256": "1ff1bac463cdf636d4dad4d60a1f9cd6ebe5ae6811920e261fe2215c6719b4b9",
+      "wikitext": "{{External|rs=Rune full helm (Saradomin)}}\n{{Infobox Item\n|name = Saradomin full helm\n|image = [[File:Saradomin full helm.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet in the colours of Saradomin.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 2665\n|leagueRegion = General\n}}\n[[File:Saradomin full helm detail.png|left|120px]]\n[[File:Saradomin full helm chathead.png|left]]\nThe '''Saradomin full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Saradomin]]. Sharing the same stats as the rune full helm with a +1 [[prayer bonus]], the Saradomin full helm also looks visually similar. Its appearance differs in that the helm features an ornamental white trim around the symbol of Saradomin. The full helm requires 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain a Saradomin full helm as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\nWearing any piece of this armour set will cause [[God Wars Dungeon#Saradomin|followers of Saradomin]] to become unaggressive upon entering the [[God Wars Dungeon]].\n\n{{Costume storage|treasure chest|tier=hard|[[Saradomin armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Saradomin full helm equipped male.png|160px]]\n|altimage = [[File:Saradomin full helm equipped female.png|160px]]\n}}\n==Item sources==\n{{Drop sources|Saradomin full helm}}\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Saradomin full\" to \"Saradomin full helm\".\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god helmets now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "6623": {
+      "title": "White full helm",
+      "revision": 15234500,
+      "timestamp": "2026-06-17T08:25:35Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234500",
+      "sha256": "af26747b3e714f88ba6bb64439fe7086c2d52671796f23ff556a9fc494ca2375",
+      "wikitext": "{{External|rs|dw=White Full Helm}}\n{{Infobox Item\n|name = White full helm\n|image = [[File:White full helm.png]]\n|release = [[17 October]] [[2005]]\n|update = Wanted!\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 1056\n|weight = 2.721\n|exchange = Yes\n|id = 6623\n}}\n[[File:White full helm detail.png|left|120px]]\n[[File:White full helm chathead.png|left]]\nThe '''white full helm''' is a type of [[White Knight equipment|White Knight]] [[helmet]] that requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. It has the same bonuses as a [[black full helmet]], with an added +1 [[Prayer bonus]].\n\nPlayers can purchase it from [[Sir Vyvin]] after achieving the [[White Knight rank|rank]] of Adept (800 [[Black Knight|black knight]] kills). It can also be bought on the [[Grand Exchange]] or obtained through trading other players. \n\nAs with all [[White equipment|white armour]], it '''cannot''' be made using the [[Smithing]] [[Skills|skill]].\n\n{{Costume storage|armour case|[[White Knight equipment|White Knight armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +12\n|dslash = +13\n|dcrush = +10\n|dmagic = -1\n|drange = +12\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:White full helm equipped male.png|170px]]\n|altimage = [[File:White full helm equipped female.png|170px]]\n}}\n\n==Shop locations==\n{{Store locations list|White full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{White equipment}}\n{{Prayer items}}\n[[Category:Items storable in the costume room]]"
+    },
+    "2657": {
+      "title": "Zamorak full helm",
+      "revision": 15324914,
+      "timestamp": "2026-08-29T21:13:33Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324914",
+      "sha256": "0e0974fcadb46e95f52932089f121f919aba070d1bd3e3e2e19a3b9289971ee6",
+      "wikitext": "{{External|rs=Rune full helm (Zamorak)}}\n{{Infobox Item\n|name = Zamorak full helm\n|image = [[File:Zamorak full helm.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet in the colours of Zamorak.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 2657\n|leagueRegion = General\n}}\n\n[[File:Zamorak full helm detail.png|left|120px]]\n[[File:Zamorak full helm chathead.png|left]]\n'''Zamorak full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Zamorak]]. Sharing the same stats as the rune full helm except for a [[prayer bonus]], the Zamorak full helm also looks visually similar. Its appearance differs in that the helm features an ornamental red plume instead of the typical purple plume.\n\nThe full helm requires 40 [[Defence]] to wear and cannot be made using the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard|[[Zamorak armour]] set|set=true}}\n\nThis item is considerably more expensive than any other piece of god-affiliated rune equipment due to its use as part of a [[Treasure Trails/Guide/Emote clues#Master Emote clues|Master tier emote clue step]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Zamorak full helm equipped male.png|160px]]\n|altimage = [[File:Zamorak full helm equipped female.png|150px]]\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Zamorak full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god helmets now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "3486": {
+      "title": "Gilded full helm",
+      "revision": 15326856,
+      "timestamp": "2026-09-01T01:54:57Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15326856",
+      "sha256": "910b1bc83a93c3a6815ba5d973e9d29d34b34f6d395c0c5f66f71379962aefa9",
+      "wikitext": "{{External|rs=Rune full helm (Gilded)}}\n{{Infobox Item\n|name = Gilded full helm\n|image = [[File:Gilded full helm.png]]\n|release = [[26 October]] [[2004]]\n|update = Treasure Trails and Changes\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet with gold plate.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 3486\n|leagueRegion = General\n}}\n[[File:Gilded full helm detail.png|left|110px]]\n[[File:Gilded full helm chathead.png|left]]\nThe '''Gilded full helm''' is a gold-plated version of the [[rune full helm]] and a part of [[gilded equipment]]. It has the same stats as the rune full helmet, and only differs in appearance. It requires 40 [[Defence]] to wear.\n\nIt can be obtained as a reward from [[Clue scroll (hard)|hard]], [[Clue scroll (elite)|elite]] and [[Clue scroll (master)|master]] tier [[Treasure Trails]] and '''cannot''' be made through any skill.\n\n{{Costume storage|treasure chest|tier=hard}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Gilded full helm equipped male.png|130px]]\n|altimage = [[File:Gilded full helm equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Gilded full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 19 May 2016\n|update = Sand Crabs & Soul Bearers\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n{{Elite clue rewards}}\n{{Master clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "1165": {
+      "title": "Black full helm",
+      "revision": 15183647,
+      "timestamp": "2026-04-22T02:56:03Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15183647",
+      "sha256": "4d4d020a40928e32b1be3638cb3bb0e8d045fdf01d511d828aabce42584c498a",
+      "wikitext": "{{External|rs|rsc=Large Black Helmet|dw=Black Knight Helmet}}\n{{Infobox Item\n|name = Black full helm\n|image = [[File:Black full helm.png]]\n|release = [[13 February]] [[2001]]\n|update = More RuneScape updates\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A full face helmet.\n|value = 1056\n|weight = 2.721\n|exchange = Yes\n|id = 1165\n}}\n[[File:Black full helm detail.png|left|120px]]\n[[File:Black full helm chathead.png|left]]\nThe '''black full helm''' is a [[full helmet]] that requires 10 [[Defence]] to equip. As with all [[Black equipment#Armour|black armour]], it cannot be made using the [[Smithing]] [[Skills|skill]]. It can be bought at [[Valaine's Shop of Champions]] in the [[Champions' Guild]] for 1,372 [[coins]]. It can also be obtained as a [[Treasure Trails]] reward.\n\nA black full helm is used in [[King's Ransom]] and, if you're part of the [[Black Arm Gang]], [[Heroes' Quest]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = 12\n|dslash = 13\n|dcrush = 10\n|dmagic = -1\n|drange = 12\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Black full helm equipped male.png|170px]]\n|altimage = [[File:Black full helm equipped female.png|170px]]\n}}\n\n==Item sources==\n{{Drop sources|Black full helm}}\n\n===Shop locations===\n{{Store locations list|Black full helm}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Black full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The full helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Black full helm detail (beta).png|center|300x150px]]\n|[[File:Black full helm detail.png|center|300x150px]]\n|-\n|[[File:Black full helm (beta).png|center]]\n|[[File:Black full helm.png|center]]\n|-\n|RuneScape 2<br/>Beta\n|29 March 2004 –<br/>present\n|}\n\n{{Melee headgear}}\n{{Black equipment}}"
+    },
+    "2673": {
+      "title": "Guthix full helm",
+      "revision": 15324898,
+      "timestamp": "2026-08-29T21:10:20Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324898",
+      "sha256": "1e940f406b0bbb8c6d0fbd3f7b2539a2b2c7c6b2272c97da8a56ae0430a579fc",
+      "wikitext": "{{External|rs=Rune full helm (Guthix)}}\n{{Infobox Item\n|name = Guthix full helm\n|image = [[File:Guthix full helm.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A rune full face helmet in the colours of Guthix.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 2673\n|leagueRegion = General\n}}\n[[File:Guthix full helm detail.png|left|120px]]\n[[File:Guthix full helm chathead.png|left]]\nThe '''Guthix full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Guthix]]. Like all god affiliated rune items, its bonuses are the same as its rune counterpart, but also offers a +1 [[Prayer bonus]]. Visually, the only difference is the colour of the plume which is green for the Guthix full helm and purple for the rune full helm.\n\nThe full helm requires 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain a Guthix full helm as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\n{{Costume storage|treasure chest|tier=hard|[[Guthix armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Guthix full helm equipped male.png|160px]]\n|altimage = [[File:Guthix full helm equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Guthix full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god helmets now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2587": {
+      "title": "Black full helm (t)",
+      "revision": 15323874,
+      "timestamp": "2026-08-28T21:20:54Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323874",
+      "sha256": "142a2e7328290d140b26b9af21718b49133c32a7f98e1a9f83bfc5e2ce1340d0",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Black full helm (t)\n|image = [[File:Black full helm (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Black full helmet with trim.\n|value = 1056\n|weight = 2.721\n|exchange = Yes\n|id = 2587\n|leagueRegion = General\n}}\n[[File:Black full helm (t) detail.png|left|120px]]\n[[File:Black full helm (t) chathead.png|left]]\n'''Black full helm (t)''' is a part of [[black trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[black full helm]], and requires level 10 [[Defence]] to wear. This item <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[black trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +12\n|dslash = +13\n|dcrush = +10\n|dmagic = -1\n|drange = +12\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Black full helm (t) equipped male.png|160px]]\n|altimage = [[File:Black full helm (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Black full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Black full helm(t)\" to \"Black full helm (t)\".\n}}\n{{Subject changes\n|date = 5 December 2006\n|update = Treasure Trails, spiders and sheep\n|change = The item was renamed from \"Black full helm (t)\" to \"Black full helm(t)\".\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Black equipment}}\n{{Easy clue rewards}}\n[[Category:Collection log items]]"
+    },
+    "2595": {
+      "title": "Black full helm (g)",
+      "revision": 15323869,
+      "timestamp": "2026-08-28T21:19:59Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323869",
+      "sha256": "3d3b172ab8f2eefd26c1fffd3bcec1c698045f0c625863e5df78e33d154e20dc",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Black full helm (g)\n|image = [[File:Black full helm (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Black full helmet with gold trim.\n|value = 1056\n|weight = 2.721\n|exchange = Yes\n|id = 2595\n|leagueRegion = General\n}}\n[[File:Black full helm (g) detail.png|left|120px]]\n[[File:Black full helm (g) chathead.png|left]]\n'''Black full helm (g)''' is a part of [[black gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[Black full helm]], and requires level 10 [[Defence]] to wear. This item <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[black gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +12\n|dslash = +13\n|dcrush = +10\n|dmagic = -1\n|drange = +12\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Black full helm (g) equipped male.png|160px]]\n|altimage = [[File:Black full helm (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Black full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Black full helm(g)\" to \"Black full helm (g)\".\n}}\n{{Subject changes\n|date = 5 December 2006\n|update = Treasure Trails, spiders and sheep\n|change = The item was renamed from \"Black full helm (g)\" to \"Black full helm(g)\".\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Black equipment}}\n{{Easy clue rewards}}\n[[Category:Collection log items]]"
+    },
+    "12486": {
+      "title": "Bandos full helm",
+      "revision": 15324887,
+      "timestamp": "2026-08-29T21:08:26Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324887",
+      "sha256": "7663935171d146ea1e0a6d740605878a96ac92dc564ea96381f3224394ac0178",
+      "wikitext": "{{External|rs=Rune full helm (Bandos)}}\n{{Infobox Item\n|name = Bandos full helm\n|image = [[File:Bandos full helm.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet in the colours of Bandos.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 12486\n|leagueRegion = General\n}}\n[[File:Bandos full helm detail.png|left|120px]]\n[[File:Bandos full helm chathead.png|left]]\nA '''Bandos full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Bandos]]. It shares the same stats as the rune full helm, except it has a [[Prayer bonus]]. Its appearance differs in that the helm features a brown plume. The full helm requires 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain a Bandos full helm as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\nThis full helm is a constituent of the [[Bandos rune armour]] set which consists of the following items: Bandos full helm, [[Bandos platebody]], [[Bandos platelegs]] or [[Bandos plateskirt]], and [[Bandos kiteshield]], all of which are decorative versions of their respective [[Rune armour|rune armour counterparts]]. Players wielding any piece featured in this set of armour will cause [[God Wars Dungeon#Bandos|followers of Bandos]] to become tolerant upon entering the [[God Wars Dungeon]].\n\n{{Costume storage|treasure chest|tier=hard|[[Bandos rune armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Bandos full helm equipped male.png|160px]]\n|altimage = [[File:Bandos full helm equipped female.png|160px]]\n}}\n==Item sources==\n{{Drop sources|Bandos full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12476": {
+      "title": "Armadyl full helm",
+      "revision": 15324882,
+      "timestamp": "2026-08-29T21:07:17Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324882",
+      "sha256": "47700390519500034ed8a9305ed6f74cda109a8e258a4b1635cf32fbf26b8902",
+      "wikitext": "{{External|rs=Rune full helm (Armadyl)}}\n{{Infobox Item\n|name = Armadyl full helm\n|image = [[File:Armadyl full helm.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet in the colours of Armadyl.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 12476\n|leagueRegion = General\n}}\n[[File:Armadyl full helm detail.png|left|120px]]\n[[File:Armadyl full helm chathead.png|left]]\nAn '''Armadyl full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Armadyl]]. It shares the same stats as the rune full helm, except it has a +1 [[Prayer bonus]]. Its appearance differs in that the helm features a greyish plume. The full helm requires 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain an Armadyl full helm as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\nThis full helm is a constituent of the [[Armadyl rune armour]] set which consists of the following items: Armadyl full helm, [[Armadyl platebody]], [[Armadyl platelegs]] or [[Armadyl plateskirt]], and [[Armadyl kiteshield]], all of which are decorative versions of their respective [[Rune armour|rune armour counterparts]]. Players wielding any piece featured in this set of armour will cause [[God Wars Dungeon#Armadyl|followers of Armadyl]] to become tolerant upon entering the [[God Wars Dungeon]].\n\n{{Costume storage|treasure chest|tier=hard|[[Armadyl rune armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Armadyl full helm equipped male.png|160px]]\n|altimage = [[File:Armadyl full helm equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Armadyl full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12466": {
+      "title": "Ancient full helm",
+      "revision": 15324875,
+      "timestamp": "2026-08-29T21:06:22Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324875",
+      "sha256": "aa09d5a65c0cbca2aab4bccac2d9d01c2ff2e644aa7de66ee1b3ae514497a88f",
+      "wikitext": "{{External|rs=Rune full helm (Ancient)}}\n{{Infobox Item\n|name = Ancient full helm\n|image = [[File:Ancient full helm.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune full helmet in the colours of a long-forgotten god.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 12466\n|leagueRegion = General\n}}\n[[File:Ancient full helm detail.png|left|120px]]\n[[File:Ancient full helm chathead.png|left]]\nAn '''Ancient full helm''' is a decorated [[rune full helm]] that is affiliated with the god [[Zaros]]. It shares the same stats as the rune full helm, except it has a [[Prayer bonus]]. Its appearance differs in that the helm features a light purple plume. The full helm requires 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain an Ancient full helm as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\nThis full helm is a constituent of the [[Ancient armour set]] which consists of the following items: Ancient full helm, [[ancient platebody]], [[ancient platelegs]] or [[ancient plateskirt]], and [[ancient kiteshield]], all of which are decorative versions of their respective [[Rune armour|rune armour counterparts]].\n\n{{Costume storage|treasure chest|tier=hard|[[ancient armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = head\n|image = [[File:Ancient full helm equipped male.png|160px]]\n|altimage = [[File:Ancient full helm equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Ancient full helm}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12293": {
+      "title": "Mithril full helm (t)",
+      "revision": 15324154,
+      "timestamp": "2026-08-28T23:51:56Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324154",
+      "sha256": "83c298f0c34b3a5b864fefdb335fa136d02b2c8610b6709d9637a468f7aaa05a",
+      "wikitext": "{{Infobox Item\n|name = Mithril full helm (t)\n|image = [[File:Mithril full helm (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Mithril full helm with trim.\n|value = 1430\n|weight = 2.267\n|exchange = Yes\n|id = 12293\n|leagueRegion = General\n}}\n[[File:Mithril full helm (t) detail.png|left|120px]]\n[[File:Mithril full helm (t) chathead.png|left]]\n'''Mithril full helm (t)''' is a part of [[mithril trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. It has the same stats as a normal [[Mithril full helm]], and requires level 20 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[mithril trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +13\n|dslash = +14\n|dcrush = +11\n|dmagic = -1\n|drange = +13\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Mithril full helm (t) equipped male.png|160px]]\n|altimage = [[File:Mithril full helm (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Mithril full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Mithril equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12211": {
+      "title": "Bronze full helm (g)",
+      "revision": 15323911,
+      "timestamp": "2026-08-28T21:29:15Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323911",
+      "sha256": "6287c4b5dfbc9149712796de8f3b121bd4b9fe31f848dd080a0aa8575a909f4b",
+      "wikitext": "{{Infobox Item\n|name = Bronze full helm (g)\n|image = [[File:Bronze full helm (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Bronze full helm with gold trim.\n|value = 48\n|weight = 2.721\n|exchange = Yes\n|id = 12211\n|leagueRegion = General\n}}\n[[File:Bronze full helm (g) detail.png|left|120px]]\n[[File:Bronze full helm (g) chathead.png|left]]\n'''Bronze full helm (g)''' is a part of [[bronze gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[Bronze full helm]]. This item <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[bronze gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +4\n|dslash = +5\n|dcrush = +3\n|dmagic = -1\n|drange = +4\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Bronze full helm (g) equipped male.png|160px]]\n|altimage = [[File:Bronze full helm (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Bronze full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Bronze equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12231": {
+      "title": "Iron full helm (t)",
+      "revision": 15323955,
+      "timestamp": "2026-08-28T21:36:07Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323955",
+      "sha256": "64b31ae1bb0cf989d08b3da9e01680c234e09ea13b11adaf96f7faa8f97af9e8",
+      "wikitext": "{{Infobox Item\n|name = Iron full helm (t)\n|image = [[File:Iron full helm (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Iron full helm with trim.\n|value = 160\n|weight = 2.721\n|exchange = Yes\n|id = 12231\n|leagueRegion = General\n}}\n[[File:Iron full helm (t) detail.png|left|120px]]\n[[File:Iron full helm (t) chathead.png|left]]\n'''Iron full helm (t)''' is a part of [[iron trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails|Treasure Trail]]s. It has the same stats as a normal [[Iron full helm]]. This item <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[iron trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +6\n|dslash = +7\n|dcrush = +5\n|dmagic = -1\n|drange = +6\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Iron full helm (t) equipped male.png|160px]]\n|altimage = [[File:Iron full helm (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Iron full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Iron equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12241": {
+      "title": "Iron full helm (g)",
+      "revision": 15323947,
+      "timestamp": "2026-08-28T21:35:04Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323947",
+      "sha256": "a2a9e3bee67751f3f90948b5a5f0ca6844a977b0c0ef21cbf4188c049051fdbf",
+      "wikitext": "{{Infobox Item\n|name = Iron full helm (g)\n|image = [[File:Iron full helm (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Iron full helm with gold trim.\n|value = 160\n|weight = 2.721\n|exchange = Yes\n|id = 12241\n|leagueRegion = General\n}}\n[[File:Iron full helm (g) detail.png|left|120px]]\n[[File:Iron full helm (g) chathead.png|left]]\n'''Iron full helm (g)''' is a part of [[iron gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[iron full helm]]. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[iron gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +6\n|dslash = +7\n|dcrush = +5\n|dmagic = -1\n|drange = +6\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Iron full helm (g) equipped male.png|160px]]\n|altimage = [[File:Iron full helm (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Iron full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Iron equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12283": {
+      "title": "Mithril full helm (g)",
+      "revision": 15324148,
+      "timestamp": "2026-08-28T23:51:01Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324148",
+      "sha256": "e5877b0e7593781cb600769749f4732db2871d75400827bf5f4634650c9c5fd4",
+      "wikitext": "{{Infobox Item\n|name = Mithril full helm (g)\n|image = [[File:Mithril full helm (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Mithril full helm with gold trim.\n|value = 1430\n|weight = 2.267\n|exchange = Yes\n|id = 12283\n|leagueRegion = General\n}}\n[[File:Mithril full helm (g) detail.png|left|120px]]\n[[File:Mithril full helm (g) chathead.png|left]]\n'''Mithril full helm (g)''' is a part of [[mithril gold-trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. It has the same stats as a normal [[Mithril full helm]], and requires level 20 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[mithril gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +13\n|dslash = +14\n|dcrush = +11\n|dmagic = -1\n|drange = +13\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Mithril full helm (g) equipped male.png|160px]]\n|altimage = [[File:Mithril full helm (g) equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Mithril full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Mithril equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12221": {
+      "title": "Bronze full helm (t)",
+      "revision": 15323917,
+      "timestamp": "2026-08-28T21:30:11Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323917",
+      "sha256": "77465d3c119734ac8d2afdc6f7b77ffc680cc06d87125fd5320c340aae6ed609",
+      "wikitext": "{{Infobox Item\n|name = Bronze full helm (t)\n|image = [[File:Bronze full helm (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Bronze full helm with trim.\n|value = 48\n|weight = 2.721\n|exchange = Yes\n|id = 12221\n|leagueRegion = General\n}}\n[[File:Bronze full helm (t) detail.png|left|120px]]\n[[File:Bronze full helm (t) chathead.png|left]]\n'''Bronze full helm (t)''' is a part of [[bronze trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[Bronze full helm]]. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[bronze trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +4\n|dslash = +5\n|dcrush = +3\n|dmagic = -1\n|drange = +4\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Bronze full helm (t) equipped male.png|160px]]\n|altimage = [[File:Bronze full helm (t) equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Bronze full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Bronze equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12417": {
+      "title": "Dragon full helm (g)",
+      "revision": 15325079,
+      "timestamp": "2026-08-29T23:29:41Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15325079",
+      "sha256": "e4591b7877082673ae83463e0b176b0ada800ca170de30561e7e26fa696f115e",
+      "wikitext": "{{External|rs=Dragon full helm (or)}}\n{{Infobox Item\n|name = Dragon full helm (g)\n|image = [[File:Dragon full helm (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Dismantle\n|examine = Protects your head and looks impressive too.\n|value = 150000\n|weight = 2.000\n|id = 12417\n}}\n[[File:Dragon full helm (g) detail.png|left|160px]]\n[[File:Dragon full helm (g) chathead.png|left]]\nThe '''dragon full helm (g)''' is a [[dragon full helm]] with a [[dragon full helm ornament kit]] attached to it, and is part of [[dragon gold-trimmed armour]]. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the helmet. It costs {{Coins|{{GEP|Dragon full helm}}+{{GEP|Dragon full helm ornament kit}}}} for both the items required to make the dragon full helm (g).\n\nWhile the helmet is untradeable in its ornamented state, it can be dismantled anytime, returning the tradeable full helm and ornament kit.\n\n{{Costume storage|treasure chest|tier=elite|[[dragon gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +45\n|dslash = +48\n|dcrush = +41\n|dmagic = -1\n|drange = +46\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Dragon gold-trimmed set (lg) equipped.png|150px]]\n}}\n\n==Creation==\n{{Recipe\n|members = Yes\n|ticks = \n|mat1 = Dragon full helm\n|mat2 = Dragon full helm ornament kit\n|output1 = Dragon full helm (g)\n|output1cost = No\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Dragon equipment}}\n{{Melee headgear}}\n[[Category:Armour]]\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]"
+    },
+    "10350": {
+      "title": "3rd Age full helmet",
+      "revision": 15326818,
+      "timestamp": "2026-09-01T01:33:45Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15326818",
+      "sha256": "f5c283fce4f52bec8e6e16c6cb7e72edd7e15e2424c1d8df3595277b395f33ba",
+      "wikitext": "{{External|rs=Third age full helmet}}\n{{Infobox Item\n|name = 3rd Age full helmet\n|image = [[File:3rd Age full helmet.png]]\n|release = [[5 December]] [[2006]]\n|update = Treasure Trails, spiders and sheep\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Fabulously ancient armour beaten from magical silver.\n|value = 90000\n|weight = 0.907\n|exchange = Yes\n|id = 10350\n|leagueRegion = General\n}}\n[[File:3rd Age full helmet detail.png|left|100px]]\n[[File:3rd Age full helmet chathead.png|left]]\nThe '''3rd Age full helmet''' is a part of the [[3rd Age armour|3rd Age melee set]]. Requiring level 65 [[Defence]] to wear, it has the third highest defence bonuses of all non-degradable melee helmets, only surpassed by the [[justiciar faceguard]] and [[Torva full helm#Restored|Torva full helm]]. \nThe 3rd Age full helmet is a possible reward from [[Clue scroll (hard)|hard]], [[Clue scroll (elite)|elite]] and [[Clue scroll (master)|master]] tier [[Treasure Trails]] and cannot be made through any skills. It can also be obtained when opening mimic caskets, after defeating the [[Mimic boss]].\n\nDue to its price, rarity and lack of offensive bonuses, it is rarely used for combat.\n\n{{Costume storage|treasure chest|tier=hard}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -5\n|arange = -2\n|dstab = 47\n|dslash = 49\n|dcrush = 43\n|dmagic = -3\n|drange = 48\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:3rd Age full helmet equipped male.png|120px]]\n|altimage = [[File:3rd Age full helmet equipped female.png|120px]]\n}}\n\n==Item sources==\n{{Drop sources|3rd Age full helmet}}\n\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 19 August 2026\n|update = Summer Sweep Up - Hunter & Skilling\n|change = The item was renamed from \"3rd age full helmet\" to \"3rd Age full helmet\".\n}}\n{{Subject changes\n|daterange = 3 July 2007 - 20 July 2007\n|update = \n|change = The 3rd Age full helmet has received the following changes:\n* Stab Defence bonus increased from +43 to +47.\n* Slash Defence bonus increased from +45 to +49.\n* Crush Defence bonus increased from +42 to +43.\n* Ranged Defence bonus increased from +44 to +48.\n}}\n{{Subject changes footer}}\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\n3rd Age armour equipped male.png|The full 3rd Age armour set on body type A.\n3rd Age armour equipped female.png|The full 3rd Age armour set on body type B.\n</gallery>\n\n==Trivia==\n* When the [[dragon full helm]] first came out, its stats beat the 3rd Age full helmet's original stats in each section. Jagex then updated the 3rd Age full helmet, which made it slightly stronger than the dragon full helm.\n\n{{3rd Age equipment}}\n{{Hard clue rewards}}\n{{Elite clue rewards}}\n{{Master clue rewards}}\n{{Melee headgear}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20178": {
+      "title": "Steel full helm (g)",
+      "revision": 15323973,
+      "timestamp": "2026-08-28T21:41:20Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323973",
+      "sha256": "08c67a8547c2cdebfa4e1f756765de1c30e347b912dde9ebdf2b40c6cb582ffd",
+      "wikitext": "{{Infobox Item\n|name = Steel full helm (g)\n|image = [[File:Steel full helm (g).png]]\n|release = [[6 July]] [[2016]]\n|update = Treasure Trail Expansion (2016)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A steel full helmet with gold trim.\n|value = 550\n|weight = 2.721\n|exchange = Yes\n|id = 20178\n|leagueRegion = General\n}}\n[[File:Steel full helm (g) detail.png|left|120px]]\n[[File:Steel full helm (g) chathead.png|left]]\n'''Steel full helm (g)''' is a part of [[steel gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[steel full helm]], and requires level 5 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[steel gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +9\n|dslash = +10\n|dcrush = +7\n|dmagic = -1\n|drange = +9\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Steel full helm (g) equipped male.png|150px]]\n|altimage = [[File:Steel full helm (g) equipped female.png|115px]]\n}}\n\n==Item sources==\n{{Drop sources|Steel full helm (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Steel equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20193": {
+      "title": "Steel full helm (t)",
+      "revision": 15323978,
+      "timestamp": "2026-08-28T21:42:14Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323978",
+      "sha256": "0d7d017c4de32954fe740f3d8a544c875638df5f3331b8e7a5a25cddb18f3d6c",
+      "wikitext": "{{Infobox Item\n|name = Steel full helm (t)\n|image = [[File:Steel full helm (t).png]]\n|release = [[6 July]] [[2016]]\n|update = Treasure Trail Expansion (2016)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A steel full helmet with trim.\n|value = 550\n|weight = 2.721\n|exchange = Yes\n|id = 20193\n|leagueRegion = General\n}}\n[[File:Steel full helm (t) detail.png|left|120px]]\n[[File:Steel full helm (t) chathead.png|left]]\n'''Steel full helm (t)''' is a part of [[steel trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. It has the same stats as a normal [[Steel full helm]], and requires level 5 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[steel trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +9\n|dslash = +10\n|dcrush = +7\n|dmagic = -1\n|drange = +9\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Steel full helm (t) equipped male.png|150px]]\n|altimage = [[File:Steel full helm (t) equipped female.png|100px]]\n}}\n\n==Item sources==\n{{Drop sources|Steel full helm (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Steel equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "22625": {
+      "title": "Statius's full helm (Deadman Mode)",
+      "revision": 15188954,
+      "timestamp": "2026-04-22T04:25:33Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15188954",
+      "sha256": "3591a328776acf34b693544f683e9648a200697fca9907a8b1bb9c3a3fc9fe02",
+      "wikitext": "{{Deadman seasonal}}\n{{Infobox Item\n|name = Statius's full helm\n|image = [[File:Statius's full helm.png]]\n|release = [[6 September]] [[2018]]\n|update = Making Friends With My Arm, Deadman Autumn Finals and Full Mobile Launch\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A powerful helmet.\n|value = 250000\n|weight = 2.721\n|exchange = dmm\n|id = 22625\n}}\n[[File:Statius's full helm detail.png|120px|left]]\n[[File:Statius's full helm chathead.png|left]]\n'''Statius's full helm''' is a piece of armour exclusive to [[Deadman Mode]], requiring 20 [[Defence]] to wear. It is part of [[Statius's equipment]], a set of [[Ancient Warriors' equipment]].\n\nIt can be obtained from looting [[Deadman's chest (scenery)|Deadman's chests]], as a rare drop from [[breach monster]]s, and as a rare drop from monsters with a combat level of 50 or higher.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 15\n|aslash = 15\n|acrush = 15\n|amagic = -6\n|arange = -2\n|dstab = 20\n|dslash = 25\n|dcrush = 23\n|dmagic = -1\n|drange = 28\n|str = 5\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Statius's full helm equipped male.png|140px]]\n|altimage = [[File:Statius's full helm equipped female.png|140px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nStatius's equipment equipped male.png|The full Statius's set on body type A.\nStatius's equipment equipped female.png|The full Statius's set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 4 February 2026\n|update = Deadman: Annihilation Tweaks, Shellbane Gryphon CAs & More!\n|change = The item was made tradeable on the [[Grand Exchange]].\n}}\n{{Subject changes\n|date = 21 January 2026\n|update = Holy Moleys and the Hooded Slayer Helm are Here!\n|change = The stats and defence requirement of the item were adjusted for [[Deadman: Annihilation]].\n}}\n{{Subject changes\n|date = 24 May 2023\n|update = Bounty Hunter is Back!\n|change = The item was graphically updated.\n}}\n{{Subject changes\n|date = 6 December 2018\n|update = The Collection Log and Deadman Permadeath Beta\n|change = The item was made untradeable on the [[Grand Exchange]].\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Statius's full helm detail v1.png|center|300x150px]]\n|[[File:Statius's full helm detail.png|center|300x150px]]\n|-\n|[[File:Statius's full helm v1.png|center]]\n|[[File:Statius's full helm.png|center]]\n|-\n|6 September 2018–<br/>24 May 2023\n|24 May 2023 ⁠–<br/>present\n|}\n\n{{Ancient Warriors' equipment}}\n{{Melee headgear}}"
+    },
+    "24034": {
+      "title": "Dragonstone full helm",
+      "revision": 15189361,
+      "timestamp": "2026-04-22T04:30:05Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15189361",
+      "sha256": "59650b6f3ac5e1a5928a13bb2d50e1cd91720389a119414c22397159e78ec4d4",
+      "wikitext": "{{External|rs=Dragonstone helm}}\n{{Infobox Item\n|name = Dragonstone full helm\n|image = [[File:Dragonstone full helm.png]]\n|release = [[25 July]] [[2019]]\n|update = Song of the Elves\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A stylish rune full helm inlaid with dragonstones.\n|value = 35200\n|weight = 2.721\n|exchange = Yes\n|id = 24034\n|leagueRegion = Tirannwn\n}}\n[[File:Dragonstone full helm detail.png|120px|left]]\n[[File:Dragonstone full helm chathead.png|left]]\nThe '''dragonstone full helm''' can be found as a rare reward upon opening the [[Elven Crystal Chest]] within [[Prifddinas]]. It has the same stats as [[rune full helm]] and requires 40 [[Defence]] to equip.\n\n{{Costume storage|armour case|[[Dragonstone armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +30\n|dslash = +32\n|dcrush = +27\n|dmagic = -1\n|drange = +30\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Dragonstone full helm equipped male.png|150px]]\n|altimage = [[File:Dragonstone full helm equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Dragonstone full helm}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nDragonstone armour equipped male.png|The full dragonstone armour set on body type A.\nDragonstone armour equipped female.png|The full dragonstone armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Melee headgear}}\n{{Rune equipment}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "25169": {
+      "title": "Decorative full helm (white)",
+      "revision": 15189941,
+      "timestamp": "2026-04-22T04:34:03Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15189941",
+      "sha256": "292e07d667c1b0bc392eaa30106105c2aca7a739867e5f436a30ec85e12d2e5f",
+      "wikitext": "{{Infobox Item\n|name = Decorative full helm\n|image = [[File:Decorative full helm (white).png]]\n|release = [[2 December]] [[2020]]\n|update = Settings Rework and the last of Poll 73\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = \n|options = Wear, Drop\n|examine = A very decorative full face helmet.\n|value = 850\n|weight = 2.721\n|id = 25169\n|leagueRegion = Kandarin\n}}\n[[File:Decorative full helm (white) detail.png|left|100px]]\n[[File:Decorative full helm (white) chathead.png|left]]\nThe '''decorative full helm (white)''' can be bought at the [[Castle Wars]] area south of the [[Observatory]] for 40 [[Castle wars ticket]]s. They can only be bought from [[Lanthus]]. The helmet has similar stats to a [[Mithril full helmet]] but weighs more, and requires level 20 [[Defence]] to wear.\n\n{{Costume storage|armour case|[[Decorative armour|Castle Wars armour (2)]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +13\n|dslash = +14\n|dcrush = +11\n|dmagic = -1\n|drange = +13\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Decorative full helm (white) equipped male.png|200px]]\n|altimage = [[File:Decorative full helm (white) equipped female.png|200px]]\n}}\n\n==Shop locations==\n{{Store locations list|Decorative full helm (white)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 2 April 2025\n|update = Poll 83: Castle Wars Update\n|change = The decorative full helm price decreased from 50 to 40 Castle Wars Tickets.\n}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Castle Wars}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "25165": {
+      "title": "Decorative full helm (red)",
+      "revision": 15189942,
+      "timestamp": "2026-04-22T04:34:04Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15189942",
+      "sha256": "863c32e6c737942cc1dac2efd78bfa096d7805c3892785509f6ff58b6790a23e",
+      "wikitext": "{{Infobox Item\n|name = Decorative full helm\n|image = [[File:Decorative full helm (red).png]]\n|release = [[2 December]] [[2020]]\n|update = Settings Rework and the last of Poll 73\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = \n|options = Wear, Drop\n|examine = A very decorative full face helmet.\n|value = 850\n|weight = 2.721\n|id = 25165\n|leagueRegion = Kandarin\n}}\n[[File:Decorative full helm (red) detail.png|left|100px]]\n[[File:Decorative full helm (red) chathead.png|left]]\nThe '''decorative full helm (red)''' can be bought at the [[Castle Wars]] area south of the [[Observatory]] for 5 [[Castle wars ticket]]s. They can only be bought from [[Lanthus]]. The helmet has similar stats to a [[Steel full helmet]], and requires level 5 [[Defence]] to wear.\n\n{{Costume storage|armour case|[[Decorative armour|Castle Wars armour (1)]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = 9\n|dslash = 10\n|dcrush = 7\n|dmagic = -1\n|drange = 9\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Decorative full helm (red) equipped male.png|200px]]\n|altimage = [[File:Decorative full helm (red) equipped female.png|200px]]\n}}\n\n==Shop locations==\n{{Store locations list|Decorative full helm (red)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The helmet's ranged attack bonus has been decreased from -2 to -3.\n}}\n{{Subject changes footer}}\n\n{{Castle Wars}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "28254": {
+      "title": "Sanguine torva full helm",
+      "revision": 15232194,
+      "timestamp": "2026-06-11T22:49:12Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15232194",
+      "sha256": "1e542fdef2514e0658e120d73616644781aeb9760af4977013cfe2da1e912e33",
+      "wikitext": "{{Infobox Item\n|name = Sanguine torva full helm\n|image = [[File:Sanguine torva full helm.png]]\n|release = [[28 July]] [[2023]]\n|update = Desert Treasure II - The Fallen Empire\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Revert\n|examine = An ancient warrior's full helm.\n|value = 200000\n|weight = 2.721\n|id = 28254\n}}\n[[File:Sanguine torva full helm detail.png|left|120px]]\n[[File:Sanguine torva full helm chathead.png|left]]\nThe '''sanguine torva full helm''' is a [[Torva full helm]] modified by an [[ancient blood ornament kit]] and 20,000 [[blood rune]]s; the kit is not consumed. The ornament gives no additional bonuses, and is purely cosmetic.\n\nWhile the item is untradeable in its sanguine state, it can be reverted anytime. However, the blood runes will not be returned.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -5\n|arange = -5\n|dstab = 59\n|dslash = 60\n|dcrush = 62\n|dmagic = -2\n|drange = 57\n|str = 8\n|rstr = 0\n|mdmg = 0\n|prayer = 1\n|slot = head\n|image = [[File:Sanguine torva full helm equipped male.png|140px]]\n|altimage = [[File:Sanguine torva full helm equipped female.png|130px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Magic\n|skill1lvl = 0\n|skill1boostable = \n|skill1exp = 500\n|members = Yes\n|ticks = \n|mat1 = Torva full helm\n|mat2 = Ancient blood ornament kit\n|mat2cost = No\n|mat3 = Blood rune\n|mat3quantity = 20000\n|output1 = Sanguine torva full helm\n|output1cost = No\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nSanguine torva armour equipped male.png|The full Sanguine Torva armour set on body type A.\nSanguine torva armour equipped female.png|The full Sanguine Torva armour set on body type B.\nAncient blood ornament kit creation.webp|A player creating a piece of Sanguine Torva.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 3 August 2023\n|update = Desert Treasure II - Tweaks and Drop Rates\n|change = \n* The item models for Sanguine Torva armour have been [[graphically updated]] to match the [[:File:Desert Treasure II - Awakened Bosses, Blood Torva & Old School's Art (3).jpg|reworked version]] shared in the [[Update:Desert Treasure II - Awakened Bosses, Blood Torva & Old School's Art|newspost]] on 12 July 2023.\n* Sanguine Torva armour now has the correct graphics when equipped by a female character.\n}}\n{{Subject changes\n|date = 28 July 2023\n|update = Desert Treasure II - The Fallen Empire\n|poll = Awakened DT2 Bosses & Poll 80\n|change = The item is now obtainable.\n}}\n{{Subject changes\n|date = 26 July 2023\n|update = Desert Treasure II - The Fallen Empire\n|change = The item was added to the game, but was unobtainable.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Sanguine torva full helm v1 detail.png|center|300x150px]]\n|[[File:Sanguine torva full helm detail.png|center|300x150px]]\n|-\n|[[File:Sanguine torva full helm v1.png|center]]\n|[[File:Sanguine torva full helm.png|center]]\n|-\n|26 July 2023 –<br/>3 August 2023\n|3 August 2023 –<br/>present\n|}\n\n{{The Forgotten Four}}\n{{Melee headgear}}"
+    },
+    "29560": {
+      "title": "Elite black full helm",
+      "revision": 15237182,
+      "timestamp": "2026-06-21T18:07:43Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15237182",
+      "sha256": "0635cea9f7617ffb8806bf421b1384d535d95b3545dc2429d1b34c27dd53c286",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Elite black full helm\n|image = [[File:Elite black full helm.png]]\n|release = [[10 July]] [[2024]]\n|update = While Guthix Sleeps\n|members = Yes\n|quest = [[While Guthix Sleeps]]\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Drop\n|examine = An elite full face helmet.\n|value = 1000\n|alchable = No\n|weight = 2.721\n|id = 29560\n}}\n[[File:Elite black full helm detail.png|left|100px]]\n[[File:Elite black full helm chathead.png|left]]\nThe '''elite black full helm''' is a piece of [[elite black armour]] which requires 40 [[Defence]] to equip and is obtained during [[While Guthix Sleeps]]. It is dropped by [[Elite Black Knight]]s within the [[Black Knight Catacombs]]. During the quest, it is a guaranteed drop (before giving the set to [[Silif]]) and can be used with the full set to enter the [[Black Knights' Fortress (location)|Black Knights' Fortress]].\n\nIt has the same stats as a [[mithril full helm]] (with the prayer bonus of a [[proselyte sallet]]).\n\nThe Elite black full helm counts as a [[Zamorak item]] in the [[God Wars Dungeon]].\n\n{{Costume storage|armour case|[[Elite black armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -6\n|arange = -3\n|dstab = +13\n|dslash = +14\n|dcrush = +11\n|dmagic = -1\n|drange = +13\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 4\n|slot = head\n|image = [[File:Elite black full helm equipped male.png|170px]]\n|altimage = [[File:Elite black full helm equipped female.png|170px]]\n}}\n\n==Item sources==\n{{Drop sources|Elite black full helm}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nElite black armour equipped male.png|The elite black armour set on body type A.\nElite black armour equipped female.png|The elite black armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 24 July 2024\n|update = Deadman: Armageddon & While Guthix Sleeps Tweaks\n|change = [[Elite black armour]] can now be stored in the [[armour case space]] of a [[player-owned house]].\n}}\n{{Subject changes footer}}\n\n{{While Guthix Sleeps}}"
+    },
+    "30302": {
+      "title": "Torva full helm (unobtainable item)",
+      "revision": 15192793,
+      "timestamp": "2026-04-22T04:53:03Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15192793",
+      "sha256": "64b46c6ce0794a9ee27d7eee745cca2397c5613935e70564a49d8755f907c035",
+      "wikitext": "{{Cache}}\n{{Infobox Item\n|name = Torva full helm\n|image = [[File:Torva full helm (unobtainable item).png]]\n|release = [[23 October]] [[2024]]\n|update = Halloween Fixes & Miscellaneous Changes\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Drop\n|examine = An ancient warrior's full helm.\n|value = 1\n|weight = 2.721\n|id = 30302\n}}\n[[File:Torva full helm (unobtainable item) detail.png|left|120px]]\n[[File:Torva full helm (unobtainable item) chathead.png|left]]\nThis variant of the '''Torva full helm''' is an unobtainable version of the regular [[Torva full helm]], which resembles its appearance prior to the 3 August 2023 graphical update.\n\nThe [[Torva_armour#Appearance|graphical update to Torva armour]] was done with the reasoning that it was not \"consistent with Old School's art style\", and a non-trivial number of players disagreed with said change, mostly due to nostalgia towards its iconic appearance in its original release in ''RuneScape 2'' in 2011.\n\nAs such, this item was released as a compromise to allow the third party client [[RuneLite]] to use the assets for various plugins which changed the appearance of the player character (such as [https://runelite.net/plugin-hub/show/fashionscape Fashionscape] and [https://runelite.net/plugin-hub/show/weapon-animation-replacer Weapon/Gear/Animation Replacer]), although other players would not be able to see said player overriding their appearance.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = 0\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = head\n|image = [[File:Torva full helm (unobtainable item) equipped male.png|120px]]\n|altimage = [[File:Torva full helm (unobtainable item) equipped female.png|120px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nTorva armour (retro) equipped male.png|The retro Torva armour set on body type A.\nTorva armour (retro) equipped female.png|The retro Torva armour set on body type B.\n</gallery>\n\n{{Unobtainable items}}"
+    }
+  },
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "license_urls": [
+    "https://github.com/weirdgloop/osrs-dps-calc/blob/main/LICENSE",
+    "https://meta.weirdgloop.org/w/Licensing"
+  ]
+}

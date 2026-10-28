@@ -1,0 +1,12 @@
+[
+  {
+    "id": "bulk_metal_platebodies_1117",
+    "name": "Bronze platebody",
+    "item_id": 1117,
+    "slot": "body",
+    "requires": null,
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

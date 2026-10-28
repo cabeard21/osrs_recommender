@@ -1,0 +1,121 @@
+[
+  {
+    "id": "bulk_metal_kiteshields_1189",
+    "name": "Bronze kiteshield",
+    "item_id": 1189,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 1
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_1191",
+    "name": "Iron kiteshield",
+    "item_id": 1191,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 1
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_1193",
+    "name": "Steel kiteshield",
+    "item_id": 1193,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 5
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_1195",
+    "name": "Black kiteshield",
+    "item_id": 1195,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 10
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_1197",
+    "name": "Mithril kiteshield",
+    "item_id": 1197,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 20
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_1199",
+    "name": "Adamant kiteshield",
+    "item_id": 1199,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 30
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_6633",
+    "name": "White kiteshield",
+    "item_id": 6633,
+    "slot": "shield",
+    "requires": {
+      "all_of": [
+        {
+          "skill": {
+            "defence": 10
+          }
+        },
+        {
+          "quest": "wanted"
+        }
+      ]
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_kiteshields_21895",
+    "name": "Dragon kiteshield",
+    "item_id": 21895,
+    "slot": "shield",
+    "requires": {
+      "skill": {
+        "defence": 60
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

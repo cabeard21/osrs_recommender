@@ -76,7 +76,7 @@ it("inspects the active role of the selected joint curve point and offers no sin
   expect(
     await screen.findByRole("heading", { name: "Rune scimitar" }),
   ).toBeVisible();
-  expect(getItem).toHaveBeenCalledWith(1333);
+  expect(getItem).toHaveBeenCalledWith(1333, "community_best_effort");
   expect(
     screen.queryByRole("region", { name: "Contextual alternatives" }),
   ).not.toBeInTheDocument();

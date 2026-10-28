@@ -1,0 +1,100 @@
+[
+  {
+    "id": "bulk_metal_chainbodies_1101",
+    "name": "Iron chainbody",
+    "item_id": 1101,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 1
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1103",
+    "name": "Bronze chainbody",
+    "item_id": 1103,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 1
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1105",
+    "name": "Steel chainbody",
+    "item_id": 1105,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 5
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1107",
+    "name": "Black chainbody",
+    "item_id": 1107,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 10
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1109",
+    "name": "Mithril chainbody",
+    "item_id": 1109,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 20
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1111",
+    "name": "Adamant chainbody",
+    "item_id": 1111,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 30
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_chainbodies_1113",
+    "name": "Rune chainbody",
+    "item_id": 1113,
+    "slot": "body",
+    "requires": {
+      "skill": {
+        "defence": 40
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

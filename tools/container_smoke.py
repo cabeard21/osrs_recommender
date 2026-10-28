@@ -40,6 +40,7 @@ def main() -> None:
             "import urllib.request; "
             "urllib.request.urlopen('http://127.0.0.1:8502/healthz', timeout=2).read()",
         )
+        docker("exec", app, "python", "-c", GEAR_PROBE)
         docker(
             "exec",
             app,
@@ -95,6 +96,31 @@ def main() -> None:
         subprocess.run(["docker", "network", "rm", network], check=False)
         subprocess.run(["docker", "volume", "rm", volume], check=False)
 
+
+GEAR_PROBE = """
+import re
+import shutil
+import urllib.request
+from pathlib import Path
+from tracker.ui.gear_preview import BUNDLE_DIR
+
+assert BUNDLE_DIR.joinpath('index.html').is_file()
+assert not Path('/app/frontend').exists()
+assert shutil.which('node') is None
+base = 'http://127.0.0.1:8502'
+for path in ('/', '/gear', '/gear/', '/gear-next/', '/gear/results/example',
+             '/gear-legacy', '/skills', '/unlocks', '/settings'):
+    with urllib.request.urlopen(base + path, timeout=20) as response:
+        assert response.status == 200, path
+with urllib.request.urlopen(base + '/gear') as response:
+    html = response.read().decode()
+for asset in re.findall(r'(?:src|href)="(/gear-ui/[^" ]+)"', html):
+    with urllib.request.urlopen(base + asset) as response:
+        assert response.status == 200 and response.read(), asset
+with urllib.request.urlopen(base + '/gear-sprites/4151.png') as response:
+    assert response.headers.get_content_type() == 'image/png'
+print('Installed wheel: React, deep links, assets, sprites, NiceGUI; no Node/source frontend')
+"""
 
 PROBE = """
 import json

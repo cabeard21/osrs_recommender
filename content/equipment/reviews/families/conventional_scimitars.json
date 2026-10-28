@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "conventional_scimitars",
+  "name_pattern": "scimitar",
+  "slots": [
+    "weapon"
+  ],
+  "source_file": "content/equipment/reviews/sources/conventional_scimitars.json",
+  "source_sha256": "",
+  "items": {}
+}

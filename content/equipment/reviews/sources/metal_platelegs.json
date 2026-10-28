@@ -1,0 +1,2526 @@
+{
+  "schema_version": 1,
+  "equipment_source": {
+    "source": "https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment.json",
+    "revision": "89c3e25b344aea90d0189746e4b5f73dde0f0383",
+    "capture_sha256": "96022a4a1764cc9d7d3d0a73f9434563e5f727e7c7f85eb1a79ab791dd4d678d"
+  },
+  "equipment_rows": [
+    {
+      "name": "3rd Age platelegs",
+      "id": 10346,
+      "weight": 2.721,
+      "version": "",
+      "slot": "legs",
+      "image": "3rd Age platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -25,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 78,
+        "slash": 76,
+        "crush": 83,
+        "magic": -5,
+        "ranged": 75
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant platelegs",
+      "id": 1073,
+      "weight": 10.432,
+      "version": "",
+      "slot": "legs",
+      "image": "Adamant platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant platelegs (g)",
+      "id": 2609,
+      "weight": 10.432,
+      "version": "",
+      "slot": "legs",
+      "image": "Adamant platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Adamant platelegs (t)",
+      "id": 2601,
+      "weight": 10.432,
+      "version": "",
+      "slot": "legs",
+      "image": "Adamant platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ancient platelegs",
+      "id": 12462,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Ancient platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ardougne knight platelegs",
+      "id": 23789,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Ardougne knight platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Armadyl platelegs",
+      "id": 12472,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Armadyl platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bandos platelegs",
+      "id": 12482,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Bandos platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black platelegs",
+      "id": 1077,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Black platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 21,
+        "slash": 20,
+        "crush": 19,
+        "magic": -4,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black platelegs (g)",
+      "id": 2593,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Black platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 21,
+        "slash": 20,
+        "crush": 19,
+        "magic": -4,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Black platelegs (t)",
+      "id": 2585,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Black platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 21,
+        "slash": 20,
+        "crush": 19,
+        "magic": -4,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze platelegs",
+      "id": 1075,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Bronze platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 7,
+        "crush": 6,
+        "magic": -4,
+        "ranged": 7
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze platelegs (g)",
+      "id": 12207,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Bronze platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 7,
+        "crush": 6,
+        "magic": -4,
+        "ranged": 7
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Bronze platelegs (t)",
+      "id": 12217,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Bronze platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 8,
+        "slash": 7,
+        "crush": 6,
+        "magic": -4,
+        "ranged": 7
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Corrupted platelegs",
+      "id": 20842,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Corrupted platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Corrupted statius's platelegs (bh)",
+      "id": 27846,
+      "weight": 9.071,
+      "version": "Activated",
+      "slot": "legs",
+      "image": "Corrupted statius's platelegs (bh).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 2,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 1,
+        "slash": 1,
+        "crush": 10,
+        "magic": -26,
+        "ranged": -13
+      },
+      "defensive": {
+        "stab": 25,
+        "slash": 23,
+        "crush": 21,
+        "magic": -10,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative armour (gold platelegs)",
+      "id": 20487,
+      "weight": 9.071,
+      "version": "Broken",
+      "slot": "legs",
+      "image": "Decorative armour (broken) (gold platelegs).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative armour (gold platelegs)",
+      "id": 24159,
+      "weight": 9.071,
+      "version": "Locked",
+      "slot": "legs",
+      "image": "Decorative armour (gold platelegs).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative armour (gold platelegs)",
+      "id": 4510,
+      "weight": 9.071,
+      "version": "Normal",
+      "slot": "legs",
+      "image": "Decorative armour (gold platelegs).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 33,
+        "slash": 31,
+        "crush": 29,
+        "magic": -4,
+        "ranged": 31
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative armour (red platelegs)",
+      "id": 4070,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Decorative armour (red platelegs).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 17,
+        "slash": 16,
+        "crush": 15,
+        "magic": -4,
+        "ranged": 16
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Decorative armour (white platelegs)",
+      "id": 4505,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Decorative armour (white platelegs).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 24,
+        "slash": 22,
+        "crush": 20,
+        "magic": -4,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4902,
+      "weight": 9.071,
+      "version": "0",
+      "slot": "legs",
+      "image": "Dharok's platelegs 0.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4898,
+      "weight": 9.071,
+      "version": "100",
+      "slot": "legs",
+      "image": "Dharok's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4901,
+      "weight": 9.071,
+      "version": "25",
+      "slot": "legs",
+      "image": "Dharok's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4900,
+      "weight": 9.071,
+      "version": "50",
+      "slot": "legs",
+      "image": "Dharok's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4899,
+      "weight": 9.071,
+      "version": "75",
+      "slot": "legs",
+      "image": "Dharok's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dharok's platelegs",
+      "id": 4722,
+      "weight": 9.071,
+      "version": "Undamaged",
+      "slot": "legs",
+      "image": "Dharok's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon platelegs",
+      "id": 4087,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Dragon platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 68,
+        "slash": 66,
+        "crush": 63,
+        "magic": -4,
+        "ranged": 65
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon platelegs (cr)",
+      "id": 28061,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Dragon platelegs (cr).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 68,
+        "slash": 66,
+        "crush": 63,
+        "magic": -4,
+        "ranged": 65
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragon platelegs (g)",
+      "id": 12415,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Dragon platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 68,
+        "slash": 66,
+        "crush": 63,
+        "magic": -4,
+        "ranged": 65
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Dragonstone platelegs",
+      "id": 24040,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Dragonstone platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Eggshell platelegs",
+      "id": 22353,
+      "weight": 1,
+      "version": "",
+      "slot": "legs",
+      "image": "Eggshell platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Elite black platelegs",
+      "id": 29564,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Elite black platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 6
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 24,
+        "slash": 22,
+        "crush": 20,
+        "magic": -4,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Gilded platelegs",
+      "id": 3483,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Gilded platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Group ironman platelegs",
+      "id": 26166,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Group ironman platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Group ironman platelegs (unranked)",
+      "id": 27044,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Group ironman platelegs (unranked).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Guthix platelegs",
+      "id": 2671,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Guthix platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Hardcore group ironman platelegs",
+      "id": 26180,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Hardcore group ironman platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Hardcore ironman platelegs",
+      "id": 20796,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Hardcore ironman platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron platelegs",
+      "id": 1067,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Iron platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron platelegs (g)",
+      "id": 12237,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Iron platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Iron platelegs (t)",
+      "id": 12227,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Iron platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ironman platelegs",
+      "id": 12812,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Ironman platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril platelegs",
+      "id": 1071,
+      "weight": 7.711,
+      "version": "",
+      "slot": "legs",
+      "image": "Mithril platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 24,
+        "slash": 22,
+        "crush": 20,
+        "magic": -4,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril platelegs (g)",
+      "id": 12279,
+      "weight": 7.711,
+      "version": "",
+      "slot": "legs",
+      "image": "Mithril platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 24,
+        "slash": 22,
+        "crush": 20,
+        "magic": -4,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Mithril platelegs (t)",
+      "id": 12289,
+      "weight": 7.711,
+      "version": "",
+      "slot": "legs",
+      "image": "Mithril platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 24,
+        "slash": 22,
+        "crush": 20,
+        "magic": -4,
+        "ranged": 22
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Obsidian platelegs",
+      "id": 21304,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Obsidian platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 1,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 46,
+        "slash": 43,
+        "crush": 41,
+        "magic": -10,
+        "ranged": 40
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune platelegs",
+      "id": 1079,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Rune platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune platelegs (g)",
+      "id": 2617,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Rune platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Rune platelegs (t)",
+      "id": 2625,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Rune platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Sanguine torva platelegs",
+      "id": 28258,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Sanguine torva platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 4,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -24,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 87,
+        "slash": 78,
+        "crush": 79,
+        "magic": -9,
+        "ranged": 102
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Saradomin platelegs",
+      "id": 2663,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Saradomin platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Statius's platelegs (Deadman Mode)",
+      "id": 22631,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Statius's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 3,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 6,
+        "slash": 6,
+        "crush": 30,
+        "magic": -6,
+        "ranged": -2
+      },
+      "defensive": {
+        "stab": 27,
+        "slash": 30,
+        "crush": 28,
+        "magic": -7,
+        "ranged": 34
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Statius's platelegs (bh)",
+      "id": 27835,
+      "weight": 9.071,
+      "version": "Activated",
+      "slot": "legs",
+      "image": "Statius's platelegs (bh).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 3,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 3
+      },
+      "offensive": {
+        "stab": 1,
+        "slash": 1,
+        "crush": 10,
+        "magic": -30,
+        "ranged": -12
+      },
+      "defensive": {
+        "stab": 73,
+        "slash": 71,
+        "crush": 68,
+        "magic": -14,
+        "ranged": 95
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel platelegs",
+      "id": 1069,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Steel platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 17,
+        "slash": 16,
+        "crush": 15,
+        "magic": -4,
+        "ranged": 16
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel platelegs (g)",
+      "id": 20172,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Steel platelegs (g).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 17,
+        "slash": 16,
+        "crush": 15,
+        "magic": -4,
+        "ranged": 16
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Steel platelegs (t)",
+      "id": 20187,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Steel platelegs (t).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 17,
+        "slash": 16,
+        "crush": 15,
+        "magic": -4,
+        "ranged": 16
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4974,
+      "weight": 9.071,
+      "version": "0",
+      "slot": "legs",
+      "image": "Torag's platelegs 0.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4970,
+      "weight": 9.071,
+      "version": "100",
+      "slot": "legs",
+      "image": "Torag's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4973,
+      "weight": 9.071,
+      "version": "25",
+      "slot": "legs",
+      "image": "Torag's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4972,
+      "weight": 9.071,
+      "version": "50",
+      "slot": "legs",
+      "image": "Torag's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4971,
+      "weight": 9.071,
+      "version": "75",
+      "slot": "legs",
+      "image": "Torag's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torag's platelegs",
+      "id": 4751,
+      "weight": 9.071,
+      "version": "Undamaged",
+      "slot": "legs",
+      "image": "Torag's platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 85,
+        "slash": 82,
+        "crush": 83,
+        "magic": -4,
+        "ranged": 92
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torva platelegs",
+      "id": 26386,
+      "weight": 9.071,
+      "version": "Restored",
+      "slot": "legs",
+      "image": "Torva platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 4,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -24,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 87,
+        "slash": 78,
+        "crush": 79,
+        "magic": -9,
+        "ranged": 102
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Torva platelegs (unobtainable item)",
+      "id": 30304,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Torva platelegs (unobtainable item).png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "defensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": 0,
+        "ranged": 0
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Ultimate ironman platelegs",
+      "id": 12815,
+      "weight": 4.535,
+      "version": "",
+      "slot": "legs",
+      "image": "Ultimate ironman platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 0
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 11,
+        "slash": 10,
+        "crush": 10,
+        "magic": -4,
+        "ranged": 10
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "White platelegs",
+      "id": 6625,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "White platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 21,
+        "slash": 20,
+        "crush": 19,
+        "magic": -4,
+        "ranged": 20
+      },
+      "isTwoHanded": false
+    },
+    {
+      "name": "Zamorak platelegs",
+      "id": 2655,
+      "weight": 9.071,
+      "version": "",
+      "slot": "legs",
+      "image": "Zamorak platelegs.png",
+      "speed": 0,
+      "category": "",
+      "bonuses": {
+        "str": 0,
+        "ranged_str": 0,
+        "magic_str": 0,
+        "prayer": 1
+      },
+      "offensive": {
+        "stab": 0,
+        "slash": 0,
+        "crush": 0,
+        "magic": -21,
+        "ranged": -11
+      },
+      "defensive": {
+        "stab": 51,
+        "slash": 49,
+        "crush": 47,
+        "magic": -4,
+        "ranged": 49
+      },
+      "isTwoHanded": false
+    }
+  ],
+  "pages": {
+    "4087": {
+      "title": "Dragon platelegs",
+      "revision": 15346812,
+      "timestamp": "2026-09-16T17:37:48Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346812",
+      "sha256": "079eb7134fe32cd1cf2c393b3e70efc0b63166216bb707f3f4534ee873672e18",
+      "wikitext": "{{External|rs|dw=Dragon Platelegs}}\n{{Infobox Item\n|name = Dragon platelegs\n|image = [[File:Dragon platelegs.png]]\n|release = [[17 January]] [[2005]]\n|update = Karamja Dungeon\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 270000\n|weight = 9.071\n|exchange = Yes\n|id = 4087\n|leagueRegion = Asgarnia,Fremennik,Karamja,Kourend,Tirannwn,Wilderness\n}}\n[[File:Dragon platelegs detail.png|left|90px]]\n'''Dragon platelegs''' are a rare piece of armour that require a [[Defence]] level of 60 to be worn. They are dropped by most [[metal dragons]], [[brutal black dragon]]s, [[Skeletal Wyvern|skeletal wyvern]]s and [[revenants]]. They have the same stats as the [[dragon plateskirt]], including  weight.\n\nDragon platelegs can be combined with a [[dragon legs/skirt ornament kit]] to make gold-trimmed [[dragon platelegs (g)]]. This cosmetic enhancement won't change the stats in any way.\n\n''As with most [[dragon armour]], players cannot make this item using the [[Smithing]] [[skill]].''\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +68\n|dslash = +66\n|dcrush = +63\n|dmagic = -4\n|drange = +65\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Dragon platelegs equipped male.png|150px]]\n|altimage = [[File:Dragon platelegs equipped female.png|150px]]\n}}\n\n==Products==\n{{Uses material list|Dragon platelegs}}\n\n==Item sources==\n{{Drop sources|Dragon platelegs}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Dragon platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Dragon equipment}}\n[[Category:Melee armour]]"
+    },
+    "1069": {
+      "title": "Steel platelegs",
+      "revision": 15320159,
+      "timestamp": "2026-08-25T22:37:45Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320159",
+      "sha256": "3f83c089a5a72e835ed88ddbc09b07d6433efb9a09e2e03e8c394fc0e5c6e976",
+      "wikitext": "{{External|rs|rsc=Steel Plate Mail Legs}}\n{{Infobox Item\n|name = Steel platelegs\n|image = [[File:Steel platelegs.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 1000\n|weight = 9.071\n|respawn = 2000\n|exchange = Yes\n|id = 1069\n}}\n[[File:Steel platelegs detail.png|left|90px]]\n'''Steel platelegs''' are the third weakest [[platelegs]] in the game. They have the same bonuses and penalties as a [[steel plateskirt]] but weigh more. A player with 46 [[Smithing]] can make them by using three [[steel bar]]s on an [[anvil]] while carrying a [[hammer]], granting 112.5 Smithing [[experience]]. They can also be bought from [[Louie's Armoured Legs Bazaar]]. They require 5 [[Defence]] to wear.\n\nAs they spawn in the [[Wilderness]] at the [[Ruins (east)|Ruins]] north of the [[Graveyard of Shadows]], they are one of the most easily accessible and most popular money making methods for new [[Ironman]] accounts when being sold to [[Louie's Armoured Legs Bazaar]] starting at 650 each at base stock of 2, reducing by 10 per extra set.\n\nTheir respawn rate in the Wilderness is between 10 and 20 minutes, depending on the number of players in a world.\n\n{{Costume storage|armour case|[[Ardougne knight armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +17\n|dslash = +16\n|dcrush = +15\n|dmagic = -4\n|drange = +16\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Steel platelegs equipped male.png|170px]]\n|altimage = [[File:Steel platelegs equipped female.png|170px]]\n}}\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 46\n|skill1boostable = Yes\n|skill1exp = 112.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Steel bar\n|mat1quantity = 3\n|output1 = Steel platelegs\n}}\n==Item sources==\n{{Drop sources|Steel platelegs}}\n===Spawns===\n{{ItemSpawnTableHead}}\n{{ItemSpawnLine|name=Steel platelegs|location=[[Wilderness]] - [[Ruins (east)|eastern Ruins]]|members=No|3184,3733|leagueRegion=wilderness}}\n{{ItemSpawnTableBottom}}\n\n===Shop locations===\n{{Store locations list|Steel platelegs}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Steel equipment}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]"
+    },
+    "1073": {
+      "title": "Adamant platelegs",
+      "revision": 15320172,
+      "timestamp": "2026-08-25T22:40:03Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320172",
+      "sha256": "9cd7f143d6d13a084156762362ae4cab055adfed90cc3c5dbded5a9955efdc9a",
+      "wikitext": "{{External|rsc=Adamantite Plate Mail Legs|rs|dw=Adamant Platelegs}}\n{{Infobox Item\n|name = Adamant platelegs\n|image = [[File:Adamant platelegs.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 6400\n|weight = 10.432\n|exchange = Yes\n|id = 1073\n}}\n[[File:Adamant platelegs detail.png|left|90px]]\n'''Adamant platelegs''' are [[platelegs]] made of [[Adamant]] and, as such, require a [[Defence]] level of 30 to wear. These platelegs have the same stats as the [[Adamant plateskirt]], but are 1kg heavier. \n\nAdamant platelegs can be smithed using 3 [[adamant bar]]s at level 86 [[Smithing]], granting 187.5 experience.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +33\n|dslash = +31\n|dcrush = +29\n|dmagic = -4\n|drange = +31\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Adamant platelegs equipped male.png|170px]]\n|altimage = [[File:Adamant platelegs equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 86\n|skill1boostable = Yes\n|skill1exp = 187.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Adamantite bar\n|mat1quantity = 3\n|output1 = Adamant platelegs\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Adamant platelegs}}\n\n===Shop locations===\n{{Store locations list|Adamant platelegs}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Adamant platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Adamant equipment}}\n[[Category:Armour]]\n[[Category:Melee armour]]"
+    },
+    "2601": {
+      "title": "Adamant platelegs (t)",
+      "revision": 15324074,
+      "timestamp": "2026-08-28T23:04:19Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324074",
+      "sha256": "cc672934429aecdc9d411ccaf8f66a6b0e8950806e739e41cdbd4d8e7ffe98c5",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Adamant platelegs (t)\n|image = [[File:Adamant platelegs (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Adamant platelegs with trim.\n|value = 6400\n|weight = 10.432\n|exchange = Yes\n|id = 2601\n|leagueRegion = General\n}}\n[[File:Adamant platelegs (t) detail.png|left|90px]]\n'''Adamant platelegs (t)''' is a part of [[adamant trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. They have the same stats as regular [[Adamant platelegs]], and require level 30 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[adamant trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +33\n|dslash = +31\n|dcrush = +29\n|dmagic = -4\n|drange = +31\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Adamant platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Adamant platelegs (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Adamant platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Adam platelegs (t)\" to \"Adamant platelegs (t)\".\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Adamant equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2609": {
+      "title": "Adamant platelegs (g)",
+      "revision": 15324068,
+      "timestamp": "2026-08-28T23:03:19Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324068",
+      "sha256": "01ebabb1c1159551a39532890d601598bf97c55bfa1c39deab86ac221eff6a3e",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Adamant platelegs (g)\n|image = [[File:Adamant platelegs (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Adamant platelegs with gold trim.\n|value = 6400\n|weight = 10.432\n|exchange = Yes\n|id = 2609\n|leagueRegion = General\n}}\n[[File:Adamant platelegs (g) detail.png|left|90px]]\n'''Adamant platelegs (g)''' is a part of [[adamant gold-trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. They have the same stats as regular [[Adamant platelegs]], and require level 30 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[adamant gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +33\n|dslash = +31\n|dcrush = +29\n|dmagic = -4\n|drange = +31\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Adamant platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Adamant platelegs (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Adamant platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Adam platelegs (g)\" to \"Adamant platelegs (g)\".\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Adamant equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "1067": {
+      "title": "Iron platelegs",
+      "revision": 15320186,
+      "timestamp": "2026-08-25T22:42:25Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320186",
+      "sha256": "29358a0504fa2b6120c5c1ff5eb546c73dfb51910ab9e7d8d167209cd8b762f2",
+      "wikitext": "{{External|rs|rsc=Iron Plate Mail Legs|dw=Iron Platelegs}}\n{{Infobox Item\n|name = Iron platelegs\n|image = [[File:Iron platelegs.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 280\n|weight = 9.071\n|exchange = Yes\n|id = 1067\n}}\n[[File:Iron platelegs detail.png|left|90px]]\n'''Iron platelegs''' are [[melee]] leg armour made of [[iron equipment|iron]]. There is no [[Defence]] requirement to wear them, as is the same with [[bronze armour]]. As such, it is recommended to skip bronze tier items and start out with iron tier items. They have the same defensive stats as an [[iron plateskirt]] but weigh more. \n\nThey can be made at level 31 [[Smithing]] with 3 [[iron bar]]s, granting 75 experience.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Iron platelegs equipped male.png|150px]]\n|altimage = [[File:Iron platelegs equipped female.png|110px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 31\n|skill1boostable = Yes\n|skill1exp = 75\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Iron bar\n|mat1quantity = 3\n|output1 = Iron platelegs\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Iron platelegs}}\n\n===Shop locations===\n{{Store locations list|Iron platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Iron equipment}}\n[[Category:Melee armour]]"
+    },
+    "1075": {
+      "title": "Bronze platelegs",
+      "revision": 15320189,
+      "timestamp": "2026-08-25T22:42:44Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320189",
+      "sha256": "f70535e74110d3d052d53f9146abae062a28aabb91c3ccbf9b87992159a7391c",
+      "wikitext": "{{External|rsc=Bronze Plate Mail Legs|rs|dw=Bronze Platelegs}}\n{{Infobox Item\n|name = Bronze platelegs\n|image = [[File:Bronze platelegs.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 80\n|weight = 9.071\n|exchange = Yes\n|id = 1075\n}}\n[[File:Bronze platelegs detail.png|left|90px]]\n'''Bronze platelegs''' are leg [[armour]] made of [[bronze equipment|bronze]], requiring level 1 [[Defence]] to wear (as is the same with other bronze and [[iron item]]s). They share the same defensive stats as a [[bronze plateskirt]] but weigh more. They can be made at level 16 [[Smithing]] by using a hammer and 3 [[bronze bar]]s at an anvil.\n\nThese can be bought from [[Louie's Armoured Legs Bazaar]] in [[Al Kharid]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +8\n|dslash = +7\n|dcrush = +6\n|dmagic = -4\n|drange = +7\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Bronze platelegs equipped male.png|170px]]\n|altimage = [[File:Bronze platelegs equipped female.png|170px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 16\n|skill1boostable = Yes\n|skill1exp = 37.5\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Bronze bar\n|mat1quantity = 3\n|output1 = Bronze platelegs\n}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Bronze platelegs}}\n\n===Shop locations===\n{{Store locations list|Bronze platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Bronze equipment}}\n[[Category:Melee armour]]"
+    },
+    "1071": {
+      "title": "Mithril platelegs",
+      "revision": 15320205,
+      "timestamp": "2026-08-25T22:47:42Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15320205",
+      "sha256": "05cc4cf3eae8a1d9044bbe16ed4c8782db6419d2501a9d6f1e33e1384e22cf54",
+      "wikitext": "{{External|rs|rsc=Mithril_Plate_Mail_Legs|dw=Mithril Platelegs}}\n{{Infobox Item\n|name = Mithril platelegs\n|image = [[File:Mithril platelegs.png]]\n|release = [[4 January]] [[2001]]\n|update = Runescape beta is now online!\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 2600\n|weight = 7.711\n|exchange = Yes\n|id = 1071\n}}\n\n[[File:Mithril_platelegs_detail.png|left|90px]]\n'''Mithril platelegs''' are the third best free-to-play [[platelegs]]. They require level 20 [[Defence]] to equip. A player with 66 [[Smithing]] can make it by using three [[mithril bar]]s on an [[anvil]] while carrying a [[hammer]], granting 150 Smithing experience. Mithril platelegs offer similar stats to a [[mithril plateskirt]] but weigh more.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +0\n|aslash = +0\n|acrush = +0\n|amagic = -21\n|arange = -11\n|dstab = +24\n|dslash = +22\n|dcrush = +20\n|dmagic = -4\n|drange = +22\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Mithril platelegs equipped male.png|170px]]\n|altimage = [[File:Mithril platelegs equipped female.png|170px]]\n}}\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 66\n|skill1boostable = Yes\n|skill1exp = 150\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Mithril bar\n|mat1quantity = 3\n|output1 = Mithril platelegs\n}}\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Mithril platelegs}}\n===Shop locations===\n{{Store locations list|Mithril platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Mithril equipment}}\n[[Category:Armour]]\n[[Category:Melee armour]]"
+    },
+    "1079": {
+      "title": "Rune platelegs",
+      "revision": 15346850,
+      "timestamp": "2026-09-16T17:48:06Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15346850",
+      "sha256": "cfaf9a8826688685aede9f952b86d139c0be6748f76bca3ea4e8e8f2ce95e5d4",
+      "wikitext": "{{External|rs|rsc=Rune Plate Mail Legs|dw=Rune Platelegs}}\n{{Infobox Item\n|name = Rune platelegs\n|image = [[File:Rune platelegs.png]]\n|release = [[26 July]] [[2001]]\n|update = Runescape updated (26 July 2001)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = These look pretty heavy.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 1079\n}}\n[[File:Rune platelegs detail.png|left|90px]]\n'''Rune platelegs''' are platelegs made of [[runite]]. They require level 40 [[Defence]] to wear. Rune platelegs are identical in function to the [[rune plateskirt]], but is 1kg heavier. Players may receive these from the [[crystal chest]] if they are a body type A character.\n\nThey can be created with the [[Smithing]] [[skill]] by using 3 [[runite bar]]s and a [[hammer]] on an [[anvil]]; this requires level 99 Smithing and yields 225 Smithing [[experience]].\n\nAlong with the rune plateskirt and [[Rune 2h sword|two-handed sword]], this is the best bar-per-alch item in the game. If smithing for money, rune platelegs, plateskirt and two-handed sword will give the best value for each bar.\n\nThey can also be put into the [[Nest (nice)|nest]] found on top of the [[Aldarin]] [[windmill]] in [[Varlamore]] in order to get a runite bar.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Rune platelegs equipped male.png|120px]]\n|altimage = [[File:Rune platelegs equipped female.png|120px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Smithing\n|skill1lvl = 99\n|skill1boostable = Yes\n|skill1exp = 225\n|members = No\n|ticks = 5\n|tools = Hammer\n|facilities = Anvil\n|mat1 = Runite bar\n|mat1quantity = 3\n|output1 = Rune platelegs\n}}\n\n==Money making==\n{{Mmgsection|Smithing rune items|Smithing rune items (Player-to-player trading)}}\n\n==Treasure Trails==\n{{EmoteClue}}\n\n==Item sources==\n{{Drop sources|Rune platelegs}}\n\n===Shop locations===\n{{Store locations list|Rune platelegs}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Rune platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n[[Category:Melee armour]]"
+    },
+    "2625": {
+      "title": "Rune platelegs (t)",
+      "revision": 15324912,
+      "timestamp": "2026-08-29T21:12:51Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324912",
+      "sha256": "f7a74a9d9ca2893a0009854de65d927ce452052db310eb9f280db73846aaeb75",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Rune platelegs (t)\n|image = [[File:Rune platelegs (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs with trim.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 2625\n|leagueRegion = General\n}}\n[[File:Rune platelegs (t) detail.png|left|90px]]\n'''Rune platelegs (t)''' is a part of [[rune trimmed armour]] and a reward from [[Clue scroll (hard)|hard]] [[Treasure Trails]]. They have the same stats as regular [[Rune platelegs]], and require level 40 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard|[[rune trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Rune platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Rune platelegs (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Rune platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "3483": {
+      "title": "Gilded platelegs",
+      "revision": 15326862,
+      "timestamp": "2026-09-01T01:55:37Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15326862",
+      "sha256": "18d4dd217bc96fc3fcab1e4dc82ad60b456a28445d8127c231a921f754aefa07",
+      "wikitext": "{{External|rs=Rune platelegs (Gilded)}}\n{{Infobox Item\n|name = Gilded platelegs\n|image = [[File:Gilded platelegs.png]]\n|release = [[26 October]] [[2004]]\n|update = Treasure Trails and Changes\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs with gold plate.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 3483\n|leagueRegion = General\n}}\n[[File:Gilded platelegs detail.png|left|90px]]\n'''Gilded platelegs''' are a part of [[gilded equipment]] and can be obtained from [[Clue scroll (hard)|hard]], [[Clue scroll (elite)|elite]] and [[Clue scroll (master)|master]] tier [[Treasure Trails]]. They are a gold-plated version of [[rune platelegs]] and share the same bonuses and requirements to equip, however, this version '''cannot''' be made through the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Gilded platelegs equipped male.png|130px]]\n|altimage = [[File:Gilded platelegs equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Gilded platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 19 May 2016\n|update = Sand Crabs & Soul Bearers\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n{{Elite clue rewards}}\n{{Master clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "1077": {
+      "title": "Black platelegs",
+      "revision": 15211048,
+      "timestamp": "2026-05-14T19:59:40Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15211048",
+      "sha256": "efa267a39c098efa6dc8b7d0f44e105b2f1d573aa4a9c0f3b8c7e14e8540dc80",
+      "wikitext": "{{External|rs|rsc=Black Plate Mail Legs|dw=Black Knight Platelegs}}\n{{Infobox Item\n|name = Black platelegs\n|image = [[File:Black platelegs.png]]\n|release = [[28 February]] [[2001]]\n|update = Yet another new quest, and new options menu\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Big, black and heavy looking.\n|value = 1920\n|weight = 9.071\n|exchange = Yes\n|id = 1077\n}}\n[[File:Black_platelegs_detail.png|left|90px]]\n'''Black platelegs''' have the same bonuses as the [[black plateskirt]] but weigh more. They require level 10 [[Defence]] to wear. They can be bought from [[Louie's Armoured Legs Bazaar]] in [[Al Kharid]] or [[Valaine's Shop of Champions.|Valaine's Shop of Champions]] in the [[Champions' Guild]]. Like all other [[black armour]], it cannot be made with the [[Smithing]] [[Skills|skill]].\n\nBlack platelegs are used in [[King's Ransom]] and [[Heroes' Quest]] if you're part of the [[Black Arm Gang]].\n\n[[Black platelegs (t)]] and [[Black platelegs (g)|(g)]] can both be obtained as a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They provide no extra bonuses than regular black platelegs other than being aesthetically improved.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = 21\n|dslash = 20\n|dcrush = 19\n|dmagic = -4\n|drange = 20\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Black platelegs equipped male.png|170px]]\n|altimage = [[File:Black platelegs equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Black platelegs}}\n\n===Shop locations===\n{{Store locations list|Black platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Black platelegs detail (beta).png|center|300x150px]]\n|[[File:Black platelegs detail.png|center|300x150px]]\n|-\n|[[File:Black platelegs (beta).png|center]]\n|[[File:Black platelegs.png|center]]\n|-\n|RuneScape 2<br/>Beta\n|29 March 2004 –<br/>present\n|}\n\n{{Platelegs}}\n{{Black equipment}}\n[[Category:Armour]]\n[[Category:Melee armour]]"
+    },
+    "2671": {
+      "title": "Guthix platelegs",
+      "revision": 15324901,
+      "timestamp": "2026-08-29T21:10:41Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324901",
+      "sha256": "f8f1ff03aed3728a7adfc8ce0224cfdfa2ca795df2c4a7b99097ee13b2943c00",
+      "wikitext": "{{External|rs=Rune platelegs (Guthix)}}\n{{Infobox Item\n|name = Guthix platelegs\n|image = [[File:Guthix platelegs.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune plate legs in the colours of Guthix.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 2671\n|leagueRegion = General\n}}\n[[File:Guthix platelegs detail.png|left|90px]]\n'''Guthix platelegs''' are a decorated version of [[rune platelegs]] that are affiliated with the god [[Guthix]]. Sharing the same stats as rune platelegs (with the addition of a +1 [[prayer bonus]]), the Guthix platelegs also look visually similar. Their appearance differs in that they feature an ornamental green trim.\n\nThe platelegs require 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain Guthix platelegs as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\n{{Costume storage|treasure chest|tier=hard|[[Guthix armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Guthix platelegs equipped male.png|160px]]\n|altimage = [[File:Guthix platelegs equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Guthix platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god platelegs now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2617": {
+      "title": "Rune platelegs (g)",
+      "revision": 15324895,
+      "timestamp": "2026-08-29T21:09:54Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324895",
+      "sha256": "2ed52e2add2d6711a26d16e053d59a113bf8d752dc66752c46f7f05fa1842721",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Rune platelegs (g)\n|image = [[File:Rune platelegs (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs with gold trim.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 2617\n|leagueRegion = General\n}}\n[[File:Rune platelegs (g) detail.png|left|90px]]\n'''Rune platelegs (g)''' is a part of [[rune gold-trimmed armour]] and a reward from [[Clue scroll (hard)|hard]] [[Treasure Trails]]. They have the same stats as regular [[Rune platelegs]], and require level 40 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=hard|[[rune gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Rune platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Rune platelegs (g) equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Rune platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2663": {
+      "title": "Saradomin platelegs",
+      "revision": 15324907,
+      "timestamp": "2026-08-29T21:11:57Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324907",
+      "sha256": "392f23559c6a065343ab6ecf5e41154cd8dce3e0f5d93180bfa8b8e01609f31a",
+      "wikitext": "{{External|rs=Rune platelegs (Saradomin)}}\n{{Infobox Item\n|name = Saradomin platelegs\n|image = [[File:Saradomin platelegs.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs in the colours of Saradomin.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 2663\n|leagueRegion = General\n}}\n[[File:Saradomin platelegs detail.png|left|90px]]\nThe '''Saradomin platelegs''' are a decorated version of [[rune platelegs]] that are affiliated with the god [[Saradomin]]. Sharing the same stats as rune platelegs (with the addition of a +1 [[prayer bonus]]), the Saradomin platelegs also look visually similar. Their appearance differs in that they feature an ornamental white trim around the symbol of Saradomin. The platelegs require 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill. Players can obtain Saradomin platelegs as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\nThese platelegs are a constituent of the [[Saradomin armour]] set which consists of the following items: [[Saradomin full helm]], [[Saradomin platebody]], Saradomin platelegs or [[Saradomin plateskirt]], and [[Saradomin kiteshield]]—all of which are decorative versions of their respective [[Rune armour|rune armour counterparts]]. Wearing any piece of this armour set causes followers of Saradomin to become unaggressive to the player.\n\n{{Costume storage|treasure chest|tier=hard|[[Saradomin armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Saradomin platelegs equipped male.png|160px]]\n|altimage = [[File:Saradomin platelegs equipped female.png|115px]]\n}}\n\n==Item sources==\n{{Drop sources|Saradomin platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 June 2014\n|update = Treasure Trail Expansion\n|change = The item was renamed from \"Saradomin legs\" to \"Saradomin platelegs\".\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god platelegs now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "4505": {
+      "title": "Decorative armour (white platelegs)",
+      "revision": 15185131,
+      "timestamp": "2026-04-22T03:09:48Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15185131",
+      "sha256": "c72c38b197eba3c514dfe75278ba473eaacb0adbf9fa52c151cd5c6dd4417d7d",
+      "wikitext": "{{External|rs=Detailed decorative platelegs}}\n{{Infobox Item\n|name = Decorative armour\n|image = [[File:Decorative armour (white platelegs).png]]\n|release = [[7 March]] [[2005]]\n|update = Mountain Daughter and Changes\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Drop\n|examine = Very decorative armour.\n|value = 2600\n|weight = 9.071\n|id = 4505\n|leagueRegion = Kandarin\n}}\n[[File:Decorative armour (white platelegs) detail.png|left|80px]]\nThe '''White decorative legs''' can be bought in the Castle Wars area south of the observatory for 60 Castle Wars tickets. They can only be bought from [[Lanthus]]. The white decorative legs and their [[white decorative skirt|skirt]] counterpart offer similar stats to the [[mithril platelegs]] but weigh more. These require level 20 [[Defence]] to wear.\n\n{{Costume storage|armour case|[[Decorative armour|Castle Wars armour (2)]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +24\n|dslash = +22\n|dcrush = +20\n|dmagic = -4\n|drange = +22\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Decorative armour (white platelegs) equipped male.png|200px]]\n|altimage = [[File:Decorative armour (white platelegs) equipped female.png|200px]]\n}}\n\n==Shop locations==\n{{Store locations list|Decorative armour (white platelegs)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 20 July 2017\n|update = F2P Castle Wars\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Castle Wars}}\n{{Platelegs}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "4070": {
+      "title": "Decorative armour (red platelegs)",
+      "revision": 15351946,
+      "timestamp": "2026-09-20T04:28:06Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15351946",
+      "sha256": "272bfa0a23613afc2ea7364e3bc0f8e86cf3bee9f2ee4e0d2a57f1c5d3572b92",
+      "wikitext": "{{External|rs=Basic decorative platelegs}}\n{{Infobox Item\n|name = Decorative armour\n|image = [[File:Decorative armour (red platelegs).png]]\n|release = [[13 December]] [[2004]]\n|update = Castle Wars\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Drop\n|examine = Very decorative armour.\n|value = 1000\n|weight = 9.071\n|id = 4070\n|leagueRegion = Kandarin\n}}\n[[File:Decorative armour (red platelegs) detail.png|left|80px]]\nThe '''Red decorative legs''' can be bought in the Castle Wars area south of the observatory for 6 [[Castle wars ticket]]s. They can only be bought from [[Lanthus]]. The red decorative legs and their [[Red decorative skirt|skirt]] counterpart offers the same stats as [[steel platelegs]], therefore making the [[steel plateskirt]] more effective as it weighs less. These require level 5 [[Defence]] to wear.\n\n{{Costume storage|armour case|[[Decorative armour|Castle Wars armour (1)]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +17\n|dslash = +16\n|dcrush = +15\n|dmagic = -4\n|drange = +16\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Decorative armour (red platelegs) equipped male.png|200px]]\n|altimage = [[File:Decorative armour (red platelegs) equipped female.png|200px]]\n}}\n\n==Shop locations==\n{{Store locations list|Decorative armour (red platelegs)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 20 July 2017\n|update = F2P Castle Wars\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes\n|date = 21 December 2004\n|update = Santa, Flax and Castlewars\n|change = Adjusted the stats of the equipment to be equivalent to steel, down from mithril.\n}}\n{{Subject changes footer}}\n\n{{Castle Wars}}\n{{Platelegs}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12472": {
+      "title": "Armadyl platelegs",
+      "revision": 15324885,
+      "timestamp": "2026-08-29T21:07:38Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324885",
+      "sha256": "3e03d85745a9c83dab7d39b7d8be56bda3d51f89a4c710bc96c745890f5f8ece",
+      "wikitext": "{{External|rs=Rune platelegs (Armadyl)}}\n{{Infobox Item\n|name = Armadyl platelegs\n|image = [[File:Armadyl platelegs.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs in the colours of Armadyl.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 12472\n|leagueRegion = General\n}}\n[[File:Armadyl platelegs detail.png|left|90px]]\nThe '''Armadyl platelegs''' are a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]]. Its stats are almost the same as those of [[rune platelegs]], however, the Armadyl platelegs offer a +1 [[Prayer bonus]].\n\nThis item will count as an [[God item|Armadyl item]] in the [[God Wars Dungeon]].\n\n{{Costume storage|treasure chest|tier=hard|[[Armadyl rune armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Armadyl platelegs equipped male.png|160px]]\n|altimage = [[File:Armadyl platelegs equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Armadyl platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12462": {
+      "title": "Ancient platelegs",
+      "revision": 15324878,
+      "timestamp": "2026-08-29T21:06:46Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324878",
+      "sha256": "d44a2b177d306b5a004edbdcdd800ce9023261a834b0750f5c9c7fea22107e2f",
+      "wikitext": "{{External|rs=Rune platelegs (Ancient)}}\n{{Infobox Item\n|name = Ancient platelegs\n|image = [[File:Ancient platelegs.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs in the colours of a long-forgotten god.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 12462\n|leagueRegion = General\n}}\n[[File:Ancient platelegs detail.png|left|90px]]\n'''Ancient platelegs''' are decorated [[rune platelegs]], part of the [[ancient armour set]], with purple trim affiliated with the god [[Zaros]]. They require 40 [[Defence]] to equip and '''cannot''' be made with [[Smithing]]. They have the same stats as rune platelegs except for +1 [[Prayer bonus]]. Ancient platelegs are only obtainable from [[Clue scroll (hard)|hard]] [[Treasure Trails]].\n\n{{Costume storage|treasure chest|tier=hard|[[ancient armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Ancient platelegs equipped male.png|160px]]\n|altimage = [[File:Ancient platelegs equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Ancient platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12482": {
+      "title": "Bandos platelegs",
+      "revision": 15324890,
+      "timestamp": "2026-08-29T21:08:56Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324890",
+      "sha256": "2e2699f7414b03697402d7c91d42f48dbdc5469e0089c3852f4236c981cba90d",
+      "wikitext": "{{External|rs=Rune platelegs (Bandos)}}\n{{Confuse|Bandos tassets}}\n{{Infobox Item\n|name = Bandos platelegs\n|image = [[File:Bandos platelegs.png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs in the colours of Bandos.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 12482\n|leagueRegion = General\n}}\n[[File:Bandos platelegs detail.png|left|90px]]\n'''Bandos platelegs''' are a decorated version of [[rune platelegs]] that are affiliated with the god [[Bandos]]. Sharing the same stats as rune platelegs (with the addition of a +1 [[Prayer bonus]]), the Bandos platelegs also look visually similar. Their appearance differs in that they feature an ornamental brown trim. The platelegs require 40 [[Defence]] to wear and '''cannot''' be made using the [[Smithing]] skill.\n\nPlayers can obtain Bandos platelegs as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]]. Wearing Bandos platelegs in the [[God Wars Dungeon]] will cause followers of Bandos to be [[unaggressive]] towards the player.\n\n{{Costume storage|treasure chest|tier=hard|[[Bandos rune armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Bandos platelegs equipped male.png|160px]]\n|altimage = [[File:Bandos platelegs equipped female.png|120px]]\n}}\n\n==Item sources==\n{{Drop sources|Bandos platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 7 April 2016\n|update = Hell-Rats, Fairy Rings & Perks\n|change = The item was made available to free-to-play players.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12289": {
+      "title": "Mithril platelegs (t)",
+      "revision": 15324156,
+      "timestamp": "2026-08-28T23:52:12Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324156",
+      "sha256": "89ac2246cf5844ea2e855483117bfbf5ec9f815efb19117575f6b0ed2fccd4b9",
+      "wikitext": "{{Infobox Item\n|name = Mithril platelegs (t)\n|image = [[File:Mithril platelegs (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Mithril platelegs with trim.\n|value = 2600\n|weight = 7.711\n|exchange = Yes\n|id = 12289\n|leagueRegion = General\n}}\n[[File:Mithril platelegs (t) detail.png|left|90px]]\n'''Mithril platelegs (t)''' are a part of the [[mithril trimmed armour]] set, and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. They have the same stats as regular [[mithril platelegs]], and require level 20 [[Defence]] to wear. They '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[mithril trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +24\n|dslash = +22\n|dcrush = +20\n|dmagic = -4\n|drange = +22\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Mithril platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Mithril platelegs (t) equipped female.png|120px]]\n}}\n\n==Item sources==\n{{Drop sources|Mithril platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Mithril equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12279": {
+      "title": "Mithril platelegs (g)",
+      "revision": 15324150,
+      "timestamp": "2026-08-28T23:51:17Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324150",
+      "sha256": "8053008176adc7ec83864a5c2aa4673a54c65e17b9494b5c690fad920807f003",
+      "wikitext": "{{Infobox Item\n|name = Mithril platelegs (g)\n|image = [[File:Mithril platelegs (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Mithril platelegs with gold trim.\n|value = 2600\n|weight = 7.711\n|exchange = Yes\n|id = 12279\n|leagueRegion = General\n}}\n[[File:Mithril platelegs (g) detail.png|left|90px]]\n'''Mithril platelegs (g)''' is a part of [[mithril gold-trimmed armour]] and a reward from [[Clue scroll (medium)|medium]] [[Treasure Trails]]. They have the same stats as regular [[Mithril platelegs]], and require level 20 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=medium|[[mithril gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +24\n|dslash = +22\n|dcrush = +20\n|dmagic = -4\n|drange = +22\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Mithril platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Mithril platelegs (g) equipped female.png|120px]]\n}}\n\n==Item sources==\n{{Drop sources|Mithril platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Mithril equipment}}\n{{Medium clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12227": {
+      "title": "Iron platelegs (t)",
+      "revision": 15323957,
+      "timestamp": "2026-08-28T21:36:24Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323957",
+      "sha256": "181de093203dd41b39f941b4b1e46c166fb53cd5c36dd92c7e69ea6ab8b4afed",
+      "wikitext": "{{Infobox Item\n|name = Iron platelegs (t)\n|image = [[File:Iron platelegs (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Iron platelegs with trim.\n|value = 280\n|weight = 9.071\n|exchange = Yes\n|id = 12227\n|leagueRegion = General\n}}\n[[File:Iron platelegs (t) detail.png|left|90px]]\n'''Iron platelegs (t)''' are a part of the [[iron trimmed armour]] set, and are a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[iron platelegs]], and <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[iron trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Iron platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Iron platelegs (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Iron platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Iron equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12237": {
+      "title": "Iron platelegs (g)",
+      "revision": 15323950,
+      "timestamp": "2026-08-28T21:35:26Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323950",
+      "sha256": "af7cef94d00116c857b5a931b7d42b1868546fb543a832734ba8d523ef8dbe31",
+      "wikitext": "{{Infobox Item\n|name = Iron platelegs (g)\n|image = [[File:Iron platelegs (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Iron platelegs with gold trim.\n|value = 280\n|weight = 9.071\n|exchange = Yes\n|id = 12237\n|leagueRegion = General\n}}\n[[File:Iron platelegs (g) detail.png|left|90px]]\n'''Iron platelegs (g)''' is a part of [[iron gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails|Treasure Trail]]s. They have the same stats as regular [[Iron platelegs]]. This item <b>cannot</b> be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[iron gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Iron platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Iron platelegs (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Iron platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Iron equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12217": {
+      "title": "Bronze platelegs (t)",
+      "revision": 15323920,
+      "timestamp": "2026-08-28T21:30:28Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323920",
+      "sha256": "7f69d23cdddd1a80e43c7b313e166f6947856c146a1027a36d4229dd3b486840",
+      "wikitext": "{{Infobox Item\n|name = Bronze platelegs (t)\n|image = [[File:Bronze platelegs (t).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Bronze platelegs with trim.\n|value = 80\n|weight = 9.071\n|exchange = Yes\n|id = 12217\n|leagueRegion = General\n}}\n[[File:Bronze platelegs (t) detail.png|left|90px]]\n'''Bronze platelegs (t)''' is a part of [[bronze trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[Bronze platelegs]]. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[bronze trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +8\n|dslash = +7\n|dcrush = +6\n|dmagic = -4\n|drange = +7\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Bronze platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Bronze platelegs (t) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Bronze platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Bronze equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12207": {
+      "title": "Bronze platelegs (g)",
+      "revision": 15323914,
+      "timestamp": "2026-08-28T21:29:33Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323914",
+      "sha256": "c749a5ff785bf09093c7aca9c5299e64419e3bc5f9584d2681c7ec0d956041e2",
+      "wikitext": "{{Infobox Item\n|name = Bronze platelegs (g)\n|image = [[File:Bronze platelegs (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Bronze platelegs with gold trim.\n|value = 80\n|weight = 9.071\n|exchange = Yes\n|id = 12207\n|leagueRegion = General\n}}\n[[File:Bronze platelegs (g) detail.png|left|90px]]\n'''Bronze platelegs (g)''' is a part of [[bronze gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails|Treasure Trail]]s. They have the same stats as regular [[Bronze platelegs]]. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[bronze gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +8\n|dslash = +7\n|dcrush = +6\n|dmagic = -4\n|drange = +7\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Bronze platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Bronze platelegs (g) equipped female.png|160px]]\n}}\n\n==Item sources==\n{{Drop sources|Bronze platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Bronze equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "2585": {
+      "title": "Black platelegs (t)",
+      "revision": 15323876,
+      "timestamp": "2026-08-28T21:21:10Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323876",
+      "sha256": "4a9217bf3b68a39a12c31634e85d52084d2075307834e9bc14dc42995129f05f",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Black platelegs (t)\n|image = [[File:Black platelegs (t).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Black platelegs with trim.\n|value = 1920\n|weight = 9.071\n|exchange = Yes\n|id = 2585\n|leagueRegion = General\n}}\n[[File:Black platelegs (t) detail.png|left|90px]]\n'''Black platelegs (t)''' is a part of [[black trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[Black platelegs]], and require level 10 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[black trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +21\n|dslash = +20\n|dcrush = +19\n|dmagic = -4\n|drange = +20\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Black platelegs (t) equipped male.png|160px]]\n|altimage = [[File:Black platelegs (t) equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Black platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Black equipment}}\n{{Easy clue rewards}}\n[[Category:Collection log items]]"
+    },
+    "2593": {
+      "title": "Black platelegs (g)",
+      "revision": 15323871,
+      "timestamp": "2026-08-28T21:20:16Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323871",
+      "sha256": "fbf09d0a564c64d55c46e21575e1050fa6e3759a0932cd7c046ada7553eb30b8",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Black platelegs (g)\n|image = [[File:Black platelegs (g).png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Black platelegs with gold trim.\n|value = 1920\n|weight = 9.071\n|exchange = Yes\n|id = 2593\n|leagueRegion = General\n}}\n[[File:Black platelegs (g) detail.png|left|90px]]\n'''Black platelegs (g)''' is a part of [[black gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[Black platelegs]], and require level 10 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[black gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +21\n|dslash = +20\n|dcrush = +19\n|dmagic = -4\n|drange = +20\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Black platelegs (g) equipped male.png|160px]]\n|altimage = [[File:Black platelegs (g) equipped female.png|130px]]\n}}\n\n==Item sources==\n{{Drop sources|Black platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Black equipment}}\n{{Easy clue rewards}}\n[[Category:Collection log items]]"
+    },
+    "12415": {
+      "title": "Dragon platelegs (g)",
+      "revision": 15325084,
+      "timestamp": "2026-08-29T23:30:22Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15325084",
+      "sha256": "a2b83ef8544dc6301af4c5ec662efb5e59db971d34fd887bb4875982c31143c9",
+      "wikitext": "{{External|rs=Dragon platelegs (or)}}\n{{Infobox Item\n|name = Dragon platelegs (g)\n|image = [[File:Dragon platelegs (g).png]]\n|release = [[12 June]] [[2014]]\n|update = Treasure Trail Expansion\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Dismantle\n|examine = Heavy protective legwear with a gold trim.\n|value = 270000\n|alchable = No\n|weight = 9.071\n|id = 12415\n}}\n[[File:Dragon platelegs (g) detail.png|left|90px]]\nThe '''dragon platelegs (g)''' are [[dragon platelegs]] with a [[dragon legs/skirt ornament kit]] attached to it, and is a part of [[dragon gold-trimmed armour]]. The attached ornament kit gives no additional bonuses, and is only used to add aesthetics to the platelegs. It costs {{Coins|{{GEP|Dragon platelegs}}+{{GEP|Dragon legs/skirt ornament kit}}}} for both the parts to make the dragon platelegs (g).\n\nWhile the platelegs are untradeable in its ornamented state, it can be dismantled anytime, returning the tradeable platelegs and ornament kit.\n\n{{Costume storage|treasure chest|tier=elite|[[dragon gold-trimmed armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +68\n|dslash = +66\n|dcrush = +63\n|dmagic = -4\n|drange = +65\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Dragon platelegs (g) equipped male.png|150px]]\n|altimage = [[File:Dragon platelegs (g) equipped female.png|130px]]\n}}\n\n==Creation==\n{{Recipe\n|members = Yes\n|ticks = \n|mat1 = Dragon platelegs\n|mat2 = Dragon legs/skirt ornament kit\n|mat2pic = Dragon legs+skirt ornament kit\n|output1 = Dragon platelegs (g)\n|output1cost = No\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Dragon equipment}}\n{{Platelegs}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]"
+    },
+    "12812": {
+      "title": "Ironman platelegs",
+      "revision": 15186435,
+      "timestamp": "2026-04-22T04:07:57Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15186435",
+      "sha256": "21735c47516a444127192f5fb5275596fe6d135243d606fc79eb80beb6118c83",
+      "wikitext": "{{Infobox Item\n|name = Ironman platelegs\n|image = [[File:Ironman platelegs.png]]\n|release = [[13 October]] [[2014]]\n|update = Ironman Mode\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Destroy\n|destroy = You can obtain another pair of platelegs from the Iron Man tutor in Lumbridge.\n|examine = Take it off and what are you?\n|value = 0\n|alchable = No\n|weight = 4.535\n|id = 12812\n}}\n[[File:Ironman platelegs detail.png|left|100px]]\n'''Ironman platelegs''' are obtainable only by players who chose to be a standard ironman in [[Ironman Mode]]. They can be obtained by speaking to [[Adam]] after leaving [[Tutorial Island]], after choosing to be a standard ironman.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Ironman platelegs equipped male.png|110px]]\n|altimage = [[File:Ironman platelegs equipped female.png|130px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nIronman armour equipped male.png|The full ironman armour set on body type A.\nIronman armour equipped female.png|The full ironman armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 August 2020\n|update = Darker Graceful and Other Changes\n|poll =\n|change = The destroy text has been updated to reflect the Ironman tutor's name change.\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*The examine info is a reference to the Avengers (2012) movie.\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "10346": {
+      "title": "3rd Age platelegs",
+      "revision": 15326822,
+      "timestamp": "2026-09-01T01:35:20Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15326822",
+      "sha256": "01c8f9e265efa0a5a6a3b17548670b4143acc0d41c127c30a3e7681c77829051",
+      "wikitext": "{{External|rs=Third age platelegs}}\n{{Infobox Item\n|name = 3rd Age platelegs\n|image = [[File:3rd Age platelegs.png]]\n|release = [[5 December]] [[2006]]\n|update = Treasure Trails, spiders and sheep\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Fabulously ancient armour beaten from magical silver.\n|value = 200000\n|weight = 2.721\n|exchange = Yes\n|id = 10346\n|leagueRegion = General\n}}\n[[File:3rd Age platelegs detail.png|left|80px]]\n'''3rd Age platelegs''' are [[3rd Age armour]], requiring 65 [[Defence]] to equip. They have the third highest defence bonuses of all non-degradable melee [[leg slot]] items, only surpassed by the [[justiciar legguards]] and [[torva platelegs]]. 3rd Age platelegs are obtainable as a reward from [[Clue scroll (hard)|hard]], [[Clue scroll (elite)|elite]] and [[Clue scroll (master)|master]] tier [[Treasure Trails]] and cannot be made through any skills. It can also be obtained when opening mimic caskets, after defeating the [[Mimic boss]].\n\nThey have slightly better melee defence than [[bandos tassets]], however they lack [[strength bonus]]. Due to that and their price, they are rarely used.\n\n{{Costume storage|treasure chest|tier=hard}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -25\n|arange = -2\n|dstab = 78\n|dslash = 76\n|dcrush = 83\n|dmagic = -5\n|drange = 75\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:3rd Age platelegs equipped male.png|120px]]\n|altimage = [[File:3rd Age platelegs equipped female.png|120px]]\n}}\n\n==Item sources==\n{{Drop sources|3rd Age platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 19 August 2026\n|update = Summer Sweep Up - Hunter & Skilling\n|change = The item was renamed from \"3rd age platelegs\" to \"3rd Age platelegs\".\n}}\n{{Subject changes footer}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\n3rd Age armour equipped male.png|The full 3rd Age armour set on body type A.\n3rd Age armour equipped female.png|The full 3rd Age armour set on body type B.\n</gallery>\n\n{{Platelegs}}\n{{3rd Age equipment}}\n{{Hard clue rewards}}\n{{Elite clue rewards}}\n{{Master clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20187": {
+      "title": "Steel platelegs (t)",
+      "revision": 15323980,
+      "timestamp": "2026-08-28T21:42:33Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323980",
+      "sha256": "f98e2b3cf54af212d07ff3aa5a870df57548281a58c871229b20a6989e0c7c1b",
+      "wikitext": "{{Infobox Item\n|name = Steel platelegs (t)\n|image = [[File:Steel platelegs (t).png]]\n|release = [[6 July]] [[2016]]\n|update = Treasure Trail Expansion (2016)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Steel platelegs with a trim.\n|value = 1000\n|weight = 9.071\n|exchange = Yes\n|id = 20187\n|leagueRegion = General\n}}\n[[File:Steel platelegs (t) detail.png|left|90px]]\n'''Steel platelegs (t)''' is a part of [[steel trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[Steel platelegs]], and require level 5 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[steel trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +17\n|dslash = +16\n|dcrush = +15\n|dmagic = -4\n|drange = +16\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Steel platelegs (t) equipped male.png|150px]]\n|altimage = [[File:Steel platelegs (t) equipped female.png|110px]]\n}}\n\n==Item sources==\n{{Drop sources|Steel platelegs (t)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Steel equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20172": {
+      "title": "Steel platelegs (g)",
+      "revision": 15323975,
+      "timestamp": "2026-08-28T21:41:37Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15323975",
+      "sha256": "a6095d1a7dbcffe17fd0fd992429487583dadb80f0190841ef3e505297b4341b",
+      "wikitext": "{{Infobox Item\n|name = Steel platelegs (g)\n|image = [[File:Steel platelegs (g).png]]\n|release = [[6 July]] [[2016]]\n|update = Treasure Trail Expansion (2016)\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Steel platelegs with a gold trim.\n|value = 1000\n|weight = 9.071\n|exchange = Yes\n|id = 20172\n|leagueRegion = General\n}}\n[[File:Steel platelegs (g) detail.png|left|90px]]\n'''Steel platelegs (g)''' is a part of [[steel gold-trimmed armour]] and a reward from [[Clue scroll (easy)|easy]] [[Treasure Trails]]. They have the same stats as regular [[Steel platelegs]], and require level 5 [[Defence]] to wear. This item '''cannot''' be made via the [[Smithing]] skill.\n\n{{Costume storage|treasure chest|tier=easy|[[steel gold-trimmed armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +17\n|dslash = +16\n|dcrush = +15\n|dmagic = -4\n|drange = +16\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Steel platelegs (g) equipped male.png|150px]]\n|altimage = [[File:Steel platelegs (g) equipped female.png|110px]]\n}}\n\n==Item sources==\n{{Drop sources|Steel platelegs (g)}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Steel equipment}}\n{{Easy clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "20796": {
+      "title": "Hardcore ironman platelegs",
+      "revision": 15188043,
+      "timestamp": "2026-04-22T04:19:04Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15188043",
+      "sha256": "d70ed91f9e8bd82348905a48674acfa4135efc86e23dd0b9b719ab46998e9940",
+      "wikitext": "{{Infobox Item\n|name = Hardcore ironman platelegs\n|image = [[File:Hardcore ironman platelegs.png]]\n|release = [[10 November]] [[2016]]\n|update = Hardcore Ironman Mode\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Destroy\n|destroy = You can obtain another pair of platelegs from the Iron Man tutor in Lumbridge.\n|examine = Take it off and what are you?\n|value = 0\n|alchable = No\n|weight = 4.535\n|id = 20796\n}}\n[[File:Hardcore ironman platelegs detail.png|left|100px]]\n'''Hardcore ironman platelegs''' are obtainable only by players who chose to be a Hardcore ironman in [[Ironman Mode]]. They can be obtained by speaking to [[Adam]] after leaving [[Tutorial Island]], after choosing to be a Hardcore ironman. It has stats identical to [[iron platelegs]], but weighs half as much.\n\nIf the player loses their Hardcore Ironman status, the item is deleted and cannot be reclaimed.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Hardcore ironman platelegs equipped male.png|130px]]\n|altimage = [[File:Hardcore ironman platelegs equipped female.png|120px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nHardcore ironman armour equipped male.png|The full hardcore ironman armour set on body type A.\nHardcore ironman armour equipped female.png|The full hardcore ironman armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 August 2020\n|update = Darker Graceful and Other Changes\n|poll =\n|change = The destroy text has been updated to reflect the Ironman tutor's name change.\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*The examine info is a reference to the Avengers (2012) movie.\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "20842": {
+      "title": "Corrupted platelegs",
+      "revision": 15188063,
+      "timestamp": "2026-04-22T04:19:11Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15188063",
+      "sha256": "5858602d0145b43f575ca149b23a0f6087114ab6a5e0b5fa15c4b97a3009f596",
+      "wikitext": "{{redirect|Corrupted legs|Corrupted legs (disambiguation)}}\n{{Infobox Item\n|name = Corrupted platelegs\n|image = [[File:Corrupted platelegs.png]]\n|release = [[14 December]] [[2016]]\n|update = Carol's Christmas\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Destroy\n|destroy = You will have to discover it again.\n|examine = The platelegs of a forgotten warrior, corrupted by the dark altar.\n|value = 1\n|weight = 9.071\n|id = 20842\n}}\n[[File:Corrupted platelegs detail.png|left|80px]]\nThe '''corrupted platelegs''' are an item introduced during the [[Christmas corrupt cluefest]]. To obtain the platelegs, the player must bring an [[acorn]] and [[bones]] to [[Louie Legs]] in [[Al Kharid]]. The [[corrupted plateskirt]] will also be obtained at the same time.\n\nIt has stats identical to that of [[iron platelegs]].\n\n{{Costume storage|armour case|[[Corrupted armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Corrupted platelegs equipped male.png|150px]]\n|altimage = [[File:Corrupted platelegs equipped female.png|130px]]\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Clue hunting event rewards}}\n{{Platelegs}}\n[[Category:Christmas corrupt cluefest]]\n[[Category:Items storable in the costume room]]"
+    },
+    "21304": {
+      "title": "Obsidian platelegs",
+      "revision": 15363215,
+      "timestamp": "2026-10-03T18:18:12Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15363215",
+      "sha256": "ed3919d6a2cac11836ebc8fc28841a3bfe0ce5e03d74555c65ef99ad76cf3ccc",
+      "wikitext": "{{External|rs|dw=Obsidian Legs}}\n{{Infobox Item\n|name = Obsidian platelegs\n|image = [[File:Obsidian platelegs.png]]\n|release = [[1 June]] [[2017]]\n|update = The Inferno\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Provides excellent protection.\n|value = 67000\n|weight = 9.071\n|exchange = Yes\n|id = 21304\n|leagueRegion = Karamja\n}}\n[[File:Obsidian platelegs detail.png|90px|left]]\n'''Obsidian platelegs''' are a piece of the [[obsidian armour set]] and can be purchased in [[TzHaar-Hur-Zal's Equipment Store]] for 100,500 [[Tokkul]] (87,100 with [[Karamja gloves]]). It requires level 60 in [[Defence]] to wear.\n\nWhen used in conjunction with the [[obsidian helmet]] and [[obsidian platebody]], all [[obsidian weapon]]ry will be given a 10% boost in melee accuracy and melee strength. The damage bonus '''does''' stack with the [[berserker necklace]].\n\nObsidian platelegs are one of only nine [[Worn Equipment#Legs slot|legs slot]] items that give a [[Strength#Strength bonus|Strength bonus]], but has lower defensive stats than most alternatives.\n{{Costume storage|armour case|[[obsidian armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = 0\n|arange = 0\n|dstab = +46\n|dslash = +43\n|dcrush = +41\n|dmagic = -10\n|drange = +40\n|str = +1\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Obsidian platelegs equipped male.png|150px]]\n|altimage = [[File:Obsidian platelegs equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Obsidian platelegs}}\n\n===Shop locations===\n{{Store locations list|Obsidian platelegs}}\n\n==Used in recommended equipment==\n{{Used in recommended equipment|Obsidian platelegs}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nObsidian armour equipped male.png|The Obsidian armour set on body type A.\nObsidian armour equipped female.png|The Obsidian armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 29 June 2017\n|update = Midsummer 2017\n|change = A graphical issue involving female players wearing Obsidian platelegs has been fixed.\n}}\n{{Subject changes footer}}\n\n{{Obsidian equipment}}\n{{Platelegs}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "22353": {
+      "title": "Eggshell platelegs",
+      "revision": 15188789,
+      "timestamp": "2026-04-22T04:24:17Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15188789",
+      "sha256": "ca7355de9b78037ebf8b37adcde94d31adee359f3c42586245b28ec0b4a5c8f3",
+      "wikitext": "{{Infobox Item\n|name = Eggshell platelegs\n|image = [[File:Eggshell platelegs.png]]\n|release = [[29 March]] [[2018]]\n|update = Easter 2018 Holiday Event\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Destroy\n|destroy = You can get a replacement from Diango.\n|examine = A chocolate shell reinforced with a thin layer of foil.\n|value = 1\n|weight = 1.000\n|id = 22353\n}}\n[[File:Eggshell platelegs detail.png|70px|left]]\nThe '''eggshell platelegs''' are a cosmetic holiday item. They are part of the [[eggshell outfit]], which can be obtained by completing one of the [[Easter]] [[holiday events]] that occur once per year.\n\n{{Costume storage|toy box|[[Eggshell outfit|2018: Eggshell Outfit]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = 0\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Eggshell platelegs equipped male.png|170px]]\n|altimage = [[File:Eggshell platelegs equipped female.png|170px]]\n}}\n\n==Shop locations==\n{{Store locations list|Eggshell platelegs}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nEggshell outfit equipped male.png|The full eggshell outfit on body type A.\nEggshell outfit equipped female.png|The full eggshell outfit on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 11 May 2022\n|update = Equipment Rebalance Tier Changes & Poll 76\n|change = The item's weight has been reduced from 1.814 kg to 1 kg.\n}}\n{{Subject changes footer}}\n\n{{Easter event rewards}}"
+    },
+    "22631": {
+      "title": "Statius's platelegs (Deadman Mode)",
+      "revision": 15188956,
+      "timestamp": "2026-04-22T04:25:34Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15188956",
+      "sha256": "7b6313af04baed893686ce1e275bb06e046435939efe469d036f8b6a1a3ce44c",
+      "wikitext": "{{Deadman seasonal}}\n{{Infobox Item\n|name = Statius's platelegs\n|image = [[File:Statius's platelegs.png]]\n|release = [[6 September]] [[2018]]\n|update = Making Friends With My Arm, Deadman Autumn Finals and Full Mobile Launch\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A powerful pair of platelegs.\n|value = 500000\n|weight = 9.071\n|exchange = dmm\n|id = 22631\n}}\n[[File:Statius's platelegs detail.png|110px|left]]\n'''Statius's platelegs''' is a piece of armour exclusive to [[Deadman Mode]], requiring 20 [[Defence]] to wear. It is part of [[Statius's equipment]], a set of [[Ancient Warriors' equipment]].\n\nIt can be obtained from looting [[Deadman's chest (scenery)|Deadman's chests]], as a rare drop from [[breach monster]]s, and as a rare drop from monsters with a combat level of 50 or higher.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 6\n|aslash = 6\n|acrush = 30\n|amagic = -6\n|arange = -2\n|dstab = 27\n|dslash = 30\n|dcrush = 28\n|dmagic = -7\n|drange = 34\n|str = 3\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Statius's platelegs equipped male.png|160px]]\n|altimage = [[File:Statius's platelegs equipped female.png|160px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nStatius's equipment equipped male.png|The full Statius's set on body type A.\nStatius's equipment equipped female.png|The full Statius's set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 4 February 2026\n|update = Deadman: Annihilation Tweaks, Shellbane Gryphon CAs & More!\n|change = The item was made tradeable on the [[Grand Exchange]].\n}}\n{{Subject changes\n|date = 21 January 2026\n|update = Holy Moleys and the Hooded Slayer Helm are Here!\n|change = The stats and defence requirement of the item were adjusted for [[Deadman: Annihilation]].\n}}\n{{Subject changes\n|date = 24 May 2023\n|update = Bounty Hunter is Back!\n|change = The item was graphically updated.\n}}\n{{Subject changes\n|date = 6 December 2018\n|update = The Collection Log and Deadman Permadeath Beta\n|change = The item was made untradeable on the [[Grand Exchange]].\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Statius's platelegs detail v1.png|center|300x150px]]\n|[[File:Statius's platelegs detail.png|center|300x150px]]\n|-\n|[[File:Statius's platelegs v1.png|center]]\n|[[File:Statius's platelegs.png|center]]\n|-\n|6 September 2018–<br/>24 May 2023\n|24 May 2023 ⁠–<br/>present\n|}\n\n{{Ancient Warriors' equipment}}\n{{Platelegs}}"
+    },
+    "23789": {
+      "title": "Ardougne knight platelegs",
+      "revision": 15366301,
+      "timestamp": "2026-10-05T22:33:44Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15366301",
+      "sha256": "2d77f37cba0b488c64e10a620d8f06b5e250d1354b48018284405c208d38a95c",
+      "wikitext": "{{Infobox Item\n|name = Ardougne knight platelegs\n|image = [[File:Ardougne knight platelegs.png]]\n|release = [[25 July]] [[2019]]\n|update = Song of the Elves\n|members = Yes\n|quest = [[Song of the Elves]]\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Drop\n|examine = Some platelegs worn by the Knights of Ardougne.\n|value = 1000\n|weight = 9.071\n|id = 23789\n}}\n[[File:Ardougne knight platelegs detail.png|100px|left]]\nThe '''Ardougne knight platelegs''' is a piece of equipment used in [[Song of the Elves]]. It is obtained by the player asking [[Edmond]] to polish [[steel platelegs]], wiping the [[Defence]] requirement and making this the only method for accounts such as [[one-defence pures]] to complete Song of the Elves. It shares the same bonuses as [[iron platelegs]]. It is impossible to obtain for players with the required Defence level to wear [[steel platelegs]], even if [[temporary skill drain|deboosting]] Defence level.\n\n{{Costume storage|armour case|[[Ardougne knight armour]] set|set=true}}\nIf lost, a pair of steel platelegs can be used instead to store in the armour case.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Ardougne knight platelegs equipped male.png|170px]]\n|altimage = [[File:Ardougne knight platelegs equipped female.png|170px]]\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 15 August 2019\n|update = Small Game Updates and Betas\n|change = Ardougne knight armour can now be stored in a Player Owned House. \n}}\n{{Subject changes footer}}\n\n{{Song of the Elves}}"
+    },
+    "24040": {
+      "title": "Dragonstone platelegs",
+      "revision": 15189363,
+      "timestamp": "2026-04-22T04:30:06Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15189363",
+      "sha256": "0c37242775ac2f789157d69d5b5781b9b52ee7f8e3a0c15b60e8daea35b61855",
+      "wikitext": "{{External|rs=Dragonstone greaves}}\n{{Infobox Item\n|name = Dragonstone platelegs\n|image = [[File:Dragonstone platelegs.png]]\n|release = [[25 July]] [[2019]]\n|update = Song of the Elves\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = A stylish pair of rune platelegs inlaid with dragonstones.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 24040\n|leagueRegion = Tirannwn\n}}\n[[File:Dragonstone platelegs detail.png|80px|left]]\nThe '''dragonstone platelegs''' can be found as a rare reward upon opening the [[Elven Crystal Chest]] within [[Prifddinas]]. It has the same stats as [[rune platelegs]] and requires 40 [[Defence]] to equip.\n\n{{Costume storage|armour case|[[Dragonstone armour]] set|set=true}}\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Dragonstone platelegs equipped male.png|150px]]\n|altimage = [[File:Dragonstone platelegs equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Dragonstone platelegs}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nDragonstone armour equipped male.png|The full dragonstone armour set on body type A.\nDragonstone armour equipped female.png|The full dragonstone armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "26166": {
+      "title": "Group ironman platelegs",
+      "revision": 15190599,
+      "timestamp": "2026-04-22T04:38:42Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15190599",
+      "sha256": "15a4f8ac26d74932214a916bc8ff25f4452038462c646232cdd2e4d09a7f67c1",
+      "wikitext": "{{Infobox Item\n|name = Group ironman platelegs\n|image = [[File:Group ironman platelegs.png]]\n|release = [[6 October]] [[2021]]\n|update = Group Ironman\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = \n|options = Wear, Destroy\n|destroy = You can obtain another pair from the Ironman tutors in Lumbridge and on The Node.\n|examine = Protects your legs while still stylish.\n|value = 0\n|weight = 4.535\n|id = 26166\n}}\n[[File:Group ironman platelegs detail.png|left|80px]]\n'''Group ironman platelegs''' are obtainable only by players who chose to be a standard group ironman in [[Group Ironman]] game mode. They can be obtained by using the ''Armour'' right-click option on the [[Group Ironman tutor]]. They have equivalent stats to [[iron platelegs]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = 11\n|dslash = 10\n|dcrush = 10\n|dmagic = -4\n|drange = 10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Group ironman platelegs equipped male.png|140px]]\n|altimage = [[File:Group ironman platelegs equipped female.png|150px]]\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 15 May 2024\n|update = Further Project Rebalance (Skilling) & Varlamore Changes\n|change = The item was renamed from \"Group iron platelegs\" to \"Group ironman platelegs\".\n}}\n{{Subject changes footer}}\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "26180": {
+      "title": "Hardcore group ironman platelegs",
+      "revision": 15190603,
+      "timestamp": "2026-04-22T04:38:44Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15190603",
+      "sha256": "dcb980e7cabc49d528a79b1bc451d6f94229975dcb4ae3eef80fce956ee0c616",
+      "wikitext": "{{Infobox Item\n|name = Hardcore group ironman platelegs\n|image = [[File:Hardcore group ironman platelegs.png]]\n|release = [[6 October]] [[2021]]\n|update = Group Ironman\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = \n|options = Wear, Destroy\n|destroy = You can obtain another pair from the Iron tutors in Lumbridge and on The Node.\n|examine = Guarding your legs - one of your most powerful tools of escaping.\n|value = 0\n|weight = 4.535\n|id = 26180\n}}\n[[File:Hardcore group ironman platelegs detail.png|left|80px]]\n'''Hardcore group ironman platelegs''' are obtainable only by players who chose to be a hardcore group ironman in [[Group Ironman]] game mode. They can be  obtained by using the ''Armour'' right-click option on the [[Group Ironman tutor]]. They have equivalent stats to [[iron platelegs]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = 11\n|dslash = 10\n|dcrush = 10\n|dmagic = -4\n|drange = 10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Hardcore group ironman platelegs equipped male.png|140px]]\n|altimage = [[File:Hardcore group ironman platelegs equipped female.png|150px]]\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 15 May 2024\n|update = Further Project Rebalance (Skilling) & Varlamore Changes\n|change = The item was renamed from \"Hardcore group iron platelegs\" to \"Hardcore group ironman platelegs\".\n}}\n{{Subject changes footer}}\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "27044": {
+      "title": "Group ironman platelegs (unranked)",
+      "revision": 15190941,
+      "timestamp": "2026-04-22T04:40:57Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15190941",
+      "sha256": "d280214524b19071bed739914cba7768d229c61fdc19395c833945f3c751439c",
+      "wikitext": "{{Infobox Item\n|name = Group ironman platelegs (unranked)\n|image = [[File:Group ironman platelegs (unranked).png]]\n|release = [[29 June]] [[2022]]\n|update = Unranked Group Iron Changes and More!\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = \n|options = Wear, Destroy\n|destroy = You can obtain another pair from the Iron tutors in Lumbridge and on The Node.\n|examine = Protects your legs while still stylish.\n|value = 0\n|weight = 4.535\n|id = 27044\n}}\n[[File:Group ironman platelegs (unranked) detail.png|left|80px]]\n'''Unranked group ironman platelegs''' are obtainable only by players who chose to be an unranked group ironman in the [[Group Ironman]] game mode.\nThey can be obtained by using the ''Armour'' right-click option on the [[Group Ironman tutor]]. They have equivalent stats to [[iron platelegs]].\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = 11\n|dslash = 10\n|dcrush = 10\n|dmagic = -4\n|drange = 10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Group ironman platelegs (unranked) equipped male.png|140px]]\n|altimage = [[File:Group ironman platelegs (unranked) equipped female.png|150px]]\n}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 15 May 2024\n|update = Further Project Rebalance (Skilling) & Varlamore Changes\n|change = The item was renamed from \"Group iron platelegs (unranked)\" to \"Group ironman platelegs (unranked)\".\n}}\n{{Subject changes footer}}\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "28061": {
+      "title": "Dragon platelegs (cr)",
+      "revision": 15191330,
+      "timestamp": "2026-04-22T04:43:44Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15191330",
+      "sha256": "5201f79f10538b84a69af4142cfcbbc76bfe3cafcfb677baea56e5ecb8fe6db9",
+      "wikitext": "{{Infobox Item\n|name = Dragon platelegs (cr)\n|image = [[File:Dragon platelegs (cr).png]]\n|release = [[24 May]] [[2023]]\n|update = Bounty Hunter is Back!\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Dismantle\n|examine = Heavy protective legwear.\n|value = 271000\n|weight = 9.071\n|id = 28061\n}}\n[[File:Dragon platelegs (cr) detail.png|left|90px]]\n'''Dragon platelegs (cr)''' are a cosmetic variant of [[dragon platelegs]] with a [[Bounty hunter ornament kit]] added to them. The colour scheme is that of a corrupt dragon aesthetic meant to imitate the original appearance of {{RSL|corrupt dragon equipment}} from ''RuneScape 3''.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +68\n|dslash = +66\n|dcrush = +63\n|dmagic = -4\n|drange = +65\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Dragon platelegs (cr) equipped male.png|130px]]\n|altimage = [[File:Dragon platelegs (cr) equipped female.png|130px]]\n}}\n\n==Creation==\n{{Recipe\n|members = Yes\n|ticks = 0\n|mat1 = Dragon platelegs\n|mat2 = Bounty hunter ornament kit\n|mat2cost = 0\n|output1 = Dragon platelegs (cr)\n|output1cost = No\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nDragon chain set (cr) (lg) equipped male.png|Corrupted dragon equipment on body type A.\nDragon chain set (cr) (lg) equipped female.png|Corrupted dragon equipment on body type B.\n</gallery>\n\n{{Bounty Hunter}}\n{{Dragon equipment}}\n{{Platelegs}}"
+    },
+    "28258": {
+      "title": "Sanguine torva platelegs",
+      "revision": 15191431,
+      "timestamp": "2026-04-22T04:44:30Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15191431",
+      "sha256": "a08c9daffe5b11b79f485840ac959cf8ecbefa825daba415150b8d86ccabf2a6",
+      "wikitext": "{{Infobox Item\n|name = Sanguine torva platelegs\n|image = [[File:Sanguine torva platelegs.png]]\n|release = [[28 July]] [[2023]]\n|update = Desert Treasure II - The Fallen Empire\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Revert\n|examine = An ancient warrior's platelegs.\n|value = 600000\n|weight = 9.071\n|id = 28258\n}}\n[[File:Sanguine torva platelegs detail.png|left|100px]]\nThe '''sanguine torva platelegs''' are [[torva platelegs]] modified by an [[ancient blood ornament kit]] and 20,000 [[blood rune]]s; the kit is not consumed. The ornament gives no additional bonuses, and is purely cosmetic.\n\nWhile the item is untradeable in its sanguine state, it can be reverted anytime. However, the blood runes will not be returned.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -24\n|arange = -11\n|dstab = 87\n|dslash = 78\n|dcrush = 79\n|dmagic = -9\n|drange = 102\n|str = 4\n|rstr = 0\n|mdmg = 0\n|prayer = 1\n|slot = legs\n|image = [[File:Sanguine torva platelegs equipped male.png|140px]]\n|altimage = [[File:Sanguine torva platelegs equipped female.png|130px]]\n}}\n\n==Creation==\n{{Recipe\n|skill1 = Magic\n|skill1lvl = 0\n|skill1boostable = \n|skill1exp = 500\n|members = Yes\n|ticks = 0\n|mat1 = Torva platelegs\n|mat2 = Ancient blood ornament kit\n|mat2cost = No\n|mat3 = Blood rune\n|mat3quantity = 20000\n|output1 = Sanguine torva platelegs\n|output1cost = No\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nSanguine torva armour equipped male.png|The full Sanguine Torva armour set on body type A.\nSanguine torva armour equipped female.png|The full Sanguine Torva armour set on body type B.\nAncient blood ornament kit creation.webp|A player creating a piece of Sanguine Blood Torva.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 3 August 2023\n|update = Desert Treasure II - Tweaks and Drop Rates\n|change = \n* The item models for Sanguine Torva armour have been [[graphically updated]] to match the [[:File:Desert Treasure II - Awakened Bosses, Blood Torva & Old School's Art (3).jpg|reworked version]] shared in the [[Update:Desert Treasure II - Awakened Bosses, Blood Torva & Old School's Art|newspost]] on 12 July 2023.\n* Sanguine Torva armour now has the correct graphics when equipped by a female character.\n}}\n{{Subject changes\n|date = 28 July 2023\n|update = Desert Treasure II - The Fallen Empire\n|poll = Awakened DT2 Bosses & Poll 80\n|change = The item is now obtainable.\n}}\n{{Subject changes\n|date = 26 July 2023\n|update = Desert Treasure II - The Fallen Empire\n|change = The item was added to the game, but was unobtainable.\n}}\n{{Subject changes footer}}\n\n===Gallery (historical)===\n{|style=\"text-align: center\" cellpadding=\"15\"\n|[[File:Sanguine torva platelegs v1 detail.png|center|300x150px]]\n|[[File:Sanguine torva platelegs detail.png|center|300x150px]]\n|-\n|[[File:Sanguine torva platelegs v1.png|center]]\n|[[File:Sanguine torva platelegs.png|center]]\n|-\n|26 July 2023 –<br/>3 August 2023\n|3 August 2023 –<br/>present\n|}\n\n{{The Forgotten Four}}\n{{Platelegs}}"
+    },
+    "29564": {
+      "title": "Elite black platelegs",
+      "revision": 15192544,
+      "timestamp": "2026-04-22T04:51:23Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15192544",
+      "sha256": "fda06aa195c824d3c75534c4554e9eb0e45ce7c782f6c0f4d1d59f7d875a8339",
+      "wikitext": "{{External|rs}}\n{{Infobox Item\n|name = Elite black platelegs\n|image = [[File:Elite black platelegs.png]]\n|release = [[10 July]] [[2024]]\n|update = While Guthix Sleeps\n|members = Yes\n|quest = [[While Guthix Sleeps]]\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Drop\n|examine = These look pretty heavy and very elite.\n|value = 1500\n|alchable = No\n|weight = 9.071\n|id = 29564\n}}\n[[File:Elite black platelegs detail.png|left|90px]]\nThe '''Elite black platelegs''' are a piece of [[elite black armour]] which requires 40 [[Defence]] to equip and is obtained during [[While Guthix Sleeps]]. It is dropped by [[Elite Black Knight]]s within the [[Black Knight Catacombs]]. During the quest, they are a guaranteed drop (before giving the set to [[Silif]]) and can be used with the full set to enter the [[Black Knights' Fortress (location)|Black Knights' Fortress]].\n\nThey have the same stats as [[mithril platelegs]] (with the prayer bonus of a [[proselyte cuisse]]).\n\nThe Elite black platelegs counts as a [[Zamorak item]] in the [[God Wars Dungeon]].\n\n{{Costume storage|armour case|[[Elite black armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = +0\n|aslash = +0\n|acrush = +0\n|amagic = -21\n|arange = -11\n|dstab = +24\n|dslash = +22\n|dcrush = +20\n|dmagic = -4\n|drange = +22\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 6\n|slot = legs\n|image = [[File:Elite black platelegs equipped male.png|170px]]\n|altimage = [[File:Elite black platelegs equipped female.png|170px]]\n}}\n\n==Item sources==\n{{Drop sources|Elite black platelegs}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nElite black armour equipped male.png|The elite black armour set on body type A.\nElite black armour equipped female.png|The elite black armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 24 July 2024\n|update = Deadman: Armageddon & While Guthix Sleeps Tweaks\n|change = [[Elite black armour]] can now be stored in the [[armour case space]] of a [[player-owned house]].\n}}\n{{Subject changes footer}}\n\n{{While Guthix Sleeps}}"
+    },
+    "6625": {
+      "title": "White platelegs",
+      "revision": 15234506,
+      "timestamp": "2026-06-17T08:27:21Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15234506",
+      "sha256": "904fa3eb972e7a81094160e97973672de75d0d1305eece3dc7318375d54ad2b9",
+      "wikitext": "{{External|rs|dw=White Platelegs}}\n{{Infobox Item\n|name = White platelegs\n|image = [[File:White platelegs.png]]\n|release = [[17 October]] [[2005]]\n|update = Wanted!\n|members = Yes\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Big, White and heavy looking.\n|value = 1920\n|weight = 9.071\n|exchange = Yes\n|id = 6625\n}}\n[[File:White platelegs detail.png|left|90px]]\nThe '''white platelegs''' are a piece of [[White Knight equipment|White Knight armour]] that requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield. They have the same bonuses as the [[black platelegs]], with an added +1 [[Prayer bonus]], and have the same stats as a [[white plateskirt]] but weigh more.\n\nPlayers can purchase them from [[Sir Vyvin]] after achieving the [[White Knight rank|rank]] of Novice (100 [[black knight]] kills). They can also be bought on the [[Grand Exchange]] or obtained through trading other players.\n\nAs with all [[white armour]], they '''cannot''' be made using the [[Smithing]] [[Skills|skill]].\n\n{{Costume storage|armour case|[[White Knight equipment|White Knight armour]]|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +21\n|dslash = +20\n|dcrush = +19\n|dmagic = -4\n|drange = +20\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:White platelegs equipped male.png|170px]]\n|altimage = [[File:White platelegs equipped female.png|170px]]\n}}\n\n==Treasure Trails==\n*Talking to Sir Vyvin while wearing a [[white platebody]] and white platelegs/[[white plateskirt]] is a requirement for the [[Clue scroll (master)|master]] [[Treasure Trails/Guide/Cryptic clues|cryptic clue]]: ''Hopefully this set of armour will help you to keep surviving.''\n\n==Shop locations==\n{{Store locations list|White platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{White equipment}}\n{{Prayer items}}\n[[Category:Melee armour]]\n[[Category:Items storable in the costume room]]"
+    },
+    "2655": {
+      "title": "Zamorak platelegs",
+      "revision": 15324918,
+      "timestamp": "2026-08-29T21:13:58Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15324918",
+      "sha256": "f4f0ed81da95a87730f335da43a518fc6baf92dd37db98c70abdc0fb4b00788e",
+      "wikitext": "{{External|rs=Rune platelegs (Zamorak)}}\n{{Infobox Item\n|name = Zamorak platelegs\n|image = [[File:Zamorak platelegs.png]]\n|release = [[5 May]] [[2004]]\n|update = Bigger Banks & Treasure Trails\n|members = No\n|quest = No\n|tradeable = Yes\n|equipable = Yes\n|stackable = No\n|noteable = Yes\n|options = Wear, Drop\n|examine = Rune platelegs in the colours of Zamorak.\n|value = 64000\n|weight = 9.071\n|exchange = Yes\n|id = 2655\n|leagueRegion = General\n}}\n[[File:Zamorak platelegs detail.png|left|90px]]\n'''Zamorak platelegs''' are a trimmed version of [[rune platelegs]] which are associated with the god [[Zamorak]]. Zamorak platelegs have the same stats as rune platelegs, apart from a [[Prayer bonus]] of 1. Like rune platelegs, these platelegs require 40 [[Defence]] to wear and cannot be made using the [[Smithing]] skill.\n\nPlayers can obtain Zamorak platelegs as a reward from completing [[Clue scroll (hard)|hard]] [[Treasure Trails]]. Wearing Zamorak platelegs in the [[God Wars Dungeon]] will cause followers of Zamorak to become [[unaggressive]].\n\n{{Costume storage|treasure chest|tier=hard|[[Zamorak armour]] set|set=true}}\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +51\n|dslash = +49\n|dcrush = +47\n|dmagic = -4\n|drange = +49\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = +1\n|slot = legs\n|image = [[File:Zamorak platelegs equipped male.png|160px]]\n|altimage = [[File:Zamorak platelegs equipped female.png|150px]]\n}}\n\n==Item sources==\n{{Drop sources|Zamorak platelegs}}\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 27 March 2014\n|update = Wilderness Feedback Update\n|poll = Old School Wilderness Feedback Poll\n|change = The god platelegs now gives a +1 [[Prayer]] bonus.\n}}\n{{Subject changes\n|daterange = 14 October –<br/>2 November 2004\n|change = The item's examine was changed from \"''Rune platelegs in the colours of zamorak.''\"{{sic}} to \"''Rune platelegs in the colours of Zamorak.''\"\n}}\n{{Subject changes footer}}\n\n{{Platelegs}}\n{{Rune equipment}}\n{{Hard clue rewards}}\n[[Category:Items storable in the costume room]]\n[[Category:Collection log items]]"
+    },
+    "12815": {
+      "title": "Ultimate ironman platelegs",
+      "revision": 15186432,
+      "timestamp": "2026-04-22T04:07:55Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15186432",
+      "sha256": "8d67aebdd8469b0da4371d2d7db6f6e1618290be574c9e843c7d95a33054c890",
+      "wikitext": "{{Infobox Item\n|name = Ultimate ironman platelegs\n|image = [[File:Ultimate ironman platelegs.png]]\n|release = [[13 October]] [[2014]]\n|update = Ironman Mode\n|members = No\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Wear, Destroy\n|destroy = You can obtain another pair of platelegs from the Iron Man tutor in Lumbridge.\n|examine = Take it off and what are you?\n|value = 0\n|alchable = No\n|weight = 4.535\n|id = 12815\n}}\n[[File:Ultimate ironman platelegs detail.png|left|100px]]\n'''Ultimate ironman platelegs''' are obtainable only by players who chose to be an ultimate ironman in [[Ironman Mode]]. They can be obtained by speaking to [[Adam]] after leaving [[Tutorial Island]], after choosing to be an ultimate ironman.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = -21\n|arange = -11\n|dstab = +11\n|dslash = +10\n|dcrush = +10\n|dmagic = -4\n|drange = +10\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Ultimate ironman platelegs equipped male.png|130px]]\n|altimage = [[File:Ultimate ironman platelegs equipped female.png|130px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nUltimate ironman armour equipped male.png|The full ultimate ironman armour set on body type A.\nUltimate ironman armour equipped female.png|The full ultimate ironman armour set on body type B.\n</gallery>\n\n==Changes==\n{{Subject changes header}}\n{{Subject changes\n|date = 21 April 2021\n|update = Fishing Trawler Improvements and Equipment Rebalance: Part One\n|change = The platelegs's ranged attack bonus has been decreased from -7 to -11.\n}}\n{{Subject changes\n|date = 12 August 2020\n|update = Darker Graceful and Other Changes\n|poll =\n|change = The destroy text has been updated to reflect the Ironman tutor's name change.\n}}\n{{Subject changes footer}}\n\n==Trivia==\n*The examine info is a reference to the Avengers (2012) movie, and consequentially the Spiderman: Homecoming (2017) movie, where Iron Man quips to Spiderman: \"If you're nothing without the suit, you shouldn't have it.\"\n\n{{Ironman armour}}\n{{Platelegs}}\n[[Category:Ironman Mode]]"
+    },
+    "30304": {
+      "title": "Torva platelegs (unobtainable item)",
+      "revision": 15192795,
+      "timestamp": "2026-04-22T04:53:04Z",
+      "url": "https://oldschool.runescape.wiki/w/Special:PermanentLink/15192795",
+      "sha256": "c501addc3bcea61a8b755f8f791e8af0adc648bfe4dec52460edb4ab4cfc622b",
+      "wikitext": "{{Cache}}\n{{Infobox Item\n|name = Torva platelegs\n|image = [[File:Torva platelegs (unobtainable item).png]]\n|release = [[23 October]] [[2024]]\n|update = Halloween Fixes & Miscellaneous Changes\n|members = Yes\n|quest = No\n|tradeable = No\n|equipable = Yes\n|stackable = No\n|noteable = No\n|options = Drop\n|examine = An ancient warrior's platelegs.\n|value = 1\n|weight = 9.071\n|id = 30304\n}}\n[[File:Torva platelegs (unobtainable item) detail.png|left|120px]]\nThis variant of the '''Torva platelegs''' is an unobtainable version of the regular [[Torva platelegs]], which resembles its appearance prior to the 3 August 2023 graphical update.\n\nThe [[Torva_armour#Appearance|graphical update to Torva armour]] was done with the reasoning that it was not \"consistent with Old School's art style\", and a non-trivial number of players disagreed with said change, mostly due to nostalgia towards its iconic appearance in its original release in ''RuneScape 2'' in 2011.\n\nAs such, this item was released as a compromise to allow the third party client [[RuneLite]] to use the assets for various plugins which changed the appearance of the player character (such as [https://runelite.net/plugin-hub/show/fashionscape Fashionscape] and [https://runelite.net/plugin-hub/show/weapon-animation-replacer Weapon/Gear/Animation Replacer]), although other players would not be able to see said player overriding their appearance.\n\n==Combat stats==\n{{Infobox Bonuses\n|astab = 0\n|aslash = 0\n|acrush = 0\n|amagic = 0\n|arange = 0\n|dstab = 0\n|dslash = 0\n|dcrush = 0\n|dmagic = 0\n|drange = 0\n|str = 0\n|rstr = 0\n|mdmg = 0\n|prayer = 0\n|slot = legs\n|image = [[File:Torva platelegs (unobtainable item) equipped male.png|130px]]\n|altimage = [[File:Torva platelegs (unobtainable item) equipped female.png|120px]]\n}}\n\n==Gallery==\n<gallery heights=\"250\" style=\"text-align:left\">\nTorva armour (retro) equipped male.png|The retro Torva armour set on body type A.\nTorva armour (retro) equipped female.png|The retro Torva armour set on body type B.\n</gallery>\n\n{{Unobtainable items}}"
+    }
+  },
+  "attribution": "Old School RuneScape Wiki contributors; Weird Gloop calculator contributors",
+  "source_license": "GPL-3.0 calculator export; Wiki-derived content CC BY-NC-SA 3.0",
+  "license_urls": [
+    "https://github.com/weirdgloop/osrs-dps-calc/blob/main/LICENSE",
+    "https://meta.weirdgloop.org/w/Licensing"
+  ]
+}

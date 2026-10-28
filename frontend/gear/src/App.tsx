@@ -69,7 +69,7 @@ export default function App() {
           <LayoutDashboard size={18} />
           Dashboard
         </a>
-        <a href="/gear">
+        <a href="/gear-legacy">
           <Shield size={18} />
           Existing Gear
         </a>

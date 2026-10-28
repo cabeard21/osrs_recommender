@@ -13,6 +13,8 @@ from tracker.content.loader import Content
 from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 
+GENERIC_UNREVIEWED = "Offensive effects have not been validated."
+
 
 def observed_ownership(snapshot: AccountSnapshot, item_id: int) -> dict[str, Any]:
     """Concrete usable forms only; asynchronous container quantities are not added."""
@@ -71,6 +73,8 @@ def equipment_fact(
     content: Content,
     prices: Mapping[int, PriceRecord],
     now: datetime,
+    *,
+    support_assumptions: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """No progression order or score is involved in eligibility/acquisition facts."""
     requirement = (
@@ -83,7 +87,10 @@ def equipment_fact(
         else None
     )
     wear_status = requirement.status.value if requirement is not None else "satisfied"
-    if not item.requirements_complete:
+    known_status = (
+        wear_status if requirement is not None or item.requirements_complete else "unknown"
+    )
+    if not item.requirements_complete and not support_assumptions:
         wear_status = "unknown"
     authored = next((entry for entry in content.items.values() if entry.item_id == item.id), None)
     price = resolve_price(authored, prices.get(item.id), now=now) if item.tradeable else None
@@ -91,9 +98,23 @@ def equipment_fact(
         "item_id": item.id,
         "name": item.name,
         "slot": item.slot,
+        "support_status": "community_assumed"
+        if support_assumptions
+        else "verified"
+        if item.requirements_complete and not item.unsupported_effects
+        else "unreviewed",
+        "support_assumptions": list(support_assumptions),
+        "effect_status": "community_assumed"
+        if support_assumptions
+        else "unsupported_mechanic"
+        if any(effect != GENERIC_UNREVIEWED for effect in item.unsupported_effects)
+        else "generic_unreviewed"
+        if item.unsupported_effects
+        else "reviewed_ordinary",
         "ownership": observed_ownership(snapshot, item.id),
         "wear": {
             "status": wear_status,
+            "known_status": known_status,
             "requirements_complete": item.requirements_complete,
             "requirements": requirement.model_dump(mode="json") if requirement else None,
             "unmet": [r.model_dump(mode="json") for r in requirement.unmet()]

@@ -33,6 +33,7 @@ from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition
+from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.transitions import inventory_slots, plan_transition
 
@@ -82,6 +83,7 @@ class OptimizationRequest(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     mode: Literal["owned", "usable", "future"] = "usable"
+    support_policy: SupportPolicy = "verified_only"
     budget_gp: int = Field(default=0, ge=0, strict=True)
     secondary_priority: SecondaryPriority = "default"
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
@@ -615,12 +617,20 @@ def optimize(
         if isinstance(request, OptimizationRequest)
         else OptimizationRequest.model_validate(request)
     )
+    catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
         snapshot, request.skill_overrides, request.quest_overrides, now
     )
     facts = {
-        i: equipment_fact(projected, item, content, price_records, now)
+        i: equipment_fact(
+            projected,
+            item,
+            content,
+            price_records,
+            now,
+            support_assumptions=getattr(catalog, "community_assumptions", {}).get(i, ()),
+        )
         for i, item in catalog.items.items()
     }
     search = _Search(projected, request, catalog.items, facts, cancelled)
@@ -744,6 +754,7 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     assumptions = {
+        **support_context(catalog, request.support_policy),
         "skills": dict(request.skill_overrides),
         "quests": dict(request.quest_overrides),
         "assumed_item_ids": request.assumed_item_ids,
@@ -778,6 +789,7 @@ def optimize(
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
     return {
         "snapshot_id": snapshot.fingerprint,
+        **support_context(catalog, request.support_policy),
         "secondary_priority": request.secondary_priority,
         "evaluated_at": now.isoformat(),
         "catalog_version": getattr(catalog, "revision", "unknown"),

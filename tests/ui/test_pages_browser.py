@@ -36,7 +36,7 @@ def test_account_change_during_search_cannot_publish_cached_result(
 
     monkeypatch.setattr(AccountService, "get_snapshot", fresh_snapshot)
     monkeypatch.setattr(GearService, "optimize", delayed_search)
-    page.goto(f"{ui_base_url}/gear", wait_until="domcontentloaded")
+    page.goto(f"{ui_base_url}/gear-legacy", wait_until="domcontentloaded")
     page.locator("[data-testid=gear-optimize]").click()
     try:
         assert started.wait(5)
@@ -54,7 +54,7 @@ def test_factual_navigation_and_uncertainty(page: Page, ui_base_url: str) -> Non
     page.locator("[data-testid=quest-cape-status]").wait_for()
     assert "unknown" in page.locator("[data-testid=account-summary]").inner_text().lower()
 
-    page.goto(f"{ui_base_url}/gear", wait_until="domcontentloaded")
+    page.goto(f"{ui_base_url}/gear-legacy", wait_until="domcontentloaded")
     page.locator("[data-testid=gear-optimizer]").wait_for()
     assert "Observed ownership" in page.locator("body").inner_text()
     page.locator("[data-testid=gear-optimize]").click()
@@ -72,7 +72,7 @@ def test_factual_navigation_and_uncertainty(page: Page, ui_base_url: str) -> Non
 def test_future_optimizer_preserves_account_facts_and_invalidates_results(
     page: Page, ui_base_url: str
 ) -> None:
-    page.goto(f"{ui_base_url}/gear", wait_until="domcontentloaded")
+    page.goto(f"{ui_base_url}/gear-legacy", wait_until="domcontentloaded")
     page.locator("[data-testid=gear-mode]").click()
     page.get_by_role("option", name="Future / explicit what-if").click()
     page.get_by_text("Target and future assumptions", exact=True).click()

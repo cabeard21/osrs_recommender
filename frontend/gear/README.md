@@ -1,4 +1,4 @@
-# Runic Ledger Gear preview — Milestone 5
+# Runic Ledger Gear Optimizer — Milestone 6
 
 Account-connected React/TypeScript/Vite/Tailwind preview with an isolated fixture mode. The architecture authority is
 [the redesign plan](../../docs/GEAR_OPTIMIZER_REDESIGN_PLAN.md); the visual authority is
@@ -16,14 +16,18 @@ cd ../..
 make run
 ```
 
-Open `http://<configured-host>:<configured-port>/gear-next/`. The existing NiceGUI
-`/gear`, dashboard, sync API, and health endpoint retain their existing behavior.
-`/gear-next` redirects to `/gear-next/`. Generated JavaScript, CSS and local fonts
+Open `http://<configured-host>:<configured-port>/gear`. The NiceGUI Gear fallback
+is `/gear-legacy`; other dashboard pages retain their existing behavior.
+`/gear/`, `/gear-next`, and `/gear-next/` redirect to `/gear`, preserving queries.
+React deep links support direct navigation and refresh. Generated JavaScript, CSS and local fonts
 are served from `/gear-ui/`; existing local item sprites use `/gear-sprites/`.
 The build output is `tracker/ui/gear_static/`, ignored by Git. Without a build,
-`/gear-next/` responds with a Gear-specific 503 and build instructions; other routes
+`/gear` responds with a Gear-specific 503 pointing to `/gear-legacy`; other routes
 still start. Build before starting the server, then refresh the browser after rebuilds.
-Image/wheel production packaging and production Gear cutover remain deferred.
+Docker builds React using locked dependencies and includes assets in the installed Python
+wheel. Node is only needed at build time. For a standalone wheel, run the npm build
+above before `python -m pip wheel --no-deps .`. See
+[the production deployment record](../../docs/GEAR_MILESTONE_6_DEPLOYMENT.md).
 
 For hot reload, keep Python running and use another terminal:
 
@@ -266,5 +270,6 @@ verification, screenshots and full-catalog performance measurements. Joint brows
 acceptance uses `/test/seed-joint` only in the disposable test server; production does
 not register that route. Run `npm.cmd run test:e2e -- joint.spec.ts` for that journey.
 
-Packaging and `/gear` cutover remain later work; Milestone 5 does not change the
-production Gear entry point.
+Milestone 5 left the production Gear entry point unchanged. Milestone 6 now packages
+React in the existing image and serves it at `/gear`, with `/gear-legacy` as fallback;
+see [the deployment record](../../docs/GEAR_MILESTONE_6_DEPLOYMENT.md).

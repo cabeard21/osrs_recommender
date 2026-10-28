@@ -398,3 +398,26 @@ it("retains backend target metadata when editing preset defence", async () => {
   const source = context.capabilities.encounter_presets[0].roles[0].target;
   expect(target).toEqual({ ...source, defence_level: 120 });
 });
+
+it("accepts strict backend provenance without community classification bytes", () => {
+  const scenario = normalize(
+    { ...newDraft(), supportPolicy: "verified_only" },
+    context.account.snapshot_id,
+  );
+  const reply = response();
+  reply.scenario = optimizationRequest(scenario);
+  Object.assign(reply.result, {
+    support_policy: "verified_only",
+    support_provenance: "",
+  });
+  expect(
+    parseOptimization(reply, scenario).scenario.request.support_policy,
+  ).toBe("verified_only");
+  Object.assign(reply.result, { support_policy: "community_best_effort" });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/support policy/);
+  Object.assign(reply.result, {
+    support_policy: "verified_only",
+    support_provenance: 42,
+  });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/provenance/);
+});

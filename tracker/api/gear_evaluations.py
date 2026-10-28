@@ -26,6 +26,7 @@ from tracker.content.schema import ItemSlot
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
+from tracker.gear.support import SupportPolicy, support_context
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -91,6 +92,8 @@ class EvaluationDeltas(DTO):
 
 
 class EquipmentEvaluationResponse(DTO):
+    support_policy: SupportPolicy = "verified_only"
+    support_provenance: str = ""
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
     scenario: BrowserOptimizationRequest
@@ -147,11 +150,13 @@ def calculate_evaluation(
         body.proposed_loadouts[role_id].values()
     )
     assumptions = {
+        **support_context(catalog, scenario.support_policy),
         "skills": dict(scenario.skill_overrides),
         "quests": dict(scenario.quest_overrides),
         "assumed_item_ids": scenario.assumed_item_ids,
     }
     return EquipmentEvaluationResponse(
+        **support_context(catalog, scenario.support_policy),
         evaluated_at=now,
         scenario=scenario,
         scenario_fingerprint=scenario_fingerprint(scenario),
@@ -165,7 +170,9 @@ def calculate_evaluation(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),
         items=[
-            gear.physical_item(projected, i, price_records=prices, now=now)
+            gear.physical_item(
+                projected, i, price_records=prices, now=now, support_policy=scenario.support_policy
+            )
             for i in sorted(referenced)
         ],
         **result,

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "bulk_metal_platelegs_1075",
+    "name": "Bronze platelegs",
+    "item_id": 1075,
+    "slot": "legs",
+    "requires": {
+      "skill": {
+        "defence": 1
+      }
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_platelegs_6625",
+    "name": "White platelegs",
+    "item_id": 6625,
+    "slot": "legs",
+    "requires": {
+      "all_of": [
+        {
+          "skill": {
+            "defence": 10
+          }
+        },
+        {
+          "quest": "wanted"
+        }
+      ]
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

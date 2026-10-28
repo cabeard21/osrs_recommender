@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 from types import MappingProxyType
@@ -14,6 +14,7 @@ from typing import Any
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.requirements_source import requirement_from_levels
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -40,18 +41,38 @@ def _reviewed_equivalent(
 class EquipmentCatalog:
     items: Mapping[int, EquipmentDefinition]
     revision: str = "custom"
+    community_items: Mapping[int, dict[str, Any]] = field(default_factory=dict)
+    community_provenance: str = ""
+    community_assumptions: Mapping[int, tuple[str, ...]] = field(default_factory=dict)
+    verified_catalog: EquipmentCatalog | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "items", MappingProxyType(dict(self.items)))
+        object.__setattr__(self, "community_items", MappingProxyType(dict(self.community_items)))
+        object.__setattr__(
+            self, "community_assumptions", MappingProxyType(dict(self.community_assumptions))
+        )
 
 
-def load_catalog(content: Content, root: Path | None = None) -> EquipmentCatalog:
+def load_catalog(
+    content: Content, root: Path | None = None, *, use_requirements_source: bool = True
+) -> EquipmentCatalog:
     """Retain physical statistics; only reviewed equal forms may share wear gates."""
     root = root or Path("content/equipment")
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     payload = (root / "catalog.json").read_bytes()
     if sha256(payload).hexdigest() != manifest["catalog_sha256"]:
         raise ValueError("Equipment catalog checksum mismatch")
+    source_path = root / "requirements.json"
+    source_payload = (
+        source_path.read_bytes() if use_requirements_source and source_path.exists() else b""
+    )
+    source_requirements = {
+        int(key): requirement_from_levels(levels, content.skills)
+        for key, levels in (json.loads(source_payload)["items"] if source_payload else {}).items()
+        # A reduced/custom skill registry cannot evaluate these partial maps.
+        if not isinstance(levels, dict) or set(levels) <= set(content.skills) | {"combat"}
+    }
     overlays = defaultdict(list)
     for item in content.items.values():
         if item.item_id:
@@ -83,6 +104,10 @@ def load_catalog(content: Content, root: Path | None = None) -> EquipmentCatalog
             if requirements
             else None
         )
+        # An authored overlay (including approved ungated or unknown) always wins.
+        # Community skill maps cannot certify absent quest/unlock gates.
+        if not entries:
+            requirement = source_requirements.get(row["id"])
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -99,7 +124,29 @@ def load_catalog(content: Content, root: Path | None = None) -> EquipmentCatalog
                 "content_ids": tuple(item.id for item in entries),
             }
         )
-    return EquipmentCatalog(result, manifest["catalog_sha256"])
+    community_path = root / "community.json"
+    community_payload = community_path.read_bytes() if community_path.exists() else b""
+    community = json.loads(community_payload) if community_payload else {}
+    evidence = community.get("provenance", {})
+    community_matches = (
+        evidence.get("catalog_sha256") == sha256(payload).hexdigest()
+        and bool(source_payload)
+        and evidence.get("requirements_sha256") == sha256(source_payload).hexdigest()
+    )
+    revision = (
+        sha256(payload + source_payload + community_payload).hexdigest()
+        if source_payload or community_payload
+        else manifest["catalog_sha256"]
+    )
+    return EquipmentCatalog(
+        result,
+        revision,
+        # A stale classification cannot bless changed physical/requirement data.
+        community_items={int(k): v for k, v in community.get("items", {}).items()}
+        if community_matches
+        else {},
+        community_provenance=sha256(community_payload).hexdigest() if community_matches else "",
+    )
 
 
 load_equipment_catalog = load_catalog

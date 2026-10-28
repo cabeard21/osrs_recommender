@@ -30,6 +30,7 @@ from tracker.gear.encounters import encounter_presets
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.optimizer import SLOTS
 from tracker.gear.service import GearService
+from tracker.gear.support import SupportPolicy
 from tracker.ui.read_model import first_player_id
 from tracker.ui.staleness import scan_note
 
@@ -154,6 +155,7 @@ class Ownership(DTO):
 
 class Wear(DTO):
     status: Literal["satisfied", "unsatisfied", "unknown"]
+    known_status: Literal["satisfied", "unsatisfied", "unknown"] = "unknown"
     requirements_complete: bool
     requirements: RequirementResult | None
     unmet: list[RequirementResult]
@@ -188,6 +190,11 @@ class ItemResponse(DTO):
     price: Price
     limitations: list[str]
     catalog_version: str
+    support_status: Literal["verified", "community_assumed", "unreviewed"] = "unreviewed"
+    support_assumptions: list[str] = []
+    effect_status: Literal[
+        "community_assumed", "unsupported_mechanic", "generic_unreviewed", "reviewed_ordinary"
+    ] = "generic_unreviewed"
 
 
 class ContextResponse(DTO):
@@ -351,6 +358,7 @@ def items(
     acquisition: str | None = None,
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
+    support_policy: SupportPolicy = "verified_only",
 ) -> ItemsResponse:
     snapshot, gear, prices = resources(request)
     try:
@@ -365,6 +373,7 @@ def items(
             offset=offset,
             limit=limit,
             price_records=prices,
+            support_policy=support_policy,
         )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -376,16 +385,22 @@ def items(
         limit=limit,
         next_offset=page["next_offset"],
         items=[
-            gear.physical_item(snapshot, row["item_id"], price_records=prices)
+            gear.physical_item(
+                snapshot, row["item_id"], price_records=prices, support_policy=support_policy
+            )
             for row in page["items"]
         ],
     )
 
 
 @router.get("/items/{item_id}", response_model=ItemResponse)
-def item(request: Request, item_id: int) -> dict[str, Any]:
+def item(
+    request: Request, item_id: int, support_policy: SupportPolicy = "verified_only"
+) -> dict[str, Any]:
     snapshot, gear, prices = resources(request)
     try:
-        return gear.physical_item(snapshot, item_id, price_records=prices)
+        return gear.physical_item(
+            snapshot, item_id, price_records=prices, support_policy=support_policy
+        )
     except KeyError as exc:
         raise HTTPException(404, "Physical item metadata unavailable") from exc

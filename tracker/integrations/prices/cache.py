@@ -63,6 +63,7 @@ def resolve_prices(
     settings: PricesSettings,
     now: datetime,
     manual_refresh_requested: bool = False,
+    bulk_refresh: bool = False,
 ) -> dict[int, PriceDTO]:
     """Resolve a price for every requested id, one cascade pass, one fetch attempt.
 
@@ -77,6 +78,8 @@ def resolve_prices(
     * Every requested id gets an entry — falling through to a static hint or
       ``unknown`` rather than being dropped — because a candidate missing a price
       entirely is a worse UI experience than one flagged low-confidence.
+    * ``bulk_refresh`` keeps scheduled/manual equipment refreshes on one bulk
+      endpoint request even when only one newly discovered ID needs a quote.
     """
     ids = frozenset(item_ids)
     ttl = timedelta(hours=settings.ttl_hours)
@@ -94,7 +97,7 @@ def resolve_prices(
     live: dict[int, PriceDTO] = {}
     if stale_or_missing or manual_refresh_allowed:
         fetch_ids = ids if manual_refresh_allowed else stale_or_missing
-        live = client.latest(fetch_ids)
+        live = client.latest(fetch_ids, bulk=True) if bulk_refresh else client.latest(fetch_ids)
 
     resolved: dict[int, PriceDTO] = {}
     for item_id in ids:

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "metal_full_helms",
+  "name_pattern": "full helm",
+  "slots": [
+    "head"
+  ],
+  "source_file": "content/equipment/reviews/sources/metal_full_helms.json",
+  "source_sha256": "aefa6507af3326fd1ec107559f86fffbc0a680c81d16580b9c40bfef2c0d57b5",
+  "items": {
+    "1155": {
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "wear_evidence": [
+        "There are no [[Defence]] requirements for wearing this helmet"
+      ],
+      "review_reason": "Exact bronze1155 full page reviewed: explicitly no Defence wear requirement; static armour only. Smithing7 is creation only, no quest gate; tradeable Yes."
+    },
+    "6623": {
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "wear_evidence": [
+        "requires 10 [[Defence]] and the completion of the [[Wanted!]] [[quest]] to wield"
+      ],
+      "review_reason": "Exact white6623 full page reviewed: Defence10 and Wanted! wear gates; static armour/prayer only. Adept800 kill shop rank is acquisition only; tradeable Yes."
+    },
+    "11335": {
+      "classification": "ordinary",
+      "mechanics": "ordinary",
+      "wear_evidence": [
+        "requires 60 [[Defence]] to equip"
+      ],
+      "review_reason": "Exact dragon11335 full page reviewed: Defence60 only; static armour bonuses. Barbarian Training/Ancient Cavern obtaining and Fremennik Isles development history are not wear gates; tradeable Yes. Ornament remains independently excluded."
+    }
+  },
+  "wear_patterns": [
+    {
+      "skill": "defence",
+      "pattern": "requires (?P<level>\\d+) Defence (?:to equip|and the completion)"
+    }
+  ],
+  "quest_patterns": [
+    {
+      "quest": "wanted",
+      "pattern": "completion of the Wanted! quest to wield"
+    }
+  ],
+  "ungated_pattern": "There are no Defence requirements for wearing this helmet",
+  "exceptions": {
+    "10350": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1161": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2613": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2605": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12466": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12476": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12486": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1165": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2595": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2587": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12211": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12221": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "27844": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "25157": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "25176": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "25174": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "25165": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "25169": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12417": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "24034": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "29560": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "3486": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2673": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1153": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12241": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12231": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "26687": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "26746": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "26745": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1159": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12283": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "12293": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1163": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2619": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2627": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "28254": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2665": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "22625": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "27833": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "1157": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "20178": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "20193": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "26382": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "30302": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance.",
+    "2657": "Variant, special equipment or nonstandard material outside this ordinary batch; independent exact-ID wear/effect review required. No tier/name inheritance."
+  }
+}

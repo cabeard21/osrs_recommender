@@ -5,6 +5,12 @@ API at `/api/sync`, and an unauthenticated liveness check at `/healthz`. Optiona
 Milestone 1 MCP runs as a separate process and never mounts those routes. Neither
 service requires a public reverse proxy.
 
+React Gear is served by that same process at `/gear`, with the NiceGUI fallback at
+`/gear-legacy`. `/gear/` and `/gear-next/` redirect to `/gear`. The Docker build runs
+locked `npm ci` and Vite in a Node build stage, then packages the assets in the Python
+wheel; Node is absent at runtime. For the actual ARM64 image, verification and exact
+image rollback commands, see [Milestone 6 deployment](GEAR_MILESTONE_6_DEPLOYMENT.md).
+
 ```bash
 cp config.example.yaml config.yaml     # then edit — see below
 make migrate                           # alembic upgrade head

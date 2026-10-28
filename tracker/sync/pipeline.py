@@ -1,4 +1,4 @@
-"""Account sync and authored Gear price refresh.
+"""Account sync and supported Gear price refresh.
 
 The caller owns the transaction. A RuneLite payload is merged as one observation;
 periodic and manual runs refresh cached market facts without changing account state.
@@ -18,6 +18,8 @@ from tracker.content.loader import Content
 from tracker.db.persist_prices import DatabasePriceCache, persist_prices
 from tracker.db.repository import get_player_by_username
 from tracker.domain.types import Source
+from tracker.gear.catalog import load_catalog
+from tracker.gear.support import project_catalog
 from tracker.integrations.prices.cache import resolve_prices
 from tracker.integrations.prices.client import PricesClient
 from tracker.integrations.prices.scope import scoped_item_ids
@@ -32,8 +34,21 @@ class PipelineResult:
 
 
 def _price_scope(content: Content) -> frozenset[int]:
-    """Primary IDs with reviewed equipment and tradeability metadata."""
-    return scoped_item_ids(content)
+    """Retain authored prices and discover supported exact physical tradeable IDs.
+
+    Reload on each refresh so updated catalog/classification bytes are discovered;
+    the catalog loader rejects stale classification evidence before projection.
+    Price discovery does not assert account eligibility or alter support policy.
+    """
+    catalog = project_catalog(load_catalog(content), "community_best_effort")
+    supported = frozenset(
+        item.id
+        for item in catalog.items.values()
+        if item.tradeable is True
+        and not item.unsupported_effects
+        and (item.requirements_complete or item.id in catalog.community_assumptions)
+    )
+    return scoped_item_ids(content) | supported
 
 
 def _refresh_prices(
@@ -58,6 +73,7 @@ def _refresh_prices(
         settings=settings,
         now=now,
         manual_refresh_requested=manual_refresh,
+        bulk_refresh=True,
     )
     if manual_refresh and cache is not None:
         cache.note_manual_refresh(now)
@@ -89,7 +105,9 @@ def run_pipeline(
     prices_written = _refresh_prices(
         session,
         content,
-        _price_scope(content),
+        _price_scope(content)
+        if prices_client is not None and prices_settings is not None
+        else frozenset(),
         client=prices_client,
         settings=prices_settings,
         cache=price_cache,

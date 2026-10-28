@@ -1,0 +1,44 @@
+[
+  {
+    "id": "bulk_metal_platebodies_extended_6617",
+    "name": "White platebody",
+    "item_id": 6617,
+    "slot": "body",
+    "requires": {
+      "all_of": [
+        {
+          "skill": {
+            "defence": 10
+          }
+        },
+        {
+          "quest": "wanted"
+        }
+      ]
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  },
+  {
+    "id": "bulk_metal_platebodies_extended_21892",
+    "name": "Dragon platebody",
+    "item_id": 21892,
+    "slot": "body",
+    "requires": {
+      "all_of": [
+        {
+          "skill": {
+            "defence": 60
+          }
+        },
+        {
+          "quest": "dragon_slayer_i"
+        }
+      ]
+    },
+    "acquisition": "tradeable",
+    "price_mode": "live",
+    "price_staleness_days": 30
+  }
+]

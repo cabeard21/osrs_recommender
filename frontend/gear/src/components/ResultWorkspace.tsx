@@ -1,3 +1,4 @@
+import { SupportPolicySummary } from "./SupportPolicySummary";
 import { useState } from "react";
 import { ArrowRightLeft, Shield } from "lucide-react";
 import { useGear } from "../state/GearProvider";
@@ -104,6 +105,7 @@ export function ResultWorkspace() {
     solution.loadouts[0];
   return (
     <div className="result-column">
+      <SupportPolicySummary result={current.result} />
       <SecondaryPrioritySummary result={current.result} />
       <OptimizationModeSummary result={current.result} />
       {state.mode === "single" && (

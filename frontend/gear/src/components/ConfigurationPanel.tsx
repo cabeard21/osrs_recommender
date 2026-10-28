@@ -33,6 +33,24 @@ export function ConfigurationPanel() {
         <SlidersHorizontal size={17} /> Optimization parameters
       </h2>
       <label>
+        Equipment support policy
+        <select
+          value={draft.supportPolicy ?? "community_best_effort"}
+          onChange={(e) =>
+            change({ supportPolicy: e.target.value as Draft["supportPolicy"] })
+          }
+        >
+          <option value="community_best_effort">Community best effort</option>
+          <option value="verified_only">Verified only</option>
+        </select>
+      </label>
+      <p>
+        Community best effort allows classified ordinary equipment using
+        community skill gates. Unresolved equip gates are assumed satisfied and
+        items are labeled community-assumed. Known unsupported mechanics remain
+        excluded. Verified only requires reviewed eligibility.
+      </p>
+      <label>
         Optimization mode
         <select
           value={draft.optimizationMode ?? "fast"}

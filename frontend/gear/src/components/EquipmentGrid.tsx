@@ -85,7 +85,15 @@ export function EquipmentGrid({
               <span className="sprite">
                 <ItemSprite id={equipment[slot]} />
               </span>
-              <span>{name}</span>
+              <span>
+                {name}
+                {item?.facts?.support_status === "community_assumed" && (
+                  <small className="gold"> � Community-assumed</small>
+                )}
+                {item?.facts?.support_status === "verified" && (
+                  <small className="green"> � Verified</small>
+                )}
+              </span>
             </span>
           </button>
         );
