@@ -39,6 +39,11 @@ class EquipmentDefinition(GearModel):
     attack_speed: int = Field(default=4, ge=1)
     attack_styles: tuple[str, ...] = ()
     attack_profiles: tuple[tuple[str, str], ...] = ()
+    # Reviewed autocast spell IDs only. An empty tuple makes compatibility unknown.
+    spell_compatibility: tuple[str, ...] = ()
+    powered_attack: str | None = None
+    powered_attack_base_max_hit: int | None = Field(default=None, ge=1)
+    powered_attack_stances: tuple[str, ...] = ()
     two_handed: bool = False
     ammo_type: str | None = None
     ammo_for: tuple[str, ...] = ()

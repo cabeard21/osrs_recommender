@@ -9,6 +9,7 @@ import type {
   Workspace,
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
+import { selectedCombatOptions } from "../api/combatOptions";
 export const newRole = (index: number) => ({
   id: `role-${index}`,
   name: `Configuration ${index}`,
@@ -39,6 +40,7 @@ export function normalize(
   draft: Draft,
   snapshotId: string,
   live = false,
+  context: GearContext | null = null,
 ): Scenario {
   if (
     !["verified_only", "community_best_effort"].includes(
@@ -62,6 +64,13 @@ export function normalize(
   };
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
+    if (live && context && !role.utility && role.combatOptionOptimization !== false) {
+      const options = selectedCombatOptions(role, context);
+      if (!options) throw new Error("Synced combat options are unavailable. Refresh account context.");
+      role.combatOptions = options;
+    } else {
+      delete role.combatOptions;
+    }
     if (role.combatTarget) {
       for (const [key, value] of Object.entries(role.targetInputs ?? {})) {
         const optional = [
@@ -133,7 +142,7 @@ export function normalize(
         ? ["accurate", "aggressive", "controlled", "defensive"]
         : role.style === "ranged"
           ? ["accurate", "rapid", "longrange"]
-          : ["accurate", "defensive"];
+          : ["accurate", "defensive", "longrange"];
     if (!role.utility && !stances.includes(role.stance))
       throw new Error(
         `${role.name} attack stance is unsupported for its discipline.`,

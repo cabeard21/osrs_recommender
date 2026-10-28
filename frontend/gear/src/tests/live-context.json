@@ -201,6 +201,30 @@
     }
   ],
   "capabilities": {
+    "combat_options": {
+      "attack_types": [
+        { "id": "stab", "category": "melee", "available": true },
+        { "id": "slash", "category": "melee", "available": true },
+        { "id": "crush", "category": "melee", "available": true },
+        { "id": "light", "category": "ranged", "available": true },
+        { "id": "standard", "category": "ranged", "available": true },
+        { "id": "heavy", "category": "ranged", "available": true },
+        { "id": "magic", "category": "magic", "available": true }
+      ],
+      "stances": [
+        { "id": "accurate", "category": "melee", "available": true },
+        { "id": "aggressive", "category": "melee", "available": true },
+        { "id": "defensive", "category": "melee", "available": true },
+        { "id": "controlled", "category": "melee", "available": true },
+        { "id": "accurate", "category": "ranged", "available": true },
+        { "id": "rapid", "category": "ranged", "available": true },
+        { "id": "longrange", "category": "ranged", "available": true },
+        { "id": "accurate", "category": "magic", "available": true },
+        { "id": "defensive", "category": "magic", "available": true },
+        { "id": "longrange", "category": "magic", "available": false, "reason": "No reviewed powered staff supports longrange" }
+      ],
+      "spells": [{ "id": "fire_strike", "level": 13, "available": true }]
+    },
     "objectives": [
       {
         "id": "weighted_dps",

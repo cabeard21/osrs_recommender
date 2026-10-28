@@ -22,7 +22,22 @@ def test_optimizer_tool_delegates_and_rejects_invalid_requests(service, snapshot
             calls.append((account, request, kwargs))
             if request.expected_snapshot_id == "old":
                 raise ValueError("snapshot_changed: refresh account facts")
-            return {"snapshot_id": account.fingerprint, "search": {"quality": "best_found"}}
+            return {
+                "snapshot_id": account.fingerprint,
+                "search": {"quality": "best_found"},
+                "selected_solution": {
+                    "loadouts": {
+                        "melee": {
+                            "combat_option": {
+                                "attack_type": "slash",
+                                "stance": "aggressive",
+                                "spell": None,
+                                "powered_attack": None,
+                            }
+                        }
+                    }
+                },
+            }
 
     app = create_http_app(
         build_server(Accounts(), service, Gear(), Prices()), MCPSettings(enabled=True, player_id=1)
@@ -46,10 +61,37 @@ def test_optimizer_tool_delegates_and_rejects_invalid_requests(service, snapshot
         result = call({"roles": [{"id": "melee", "style": "slash"}], "budget_gp": 100})
         assert not result.get("isError"), result
         assert result["structuredContent"]["snapshot_id"] == snapshot.fingerprint
+        assert result["structuredContent"]["selected_solution"]["loadouts"]["melee"][
+            "combat_option"
+        ] == {
+            "attack_type": "slash",
+            "stance": "aggressive",
+            "spell": None,
+            "powered_attack": None,
+        }
         assert calls[0][0] is snapshot
         assert calls[0][1].budget_gp == 100
         assert calls[0][2]["price_records"] == {}
         assert calls[0][2]["now"].tzinfo is not None
+        filtered = call(
+            {
+                "roles": [
+                    {
+                        "id": "melee",
+                        "style": "slash",
+                        "combat_options": {
+                            "attack_types": ["slash"],
+                            "stances": ["aggressive"],
+                            "spells": [],
+                        },
+                    }
+                ]
+            }
+        )
+        assert not filtered.get("isError"), filtered
+        assert tuple(calls[-1][1].roles[0].combat_options.attack_types) == ("slash",)
+        assert tuple(calls[-1][1].roles[0].combat_options.stances) == ("aggressive",)
+        assert tuple(calls[-1][1].roles[0].combat_options.spells) == ()
         assert call({"roles": []})["isError"]
         assert call({"roles": [{"id": "melee", "style": "slash"}], "budget_gp": -1})["isError"]
         stale = call({"roles": [{"id": "melee", "style": "slash"}], "expected_snapshot_id": "old"})

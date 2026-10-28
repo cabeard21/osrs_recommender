@@ -20,6 +20,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
+from tracker.gear.combat_options import eligible_combat_options
 from tracker.gear.evaluation import (
     evaluate_equipment,
     item_problems,
@@ -56,6 +57,21 @@ MAX_EXPANSIONS = 1_000_000
 ItemId = Annotated[int, Field(strict=True, gt=0)]
 
 
+class CombatOptionFilters(BaseModel):
+    """Explicit user allowlists; an empty list intentionally permits no attacks."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    attack_types: tuple[
+        Literal["stab", "slash", "crush", "light", "standard", "heavy", "magic"], ...
+    ] = Field(max_length=7)
+    stances: tuple[
+        Literal["accurate", "aggressive", "controlled", "defensive", "rapid", "longrange"], ...
+    ] = Field(max_length=6)
+    spells: tuple[Annotated[str, Field(max_length=40, pattern=r"^[a-z0-9_:]+$")], ...] = Field(
+        max_length=100
+    )
+
+
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     id: str = Field(min_length=1, max_length=40, pattern=r"^[a-zA-Z0-9_-]+$")
@@ -64,6 +80,8 @@ class RoleConfig(BaseModel):
         "accurate"
     )
     spell: str = Field(default="fire_strike", max_length=40)
+    combat_options: CombatOptionFilters | None = None
+    powered_attack: str | None = None
     weight: float = Field(default=1, ge=0, le=1_000_000, allow_inf_nan=False)
     target: CombatTarget | None = None
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
@@ -71,6 +89,8 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.powered_attack is not None:
+            raise ValueError("powered_attack is selected by the optimizer, not a request field")
         object.__setattr__(self, "locks", MappingProxyType(dict(self.locks)))
         return self
 
@@ -204,6 +224,7 @@ class _Search:
         self.truncated = False
         self.edges = required_transitions(request)
         self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
+        self.option_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None] = {}
         self.eligible = {i: item for i, item in items.items() if self.allowed(i)}
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
@@ -234,12 +255,77 @@ class _Search:
                         "Special role is unscored; no damage or utility benefit assumed."
                     ],
                 }
+            elif role.combat_options is not None:
+                weapon = self.items.get(equipment.get("weapon", -1))
+                discipline = "melee" if role.style in {"stab", "slash", "crush"} else role.style
+                allowed = role.combat_options
+                evaluated = []
+                for option in eligible_combat_options(
+                    weapon, self.snapshot, discipline=discipline, levels=self.levels
+                ):
+                    spell_id = option.spell or (
+                        f"powered:{weapon.id}" if option.powered_attack and weapon else None
+                    )
+                    if (
+                        not option.available
+                        or option.attack_type not in allowed.attack_types
+                        or option.stance not in allowed.stances
+                        or (spell_id is not None and spell_id not in allowed.spells)
+                    ):
+                        continue
+                    configured = role.model_copy(
+                        update={
+                            "style": option.style,
+                            "stance": option.stance,
+                            "spell": option.spell or role.spell,
+                            "powered_attack": option.powered_attack,
+                        }
+                    )
+                    performance = evaluate_equipment(
+                        equipment, self.items, configured, self.levels
+                    ).model_dump(mode="json")
+                    if performance["supported"]:
+                        evaluated.append((performance, option))
+                if evaluated:
+                    result, selected = max(
+                        evaluated,
+                        key=lambda row: (
+                            row[0].get("dps") or 0,
+                            row[1].attack_type,
+                            row[1].stance,
+                            row[1].spell or "",
+                        ),
+                    )
+                    self.option_cache[key] = selected.model_dump(
+                        mode="json", include={"attack_type", "stance", "spell", "powered_attack"}
+                    )
+                else:
+                    result = {
+                        "supported": False,
+                        "dps": None,
+                        "limitations": [
+                            "No legal combat configuration satisfies account and option filters."
+                        ],
+                    }
+                    self.option_cache[key] = None
             else:
                 result = evaluate_equipment(equipment, self.items, role, self.levels).model_dump(
                     mode="json"
                 )
+                self.option_cache[key] = {
+                    "attack_type": role.style,
+                    "stance": role.stance,
+                    "spell": role.spell if role.style == "magic" else None,
+                    "powered_attack": None,
+                }
             self.performance_cache[key] = result
         return self.performance_cache[key]
+
+    def combat_option(
+        self, equipment: Mapping[str, int], role: RoleConfig
+    ) -> dict[str, Any] | None:
+        self.performance(equipment, role)
+        return self.option_cache.get((role.id, tuple(sorted(equipment.items()))))
 
     def secondary(self, loadouts: Mapping[str, Mapping[str, int]]) -> float:
         """Normalize active time across scored roles; utility roles contribute nothing."""
@@ -517,6 +603,7 @@ class _Search:
                 r.id: {
                     "equipment": loadouts[r.id],
                     "performance": self.performance(loadouts[r.id], r),
+                    "combat_option": self.combat_option(loadouts[r.id], r),
                 }
                 for r in self.request.roles
             },
@@ -841,6 +928,14 @@ def optimize(
         },
         "limitations": [
             "Best found within bounded candidates and beams; global optimum is not proven.",
+            *(
+                [
+                    "No legal combat configuration satisfied the account and option filters "
+                    "within this search."
+                ]
+                if winners[-1] is None and any(r.combat_options is not None for r in request.roles)
+                else []
+            ),
             "Secondary priority orders exact modeled DPS ties; bounded search does not "
             "guarantee the best secondary value.",
             "Active-time weighted DPS excludes movement, survival, supply endurance "

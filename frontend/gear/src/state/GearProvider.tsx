@@ -154,7 +154,7 @@ function useGearState(client: GearClient) {
       const live = !(client instanceof FixtureGearClient);
       if (!state.context?.snapshotId)
         throw new Error("Synchronize an account before optimizing.");
-      const scenario = normalize(current.draft, state.context.snapshotId, live);
+      const scenario = normalize(current.draft, state.context.snapshotId, live, state.context);
       const controller = new AbortController();
       controllers.current[mode]?.abort();
       controllers.current[mode] = controller;

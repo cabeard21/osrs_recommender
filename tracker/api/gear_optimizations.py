@@ -87,6 +87,7 @@ def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
 class Loadout(DTO):
     equipment: dict[str, int]
     performance: CombatPerformance
+    combat_option: dict[str, Any] | None = None
 
 
 class Purchase(DTO):
@@ -227,7 +228,7 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
         level = body.skill_overrides.get(
             "magic", snapshot.skills.get("magic").level if snapshot.skills.get("magic") else 0
         )
-        if role.style == "magic" and level < SPELLS[role.spell][0]:
+        if role.style == "magic" and role.combat_options is None and level < SPELLS[role.spell][0]:
             raise error(
                 "invalid_request",
                 "Selected spell Magic level is unmet",

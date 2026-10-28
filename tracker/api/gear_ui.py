@@ -26,6 +26,7 @@ from tracker.content.schema import ItemSlot
 from tracker.db.gear_prices import DatabaseGearPrices
 from tracker.domain.types import Container
 from tracker.gear.combat import SPELLS
+from tracker.gear.combat_options import enumerate_combat_options
 from tracker.gear.encounters import encounter_presets
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.optimizer import SLOTS
@@ -299,6 +300,94 @@ def resources(request: Request):
     return snapshot, request.app.state.gear_service, DatabaseGearPrices(factory).get_prices()
 
 
+def combat_option_capabilities(
+    snapshot: AccountSnapshot | None, gear: GearService
+) -> dict[str, Any]:
+    """Account-facing controls; weapon pairing remains checked during optimization."""
+    account = snapshot or AccountSnapshot(0, "")
+    levels = {key: state.level for key, state in account.skills.items()}
+    powered_longrange = any(
+        weapon.powered_attack
+        and weapon.powered_attack_base_max_hit
+        and "longrange" in weapon.powered_attack_stances
+        for weapon in gear.equipment_catalog().items.values()
+    )
+    attack_types = []
+    stances = []
+    for category, names, skill in (
+        ("melee", ("stab", "slash", "crush"), "attack"),
+        ("ranged", ("light", "standard", "heavy"), "ranged"),
+        ("magic", ("magic",), "magic"),
+    ):
+        known = skill in levels and levels[skill] >= 1
+        attack_types.extend(
+            {
+                "id": name,
+                "category": category,
+                "available": known,
+                "reason": None if known else f"{skill.title()} level is unknown",
+            }
+            for name in names
+        )
+        for stance in (
+            ("accurate", "aggressive", "defensive", "controlled")
+            if category == "melee"
+            else ("accurate", "rapid", "longrange")
+            if category == "ranged"
+            else ("accurate", "defensive", "longrange")
+        ):
+            longrange_missing = (
+                category == "magic" and stance == "longrange" and not powered_longrange
+            )
+            stance_available = known and not longrange_missing
+            stance_reason = (
+                None
+                if stance_available
+                else "No reviewed powered staff supports longrange"
+                if longrange_missing and known
+                else f"{skill.title()} level is unknown"
+            )
+            stances.append(
+                {
+                    "id": stance,
+                    "category": category,
+                    "available": stance_available,
+                    "reason": stance_reason,
+                }
+            )
+    spells = []
+    for option in enumerate_combat_options(None, account, discipline="magic", levels=levels):
+        if option.spell is None:
+            continue
+        spells.append(
+            {
+                "id": option.spell,
+                "level": SPELLS[option.spell][0],
+                "available": option.available,
+                "reason": option.reason,
+            }
+        )
+    for weapon in gear.equipment_catalog().items.values():
+        if (
+            not weapon.powered_attack
+            or not weapon.powered_attack_base_max_hit
+            or not weapon.powered_attack_stances
+        ):
+            continue
+        options = enumerate_combat_options(weapon, account, discipline="magic", levels=levels)
+        option = next((row for row in options if row.powered_attack == weapon.powered_attack), None)
+        if option is not None:
+            spells.append(
+                {
+                    "id": f"powered:{weapon.id}",
+                    "level": 1,
+                    "available": option.available,
+                    "reason": option.reason,
+                }
+            )
+    return {"attack_types": attack_types, "stances": stances, "spells": spells}
+
+
 @router.get("/context", response_model=ContextResponse)
 def context(request: Request) -> ContextResponse:
     snapshot, gear, prices = resources(request)
@@ -336,6 +425,7 @@ def context(request: Request) -> ContextResponse:
             "max_equipment_actions": 12,
             "slots": list(SLOTS),
             "spells": [{"id": k, "level": v[0], "base_max_hit": v[1]} for k, v in SPELLS.items()],
+            "combat_options": combat_option_capabilities(snapshot, gear),
             "encounter_presets": [p.__dict__ for p in encounter_presets()],
             "configurations": ["melee", "ranged", "magic"],
         },

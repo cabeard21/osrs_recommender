@@ -26,6 +26,7 @@ import type {
   OptimizationReply,
   OptimizationDTO,
   CombatPerformance,
+  CombatOption,
   PhysicalItem,
   Scenario,
   Slot,
@@ -276,6 +277,7 @@ export function parseOptimization(
           name: "Best configuration found",
           equipment,
           metrics: performanceMetrics(loadout.performance as CombatPerformance),
+          combatOption: loadout.combat_option as CombatOption | undefined,
         },
       ],
       weightedDps: selected.score as number,
@@ -328,6 +330,7 @@ export function optimizationRequest(scenario: Scenario) {
           : role.style,
       stance: role.stance,
       spell: role.spell,
+      ...(role.combatOptions ? { combat_options: role.combatOptions } : {}),
       weight: role.weight,
       locks: Object.fromEntries(
         Object.entries(role.locks).map(([slot, id]) => [

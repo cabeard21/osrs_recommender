@@ -258,11 +258,13 @@ def build_server(
 
         @server.tool(annotations=annotations)
         async def optimize_gear(request: OptimizationRequest) -> dict[str, Any]:
-            """Find compatible account-aware equipment and a bounded swap-efficiency curve.
+            """Find compatible account-aware equipment and combat options.
 
             Equipment actions include explicit unequips; automatic removals are not extra
             actions. Time-share DPS is a supported-mechanics proxy, not predicted kill time.
-            Future assumptions are request-local. Inspect limitations and search quality.
+            Future assumptions are request-local. Combat filters and selected attack type,
+            stance, and spell (where applicable) travel through this existing operation.
+            Inspect limitations and search quality.
             """
             account = accounts.get_snapshot()
             records = prices.get_prices()

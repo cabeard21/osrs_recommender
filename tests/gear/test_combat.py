@@ -216,3 +216,82 @@ def test_equipped_arrows_do_not_strengthen_thrown_weapon():
     assert with_arrow.max_hit == without.max_hit
     assert with_arrow.attack_roll == without.attack_roll
     assert with_arrow.bonuses.prayer == 1
+
+
+def test_all_melee_stances_apply_their_distinct_effective_level_modifiers():
+    from types import SimpleNamespace
+
+    blade = EquipmentDefinition(
+        id=80,
+        name="Stance blade",
+        slot="weapon",
+        attack_styles=("stab",),
+        attack_profiles=tuple(
+            ("stab", stance) for stance in ("accurate", "aggressive", "defensive", "controlled")
+        ),
+        bonuses=EquipmentBonuses(stab=20, melee_strength=64),
+    )
+    results = {
+        stance: evaluate_loadout(
+            [blade], SimpleNamespace(style="stab", stance=stance), {"attack": 50, "strength": 50}
+        )
+        for stance in ("accurate", "aggressive", "defensive", "controlled")
+    }
+    assert results["accurate"].attack_roll == 61 * 84
+    assert results["aggressive"].attack_roll == results["defensive"].attack_roll == 58 * 84
+    assert results["controlled"].attack_roll == 59 * 84
+    assert results["aggressive"].max_hit >= results["controlled"].max_hit
+    assert results["controlled"].max_hit >= results["accurate"].max_hit
+
+
+def test_ranged_accurate_and_longrange_keep_weapon_interval_but_rapid_reduces_it():
+    from types import SimpleNamespace
+
+    dart = EquipmentDefinition(
+        id=81,
+        name="Stance dart",
+        slot="weapon",
+        attack_styles=("ranged",),
+        attack_profiles=(("ranged", "accurate"), ("ranged", "rapid"), ("ranged", "longrange")),
+        attack_speed=4,
+        bonuses=EquipmentBonuses(ranged=20, ranged_strength=64),
+    )
+    result = {
+        stance: evaluate_loadout(
+            [dart], SimpleNamespace(style="ranged", stance=stance), {"ranged": 50}
+        )
+        for stance in ("accurate", "rapid", "longrange")
+    }
+    assert result["accurate"].attack_roll == 61 * 84
+    assert result["longrange"].attack_roll == result["rapid"].attack_roll == 58 * 84
+    assert result["accurate"].attack_interval == result["longrange"].attack_interval == 2.4
+    assert result["rapid"].attack_interval == pytest.approx(1.8)
+
+
+def test_powered_staff_uses_authored_hit_speed_and_stances():
+    from types import SimpleNamespace
+
+    staff = EquipmentDefinition(
+        id=82,
+        name="Authored powered fixture",
+        slot="weapon",
+        attack_speed=4,
+        powered_attack="fixture_bolt",
+        powered_attack_base_max_hit=18,
+        powered_attack_stances=("accurate", "longrange"),
+        bonuses=EquipmentBonuses(magic=20),
+    )
+    selected = SimpleNamespace(
+        style="magic", stance="longrange", spell="fire_strike", powered_attack="fixture_bolt"
+    )
+    result = evaluate_loadout([staff], selected, {"magic": 50})
+    assert result.supported
+    assert result.max_hit == 18
+    assert result.attack_interval == 2.4
+    assert not evaluate_loadout(
+        [staff],
+        SimpleNamespace(
+            style="magic", stance="defensive", spell="fire_strike", powered_attack="fixture_bolt"
+        ),
+        {"magic": 50},
+    ).supported

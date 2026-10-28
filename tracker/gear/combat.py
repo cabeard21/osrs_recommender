@@ -64,6 +64,7 @@ def evaluate_loadout(
     style = role if isinstance(role, str) else role.style
     stance = getattr(role, "stance", stance)
     spell = getattr(role, "spell", spell)
+    powered_attack = getattr(role, "powered_attack", None)
     target = target or getattr(role, "target", None) or CombatTarget()
     weapon = next((i for i in equipment if i.slot == "weapon"), None)
     bonuses = EquipmentBonuses(
@@ -117,15 +118,46 @@ def evaluate_loadout(
     needed = ("attack", "strength") if style in {"stab", "slash", "crush"} else (style,)
     if any(levels.get(key, 0) < 1 for key in needed):
         problems.append("Required combat levels are unknown.")
-    if style == "magic" and (spell not in SPELLS or levels.get("magic", 0) < SPELLS[spell][0]):
+    if (
+        style == "magic"
+        and powered_attack is not None
+        and (
+            weapon is None
+            or weapon.powered_attack != powered_attack
+            or weapon.powered_attack_base_max_hit is None
+        )
+    ):
+        problems.append("Powered attack is not supported by this weapon.")
+    if (
+        style == "magic"
+        and powered_attack is None
+        and (spell not in SPELLS or levels.get("magic", 0) < SPELLS[spell][0])
+    ):
         problems.append("Selected standard spell is unknown or its Magic level is unmet.")
-    if style == "magic" and stance not in {"accurate", "defensive"}:
+    if style == "magic" and powered_attack is None and weapon and weapon.powered_attack:
+        problems.append("Powered weapon cannot autocast the selected standard spell.")
+    if (
+        style == "magic"
+        and powered_attack is None
+        and weapon
+        and weapon.spell_compatibility
+        and spell not in weapon.spell_compatibility
+    ):
+        problems.append("Weapon cannot autocast the selected standard spell.")
+    if style == "magic" and powered_attack is None and stance not in {"accurate", "defensive"}:
         problems.append("Illegal standard-spell casting stance.")
+    if (
+        style == "magic"
+        and powered_attack is not None
+        and weapon
+        and (stance not in weapon.powered_attack_stances)
+    ):
+        problems.append("Illegal powered-attack casting stance.")
     if problems:
         return CombatPerformance(
             supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
         )
-    return _calculate(weapon, style, levels, target, stance, spell, bonuses)
+    return _calculate(weapon, style, levels, target, stance, spell, bonuses, powered_attack)
 
 
 def _calculate(
@@ -136,18 +168,24 @@ def _calculate(
     stance: str,
     spell: str,
     bonuses: EquipmentBonuses,
+    powered_attack: str | None,
 ) -> CombatPerformance:
     speed = weapon.attack_speed if weapon else 4
     if style == "magic":
-        tier = spell.split("_")[1]
-        base = max(
-            damage
-            for name, (level, damage) in SPELLS.items()
-            if name.endswith("_" + tier) and level <= levels["magic"]
-        )
+        if powered_attack is not None:
+            # Powered attack metadata provides the base hit; all other rolls use
+            # the same ordinary magic model as standard spells.
+            base = weapon.powered_attack_base_max_hit if weapon else 0
+        else:
+            tier = spell.split("_")[1]
+            base = max(
+                damage
+                for name, (level, damage) in SPELLS.items()
+                if name.endswith("_" + tier) and level <= levels["magic"]
+            )
         max_hit = floor(base * (100 + bonuses.magic_damage) / 100)
         attack = (levels["magic"] + 9 + (2 if stance == "accurate" else 0)) * (bonuses.magic + 64)
-        element = spell.split("_")[0]
+        element = spell.split("_")[0] if powered_attack is None else None
         if element == "wind":
             element = "air"
         if element == target.weakness_element:
@@ -156,7 +194,7 @@ def _calculate(
             max_hit += base * target.weakness_percent // 100
             attack += attack * target.weakness_percent // 100
         defence = (target.magic_level + 9) * (target.bonuses.magic + 64)
-        speed = 5
+        speed = weapon.attack_speed if powered_attack is not None and weapon else 5
     else:
         is_ranged = style == "ranged"
         skill = "ranged" if is_ranged else "attack"

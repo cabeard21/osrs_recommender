@@ -9,6 +9,7 @@ import { PerformanceSummary } from "./PerformanceSummary";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
+import { CombatOptionSummary } from "./CombatOptionSummary";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 import { matchesOptimizationPolicy } from "../api/optimizationModes";
 
@@ -23,6 +24,7 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
       attackType: role.attackType,
       stance: role.stance,
       spell: role.spell,
+      combatOptions: role.combatOptions,
     });
   };
   return (
@@ -102,13 +104,7 @@ export function LiveResultWorkspace() {
           {result.scenario.request.budget_gp.toLocaleString()} GP additional
           budget · {result.scenario.request.mode}
         </p>
-        <p>
-          {result.scenario.request.roles[0].style} ·{" "}
-          {result.scenario.request.roles[0].stance} ·{" "}
-          {result.scenario.request.roles[0].style === "magic"
-            ? result.scenario.request.roles[0].spell
-            : result.scenario.request.roles[0].attackType}
-        </p>
+        <p>{result.scenario.request.roles[0].style} combat · {result.scenario.request.roles[0].combatOptions ? "option selection enabled" : "fixed option"}</p>
         {current.outdated && (
           <p role="status" className="notice">
             Result outdated — draft inputs, account, prices, catalog or model
@@ -146,6 +142,11 @@ export function LiveResultWorkspace() {
             onSelect={select}
             optimized
           />
+          <CombatOptionSummary
+            option={loadout.combatOption}
+            role={result.scenario.request.roles[0]}
+            weapon={itemById(loadout.equipment.weapon ?? -1)?.name ?? "Unarmed"}
+          />
           {loadout.metrics && (
             <PerformanceSummary
               metrics={loadout.metrics}
@@ -172,8 +173,7 @@ export function LiveResultWorkspace() {
         <section className="panel">
           <h2>No feasible solution found within this search</h2>
           <p>
-            Change the supported constraints and run again. Bounded search does
-            not prove that no legal configuration exists.
+            No legal combat configuration may satisfy the selected filters and equipment constraints. Change the options or other constraints and run again. Bounded search does not prove that no legal configuration exists.
           </p>
         </section>
       )}

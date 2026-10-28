@@ -8,6 +8,7 @@ import { MultiTransitions } from "./MultiTransitions";
 import { MultiLockEditor } from "./MultiLockEditor";
 import { nextRoleIndex, removeMultiRole } from "./multiDraft";
 import { secondaryPriorities } from "../api/secondaryPriorities";
+import { CombatOptionsControls } from "./CombatOptionsControls";
 export function ConfigurationPanel() {
   const { state, current, edit, liveMode } = useGear(),
     draft = current.draft;
@@ -287,7 +288,13 @@ export function ConfigurationPanel() {
                   </button>
                 ))}
               </div>
-              {role.style === "melee" && (
+              <CombatOptionsControls
+                role={role}
+                context={state.context}
+                liveMode={liveMode}
+                onChange={(patch) => roleChange(role.id, patch)}
+              />
+              {role.combatOptionOptimization === false && role.style === "melee" && (
                 <label>
                   Melee attack type
                   <select
@@ -304,7 +311,7 @@ export function ConfigurationPanel() {
                   </select>
                 </label>
               )}
-              <label>
+              {role.combatOptionOptimization === false && <label>
                 Attack stance
                 <select
                   value={role.stance}
@@ -321,8 +328,8 @@ export function ConfigurationPanel() {
                     <option key={s}>{s}</option>
                   ))}
                 </select>
-              </label>
-              {role.style === "magic" && (
+              </label>}
+              {role.combatOptionOptimization === false && role.style === "magic" && (
                 <label>
                   Standard spell
                   <select

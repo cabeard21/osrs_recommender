@@ -8,6 +8,7 @@ import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
+import { CombatOptionSummary } from "./CombatOptionSummary";
 import {
   JointInventory,
   JointPurchases,
@@ -113,10 +114,7 @@ export function LiveMultiResultWorkspace() {
           </h2>
           <span className="badge">Joint solution</span>
         </div>
-        <p>
-          {role.utility ? "Utility (unscored)" : role.style} · {role.stance} ·{" "}
-          {role.style === "magic" ? role.spell : role.attackType}
-        </p>
+        {role.utility ? <p>Utility (unscored)</p> : <CombatOptionSummary option={loadout.combat_option} role={role} weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"} />}
         <p>
           Target:{" "}
           {role.combatTarget?.name ??
@@ -406,8 +404,7 @@ export function LiveMultiResultWorkspace() {
         <section className="panel">
           <h2>No feasible solution found within this search</h2>
           <p>
-            Select another computed point or revise constraints and rerun.
-            Bounded search does not prove mathematical infeasibility.
+            No legal combat configuration may satisfy the selected filters and equipment constraints. Select another computed point or revise constraints and rerun. Bounded search does not prove mathematical infeasibility.
           </p>
         </section>
       )}

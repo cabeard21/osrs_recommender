@@ -37,14 +37,41 @@ deltas or request progress. Equal-DPS ordering changes must not be labeled damag
 improvements. Cap exhaustion is successful bounded termination, not search failure.
 
 Existing browser callers without a mode and existing NiceGUI/Python/MCP callers
-retain Fast behavior. The MCP `optimize_gear` public request remains unchanged:
-there is no concrete MCP use case justifying a broader schema in this milestone.
+retain Fast behavior. The MCP `optimize_gear` operation accepts optional per-role
+combat filters and returns the selected option with each loadout; no new tool is needed.
 `GearService.optimize` exposes a Python-only `local_refinement=False` keyword used
 by the browser adapter. Busy rejection, worker-thread execution, cooperative
 cancellation and pre/post snapshot checks retain their existing behavior. No queue,
 job persistence, background storage or progress-percentage contract is added.
 
 See [optimization mode acceptance](GEAR_OPTIMIZATION_MODES.md) for deployment limits.
+
+## Combat Options
+
+Each ordinary role may include `combat_options` with explicit `attack_types`,
+`stances`, and `spells` allowlists. Omission preserves the prior fixed
+`style`/`stance`/`spell` behavior. An empty array remains empty and yields no
+configuration when that dimension is required. The browser sends all account
+eligible options by default and retains explicit exclusions across account syncs.
+`GET /ui-api/gear/context` exposes current availability; `optimize_gear` returns
+`combat_option` per selected loadout.
+
+Melee and ranged legality uses reviewed weapon `attack_profiles`. Ranged
+light/standard/heavy follows the scorer's ammunition category. Standard spell
+eligibility uses account Magic level. The standard spellbook is available by
+default when sync omits its optional unlock row; an explicit locked or unknown
+`spellbook_standard` observation remains authoritative.
+The snapshot does not track which spellbook is active at the moment of attack.
+Rune holdings, ammunition quantities, and powered-staff charges are reported
+separately as unknown when the required data is unavailable.
+
+Magic weapon autocast requires reviewed `spell_compatibility` metadata. Powered
+attacks additionally require a reviewed attack name, fixed base maximum hit, and
+stance list. Current real catalog weapons do not supply these magic fields, so
+magic weapon autocast and powered attacks remain unsupported until reviewed
+metadata and level-scaling formulas are added. Unarmed standard casting is
+available when its account requirements are observed. Special attacks are outside
+this ordinary-attack model.
 
 ## Access and lifecycle
 

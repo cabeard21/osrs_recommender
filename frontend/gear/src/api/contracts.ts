@@ -34,6 +34,29 @@ export interface WorkBudgetPolicy {
   targeted_head_refinement: false;
 }
 export type Style = "melee" | "ranged" | "magic";
+export interface CombatOptionSelection {
+  attack_types: string[];
+  stances: string[];
+  spells: string[];
+}
+export interface CombatOption {
+  attack_type: string;
+  stance: string;
+  spell: string | null;
+  powered_attack: string | null;
+}
+export interface CombatOptionAvailability {
+  id: string;
+  category?: Style;
+  available: boolean;
+  reason?: string;
+  level?: number;
+}
+export interface CombatOptionCapabilities {
+  attack_types: CombatOptionAvailability[];
+  stances: CombatOptionAvailability[];
+  spells: CombatOptionAvailability[];
+}
 export type Equipment = Record<Slot, number | null>;
 export interface Role {
   id: string;
@@ -42,6 +65,10 @@ export interface Role {
   attackType: "stab" | "slash" | "crush";
   stance: string;
   spell: string;
+  combatOptionOptimization?: boolean;
+  combatOptionDisabled?: CombatOptionSelection;
+  combatOptionExplicitlyEmpty?: Partial<Record<keyof CombatOptionSelection, boolean>>;
+  combatOptions?: CombatOptionSelection;
   weight: string;
   locks: Partial<Equipment>;
   combatTarget?: CombatTarget;
@@ -141,6 +168,7 @@ export interface Loadout {
   equipment: Equipment;
   metrics: Metrics | null;
   performance?: CombatPerformance;
+  combatOption?: CombatOption;
 }
 export interface Transition {
   from: string;
@@ -186,7 +214,7 @@ export interface JointSolutionDTO {
   score: number;
   loadouts: Record<
     string,
-    { equipment: Record<string, number>; performance: CombatPerformance }
+    { equipment: Record<string, number>; performance: CombatPerformance; combat_option?: CombatOption }
   >;
   purchases: PurchaseDTO[];
   purchase_cost_gp: number;
@@ -222,6 +250,7 @@ export interface CombatPerformance {
   max_hit: number | null;
   accuracy: number | null;
   attack_interval: number | null;
+  combat_option?: CombatOption;
   bonuses: Record<string, number>;
   limitations: string[];
 }

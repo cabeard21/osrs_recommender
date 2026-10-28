@@ -98,6 +98,7 @@ export function parseJointSolution(
           ? performanceMetrics(performance)
           : null,
       performance,
+      combatOption: loadout.combat_option as import("./contracts").CombatOption | undefined,
     };
   });
   const required = [
