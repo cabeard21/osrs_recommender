@@ -320,6 +320,12 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
   fireEvent.change(within(first).getByLabelText("Name"), {
     target: { value: "Slash phase" },
   });
+  fireEvent.click(within(first).getByText("Combat Options"));
+  fireEvent.click(
+    within(first).getByRole("checkbox", {
+      name: "Optimize attack type, stance and spell with equipment",
+    }),
+  );
   fireEvent.change(within(first).getByLabelText("Melee attack type"), {
     target: { value: "stab" },
   });
@@ -330,6 +336,12 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
     target: { value: "2.5" },
   });
   fireEvent.click(within(second).getByRole("button", { name: "magic" }));
+  fireEvent.click(within(second).getByText("Combat Options"));
+  fireEvent.click(
+    within(second).getByRole("checkbox", {
+      name: "Optimize attack type, stance and spell with equipment",
+    }),
+  );
   fireEvent.change(within(second).getByLabelText("Standard spell"), {
     target: { value: "fire_wave" },
   });
@@ -352,9 +364,14 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
     name: "Slash phase",
     attackType: "stab",
     stance: "aggressive",
+    combatOptionOptimization: false,
     weight: "2.5",
   });
-  expect(draft.roles[1]).toMatchObject({ style: "magic", spell: "fire_wave" });
+  expect(draft.roles[1]).toMatchObject({
+    style: "magic",
+    spell: "fire_wave",
+    combatOptionOptimization: false,
+  });
   expect(draft).toMatchObject({
     mode: "future",
     budget: "10000",
