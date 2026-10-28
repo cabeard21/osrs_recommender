@@ -31,6 +31,7 @@ from tracker.gear.evaluation import (
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatTarget, EquipmentDefinition
 from tracker.gear.refinement import refine_ammunition
+from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.transitions import inventory_slots, plan_transition
 
 SLOTS: tuple[ItemSlot, ...] = (
@@ -541,8 +542,10 @@ def optimize(
     price_records: Mapping[int, PriceRecord],
     now: datetime,
     cancelled: Callable[[], bool] | None = None,
+    *,
+    targeted_head_refinement: bool = False,
 ) -> dict[str, Any]:
-    """Return a complete frozen-context curve; never persist recommendations."""
+    """Return a frozen-context curve; targeted head refinement is Python-only opt-in."""
     request = (
         request
         if isinstance(request, OptimizationRequest)
@@ -655,6 +658,11 @@ def optimize(
             previous = winners[limit]
             if previous is None or _solution_key(solution) < _solution_key(previous):
                 winners[limit] = solution
+    targeted_diagnostics = None
+    if targeted_head_refinement:
+        winners, unrestricted, targeted_diagnostics = refine_omitted_heads(
+            search, winners, unrestricted, _solution_key
+        )
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -686,6 +694,15 @@ def optimize(
         for row in rows
         if row["item_id"] is not None
     }
+    if targeted_diagnostics is not None:
+        originals = targeted_diagnostics["baseline"]
+        referenced |= {
+            i
+            for solution in [*originals["curve_solutions"], originals["unrestricted"]]
+            if solution is not None
+            for loadout in solution["loadouts"].values()
+            for i in loadout["equipment"].values()
+        }
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
     return {
         "snapshot_id": snapshot.fingerprint,
@@ -721,6 +738,11 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            **(
+                {"targeted_head_refinement": targeted_diagnostics}
+                if targeted_diagnostics is not None
+                else {}
+            ),
             "ammunition_refinement": refinement,
             "explored_nodes": search.nodes,
             "candidate_truncation": search.truncated,

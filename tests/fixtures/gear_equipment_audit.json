@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-19T22:05:44Z",
+  "members": true,
+  "skills": {"attack": 70, "strength": 70, "defence": 70, "ranged": 70, "magic": 70},
+  "scans": {"bank": "2026-10-19T22:05:44Z", "inventory": "2026-10-19T22:05:44Z", "equipment": "2026-10-19T22:05:44Z"},
+  "equipment": [
+    {"id": 100, "name": "Synthetic slash weapon", "slot": "weapon", "attack_styles": ["slash"], "requirements_complete": true},
+    {"id": 1, "name": "Synthetic head 1", "slot": "head", "requirements_complete": true},
+    {"id": 2, "name": "Synthetic head 2", "slot": "head", "requirements_complete": true},
+    {"id": 3, "name": "Synthetic head 3", "slot": "head", "requirements_complete": true},
+    {"id": 4, "name": "Synthetic head 4", "slot": "head", "requirements_complete": true},
+    {"id": 5, "name": "Synthetic head 5", "slot": "head", "requirements_complete": true},
+    {"id": 6, "name": "Synthetic head 6", "slot": "head", "requirements_complete": true},
+    {"id": 7, "name": "Synthetic head 7", "slot": "head", "requirements_complete": true},
+    {"id": 8, "name": "Synthetic head 8", "slot": "head", "requirements_complete": true},
+    {"id": 9, "name": "Synthetic head 9", "slot": "head", "requirements_complete": true},
+    {"id": 10, "name": "Synthetic head 10", "slot": "head", "requirements_complete": true},
+    {"id": 11, "name": "Synthetic head 11", "slot": "head", "requirements_complete": true},
+    {"id": 12, "name": "Synthetic breakpoint head", "slot": "head", "bonuses": {"melee_strength": 3}, "requirements_complete": true},
+    {"id": 20, "name": "Synthetic breakpoint cape", "slot": "cape", "bonuses": {"melee_strength": 3}, "requirements_complete": true},
+    {"id": 21, "name": "Synthetic unknown requirements", "slot": "feet", "requirements_complete": false},
+    {"id": 22, "name": "Synthetic unreviewed effect", "slot": "ring", "requirements_complete": true, "unsupported_effects": ["Synthetic effect not reviewed."]}
+  ],
+  "observations": [
+    {"item_id": 100}, {"item_id": 1}, {"item_id": 2}, {"item_id": 3},
+    {"item_id": 4}, {"item_id": 5}, {"item_id": 6}, {"item_id": 7},
+    {"item_id": 8}, {"item_id": 9}, {"item_id": 10}, {"item_id": 11},
+    {"item_id": 12}, {"item_id": 20}, {"item_id": 21}, {"item_id": 22},
+    {"item_id": 900001, "container": "equipment"},
+    {"item_id": 900002, "container": "inventory"}
+  ]
+}
