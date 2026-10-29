@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      full_tests:
+        description: Run the full Python and browser coverage suite
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,7 +36,19 @@ jobs:
       - run: python -m tracker.content.validate
       - run: python tools/generate_quest_cape.py --check
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - run: make test-smoke PY=python
+
   coverage:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,10 +58,11 @@ jobs:
           cache: pip
       - run: python -m pip install -e ".[dev]"
       - run: python -m playwright install --with-deps chromium
+      # Reuse frozen searches across modules and start expensive scenarios first.
       # Playwright's session-scoped sync loop cannot share a worker with AnyIO tests.
       - run: >-
           make test-cov PY=python
-          ARGS="-n 2 --dist=loadscope --durations=25 -m 'not browser and not llm_live' --cov-fail-under=0"
+          ARGS="-n 2 --dist=loadgroup --no-loadscope-reorder --durations=25 -m 'not browser and not llm_live' --cov-fail-under=0"
       - run: >-
           make test-cov PY=python
           ARGS="-m 'browser and not llm_live' --cov-append --durations=25"
@@ -64,13 +82,15 @@ jobs:
   # Preserve the existing aggregate status for branch protection and publication.
   validate:
     if: always()
-    needs: [checks, coverage, frontend]
+    needs: [checks, tests, frontend, coverage]
     runs-on: ubuntu-latest
     steps:
       - run: >-
           test '${{ needs.checks.result }}' = success &&
-          test '${{ needs.coverage.result }}' = success &&
-          test '${{ needs.frontend.result }}' = success
+          test '${{ needs.tests.result }}' = success &&
+          test '${{ needs.frontend.result }}' = success &&
+          (test '${{ needs.coverage.result }}' = success ||
+          test '${{ needs.coverage.result }}' = skipped)
 
   container-smoke:
     runs-on: ubuntu-latest

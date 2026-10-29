@@ -50,12 +50,18 @@ player ID and is disabled by default; see [deployment](docs/DEPLOYMENT.md).
 repository's existing 80% supported-core coverage gate. Run content validation,
 lint, and production type checks before committing changes.
 
-CI runs static validation, frontend validation, full Python coverage, and container
-smoke checks as independent jobs; all must pass before image publication. Coverage
-uses two workers for non-browser tests, then runs browser tests in a separate pytest
-process because Playwright and AnyIO retain incompatible session event loops. It
-combines both runs for the same 80% gate and reports the 25 slowest tests. The local
-`make test-cov` command stays serial.
+Routine CI runs static validation, frontend build/tests, a focused Python smoke suite,
+and container smoke checks before image publication. `make test-smoke` (also
+`make test-ci`) reproduces the Python CI subset: startup/configuration, authentication,
+sync/API contracts, migrations, and small optimizer/transition regressions. The full
+Python suite, expensive account/search-quality regressions, browser tests, and coverage
+measurement are left to local verification.
+
+For a full CI run, use **Run workflow** on the Container image workflow and enable
+**full_tests**. This adds the complete Python/browser suite and the 80% coverage gate;
+a failure blocks publication. Non-browser tests use two workers, followed by a separate
+browser process because Playwright and AnyIO retain incompatible session event loops.
+The local `make test-cov` command stays serial.
 
 Current authoring rules are in [content authoring](docs/CONTENT_AUTHORING.md).
 Equipment metadata is bundled under `content/equipment`; optimization makes no network

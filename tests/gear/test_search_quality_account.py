@@ -29,9 +29,8 @@ def search_for(case):
 
 
 @pytest.mark.parametrize("name", ["owned_slash", "melee_1m", "melee_5m", "joint_four"])
-def test_frozen_account_reproduces_original_baseline(name):
-    case = load_case(name)
-    result = run(case)
+def test_frozen_account_reproduces_original_baseline(name, frozen_account_result):
+    result = frozen_account_result(name)
     expected = fixture_data()["expected"][name]
     assert result["selected_solution"]["score"] == pytest.approx(
         expected["score"], rel=0, abs=1e-12
@@ -100,10 +99,10 @@ def test_joint_helm_witness_preserves_complete_joint_legality():
 
 
 @pytest.mark.parametrize("name", ["owned_slash", "melee_1m", "melee_5m", "joint_four"])
-def test_opt_in_recovers_validated_account_improvement(name):
+def test_opt_in_recovers_validated_account_improvement(name, frozen_account_result):
     case = load_case(name)
-    baseline = run(case)
-    result = run(case, local_refinement=True)
+    baseline = frozen_account_result(name)
+    result = frozen_account_result(name, thorough=True)
     expected = 2.772721328442114 if name == "joint_four" else 2.728201379517169
     assert result["selected_solution"]["score"] >= expected - 1e-12
     assert _solution_key(result["selected_solution"]) <= _solution_key(
@@ -117,6 +116,7 @@ def test_opt_in_recovers_validated_account_improvement(name):
         is not None
     )
     assert result["search"]["explored_nodes"] == baseline["search"]["explored_nodes"]
+    # Determinism needs an independent execution, bypassing the shared result fixture.
     repeated = run(case, local_refinement=True)
     comparable = deepcopy(result)
     for response in (comparable, repeated):

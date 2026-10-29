@@ -197,11 +197,10 @@ def test_cli_rejects_invalid_arguments(tmp_path, monkeypatch, arguments):
         measure.main()
 
 
-def test_main_writes_and_compares_database_reports(database, tmp_path, monkeypatch):
-    # The shared checkout may receive an approved batch between these invocations.
-    # Freeze catalog/content as well as the disposable account for this identity test.
-    content = measure.load_content()
-    catalog = measure.load_catalog(content)
+def test_main_writes_and_compares_database_reports(database, tmp_path, monkeypatch, inputs):
+    # Exercise real database/report handling with a small catalog. The subprocess
+    # CLI test above retains coverage of loading the full repository catalog.
+    _, content, catalog = inputs
     monkeypatch.setattr(measure, "load_content", lambda: content)
     monkeypatch.setattr(measure, "load_catalog", lambda _: catalog)
     output = tmp_path / "before"

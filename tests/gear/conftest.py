@@ -1,14 +1,18 @@
-"""Minimal authored-content builders for factual GearService tests."""
+"""Shared content builders and frozen-account searches for factual gear tests."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
+from functools import cache
 from typing import Any
 
 import pytest
 
+from tools.benchmark_gear_search_quality import benchmark_case
 from tracker.content.loader import Content
 from tracker.content.schema import Item, Quest, Skill
+from tracker.gear.optimizer import optimize
 
 ALL_SKILLS: tuple[str, ...] = (
     "attack",
@@ -21,6 +25,29 @@ ALL_SKILLS: tuple[str, ...] = (
     "agility",
     "hunter",
 )
+
+
+@pytest.fixture(scope="session")
+def frozen_account_result() -> Callable[..., dict[str, Any]]:
+    """Reuse unmodified frozen searches per worker, isolating each test's response."""
+
+    @cache
+    def run(name: str, thorough: bool) -> dict[str, Any]:
+        case = benchmark_case(name)
+        return optimize(
+            case.snapshot,
+            case.request,
+            case.catalog,
+            case.content,
+            case.prices,
+            case.at,
+            local_refinement=thorough,
+        )
+
+    def result(name: str, *, thorough: bool = False) -> dict[str, Any]:
+        return deepcopy(run(name, thorough))
+
+    return result
 
 
 @pytest.fixture

@@ -66,19 +66,21 @@ def test_expanded_catalog_slash_head_witness_and_recovery():
 
 
 @pytest.mark.parametrize("name", ["owned_slash", "melee_1m", "melee_5m", "joint_four"])
-def test_historical_recovery_preserves_complete_curve(name):
+def test_historical_recovery_preserves_complete_curve(name, frozen_account_result):
     case = load_case(name)
-    before = run(case)
-    after = run(case, True)
+    before = frozen_account_result(name)
+    after = frozen_account_result(name, thorough=True)
     assert_complete_no_worse(case, before, after)
     assert after["selected_solution"]["score"] > before["selected_solution"]["score"]
 
 
 @pytest.mark.parametrize("name", ["owned_slash", "joint_four", "account_three", "account_four"])
-def test_one_through_four_roles_keep_every_role_and_complete_constraints(name):
+def test_one_through_four_roles_keep_every_role_and_complete_constraints(
+    name, frozen_account_result
+):
     case = benchmark_case(name)
-    before = run(case)
-    after = run(case, True)
+    before = frozen_account_result(name)
+    after = frozen_account_result(name, thorough=True)
     expected_roles = {r.id for r in case.request.roles}
     assert (
         len(expected_roles)

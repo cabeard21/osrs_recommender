@@ -7,11 +7,21 @@
 # Parallel steps append to this file; never reorder or reformat existing targets.
 
 ARGS ?=
+# Routine CI checks deployment boundaries and a small optimizer regression set.
+# Keep this list explicit so new expensive suites do not silently enter this lane.
+SMOKE_TESTS := tests/test_ci_workflow.py tests/test_config.py tests/test_app.py \
+    tests/test_container_entrypoint.py tests/test_container_smoke.py \
+    tests/api/test_auth.py tests/api/test_contract.py tests/api/test_sync.py \
+    tests/api/test_gear_optimizations.py::test_real_delegation_numeric_parity_baseline_and_determinism \
+    tests/api/test_gear_optimizations.py::test_hypothetical_does_not_mutate_account_and_budget_enforced \
+    tests/db/test_migrations.py \
+    tests/db/test_m3_migration.py tests/gear/test_optimizer.py \
+    tests/gear/test_transitions.py tests/gear/test_transition_cache.py
 VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
 
-.PHONY: install venv browsers test test-full test-ci test-cov lint format typecheck validate-content migrate run clean
+.PHONY: install venv browsers test test-full test-ci test-smoke test-cov lint format typecheck validate-content migrate run clean
 
 venv: ; @test -d $(VENV) || python3 -m venv $(VENV)
 
@@ -25,7 +35,8 @@ browsers: ; $(PY) -m playwright install chromium
 
 test:              ; $(PY) -m pytest -m "not browser and not llm_live" $(ARGS)
 test-full:         ; $(PY) -m pytest -m "not llm_live" $(ARGS)
-test-ci: test-full
+test-ci: test-smoke
+test-smoke:        ; $(PY) -m pytest -m "not browser and not llm_live" $(SMOKE_TESTS) $(ARGS)
 # Measure the established supported account, goal, sync, API, persistence and gear boundary.
 test-cov:          ; $(PY) -m pytest -m "not llm_live" --cov=tracker.accounts --cov=tracker.quest_cape --cov=tracker.sync --cov=tracker.api --cov=tracker.mcp --cov=tracker.db --cov=tracker.config --cov=tracker.content.requirements --cov=tracker.domain.tri --cov=tracker.gear --cov-report=term-missing --cov-fail-under=80 $(ARGS)
 lint:              ; $(PY) -m ruff check . && $(PY) -m ruff format --check .
