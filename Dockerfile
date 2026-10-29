@@ -6,6 +6,17 @@ RUN npm ci --no-audit --no-fund
 COPY frontend/gear ./
 RUN npm run build
 
+FROM --platform=$BUILDPLATFORM python:3.12-slim-bookworm AS icons
+
+WORKDIR /build
+RUN python -m pip install --no-cache-dir httpx pydantic PyYAML
+COPY tracker ./tracker
+COPY content ./content
+COPY tools/capture_gear_icons.py ./tools/capture_gear_icons.py
+# Capture before wheel creation so CI images include every authored physical form.
+# A failed download fails the build; the runtime never needs network icon access.
+RUN python -u -m tools.capture_gear_icons
+
 FROM python:3.12-slim-bookworm AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -15,6 +26,7 @@ WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY tracker ./tracker
 COPY contracts ./contracts
+COPY --from=icons /build/tracker/ui/assets/items ./tracker/ui/assets/items
 COPY --from=frontend /build/tracker/ui/gear_static ./tracker/ui/gear_static
 RUN python -m pip wheel --wheel-dir /wheels .
 

@@ -22,7 +22,8 @@ plugin/build
 .gradle
 tests
 plans
-tools
+tools/*
+!tools/capture_gear_icons.py
 Capture.PNG
 *.stackdump
 .env

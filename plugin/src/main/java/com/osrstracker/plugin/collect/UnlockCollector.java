@@ -6,6 +6,7 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Varbits;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.gameval.VarPlayerID;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,10 +17,10 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Unlock flags: achievement diaries, combat achievements, spellbooks and the scroll prayers
+ * Unlock flags: achievement diaries, combat achievements, spellbooks, scroll prayers and training
  * (§7.1, A12). Must run on the client thread.
  *
- * <p>Three sources, for three different reasons:
+ * <p>Four sources, for four different reasons:
  *
  * <ul>
  *   <li><b>Diaries and CAs</b> come from {@code Varbits}, enumerated reflectively. That class is
@@ -34,6 +35,8 @@ import java.util.Map;
  *       ruling in docs/CONTRACT_RECONCILIATION.md. {@code Varbits.SPELLBOOK} is the currently
  *       open book — an "unlock" that flips when the player walks to an altar is not an
  *       unlock.</li>
+ *   <li><b>Daero training</b> uses the post-reward state of {@code VarPlayerID.MM_MAIN}.
+ *       Finishing Monkey Madness I alone does not mean the optional training was taken.</li>
  * </ul>
  *
  * <p><b>Known G9 tension.</b> {@link #QUEST_GRANTED_UNLOCKS} is game content living in Java: it
@@ -79,9 +82,23 @@ public final class UnlockCollector
 
 		unlocks.add(unlock("rigour", client.getVarbitValue(VarbitID.PRAYER_RIGOUR_UNLOCKED)));
 		unlocks.add(unlock("augury", client.getVarbitValue(VarbitID.PRAYER_AUGURY_UNLOCKED)));
+		unlocks.add(daeroTraining(client));
 
 		unlocks.addAll(questGranted(client));
 		return unlocks;
+	}
+
+	/**
+	 * MM_MAIN (varp 365): 9 is quest complete; 10 is training reward claimed.
+	 * MM_DAERO (varbit 123) instead tracks the earlier hangar/puzzle dialogue.
+	 * See docs/PLUGIN_SIDELOAD.md#daero-training-sync for the reviewed source mapping.
+	 */
+	static AccountSnapshot.Unlock daeroTraining(Client client)
+	{
+		final int progress = client.getVarpValue(VarPlayerID.MM_MAIN);
+		final String state = progress == 10 ? UNLOCKED
+			: progress >= 0 && progress <= 9 ? LOCKED : "unknown";
+		return new AccountSnapshot.Unlock("daero_training_complete", state);
 	}
 
 	/** The spellbook and Ancients rows, read off quest completion rather than the active book. */

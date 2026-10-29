@@ -21,6 +21,30 @@ cd plugin
 The build generates `SyncPayloadFields` from `contracts/sync_payload.schema.json`. If you rename a
 property in the contract, the plugin stops compiling — that is deliberate (§12.1).
 
+### Daero training sync
+
+The unlock collector sends `daero_training_complete` in every account snapshot,
+using `VarPlayerID.MM_MAIN` (varp **365**) from the pinned
+[RuneLite 1.13.4 constants](https://github.com/runelite/runelite/blob/runelite-parent-1.13.4/runelite-api/src/main/java/net/runelite/api/gameval/VarPlayerID.java).
+Progress **9** is Monkey Madness I complete with training unclaimed; **10** is
+training complete. Values 0–9 emit `locked`, 10 emits `unlocked`, and unexpected
+values emit `unknown`. The earlier hangar/puzzle state `VarbitID.MM_DAERO` (123)
+does not establish training completion.
+
+The named reward stages are cross-checked against the published
+[quest constants](https://github.com/MaxBittker/rs-sdk/blob/db0cc51e0a8f9f0d6a7d60c44e534412bb0601bb/server/content/scripts/quests/quest_mm/configs/quest_mm.constant)
+and [Daero reward script](https://github.com/MaxBittker/rs-sdk/blob/db0cc51e0a8f9f0d6a7d60c44e534412bb0601bb/server/content/scripts/quests/quest_mm/scripts/mm_daero.rs2).
+These are a public quest reconstruction, not an in-game observation of this
+account. The collector tests cover quest-only completion, training claimed,
+unexpected states, and inclusion in the collected unlock payload.
+
+Rebuild and restart the developer client using the commands below, then sync
+while logged in. The backend already accepts this unlock key and uses it for rune
+gloves; no database edit or full Recipe for Disaster completion is needed. A
+Docker update does not replace the locally running RuneLite plugin. In the
+dashboard's unlock facts, verify `daero_training_complete` is `unlocked` after
+the new sync; this is the live acceptance check for the mapping.
+
 ## Run
 
 ```bash

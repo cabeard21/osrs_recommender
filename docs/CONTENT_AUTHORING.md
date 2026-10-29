@@ -53,6 +53,65 @@ offensive/set effects require explicit markers; never silently calculate ordinar
 for an exceptional weapon. Prices remain timestamped observations from the existing
 price service, not manually assigned recommendation scores.
 
+### Adding equipment and item icons
+
+First look up the exact physical ID in `content/equipment/catalog.json`. An item
+can already exist there but be excluded because requirements, account evidence,
+or combat effects are unknown. Adding an icon does not make an item eligible.
+
+For an existing physical item, add reviewed identity, wear requirements, and
+acquisition metadata in an authored `content/items/*.yaml` file. The loader reads
+all these files; `gear_high_impact.yaml` is a small example. Keep source evidence
+and review ordinary effects before clearing an unsupported-effects marker.
+The exact-ID capture/review workflow is documented by
+`python -m tools.capture_bulk_gear --help` and
+`python -m tools.bulk_review_gear --help`. A genuinely new physical item also
+needs sourced statistics and an updated catalog manifest checksum. Preserve the
+catalog's provenance and regenerate dependent community classification when its
+input hashes change. Validate content and run relevant catalog/service tests.
+
+The older curated progression lists are authored in `tools/gear_ladders.py`.
+To extend those lists, update their requirements/acquisition tables, run
+`python tools/capture_gear_ids.py`, then `python tools/generate_gear_items.py`.
+Do not hand-edit the generated `content/items/items.yaml`. Ladder placement is
+separate from optimizer support.
+
+Rune gloves already have physical ID **7460** and reviewed metadata in
+`content/items/gear_high_impact.yaml`. Their wear gate requires recorded
+`daero_training_complete` **or** `recipe_for_disaster_culinaromancer` evidence.
+Missing evidence stays unknown; Monkey Madness I completion or an ownership scan
+alone does not establish that gate. See [the exact-ID review](GEAR_HIGH_IMPACT_COVERAGE.md).
+
+Item artwork lives in `tracker/ui/assets/items/{item_id}.png`. Both Gear interfaces
+use these bundled files; no frontend rebuild is needed to add a sprite to a source
+checkout. Repackage/redeploy the application to update an installed wheel or image.
+Use the offline capture tool to preview or fill missing artwork:
+
+```bash
+python -m tools.capture_gear_icons --dry-run  # Missing icons for authored physical forms
+python -m tools.capture_gear_icons           # Download those missing icons
+python -m tools.capture_gear_icons 7460 7459 # Specific catalog IDs
+```
+
+The capture skips existing files, rejects unknown catalog IDs and non-PNG
+responses, and records each new file's source, retrieval date, and SHA-256 in
+`source.json` alongside the existing RuneLite/Jagex attribution. Explicit IDs may
+also select physical catalog items that have no authored overlay yet. Failed
+downloads return a nonzero exit status; rerun to resume the remaining files.
+If the primary cache is unavailable, capture tries the same numeric-ID path in
+[RuneLite's cache repository](https://github.com/runelite/static.runelite.net),
+recording the actual download URL.
+
+Docker builds run this capture in a separate build stage, then copy the completed
+sprite directory into the Python wheel **before** packaging. The existing CI
+container builds therefore bundle missing icons automatically for both AMD64 and
+ARM64; no developer-machine downloads or runtime internet access are needed.
+A missing icon that cannot be fetched fails the build. Docker's layer cache reuses
+successful captures until the build inputs change. CI's container smoke check
+verifies all authored physical forms have packaged sprites and that the installed
+wheel serves both the whip and rune gloves PNGs. Transient connection failures
+are retried before falling back to the mirror.
+
 The catalog loader explicitly reviews Berserker ring (i) forms 25264 and 26770 as
 equivalent to 11773, following the pinned Wiki calculator's
 [equipment alias data](https://github.com/weirdgloop/osrs-dps-calc/blob/89c3e25b344aea90d0189746e4b5f73dde0f0383/cdn/json/equipment_aliases.json).

@@ -102,9 +102,15 @@ import re
 import shutil
 import urllib.request
 from pathlib import Path
-from tracker.ui.gear_preview import BUNDLE_DIR
+from tracker.ui.gear_preview import BUNDLE_DIR, SPRITE_DIR
+from tracker.content.loader import load_content
+from tracker.gear.catalog import load_catalog
 
 assert BUNDLE_DIR.joinpath('index.html').is_file()
+catalog = load_catalog(load_content())
+missing = [item.id for item in catalog.items.values()
+           if item.content_ids and not (SPRITE_DIR / f'{item.id}.png').is_file()]
+assert not missing, f'Installed wheel missing authored item icons: {missing}'
 assert not Path('/app/frontend').exists()
 assert shutil.which('node') is None
 base = 'http://127.0.0.1:8502'
@@ -117,8 +123,10 @@ with urllib.request.urlopen(base + '/gear') as response:
 for asset in re.findall(r'(?:src|href)="(/gear-ui/[^" ]+)"', html):
     with urllib.request.urlopen(base + asset) as response:
         assert response.status == 200 and response.read(), asset
-with urllib.request.urlopen(base + '/gear-sprites/4151.png') as response:
-    assert response.headers.get_content_type() == 'image/png'
+for item_id in (4151, 7460):
+    with urllib.request.urlopen(base + f'/gear-sprites/{item_id}.png') as response:
+        assert response.headers.get_content_type() == 'image/png'
+        assert response.read().startswith(bytes([137, 80, 78, 71, 13, 10, 26, 10]))
 print('Installed wheel: React, deep links, assets, sprites, NiceGUI; no Node/source frontend')
 """
 

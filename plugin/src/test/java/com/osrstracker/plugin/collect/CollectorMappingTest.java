@@ -1,9 +1,11 @@
 package com.osrstracker.plugin.collect;
 
 import com.osrstracker.plugin.AccountSnapshot;
+import net.runelite.api.Client;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.gameval.VarPlayerID;
 import org.junit.Test;
 
 import java.util.Map;
@@ -12,6 +14,9 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * The mapping decisions, tested without a client.
@@ -110,6 +115,53 @@ public class CollectorMappingTest
 			.get("state").getAsString());
 		assertEquals("unlocked", UnlockCollector.unlock("diary_varrock_easy", 1).toJson()
 			.get("state").getAsString());
+	}
+
+	@Test
+	public void daeroTrainingRequiresTheClaimedRewardState()
+	{
+		final Client client = mock(Client.class);
+		// Includes quest complete (9), which does not establish training completion.
+		for (int progress = 0; progress <= 9; progress++)
+		{
+			when(client.getVarpValue(VarPlayerID.MM_MAIN)).thenReturn(progress);
+			assertEquals("locked", UnlockCollector.daeroTraining(client).toJson()
+				.get("state").getAsString());
+		}
+		when(client.getVarpValue(VarPlayerID.MM_MAIN)).thenReturn(10);
+		final AccountSnapshot.Unlock trained = UnlockCollector.daeroTraining(client);
+		assertEquals("daero_training_complete", trained.toJson().get("key").getAsString());
+		assertEquals("unlocked", trained.toJson().get("state").getAsString());
+	}
+
+	@Test
+	public void unexpectedDaeroProgressStaysUnknown()
+	{
+		for (int progress : new int[]{-1, 11, Integer.MAX_VALUE})
+		{
+			final Client client = mock(Client.class);
+			when(client.getVarpValue(VarPlayerID.MM_MAIN)).thenReturn(progress);
+			assertEquals("unknown", UnlockCollector.daeroTraining(client).toJson()
+				.get("state").getAsString());
+			verify(client).getVarpValue(VarPlayerID.MM_MAIN);
+		}
+	}
+
+	@Test
+	public void collectedUnlocksIncludeDaeroTrainingWithoutRfdCompletion()
+	{
+		final Client client = mock(Client.class);
+		// RuneLite's Quest.getState reads the script result from this stack.
+		// All quests are in progress here, including the final RFD subquest.
+		when(client.getIntStack()).thenReturn(new int[]{0});
+		when(client.getVarpValue(VarPlayerID.MM_MAIN)).thenReturn(10);
+		final AccountSnapshot.Unlock[] training = UnlockCollector.collect(client).stream()
+			.filter(unlock -> unlock.toJson().get("key").getAsString()
+				.equals("daero_training_complete"))
+			.toArray(AccountSnapshot.Unlock[]::new);
+		assertEquals(1, training.length);
+		assertEquals("unlocked", training[0].toJson().get("state").getAsString());
+		verify(client).getVarpValue(VarPlayerID.MM_MAIN);
 	}
 
 	@Test
