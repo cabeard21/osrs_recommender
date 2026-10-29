@@ -65,7 +65,7 @@ export function OptimizationModeSummary({
           {gain !== null && solution && baseline ? (
             <>
               <p>
-                Weighted DPS improvement over preserved baseline:{" "}
+                Selected weighted DPS change from preserved baseline:{" "}
                 {signed(gain, 6)} ({baseline.score.toFixed(6)} →{" "}
                 {solution.score.toFixed(6)}).
               </p>

@@ -97,6 +97,8 @@ class GearService:
         price_records: Mapping[int, PriceRecord] | None = None,
         now: datetime | None = None,
         cancelled: Callable[[], bool] | None = None,
+        baseline_combat_option: Mapping[str, Any] | None = None,
+        proposed_combat_option: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Evaluate two fixed single-role loadouts without running candidate search."""
         from tracker.gear.evaluation import evaluate_configurations
@@ -122,6 +124,8 @@ class GearService:
                 self.content,
                 dict(price_records or {}),
                 now or datetime.now(UTC),
+                baseline_combat_option=baseline_combat_option,
+                proposed_combat_option=proposed_combat_option,
             )
             if cancelled and cancelled():
                 raise ValueError("evaluation_cancelled")

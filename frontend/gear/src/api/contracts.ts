@@ -67,7 +67,9 @@ export interface Role {
   spell: string;
   combatOptionOptimization?: boolean;
   combatOptionDisabled?: CombatOptionSelection;
-  combatOptionExplicitlyEmpty?: Partial<Record<keyof CombatOptionSelection, boolean>>;
+  combatOptionExplicitlyEmpty?: Partial<
+    Record<keyof CombatOptionSelection, boolean>
+  >;
   combatOptions?: CombatOptionSelection;
   weight: string;
   locks: Partial<Equipment>;
@@ -93,6 +95,7 @@ export interface CombatTarget {
 export interface Draft {
   supportPolicy?: SupportPolicy;
   secondaryPriority?: SecondaryPriority;
+  maxDpsLossPct?: string;
   optimizationMode?: OptimizationMode;
   target: string;
   defence: string;
@@ -116,6 +119,7 @@ export interface Scenario {
   request: {
     support_policy?: SupportPolicy;
     secondary_priority?: SecondaryPriority;
+    max_dps_loss_pct?: number;
     optimization_mode?: OptimizationMode;
     roles: (Omit<Role, "weight"> & { weight: number })[];
     target: { name: string; defence: number; definition?: CombatTarget };
@@ -214,7 +218,11 @@ export interface JointSolutionDTO {
   score: number;
   loadouts: Record<
     string,
-    { equipment: Record<string, number>; performance: CombatPerformance; combat_option?: CombatOption }
+    {
+      equipment: Record<string, number>;
+      performance: CombatPerformance;
+      combat_option?: CombatOption;
+    }
   >;
   purchases: PurchaseDTO[];
   purchase_cost_gp: number;
@@ -227,6 +235,18 @@ export interface JointSolutionDTO {
   remaining_inventory_slots: number;
   reserved_supply_slots: number;
   maximum_actions: number;
+}
+export interface SecondaryFrontierGroup {
+  swap_limit: number | null;
+  baseline_dps: number | null;
+  sampled: boolean;
+  points: {
+    id: string;
+    solution: JointSolutionDTO;
+    dps_loss: number;
+    dps_loss_pct: number | null;
+    secondary_gain: number;
+  }[];
 }
 export interface OptimizationReply {
   source: "fixture" | "live";
@@ -255,6 +275,7 @@ export interface CombatPerformance {
   limitations: string[];
 }
 export interface OptimizationDTO {
+  frontier_policy?: Record<string, unknown> | null;
   secondary_priority?: SecondaryPriority;
   optimization_mode?: OptimizationMode;
   work_budget_policy?: WorkBudgetPolicy;
@@ -305,6 +326,8 @@ export interface OptimizationDTO {
         purchase_cost_gp: number;
       }[]
     >;
+    frontier_policy?: Record<string, unknown> | null;
+    secondary_frontiers?: SecondaryFrontierGroup[];
     selected_solution: JointSolutionDTO | null;
   };
 }

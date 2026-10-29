@@ -191,3 +191,77 @@ def test_fixed_evaluator_rejects_unknown_and_noninteger_direct_ids(make_content)
     for equipment in ({"weapon": 999}, {"weapon": True}):
         with pytest.raises(ValueError):
             service.evaluate(snapshot, request, equipment, {}, now=now)
+
+
+def test_fixed_selected_combat_options_preserve_frontier_stance(make_content):
+    from tracker.gear.optimizer import CombatOptionFilters, OptimizationRequest
+
+    service, snapshot, now = fixed_context(make_content)
+    catalog = service.equipment_catalog()
+    bow = catalog.items[1].model_copy(
+        update={"attack_profiles": (("ranged", "accurate"), ("ranged", "rapid"))}
+    )
+    service._equipment = type(catalog)({**catalog.items, 1: bow})
+    request = OptimizationRequest(
+        roles=(
+            RoleConfig(
+                id="single",
+                style="ranged",
+                combat_options=CombatOptionFilters(
+                    attack_types=("standard",), stances=("accurate", "rapid"), spells=()
+                ),
+            ),
+        ),
+        mode="owned",
+    )
+    equipment = {"weapon": 1, "ammunition": 2}
+    accurate = {
+        "attack_type": "standard",
+        "stance": "accurate",
+        "spell": None,
+        "powered_attack": None,
+    }
+    rapid = {**accurate, "stance": "rapid"}
+    result = service.evaluate(
+        snapshot,
+        request,
+        equipment,
+        equipment,
+        now=now,
+        baseline_combat_option=accurate,
+        proposed_combat_option=rapid,
+    )
+    assert result["baseline"]["status"] == result["proposed"]["status"] == "valid"
+    assert (
+        result["baseline"]["performance"]["accuracy"]
+        > result["proposed"]["performance"]["accuracy"]
+    )
+    assert result["deltas"]["dps"] > 0
+    invalid = service.evaluate(
+        snapshot,
+        request,
+        equipment,
+        equipment,
+        now=now,
+        baseline_combat_option=accurate,
+        proposed_combat_option={**rapid, "attack_type": "heavy"},
+    )
+    assert invalid["proposed"]["status"] == "invalid"
+    assert invalid["deltas"] is None
+    restricted = request.model_copy(
+        update={
+            "roles": (
+                request.roles[0].model_copy(
+                    update={
+                        "combat_options": CombatOptionFilters(
+                            attack_types=("standard",), stances=("rapid",), spells=()
+                        )
+                    }
+                ),
+            )
+        }
+    )
+    denied = service.evaluate(
+        snapshot, restricted, equipment, equipment, now=now, baseline_combat_option=accurate
+    )
+    assert denied["baseline"]["status"] == "invalid"

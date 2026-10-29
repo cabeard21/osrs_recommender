@@ -1,3 +1,4 @@
+import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment } from "../api/contracts";
@@ -42,7 +43,10 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
 export function LiveResultWorkspace() {
   const { state, current, dispatch, itemById } = useGear();
   const result = current.result;
-  const solution = result?.solutions[0];
+  const solution =
+    result?.solutions.find((s) => s.id === current.solutionId) ??
+    result?.solutions[0];
+  const selected = solution?.live ?? result?.live?.result.selected_solution;
   const loadout = solution?.loadouts[0];
   const baseline = result?.live?.baseline;
   const previous = current.previous;
@@ -86,14 +90,18 @@ export function LiveResultWorkspace() {
   return (
     <div className="result-column">
       <SupportPolicySummary result={result} />
-      <SecondaryPrioritySummary
-        result={result}
-        solution={result.live?.result.selected_solution}
+      <SecondaryFrontier
+        group={result.live?.result.secondary_frontiers?.find(
+          (g) => g.swap_limit === result.scenario.request.max_swaps,
+        )}
+        selectedId={current.solutionId}
+        priority={result.scenario.request.secondary_priority ?? "default"}
+        onSelect={(solutionId) =>
+          dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
+        }
       />
-      <OptimizationModeSummary
-        result={result}
-        solution={result.live?.result.selected_solution}
-      />
+      <SecondaryPrioritySummary result={result} solution={selected} />
+      <OptimizationModeSummary result={result} solution={selected} />
       <section className="panel result-context">
         <span className="eyebrow gold">
           Submitted scenario // Python optimizer
@@ -104,7 +112,12 @@ export function LiveResultWorkspace() {
           {result.scenario.request.budget_gp.toLocaleString()} GP additional
           budget · {result.scenario.request.mode}
         </p>
-        <p>{result.scenario.request.roles[0].style} combat · {result.scenario.request.roles[0].combatOptions ? "option selection enabled" : "fixed option"}</p>
+        <p>
+          {result.scenario.request.roles[0].style} combat ·{" "}
+          {result.scenario.request.roles[0].combatOptions
+            ? "option selection enabled"
+            : "fixed option"}
+        </p>
         {current.outdated && (
           <p role="status" className="notice">
             Result outdated — draft inputs, account, prices, catalog or model
@@ -158,8 +171,7 @@ export function LiveResultWorkspace() {
             <summary>Equipment bonuses</summary>
             <dl>
               {Object.entries(
-                result.live!.result.selected_solution!.loadouts[loadout.roleId]
-                  .performance.bonuses,
+                selected!.loadouts[loadout.roleId].performance.bonuses,
               ).map(([key, value]) => (
                 <div key={key}>
                   <dt>{key.replaceAll("_", " ")}</dt>
@@ -173,7 +185,10 @@ export function LiveResultWorkspace() {
         <section className="panel">
           <h2>No feasible solution found within this search</h2>
           <p>
-            No legal combat configuration may satisfy the selected filters and equipment constraints. Change the options or other constraints and run again. Bounded search does not prove that no legal configuration exists.
+            No legal combat configuration may satisfy the selected filters and
+            equipment constraints. Change the options or other constraints and
+            run again. Bounded search does not prove that no legal configuration
+            exists.
           </p>
         </section>
       )}
@@ -220,7 +235,7 @@ export function LiveResultWorkspace() {
               ? "Concrete purchases counted once; cached estimates are not guaranteed execution prices."
               : "No additional purchases required."}
           </p>
-          {result.live?.result.selected_solution?.purchases.map((p) => (
+          {selected?.purchases.map((p) => (
             <p key={p.item_id}>
               {itemById(p.item_id)?.name ?? `Item #${p.item_id}`} ·{" "}
               {p.cost_gp === null
@@ -233,7 +248,7 @@ export function LiveResultWorkspace() {
           ))}
           <PurchaseListCopy
             key={`${result.fingerprint}:${result.priceRevision}`}
-            purchases={result.live?.result.selected_solution?.purchases ?? []}
+            purchases={selected?.purchases ?? []}
             itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
           />
           <h3 className="eyebrow">Reused observed owned equipment</h3>

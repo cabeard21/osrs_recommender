@@ -70,6 +70,17 @@ def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
     )
 
 
+def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
+    if body.secondary_priority == "default":
+        return None
+    thorough = body.optimization_mode == "thorough"
+    return {
+        "policy": "secondary-frontier-v1",
+        "expansion_limit": 300000 if thorough else 100000,
+        "refinement_assignment_limit": 2000 if thorough else 0,
+    }
+
+
 def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
     """Identify both requested inputs and the effective, server-owned search policy."""
     return hashlib.sha256(
@@ -77,6 +88,7 @@ def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
             {
                 "scenario": body.model_dump(mode="json"),
                 "work_budget_policy": work_budget_policy(body).model_dump(mode="json"),
+                "frontier_policy": frontier_policy(body),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -138,6 +150,21 @@ class CurvePoint(DTO):
     relative_performance: float | None
 
 
+class FrontierPoint(DTO):
+    id: str
+    solution: Solution
+    dps_loss: float
+    dps_loss_pct: float | None
+    secondary_gain: float
+
+
+class SecondaryFrontier(DTO):
+    swap_limit: int | None
+    baseline_dps: float | None
+    points: list[FrontierPoint]
+    sampled: bool = False
+
+
 class OptimizationResult(DTO):
     support_policy: SupportPolicy = "verified_only"
     support_provenance: str = ""
@@ -158,6 +185,8 @@ class OptimizationResult(DTO):
     selected_solution: Solution | None
     alternatives: dict[str, list[dict[str, Any]]]
     suggested_swap_limit: int | None
+    secondary_frontiers: list[SecondaryFrontier] = Field(default_factory=list)
+    frontier_policy: dict[str, Any] | None = None
     search: dict[str, Any]
     limitations: list[str]
 
@@ -168,6 +197,7 @@ class OptimizationResponse(DTO):
     optimization_mode: Literal["fast", "thorough"]
     secondary_priority: SecondaryPriority
     work_budget_policy: WorkBudgetPolicy
+    frontier_policy: dict[str, Any] | None = None
     scenario: BrowserOptimizationRequest
     scenario_fingerprint: str
     price_revision: str
@@ -256,6 +286,7 @@ def calculate(
         **result,
         "optimization_mode": body.optimization_mode,
         "work_budget_policy": policy.model_dump(mode="json"),
+        "frontier_policy": frontier_policy(body),
     }
     if stopped.is_set():
         raise ValueError("optimization_cancelled")
@@ -295,6 +326,7 @@ def calculate(
         optimization_mode=body.optimization_mode,
         secondary_priority=body.secondary_priority,
         work_budget_policy=policy,
+        frontier_policy=frontier_policy(body),
         scenario=body,
         scenario_fingerprint=scenario_fingerprint(body),
         price_revision=hashlib.sha256(

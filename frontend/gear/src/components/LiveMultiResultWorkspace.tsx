@@ -1,3 +1,4 @@
+import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment, slots } from "../api/contracts";
@@ -61,6 +62,17 @@ export function LiveMultiResultWorkspace() {
   const solution = point
     ? point.solution
     : result.solutions.find((s) => s.id === current.solutionId)?.live;
+  const frontierGroup =
+    raw.secondary_frontiers?.find((g) =>
+      g.points.some((p) => p.id === current.solutionId),
+    ) ??
+    raw.secondary_frontiers?.find(
+      (g) =>
+        g.swap_limit ===
+        (current.solutionId === "unrestricted"
+          ? null
+          : (point?.swap_limit ?? result.scenario.request.max_swaps)),
+    );
   const first = roleIds.includes(current.comparisonRoles[0])
     ? current.comparisonRoles[0]
     : roleIds[0];
@@ -114,7 +126,15 @@ export function LiveMultiResultWorkspace() {
           </h2>
           <span className="badge">Joint solution</span>
         </div>
-        {role.utility ? <p>Utility (unscored)</p> : <CombatOptionSummary option={loadout.combat_option} role={role} weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"} />}
+        {role.utility ? (
+          <p>Utility (unscored)</p>
+        ) : (
+          <CombatOptionSummary
+            option={loadout.combat_option}
+            role={role}
+            weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"}
+          />
+        )}
         <p>
           Target:{" "}
           {role.combatTarget?.name ??
@@ -175,12 +195,23 @@ export function LiveMultiResultWorkspace() {
   return (
     <div className="result-column">
       <SupportPolicySummary result={result} />
+      <SecondaryFrontier
+        group={frontierGroup}
+        selectedId={current.solutionId}
+        priority={result.scenario.request.secondary_priority ?? "default"}
+        onSelect={(solutionId) => ui({ solutionId })}
+      />
       <SecondaryPrioritySummary result={result} solution={solution} />
       <OptimizationModeSummary
         result={result}
         solution={solution}
-        actionLimit={point?.swap_limit}
-        unrestricted={current.solutionId === "unrestricted"}
+        actionLimit={
+          point?.swap_limit ?? frontierGroup?.swap_limit ?? undefined
+        }
+        unrestricted={
+          current.solutionId === "unrestricted" ||
+          frontierGroup?.swap_limit === null
+        }
       />
       <section className="panel result-context">
         <span className="eyebrow gold">
@@ -236,7 +267,13 @@ export function LiveMultiResultWorkspace() {
         <label>
           Swap-efficiency curve point
           <select
-            value={point ? `curve-${point.swap_limit}` : current.solutionId}
+            value={
+              point
+                ? `curve-${point.swap_limit}`
+                : frontierGroup?.swap_limit != null
+                  ? `curve-${frontierGroup.swap_limit}`
+                  : current.solutionId
+            }
             onChange={(e) => ui({ solutionId: e.target.value })}
           >
             {curve.map((p) => (
@@ -404,7 +441,10 @@ export function LiveMultiResultWorkspace() {
         <section className="panel">
           <h2>No feasible solution found within this search</h2>
           <p>
-            No legal combat configuration may satisfy the selected filters and equipment constraints. Select another computed point or revise constraints and rerun. Bounded search does not prove mathematical infeasibility.
+            No legal combat configuration may satisfy the selected filters and
+            equipment constraints. Select another computed point or revise
+            constraints and rerun. Bounded search does not prove mathematical
+            infeasibility.
           </p>
         </section>
       )}

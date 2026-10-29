@@ -1,3 +1,4 @@
+import { sameValue } from "./runtime";
 import type { OptimizationReply, SecondaryPriority } from "./contracts";
 
 export const secondaryPriorities = [
@@ -41,6 +42,9 @@ export function matchesSecondaryPriority(
 ) {
   return (
     (a.scenario.request.secondary_priority ?? "default") ===
-    (b.scenario.request.secondary_priority ?? "default")
+      (b.scenario.request.secondary_priority ?? "default") &&
+    (a.scenario.request.max_dps_loss_pct ?? 10) ===
+      (b.scenario.request.max_dps_loss_pct ?? 10) &&
+    sameValue(a.live?.frontier_policy ?? null, b.live?.frontier_policy ?? null)
   );
 }

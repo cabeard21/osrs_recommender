@@ -10,7 +10,7 @@ from threading import Event
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from tracker.api.gear_optimizations import (
     BrowserOptimizationRequest,
@@ -36,10 +36,19 @@ router = APIRouter(
 )
 
 
+class FixedCombatOption(DTO):
+    attack_type: str = Field(max_length=20)
+    stance: str = Field(max_length=20)
+    spell: str | None = Field(default=None, max_length=40)
+    powered_attack: str | None = Field(default=None, max_length=40)
+
+
 class EquipmentEvaluationRequest(DTO):
     scenario: BrowserOptimizationRequest
     baseline_loadouts: dict[str, dict[ItemSlot, ItemId]]
     proposed_loadouts: dict[str, dict[ItemSlot, ItemId]]
+    baseline_combat_options: dict[str, FixedCombatOption] = Field(default_factory=dict)
+    proposed_combat_options: dict[str, FixedCombatOption] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def exact_role(self) -> EquipmentEvaluationRequest:
@@ -56,6 +65,11 @@ class EquipmentEvaluationRequest(DTO):
         expected = {self.scenario.roles[0].id}
         if set(self.baseline_loadouts) != expected or set(self.proposed_loadouts) != expected:
             raise ValueError("Both fixed configurations must contain exactly the submitted role")
+        if (
+            set(self.baseline_combat_options) - expected
+            or set(self.proposed_combat_options) - expected
+        ):
+            raise ValueError("Combat options must reference the submitted role")
         return self
 
 
@@ -142,6 +156,16 @@ def calculate_evaluation(
         price_records=prices,
         now=now,
         cancelled=stopped.is_set,
+        baseline_combat_option=(
+            body.baseline_combat_options[role_id].model_dump()
+            if role_id in body.baseline_combat_options
+            else None
+        ),
+        proposed_combat_option=(
+            body.proposed_combat_options[role_id].model_dump()
+            if role_id in body.proposed_combat_options
+            else None
+        ),
     )
     projected = hypothetical_snapshot(
         snapshot, scenario.skill_overrides, scenario.quest_overrides, now

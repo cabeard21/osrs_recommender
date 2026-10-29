@@ -23,6 +23,7 @@ export const newRole = (index: number) => ({
 export const newDraft = (): Draft => ({
   supportPolicy: "community_best_effort",
   secondaryPriority: "default",
+  maxDpsLossPct: "10",
   optimizationMode: "fast",
   target: "Custom ordinary-attack target",
   defence: "1",
@@ -56,6 +57,14 @@ export function normalize(
     throw new Error("Choose a valid secondary priority.");
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
+  const loss = Number(draft.maxDpsLossPct ?? "10");
+  if (
+    !(draft.maxDpsLossPct ?? "10").trim() ||
+    !Number.isFinite(loss) ||
+    loss < 0 ||
+    loss > 100
+  )
+    throw new Error("Maximum DPS loss must be from 0 to 100 percent.");
   const integer = (value: string, name: string, min: number, max: number) => {
     const n = Number(value);
     if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
@@ -64,9 +73,17 @@ export function normalize(
   };
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
-    if (live && context && !role.utility && role.combatOptionOptimization !== false) {
+    if (
+      live &&
+      context &&
+      !role.utility &&
+      role.combatOptionOptimization !== false
+    ) {
       const options = selectedCombatOptions(role, context);
-      if (!options) throw new Error("Synced combat options are unavailable. Refresh account context.");
+      if (!options)
+        throw new Error(
+          "Synced combat options are unavailable. Refresh account context.",
+        );
       role.combatOptions = options;
     } else {
       delete role.combatOptions;
@@ -272,6 +289,7 @@ export function normalize(
     request: {
       support_policy: draft.supportPolicy ?? "community_best_effort",
       secondary_priority: draft.secondaryPriority ?? "default",
+      max_dps_loss_pct: loss,
       optimization_mode: draft.optimizationMode ?? "fast",
       roles,
       target: {
@@ -592,6 +610,18 @@ export function reducer(state: State, action: Action): State {
             ...current,
             pending: false,
             error: "Secondary priority changed; rerun the selected priority.",
+          },
+        };
+      if (
+        (current.submitted?.request.max_dps_loss_pct ?? 10) !==
+        (action.result.scenario.request.max_dps_loss_pct ?? 10)
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "DPS loss range changed; rerun optimization.",
           },
         };
       if (

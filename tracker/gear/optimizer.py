@@ -106,6 +106,7 @@ class OptimizationRequest(BaseModel):
     support_policy: SupportPolicy = "verified_only"
     budget_gp: int = Field(default=0, ge=0, strict=True)
     secondary_priority: SecondaryPriority = "default"
+    max_dps_loss_pct: float = Field(default=10, strict=True, ge=0, le=100, allow_inf_nan=False)
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
     base_role: str | None = None
     transitions: tuple[tuple[str, str], ...] = ()
@@ -229,6 +230,15 @@ class _Search:
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
         self.pools = self.candidate_pools()
+
+    def retain[Row](
+        self, rows: list[Row], rank: Callable[[Row], tuple[Any, ...]], limit: int
+    ) -> list[Row]:
+        if not getattr(self, "frontier_search", False):
+            return sorted(rows, key=rank)[:limit]
+        from tracker.gear.frontier import diverse
+
+        return diverse(rows, rank, limit)
 
     def tick(self) -> bool:
         if self.cancelled and self.cancelled():
@@ -446,7 +456,26 @@ class _Search:
                 options = (
                     [locks[slot]]
                     if slot in locks
-                    else list(dict.fromkeys([None, *ranked[:2], *common]))
+                    else list(
+                        dict.fromkeys(
+                            [
+                                None,
+                                *ranked[:2],
+                                *common,
+                                *(
+                                    sorted(
+                                        candidates,
+                                        key=lambda i: (
+                                            -self.secondary_marginals.get((role.id, i), 0),
+                                            i,
+                                        ),
+                                    )[:2]
+                                    if getattr(self, "frontier_search", False)
+                                    else []
+                                ),
+                            ]
+                        )
+                    )
                 )
                 choices.append(options)
             expanded = []
@@ -499,7 +528,9 @@ class _Search:
                     json.dumps(c, sort_keys=True),
                 )
 
-            beam = sorted(expanded, key=rank)[:16]
+            beam = self.retain(
+                expanded, rank, 32 if getattr(self, "frontier_search", False) else 16
+            )
             if not beam:
                 break
         return beam if beam and all(len(e) <= len(SLOTS) for e in beam[0].values()) else []
@@ -555,7 +586,7 @@ class _Search:
                     tuple(sorted(e.items())),
                 )
 
-            states = sorted(expanded, key=rank)[:BEAM_WIDTH]
+            states = self.retain(expanded, rank, BEAM_WIDTH)
             if not states:
                 return []
         return [s for s in states if all(self.performance(s, r)["supported"] for r in roles)]
@@ -832,6 +863,14 @@ def optimize(
         winners, unrestricted, local_diagnostics = refine_completed(
             search, winners, unrestricted, _solution_key
         )
+    secondary_frontiers: list[dict[str, Any]] = []
+    frontier_diagnostics = None
+    if request.secondary_priority != "default":
+        from tracker.gear.frontier import explore
+
+        secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
+            search, winners, unrestricted, local_refinement
+        )
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -855,6 +894,13 @@ def optimize(
         if solution
         for role in solution["loadouts"].values()
         for i in role["equipment"].values()
+    }
+    referenced |= {
+        i
+        for group in secondary_frontiers
+        for point in group["points"]
+        for loadout in point["solution"]["loadouts"].values()
+        for i in loadout["equipment"].values()
     }
     referenced |= {i for role in request.roles for i in role.locks.values() if i is not None}
     referenced |= {i for i in request.locks.values() if i is not None}
@@ -901,6 +947,7 @@ def optimize(
         "curve": curve,
         "unrestricted": unrestricted,
         "selected_solution": winners[-1],
+        "secondary_frontiers": secondary_frontiers,
         "alternatives": alternatives,
         "suggested_swap_limit": next(
             (
@@ -912,6 +959,7 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            **({"secondary_frontier": frontier_diagnostics} if frontier_diagnostics else {}),
             **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),
             **(
                 {"targeted_head_refinement": targeted_diagnostics}
@@ -938,8 +986,8 @@ def optimize(
                 if winners[-1] is None and any(r.combat_options is not None for r in request.roles)
                 else []
             ),
-            "Secondary priority orders exact modeled DPS ties; bounded search does not "
-            "guarantee the best secondary value.",
+            "Secondary priorities order DPS ties; secondary frontiers show best-found "
+            "tradeoffs, without a global optimality guarantee.",
             "Active-time weighted DPS excludes movement, survival, supply endurance "
             "and special utility.",
             "Budget uses cached quoted acquisition prices, not guaranteed market fills.",

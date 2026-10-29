@@ -31,8 +31,9 @@ export function SecondaryPrioritySummary({
       </p>
       <p>
         Weighted ordinary-attack DPS remains the primary objective. Secondary
-        priorities apply only to exactly equal modeled DPS. Bounded search does
-        not guarantee the best secondary value.
+        priorities break exact DPS ties for the initial selection; the tradeoff
+        frontier also explores DPS sacrifices. Bounded search does not guarantee
+        the best secondary value.
       </p>
       {priority !== "default" && (
         <p>

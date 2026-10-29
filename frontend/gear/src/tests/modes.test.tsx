@@ -164,12 +164,21 @@ it("reports objective gains separately from equal-DPS tie replacements and cap e
       solution={{ ...solution, score: 2.25 }}
     />,
   );
-  expect(screen.getByText(/Weighted DPS improvement/)).toHaveTextContent(
+  expect(screen.getByText(/Selected weighted DPS change/)).toHaveTextContent(
     "+0.250000",
   );
   expect(
     screen.queryByText(/No weighted-DPS improvement/),
   ).not.toBeInTheDocument();
+  view.rerender(
+    <OptimizationModeSummary
+      result={liveResult}
+      solution={{ ...solution, score: 1.9 }}
+    />,
+  );
+  expect(screen.getByText(/Selected weighted DPS change/)).toHaveTextContent(
+    "-0.100000",
+  );
   const noWork = {
     ...liveResult,
     live: {

@@ -76,6 +76,7 @@ export function parseOptimization(
   }
   const normalizedServerScenario = {
     ...object(envelope.scenario),
+    max_dps_loss_pct: object(envelope.scenario).max_dps_loss_pct ?? 10,
     optimization_mode: object(envelope.scenario).optimization_mode ?? "fast",
     secondary_priority:
       object(envelope.scenario).secondary_priority ?? "default",
@@ -138,6 +139,24 @@ export function parseOptimization(
   const priority = scenario.request.secondary_priority ?? "default";
   validateSecondaryPriority(envelope, priority);
   validateSecondaryPriority(result, priority);
+  const expectedFrontierPolicy =
+    priority === "default"
+      ? null
+      : {
+          policy: "secondary-frontier-v1",
+          expansion_limit:
+            scenario.request.optimization_mode === "thorough" ? 300000 : 100000,
+          refinement_assignment_limit:
+            scenario.request.optimization_mode === "thorough" ? 2000 : 0,
+        };
+  for (const row of [envelope, result]) {
+    if (
+      (row.frontier_policy !== undefined ||
+        result.secondary_frontiers !== undefined) &&
+      !sameValue(row.frontier_policy, expectedFrontierPolicy)
+    )
+      throw new Error("Frontier work policy does not match submitted scenario");
+  }
   object(result.search);
   if (scenario.request.optimization_mode === "thorough")
     validateRefinementDiagnostics(
@@ -287,6 +306,60 @@ export function parseOptimization(
       transitions: [],
     });
   }
+  if (result.secondary_frontiers !== undefined) {
+    if (!Array.isArray(result.secondary_frontiers))
+      throw new Error("Invalid secondary frontiers");
+    const frontierIds = new Set<string>();
+    for (const value of result.secondary_frontiers) {
+      const group = requireFields(value, { sampled: "boolean" });
+      if (
+        group.swap_limit !== null &&
+        (!Number.isSafeInteger(group.swap_limit) ||
+          Number(group.swap_limit) < 0 ||
+          Number(group.swap_limit) > scenario.request.max_swaps)
+      )
+        throw new Error("Invalid frontier swap limit");
+      if (
+        group.baseline_dps !== null &&
+        (typeof group.baseline_dps !== "number" ||
+          !Number.isFinite(group.baseline_dps) ||
+          group.baseline_dps < 0)
+      )
+        throw new Error("Invalid frontier baseline");
+      if (!Array.isArray(group.points) || group.points.length > 64)
+        throw new Error("Invalid frontier points");
+      for (const value of group.points) {
+        const point = requireFields(value, {
+          id: "string",
+          dps_loss: "number",
+          secondary_gain: "number",
+        });
+        if (
+          frontierIds.has(String(point.id)) ||
+          solutions.some((s) => s.id === point.id) ||
+          !Number.isFinite(point.dps_loss) ||
+          Number(point.dps_loss) < 0 ||
+          !Number.isFinite(point.secondary_gain) ||
+          (point.dps_loss_pct !== null &&
+            (typeof point.dps_loss_pct !== "number" ||
+              !Number.isFinite(point.dps_loss_pct) ||
+              point.dps_loss_pct < 0 ||
+              point.dps_loss_pct > (scenario.request.max_dps_loss_pct ?? 10)))
+        )
+          throw new Error("Invalid frontier measurement");
+        frontierIds.add(String(point.id));
+        solutions.push(
+          parseJointSolution(
+            point.solution,
+            scenario,
+            items,
+            String(point.id),
+            group.swap_limit === null ? 12 : Number(group.swap_limit),
+          ),
+        );
+      }
+    }
+  }
   if (result.snapshot_id !== scenario.request.expected_snapshot_id)
     throw new Error("Account changed during optimization. Refresh and rerun.");
   const dto = structuredClone(value) as OptimizationDTO;
@@ -371,6 +444,7 @@ export function optimizationRequest(scenario: Scenario) {
     mode: r.mode,
     optimization_mode: r.optimization_mode ?? "fast",
     secondary_priority: r.secondary_priority ?? "default",
+    max_dps_loss_pct: r.max_dps_loss_pct ?? 10,
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,
     max_swaps: r.max_swaps,
@@ -874,6 +948,9 @@ export class HttpGearClient implements GearClient {
       throw new Error(
         "Live evaluation requires an accepted live configuration",
       );
+    const combatOption = result.solutions
+      .find((s) => s.id === solution)
+      ?.loadouts.find((l) => l.roleId === role)?.combatOption;
     const proposal = structuredClone(equipment);
     const response = await this.transport(`${this.base}/evaluations`, {
       method: "POST",
@@ -885,6 +962,12 @@ export class HttpGearClient implements GearClient {
         scenario: result.live.scenario,
         baseline_loadouts: { [role]: concreteEquipment(baseline) },
         proposed_loadouts: { [role]: concreteEquipment(proposal) },
+        ...(combatOption
+          ? {
+              baseline_combat_options: { [role]: combatOption },
+              proposed_combat_options: { [role]: combatOption },
+            }
+          : {}),
       }),
     });
     const body = await response.json();

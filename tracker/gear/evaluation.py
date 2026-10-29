@@ -194,6 +194,9 @@ def evaluate_configurations(
     content: Content,
     price_records: Mapping[int, PriceRecord],
     now: datetime,
+    *,
+    baseline_combat_option: Mapping[str, Any] | None = None,
+    proposed_combat_option: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Both sides share exactly one account projection, price set and calculation time."""
     if (
@@ -227,8 +230,78 @@ def evaluate_configurations(
         for i in referenced
     }
     levels = {k: v.level for k, v in projected.skills.items()}
-    first = evaluate_configuration(baseline, catalog.items, facts, request, role, levels)
-    second = evaluate_configuration(proposed, catalog.items, facts, request, role, levels)
+
+    def fixed(equipment: Mapping[str, int], selected: Mapping[str, Any] | None) -> dict[str, Any]:
+        configured = role
+        if selected is not None:
+            from tracker.gear.combat_options import eligible_combat_options
+
+            weapon = catalog.items.get(equipment.get("weapon", -1))
+            discipline = "melee" if role.style in {"stab", "slash", "crush"} else role.style
+            allowed = role.combat_options
+            options = eligible_combat_options(
+                weapon, projected, discipline=discipline, levels=levels
+            )
+            legal = [
+                o
+                for o in options
+                if o.available
+                and o.model_dump(include={"attack_type", "stance", "spell", "powered_attack"})
+                == dict(selected)
+            ]
+            if legal:
+                chosen = legal[0]
+                spell_id = chosen.spell or (
+                    f"powered:{weapon.id}" if chosen.powered_attack and weapon else None
+                )
+                if allowed is not None:
+                    legal = [
+                        o
+                        for o in legal
+                        if o.attack_type in allowed.attack_types
+                        and o.stance in allowed.stances
+                        and (spell_id is None or spell_id in allowed.spells)
+                    ]
+                elif (
+                    chosen.style != role.style
+                    or chosen.stance != role.stance
+                    or (chosen.spell is not None and chosen.spell != role.spell)
+                    or chosen.powered_attack != role.powered_attack
+                ):
+                    legal = []
+            if not legal:
+                result = evaluate_configuration(
+                    equipment, catalog.items, facts, request, role, levels
+                )
+                return {
+                    **result,
+                    "status": "invalid",
+                    "performance": None,
+                    "reasons": [
+                        *result["reasons"],
+                        {
+                            "path": "combat_option",
+                            "message": (
+                                "Selected combat option is not legal "
+                                "for this equipment and scenario."
+                            ),
+                        },
+                    ],
+                }
+            chosen = legal[0]
+            configured = role.model_copy(
+                update={
+                    "style": chosen.style,
+                    "stance": chosen.stance,
+                    "spell": chosen.spell or role.spell,
+                    "powered_attack": chosen.powered_attack,
+                    "combat_options": None,
+                }
+            )
+        return evaluate_configuration(equipment, catalog.items, facts, request, configured, levels)
+
+    first = fixed(baseline, baseline_combat_option)
+    second = fixed(proposed, proposed_combat_option)
     deltas = None
     if first["status"] == second["status"] == "valid":
         deltas = {

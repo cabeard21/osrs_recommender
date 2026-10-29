@@ -90,6 +90,20 @@ export function ConfigurationPanel() {
           ))}
         </select>
       </label>
+      {(draft.secondaryPriority ?? "default") !== "default" && (
+        <label>
+          Maximum DPS loss (%)
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={draft.maxDpsLossPct ?? "10"}
+            onChange={(e) => change({ maxDpsLossPct: e.target.value })}
+          />
+          <span>Run optimization to apply the range.</span>
+        </label>
+      )}
       {state.mode === "single" && (
         <div className="raised">
           <span className="eyebrow blue">Encounter target</span>
@@ -294,69 +308,74 @@ export function ConfigurationPanel() {
                 liveMode={liveMode}
                 onChange={(patch) => roleChange(role.id, patch)}
               />
-              {role.combatOptionOptimization === false && role.style === "melee" && (
+              {role.combatOptionOptimization === false &&
+                role.style === "melee" && (
+                  <label>
+                    Melee attack type
+                    <select
+                      value={role.attackType}
+                      onChange={(e) =>
+                        roleChange(role.id, {
+                          attackType: e.target.value as Role["attackType"],
+                        })
+                      }
+                    >
+                      {["stab", "slash", "crush"].map((type) => (
+                        <option key={type}>{type}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              {role.combatOptionOptimization === false && (
                 <label>
-                  Melee attack type
+                  Attack stance
                   <select
-                    value={role.attackType}
+                    value={role.stance}
                     onChange={(e) =>
-                      roleChange(role.id, {
-                        attackType: e.target.value as Role["attackType"],
-                      })
+                      roleChange(role.id, { stance: e.target.value })
                     }
                   >
-                    {["stab", "slash", "crush"].map((type) => (
-                      <option key={type}>{type}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {role.combatOptionOptimization === false && <label>
-                Attack stance
-                <select
-                  value={role.stance}
-                  onChange={(e) =>
-                    roleChange(role.id, { stance: e.target.value })
-                  }
-                >
-                  {(role.style === "melee"
-                    ? ["accurate", "aggressive", "controlled", "defensive"]
-                    : role.style === "ranged"
-                      ? ["accurate", "rapid", "longrange"]
-                      : ["accurate", "defensive"]
-                  ).map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </label>}
-              {role.combatOptionOptimization === false && role.style === "magic" && (
-                <label>
-                  Standard spell
-                  <select
-                    value={role.spell}
-                    onChange={(e) =>
-                      roleChange(role.id, { spell: e.target.value })
-                    }
-                  >
-                    {(liveMode
-                      ? (
-                          (state.context?.live?.capabilities.spells ?? []) as {
-                            id: string;
-                          }[]
-                        ).map((s) => s.id)
-                      : [
-                          "fire_strike",
-                          "wind_wave",
-                          "water_wave",
-                          "earth_wave",
-                          "fire_wave",
-                        ]
+                    {(role.style === "melee"
+                      ? ["accurate", "aggressive", "controlled", "defensive"]
+                      : role.style === "ranged"
+                        ? ["accurate", "rapid", "longrange"]
+                        : ["accurate", "defensive"]
                     ).map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </label>
               )}
+              {role.combatOptionOptimization === false &&
+                role.style === "magic" && (
+                  <label>
+                    Standard spell
+                    <select
+                      value={role.spell}
+                      onChange={(e) =>
+                        roleChange(role.id, { spell: e.target.value })
+                      }
+                    >
+                      {(liveMode
+                        ? (
+                            (state.context?.live?.capabilities.spells ??
+                              []) as {
+                              id: string;
+                            }[]
+                          ).map((s) => s.id)
+                        : [
+                            "fire_strike",
+                            "wind_wave",
+                            "water_wave",
+                            "earth_wave",
+                            "fire_wave",
+                          ]
+                      ).map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
             </>
           )}
           {state.mode === "multi" && (
