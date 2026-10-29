@@ -103,7 +103,9 @@ def test_ssh_failure_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
         refresh.ssh("pi", "docker compose ps")
 
 
-@pytest.mark.parametrize("target", ["pi", "pi.local", "pi@pi.local", "user_name@host-1.local"])
+@pytest.mark.parametrize(
+    "target", ["pi", "pi.local", "pi@pi.local", "user_name@host-1.local", "pi@100.117.157.57"]
+)
 def test_ssh_target_accepts_alias_and_user_host(target: str) -> None:
     refresh.validate_ssh_target(target)
 
@@ -188,3 +190,20 @@ def test_missing_destination_directory_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(refresh.RefreshError, match="directory does not exist"):
         refresh.install(stage, tmp_path / "missing" / "tracker.db", tmp_path / "backups", "x")
     assert stage.exists()
+
+
+@pytest.mark.parametrize(
+    ("platform", "relative"),
+    [("linux", ".venv/bin/python"), ("win32", ".venv/Scripts/python.exe")],
+)
+def test_development_python_selects_platform_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, platform: str, relative: str
+) -> None:
+    monkeypatch.setattr(refresh, "REPO", tmp_path)
+    monkeypatch.setattr(refresh.sys, "platform", platform)
+    python = tmp_path / relative
+    with pytest.raises(refresh.RefreshError, match="virtual environment missing"):
+        refresh.development_python()
+    python.parent.mkdir(parents=True)
+    python.touch()
+    assert refresh.development_python() == python

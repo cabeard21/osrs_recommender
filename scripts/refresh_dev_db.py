@@ -1,4 +1,4 @@
-"""One-way, online production SQLite snapshot to a Windows development database.
+"""One-way, online production SQLite snapshot to a local development database.
 
 The remote program uses only Python's standard library and runs inside the existing
 application container. It never opens the production database for writing.
@@ -261,6 +261,14 @@ def migrate(staged: Path, python: Path) -> None:
         raise RefreshError("Local staged-copy migration failed; existing dev DB is unchanged")
 
 
+def development_python() -> Path:
+    relative = ".venv/Scripts/python.exe" if sys.platform == "win32" else ".venv/bin/python"
+    python = REPO / relative
+    if not python.is_file():
+        raise RefreshError(f"Development virtual environment missing: {python}")
+    return python
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--production-host", default="pi")
@@ -273,9 +281,7 @@ def main() -> int:
         raise RefreshError(f"Development database directory does not exist: {destination.parent}")
     if destination == Path(REMOTE_DB):
         raise RefreshError("Production and development database resolve to the same path")
-    python = REPO / ".venv/Scripts/python.exe"
-    if not python.is_file():
-        raise RefreshError(f"Development virtual environment missing: {python}")
+    python = development_python()
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     backup_dir = REPO / "backups"
     print("[1/6] Checking production connection and Compose identity...", flush=True)

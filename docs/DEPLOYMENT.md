@@ -235,11 +235,21 @@ while it is running can miss committed transactions still sitting in the write-a
 
 ### Refresh dev DB from production
 
-On Windows, stop the local app and MCP, keep the repo's `.venv` and `config.yaml`
-configured, and ensure `ssh pi@pi.local` (or your SSH alias) works in PowerShell. The
-script uses the same SSH authentication and may prompt for your password. The Pi stack
+Stop the local app and MCP, keep the repo's `.venv` and `config.yaml` configured,
+and ensure SSH access to the Pi works. The script uses the same SSH authentication;
+authorized SSH keys allow passwordless access, otherwise it may prompt repeatedly
+for your password. The Pi stack
 must be at `/opt/stacks/osrs-recommender`, with the running `osrs-recommender` service
-using `./data:/data` and `sqlite:////data/tracker.db`. From the repository root:
+using `./data:/data` and `sqlite:////data/tracker.db`. On Linux, from the repository
+root, use the Pi's Tailscale IP and the `pi` SSH user:
+
+```bash
+.venv/bin/python scripts/refresh_dev_db.py --production-host pi@100.117.157.57 --dry-run
+.venv/bin/python scripts/refresh_dev_db.py --production-host pi@100.117.157.57
+```
+
+The dry run verifies the connection and Compose identity without creating a snapshot
+or replacing the local database. On Windows, use PowerShell:
 
 ```powershell
 .\scripts\refresh-dev-db.ps1 -DryRun
@@ -248,7 +258,7 @@ using `./data:/data` and `sqlite:////data/tracker.db`. From the repository root:
 
 The script verifies Compose identity, uses SQLite's online backup API inside the running
 container, streams the complete snapshot over SSH, checks size/SHA-256 and SQLite
-`quick_check`, and verifies core account tables. It migrates the **staged Windows copy**
+`quick_check`, and verifies core account tables. It migrates the **staged local copy**
 with the repository's Alembic head, then backs up the existing dev DB to
 `backups/dev-before-refresh-YYYYMMDD-HHMMSS.sqlite` before installing it. The previous
 physical DB and any WAL sidecars are also retained beside that backup with an
