@@ -1,5 +1,6 @@
 import pytest
 
+from tools import trace_gear_search_quality
 from tools.gear_search_quality_fixture import load_case
 from tools.trace_gear_search_quality import trace_case
 from tracker.gear import optimizer
@@ -45,5 +46,15 @@ def test_observer_restores_search_class_after_failure(monkeypatch):
 
     monkeypatch.setattr(optimizer, "optimize", fail)
     with pytest.raises(RuntimeError, match="test failure"):
+        trace_case(load_case("melee_1m"), bracelet=True)
+    assert optimizer._Search is original
+
+
+def test_observer_rejects_unrecognized_search_structure(monkeypatch):
+    original = optimizer._Search
+    monkeypatch.setattr(
+        trace_gear_search_quality.inspect, "getsource", lambda _: "class _Search: pass"
+    )
+    with pytest.raises(RuntimeError, match="Expected 2 beam retention sites, found 0"):
         trace_case(load_case("melee_1m"), bracelet=True)
     assert optimizer._Search is original

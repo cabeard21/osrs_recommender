@@ -9,7 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable, Mapping
+from copy import deepcopy
 from datetime import datetime
+from functools import lru_cache
 from itertools import product
 from types import MappingProxyType
 from typing import Annotated, Any, Literal
@@ -226,6 +228,21 @@ class _Search:
         self.edges = required_transitions(request)
         self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
         self.option_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None] = {}
+
+        # Catalog definitions are fixed for this search; bound retained plans per
+        # request and include inventory context as well as directional equipment.
+        @lru_cache(maxsize=8192)
+        def transition(
+            source: tuple[tuple[str, int], ...],
+            destination: tuple[tuple[str, int], ...],
+            carried: frozenset[int],
+            capacity: int,
+        ) -> dict[str, Any] | None:
+            return plan_transition(
+                dict(source), dict(destination), items, carried=carried, capacity=capacity
+            )
+
+        self._transition = transition
         self.eligible = {i: item for i, item in items.items() if self.allowed(i)}
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
@@ -611,12 +628,15 @@ class _Search:
             return None
         transitions: list[dict[str, Any]] = []
         for a, b in self.edges:
-            transition = plan_transition(
-                loadouts[a], loadouts[b], self.items, carried=carried, capacity=capacity
+            transition = self._transition(
+                tuple(sorted(loadouts[a].items())),
+                tuple(sorted(loadouts[b].items())),
+                frozenset(carried),
+                capacity,
             )
             if transition is None or (limit is not None and transition["action_count"] > limit):
                 return None
-            transitions.append({"from_role": a, "to_role": b, **transition})
+            transitions.append({"from_role": a, "to_role": b, **deepcopy(transition)})
         weight = sum(r.weight for r in self.request.roles if r.style != "special")
         score = sum(
             (self.performance(loadouts[r.id], r).get("dps") or 0) * r.weight

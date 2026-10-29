@@ -31,20 +31,25 @@ def _witness(name: str, bracelet: bool) -> dict[str, dict[str, int]]:
 
 
 class _ObserveTrims(ast.NodeTransformer):
+    def __init__(self) -> None:
+        self.trim_sites = 0
+
     def visit_Assign(self, node: ast.Assign) -> Any:
-        """Insert only beside the two existing expanded-beam sorting statements."""
+        """Insert only beside the two existing expanded-beam retention calls."""
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
             and node.targets[0].id in {"states", "beam"}
-            and isinstance(node.value, ast.Subscript)
-            and isinstance(node.value.value, ast.Call)
-            and isinstance(node.value.value.func, ast.Name)
-            and node.value.value.func.id == "sorted"
-            and node.value.value.args
-            and isinstance(node.value.value.args[0], ast.Name)
-            and node.value.value.args[0].id == "expanded"
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Attribute)
+            and isinstance(node.value.func.value, ast.Name)
+            and node.value.func.value.id == "self"
+            and node.value.func.attr == "retain"
+            and node.value.args
+            and isinstance(node.value.args[0], ast.Name)
+            and node.value.args[0].id == "expanded"
         ):
+            self.trim_sites += 1
             callback = ast.parse("_observe(locals())").body[0]
             return [ast.copy_location(callback, node), node]
         return node
@@ -93,7 +98,10 @@ def trace_case(case: Case, *, bracelet: bool = False) -> dict[str, Any]:
 
     original = optimizer._Search
     tree = ast.parse("from __future__ import annotations\n" + inspect.getsource(original))
-    tree = ast.fix_missing_locations(_ObserveTrims().visit(tree))
+    observer = _ObserveTrims()
+    tree = ast.fix_missing_locations(observer.visit(tree))
+    if observer.trim_sites != 2:
+        raise RuntimeError(f"Expected 2 beam retention sites, found {observer.trim_sites}")
     namespace = {**vars(optimizer), "_observe": observe}
     exec(compile(tree, "<research beam observer>", "exec"), namespace)
     optimizer._Search = namespace["_Search"]
