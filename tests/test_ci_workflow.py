@@ -97,7 +97,12 @@ def test_ci_runs_smoke_tests_with_optional_full_coverage() -> None:
         assert f"test '${{{{ needs.{job}.result }}}}' = success" in validation_gate
     assert "test '${{ needs.coverage.result }}' = skipped" in validation_gate
     assert set(publish["needs"]) == {"validate", "container-smoke"}
-    assert publish["if"] == "github.event_name != 'pull_request'"
+    # A status function overrides implicit success(), which includes skipped ancestors.
+    # Only the two immediate required gates may authorize image publication.
+    assert publish["if"] == (
+        "!cancelled() && github.event_name != 'pull_request' && "
+        "needs.validate.result == 'success' && needs.container-smoke.result == 'success'"
+    )
 
 
 def test_container_builds_share_a_repository_scoped_gha_cache() -> None:
