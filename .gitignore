@@ -7,11 +7,19 @@ __pycache__/
 *.db-shm
 *.db-wal
 *.db-journal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite.compact-shm
+*.sqlite.compact-wal
 *.sqlite3
 .venv/
 .venv-*/
 .pytest_tmp*/
+/.pytest-*/
+/.pytest_browser_tmp*/
 .tmp/
+/.tmp-*/
+/.playwright-mcp/
 secrets/
 *.env
 !*.env.example
@@ -28,6 +36,7 @@ backups/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage-*
 htmlcov/
 *.egg-info/
 credentials.properties
