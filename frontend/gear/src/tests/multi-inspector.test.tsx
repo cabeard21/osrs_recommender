@@ -83,9 +83,7 @@ it("inspects the active role of the selected joint curve point and offers no sin
   expect(
     screen.queryByRole("button", { name: /Preview/ }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.getByText(/Exact multi-role manual evaluation is unavailable/),
-  ).toBeVisible();
+  expect(screen.getByText(/Item differences only/)).toBeVisible();
   expect(previewTrial).not.toHaveBeenCalled();
 });
 

@@ -65,8 +65,12 @@ test("real single-style configure, optimize, inspect, change budget, rerun and c
   await expect(
     page.getByRole("button", { name: /^neck .*Amulet of fury/ }),
   ).toBeVisible();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Previous configuration comparison$/ })
+    .click();
   await expect(page.getByText(/Previous accepted result/)).toBeVisible();
-  await expect(page.getByText(/Current equipment comparison/)).toBeVisible();
+  await expect(page.getByText(/Current equipment comparison/)).toHaveCount(0);
   await mkdir("../../docs/ui/gear-optimization", { recursive: true });
   await page.screenshot({
     path: `../../docs/ui/gear-optimization/${info.project.name}-optimized.png`,
@@ -76,6 +80,7 @@ test("real single-style configure, optimize, inspect, change budget, rerun and c
   await expect(
     page.getByRole("heading", { name: "Amulet of fury", exact: true }),
   ).toBeVisible();
+  await page.getByText("Item facts, requirements and provenance").click();
   await expect(page.getByText(/deterministic-browser-fixture/)).toBeVisible();
   await page.screenshot({
     path: `../../docs/ui/gear-optimization/${info.project.name}-inspector.png`,
@@ -119,7 +124,7 @@ test("real single-style configure, optimize, inspect, change budget, rerun and c
   expect(partialData.baseline.performance).toBeNull();
   await expect(
     page.getByText("Current equipment baseline unavailable."),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Best configuration found" }),
   ).toBeVisible();

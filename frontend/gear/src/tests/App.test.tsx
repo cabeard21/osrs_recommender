@@ -185,12 +185,15 @@ it("supports dialog keyboard cancellation and focus restoration", async () => {
 it("keeps missing and partial observations distinct from empty equipment", async () => {
   const user = setup();
   await screen.findByText("Demo adventurer");
+  screen.getByText("Search information and provenance").click();
   await user.selectOptions(
     screen.getByLabelText("Demo equipment observations"),
     "unknown",
   );
   expect(
-    await screen.findByRole("heading", { name: "Current equipment unknown" }),
+    await screen.findByRole("heading", {
+      name: "Find your best configuration",
+    }),
   ).toBeInTheDocument();
   expect(
     screen.queryByText("Illustrative combat telemetry"),
@@ -201,7 +204,7 @@ it("keeps missing and partial observations distinct from empty equipment", async
   );
   expect(
     await screen.findByRole("heading", {
-      name: "Partial equipment observation",
+      name: "Find your best configuration",
     }),
   ).toBeInTheDocument();
 });

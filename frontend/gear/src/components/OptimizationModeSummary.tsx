@@ -35,7 +35,11 @@ export function OptimizationModeSummary({
       ];
   const gain = solution && baseline ? solution.score - baseline.score : null;
   return (
-    <section className="panel" aria-label="Optimization mode and refinement">
+    <details
+      className="panel result-explanation"
+      aria-label="Optimization mode and refinement"
+    >
+      <summary>Search details</summary>
       <h2>{mode === "thorough" ? "Thorough" : "Fast"} optimization</h2>
       {result.source === "fixture" ? (
         <p>Authored fixture example; no additional search performed.</p>
@@ -104,6 +108,6 @@ export function OptimizationModeSummary({
           </p>
         </>
       )}
-    </section>
+    </details>
   );
 }

@@ -15,7 +15,11 @@ export function SecondaryPrioritySummary({
   const secondaryValue = (solution ?? result.live?.result.selected_solution)
     ?.secondary_value;
   return (
-    <section className="panel" aria-label="Secondary optimization priority">
+    <details
+      className="panel result-explanation"
+      aria-label="Secondary optimization priority"
+    >
+      <summary>Secondary priority</summary>
       <p>
         Secondary priority: {priorityLabel} ·{" "}
         {priority === "default"
@@ -44,6 +48,6 @@ export function SecondaryPrioritySummary({
           roles; utility roles do not contribute.
         </p>
       )}
-    </section>
+    </details>
   );
 }

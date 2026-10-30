@@ -70,7 +70,7 @@ export function EquipmentGrid({
           <button
             key={slot}
             className={`equipment-slot slot-${slot} ${selected === slot ? "selected" : ""}`}
-            aria-label={`${prefix}${slot} ${label}${differences.includes(slot) ? " · Different" : ""} ${name}`}
+            aria-label={`${prefix}${slot} ${label}${differences.includes(slot) ? " · Different" : ""} ${name}${item?.facts?.support_status === "community_assumed" ? " Community-assumed" : item?.facts?.support_status === "verified" ? " Verified" : ""}`}
             aria-pressed={selected === slot}
             onClick={() => onSelect(slot)}
           >
@@ -88,10 +88,10 @@ export function EquipmentGrid({
               <span>
                 {name}
                 {item?.facts?.support_status === "community_assumed" && (
-                  <small className="gold"> � Community-assumed</small>
+                  <small className="gold"> Community-assumed</small>
                 )}
                 {item?.facts?.support_status === "verified" && (
-                  <small className="green"> � Verified</small>
+                  <small className="green"> Verified</small>
                 )}
               </span>
             </span>

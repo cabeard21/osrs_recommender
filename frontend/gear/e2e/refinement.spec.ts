@@ -107,7 +107,9 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
     fullPage: info.project.name !== "mobile",
   });
 
-  await page.getByRole("button", { name: "Revert trial", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Clear preview", exact: true })
+    .click();
   await expect(comparison).toHaveCount(0);
   await page
     .getByRole("button", { name: "Close Item inspector", exact: true })
@@ -150,6 +152,10 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
   await expect(
     page.getByRole("button", { name: /^weapon .*Adamant scimitar/ }),
   ).toBeVisible();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Previous configuration comparison$/ })
+    .click();
   await expect(page.getByText(/Previous accepted result/)).toBeVisible();
   await page.screenshot({
     path: `${screenshots}/${info.project.name}-reoptimized.png`,
@@ -247,7 +253,9 @@ test("infeasible catalog replacement explains the budget constraint without tria
     path: `${screenshots}/${info.project.name}-invalid-trial.png`,
     fullPage: info.project.name !== "mobile",
   });
-  await page.getByRole("button", { name: "Revert trial", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Clear preview", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Close Item inspector", exact: true })
     .click();

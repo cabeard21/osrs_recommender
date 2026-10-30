@@ -151,8 +151,9 @@ it("renders actual results, baseline and immutable scenarios, then preserves a c
     screen.getByLabelText("Calculated combat performance"),
   ).toHaveTextContent("2.4 seconds");
   expect(
-    screen.getByRole("heading", { name: "Current equipment comparison" }),
-  ).toBeVisible();
+    screen.queryByRole("heading", { name: "Current equipment comparison" }),
+  ).not.toBeInTheDocument();
+  screen.getByText("Search information and provenance").click();
   expect(screen.getByText(/Candidate pruning truncated/)).toBeVisible();
   await user.clear(screen.getByLabelText("Additional purchase budget (GP)"));
   await user.type(
@@ -203,7 +204,7 @@ it("shows no solution and unavailable baseline reasons without inventing metrics
   await screen.findByText("Synchronized ranger", { exact: true });
   await user.click(screen.getByRole("button", { name: "Run optimization" }));
   await screen.findByRole("heading", { name: /No feasible solution/ });
-  expect(screen.getByText("No equipment scan")).toBeVisible();
+  expect(screen.queryByText("No equipment scan")).not.toBeInTheDocument();
   expect(
     screen.queryByLabelText("Calculated combat performance"),
   ).not.toBeInTheDocument();
@@ -363,6 +364,11 @@ it("retains a previous result but withholds its metric comparison for a differen
   await screen.findByRole("heading", {
     name: "Previous configuration comparison",
   });
+  await user.click(
+    screen.getByText("Previous configuration comparison", {
+      selector: "summary",
+    }),
+  );
   expect(screen.getByText(/Performance comparison unavailable/)).toBeVisible();
 });
 it("supports explicit hypothetical skills and quests while keeping requests local", () => {

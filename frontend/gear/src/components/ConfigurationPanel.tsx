@@ -46,12 +46,15 @@ export function ConfigurationPanel() {
           <option value="verified_only">Verified only</option>
         </select>
       </label>
-      <p>
-        Community best effort allows classified ordinary equipment using
-        community skill gates. Unresolved equip gates are assumed satisfied and
-        items are labeled community-assumed. Known unsupported mechanics remain
-        excluded. Verified only requires reviewed eligibility.
-      </p>
+      <details className="control-help">
+        <summary>About this setting</summary>
+        <p>
+          Community best effort allows classified ordinary equipment using
+          community skill gates. Unresolved equip gates are assumed satisfied
+          and items are labeled community-assumed. Known unsupported mechanics
+          remain excluded. Verified only requires reviewed eligibility.
+        </p>
+      </details>
       <label>
         Optimization mode
         <select
@@ -66,13 +69,21 @@ export function ConfigurationPanel() {
           <option value="thorough">Thorough</option>
         </select>
       </label>
-      <p>
-        Fast uses the existing bounded search. Thorough searches additional
-        equipment combinations and can take substantially longer. Neither mode
-        guarantees globally optimal equipment.
-      </p>
+      <details className="control-help">
+        <summary>About this setting</summary>
+        <p>
+          Fast uses the existing bounded search. Thorough searches additional
+          equipment combinations and can take substantially longer. Neither mode
+          guarantees globally optimal equipment.
+        </p>
+      </details>
       {!liveMode && (
-        <p>Fixture mode records this selection; it does not run refinement.</p>
+        <details className="control-help">
+          <summary>About this setting</summary>
+          <p>
+            Fixture mode records this selection; it does not run refinement.
+          </p>
+        </details>
       )}
       <label>
         Secondary priority
@@ -195,10 +206,13 @@ export function ConfigurationPanel() {
                   }
                 />
               </label>
-              <p>
-                Ordinary attacks only. User-supplied target assumptions; no
-                encounter mechanics.
-              </p>
+              <details className="control-help">
+                <summary>About this setting</summary>
+                <p>
+                  Ordinary attacks only. User-supplied target assumptions; no
+                  encounter mechanics.
+                </p>
+              </details>
               {liveMode && (
                 <p>
                   {draft.combatTarget
@@ -256,10 +270,13 @@ export function ConfigurationPanel() {
               </label>
               {role.utility ? (
                 <div className="raised">
-                  <p>
-                    Equipment carriage only. No special-attack damage or utility
-                    score is calculated.
-                  </p>
+                  <details className="control-help">
+                    <summary>About this setting</summary>
+                    <p>
+                      Equipment carriage only. No special-attack damage or
+                      utility score is calculated.
+                    </p>
+                  </details>
                   <label>
                     Parent configuration
                     <select
@@ -526,10 +543,13 @@ export function ConfigurationPanel() {
       </label>
       <details>
         <summary>⚗ What-if assumptions</summary>
-        <p>
-          Explicit request-local hypotheses. Select hypothetical access to apply
-          them; no account changes.
-        </p>
+        <details className="control-help">
+          <summary>About this setting</summary>
+          <p>
+            Explicit request-local hypotheses. Select hypothetical access to
+            apply them; no account changes.
+          </p>
+        </details>
         <label>
           Assumed Attack level
           <input
@@ -593,10 +613,13 @@ export function ConfigurationPanel() {
                 }
               />
             </label>
-            <p>
-              Use canonical quest IDs separated by commas. Python validates
-              skill and quest identities.
-            </p>
+            <details className="control-help">
+              <summary>About this setting</summary>
+              <p>
+                Use canonical quest IDs separated by commas. Python validates
+                skill and quest identities.
+              </p>
+            </details>
           </>
         )}
         <label>

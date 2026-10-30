@@ -1,3 +1,4 @@
+import { EquipmentBonuses } from "./EquipmentBonuses";
 import { Fragment, useEffect, useState } from "react";
 import { emptyEquipment, type Item } from "../api/contracts";
 import { useGear } from "../state/GearProvider";
@@ -272,9 +273,11 @@ function LiveItemInspector() {
     (role) => role.id === current.activeRole,
   );
   const canLock = lockScope === "global" || draftRoleExists;
-  const [selected, setSelected] = useState<number | null>(null);
-  const id =
-    selected ?? (optimized ? optimized[slot] : observation?.item_id) ?? null;
+  const [selected, setSelected] = useState<number | null | undefined>(
+    undefined,
+  );
+  const originalId = optimized?.[slot] ?? null;
+  const id = selected !== undefined ? selected : originalId;
   const [item, setItem] = useState<Item | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -336,12 +339,21 @@ function LiveItemInspector() {
       exclusions: [...new Set([...current.draft.exclusions, id])],
     });
   }
+  function chooseCandidate(candidate: number | null) {
+    document.activeElement?.closest("dialog")?.scrollTo?.({ top: 0 });
+    setSelected(candidate);
+    revertTrial();
+    if (optimized && canPreview)
+      void previewTrial({ ...optimized, [slot]: candidate });
+  }
   function preview(replacement: number | null) {
+    document.activeElement?.closest("dialog")?.scrollTo?.({ top: 0 });
+    setSelected(replacement);
     if (optimized && canPreview)
       void previewTrial({ ...optimized, [slot]: replacement });
   }
   useEffect(() => {
-    setSelected(null);
+    setSelected(undefined);
     setQuery("");
     setOffset(0);
   }, [
@@ -429,19 +441,14 @@ function LiveItemInspector() {
         {slot} // authoritative physical catalog
       </span>
       <p className="notice">
-        {selected !== null
-          ? "Catalog inspection · observed equipment is unchanged."
+        {selected !== undefined
+          ? "Candidate preview · selected configuration is unchanged."
           : optimized
             ? "Selected Python optimization result · submitted scenario retained."
             : `Equipment observation: ${observation?.status ?? "unknown"}`}
       </p>
       {multi && (
         <>
-          <p className="notice">
-            Exact multi-role manual evaluation is unavailable. Inspect facts or
-            edit draft constraints and rerun the joint optimizer; single-role
-            alternatives do not measure joint contributions.
-          </p>
           <label>
             Lock scope
             <select
@@ -462,40 +469,6 @@ function LiveItemInspector() {
           )}
         </>
       )}
-      {(state.context?.live?.current_equipment.unmapped_item_ids.length ?? 0) >
-        0 && (
-        <div>
-          <p>Equipped IDs with missing metadata (slot unknown):</p>
-          {state.context?.live?.current_equipment.unmapped_item_ids.map(
-            (unknownId) => (
-              <button key={unknownId} onClick={() => setSelected(unknownId)}>
-                Inspect unmapped #{unknownId}
-              </button>
-            ),
-          )}
-        </div>
-      )}
-      {id === null && (
-        <p>
-          {optimized
-            ? "Selected result leaves this slot empty."
-            : observation?.status === "empty"
-              ? "No item observed in this slot at the equipment scan."
-              : "Equipment information is incomplete. No item identity can be assigned to this slot."}
-        </p>
-      )}
-      {observation?.status === "ambiguous" && (
-        <div>
-          <p>
-            Conflicting observations. Inspect a candidate without assigning it:
-          </p>
-          {observation.candidate_item_ids.map((candidate) => (
-            <button key={candidate} onClick={() => setSelected(candidate)}>
-              Inspect #{candidate}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="inspector-item">
         <ItemSprite id={id} />
         <h3>
@@ -504,6 +477,129 @@ function LiveItemInspector() {
       </div>
       {loading && <p role="status">Loading item metadata…</p>}
       {error && <p role="alert">{error}</p>}
+      <section
+        className="candidate-comparison"
+        aria-label="Candidate comparison"
+      >
+        <p className="eyebrow">
+          {solution?.loadouts.find((role) => role.roleId === current.activeRole)
+            ?.name ?? "Selected configuration"}{" "}
+          · {slot}
+        </p>
+        <div className="candidate-heading">
+          <span>
+            <ItemSprite id={originalId} />
+            {originalId === null ? "Empty" : namedItem(originalId)}
+          </span>
+          <span aria-hidden="true">→</span>
+          <span>
+            <ItemSprite id={id} />
+            {id === null ? "Empty" : (item?.name ?? namedItem(id))}
+          </span>
+        </div>
+        {selected !== undefined && !current.trial && (
+          <button
+            onClick={() => {
+              setSelected(undefined);
+              revertTrial();
+            }}
+          >
+            Clear preview
+          </button>
+        )}
+        {facts && (multi || !current.trial) && (
+          <EquipmentBonuses
+            bonuses={facts.equipment.bonuses}
+            baseline={
+              selected !== undefined
+                ? itemById(originalId)?.facts?.equipment.bonuses
+                : undefined
+            }
+            title={multi ? "Item bonuses only" : "Item bonuses"}
+          />
+        )}
+        {multi && (
+          <p className="notice">
+            Item differences only. Lock a candidate and rerun to evaluate the
+            joint configuration.
+          </p>
+        )}
+        {current.outdated && (
+          <p className="notice">
+            Result outdated. Re-run before previewing alternatives.
+          </p>
+        )}
+        {current.trialPending && (
+          <p role="status">
+            Evaluating manual trial…{" "}
+            <button
+              onClick={() => {
+                retainInspectorFocus();
+                cancelTrial();
+              }}
+            >
+              Cancel evaluation
+            </button>
+          </p>
+        )}
+        {current.trialError && <p role="alert">{current.trialError}</p>}
+        {current.trial?.source === "live" && (
+          <TrialComparison
+            trial={current.trial}
+            onRevert={() => {
+              retainInspectorFocus();
+              setSelected(undefined);
+              revertTrial();
+            }}
+            onLock={() => lockItem(current.trial!.equipment[slot])}
+            itemName={(itemId) =>
+              current.trial?.source === "live"
+                ? (current.trial.live.items.find(
+                    (row) => row.item_id === itemId,
+                  )?.name ?? namedItem(itemId))
+                : namedItem(itemId)
+            }
+          />
+        )}{" "}
+      </section>
+      {optimized && !multi && (
+        <section aria-label="Contextual alternatives">
+          <h3>Contextual alternatives</h3>
+          <p>
+            Validated against the accepted result's surrounding equipment and
+            submitted constraints.
+          </p>
+          {contextual
+            .filter((row) => row.item_id !== null && !excluded.has(row.item_id))
+            .map((row) => {
+              const name =
+                row.item_id === null ? "empty slot" : namedItem(row.item_id);
+              return (
+                <article className="alternative" key={row.item_id ?? "empty"}>
+                  <ItemSprite id={row.item_id} />
+                  <span>{name}</span>
+                  {row.item_id !== null && (
+                    <button
+                      aria-label={`Inspect ${name}`}
+                      onClick={() => chooseCandidate(row.item_id)}
+                    >
+                      Inspect
+                    </button>
+                  )}
+                  <button
+                    disabled={!canPreview}
+                    onClick={() => preview(row.item_id)}
+                  >
+                    Preview {name}
+                  </button>
+                </article>
+              );
+            })}
+          <button disabled={!canPreview} onClick={() => preview(null)}>
+            Preview empty slot
+          </button>
+        </section>
+      )}
       {facts && (
         <>
           <div className="button-row">
@@ -536,203 +632,132 @@ function LiveItemInspector() {
               </button>
             )}
           </div>
-          <dl>
-            <dt>Concrete ID</dt>
-            <dd>{facts.item_id}</dd>
-            <dt>Equipment slot</dt>
-            <dd>{facts.slot}</dd>
-            <dt>Ownership</dt>
-            <dd>
-              {facts.ownership.meaning} ({facts.ownership.status}) · quantity{" "}
-              {facts.ownership.quantity}
-            </dd>
-            <dt>Acquisition</dt>
-            <dd>{facts.acquisition}</dd>
-            <dt>Selected quote</dt>
-            <dd>
-              {facts.price.amount_gp === null
-                ? "Price unavailable"
-                : `${facts.price.amount_gp.toLocaleString()} GP`}{" "}
-              · {facts.price.layer}
-            </dd>
-            <dt>Price source / provider</dt>
-            <dd>
-              {facts.price.source ?? "Unavailable"} /{" "}
-              {facts.price.provider ?? "Unavailable"}
-            </dd>
-            <dt>Selected trade</dt>
-            <dd>{facts.price.selected_trade_at ?? "No trade timestamp"}</dd>
-            <dt>Fetched</dt>
-            <dd>{facts.price.fetched_at ?? "No cached price"}</dd>
-            <dt>Confidence / policy</dt>
-            <dd>
-              {facts.price.confidence ?? "Unavailable"} /{" "}
-              {facts.price.policy ?? "Unavailable"}
-            </dd>
-          </dl>
-          <p>{facts.price.selection_reason}</p>
-          <h3>Ownership observations</h3>
-          <p>
-            Previously observed sightings describe the last accepted scans.
-            Historical ownership beyond those sightings is unknown.
-          </p>
-          {facts.ownership.sightings.length === 0 && (
+          <details className="item-metadata">
+            <summary>Item facts, requirements and provenance</summary>{" "}
+            <dl>
+              <dt>Concrete ID</dt>
+              <dd>{facts.item_id}</dd>
+              <dt>Equipment slot</dt>
+              <dd>{facts.slot}</dd>
+              <dt>Ownership</dt>
+              <dd>
+                {facts.ownership.meaning} ({facts.ownership.status}) · quantity{" "}
+                {facts.ownership.quantity}
+              </dd>
+              <dt>Acquisition</dt>
+              <dd>{facts.acquisition}</dd>
+              <dt>Selected quote</dt>
+              <dd>
+                {facts.price.amount_gp === null
+                  ? "Price unavailable"
+                  : `${facts.price.amount_gp.toLocaleString()} GP`}{" "}
+                · {facts.price.layer}
+              </dd>
+              <dt>Price source / provider</dt>
+              <dd>
+                {facts.price.source ?? "Unavailable"} /{" "}
+                {facts.price.provider ?? "Unavailable"}
+              </dd>
+              <dt>Selected trade</dt>
+              <dd>{facts.price.selected_trade_at ?? "No trade timestamp"}</dd>
+              <dt>Fetched</dt>
+              <dd>{facts.price.fetched_at ?? "No cached price"}</dd>
+              <dt>Confidence / policy</dt>
+              <dd>
+                {facts.price.confidence ?? "Unavailable"} /{" "}
+                {facts.price.policy ?? "Unavailable"}
+              </dd>
+            </dl>
+            <p>{facts.price.selection_reason}</p>
+            <h3>Ownership observations</h3>
             <p>
-              No accepted positive sightings. Latest observations do not
-              establish historical ownership.
+              Previously observed sightings describe the last accepted scans.
+              Historical ownership beyond those sightings is unknown.
             </p>
-          )}
-          {facts.ownership.sightings.map((s) => (
-            <p key={s.container}>
-              Observed {s.container}: {s.quantity} · {s.observed_at} ·{" "}
-              {s.source}
-            </p>
-          ))}
-          {Object.entries(facts.ownership.container_scans).map(
-            ([container, scan]) => (
-              <p key={container}>
-                {container} last scanned: {scan.scanned_at}
+            {facts.ownership.sightings.length === 0 && (
+              <p>
+                No accepted positive sightings. Latest observations do not
+                establish historical ownership.
               </p>
-            ),
-          )}
-          <h3>Equipment support</h3>
-          <p>
-            {facts.support_status === "community_assumed"
-              ? "Community-assumed"
-              : facts.support_status === "verified"
-                ? "Verified"
-                : "Unreviewed"}
-          </p>
-          {facts.support_assumptions?.map((assumption) => (
-            <p key={assumption}>{assumption}</p>
-          ))}
-          <h3>Requirements</h3>
-          <p>{item?.requirement}</p>
-          <pre className="fact-json">
-            {JSON.stringify(
-              facts.wear.requirements ??
-                facts.equipment.requires ??
-                "No reviewed requirement tree",
-              null,
-              2,
             )}
-          </pre>
-          <h3>Equipment statistics</h3>
-          <p>
-            Attack speed: {facts.equipment.attack_speed} ticks ·{" "}
-            {facts.equipment.two_handed
-              ? "Two-handed"
-              : "One-handed / non-weapon"}
-          </p>
-          <p>
-            Attack styles:{" "}
-            {facts.equipment.attack_styles.join(", ") || "None listed"}
-          </p>
-          <dl>
-            {Object.entries(facts.equipment.bonuses).map(([key, value]) => (
-              <Fragment key={key}>
-                <dt>{key.replaceAll("_", " ")}</dt>
-                <dd>{value}</dd>
-              </Fragment>
+            {facts.ownership.sightings.map((s) => (
+              <p key={s.container}>
+                Observed {s.container}: {s.quantity} · {s.observed_at} ·{" "}
+                {s.source}
+              </p>
             ))}
-          </dl>
-          {facts.acquisition_descriptions.map((d) => (
-            <p key={d}>{d}</p>
-          ))}
-          <h3>Unsupported effects</h3>
-          {facts.effect_status === "generic_unreviewed" && (
+            {Object.entries(facts.ownership.container_scans).map(
+              ([container, scan]) => (
+                <p key={container}>
+                  {container} last scanned: {scan.scanned_at}
+                </p>
+              ),
+            )}
+            <h3>Equipment support</h3>
             <p>
-              Generic unreviewed marker: ordinary-equipment classification is
-              missing.
+              {facts.support_status === "community_assumed"
+                ? "Community-assumed"
+                : facts.support_status === "verified"
+                  ? "Verified"
+                  : "Unreviewed"}
             </p>
-          )}
-          {facts.effect_status === "unsupported_mechanic" && (
+            {facts.support_assumptions?.map((assumption) => (
+              <p key={assumption}>{assumption}</p>
+            ))}
+            <h3>Requirements</h3>
+            <p>{item?.requirement}</p>
+            <pre className="fact-json">
+              {JSON.stringify(
+                facts.wear.requirements ??
+                  facts.equipment.requires ??
+                  "No reviewed requirement tree",
+                null,
+                2,
+              )}
+            </pre>
+            <h3>Equipment statistics</h3>
             <p>
-              Known unsupported mechanic: ordinary DPS is incomplete for this
-              equipment.
+              Attack speed: {facts.equipment.attack_speed} ticks ·{" "}
+              {facts.equipment.two_handed
+                ? "Two-handed"
+                : "One-handed / non-weapon"}
             </p>
-          )}
-          {facts.limitations.length ? (
-            facts.limitations.map((l) => <p key={l}>{l}</p>)
-          ) : (
-            <p>No unsupported effects listed.</p>
-          )}
-          <p>Catalog: {facts.catalog_version}</p>
+            <p>
+              Attack styles:{" "}
+              {facts.equipment.attack_styles.join(", ") || "None listed"}
+            </p>
+            <dl>
+              {Object.entries(facts.equipment.bonuses).map(([key, value]) => (
+                <Fragment key={key}>
+                  <dt>{key.replaceAll("_", " ")}</dt>
+                  <dd>{value}</dd>
+                </Fragment>
+              ))}
+            </dl>
+            {facts.acquisition_descriptions.map((d) => (
+              <p key={d}>{d}</p>
+            ))}
+            <h3>Unsupported effects</h3>
+            {facts.effect_status === "generic_unreviewed" && (
+              <p>
+                Generic unreviewed marker: ordinary-equipment classification is
+                missing.
+              </p>
+            )}
+            {facts.effect_status === "unsupported_mechanic" && (
+              <p>
+                Known unsupported mechanic: ordinary DPS is incomplete for this
+                equipment.
+              </p>
+            )}
+            {facts.limitations.length ? (
+              facts.limitations.map((l) => <p key={l}>{l}</p>)
+            ) : (
+              <p>No unsupported effects listed.</p>
+            )}
+            <p>Catalog: {facts.catalog_version}</p>
+          </details>
         </>
-      )}
-      {optimized && !multi && (
-        <section aria-label="Contextual alternatives">
-          <h3>Contextual alternatives</h3>
-          <p>
-            Validated against the accepted result's surrounding equipment and
-            submitted constraints.
-          </p>
-          {contextual
-            .filter((row) => row.item_id !== null && !excluded.has(row.item_id))
-            .map((row) => {
-              const name =
-                row.item_id === null ? "empty slot" : namedItem(row.item_id);
-              return (
-                <article className="alternative" key={row.item_id ?? "empty"}>
-                  <ItemSprite id={row.item_id} />
-                  <span>{name}</span>
-                  {row.item_id !== null && (
-                    <button
-                      aria-label={`Inspect ${name}`}
-                      onClick={() => setSelected(row.item_id)}
-                    >
-                      Inspect
-                    </button>
-                  )}
-                  <button
-                    disabled={!canPreview}
-                    onClick={() => preview(row.item_id)}
-                  >
-                    Preview {name}
-                  </button>
-                </article>
-              );
-            })}
-          <button disabled={!canPreview} onClick={() => preview(null)}>
-            Preview empty slot
-          </button>
-          {current.outdated && (
-            <p className="notice">
-              Result outdated. Re-run before previewing alternatives.
-            </p>
-          )}
-          {current.trialPending && (
-            <p role="status">
-              Evaluating manual trial…{" "}
-              <button
-                onClick={() => {
-                  retainInspectorFocus();
-                  cancelTrial();
-                }}
-              >
-                Cancel evaluation
-              </button>
-            </p>
-          )}
-          {current.trialError && <p role="alert">{current.trialError}</p>}
-          {current.trial?.source === "live" && (
-            <TrialComparison
-              trial={current.trial}
-              onRevert={() => {
-                retainInspectorFocus();
-                revertTrial();
-              }}
-              onLock={() => lockItem(current.trial!.equipment[slot])}
-              itemName={(itemId) =>
-                current.trial?.source === "live"
-                  ? (current.trial.live.items.find(
-                      (row) => row.item_id === itemId,
-                    )?.name ?? namedItem(itemId))
-                  : namedItem(itemId)
-              }
-            />
-          )}
-        </section>
       )}
       <h3>Browse physical items</h3>
       <button disabled={!canLock} onClick={() => lockItem(null)}>
@@ -763,7 +788,7 @@ function LiveItemInspector() {
             </span>
             <button
               aria-label={`Inspect ${row.name}`}
-              onClick={() => setSelected(row.id)}
+              onClick={() => chooseCandidate(row.id)}
             >
               Inspect
             </button>
