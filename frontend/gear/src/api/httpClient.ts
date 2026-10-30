@@ -412,6 +412,14 @@ export function optimizationRequest(scenario: Scenario) {
         ]),
       ),
       ...(role.parentRole ? { parent_role: role.parentRole } : {}),
+      ...((role.targetSelection ??
+      (r.roles.length === 1 ? r.target.selection : undefined))
+        ? {
+            target_selection:
+              role.targetSelection ??
+              (r.roles.length === 1 ? r.target.selection : undefined),
+          }
+        : {}),
       target: role.combatTarget ??
         r.target.definition ?? {
           name: r.target.name,

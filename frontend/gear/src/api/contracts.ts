@@ -58,7 +58,12 @@ export interface CombatOptionCapabilities {
   spells: CombatOptionAvailability[];
 }
 export type Equipment = Record<Slot, number | null>;
+export interface TargetSelection {
+  key: string;
+  catalog_revision: string;
+}
 export interface Role {
+  targetSelection?: TargetSelection;
   id: string;
   name: string;
   style: Style;
@@ -93,6 +98,8 @@ export interface CombatTarget {
   [key: string]: unknown;
 }
 export interface Draft {
+  targetInputs?: Record<string, string>;
+  targetSelection?: TargetSelection;
   supportPolicy?: SupportPolicy;
   secondaryPriority?: SecondaryPriority;
   maxDpsLossPct?: string;
@@ -122,7 +129,12 @@ export interface Scenario {
     max_dps_loss_pct?: number;
     optimization_mode?: OptimizationMode;
     roles: (Omit<Role, "weight"> & { weight: number })[];
-    target: { name: string; defence: number; definition?: CombatTarget };
+    target: {
+      name: string;
+      defence: number;
+      definition?: CombatTarget;
+      selection?: TargetSelection;
+    };
     budget_gp: number;
     mode: Draft["mode"];
     max_swaps: number;

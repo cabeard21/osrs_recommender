@@ -1,0 +1,2144 @@
+{
+  "source_revision": "c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48",
+  "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+  "catalog_sha256": "119b8ef1d5fe3bd6360928f77fbba42bf043f33cc5abf02757c97eaa9b8e961a",
+  "imported_at": "2026-10-30T02:47:06.124494+00:00",
+  "attribution": "OSRS Wiki contributors / Weird Gloop. Source project GPL-3.0; Wiki data CC BY-NC-SA 3.0.",
+  "reviewed_profiles": {
+    "6914": {
+      "name": "Lizardman",
+      "variant": "Level 53",
+      "source_url": "https://oldschool.runescape.wiki/w/Lizardman#Level_53",
+      "review_notes": "Exact level-53 profile: Defence 43, Magic 1, melee defence -20/25/0 and light/standard/heavy ranged defence -10/0/0; no elemental weakness. Ordinary direct attacks use these defence rolls; poison immunity does not change direct-hit damage.",
+      "limitations": [
+        "Ordinary direct attacks only; Poison and venom damage are not included (this NPC is immune).",
+        "Incoming poisonous attacks, survival, movement, Slayer bonuses and time fighting Shayzien soldiers are not simulated.",
+        "This review applies only to the Level 53 Lizardman profile; brutes, shamans and other levels require separate review."
+      ]
+    },
+    "415": {
+      "name": "Abyssal demon",
+      "variant": "Standard",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "1173": {
+      "name": "Chicken",
+      "variant": "Normal",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2790": {
+      "name": "Cow",
+      "variant": "1",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2266": {
+      "name": "Dagannoth Prime",
+      "variant": "",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2267": {
+      "name": "Dagannoth Rex",
+      "variant": "",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2265": {
+      "name": "Dagannoth Supreme",
+      "variant": "",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "3028": {
+      "name": "Goblin",
+      "variant": "Level 2",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2025": {
+      "name": "Greater demon",
+      "variant": "Level 92",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2098": {
+      "name": "Hill Giant",
+      "variant": "1",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2005": {
+      "name": "Lesser demon",
+      "variant": "Level 82",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2090": {
+      "name": "Moss giant",
+      "variant": "Level 42",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2043": {
+      "name": "Zulrah",
+      "variant": "Magma",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2042": {
+      "name": "Zulrah",
+      "variant": "Serpentine",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    },
+    "2044": {
+      "name": "Zulrah",
+      "variant": "Tanzanite",
+      "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
+      "limitations": [
+        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+      ]
+    }
+  },
+  "mechanic_exceptions": {
+    "11778": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11779": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11780": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11719": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11721": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11724": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11789": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11790": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11791": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11792": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11793": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11794": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11795": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11796": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11797": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11798": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11799": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11730": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11732": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11733": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11750": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11751": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11752": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11753": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11754": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11755": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11756": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11757": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11758": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11725": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11761": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11762": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11763": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11764": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11726": {
+      "reasons": [
+        "Raid invocation/path scaling and phase-specific damage rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10770": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10771": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10772": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10791": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10792": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10793": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10794": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10795": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10796": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10797": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10798": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10799": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10800": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10801": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10802": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10804": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10805": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10806": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10808": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10809": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10810": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10813": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10822": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10823": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10824": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10825": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10826": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10827": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10828": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10829": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10830": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10831": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10832": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10847": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10848": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10849": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10850": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10851": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10852": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10854": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10858": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10859": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10860": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10861": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10862": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10867": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10868": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8339": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8340": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8342": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8343": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8344": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8345": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8346": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8347": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8348": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8349": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8350": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8351": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8352": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8353": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8355": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8356": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8357": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8359": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8360": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8361": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8362": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8363": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8364": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8365": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8366": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8367": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8369": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8370": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8371": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8372": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8373": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8374": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8376": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8381": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8382": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8383": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8384": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8385": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8387": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8388": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10767": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10768": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10774": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10775": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10776": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10777": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10778": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10779": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10780": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10781": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10782": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10783": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10784": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10785": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10787": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10788": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10789": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10812": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10814": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10815": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10816": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10817": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10818": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10819": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10820": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10821": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10833": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10834": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10835": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported.",
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10837": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10841": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10842": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10843": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10844": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10845": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10864": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "10865": {
+      "reasons": [
+        "Raid party scaling and phase-specific rules are unsupported.",
+        "Party scaling is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11712": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8917": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8918": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8919": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8920": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9118": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7584": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7585": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11709": {
+      "reasons": [
+        "Alternative magic defence calculation is unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7533": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "494": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12214": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12215": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7706": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12219": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7708": {
+      "reasons": [
+        "Target has melee damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3169": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3170": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3171": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3172": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3173": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3174": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3175": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3176": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3177": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3178": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3179": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3180": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3181": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3182": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "3183": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7037": {
+      "reasons": [
+        "Target restricts melee weapon types."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7882": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7883": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7886": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7887": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7888": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7889": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7568": {
+      "reasons": [
+        "Target has ranged damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2137": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2138": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2139": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2140": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2141": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2142": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2463": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2464": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2465": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2466": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2467": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "2468": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7851": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7854": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7855": {
+      "reasons": [
+        "Target has ranged damage immunity.",
+        "Target has magic damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7540": {
+      "reasons": [
+        "Target has ranged damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7543": {
+      "reasons": [
+        "Target has ranged damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7544": {
+      "reasons": [
+        "Target has ranged damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7545": {
+      "reasons": [
+        "Target has ranged damage immunity."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9440": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9441": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9443": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9444": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9434": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9435": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9437": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "9438": {
+      "reasons": [
+        "Target has a special magic damage multiplier."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7569": {
+      "reasons": [
+        "Target requires pickaxe-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7570": {
+      "reasons": [
+        "Target requires pickaxe-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7571": {
+      "reasons": [
+        "Target requires pickaxe-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7572": {
+      "reasons": [
+        "Target requires pickaxe-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "8584": {
+      "reasons": [
+        "Target uses special one-hit rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "11193": {
+      "reasons": [
+        "Target uses special one-hit rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7223": {
+      "reasons": [
+        "Target uses special one-hit rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14180": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5916": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7691": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "931": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12335": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "4135": {
+      "reasons": [
+        "Target uses special guaranteed accuracy rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5760": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5761": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5762": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "1667": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "1668": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5763": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5764": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5765": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5739": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5740": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5741": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5742": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5743": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5744": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5745": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5746": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5747": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5757": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5758": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5759": {
+      "reasons": [
+        "Barbarian Assault role and damage rules are unsupported."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12224": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12228": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12425": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12426": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13656": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12223": {
+      "reasons": [
+        "Target has health-dependent defence."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13600": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13601": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13602": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13603": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13604": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13605": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13606": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13599": {
+      "reasons": [
+        "Target has shield and combat phase damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14017": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14009": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14010": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14013": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14014": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14707": {
+      "reasons": [
+        "Target has shield and phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5889": {
+      "reasons": [
+        "Target has transition-phase damage reduction."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5891": {
+      "reasons": [
+        "Target has transition-phase damage reduction."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5886": {
+      "reasons": [
+        "Target has transition-phase damage reduction."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14147": {
+      "reasons": [
+        "Target has range-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "12596": {
+      "reasons": [
+        "Target has range-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14150": {
+      "reasons": [
+        "Target has elemental damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14151": {
+      "reasons": [
+        "Target has elemental damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "7796": {
+      "reasons": [
+        "Target requires underwater weapon rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "14179": {
+      "reasons": [
+        "Target uses special damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "15742": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "16305": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "16314": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "16315": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "16309": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "13012": {
+      "reasons": [
+        "Target has phase-specific damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "6353": {
+      "reasons": [
+        "Target has special skill-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "6291": {
+      "reasons": [
+        "Target has special skill-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5848": {
+      "reasons": [
+        "Target has special skill-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5853": {
+      "reasons": [
+        "Target has special skill-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "5854": {
+      "reasons": [
+        "Target has special skill-dependent damage rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "16640": {
+      "reasons": [
+        "Target has phase-specific defence rules."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/constants.ts"
+    },
+    "319": {
+      "reasons": [
+        "Target has weapon-dependent damage reduction."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/PlayerVsNPCCalc.ts"
+    },
+    "3448": {
+      "reasons": [
+        "Target restricts attack styles."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/PlayerVsNPCCalc.ts"
+    },
+    "1362": {
+      "reasons": [
+        "Target has pickaxe-dependent damage reduction."
+      ],
+      "source_url": "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/src/lib/PlayerVsNPCCalc.ts"
+    }
+  }
+}

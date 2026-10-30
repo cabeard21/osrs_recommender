@@ -543,3 +543,52 @@ and role-specific lock edits and global exclusions modify only the draft and mar
 accepted results outdated. Single-role contextual alternatives and manual trial DPS
 comparisons are unavailable for Multi. `/evaluations` independently rejects joint
 scenarios; it never evaluates only the first role as a joint comparison.
+
+## NPC target catalog
+
+`GET /ui-api/gear/targets?q=<name-or-id>&offset=0&limit=20` searches the bundled
+NPC catalog. The response contains `catalog_revision`, `items`, `total`, `offset`,
+and `limit`. Entries retain separate `key`, `npc_id`, `name`, `variant`,
+`combat_level`, `support_status`, and `reasons` fields. Exact name/ID matches rank
+before prefixes and substrings; pagination uses a stable order.
+
+`GET /ui-api/gear/targets/{key}` adds the mapped `target` and source reference.
+`target` can be null when required statistics are missing. Support statuses are
+`supported`, `unsupported`, and `not_reviewed` (unknown attributes only);
+all remain inspectable, but only supported
+ordinary-attack targets can be optimized. Complete ordinary profiles are supported
+by default without individual review. Mechanical attributes, missing statistics,
+flat armour, and known NPC-specific rules can block scoring with explicit reasons;
+ordinary classification tags do not automatically block a target. This is a
+static ordinary-attack calculation, not a full encounter simulation.
+Elemental weaknesses and separate light,
+standard, and heavy ranged defence values feed the existing Python evaluator.
+
+Roles optionally submit `target_selection: {key, catalog_revision}` alongside
+their effective `target`. Numeric stat overrides retain the selected NPC identity
+and are visibly marked Modified. Server-owned damage caps and unsupported-mechanic
+restrictions cannot be removed through edits. Both optimization and exact
+evaluation resolve selections on the server; stale catalog revisions and removed
+keys require explicit reselection rather than silently adopting changed stats.
+Custom targets remain explicit manual snapshots without catalog identity.
+
+Single and each Multi role use independent selections. Draft storage v3 preserves
+selection identity and effective values, while v1/v2 drafts migrate as manual
+targets without name-based identity inference. Results retain the submitted
+selection and scenario fingerprints include it. Changing target identity, data
+revision, or overrides invalidates comparisons with a previous result.
+
+The catalog is bundled under `content/npcs` and needs no runtime network access or
+database migration. Its manifest pins the upstream commit, exact payload SHA-256,
+import timestamp, and attribution. To refresh, replace the source payload from an
+explicit upstream commit, regenerate the manifest checksum, review capability
+classifications against the changed records, and run the focused catalog/API and
+picker/browser tests before shipping both files together. Existing selections
+must be refreshed explicitly after the catalog revision changes. Raid scaling,
+defence-reduction settings, and new encounter mechanics are outside this release.
+
+Use `python tools/import_npcs.py --source <monsters.json> --revision <commit-sha>`
+to refresh the bundled catalog. The importer preserves the existing manifest's
+known mechanic exceptions and their provenance. A fresh output directory must
+first receive a copy of the bundled manifest; importing without an exception
+registry fails before writing either file.

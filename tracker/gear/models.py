@@ -65,6 +65,11 @@ class TargetDefenceBonuses(GearModel):
     magic: int = 0
 
 
+class TargetSelection(GearModel):
+    key: str = Field(min_length=1, max_length=64)
+    catalog_revision: str = Field(min_length=1, max_length=128)
+
+
 class CombatTarget(GearModel):
     name: str = "Generic target (Defence 1, zero bonuses)"
     defence_level: int = Field(default=1, ge=0, le=10000)

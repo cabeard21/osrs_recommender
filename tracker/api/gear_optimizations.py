@@ -219,6 +219,21 @@ def same_origin(request: Request) -> None:
 
 
 def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any) -> None:
+    from tracker.gear.npcs import resolve_target
+
+    for index, role in enumerate(body.roles):
+        try:
+            resolve_target(role)
+            if role.target_selection is not None and role.target is None:
+                raise ValueError("NPC selection requires an explicit effective target snapshot.")
+        except ValueError as exc:
+            stale = "revision" in str(exc)
+            raise error(
+                "target_revision_changed" if stale else "invalid_target",
+                str(exc),
+                409 if stale else 422,
+                f"roles.{index}.target_selection",
+            ) from exc
     catalog = gear.equipment_catalog()
     for field, keys, allowed in (
         ("skill_overrides", body.skill_overrides, gear.content.skills),

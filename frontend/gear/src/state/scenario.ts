@@ -73,6 +73,19 @@ export function normalize(
   };
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
+    if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
+      role.combatTarget = draft.combatTarget
+        ? structuredClone(draft.combatTarget)
+        : undefined;
+      role.targetSelection = draft.targetSelection;
+      role.targetInputs = draft.targetInputs;
+    }
+    const target = role.combatTarget ?? draft.combatTarget;
+    const restrictions = target?.unsupported_mechanics;
+    if (Array.isArray(restrictions) && restrictions.length)
+      throw new Error(
+        `Cannot optimize against ${target!.name}: ${restrictions.join(" ")} Choose a supported NPC target.`,
+      );
     if (
       live &&
       context &&
@@ -294,7 +307,8 @@ export function normalize(
       roles,
       target: {
         name: draft.target,
-        defence: integer(draft.defence, "Target defence", 0, 1000),
+        selection: draft.targetSelection,
+        defence: integer(draft.defence, "Target defence", 0, 10000),
         ...(draft.combatTarget
           ? { definition: structuredClone(draft.combatTarget) }
           : {}),
@@ -512,6 +526,8 @@ export function reducer(state: State, action: Action): State {
             bonuses: {},
           },
       ),
+      targetSelection:
+        sourceRole.targetSelection ?? sourceScenario.target.selection,
       targetInputs: {},
     };
     if (draft.roles.length === 1) draft.roles.push(newRole(2));
@@ -542,6 +558,27 @@ export function reducer(state: State, action: Action): State {
     if (action.mode === "multi" && !state.multiSeeded) {
       const draft = structuredClone(state.single.draft);
       draft.roles.push(newRole(2));
+      draft.roles = draft.roles.map((role) => ({
+        ...role,
+        combatTarget: structuredClone(
+          role.combatTarget ??
+            draft.combatTarget ?? {
+              name: draft.target,
+              defence_level: Number(draft.defence),
+              magic_level: 1,
+              bonuses: {},
+            },
+        ),
+        targetSelection: structuredClone(
+          role.targetSelection ?? draft.targetSelection,
+        ),
+        targetInputs: structuredClone(
+          role.targetInputs ??
+            draft.targetInputs ?? { defence_level: draft.defence },
+        ),
+      }));
+      delete draft.targetSelection;
+      delete draft.targetInputs;
       return {
         ...state,
         mode: "multi",
@@ -788,7 +825,7 @@ export function reducer(state: State, action: Action): State {
   }
   return { ...state, [action.mode]: next };
 }
-const version = 2;
+const version = 3;
 export const storageKey = (player: string) =>
   `gear-drafts-v${version}:${player}`;
 export function saveDrafts(state: State, storage: Storage) {
@@ -814,10 +851,11 @@ export function readDrafts(
   try {
     const data = JSON.parse(
       storage.getItem(storageKey(player)) ??
+        storage.getItem(`gear-drafts-v2:${player}`) ??
         storage.getItem(`gear-drafts-v1:${player}`) ??
         "null",
     );
-    if (![1, version].includes(data?.version)) return null;
+    if (![1, 2, version].includes(data?.version)) return null;
     for (const draft of [data.single, data.multi]) {
       if (draft.supportPolicy === undefined)
         draft.supportPolicy = "community_best_effort";

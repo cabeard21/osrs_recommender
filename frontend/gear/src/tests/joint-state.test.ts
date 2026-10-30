@@ -11,6 +11,50 @@ import {
 } from "../state/scenario";
 import { contextFixture, FixtureGearClient } from "../fixtures/client";
 
+it("seeds independent catalog identities and incomplete edits into Multi roles", () => {
+  const state = initialState();
+  state.single.draft.targetSelection = {
+    key: "goblin-standard",
+    catalog_revision: "rev",
+  };
+  state.single.draft.combatTarget = {
+    name: "Goblin",
+    defence_level: 1,
+    magic_level: 1,
+    bonuses: {},
+  };
+  const multi = reducer(state, { type: "navigate", mode: "multi" }).multi.draft;
+  const request = optimizationRequest(normalize(multi, "snapshot"));
+  expect(request.roles.map((role) => role.target_selection)).toEqual([
+    state.single.draft.targetSelection,
+    state.single.draft.targetSelection,
+  ]);
+  expect(multi.roles[0].combatTarget).not.toBe(multi.roles[1].combatTarget);
+  expect(multi.targetSelection).toBeUndefined();
+});
+
+it("does not overwrite an explicit role target from a stale top-level selection", () => {
+  const draft = newDraft();
+  draft.targetSelection = { key: "old", catalog_revision: "rev" };
+  draft.combatTarget = {
+    name: "Old",
+    defence_level: 1,
+    magic_level: 1,
+    bonuses: {},
+  };
+  draft.roles[0].combatTarget = {
+    name: "Current",
+    defence_level: 10,
+    magic_level: 1,
+    bonuses: {},
+  };
+  draft.roles[0].targetSelection = { key: "current", catalog_revision: "rev" };
+  expect(
+    optimizationRequest(normalize(draft, "snapshot")).roles[0].target_selection
+      ?.key,
+  ).toBe("current");
+});
+
 it("serializes a joint request with per-role targets and looping phases", () => {
   const draft = newDraft();
   draft.roles.push(newRole(2));

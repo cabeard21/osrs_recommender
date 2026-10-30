@@ -29,6 +29,7 @@ from tracker.gear.combat import SPELLS
 from tracker.gear.combat_options import enumerate_combat_options
 from tracker.gear.encounters import encounter_presets
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.npcs import npc_catalog
 from tracker.gear.optimizer import SLOTS
 from tracker.gear.service import GearService
 from tracker.gear.support import SupportPolicy
@@ -429,6 +430,7 @@ def context(request: Request) -> ContextResponse:
             "spells": [{"id": k, "level": v[0], "base_max_hit": v[1]} for k, v in SPELLS.items()],
             "combat_options": combat_option_capabilities(snapshot, gear),
             "encounter_presets": [p.__dict__ for p in encounter_presets()],
+            "npc_catalog": {"available": True, "catalog_revision": npc_catalog().revision},
             "configurations": ["melee", "ranged", "magic"],
         },
         catalog_version=gear.equipment_catalog().revision,
@@ -496,3 +498,20 @@ def item(
         )
     except KeyError as exc:
         raise HTTPException(404, "Physical item metadata unavailable") from exc
+
+
+@router.get("/targets")
+def search_targets(
+    q: str = Query(default="", max_length=100),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> dict[str, Any]:
+    return npc_catalog().search(q, offset, limit)
+
+
+@router.get("/targets/{key}")
+def target_detail(key: str) -> dict[str, Any]:
+    try:
+        return npc_catalog().detail(key)
+    except ValueError as exc:
+        raise HTTPException(404, {"code": "target_not_found", "message": str(exc)}) from exc

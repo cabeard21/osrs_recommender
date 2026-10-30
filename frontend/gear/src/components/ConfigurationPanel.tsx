@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useGear } from "../state/GearProvider";
 import { newRole } from "../state/scenario";
 import type { CombatTarget, Draft, Role, Style } from "../api/contracts";
+import { NpcTargetPicker } from "./NpcTargetPicker";
 import { RoleTargetEditor } from "./RoleTargetEditor";
 import { MultiTransitions } from "./MultiTransitions";
 import { MultiLockEditor } from "./MultiLockEditor";
@@ -108,78 +109,104 @@ export function ConfigurationPanel() {
         <div className="raised">
           <span className="eyebrow blue">Encounter target</span>
           {liveMode && (
-            <label>
-              Target selection
-              <select
-                value={
-                  targets.some(
-                    (target) => target.name === draft.combatTarget?.name,
-                  )
-                    ? draft.combatTarget!.name
-                    : "custom"
-                }
-                onChange={(e) => {
-                  const target = targets.find((t) => t.name === e.target.value);
-                  change({
-                    combatTarget: target ? structuredClone(target) : undefined,
-                    target: target?.name ?? "Custom ordinary-attack target",
-                    defence: String(target?.defence_level ?? 1),
-                  });
-                }}
-              >
-                <option value="custom">Custom ordinary-attack target</option>
-                {targets.map((target) => (
-                  <option key={target.name} value={target.name}>
-                    {target.name} · ordinary attacks
-                  </option>
-                ))}
-              </select>
-            </label>
+            <NpcTargetPicker
+              selection={draft.targetSelection}
+              inputs={draft.targetInputs}
+              target={draft.combatTarget}
+              onChange={(patch) =>
+                change({
+                  ...patch,
+                  target: patch.combatTarget?.name ?? draft.target,
+                  defence: String(
+                    patch.combatTarget?.defence_level ?? draft.defence,
+                  ),
+                })
+              }
+            />
           )}
-          <label>
-            Custom target
-            <input
-              value={draft.target}
-              onChange={(e) =>
-                change({
-                  target: e.target.value,
-                  combatTarget: draft.combatTarget
-                    ? { ...draft.combatTarget, name: e.target.value }
-                    : undefined,
-                })
-              }
-            />
-          </label>
-          <label>
-            Target defence
-            <input
-              type="number"
-              min="0"
-              max="1000"
-              value={draft.defence}
-              onChange={(e) =>
-                change({
-                  defence: e.target.value,
-                  combatTarget: draft.combatTarget
-                    ? {
-                        ...draft.combatTarget,
-                        defence_level: Number(e.target.value),
-                      }
-                    : undefined,
-                })
-              }
-            />
-          </label>
-          <p>
-            Ordinary attacks only. User-supplied target assumptions; no
-            encounter mechanics.
-          </p>
-          {liveMode && (
-            <p>
-              {draft.combatTarget
-                ? `Preset metadata retained: Magic ${draft.combatTarget.magic_level}; ${JSON.stringify(draft.combatTarget.bonuses)} defence bonuses. Preset encounter mechanics are not simulated.`
-                : "Custom target assumes Magic level 1 and zero defence bonuses."}
-            </p>
+          {!draft.targetSelection && (
+            <>
+              {liveMode && (
+                <label>
+                  Target selection
+                  <select
+                    value={
+                      targets.some(
+                        (target) => target.name === draft.combatTarget?.name,
+                      )
+                        ? draft.combatTarget!.name
+                        : "custom"
+                    }
+                    onChange={(e) => {
+                      const target = targets.find(
+                        (t) => t.name === e.target.value,
+                      );
+                      change({
+                        combatTarget: target
+                          ? structuredClone(target)
+                          : undefined,
+                        target: target?.name ?? "Custom ordinary-attack target",
+                        defence: String(target?.defence_level ?? 1),
+                      });
+                    }}
+                  >
+                    <option value="custom">
+                      Custom ordinary-attack target
+                    </option>
+                    {targets.map((target) => (
+                      <option key={target.name} value={target.name}>
+                        {target.name} · ordinary attacks
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                Custom target
+                <input
+                  value={draft.target}
+                  onChange={(e) =>
+                    change({
+                      target: e.target.value,
+                      combatTarget: draft.combatTarget
+                        ? { ...draft.combatTarget, name: e.target.value }
+                        : undefined,
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Target defence
+                <input
+                  type="number"
+                  min="0"
+                  max="1000"
+                  value={draft.defence}
+                  onChange={(e) =>
+                    change({
+                      defence: e.target.value,
+                      combatTarget: draft.combatTarget
+                        ? {
+                            ...draft.combatTarget,
+                            defence_level: Number(e.target.value),
+                          }
+                        : undefined,
+                    })
+                  }
+                />
+              </label>
+              <p>
+                Ordinary attacks only. User-supplied target assumptions; no
+                encounter mechanics.
+              </p>
+              {liveMode && (
+                <p>
+                  {draft.combatTarget
+                    ? `Preset metadata retained: Magic ${draft.combatTarget.magic_level}; ${JSON.stringify(draft.combatTarget.bonuses)} defence bonuses. Preset encounter mechanics are not simulated.`
+                    : "Custom target assumes Magic level 1 and zero defence bonuses."}
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

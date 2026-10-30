@@ -69,7 +69,10 @@ class GearService:
         local_refinement: bool = False,
     ) -> dict[str, Any]:
         """Shared complete-loadout optimizer, separate from legacy factual change tools."""
+        from tracker.gear.npcs import resolve_request
         from tracker.gear.optimizer import optimize
+
+        request = resolve_request(request)
 
         if not self._optimization_lock.acquire(blocking=False):
             raise ValueError("optimizer_busy: another equipment search is running")
@@ -108,6 +111,9 @@ class GearService:
             if isinstance(request, OptimizationRequest)
             else OptimizationRequest.model_validate(request)
         )
+        from tracker.gear.npcs import resolve_request
+
+        normalized = resolve_request(normalized)
         if len(normalized.roles) != 1 or normalized.roles[0].style == "special":
             raise ValueError("Exact evaluation supports one ordinary-attack role")
         if not self._optimization_lock.acquire(blocking=False):

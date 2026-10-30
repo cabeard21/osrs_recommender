@@ -33,7 +33,7 @@ from tracker.gear.evaluation import (
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.local_refinement import refine_completed
-from tracker.gear.models import CombatTarget, EquipmentDefinition
+from tracker.gear.models import CombatTarget, EquipmentDefinition, TargetSelection
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
@@ -85,6 +85,7 @@ class RoleConfig(BaseModel):
     combat_options: CombatOptionFilters | None = None
     powered_attack: str | None = None
     weight: float = Field(default=1, ge=0, le=1_000_000, allow_inf_nan=False)
+    target_selection: TargetSelection | None = None
     target: CombatTarget | None = None
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
     parent_role: str | None = None

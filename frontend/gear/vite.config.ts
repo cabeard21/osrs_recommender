@@ -30,6 +30,7 @@ export default defineConfig({
         "src/components/JointSolutionDetails.tsx",
         "src/components/ConfigurationPanel.tsx",
         "src/components/RoleTargetEditor.tsx",
+        "src/components/NpcTargetPicker.tsx",
         "src/components/MultiTransitions.tsx",
         "src/components/MultiLockEditor.tsx",
         "src/components/multiDraft.ts",
