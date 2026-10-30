@@ -46,6 +46,11 @@ echo [run] alembic upgrade head
 "%PY%" -m alembic upgrade head
 if errorlevel 1 goto :fail
 
+rem Match the Docker icon stage: fetch missing sprites before starting the app.
+echo [run] downloading missing gear icons
+"%PY%" -u -m tools.capture_gear_icons
+if errorlevel 1 goto :fail
+
 echo [run] starting tracker
 "%PY%" -m tracker.app
 set "RC=%ERRORLEVEL%"
