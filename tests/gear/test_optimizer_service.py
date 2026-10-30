@@ -60,6 +60,7 @@ def test_service_bounds_concurrent_search_and_recovers(monkeypatch, make_content
     service = GearService(make_content())
     snapshot = AccountSnapshot(player_id=1, username="fixture")
     started, release = Event(), Event()
+    request = {"roles": [{"id": "melee", "style": "slash"}]}
 
     def work(*args, **kwargs):
         started.set()
@@ -69,15 +70,15 @@ def test_service_bounds_concurrent_search_and_recovers(monkeypatch, make_content
 
     monkeypatch.setattr(engine, "optimize", work)
     with ThreadPoolExecutor(max_workers=1) as worker:
-        first = worker.submit(service.optimize, snapshot, {})
+        first = worker.submit(service.optimize, snapshot, request)
         try:
             assert started.wait(10)
             with pytest.raises(ValueError, match="optimizer_busy"):
-                service.optimize(snapshot, {})
+                service.optimize(snapshot, request)
         finally:
             release.set()
         assert first.result(timeout=10)["snapshot_id"] == snapshot.fingerprint
-    assert service.optimize(snapshot, {})["snapshot_id"] == snapshot.fingerprint
+    assert service.optimize(snapshot, request)["snapshot_id"] == snapshot.fingerprint
 
 
 def test_numeric_details_can_inspect_non_ladder_equipment(make_content):
