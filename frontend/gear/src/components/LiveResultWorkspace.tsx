@@ -1,9 +1,9 @@
+import { EquipmentBonuses } from "./EquipmentBonuses";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment } from "../api/contracts";
 import type { OptimizationReply } from "../api/contracts";
-import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
@@ -48,7 +48,6 @@ export function LiveResultWorkspace() {
     result?.solutions[0];
   const selected = solution?.live ?? result?.live?.result.selected_solution;
   const loadout = solution?.loadouts[0];
-  const baseline = result?.live?.baseline;
   const previous = current.previous;
   const select = (slot: keyof ReturnType<typeof emptyEquipment>) =>
     dispatch({
@@ -58,34 +57,12 @@ export function LiveResultWorkspace() {
     });
   if (!result)
     return (
-      <div className="result-column">
-        <section className="panel equipment-panel">
-          <div className="section-title">
-            <h2>
-              <Shield size={19} />
-              Observed equipment
-            </h2>
-            <span className="badge">
-              {state.context?.equipmentStatus ?? "unknown"}
-            </span>
-          </div>
-          <p>
-            Last observed:{" "}
-            {state.context?.live?.current_equipment.scanned_at ??
-              "No equipment scan"}
-            . Select any slot to inspect.
-          </p>
-          <EquipmentGrid
-            equipment={state.context?.equipment ?? emptyEquipment()}
-            selected={current.slot}
-            onSelect={select}
-          />
-          <p>
-            Combat metrics become available after optimization when the observed
-            equipment can be evaluated.
-          </p>
-        </section>
-      </div>
+      <section className="panel empty-result">
+        <h2>Find your best configuration</h2>
+        <p>
+          Choose your target, combat style and budget, then run optimization.
+        </p>
+      </section>
     );
   return (
     <div className="result-column">
@@ -167,19 +144,9 @@ export function LiveResultWorkspace() {
               title="Calculated combat performance"
             />
           )}
-          <details>
-            <summary>Equipment bonuses</summary>
-            <dl>
-              {Object.entries(
-                selected!.loadouts[loadout.roleId].performance.bonuses,
-              ).map(([key, value]) => (
-                <div key={key}>
-                  <dt>{key.replaceAll("_", " ")}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </details>
+          <EquipmentBonuses
+            bonuses={selected?.loadouts[loadout.roleId]?.performance.bonuses}
+          />
         </section>
       ) : (
         <section className="panel">
@@ -192,38 +159,6 @@ export function LiveResultWorkspace() {
           </p>
         </section>
       )}
-      <section className="panel">
-        <h2>Current equipment comparison</h2>
-        {baseline?.status === "available" && baseline.performance ? (
-          <>
-            <p>
-              Observed equipment evaluated against the submitted target and
-              combat assumptions. New purchase budget and locks do not restrict
-              this baseline.
-            </p>
-            <PerformanceSummary
-              metrics={performanceMetrics(baseline.performance)}
-              live
-              title="Observed equipment performance"
-            />
-            {loadout?.metrics && (
-              <p>
-                Current equipment DPS {baseline.performance.dps?.toFixed(2)} →
-                best configuration found {loadout.metrics.dps.toFixed(2)}
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <p>Current equipment baseline unavailable.</p>
-            {baseline?.reasons.map((reason) => (
-              <p className="notice" key={reason}>
-                {reason}
-              </p>
-            ))}
-          </>
-        )}
-      </section>
       {solution && (
         <section className="panel">
           <h2>Acquisition requirements</h2>
@@ -272,7 +207,8 @@ export function LiveResultWorkspace() {
         </section>
       )}
       {previous && (
-        <section className="panel">
+        <details className="panel">
+          <summary>Previous configuration comparison</summary>
           <h2>Previous configuration comparison</h2>
           <p>
             Previous accepted result · {previous.scenario.request.target.name} ·
@@ -311,7 +247,7 @@ export function LiveResultWorkspace() {
               )}
             </pre>
           </details>
-        </section>
+        </details>
       )}
     </div>
   );

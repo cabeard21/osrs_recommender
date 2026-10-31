@@ -124,6 +124,7 @@ it("shows a measured secondary value separately from primary DPS", async () => {
   expect(screen.getByText(/Secondary priority: Accuracy/)).toHaveTextContent(
     "75.00%",
   );
+  screen.getByText("Secondary priority", { exact: true }).click();
   expect(
     screen.getByText(
       /Weighted ordinary-attack DPS remains the primary objective/,

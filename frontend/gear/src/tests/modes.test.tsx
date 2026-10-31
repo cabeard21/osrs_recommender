@@ -144,6 +144,7 @@ it("reports objective gains separately from equal-DPS tie replacements and cap e
   const view = render(
     <OptimizationModeSummary result={liveResult} solution={solution} />,
   );
+  screen.getByText("Search details").click();
   expect(screen.getByText(/2000 extra complete assignments/)).toBeVisible();
   expect(screen.getByText(/cap reached; best valid/)).toBeVisible();
   expect(screen.getByText(/No weighted-DPS improvement/)).toHaveTextContent(

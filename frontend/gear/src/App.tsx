@@ -271,10 +271,11 @@ export default function App() {
           >
             <ConfigurationPanel />
             <ResultWorkspace />
-            <aside
+            <details
               className="analysis-column"
               aria-label="Simulation status and provenance"
             >
+              <summary>Search information and provenance</summary>
               <section className="panel">
                 <h2>
                   <SlidersHorizontal size={18} /> Optimizer engine
@@ -427,7 +428,7 @@ export default function App() {
                 </p>
                 <button onClick={() => setHandoff(true)}>Open handoff</button>
               </section>
-            </aside>
+            </details>
           </div>
           <footer>
             RUNIC LEDGER // MILESTONE 5{" "}
@@ -474,27 +475,12 @@ function LiveAccountContext() {
           : "No synchronized account"}
       </h2>
       {!live.account && (
-        <p>
-          Configure your account in Settings and synchronize with RuneLite.
-          Equipment remains unknown.
-        </p>
+        <p>Configure your account in Settings and synchronize with RuneLite.</p>
       )}
       <p>
         {live.account?.username ?? "No account"} · Last synchronization:{" "}
-        {live.account?.last_sync_at ?? "Never"} · Equipment:{" "}
-        {live.current_equipment.status}
+        {live.account?.last_sync_at ?? "Never"}
       </p>
-      {live.current_equipment.warnings.map((warning) => (
-        <p className="notice" key={warning}>
-          {warning}
-        </p>
-      ))}
-      {live.current_equipment.unmapped_item_ids.length > 0 && (
-        <p className="notice">
-          Missing physical metadata for equipped IDs:{" "}
-          {live.current_equipment.unmapped_item_ids.join(", ")}
-        </p>
-      )}
       <button onClick={() => void loadContext()}>Refresh account</button>
       <details>
         <summary>Detailed account observations</summary>

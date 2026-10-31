@@ -1,3 +1,4 @@
+import { EquipmentBonuses } from "./EquipmentBonuses";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
@@ -183,8 +184,12 @@ export function LiveMultiResultWorkspace() {
           Equipment differences from {roleName(comparedRole)}:{" "}
           {differences.join(", ") || "None"}.
         </p>
+        <EquipmentBonuses
+          bonuses={performance.bonuses}
+          title={`${role.name} equipment bonuses`}
+        />
         <details>
-          <summary>Equipment bonuses and role assumptions</summary>
+          <summary>Role assumptions</summary>
           <pre className="fact-json">
             {JSON.stringify({ performance, role }, null, 2)}
           </pre>

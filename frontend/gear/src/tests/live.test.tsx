@@ -1,9 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import App from "../App";
 import { HttpGearClient, parseContext, parseItem } from "../api/httpClient";
-import { slots } from "../api/contracts";
 import { GearProvider } from "../state/GearProvider";
 import context from "./live-context.json";
 
@@ -19,7 +17,6 @@ const transport = (status = 200) =>
   }) as unknown as typeof fetch;
 
 it("renders live account facts without fixture metrics or automatic optimization", async () => {
-  const user = userEvent.setup();
   const fetcher = transport();
   render(
     <GearProvider client={new HttpGearClient("/ui-api/gear", fetcher)}>
@@ -33,29 +30,12 @@ it("renders live account facts without fixture metrics or automatic optimization
   expect(
     screen.queryByText(/Demo adventurer|5.66 DPS|Current demo loadout/),
   ).not.toBeInTheDocument();
-  for (const slot of slots) {
-    await user.click(
-      screen.getByRole("button", { name: new RegExp(`^${slot} `) }),
-    );
-    expect(
-      screen.getByRole("dialog", { name: "Item inspector" }),
-    ).toBeVisible();
-    if (slot === "weapon") {
-      const dialog = within(screen.getByRole("dialog"));
-      await dialog.findByRole("heading", { name: "Abyssal whip" });
-      expect(
-        dialog.getByText("observed concrete usable form (owned) · quantity 1"),
-      ).toBeVisible();
-      expect(dialog.getByText(/Observed equipment: 1/)).toBeVisible();
-      expect(dialog.getByText(/static_hint/)).toBeVisible();
-      expect(
-        dialog.queryByRole("button", { name: /Preview comparison/ }),
-      ).not.toBeInTheDocument();
-    }
-    await user.click(
-      screen.getByRole("button", { name: "Close Item inspector" }),
-    );
-  }
+  expect(
+    screen.getByRole("heading", { name: "Find your best configuration" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: /^weapon / }),
+  ).not.toBeInTheDocument();
   expect(
     vi
       .mocked(fetcher)
@@ -71,7 +51,9 @@ it("shows backend errors without falling back to fixture account data", async ()
   );
   await screen.findByText("Gear request failed (503)");
   expect(screen.queryByText("Demo adventurer")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /^head unknown/ })).toBeEnabled();
+  expect(
+    screen.queryByRole("button", { name: /^head unknown/ }),
+  ).not.toBeInTheDocument();
 });
 
 it("preserves no-account and unknown equipment states", () => {

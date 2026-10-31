@@ -57,35 +57,14 @@ export function ResultWorkspace() {
     ) : (
       <LiveResultWorkspace />
     );
-  if (
-    !current.result &&
-    state.context &&
-    state.context.equipmentStatus !== "observed"
-  )
-    return (
-      <section className="panel">
-        <h2>
-          {state.context?.equipmentStatus === "partial"
-            ? "Partial equipment observation"
-            : "Current equipment unknown"}
-        </h2>
-        <p>
-          No complete fixture equipment scan. Baseline metrics are unavailable;
-          missing observations do not mean empty equipment.
-        </p>
-      </section>
-    );
   if (!current.result)
     return (
-      <div className="result-column">
-        {state.context &&
-          equipmentCard({
-            roleId: "role-1",
-            name: "Current demo loadout",
-            equipment: state.context.equipment,
-            metrics: { dps: 5.66, maxHit: 36, accuracy: 0.558, ticks: 4 },
-          })}
-      </div>
+      <section className="panel empty-result">
+        <h2>Find your best configuration</h2>
+        <p>
+          Choose your target, combat style and budget, then run optimization.
+        </p>
+      </section>
     );
   if (!solution)
     return (
@@ -278,7 +257,8 @@ export function ResultWorkspace() {
         </section>
       )}
       {current.previous && (
-        <section className="panel">
+        <details className="panel">
+          <summary>Previous configuration comparison</summary>
           <h2>Previous configuration comparison</h2>
           <p>
             Previous target: {current.previous.scenario.request.target.name} ·
@@ -323,7 +303,7 @@ export function ResultWorkspace() {
               </p>
             );
           })}
-        </section>
+        </details>
       )}
     </div>
   );

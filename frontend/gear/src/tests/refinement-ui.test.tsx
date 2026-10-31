@@ -195,7 +195,7 @@ it("locks an inspected alternative only in the draft", async () => {
   );
   expect(edit.mock.calls[0][0].roles[0].locks).toEqual({ weapon: 1333 });
   expect(result.solutions[0].loadouts[0].equipment).toEqual(equipment);
-  expect(previewTrial).not.toHaveBeenCalled();
+  expect(previewTrial).toHaveBeenCalledWith({ ...equipment, weapon: 1333 });
 });
 
 it("filters exclusions from alternatives and requires correction before locking an excluded item", async () => {
@@ -266,7 +266,7 @@ it("shows exact comparisons and trial purchases without relabeling the recommend
     screen.getByText(/ownership uncertain/, { selector: "p" }),
   ).toBeVisible();
   expect(screen.getByText(/weapon: Item #4151 → Item #1333/)).toBeVisible();
-  await user.click(screen.getByRole("button", { name: "Revert trial" }));
+  await user.click(screen.getByRole("button", { name: "Clear preview" }));
   expect(revert).toHaveBeenCalledOnce();
   await user.click(
     screen.getByRole("button", { name: "Lock trial alternative in draft" }),

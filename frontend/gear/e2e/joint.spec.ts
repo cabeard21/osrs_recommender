@@ -169,9 +169,7 @@ test("live joint curve and switching share one backend solution", async ({
     .getByRole("button", { name: "Interactive switching", exact: true })
     .scrollIntoViewIfNeeded();
   await page.getByRole("button", { name: /^Configuration 2 weapon / }).click();
-  await expect(
-    page.getByText(/Exact multi-role manual evaluation is unavailable/),
-  ).toBeVisible();
+  await expect(page.getByText(/Item differences only/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Preview/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Side-by-side", exact: true }).click();

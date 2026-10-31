@@ -14,7 +14,7 @@ export function Dialog({
   const previousFocus = useRef(document.activeElement as HTMLElement);
   useEffect(() => {
     const dialog = ref.current;
-    if (contextual && window.matchMedia("(min-width: 1280px)").matches)
+    if (contextual && window.matchMedia("(min-width: 1440px)").matches)
       dialog?.show();
     else dialog?.showModal();
     return () => {

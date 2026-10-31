@@ -7,7 +7,11 @@ export function SupportPolicySummary({
   const community =
     result.scenario.request.support_policy === "community_best_effort";
   return (
-    <section className="panel" aria-label="Equipment support policy result">
+    <details
+      className="panel result-explanation"
+      aria-label="Equipment support policy result"
+    >
+      <summary>Equipment support policy</summary>
       <p>
         Equipment support:{" "}
         {community ? "Community best effort" : "Verified only"}.
@@ -23,6 +27,6 @@ export function SupportPolicySummary({
       {result.live?.result.support_provenance && (
         <p>Assumption source: {result.live.result.support_provenance}</p>
       )}
-    </section>
+    </details>
   );
 }

@@ -17,9 +17,7 @@ test("live browser uses real account endpoints, preserves uncertain equipment an
     page.getByRole("heading", { name: "No synchronized account" }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "No equipment scan; missing observations do not mean empty slots.",
-    ),
+    page.getByRole("heading", { name: "Find your best configuration" }),
   ).toBeVisible();
   await mkdir(screenshots, { recursive: true });
   await page.screenshot({
@@ -45,55 +43,13 @@ test("live browser uses real account endpoints, preserves uncertain equipment an
   expect(result.status(), await result.text()).toBe(202);
   await page.getByRole("button", { name: "Refresh account" }).click();
   await expect(
-    page.getByRole("button", { name: /^weapon ambiguous/ }),
+    page.getByRole("heading", { name: "Account observations" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Missing physical metadata for equipped IDs: 99999999"),
+    page.getByRole("heading", { name: "Find your best configuration" }),
   ).toBeVisible();
-  await page.screenshot({
-    path: `${screenshots}/${info.project.name}-partial-observations.png`,
-    fullPage: true,
-  });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await page.getByRole("button", { name: /^weapon ambiguous/ }).click();
-  await page
-    .getByRole("button", { name: "Inspect #4151", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Abyssal whip", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Eligibility: satisfied", { exact: true }),
-  ).toBeVisible();
-  await page.screenshot({
-    path: `${screenshots}/${info.project.name}-physical-inspector.png`,
-    fullPage: true,
-  });
+  await expect(page.getByRole("button", { name: /^weapon / })).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  await page.keyboard.press("Escape");
-  for (const slot of [
-    "head",
-    "cape",
-    "neck",
-    "ammo",
-    "weapon",
-    "body",
-    "shield",
-    "legs",
-    "hands",
-    "feet",
-    "ring",
-  ]) {
-    await page.getByRole("button", { name: new RegExp(`^${slot} `) }).click();
-    await expect(
-      page.getByRole("dialog", { name: "Item inspector" }),
-    ).toBeVisible();
-    await page.keyboard.press("Escape");
-  }
   await expect(page.getByText("Demo adventurer", { exact: true })).toHaveCount(
     0,
   );

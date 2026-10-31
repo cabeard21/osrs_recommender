@@ -1,3 +1,4 @@
+import { EquipmentBonuses } from "./EquipmentBonuses";
 import type { Trial } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 
@@ -75,8 +76,8 @@ export function TrialComparison({
             <thead>
               <tr>
                 <th>Metric</th>
-                <th>Original</th>
-                <th>Trial</th>
+                <th>Selected configuration</th>
+                <th>With candidate</th>
                 <th>Change</th>
               </tr>
             </thead>
@@ -86,11 +87,29 @@ export function TrialComparison({
                   <th scope="row">{label}</th>
                   <td>{a}</td>
                   <td>{b}</td>
-                  <td>{delta}</td>
+                  <td
+                    className={
+                      Number.parseFloat(delta) === 0
+                        ? "muted"
+                        : Number.parseFloat(delta) > 0 ===
+                            (label !== "Attack interval" &&
+                              label !== "Additional GP required")
+                          ? "green"
+                          : "negative"
+                    }
+                  >
+                    {delta}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <EquipmentBonuses
+            bonuses={second.bonuses}
+            baseline={first.bonuses}
+            title="Configuration bonus changes"
+            changedOnly
+          />
           <h4>Equipment changes</h4>
           {deltas.equipment_changes.length === 0 && (
             <p>No equipment changes.</p>
@@ -149,7 +168,7 @@ export function TrialComparison({
         itemName={itemName}
       />
       <div className="button-row">
-        <button onClick={onRevert}>Revert trial</button>
+        <button onClick={onRevert}>Clear preview</button>
         <button disabled={!valid} onClick={onLock}>
           Lock trial alternative in draft
         </button>
