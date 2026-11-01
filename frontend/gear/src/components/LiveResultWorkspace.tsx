@@ -22,6 +22,8 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
     return JSON.stringify({
       target: serverRoles?.[0]?.target ?? r.scenario.request.target,
       style: role.style,
+      autoDiscipline: role.autoDiscipline,
+      allowedDisciplines: role.allowedDisciplines,
       attackType: role.attackType,
       stance: role.stance,
       spell: role.spell,
@@ -67,6 +69,41 @@ export function LiveResultWorkspace() {
   return (
     <div className="result-column">
       <SupportPolicySummary result={result} />
+      {result.live?.result.discipline_comparison && (
+        <section className="panel" aria-label="Combat discipline comparison">
+          <h2>Combat discipline comparison</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Discipline</th>
+                <th>Best-found DPS</th>
+                <th>Purchase cost</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.live.result.discipline_comparison.map((row) => (
+                <tr key={row.discipline}>
+                  <th scope="row">{row.discipline}</th>
+                  <td>{row.score?.toFixed(3) ?? "Unavailable"}</td>
+                  <td>
+                    {row.purchase_cost_gp === null
+                      ? "�"
+                      : `${row.purchase_cost_gp.toLocaleString()} GP`}
+                  </td>
+                  <td>
+                    {row.status === "best_found"
+                      ? "Best found"
+                      : row.reasons.join(" ") ||
+                        "No feasible setup found within this search."}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <SecondaryFrontier
         group={result.live?.result.secondary_frontiers?.find(
           (g) => g.swap_limit === result.scenario.request.max_swaps,
@@ -90,7 +127,10 @@ export function LiveResultWorkspace() {
           budget · {result.scenario.request.mode}
         </p>
         <p>
-          {result.scenario.request.roles[0].style} combat ·{" "}
+          {result.scenario.request.roles[0].autoDiscipline
+            ? `Auto selected ${loadout?.discipline ?? "no discipline"}`
+            : `${result.scenario.request.roles[0].style} combat`}{" "}
+          ·{" "}
           {result.scenario.request.roles[0].combatOptions
             ? "option selection enabled"
             : "fixed option"}

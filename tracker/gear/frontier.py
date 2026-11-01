@@ -217,9 +217,11 @@ def explore(
         visible = [
             row
             for row in archive
-            if not dps or 100 * (dps - row["score"]) / dps <= search.request.max_dps_loss_pct
+            if getattr(search, "complete_frontiers", False)
+            or not dps
+            or 100 * (dps - row["score"]) / dps <= search.request.max_dps_loss_pct
         ]
-        sampled = len(visible) > 64
+        sampled = len(visible) > 64 and not getattr(search, "complete_frontiers", False)
         if sampled:
             visible = [visible[round(i * (len(visible) - 1) / 63)] for i in range(64)]
         points = []

@@ -331,14 +331,44 @@ export function ConfigurationPanel() {
           {!role.utility && (
             <>
               <div className="segmented" aria-label={`${role.name} discipline`}>
+                {state.mode === "single" && (
+                  <button
+                    aria-pressed={!!role.autoDiscipline}
+                    onClick={() =>
+                      roleChange(role.id, {
+                        autoDiscipline: true,
+                        manualCombatOptionOptimization: role.autoDiscipline
+                          ? role.manualCombatOptionOptimization
+                          : role.combatOptionOptimization,
+                        combatOptionOptimization: true,
+                        allowedDisciplines: role.allowedDisciplines ?? [
+                          "melee",
+                          "ranged",
+                          "magic",
+                        ],
+                      })
+                    }
+                  >
+                    Auto
+                  </button>
+                )}
                 {(["melee", "ranged", "magic"] as Style[]).map((style) => (
                   <button
                     key={style}
-                    aria-pressed={role.style === style}
+                    aria-pressed={!role.autoDiscipline && role.style === style}
                     onClick={() =>
                       roleChange(role.id, {
                         style,
-                        stance: style === "ranged" ? "rapid" : "accurate",
+                        autoDiscipline: false,
+                        combatOptionOptimization: role.autoDiscipline
+                          ? role.manualCombatOptionOptimization
+                          : role.combatOptionOptimization,
+                        stance:
+                          style === role.style
+                            ? role.stance
+                            : style === "ranged"
+                              ? "rapid"
+                              : "accurate",
                       })
                     }
                   >
@@ -346,13 +376,62 @@ export function ConfigurationPanel() {
                   </button>
                 ))}
               </div>
+              {role.autoDiscipline && (
+                <fieldset>
+                  <legend>Allowed combat disciplines</legend>
+                  {(["melee", "ranged", "magic"] as Style[]).map((style) => (
+                    <label className="check" key={style}>
+                      <input
+                        type="checkbox"
+                        checked={(
+                          role.allowedDisciplines ?? [
+                            "melee",
+                            "ranged",
+                            "magic",
+                          ]
+                        ).includes(style)}
+                        onChange={(event) =>
+                          roleChange(role.id, {
+                            allowedDisciplines: event.target.checked
+                              ? [
+                                  ...(role.allowedDisciplines ?? [
+                                    "melee",
+                                    "ranged",
+                                    "magic",
+                                  ]),
+                                  style,
+                                ]
+                              : (
+                                  role.allowedDisciplines ?? [
+                                    "melee",
+                                    "ranged",
+                                    "magic",
+                                  ]
+                                ).filter((d) => d !== style),
+                          })
+                        }
+                      />
+                      {style}
+                    </label>
+                  ))}
+                  <p>
+                    Auto compares each permitted discipline at full search
+                    effort. All three can take roughly three manual searches.
+                  </p>
+                </fieldset>
+              )}
               <CombatOptionsControls
-                role={role}
+                role={
+                  role.autoDiscipline
+                    ? { ...role, combatOptionOptimization: true }
+                    : role
+                }
                 context={state.context}
                 liveMode={liveMode}
                 onChange={(patch) => roleChange(role.id, patch)}
               />
-              {role.combatOptionOptimization === false &&
+              {!role.autoDiscipline &&
+                role.combatOptionOptimization === false &&
                 role.style === "melee" && (
                   <label>
                     Melee attack type
@@ -370,27 +449,29 @@ export function ConfigurationPanel() {
                     </select>
                   </label>
                 )}
-              {role.combatOptionOptimization === false && (
-                <label>
-                  Attack stance
-                  <select
-                    value={role.stance}
-                    onChange={(e) =>
-                      roleChange(role.id, { stance: e.target.value })
-                    }
-                  >
-                    {(role.style === "melee"
-                      ? ["accurate", "aggressive", "controlled", "defensive"]
-                      : role.style === "ranged"
-                        ? ["accurate", "rapid", "longrange"]
-                        : ["accurate", "defensive"]
-                    ).map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {role.combatOptionOptimization === false &&
+              {!role.autoDiscipline &&
+                role.combatOptionOptimization === false && (
+                  <label>
+                    Attack stance
+                    <select
+                      value={role.stance}
+                      onChange={(e) =>
+                        roleChange(role.id, { stance: e.target.value })
+                      }
+                    >
+                      {(role.style === "melee"
+                        ? ["accurate", "aggressive", "controlled", "defensive"]
+                        : role.style === "ranged"
+                          ? ["accurate", "rapid", "longrange"]
+                          : ["accurate", "defensive"]
+                      ).map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              {!role.autoDiscipline &&
+                role.combatOptionOptimization === false &&
                 role.style === "magic" && (
                   <label>
                     Standard spell

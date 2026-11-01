@@ -113,7 +113,13 @@ def _validate_role(
         locks = role.get("locks", {})
         if not isinstance(locks, dict) or locks.get("weapon") is None:
             issue((*path, "locks", "weapon"), "Unscored utility role requires a weapon lock")
-    elif style in ("stab", "slash", "crush", "ranged", "magic"):
+    elif role.get("allowed_disciplines") is None and style in (
+        "stab",
+        "slash",
+        "crush",
+        "ranged",
+        "magic",
+    ):
         allowed = (
             {"accurate", "rapid", "longrange"}
             if style == "ranged"

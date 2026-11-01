@@ -60,6 +60,8 @@ class WorkBudgetPolicy(DTO):
     policy: Literal["baseline-v1", "local-refinement-v1"]
     complete_assignment_limit: Literal[0, 2000]
     targeted_head_refinement: Literal[False] = False
+    budget_scope: Literal["per_discipline"] = "per_discipline"
+    discipline_count: int = Field(default=1, ge=1, le=3)
 
 
 def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
@@ -67,6 +69,7 @@ def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
     return WorkBudgetPolicy(
         policy="local-refinement-v1" if thorough else "baseline-v1",
         complete_assignment_limit=2000 if thorough else 0,
+        discipline_count=len(body.roles[0].allowed_disciplines or ()) or 1,
     )
 
 
@@ -100,6 +103,15 @@ class Loadout(DTO):
     equipment: dict[str, int]
     performance: CombatPerformance
     combat_option: dict[str, Any] | None = None
+    discipline: Literal["melee", "ranged", "magic"] | None = None
+
+
+class DisciplineComparison(DTO):
+    discipline: Literal["melee", "ranged", "magic"]
+    status: Literal["best_found", "no_feasible_solution_found"]
+    score: float | None
+    purchase_cost_gp: int | None
+    reasons: list[str]
 
 
 class Purchase(DTO):
@@ -189,6 +201,7 @@ class OptimizationResult(DTO):
     frontier_policy: dict[str, Any] | None = None
     search: dict[str, Any]
     limitations: list[str]
+    discipline_comparison: list[DisciplineComparison] = Field(default_factory=list)
 
 
 class OptimizationResponse(DTO):
@@ -324,7 +337,21 @@ def calculate(
     if len(body.roles) > 1:
         reasons.append("Observed equipment has no joint multi-role baseline evaluation.")
     performance = None
-    if not reasons:
+    if not reasons and body.roles[0].allowed_disciplines is not None:
+        evaluated = gear.evaluate(
+            snapshot,
+            body,
+            projection.equipment,
+            projection.equipment,
+            price_records=prices,
+            now=now,
+            cancelled=stopped.is_set,
+        )["baseline"]
+        if evaluated["status"] == "valid":
+            performance = CombatPerformance.model_validate(evaluated["performance"])
+        else:
+            reasons.extend(reason["message"] for reason in evaluated["reasons"])
+    elif not reasons:
         calculated = evaluate_equipment(
             projection.equipment,
             gear.supported_catalog(body.support_policy).items,

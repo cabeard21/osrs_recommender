@@ -378,3 +378,37 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
     assumptions: { attack: "99", quest: true, acquired: "6585" },
   });
 });
+
+it("Auto is opt-in, preserves manual settings, and stays out of Multi", () => {
+  render(
+    <GearProvider client={new FixtureGearClient("none", 0)}>
+      <Harness />
+    </GearProvider>,
+  );
+  expect(screen.getByRole("button", { name: "Auto" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Auto" }));
+  expect(
+    JSON.parse(screen.getByTestId("draft").textContent!).roles[0]
+      .allowedDisciplines,
+  ).toEqual(["melee", "ranged", "magic"]);
+  fireEvent.click(screen.getByRole("checkbox", { name: "magic" }));
+  fireEvent.click(screen.getByRole("button", { name: "melee" }));
+  expect(
+    JSON.parse(screen.getByTestId("draft").textContent!).roles[0]
+      .autoDiscipline,
+  ).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Auto" }));
+  expect(screen.getByRole("checkbox", { name: "magic" })).not.toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: "Enter Multi" }));
+  expect(
+    screen.queryByRole("button", { name: "Auto" }),
+  ).not.toBeInTheDocument();
+  expect(
+    JSON.parse(screen.getByTestId("draft").textContent!).roles.every(
+      (role: { autoDiscipline?: boolean }) => !role.autoDiscipline,
+    ),
+  ).toBe(true);
+});

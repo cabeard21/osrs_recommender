@@ -37,9 +37,23 @@ export function validateOptimizationPolicy(
   envelope: Record<string, unknown>,
   result: Record<string, unknown>,
   mode: OptimizationMode,
+  disciplineCount = 1,
 ) {
   const expected = workBudgetPolicy(mode);
   for (const row of [envelope, result]) {
+    if (row.work_budget_policy !== undefined) {
+      const policy = object(row.work_budget_policy);
+      if (
+        (policy.budget_scope !== undefined &&
+          policy.budget_scope !== "per_discipline") ||
+        (policy.discipline_count !== undefined &&
+          policy.discipline_count !== disciplineCount) ||
+        (disciplineCount > 1 &&
+          (policy.budget_scope !== "per_discipline" ||
+            policy.discipline_count !== disciplineCount))
+      )
+        throw new Error("Invalid discipline work budget policy");
+    }
     // Historical Fast-only transports are compatible; Thorough must identify itself.
     if (
       (row.optimization_mode !== undefined || mode === "thorough") &&
@@ -48,7 +62,16 @@ export function validateOptimizationPolicy(
       throw new Error("Optimization mode does not match the submitted request");
     if (
       (row.work_budget_policy !== undefined || mode === "thorough") &&
-      !sameValue(row.work_budget_policy, expected)
+      !sameValue(
+        row.work_budget_policy === undefined
+          ? undefined
+          : Object.fromEntries(
+              Object.entries(object(row.work_budget_policy)).filter(
+                ([key]) => !["budget_scope", "discipline_count"].includes(key),
+              ),
+            ),
+        expected,
+      )
     )
       throw new Error(
         "Optimization work budget does not match the submitted mode",

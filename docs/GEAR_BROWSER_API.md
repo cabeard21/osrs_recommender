@@ -73,6 +73,44 @@ metadata and level-scaling formulas are added. Unarmed standard casting is
 available when its account requirements are observed. Special attacks are outside
 this ordinary-attack model.
 
+## Automatic discipline selection (Single)
+
+An ordinary role may supply `allowed_disciplines`, a nonempty, unique subset of
+`["melee", "ranged", "magic"]`. Its presence enables Auto and requires explicit
+`combat_options`. Auto accepts exactly one ordinary role; multiple roles and
+utility configurations are rejected. Omitting the field preserves manual behavior.
+For Auto, the retained fixed `style`, `stance`, and `spell` fields do not restrict
+selection. Empty combat-option allowlists remain empty rather than becoming defaults.
+
+The shared Python optimizer runs each permitted discipline sequentially against
+the same frozen account, target, prices, catalog, assumptions, and evaluation time.
+Each receives the full Fast or Thorough allowance. The existing busy guard spans
+the complete operation, and cancellation stops the operation rather than returning
+a partial comparison. Unexpected branch errors propagate.
+
+Every returned solution loadout identifies its resolved `discipline` alongside
+`combat_option`. `result.discipline_comparison` contains one row per permitted
+discipline with `discipline`, `status`, `score`, `purchase_cost_gp`, and `reasons`.
+A missing feasible result is a bounded-search outcome, not proof of infeasibility.
+The selected result uses the existing DPS-first ordering and deterministic ties.
+Curve normalization and secondary-frontier DPS losses use the combined winner;
+secondary candidate archives are merged before loss filtering and display sampling.
+Slot alternatives describe substitutions within the winning discipline.
+
+`result.search.discipline_selection` records `policy: "full-per-discipline-v1"`,
+`branch_count`, and per-discipline `branches` diagnostics. The effective policy and
+allowlist participate in scenario identity. Considering all three disciplines can
+take roughly three manual searches; results remain `best_found`.
+The response `work_budget_policy` also identifies `budget_scope: "per_discipline"`
+and `discipline_count` (one for manual requests). Its assignment limit applies to
+each branch, not to the sum of all branches.
+
+Fixed-loadout evaluations retain Auto scenario identity. Without a pinned combat
+option they choose the best legal option across permitted disciplines for each
+fixed loadout. Pinned options must satisfy the discipline allowlist, account,
+equipment, and combat-option filters. Baseline equipment observations must still
+be complete and unambiguous.
+
 ## Access and lifecycle
 
 The existing FastAPI application serves these routes **inside the private dashboard
