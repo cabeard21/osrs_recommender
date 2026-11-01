@@ -35,7 +35,7 @@ echo [gear] downloading missing gear icons
 "%PY%" -u -m tools.capture_gear_icons
 if errorlevel 1 goto :fail
 
-echo [gear] starting desktop Gear on the configured loopback port
+echo [gear] starting desktop Gear on the configured private address and port
 "%PY%" -m tracker.gear_desktop
 set "RC=%ERRORLEVEL%"
 popd

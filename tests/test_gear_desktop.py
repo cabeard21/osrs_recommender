@@ -28,6 +28,19 @@ def test_desktop_rejects_exposure_and_placeholder():
         DesktopSettings(pi_url="http://pi:8502", player_id=1, read_token="CHANGE_ME")
 
 
+@pytest.mark.parametrize("address", ["127.0.0.1", "::1", "100.101.102.103", "fd7a:115c:a1e0::1"])
+def test_desktop_accepts_loopback_and_tailscale(address):
+    assert settings(bind_address=address).bind_address == address
+
+
+@pytest.mark.parametrize(
+    "address", ["0.0.0.0", "::", "192.168.1.10", "8.8.8.8", "pc.local", "100.128.0.1"]
+)
+def test_desktop_rejects_other_interfaces(address):
+    with pytest.raises(ValidationError):
+        settings(bind_address=address)
+
+
 def test_settings_errors_hide_credentials():
     from tracker.config.settings import Settings
 

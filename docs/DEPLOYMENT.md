@@ -72,6 +72,16 @@ database migrations or provider refresh scheduler and exposes no RuneLite ingest
 endpoint. Stop any normal local app using port 8502 first, or change the desktop port.
 The Pi token stays in the Python process and is never delivered to React.
 
+For access from another Tailscale device, run `tailscale ip -4` on the development
+PC and set `bind_address` in `config.gear-desktop.yaml` to that address. Restart the
+desktop launcher, then open `http://PC_TAILSCALE_IP:8502/gear` from your phone or
+other tailnet device (use that URL on the PC too). The default remains loopback;
+desktop mode accepts only loopback or Tailscale IP addresses, never an all-interface
+bind. Browser access relies on your tailnet access rules; the Pi read token stays
+server-side. If Windows Firewall blocks access, allow inbound TCP on the selected
+port only for the PC's Tailscale address and Tailscale source addresses. Keep the
+PC awake and the launcher running while connecting remotely.
+
 Gear checks for updates on focus and through its existing 30-second refresh cycle.
 Calculations fetch current facts before and after running. Account changes during a
 calculation require refreshing and rerunning; prices remain frozen for that calculation.

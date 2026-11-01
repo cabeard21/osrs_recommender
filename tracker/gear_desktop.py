@@ -1,8 +1,8 @@
-"""Loopback-only Gear execution using authoritative Pi facts, without a local DB."""
+"""Private Gear execution using authoritative Pi facts, without a local DB."""
 
+import ipaddress
 import os
 from pathlib import Path
-from typing import Literal
 
 import uvicorn
 from fastapi import FastAPI
@@ -27,12 +27,23 @@ class DesktopSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="TRACKER_DESKTOP_", extra="forbid", hide_input_in_errors=True
     )
-    bind_address: Literal["127.0.0.1"] = "127.0.0.1"
+    bind_address: str = "127.0.0.1"
     port: int = Field(default=8502, gt=0, lt=65536)
     content_dir: Path = Path("content")
     pi_url: str
     player_id: int = Field(gt=0)
     read_token: SecretStr
+
+    @field_validator("bind_address")
+    @classmethod
+    def private_bind(cls, value: str) -> str:
+        address = ipaddress.ip_address(value.strip())
+        network = ipaddress.ip_network(
+            "100.64.0.0/10" if address.version == 4 else "fd7a:115c:a1e0::/48"
+        )
+        if not address.is_loopback and address not in network:
+            raise ValueError("bind_address must be a loopback or Tailscale IP address")
+        return str(address)
 
     @field_validator("read_token")
     @classmethod

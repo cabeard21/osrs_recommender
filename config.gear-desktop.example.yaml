@@ -1,5 +1,6 @@
 # Copy to config.gear-desktop.yaml (private and gitignored).
 # Environment variables TRACKER_DESKTOP_<KEY> override these settings.
+# For access from other tailnet devices, set this to the dev PC's `tailscale ip -4`.
 bind_address: 127.0.0.1
 port: 8502
 content_dir: content
