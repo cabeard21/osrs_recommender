@@ -1,5 +1,6 @@
 import type { JointSolutionDTO, JointTransitionDTO } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
+import { PurchaseRows } from "./PurchaseRows";
 
 export function JointInventory({
   solution,
@@ -130,7 +131,7 @@ export function JointTransition({
             <p>No equipment actions required for this directed transition.</p>
           )}
           <p>
-            Backend-provided sequence. Automatic removals do not add equipment
+            Calculated sequence. Automatic removals do not add equipment
             actions; reverse transitions can require different actions.
           </p>
         </>
@@ -160,16 +161,7 @@ export function JointPurchases({
         Shared purchases are counted once across all configurations. Cached
         acquisition estimates are not guaranteed market prices.
       </p>
-      {solution.purchases.map((purchase) => (
-        <p key={purchase.item_id}>
-          {itemName(purchase.item_id)} ·{" "}
-          {purchase.cost_gp === null
-            ? "Price unavailable"
-            : `${purchase.cost_gp.toLocaleString()} GP`}
-          {purchase.conditional &&
-            " · conditional purchase: ownership uncertain"}
-        </p>
-      ))}
+      <PurchaseRows purchases={solution.purchases} itemName={itemName} />
       <PurchaseListCopy
         key={identity}
         purchases={solution.purchases}

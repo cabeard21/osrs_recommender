@@ -1,6 +1,6 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { Fragment, useEffect, useState } from "react";
-import { emptyEquipment, type Item } from "../api/contracts";
+import { emptyEquipment, type Item, type Slot } from "../api/contracts";
 import { useGear } from "../state/GearProvider";
 import { Dialog } from "./Dialog";
 import { ItemSprite } from "./EquipmentGrid";
@@ -126,7 +126,7 @@ function FixtureItemInspector() {
         Fixture item facts · no live ownership or price verification.
       </p>
       <dl>
-        <dt>Concrete ID</dt>
+        <dt>Item ID</dt>
         <dd>{id ?? "None"}</dd>
         <dt>Ownership example</dt>
         <dd>
@@ -167,7 +167,7 @@ function FixtureItemInspector() {
       </div>
       <p>
         Fixture draft controls and authored comparisons demonstrate refinement.
-        Live requests use authoritative Python validation.
+        Live requests are fully validated.
       </p>
       <h3>Equipment alternatives</h3>
       {!current.result && (
@@ -254,6 +254,7 @@ function LiveItemInspector() {
     client,
     dispatch,
     edit,
+    run,
     previewTrial,
     revertTrial,
     cancelTrial,
@@ -289,6 +290,7 @@ function LiveItemInspector() {
   }>({ items: [], total: 0, nextOffset: null });
   const [offset, setOffset] = useState(0);
   const [browseError, setBrowseError] = useState("");
+  const [isBrowsing, setIsBrowsing] = useState(!!client.browseItems);
   const physicalSlot = slot === "ammo" ? "ammunition" : slot;
   const excluded = new Set(current.draft.exclusions);
   const contextual =
@@ -320,6 +322,30 @@ function LiveItemInspector() {
       ),
     });
   }
+  const scopedLock =
+    lockScope === "global"
+      ? current.draft.globalLocks?.[slot]
+      : current.draft.roles.find((role) => role.id === current.activeRole)
+          ?.locks[slot];
+  const isSlotLocked = scopedLock !== undefined && scopedLock === id;
+  function unlockSlot() {
+    retainInspectorFocus();
+    const withoutSlot = <T,>(locks: Partial<Record<Slot, T>>) =>
+      Object.fromEntries(
+        Object.entries(locks).filter(([key]) => key !== slot),
+      ) as Partial<Record<Slot, T>>;
+    edit({
+      ...current.draft,
+      ...(lockScope === "global"
+        ? { globalLocks: withoutSlot(current.draft.globalLocks ?? {}) }
+        : {}),
+      roles: current.draft.roles.map((role) =>
+        lockScope === "role" && role.id === current.activeRole
+          ? { ...role, locks: withoutSlot(role.locks) }
+          : role,
+      ),
+    });
+  }
   function excludeItem() {
     if (id === null) return;
     retainInspectorFocus();
@@ -342,9 +368,11 @@ function LiveItemInspector() {
   function chooseCandidate(candidate: number | null) {
     document.activeElement?.closest("dialog")?.scrollTo?.({ top: 0 });
     setSelected(candidate);
-    revertTrial();
+    // previewTrial replaces any current trial itself. Reverting first would
+    // advance the trial generation and make the reducer reject this request.
     if (optimized && canPreview)
       void previewTrial({ ...optimized, [slot]: candidate });
+    else revertTrial();
   }
   function preview(replacement: number | null) {
     document.activeElement?.closest("dialog")?.scrollTo?.({ top: 0 });
@@ -396,8 +424,8 @@ function LiveItemInspector() {
   ]);
   useEffect(() => {
     let active = true;
-    setPage({ items: [], total: 0, nextOffset: null });
     setBrowseError("");
+    setIsBrowsing(!!client.browseItems);
     const timer = setTimeout(() => {
       client
         .browseItems?.(
@@ -412,7 +440,12 @@ function LiveItemInspector() {
           if (active) setPage(value);
         })
         .catch((e) => {
-          if (active) setBrowseError(e.message);
+          if (!active) return;
+          setPage({ items: [], total: 0, nextOffset: null });
+          setBrowseError(e.message);
+        })
+        .finally(() => {
+          if (active) setIsBrowsing(false);
         });
     }, 200);
     return () => {
@@ -429,6 +462,12 @@ function LiveItemInspector() {
     current.draft.supportPolicy,
   ]);
   const facts = item?.id === id ? item.facts : undefined;
+  const hiddenExclusions = page.items.filter((row) =>
+    excluded.has(row.id),
+  ).length;
+  const hiddenNote = hiddenExclusions
+    ? ` · ${hiddenExclusions} excluded item${hiddenExclusions === 1 ? "" : "s"} hidden on this page`
+    : "";
   return (
     <Dialog
       contextual
@@ -437,14 +476,12 @@ function LiveItemInspector() {
         dispatch({ type: "ui", mode: state.mode, patch: { slot: null } })
       }
     >
-      <span className="eyebrow blue">
-        {slot} // authoritative physical catalog
-      </span>
+      <span className="eyebrow blue">{slot}</span>
       <p className="notice">
         {selected !== undefined
           ? "Candidate preview · selected configuration is unchanged."
           : optimized
-            ? "Selected Python optimization result · submitted scenario retained."
+            ? "Showing the optimized result for your submitted settings."
             : `Equipment observation: ${observation?.status ?? "unknown"}`}
       </p>
       {multi && (
@@ -475,6 +512,14 @@ function LiveItemInspector() {
           {item?.id === id ? item.name : id ? `Item #${id}` : "Unassigned slot"}
         </h3>
       </div>
+      {isSlotLocked && (
+        <div className="lock-status">
+          <p role="status" className="green">
+            Locked in draft
+          </p>
+          <button onClick={unlockSlot}>Unlock {slot}</button>
+        </div>
+      )}
       {loading && <p role="status">Loading item metadata…</p>}
       {error && <p role="alert">{error}</p>}
       <section
@@ -525,9 +570,12 @@ function LiveItemInspector() {
           </p>
         )}
         {current.outdated && (
-          <p className="notice">
-            Result outdated. Re-run before previewing alternatives.
-          </p>
+          <div className="notice">
+            <p>Result outdated. Re-run before previewing alternatives.</p>
+            <button disabled={current.pending} onClick={() => void run()}>
+              Re-run optimization
+            </button>
+          </div>
         )}
         {current.trialPending && (
           <p role="status">
@@ -578,19 +626,8 @@ function LiveItemInspector() {
                 <article className="alternative" key={row.item_id ?? "empty"}>
                   <ItemSprite id={row.item_id} />
                   <span>{name}</span>
-                  {row.item_id !== null && (
-                    <button
-                      aria-label={`Inspect ${name}`}
-                      onClick={() => chooseCandidate(row.item_id)}
-                    >
-                      Inspect
-                    </button>
-                  )}
-                  <button
-                    disabled={!canPreview}
-                    onClick={() => preview(row.item_id)}
-                  >
-                    Preview {name}
+                  <button onClick={() => chooseCandidate(row.item_id)}>
+                    Try {name}
                   </button>
                 </article>
               );
@@ -606,6 +643,7 @@ function LiveItemInspector() {
             <button
               disabled={
                 !canLock ||
+                isSlotLocked ||
                 facts.slot !== physicalSlot ||
                 (id !== null && excluded.has(id))
               }
@@ -619,23 +657,11 @@ function LiveItemInspector() {
             >
               {isLocked ? "Unlock and exclude" : "Exclude item"} in draft
             </button>
-            {optimized && !multi && (
-              <button
-                disabled={
-                  !canPreview ||
-                  facts.slot !== physicalSlot ||
-                  (id !== null && excluded.has(id))
-                }
-                onClick={() => preview(id)}
-              >
-                Preview selected alternative
-              </button>
-            )}
           </div>
           <details className="item-metadata">
             <summary>Item facts, requirements and provenance</summary>{" "}
             <dl>
-              <dt>Concrete ID</dt>
+              <dt>Item ID</dt>
               <dd>{facts.item_id}</dd>
               <dt>Equipment slot</dt>
               <dd>{facts.slot}</dd>
@@ -774,7 +800,11 @@ function LiveItemInspector() {
         />
       </label>
       {browseError && <p role="alert">{browseError}</p>}
-      <p>{page.total} matching items · inspection only</p>
+      <p role="status">
+        {isBrowsing
+          ? "Searching items…"
+          : `${page.total} matching items · inspection only${hiddenNote}`}
+      </p>
       {page.items
         .filter((row) => !excluded.has(row.id))
         .map((row) => (
@@ -786,11 +816,8 @@ function LiveItemInspector() {
                 #{row.id} · {row.requirement}
               </small>
             </span>
-            <button
-              aria-label={`Inspect ${row.name}`}
-              onClick={() => chooseCandidate(row.id)}
-            >
-              Inspect
+            <button onClick={() => chooseCandidate(row.id)}>
+              {multi ? "Inspect" : "Try"} {row.name}
             </button>
           </article>
         ))}

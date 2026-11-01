@@ -1,4 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
+
+const SIDE_PANEL_QUERY = "(min-width: 1280px)";
+
 export function Dialog({
   title,
   onClose,
@@ -12,16 +15,36 @@ export function Dialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const previousFocus = useRef(document.activeElement as HTMLElement);
+  const latestClose = useRef(onClose);
+  useEffect(() => {
+    latestClose.current = onClose;
+  });
   useEffect(() => {
     const dialog = ref.current;
-    if (contextual && window.matchMedia("(min-width: 1440px)").matches)
-      dialog?.show();
-    else dialog?.showModal();
+    const sidePanel = contextual ? window.matchMedia(SIDE_PANEL_QUERY) : null;
+    const present = () => {
+      if (dialog?.open) dialog.close();
+      if (sidePanel?.matches) dialog?.show();
+      else dialog?.showModal();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (
+        event.key === "Escape" &&
+        !event.defaultPrevented &&
+        sidePanel?.matches
+      )
+        latestClose.current();
+    };
+    present();
+    sidePanel?.addEventListener?.("change", present);
+    if (contextual) document.addEventListener("keydown", closeOnEscape);
     return () => {
+      sidePanel?.removeEventListener?.("change", present);
+      document.removeEventListener("keydown", closeOnEscape);
       dialog?.close();
       previousFocus.current?.focus();
     };
-  }, []);
+  }, [contextual]);
   return (
     <dialog
       className={contextual ? "inspector-dialog" : undefined}

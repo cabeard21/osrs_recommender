@@ -84,9 +84,6 @@ export function ResultWorkspace() {
     solution.loadouts[0];
   return (
     <div className="result-column">
-      <SupportPolicySummary result={current.result} />
-      <SecondaryPrioritySummary result={current.result} />
-      <OptimizationModeSummary result={current.result} />
       {state.mode === "single" && (
         <button
           onClick={() => {
@@ -305,6 +302,9 @@ export function ResultWorkspace() {
           })}
         </details>
       )}
+      <SupportPolicySummary result={current.result} />
+      <SecondaryPrioritySummary result={current.result} />
+      <OptimizationModeSummary result={current.result} />
     </div>
   );
 }

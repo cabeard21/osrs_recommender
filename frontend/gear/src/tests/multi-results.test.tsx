@@ -197,11 +197,13 @@ it("renders exactly two selected joint configurations with shared items and dist
     screen.getByLabelText("Gear inventory requirements"),
   ).toHaveTextContent("Transient peak gear inventory slots3");
   expect(
-    screen.getAllByRole("button", { name: /neck Shared Shared necklace/ }),
+    screen.getAllByRole("button", {
+      name: /neck \S+ · Shared Shared necklace/,
+    }),
   ).toHaveLength(2);
   expect(
     screen.getByRole("button", {
-      name: "Blade weapon selected · Different One handed blade",
+      name: /^Blade weapon \S+ · Different One handed blade$/,
     }),
   ).toBeVisible();
   expect(screen.getByText(/250 GP additional purchases/)).toBeVisible();
@@ -262,7 +264,7 @@ it("labels only an actual backend suggested curve point without changing selecti
   const { current, rerender, dispatch } = setup();
   Object.assign(current.result.live.result, { suggested_swap_limit: 0 });
   rerender(<LiveMultiResultWorkspace />);
-  expect(screen.getByText(/Backend suggestion:/)).toHaveTextContent(
+  expect(screen.getByText(/^Suggested:/)).toHaveTextContent(
     "0 equipment actions",
   );
   expect(screen.getByLabelText("Swap-efficiency curve point")).toHaveValue(
@@ -442,7 +444,7 @@ it("handles missing reference, metadata, shared equipment and purchases explicit
   ).toBeVisible();
   expect(screen.getByText(/Shared by Blade and Bow: None/)).toBeVisible();
   expect(
-    screen.getByText(/Price unavailable/, { selector: "p" }),
+    screen.getByText(/Price unavailable/, { selector: "span" }),
   ).toBeVisible();
 });
 

@@ -1,22 +1,61 @@
 import { useEffect, useState } from "react";
-import { Shield } from "lucide-react";
-import type { Equipment, Slot } from "../api/contracts";
+import {
+  CircleDot,
+  Crosshair,
+  Flag,
+  Footprints,
+  Gem,
+  Hand,
+  HardHat,
+  ImageOff,
+  PersonStanding,
+  Shield,
+  Shirt,
+  Sword,
+  type LucideIcon,
+} from "lucide-react";
+import type { Equipment, Item, Slot } from "../api/contracts";
 import { slots } from "../api/contracts";
 import { useGear } from "../state/GearProvider";
-export function ItemSprite({ id }: { id: number | null }) {
+function acquisitionStatus(
+  id: number | null,
+  item: Item | undefined,
+  purchaseIds: number[],
+) {
+  if (!id) return "Empty";
+  if (purchaseIds.includes(id)) return "Buy";
+  return item?.owned ? "Owned" : "Unconfirmed";
+}
+const statusColor: Record<string, string> = { Buy: "gold", Owned: "green" };
+const SLOT_ICONS: Record<Slot, LucideIcon> = {
+  head: HardHat,
+  cape: Flag,
+  neck: Gem,
+  ammo: Crosshair,
+  weapon: Sword,
+  body: Shirt,
+  shield: Shield,
+  legs: PersonStanding,
+  hands: Hand,
+  feet: Footprints,
+  ring: CircleDot,
+};
+export function ItemSprite({ id, slot }: { id: number | null; slot?: Slot }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [id]);
-  return id && !failed ? (
-    <img
-      src={`/gear-sprites/${id}.png`}
-      alt=""
-      onError={() => setFailed(true)}
-      width="36"
-      height="36"
-    />
-  ) : (
-    <Shield size={27} aria-hidden="true" />
-  );
+  if (id && !failed)
+    return (
+      <img
+        src={`/gear-sprites/${id}.png`}
+        alt=""
+        onError={() => setFailed(true)}
+        width="36"
+        height="36"
+      />
+    );
+  if (id) return <ImageOff size={27} aria-hidden="true" />;
+  const SlotIcon = slot ? SLOT_ICONS[slot] : Shield;
+  return <SlotIcon className="slot-icon" size={27} aria-hidden="true" />;
 }
 export function EquipmentGrid({
   equipment,
@@ -26,6 +65,8 @@ export function EquipmentGrid({
   onSelect,
   prefix = "",
   optimized = false,
+  purchaseIds = [],
+  roleId,
 }: {
   equipment: Equipment;
   shared?: number[];
@@ -34,10 +75,21 @@ export function EquipmentGrid({
   onSelect: (slot: Slot) => void;
   prefix?: string;
   optimized?: boolean;
+  purchaseIds?: number[];
+  roleId?: string;
 }) {
-  const { itemById, state, liveMode } = useGear();
+  const { itemById, state, liveMode, current } = useGear();
+  const roleLocks = current.draft.roles.find((r) => r.id === roleId)?.locks;
+  const isLocked = (slot: Slot) =>
+    [roleLocks?.[slot], current.draft.globalLocks?.[slot]].some(
+      (lock) => lock !== undefined && lock === equipment[slot],
+    );
   return (
-    <div className="equipment-grid" aria-label={`${prefix} equipment slots`}>
+    <div
+      className="equipment-grid"
+      role="group"
+      aria-label={`${prefix} equipment slots`}
+    >
       {slots.map((slot) => {
         const item = itemById(equipment[slot]),
           isShared = shared.includes(equipment[slot] ?? -1);
@@ -45,13 +97,12 @@ export function EquipmentGrid({
           liveMode && !optimized
             ? state.context?.live?.current_equipment.slots[slot]
             : undefined;
+        const status = acquisitionStatus(equipment[slot], item, purchaseIds);
         const label =
           liveMode && optimized
-            ? isShared
-              ? "Shared"
-              : equipment[slot]
-                ? "selected"
-                : "empty"
+            ? [status, isShared && "Shared", isLocked(slot) && "Locked"]
+                .filter(Boolean)
+                .join(" · ")
             : liveMode
               ? (observation?.status ?? "unknown")
               : isShared
@@ -63,7 +114,7 @@ export function EquipmentGrid({
           item?.name ??
           (equipment[slot]
             ? `Item #${equipment[slot]} · metadata unavailable`
-            : liveMode && label !== "empty"
+            : liveMode && !optimized && label !== "empty"
               ? `${label} equipment`
               : "Empty slot");
         return (
@@ -76,14 +127,21 @@ export function EquipmentGrid({
           >
             <span className="slot-label">
               {slot}{" "}
-              <span className={isShared ? "green" : "blue"}>{label}</span>
+              <span
+                className={
+                  (optimized && statusColor[status]) ||
+                  (isShared ? "green" : "blue")
+                }
+              >
+                {label}
+              </span>
               {differences.includes(slot) && (
                 <span className="blue"> · Different</span>
               )}
             </span>{" "}
             <span className="item-content">
               <span className="sprite">
-                <ItemSprite id={equipment[slot]} />
+                <ItemSprite id={equipment[slot]} slot={slot} />
               </span>
               <span>
                 {name}

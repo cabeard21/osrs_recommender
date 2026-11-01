@@ -32,7 +32,7 @@ it("preserves configuration across Single/Multi navigation and reload", async ()
   await user.type(budget, "12345");
   await user.click(screen.getByRole("button", { name: "Multi-style" }));
   expect(screen.getByLabelText("Additional purchase budget (GP)")).toHaveValue(
-    12345,
+    "12345",
   );
   await user.clear(screen.getByLabelText("Additional purchase budget (GP)"));
   await user.type(
@@ -41,7 +41,7 @@ it("preserves configuration across Single/Multi navigation and reload", async ()
   );
   await user.click(screen.getByRole("button", { name: "Single-style" }));
   expect(screen.getByLabelText("Additional purchase budget (GP)")).toHaveValue(
-    12345,
+    "12345",
   );
 });
 it("selects all eleven slots and closes inspectors without changing results", async () => {
@@ -116,7 +116,7 @@ it.each(["busy", "error", "no-solution"] as const)(
     else await screen.findByRole("alert");
     expect(
       screen.getByLabelText("Additional purchase budget (GP)"),
-    ).toHaveValue(0);
+    ).toHaveValue("0");
   },
 );
 it("renders context failures with retry", async () => {

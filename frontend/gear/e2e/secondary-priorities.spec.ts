@@ -5,6 +5,10 @@ test("secondary priority persists, identifies requests/results, and invalidates 
 }, testInfo) => {
   await page.request.post("/test/seed-optimization");
   await page.goto("/gear-next/");
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
   const priority = page.getByRole("combobox", {
     name: "Secondary priority",
     exact: true,
@@ -89,6 +93,10 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
     await route.fulfill({ response, json: body });
   });
   await page.goto("/gear-next/");
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
   await page
     .getByRole("combobox", { name: "Secondary priority", exact: true })
     .selectOption("balanced_defence");

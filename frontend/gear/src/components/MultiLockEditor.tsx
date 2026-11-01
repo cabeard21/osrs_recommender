@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { slots, type Draft, type Slot } from "../api/contracts";
+import { ItemSearch } from "./ItemSearch";
 
 export function MultiLockEditor({
   draft,
   change,
+  itemLabel = (id) => `Item #${id}`,
 }: {
   draft: Draft;
   change: (patch: Partial<Draft>) => void;
+  itemLabel?: (id: number) => string;
 }) {
   const [scope, setScope] = useState("global");
   const [slot, setSlot] = useState<Slot>("weapon");
@@ -62,6 +65,11 @@ export function MultiLockEditor({
           ))}
         </select>
       </label>
+      <ItemSearch
+        label="Find item to lock"
+        slot={slot}
+        onPick={(picked) => setItem(String(picked.id))}
+      />
       <label>
         Physical item ID or empty
         <input
@@ -74,7 +82,7 @@ export function MultiLockEditor({
       {error && <p role="alert">{error}</p>}
       {Object.entries(draft.globalLocks ?? {}).map(([key, id]) => (
         <div className="constraint" key={key}>
-          Global {key}: {id ?? "empty"}
+          Global {key}: {id === null ? "empty" : itemLabel(id)}
           <button
             onClick={() => {
               const locks = { ...draft.globalLocks };
@@ -88,7 +96,7 @@ export function MultiLockEditor({
       ))}
       <p>
         Locks require a compatible physical item, and global and role locks must
-        agree. Python validates requirements and conflicts on submission.
+        agree. Requirements and conflicts are checked when you run.
       </p>
     </div>
   );
