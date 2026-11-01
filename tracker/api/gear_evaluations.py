@@ -86,6 +86,8 @@ class FixedEvaluation(DTO):
     purchase_cost_gp: int | None
     purchases: list[Purchase]
     assumed_item_ids: list[int]
+    discipline: Literal["melee", "ranged", "magic"] | None = None
+    combat_option: FixedCombatOption | None = None
 
 
 class EquipmentChange(DTO):

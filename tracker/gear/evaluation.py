@@ -233,6 +233,42 @@ def evaluate_configurations(
 
     def fixed(equipment: Mapping[str, int], selected: Mapping[str, Any] | None) -> dict[str, Any]:
         configured = role
+        if role.allowed_disciplines is not None:
+            from tracker.gear.auto import resolve_auto_role
+
+            resolved = resolve_auto_role(
+                role, equipment, catalog.items, projected, levels, selected
+            )
+            if resolved is None:
+                result = evaluate_configuration(
+                    equipment, catalog.items, facts, request, role, levels
+                )
+                return {
+                    **result,
+                    "status": "invalid",
+                    "performance": None,
+                    "reasons": [
+                        *result["reasons"],
+                        {
+                            "path": "combat_option",
+                            "message": (
+                                "No legal combat option satisfies the Auto "
+                                "discipline allowlist and filters."
+                            ),
+                        },
+                    ],
+                }
+            configured, chosen_option = resolved
+            result = evaluate_configuration(
+                equipment, catalog.items, facts, request, configured, levels
+            )
+            return {
+                **result,
+                "discipline": "melee"
+                if configured.style in {"stab", "slash", "crush"}
+                else configured.style,
+                "combat_option": chosen_option,
+            }
         if selected is not None:
             from tracker.gear.combat_options import eligible_combat_options
 

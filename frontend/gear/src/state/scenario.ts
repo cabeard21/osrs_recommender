@@ -146,6 +146,20 @@ export function normalize(
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
   const loss = parseDpsLoss(draft);
+  for (const role of draft.roles) {
+    if (!role.autoDiscipline) continue;
+    if (draft.roles.length !== 1 || role.utility)
+      throw new Error("Automatic discipline selection supports Single only.");
+    const disciplines = role.allowedDisciplines ?? ["melee", "ranged", "magic"];
+    if (
+      !disciplines.length ||
+      new Set(disciplines).size !== disciplines.length ||
+      disciplines.some((d) => !["melee", "ranged", "magic"].includes(d))
+    )
+      throw new Error("Choose at least one valid combat discipline.");
+    if (role.combatOptionOptimization === false)
+      throw new Error("Auto requires combat option optimization.");
+  }
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -248,7 +262,7 @@ export function normalize(
         : role.style === "ranged"
           ? ["accurate", "rapid", "longrange"]
           : ["accurate", "defensive"];
-    if (!role.utility && !stances.includes(role.stance))
+    if (!role.utility && !role.autoDiscipline && !stances.includes(role.stance))
       throw new Error(
         `${role.name} attack stance is unsupported for its discipline.`,
       );
@@ -578,6 +592,9 @@ export function reducer(state: State, action: Action): State {
     const sourceRole = sourceScenario.roles[0];
     draft.roles[0] = {
       ...sourceRole,
+      autoDiscipline: false,
+      allowedDisciplines: undefined,
+      style: loadout.discipline ?? sourceRole.style,
       weight: String(state.single.result!.scenario.request.roles[0].weight),
       id: "role-1",
       name: "Single result (locked)",
@@ -625,6 +642,11 @@ export function reducer(state: State, action: Action): State {
       draft.roles.push(newRole(2));
       draft.roles = draft.roles.map((role) => ({
         ...role,
+        autoDiscipline: false,
+        allowedDisciplines: undefined,
+        combatOptionOptimization: role.autoDiscipline
+          ? role.manualCombatOptionOptimization
+          : role.combatOptionOptimization,
         combatTarget: structuredClone(
           role.combatTarget ??
             draft.combatTarget ?? {

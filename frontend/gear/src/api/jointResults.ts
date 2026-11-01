@@ -63,6 +63,13 @@ export function parseJointSolution(
   const loadouts = roles.map((role) => {
     const loadout = object(byRole[role.id]),
       equipment = equipmentMap(loadout.equipment);
+    if (
+      role.autoDiscipline &&
+      !(role.allowedDisciplines ?? ["melee", "ranged", "magic"]).includes(
+        loadout.discipline as import("./contracts").Style,
+      )
+    )
+      throw new Error("Invalid resolved Auto discipline");
     for (const [slot, itemId] of Object.entries(equipment))
       if (
         itemId !== null &&
@@ -98,7 +105,9 @@ export function parseJointSolution(
           ? performanceMetrics(performance)
           : null,
       performance,
-      combatOption: loadout.combat_option as import("./contracts").CombatOption | undefined,
+      discipline: loadout.discipline as import("./contracts").Style | undefined,
+      combatOption: loadout.combat_option as
+        import("./contracts").CombatOption | undefined,
     };
   });
   const required = [

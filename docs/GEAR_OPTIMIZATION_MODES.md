@@ -20,6 +20,34 @@ See [the browser API contract](GEAR_BROWSER_API.md) for exact transport fields a
 
 ## React behavior
 
+### Automatic discipline selection
+
+Single mode offers opt-in **Auto** beside the three manual disciplines. Existing
+and new drafts keep their manual defaults. Auto initially considers melee, ranged,
+and magic; users can exclude disciplines but must leave at least one selected.
+Attack-type, stance, and spell optimization stays enabled in Auto, with eligibility
+and explicit option exclusions taken from the existing account capabilities.
+Manual settings are retained when switching back. Single and Multi drafts remain
+separate, and Multi continues to require explicit disciplines.
+
+Each allowed discipline receives a complete existing Fast or Thorough search over
+the same frozen inputs. This preserves manual search effort per discipline and can
+take roughly three manual runs when all are enabled. Results identify the selected
+discipline and compare each permitted discipline's best-found DPS and purchase cost,
+including reasons when a branch finds no feasible setup. Cancellation discards the
+whole operation rather than presenting an incomplete comparison as a winner.
+The server-owned work policy reports `budget_scope: "per_discipline"` and the
+effective `discipline_count`; Thorough's 2,000-assignment limit applies per branch.
+
+The existing DPS-first ordering selects the winner. Secondary frontiers combine
+discipline candidates before applying the shared DPS-loss threshold; curve and
+frontier selections retain their own resolved discipline and combat option. Item
+inspection and exact manual trials use those selections. An Auto fixed-loadout
+comparison without a pinned option chooses the best legal permitted option for
+that equipment. Neither Auto nor a branch without a result proves optimality or
+infeasibility. This addition makes no production deployment or latency-acceptance
+claim. See the browser API contract for request and diagnostic fields.
+
 ### Secondary priority
 
 Both modes accept `secondary_priority`, defaulting to `default` (the existing inventory/cost/action/identity ordering). The configuration dropdown also offers Balanced defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee strength bonus, Ranged strength bonus, Magic damage bonus and Accuracy. All options remain available for one to four roles.

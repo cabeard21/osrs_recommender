@@ -222,14 +222,44 @@ export function RoleFields({
             role="group"
             aria-label={`${role.name} discipline`}
           >
+            {!isMulti && (
+              <button
+                aria-pressed={!!role.autoDiscipline}
+                onClick={() =>
+                  onChange({
+                    autoDiscipline: true,
+                    manualCombatOptionOptimization: role.autoDiscipline
+                      ? role.manualCombatOptionOptimization
+                      : role.combatOptionOptimization,
+                    combatOptionOptimization: true,
+                    allowedDisciplines: role.allowedDisciplines ?? [
+                      "melee",
+                      "ranged",
+                      "magic",
+                    ],
+                  })
+                }
+              >
+                Auto
+              </button>
+            )}
             {(["melee", "ranged", "magic"] as Style[]).map((style) => (
               <button
                 key={style}
-                aria-pressed={role.style === style}
+                aria-pressed={!role.autoDiscipline && role.style === style}
                 onClick={() =>
                   onChange({
                     style,
-                    stance: style === "ranged" ? "rapid" : "accurate",
+                    autoDiscipline: false,
+                    combatOptionOptimization: role.autoDiscipline
+                      ? role.manualCombatOptionOptimization
+                      : role.combatOptionOptimization,
+                    stance:
+                      style === role.style
+                        ? role.stance
+                        : style === "ranged"
+                          ? "rapid"
+                          : "accurate",
                   })
                 }
               >
@@ -237,13 +267,57 @@ export function RoleFields({
               </button>
             ))}
           </div>
+          {role.autoDiscipline && (
+            <fieldset>
+              <legend>Allowed combat disciplines</legend>
+              {(["melee", "ranged", "magic"] as Style[]).map((style) => (
+                <label className="check" key={style}>
+                  <input
+                    type="checkbox"
+                    checked={(
+                      role.allowedDisciplines ?? ["melee", "ranged", "magic"]
+                    ).includes(style)}
+                    onChange={(event) =>
+                      onChange({
+                        allowedDisciplines: event.target.checked
+                          ? [
+                              ...(role.allowedDisciplines ?? [
+                                "melee",
+                                "ranged",
+                                "magic",
+                              ]),
+                              style,
+                            ]
+                          : (
+                              role.allowedDisciplines ?? [
+                                "melee",
+                                "ranged",
+                                "magic",
+                              ]
+                            ).filter((d) => d !== style),
+                      })
+                    }
+                  />
+                  {style}
+                </label>
+              ))}
+              <p>
+                Auto compares each permitted discipline at full search effort.
+                All three can take roughly three manual searches.
+              </p>
+            </fieldset>
+          )}
           <CombatOptionsControls
-            role={role}
+            role={
+              role.autoDiscipline
+                ? { ...role, combatOptionOptimization: true }
+                : role
+            }
             context={context}
             liveMode={liveMode}
             onChange={onChange}
           />
-          {role.combatOptionOptimization === false && (
+          {!role.autoDiscipline && role.combatOptionOptimization === false && (
             <FixedCombatFields
               role={role}
               context={context}

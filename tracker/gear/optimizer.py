@@ -83,6 +83,9 @@ class RoleConfig(BaseModel):
     )
     spell: str = Field(default="fire_strike", max_length=40)
     combat_options: CombatOptionFilters | None = None
+    allowed_disciplines: tuple[Literal["melee", "ranged", "magic"], ...] | None = Field(
+        default=None, min_length=1, max_length=3
+    )
     powered_attack: str | None = None
     weight: float = Field(default=1, ge=0, le=1_000_000, allow_inf_nan=False)
     target_selection: TargetSelection | None = None
@@ -92,6 +95,11 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.allowed_disciplines is not None:
+            if len(set(self.allowed_disciplines)) != len(self.allowed_disciplines):
+                raise ValueError("allowed_disciplines must be unique")
+            if self.style == "special" or self.combat_options is None:
+                raise ValueError("Auto requires an ordinary role and explicit combat_options")
         if self.powered_attack is not None:
             raise ValueError("powered_attack is selected by the optimizer, not a request field")
         object.__setattr__(self, "locks", MappingProxyType(dict(self.locks)))
@@ -125,6 +133,8 @@ class OptimizationRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_context(self) -> OptimizationRequest:
+        if any(r.allowed_disciplines is not None for r in self.roles) and len(self.roles) != 1:
+            raise ValueError("Auto discipline selection supports Single only")
         ids = {r.id for r in self.roles}
         if len(ids) != len(self.roles):
             raise ValueError("role IDs must be unique")
@@ -226,6 +236,7 @@ class _Search:
         self.cancelled = cancelled
         self.nodes = 0
         self.truncated = False
+        self.complete_frontiers = False
         self.edges = required_transitions(request)
         self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
         self.option_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None] = {}
@@ -654,6 +665,13 @@ class _Search:
             "loadouts": {
                 r.id: {
                     "equipment": loadouts[r.id],
+                    "discipline": (
+                        None
+                        if r.style == "special"
+                        else "melee"
+                        if r.style in {"stab", "slash", "crush"}
+                        else r.style
+                    ),
                     "performance": self.performance(loadouts[r.id], r),
                     "combat_option": self.combat_option(loadouts[r.id], r),
                 }
@@ -749,6 +767,7 @@ def optimize(
     *,
     targeted_head_refinement: bool = False,
     local_refinement: bool = False,
+    _complete_frontiers: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     request = (
@@ -756,6 +775,20 @@ def optimize(
         if isinstance(request, OptimizationRequest)
         else OptimizationRequest.model_validate(request)
     )
+    if request.roles[0].allowed_disciplines is not None:
+        from tracker.gear.auto import optimize_auto
+
+        return optimize_auto(
+            snapshot,
+            request,
+            catalog,
+            content,
+            price_records,
+            now,
+            cancelled=cancelled,
+            targeted_head_refinement=targeted_head_refinement,
+            local_refinement=local_refinement,
+        )
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
@@ -773,6 +806,7 @@ def optimize(
         for i, item in catalog.items.items()
     }
     search = _Search(projected, request, catalog.items, facts, cancelled)
+    search.complete_frontiers = _complete_frontiers
     individual = {role.id: search.loadouts((role,)) for role in request.roles}
     for role in request.roles:
         if role.style != "special" or role.parent_role is None:

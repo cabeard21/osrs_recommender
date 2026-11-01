@@ -29,6 +29,8 @@ export type SecondaryPriority =
   | "magic_damage_bonus"
   | "accuracy";
 export interface WorkBudgetPolicy {
+  budget_scope?: "per_discipline";
+  discipline_count?: number;
   policy: "baseline-v1" | "local-refinement-v1";
   complete_assignment_limit: 0 | 2000;
   targeted_head_refinement: false;
@@ -67,6 +69,9 @@ export interface Role {
   id: string;
   name: string;
   style: Style;
+  autoDiscipline?: boolean;
+  manualCombatOptionOptimization?: boolean;
+  allowedDisciplines?: Style[];
   attackType: "stab" | "slash" | "crush";
   stance: string;
   spell: string;
@@ -185,6 +190,7 @@ export interface Loadout {
   metrics: Metrics | null;
   performance?: CombatPerformance;
   combatOption?: CombatOption;
+  discipline?: Style;
 }
 export interface Transition {
   from: string;
@@ -234,6 +240,7 @@ export interface JointSolutionDTO {
       equipment: Record<string, number>;
       performance: CombatPerformance;
       combat_option?: CombatOption;
+      discipline?: Style;
     }
   >;
   purchases: PurchaseDTO[];
@@ -340,6 +347,13 @@ export interface OptimizationDTO {
     >;
     frontier_policy?: Record<string, unknown> | null;
     secondary_frontiers?: SecondaryFrontierGroup[];
+    discipline_comparison?: {
+      discipline: Style;
+      status: string;
+      score: number | null;
+      purchase_cost_gp: number | null;
+      reasons: string[];
+    }[];
     selected_solution: JointSolutionDTO | null;
   };
 }

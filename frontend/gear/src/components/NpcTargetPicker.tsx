@@ -15,7 +15,7 @@ interface Entry {
 interface Detail extends Entry {
   catalog_revision: string;
   target: CombatTarget | null;
-  source_url: string;
+  wiki_url: string;
 }
 export function NpcTargetPicker({
   selection,
@@ -196,7 +196,7 @@ export function NpcTargetPicker({
           {detail.reasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
-          <a href={detail.source_url} target="_blank" rel="noreferrer">
+          <a href={detail.wiki_url} target="_blank" rel="noreferrer">
             NPC source
           </a>
           {selection &&
