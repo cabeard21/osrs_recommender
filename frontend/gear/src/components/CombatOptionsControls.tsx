@@ -1,4 +1,8 @@
-import type { CombatOptionSelection, GearContext, Role } from "../api/contracts";
+import type {
+  CombatOptionSelection,
+  GearContext,
+  Role,
+} from "../api/contracts";
 import {
   availableCombatOptions,
   emptyCombatOptions,
@@ -27,7 +31,13 @@ export function CombatOptionsControls({
   const selected = selectedCombatOptions(role, context);
   const enabled = role.combatOptionOptimization !== false;
   const visibleGroups = groups.filter(
-    ({ field }) => field !== "spells" || role.style === "magic",
+    ({ field }) =>
+      field !== "spells" ||
+      (role.autoDiscipline
+        ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"]).includes(
+            "magic",
+          )
+        : role.style === "magic"),
   );
   return (
     <details className="raised" aria-label={`${role.name} Combat Options`}>
@@ -35,16 +45,24 @@ export function CombatOptionsControls({
       <label className="check">
         <input
           type="checkbox"
-          checked={enabled}
+          checked={role.autoDiscipline || enabled}
+          disabled={role.autoDiscipline}
           onChange={(event) =>
             onChange({ combatOptionOptimization: event.target.checked })
           }
         />
         Optimize attack type, stance and spell with equipment
       </label>
-      {!liveMode && <p>Fixture mode records these controls; it does not calculate combat options.</p>}
+      {!liveMode && (
+        <p>
+          Fixture mode records these controls; it does not calculate combat
+          options.
+        </p>
+      )}
       {enabled && !catalog && liveMode && (
-        <p role="status" className="notice">Synced combat options are unavailable. Refresh account context.</p>
+        <p role="status" className="notice">
+          Synced combat options are unavailable. Refresh account context.
+        </p>
       )}
       {enabled && catalog && selected && (
         <>
@@ -74,23 +92,28 @@ export function CombatOptionsControls({
                     <input
                       type="checkbox"
                       disabled={!option.available}
-                      checked={option.available && selected[field].includes(option.id)}
+                      checked={
+                        option.available && selected[field].includes(option.id)
+                      }
                       onChange={(event) => {
                         const updated = setCombatOptionEnabled(
-                            role,
-                            field,
-                            option.id,
-                            event.target.checked,
-                            context,
-                          );
+                          role,
+                          field,
+                          option.id,
+                          event.target.checked,
+                          context,
+                        );
                         onChange({
                           combatOptionDisabled: updated.combatOptionDisabled,
-                          combatOptionExplicitlyEmpty: updated.combatOptionExplicitlyEmpty,
+                          combatOptionExplicitlyEmpty:
+                            updated.combatOptionExplicitlyEmpty,
                         });
                       }}
                     />
                     {option.id.replaceAll("_", " ")}
-                    {option.reason && !option.available ? ` · ${option.reason}` : ""}
+                    {option.reason && !option.available
+                      ? ` · ${option.reason}`
+                      : ""}
                   </label>
                 ))}
               </div>
@@ -110,7 +133,8 @@ export function CombatOptionsControls({
           </button>
           {visibleGroups.some(({ field }) => selected[field].length === 0) && (
             <p role="status" className="notice">
-              No legal combat configuration can satisfy an empty selection. Enable at least one option in each group.
+              No legal combat configuration can satisfy an empty selection.
+              Enable at least one option in each group.
             </p>
           )}
         </>

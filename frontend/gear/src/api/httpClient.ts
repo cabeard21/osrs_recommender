@@ -135,6 +135,9 @@ export function parseOptimization(
     envelope,
     result,
     scenario.request.optimization_mode ?? "fast",
+    scenario.request.roles[0]?.autoDiscipline
+      ? (scenario.request.roles[0].allowedDisciplines?.length ?? 3)
+      : 1,
   );
   const priority = scenario.request.secondary_priority ?? "default";
   validateSecondaryPriority(envelope, priority);
@@ -158,7 +161,49 @@ export function parseOptimization(
       throw new Error("Frontier work policy does not match submitted scenario");
   }
   object(result.search);
-  if (scenario.request.optimization_mode === "thorough")
+  if (scenario.request.roles[0]?.autoDiscipline) {
+    const allowed = scenario.request.roles[0].allowedDisciplines ?? [
+      "melee",
+      "ranged",
+      "magic",
+    ];
+    if (
+      !Array.isArray(result.discipline_comparison) ||
+      result.discipline_comparison.length !== allowed.length
+    )
+      throw new Error("Missing Auto discipline comparison");
+    const seen = new Set<string>();
+    for (const value of result.discipline_comparison) {
+      const row = object(value);
+      if (
+        !allowed.includes(row.discipline as import("./contracts").Style) ||
+        seen.has(String(row.discipline)) ||
+        !strings(row.reasons) ||
+        !["best_found", "no_feasible_solution_found"].includes(
+          String(row.status),
+        ) ||
+        (row.score !== null &&
+          (typeof row.score !== "number" ||
+            !Number.isFinite(row.score) ||
+            row.score < 0)) ||
+        (row.purchase_cost_gp !== null &&
+          (!Number.isSafeInteger(row.purchase_cost_gp) ||
+            Number(row.purchase_cost_gp) < 0))
+      )
+        throw new Error("Invalid Auto discipline comparison");
+      seen.add(String(row.discipline));
+    }
+    if (scenario.request.optimization_mode === "thorough") {
+      const branches = object(
+        object(object(result.search).discipline_selection).branches,
+      );
+      for (const discipline of allowed)
+        validateRefinementDiagnostics(
+          object(branches[discipline]).local_refinement,
+          scenario.request.max_swaps,
+        );
+    }
+  } else if (scenario.request.optimization_mode === "thorough")
     validateRefinementDiagnostics(
       object(result.search).local_refinement,
       scenario.request.max_swaps,
@@ -265,6 +310,13 @@ export function parseOptimization(
       throw new Error("Invalid acquisition result");
     const role = scenario.request.roles[0];
     const loadout = object(object(selected.loadouts)[role.id]);
+    if (
+      role.autoDiscipline &&
+      !(role.allowedDisciplines ?? ["melee", "ranged", "magic"]).includes(
+        loadout.discipline as import("./contracts").Style,
+      )
+    )
+      throw new Error("Invalid resolved Auto discipline");
     const equipment = equipmentMap(loadout.equipment);
     for (const id of Object.values(equipment))
       if (
@@ -297,6 +349,8 @@ export function parseOptimization(
           equipment,
           metrics: performanceMetrics(loadout.performance as CombatPerformance),
           combatOption: loadout.combat_option as CombatOption | undefined,
+          discipline: loadout.discipline as
+            import("./contracts").Style | undefined,
         },
       ],
       weightedDps: selected.score as number,
@@ -393,9 +447,20 @@ export function optimizationRequest(scenario: Scenario) {
     throw new Error(
       "Live optimization supports one through four configurations.",
     );
+  if (r.roles.some((role) => role.autoDiscipline) && r.roles.length !== 1)
+    throw new Error("Auto supports Single only.");
   return {
     roles: r.roles.map((role) => ({
       id: role.id,
+      ...(role.autoDiscipline
+        ? {
+            allowed_disciplines: role.allowedDisciplines ?? [
+              "melee",
+              "ranged",
+              "magic",
+            ],
+          }
+        : {}),
       style: role.utility
         ? "special"
         : role.style === "melee"
@@ -981,7 +1046,9 @@ export class HttpGearClient implements GearClient {
         ...(combatOption
           ? {
               baseline_combat_options: { [role]: combatOption },
-              proposed_combat_options: { [role]: combatOption },
+              ...(!result.scenario.request.roles[0].autoDiscipline
+                ? { proposed_combat_options: { [role]: combatOption } }
+                : {}),
             }
           : {}),
       }),

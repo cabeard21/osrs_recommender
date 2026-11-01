@@ -30,42 +30,74 @@ export function combatCapabilities(
   const raw = context?.live?.capabilities.combat_options;
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
-  if (!["attack_types", "stances", "spells"].every((key) => Array.isArray(row[key])))
+  if (
+    !["attack_types", "stances", "spells"].every((key) =>
+      Array.isArray(row[key]),
+    )
+  )
     return null;
   return raw as CombatOptionCapabilities;
 }
 
 export function availableCombatOptions(
-  role: Pick<Role, "style">,
+  role: Pick<Role, "style" | "autoDiscipline" | "allowedDisciplines">,
   context: GearContext | null,
 ): CombatOptionCapabilities | null {
   const catalog = combatCapabilities(context);
   if (!catalog) return null;
-  const allowedAttackTypes = new Set(attackTypes[role.style]);
-  const allowedStances = new Set(stances[role.style]);
-  const filter = (rows: CombatOptionAvailability[], ids?: Set<string>) =>
-    rows.filter((row) =>
-      (!ids || ids.has(row.id)) && (!row.category || row.category === role.style),
+  const disciplines = role.autoDiscipline
+    ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"])
+    : [role.style];
+  const allowedAttackTypes = new Set(
+    disciplines.flatMap((style) => attackTypes[style]),
+  );
+  const allowedStances = new Set(
+    disciplines.flatMap((style) => stances[style]),
+  );
+  const filter = (rows: CombatOptionAvailability[], ids?: Set<string>) => {
+    const eligible = rows.filter(
+      (row) =>
+        (!ids || ids.has(row.id)) &&
+        (!row.category || disciplines.includes(row.category)),
     );
+    return [...new Set(eligible.map((row) => row.id))].map(
+      (id) =>
+        eligible.find((row) => row.id === id && row.available) ??
+        eligible.find((row) => row.id === id)!,
+    );
+  };
   return {
     attack_types: filter(catalog.attack_types, allowedAttackTypes),
     stances: filter(catalog.stances, allowedStances),
-    spells: role.style === "magic" ? filter(catalog.spells) : [],
+    spells: disciplines.includes("magic") ? filter(catalog.spells) : [],
   };
 }
 
 export function selectedCombatOptions(
-  role: Pick<Role, "style" | "combatOptionDisabled" | "combatOptionExplicitlyEmpty">,
+  role: Pick<
+    Role,
+    | "style"
+    | "autoDiscipline"
+    | "allowedDisciplines"
+    | "combatOptionDisabled"
+    | "combatOptionExplicitlyEmpty"
+  >,
   context: GearContext | null,
 ): CombatOptionSelection | null {
   const available = availableCombatOptions(role, context);
   if (!available) return null;
   const disabled = role.combatOptionDisabled ?? emptyCombatOptions();
   return {
-    attack_types: (role.combatOptionExplicitlyEmpty?.attack_types ? [] : available.attack_types)
+    attack_types: (role.combatOptionExplicitlyEmpty?.attack_types
+      ? []
+      : available.attack_types
+    )
       .filter((row) => row.available && !disabled.attack_types.includes(row.id))
       .map((row) => row.id),
-    stances: (role.combatOptionExplicitlyEmpty?.stances ? [] : available.stances)
+    stances: (role.combatOptionExplicitlyEmpty?.stances
+      ? []
+      : available.stances
+    )
       .filter((row) => row.available && !disabled.stances.includes(row.id))
       .map((row) => row.id),
     spells: (role.combatOptionExplicitlyEmpty?.spells ? [] : available.spells)
@@ -86,8 +118,12 @@ export function setCombatOptionEnabled(
     ? disabled[field].filter((entry) => entry !== id)
     : [...new Set([...disabled[field], id])];
   const available = availableCombatOptions(role, context);
-  const explicitlyEmpty = !enabled && !!available &&
-    available[field].filter((row) => row.available).every((row) => nextDisabled.includes(row.id));
+  const explicitlyEmpty =
+    !enabled &&
+    !!available &&
+    available[field]
+      .filter((row) => row.available)
+      .every((row) => nextDisabled.includes(row.id));
   return {
     ...role,
     combatOptionDisabled: {
