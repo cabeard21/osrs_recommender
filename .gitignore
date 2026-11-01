@@ -25,6 +25,7 @@ secrets/
 !*.env.example
 .env
 config.yaml
+config.gear-desktop.yaml
 # Agent worktrees. These are live checkouts of other branches; committing them or
 # letting the linters walk into them would mix another unit's work into this one's.
 .claude/

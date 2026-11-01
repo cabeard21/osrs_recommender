@@ -30,17 +30,21 @@ class DatabaseGearPrices:
     def get_prices(self) -> dict[int, CachedPriceRecord]:
         """Copy stored rows once; gear evaluation performs no network request or write."""
         with self.sessions(autoflush=False) as session:
-            rows = session.scalars(select(ItemPrice)).all()
-            return {
-                row.item_id: CachedPriceRecord(
-                    item_id=row.item_id,
-                    high_price_gp=row.high_price_gp,
-                    high_trade_at=row.high_trade_at,
-                    low_price_gp=row.low_price_gp,
-                    low_trade_at=row.low_trade_at,
-                    fetched_at=row.fetched_at,
-                    source=row.source.value,
-                    provider=row.provider,
-                )
-                for row in rows
-            }
+            return self.read_prices(session)
+
+    @staticmethod
+    def read_prices(session: Session) -> dict[int, CachedPriceRecord]:
+        rows = session.scalars(select(ItemPrice)).all()
+        return {
+            row.item_id: CachedPriceRecord(
+                item_id=row.item_id,
+                high_price_gp=row.high_price_gp,
+                high_trade_at=row.high_trade_at,
+                low_price_gp=row.low_price_gp,
+                low_trade_at=row.low_trade_at,
+                fetched_at=row.fetched_at,
+                source=row.source.value,
+                provider=row.provider,
+            )
+            for row in rows
+        }

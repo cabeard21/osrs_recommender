@@ -776,6 +776,14 @@ export function parseContext(value: unknown): GearContext {
   });
   if (row.api_version !== "gear-ui-v1" || !Array.isArray(row.items))
     throw new Error("Unsupported Gear API response");
+  if (row.data_source !== undefined && row.data_source !== null) {
+    const source = requireFields(row.data_source, {
+      label: "string",
+      fetched_at: "string",
+    });
+    if (!Number.isFinite(Date.parse(source.fetched_at as string)))
+      throw new Error("Invalid data retrieval timestamp");
+  }
   const projection = requireFields(row.current_equipment, { status: "string" });
   if (!["observed", "partial", "unknown"].includes(projection.status as string))
     throw new Error("Invalid equipment status");

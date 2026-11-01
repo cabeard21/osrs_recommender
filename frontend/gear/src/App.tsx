@@ -224,7 +224,11 @@ export default function App() {
             <div className="button-row">
               <button
                 className="primary"
-                disabled={!state.context?.snapshotId || current.pending}
+                disabled={
+                  !state.context?.snapshotId ||
+                  current.pending ||
+                  !!contextError
+                }
                 onClick={() => void run()}
               >
                 {liveMode
@@ -249,6 +253,7 @@ export default function App() {
           {contextError && (
             <div className="panel" role="alert">
               {contextError}
+              {state.context && <p>Displayed data may be stale.</p>}
               <button onClick={() => void loadContext()}>Retry context</button>
             </div>
           )}
@@ -482,6 +487,14 @@ function LiveAccountContext() {
         {live.account?.last_sync_at ?? "Never"}
       </p>
       <button onClick={() => void loadContext()}>Refresh account</button>
+      {live.data_source && (
+        <p>
+          Data source: {live.data_source.label} · Last retrieved:{" "}
+          <time dateTime={live.data_source.fetched_at}>
+            {live.data_source.fetched_at}
+          </time>
+        </p>
+      )}
       <details>
         <summary>Detailed account observations</summary>
         <p>

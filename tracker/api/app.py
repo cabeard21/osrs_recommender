@@ -38,4 +38,7 @@ def create_app(settings: Settings, session_factory: sessionmaker[Session]) -> Fa
 
     app.include_router(build_api_router())
     app.include_router(health.router)
+    from tracker.api.gear_data import router as gear_data_router
+
+    app.include_router(gear_data_router)
     return app

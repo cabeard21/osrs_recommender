@@ -483,6 +483,7 @@ export interface SlotObservation {
   candidate_item_ids: number[];
 }
 export interface ContextDTO {
+  data_source?: { label: string; fetched_at: string } | null;
   api_version: "gear-ui-v1";
   evaluated_at: string;
   account: {

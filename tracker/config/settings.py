@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -119,6 +119,7 @@ class Settings(BaseSettings):
         env_prefix="TRACKER_",
         env_nested_delimiter="__",
         extra="forbid",
+        hide_input_in_errors=True,
     )
 
     bind_address: str
@@ -132,6 +133,7 @@ class Settings(BaseSettings):
     """Bearer token shared with the RuneLite plugin (§11.2). Env: ``TRACKER_API_TOKEN``."""
 
     database_url: str = "sqlite:///./tracker.db"
+    gear_data_token: SecretStr | None = None
     integrations: IntegrationsSettings = Field(default_factory=IntegrationsSettings)
     mcp: MCPSettings = Field(default_factory=MCPSettings)
     content_dir: Path = Path("content")
@@ -156,6 +158,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _require_explicit_all_interfaces_opt_in(self) -> Settings:
+        if self.gear_data_token is not None:
+            read_token = self.gear_data_token.get_secret_value()
+            if not read_token.strip() or read_token.strip() == "CHANGE_ME":
+                raise ValueError("gear_data_token must be a non-placeholder credential")
+            if read_token == self.api_token:
+                raise ValueError("gear_data_token must differ from the synchronization token")
         if self.bind_address in _UNSPECIFIED_ADDRESSES and not self.allow_all_interfaces:
             raise ValueError(
                 f"bind_address {self.bind_address!r} binds every interface, which §11.1 "

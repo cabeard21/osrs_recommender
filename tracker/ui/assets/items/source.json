@@ -7,42 +7,42 @@
   "fallback": "Items without a bundled sprite retain their exact textual name and a generic equipment symbol.",
   "additional_captures": {
     "857": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/857.png",
+      "source": "https://static.runelite.net/cache/item/icon/857.png",
       "retrieved_on": "2026-10-30",
       "sha256": "04d4c6db65e13adb9f2a219c308601bd930791d780c65b400f8f0d9ac0a113da"
     },
     "882": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/882.png",
+      "source": "https://static.runelite.net/cache/item/icon/882.png",
       "retrieved_on": "2026-10-30",
       "sha256": "bdd37ee1d4a048e3c3fc91b69885b4168e8f99292f33d1db580b04e6e09a3f5c"
     },
     "886": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/886.png",
+      "source": "https://static.runelite.net/cache/item/icon/886.png",
       "retrieved_on": "2026-10-30",
       "sha256": "3f58a04d1bdf208c9f6e59e347496f94e6fdbbf14ec829f42e27b2834a1886fe"
     },
     "1017": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/1017.png",
+      "source": "https://static.runelite.net/cache/item/icon/1017.png",
       "retrieved_on": "2026-10-30",
       "sha256": "2b14ed268b7196c62f1aaa240e8648b2213b742147f9e8b133ffc5d795664db8"
     },
     "1075": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/1075.png",
+      "source": "https://static.runelite.net/cache/item/icon/1075.png",
       "retrieved_on": "2026-10-30",
       "sha256": "9e18877183234f7c3f0f92b90ea3f6ec3ec1ffdd3041d868560e00ba341fb084"
     },
     "1077": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/1077.png",
+      "source": "https://static.runelite.net/cache/item/icon/1077.png",
       "retrieved_on": "2026-10-30",
       "sha256": "5b4b84a51dfae4e7c737d81e1a6008d089b8d904757133e91ccad38d389dac84"
     },
     "1101": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/1101.png",
+      "source": "https://static.runelite.net/cache/item/icon/1101.png",
       "retrieved_on": "2026-10-30",
       "sha256": "b5ba68704c62fc93ccb4a908f7c08ae1d1afb202b8f0d7baf8b58942c83bc819"
     },
     "1103": {
-      "source": "https://raw.githubusercontent.com/runelite/static.runelite.net/gh-pages/cache/item/icon/1103.png",
+      "source": "https://static.runelite.net/cache/item/icon/1103.png",
       "retrieved_on": "2026-10-30",
       "sha256": "57c055b7981a5f26977c514c141a2048642c476af7405e2c5e63dae42bf41c9c"
     },

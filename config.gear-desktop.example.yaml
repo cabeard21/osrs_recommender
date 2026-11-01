@@ -1,0 +1,12 @@
+# Copy to config.gear-desktop.yaml (private and gitignored).
+# Environment variables TRACKER_DESKTOP_<KEY> override these settings.
+bind_address: 127.0.0.1
+port: 8502
+content_dir: content
+
+# Use the Pi's private Tailscale address. No database file is mounted or copied.
+pi_url: http://100.117.157.57:8502
+# Set the numeric player.id from the Pi database, not the RuneScape display name.
+player_id: 1
+# Match TRACKER_GEAR_DATA_TOKEN on the Pi; this is separate from the RuneLite token.
+read_token: CHANGE_ME

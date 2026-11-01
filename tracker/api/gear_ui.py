@@ -19,11 +19,9 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict
 
 from tracker.accounts.requirements import RequirementResult
-from tracker.accounts.service import AccountService
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.api.deps import get_session_factory
 from tracker.content.schema import ItemSlot
-from tracker.db.gear_prices import DatabaseGearPrices
 from tracker.domain.types import Container
 from tracker.gear.combat import SPELLS
 from tracker.gear.combat_options import enumerate_combat_options
@@ -33,7 +31,6 @@ from tracker.gear.npcs import npc_catalog
 from tracker.gear.optimizer import SLOTS
 from tracker.gear.service import GearService
 from tracker.gear.support import SupportPolicy
-from tracker.ui.read_model import first_player_id
 from tracker.ui.staleness import scan_note
 
 
@@ -200,6 +197,7 @@ class ItemResponse(DTO):
 
 
 class ContextResponse(DTO):
+    data_source: dict[str, str] | None = None
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
     account: dict[str, Any] | None
@@ -294,11 +292,14 @@ def project_equipment(snapshot: AccountSnapshot | None, gear: GearService) -> Eq
 
 
 def resources(request: Request):
-    factory = get_session_factory(request)
-    with factory() as session:
-        player_id = first_player_id(session)
-    snapshot = AccountService(factory).get_snapshot(player_id) if player_id is not None else None
-    return snapshot, request.app.state.gear_service, DatabaseGearPrices(factory).get_prices()
+    source = getattr(request.app.state, "gear_data_source", None)
+    if source is not None:
+        snapshot, prices = source.load()
+        return snapshot, request.app.state.gear_service, prices
+    from tracker.gear.data_source import LocalGearDataSource
+
+    snapshot, prices = LocalGearDataSource(get_session_factory(request)).load()
+    return snapshot, request.app.state.gear_service, prices
 
 
 def combat_option_capabilities(
@@ -399,6 +400,9 @@ def context(request: Request) -> ContextResponse:
 
     return ContextResponse(
         evaluated_at=now,
+        data_source={"label": "Homelab Pi", "fetched_at": now.isoformat()}
+        if getattr(request.app.state, "gear_data_source", None) is not None
+        else None,
         account={**snapshot.summary(), "snapshot_id": snapshot.fingerprint} if snapshot else None,
         container_scans={
             c.value: {

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import App from "../App";
 import { HttpGearClient, parseContext, parseItem } from "../api/httpClient";
@@ -15,6 +15,55 @@ const transport = (status = 200) =>
         : context.items[0];
     return new Response(JSON.stringify(body), { status });
   }) as unknown as typeof fetch;
+
+it("preserves validated Pi source metadata and rejects invalid retrieval dates", () => {
+  const data_source = {
+    label: "Homelab Pi",
+    fetched_at: "2026-10-31T12:00:00+00:00",
+  };
+  expect(parseContext({ ...context, data_source }).live?.data_source).toEqual(
+    data_source,
+  );
+  expect(() =>
+    parseContext({
+      ...context,
+      data_source: { ...data_source, fetched_at: "not a date" },
+    }),
+  ).toThrow();
+  expect(parseContext(context).live?.data_source).toBeUndefined();
+});
+
+it("displays the Pi retrieval time and retains account data after a failed refresh", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...context,
+          data_source: {
+            label: "Homelab Pi",
+            fetched_at: "2026-10-31T12:00:00+00:00",
+          },
+        }),
+      ),
+    )
+    .mockResolvedValue(new Response("{}", { status: 503 }));
+  render(
+    <GearProvider client={new HttpGearClient("/ui-api/gear", fetcher)}>
+      <App />
+    </GearProvider>,
+  );
+  await screen.findByText(/Data source: Homelab Pi/);
+  expect(screen.getByText("2026-10-31T12:00:00+00:00")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Refresh account" }));
+  await screen.findByText("Displayed data may be stale.");
+  expect(
+    screen.getByRole("button", { name: "Run optimization" }),
+  ).toBeDisabled();
+  expect(
+    screen.getByText("Synchronized ranger", { exact: true }),
+  ).toBeVisible();
+});
 
 it("renders live account facts without fixture metrics or automatic optimization", async () => {
   const fetcher = transport();

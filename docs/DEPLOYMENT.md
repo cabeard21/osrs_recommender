@@ -17,6 +17,73 @@ make migrate                           # alembic upgrade head
 make run
 ```
 
+## Desktop Gear using live Pi data
+
+The desktop Gear mode runs the Python optimizer and React UI on Windows and reads
+account observations and cached prices from the Pi over Tailscale. RuneLite continues
+sending updates to the Pi. Quest Cape, history, and account-setting edits remain on the
+Pi. This mode does not copy or open the Pi's SQLite file across the network.
+
+### Provision the Pi endpoint
+
+Deploy an application image containing the read-only Gear data endpoint before starting
+the desktop. Verify the live stack, selected player, and Tailscale address first. Generate
+a fresh secret locally without committing or publishing it:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Set `TRACKER_GEAR_DATA_TOKEN` in the Pi stack's private `.env` file, or set
+`gear_data_token` in its private application YAML. Recreate only the
+`osrs-recommender` Compose service after changing its image or environment. Preserve the
+existing data/config mounts and RuneLite token. The endpoint is disabled when no read
+token is configured. The read token must differ from the RuneLite write token.
+
+The endpoint is `GET /api/gear-data/v1/players/{player_id}/snapshot`, authenticated with
+`Authorization: Bearer <read token>`. Its dedicated credential cannot authorize
+`/api/sync`. It returns raw account facts and prices, rather than Pi-calculated Gear
+results. Restrict the service to the existing Tailscale/private publication; do not add
+public ingress. Desktop and Pi must use compatible data-transport versions, but their
+Gear catalogs and optimizer code need not match.
+
+### Start on Windows
+
+Use Python 3.12 or newer, the repository's `.venv` with project dependencies installed,
+Node 22, npm, and an active Tailscale connection. If needed, create the environment with
+`py -3.12 -m venv .venv` and install using
+`.\.venv\Scripts\python.exe -m pip install -e ".[dev]"`.
+
+Copy `config.gear-desktop.example.yaml` to `config.gear-desktop.yaml`. Set the Pi URL,
+the account's numeric `player_id`, and `read_token` to the dedicated token provisioned
+above. The default player ID is an example: confirm the correct ID in the Pi database.
+Keep this file private. Alternatively, supply the token through
+`TRACKER_DESKTOP_READ_TOKEN`; all desktop fields support a `TRACKER_DESKTOP_` environment
+override. The launcher selects this file through `TRACKER_CONFIG_FILE` and leaves the
+normal `config.yaml` alone.
+
+```powershell
+.\run-gear-desktop.bat
+```
+
+The launcher validates settings, runs locked `npm ci` and the React production build,
+fetches missing sprites, and starts `http://127.0.0.1:8502/gear`. It runs no local
+database migrations or provider refresh scheduler and exposes no RuneLite ingestion
+endpoint. Stop any normal local app using port 8502 first, or change the desktop port.
+The Pi token stays in the Python process and is never delivered to React.
+
+Gear checks for updates on focus and through its existing 30-second refresh cycle.
+Calculations fetch current facts before and after running. Account changes during a
+calculation require refreshing and rerunning; prices remain frozen for that calculation.
+Connection failures retain scenario drafts and mark the view unavailable/stale rather
+than silently substituting a local database. Restore Tailscale/Pi connectivity to resume.
+Authentication errors require checking the dedicated token; compatibility errors require
+updating the endpoint or desktop to a compatible transport version.
+
+No database schema migration is needed for this feature. Roll back by stopping desktop
+Gear and removing the Pi read-token setting, then recreating only the application
+service. Existing Pi UI, RuneLite synchronization, and MCP remain the normal workflow.
+
 ## Raspberry Pi Docker Compose
 
 The production Compose source is `home-app-deployment/stacks/osrs-recommender/compose.yaml`;

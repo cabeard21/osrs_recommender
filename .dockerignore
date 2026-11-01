@@ -28,6 +28,7 @@ Capture.PNG
 *.stackdump
 .env
 config.yaml
+config.gear-desktop.yaml
 *.db
 *.db-shm
 *.db-wal
