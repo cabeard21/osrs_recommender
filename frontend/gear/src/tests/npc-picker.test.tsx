@@ -14,7 +14,9 @@ it("searches NPC variants and selects the exact catalog identity", async () => {
     reasons: [],
     catalog_revision: "rev",
     target: { name: "Goblin", defence_level: 1, magic_level: 1, bonuses: {} },
-    source_url: "https://oldschool.runescape.wiki/w/Goblin",
+    source_url:
+      "https://github.com/weirdgloop/osrs-dps-calc/blob/rev/cdn/json/monsters.json",
+    wiki_url: "https://oldschool.runescape.wiki/w/Goblin",
   };
   vi.stubGlobal(
     "fetch",
@@ -35,6 +37,10 @@ it("searches NPC variants and selects the exact catalog identity", async () => {
     await screen.findByRole("button", { name: /Goblin · Standard/ }),
   );
   await waitFor(() => expect(change).toHaveBeenCalled());
+  expect(screen.getByRole("link", { name: "NPC source" })).toHaveAttribute(
+    "href",
+    entry.wiki_url,
+  );
   expect(change).toHaveBeenCalledWith(
     expect.objectContaining({
       targetSelection: { key: entry.key, catalog_revision: "rev" },
@@ -59,7 +65,7 @@ const detail = {
     magic_level: 1,
     bonuses: { stab: 0 },
   },
-  source_url: "https://oldschool.runescape.wiki/w/Goblin",
+  wiki_url: "https://oldschool.runescape.wiki/w/Goblin",
 };
 const selection = { key: detail.key, catalog_revision: "rev" };
 const response = (value: unknown) => ({ ok: true, json: async () => value });
