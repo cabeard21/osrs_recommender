@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { sameValue } from "../api/runtime";
+import { getTarget, searchTargets } from "../api/targetCatalog";
 import type { CombatTarget, Role, TargetSelection } from "../api/contracts";
 
 interface Entry {
@@ -57,14 +58,7 @@ export function NpcTargetPicker({
     }
     setLoading(true);
     const timer = setTimeout(() => {
-      fetch(
-        `/ui-api/gear/targets?q=${encodeURIComponent(query.trim())}&offset=${offset}&limit=20`,
-        { signal: controller.signal },
-      )
-        .then(async (response) => {
-          if (!response.ok) throw new Error();
-          return response.json();
-        })
+      searchTargets<Entry>(query.trim(), offset, 20, controller.signal)
         .then((page) => {
           if (active) {
             setItems(page.items);
@@ -93,11 +87,7 @@ export function NpcTargetPicker({
   useEffect(() => {
     if (!selection) return;
     let active = true;
-    fetch(`/ui-api/gear/targets/${encodeURIComponent(selection.key)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error();
-        return response.json();
-      })
+    getTarget<Detail>(selection.key)
       .then((row) => {
         if (active) setDetail(row);
       })
@@ -114,11 +104,7 @@ export function NpcTargetPicker({
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(
-        `/ui-api/gear/targets/${encodeURIComponent(key)}`,
-      );
-      if (!response.ok) throw new Error();
-      const row: Detail = await response.json();
+      const row = await getTarget<Detail>(key);
       if (request !== serial.current) return;
       setDetail(row);
       setEditing(false);
@@ -241,7 +227,11 @@ export function NpcTargetPicker({
                     </div>
                   ))}
               </dl>
-              <button type="button" onClick={() => setEditing(!editing)}>
+              <button
+                type="button"
+                aria-expanded={editing}
+                onClick={() => setEditing(!editing)}
+              >
                 Edit stats
               </button>
               <button

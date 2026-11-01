@@ -37,6 +37,94 @@ export const newDraft = (): Draft => ({
   exclusions: [],
   assumptions: { attack: "", quest: false, acquired: "" },
 });
+const GP_MULTIPLIERS: Record<string, number> = {
+  k: 1_000,
+  m: 1_000_000,
+  b: 1_000_000_000,
+};
+/** Expands `10m`, `500k`, `1.5b` and `1,000`; anything else is returned as typed. */
+export function parseGp(value: string): string {
+  const match = /^\s*([\d,]*\.?\d+)\s*([kmb])?\s*$/i.exec(value);
+  if (!match) return value;
+  const amount = Number(match[1].replaceAll(",", ""));
+  const suffix = match[2]?.toLowerCase();
+  if (!suffix) return Number.isInteger(amount) ? String(amount) : value;
+  return String(Math.round(amount * GP_MULTIPLIERS[suffix]));
+}
+function integer(value: string, name: string, min: number, max: number) {
+  const n = Number(value);
+  if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
+    throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
+  return n;
+}
+function parseDpsLoss(draft: Draft) {
+  const loss = Number(draft.maxDpsLossPct ?? "10");
+  if (
+    !(draft.maxDpsLossPct ?? "10").trim() ||
+    !Number.isFinite(loss) ||
+    loss < 0 ||
+    loss > 100
+  )
+    throw new Error("Maximum DPS loss must be from 0 to 100 percent.");
+  return loss;
+}
+function parseAcquiredIds(acquired: string) {
+  return acquired.trim()
+    ? acquired
+        .split(",")
+        .map((v) => integer(v.trim(), "Assumed item ID", 1, 100000))
+    : [];
+}
+function parseSkillLevels(skillLevels: string | undefined) {
+  const skills: Record<string, number> = {};
+  for (const entry of (skillLevels ?? "").split(",").filter((v) => v.trim())) {
+    const [skill, level, extra] = entry.trim().split("=");
+    if (!skill || !level || extra)
+      throw new Error("Assumed skills use skill=level, separated by commas.");
+    skills[skill.trim()] = integer(level.trim(), "Assumed skill", 1, 99);
+  }
+  return skills;
+}
+export type DraftFieldErrors = Partial<
+  Record<
+    | "budget"
+    | "defence"
+    | "supplies"
+    | "maxDpsLoss"
+    | "attack"
+    | "skillLevels"
+    | "acquired",
+    string
+  >
+>;
+function errorOf(check: () => unknown): string | undefined {
+  try {
+    check();
+    return undefined;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+/** Per-field messages for inline display. `normalize` still blocks submission. */
+export function draftFieldErrors(draft: Draft): DraftFieldErrors {
+  const checks: Record<keyof DraftFieldErrors, () => unknown> = {
+    budget: () => integer(parseGp(draft.budget), "Budget", 0, 2147483647),
+    defence: () => integer(draft.defence, "Target defence", 0, 10000),
+    supplies: () => integer(draft.supplies, "Supply slots", 0, 28),
+    maxDpsLoss: () => parseDpsLoss(draft),
+    attack: () =>
+      draft.assumptions.attack &&
+      integer(draft.assumptions.attack, "Assumed Attack", 1, 99),
+    skillLevels: () => parseSkillLevels(draft.assumptions.skillLevels),
+    acquired: () => parseAcquiredIds(draft.assumptions.acquired),
+  };
+  return Object.fromEntries(
+    Object.entries(checks).flatMap(([field, check]) => {
+      const message = errorOf(check);
+      return message ? [[field, message]] : [];
+    }),
+  );
+}
 export function normalize(
   draft: Draft,
   snapshotId: string,
@@ -57,20 +145,7 @@ export function normalize(
     throw new Error("Choose a valid secondary priority.");
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
-  const loss = Number(draft.maxDpsLossPct ?? "10");
-  if (
-    !(draft.maxDpsLossPct ?? "10").trim() ||
-    !Number.isFinite(loss) ||
-    loss < 0 ||
-    loss > 100
-  )
-    throw new Error("Maximum DPS loss must be from 0 to 100 percent.");
-  const integer = (value: string, name: string, min: number, max: number) => {
-    const n = Number(value);
-    if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
-      throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
-    return n;
-  };
+  const loss = parseDpsLoss(draft);
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -172,7 +247,7 @@ export function normalize(
         ? ["accurate", "aggressive", "controlled", "defensive"]
         : role.style === "ranged"
           ? ["accurate", "rapid", "longrange"]
-          : ["accurate", "defensive", "longrange"];
+          : ["accurate", "defensive"];
     if (!role.utility && !stances.includes(role.stance))
       throw new Error(
         `${role.name} attack stance is unsupported for its discipline.`,
@@ -231,20 +306,8 @@ export function normalize(
     draft.assumptions.acquired !== "";
   if (hypothetical && draft.mode !== "future")
     throw new Error("Select hypothetical access to submit assumptions.");
-  const assumed = draft.assumptions.acquired.trim()
-    ? draft.assumptions.acquired
-        .split(",")
-        .map((v) => integer(v.trim(), "Assumed item ID", 1, 100000))
-    : [];
-  const skills: Record<string, number> = {};
-  for (const entry of (draft.assumptions.skillLevels ?? "")
-    .split(",")
-    .filter((v) => v.trim())) {
-    const [skill, level, extra] = entry.trim().split("=");
-    if (!skill || !level || extra)
-      throw new Error("Assumed skills use skill=level, separated by commas.");
-    skills[skill.trim()] = integer(level.trim(), "Assumed skill", 1, 99);
-  }
+  const assumed = parseAcquiredIds(draft.assumptions.acquired);
+  const skills = parseSkillLevels(draft.assumptions.skillLevels);
   const quests = (draft.assumptions.completedQuests ?? "")
     .split(",")
     .map((v) => v.trim())
@@ -313,7 +376,7 @@ export function normalize(
           ? { definition: structuredClone(draft.combatTarget) }
           : {}),
       },
-      budget_gp: integer(draft.budget, "Budget", 0, 2147483647),
+      budget_gp: integer(parseGp(draft.budget), "Budget", 0, 2147483647),
       mode: draft.mode,
       max_swaps: integer(draft.maxActions, "Equipment actions", 0, 12),
       reserved_supply_slots: integer(draft.supplies, "Supply slots", 0, 28),
@@ -358,6 +421,7 @@ export interface WorkspaceState {
   generation: number;
   pending: boolean;
   error: string | null;
+  runNotice: string | null;
   outdated: boolean;
   activeRole: string;
   slot: Slot | null;
@@ -380,6 +444,7 @@ const workspace = (): WorkspaceState => ({
   generation: 0,
   pending: false,
   error: null,
+  runNotice: null,
   outdated: false,
   activeRole: "role-1",
   slot: null,
@@ -607,6 +672,9 @@ export function reducer(state: State, action: Action): State {
         generation: current.generation + 1,
         pending: false,
         error: null,
+        runNotice: current.pending
+          ? "Run cancelled because settings changed. Run again when you're ready."
+          : current.runNotice,
         outdated: !!current.result,
         ...clearedTrial(current),
       };
@@ -618,6 +686,7 @@ export function reducer(state: State, action: Action): State {
         generation: action.generation,
         pending: true,
         error: null,
+        runNotice: null,
         ...clearedTrial(current),
       };
       break;

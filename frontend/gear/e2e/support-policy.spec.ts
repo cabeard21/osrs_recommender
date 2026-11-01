@@ -4,6 +4,10 @@ test("equipment support policy defaults to community and roundtrips strict selec
   page,
 }) => {
   await page.goto("/gear-next/?mode=fixture");
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
   const policy = page.getByRole("combobox", {
     name: "Equipment support policy",
   });

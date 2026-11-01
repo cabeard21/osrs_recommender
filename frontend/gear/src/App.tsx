@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
+  History,
   LayoutDashboard,
+  Loader2,
   Settings,
-  Shield,
-  ArrowRightLeft,
   SlidersHorizontal,
 } from "lucide-react";
 import { useGear } from "./state/GearProvider";
 import { ConfigurationPanel } from "./components/ConfigurationPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ResultWorkspace } from "./components/ResultWorkspace";
 import { ItemInspector } from "./components/ItemInspector";
 import { Dialog } from "./components/Dialog";
+import { Timestamp } from "./components/Timestamp";
 import type { FixtureFailure } from "./api/contracts";
+
+const STACKED_LAYOUT_QUERY = "(max-width: 900px)";
+
 export default function App() {
   const {
     state,
@@ -32,45 +37,47 @@ export default function App() {
   const [menu, setMenu] = useState(false),
     [handoff, setHandoff] = useState(false),
     [copyStatus, setCopyStatus] = useState("");
+  const lastResult = useRef({ mode: state.mode, result: current.result });
+  useEffect(() => {
+    const previous = lastResult.current;
+    lastResult.current = { mode: state.mode, result: current.result };
+    if (
+      previous.mode !== state.mode ||
+      !current.result ||
+      previous.result === current.result ||
+      !window.matchMedia(STACKED_LAYOUT_QUERY).matches
+    )
+      return;
+    document.querySelector(".result-column")?.scrollIntoView?.();
+  }, [state.mode, current.result]);
   const solution = current.result?.solutions.find(
     (s) => s.id === current.solutionId,
   );
   const navigate = (mode: "single" | "multi") => {
     location.hash = mode;
     dispatch({ type: "navigate", mode });
-    setMenu(false);
+  };
+  const openHandoff = () => {
+    setCopyStatus("");
+    setHandoff(true);
   };
   const nav = (
     <>
       <div className="brand">
         <Box className="gold" />
         <div>
-          <strong>RUNIC VAULT</strong>
-          <small className="gold">GEAR // PREVIEW 01</small>
+          <strong>RUNIC LEDGER</strong>
+          <small className="gold">GEAR</small>
         </div>
       </div>
       <span className="eyebrow nav-label">Operations</span>
       <nav aria-label="Workspace navigation">
-        <button
-          aria-current={state.mode === "single" ? "page" : undefined}
-          onClick={() => navigate("single")}
-        >
-          <Shield size={18} />
-          Loadout Optimizer
-        </button>
-        <button
-          aria-current={state.mode === "multi" ? "page" : undefined}
-          onClick={() => navigate("multi")}
-        >
-          <ArrowRightLeft size={18} />
-          Multi-Style Planner
-        </button>
         <a href="/">
           <LayoutDashboard size={18} />
           Dashboard
         </a>
         <a href="/gear-legacy">
-          <Shield size={18} />
+          <History size={18} />
           Existing Gear
         </a>
       </nav>
@@ -92,23 +99,30 @@ export default function App() {
     current.draft.assumptions.acquired ||
     current.draft.assumptions.skillLevels ||
     current.draft.assumptions.completedQuests;
-  const handoffText = JSON.stringify(
-    {
-      source: liveMode
-        ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
-        : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
-      submitted: current.result?.scenario ?? null,
-      draft: current.draft,
-      result: current.result,
-      trial: current.trial,
-    },
-    null,
-    2,
-  );
+  const handoffText = handoff
+    ? JSON.stringify(
+        {
+          source: liveMode
+            ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
+            : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
+          submitted: current.result?.scenario ?? null,
+          draft: current.draft,
+          result: current.result,
+          trial: current.trial,
+        },
+        null,
+        2,
+      )
+    : "";
+  const pendingMessage = liveMode
+    ? current.draft.optimizationMode === "thorough"
+      ? "Searching supported configurations and additional complete combinations… Thorough can take substantially longer. Settings are locked until it finishes or you cancel."
+      : "Searching supported configurations…"
+    : "Running deterministic fixture…";
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      setCopyStatus(liveMode ? "Copied scenario draft" : "Copied fixture text");
+      setCopyStatus("Copied handoff text");
     } catch {
       setCopyStatus("Clipboard unavailable. Select and copy the text below.");
     }
@@ -141,7 +155,7 @@ export default function App() {
             </strong>
             <small className="blue">
               {liveMode
-                ? "PYTHON OPTIMIZER · ACCOUNT OBSERVATIONS"
+                ? "LIVE ACCOUNT · LAST SYNCED DATA"
                 : "FIXTURE PREVIEW · NO LIVE CONNECTION"}
             </small>
           </div>
@@ -172,14 +186,13 @@ export default function App() {
               {liveMode ? "Last synchronized observations" : "Account fixture"}
             </small>
           </span>
-          <button onClick={() => setHandoff(true)}>ChatGPT handoff</button>
+          <button onClick={openHandoff}>ChatGPT handoff</button>
         </header>
         <main id="main" tabIndex={-1}>
           <div className="demo-banner">
             {liveMode ? (
               <>
-                Live single and joint optimization · ordinary-attack DPS from
-                Python.{" "}
+                Live optimization · DPS for ordinary attacks only.{" "}
                 <a href="?mode=fixture">Open separate fixture demonstration</a>
               </>
             ) : (
@@ -198,37 +211,22 @@ export default function App() {
           )}
           <section className="protocol panel">
             <div>
-              <span className="eyebrow gold">
-                Protocol 01 //{" "}
-                {current.result ? "Result inspection" : "Baseline state"}
-              </span>
               <h1>
                 {state.mode === "single"
                   ? "Single-style optimizer"
                   : "Multi-style planner"}
               </h1>
-              <p>
-                {current.pending
-                  ? liveMode
-                    ? current.draft.optimizationMode === "thorough"
-                      ? "Searching supported configurations and additional complete combinations… Thorough can take substantially longer."
-                      : "Searching supported configurations…"
-                    : "Running deterministic fixture…"
-                  : current.result
-                    ? "Inspect equipment and refine your scenario"
-                    : liveMode
-                      ? "Configure supported ordinary attacks and optimize your equipment"
-                      : "Configure your scenario and inspect the demo loadout"}
-              </p>
+              {current.pending && <RunStatus message={pendingMessage} />}
+              {current.outdated && !current.pending && (
+                <span className="badge">
+                  Settings changed since this result
+                </span>
+              )}
             </div>
             <div className="button-row">
               <button
                 className="primary"
-                disabled={
-                  !state.context?.snapshotId ||
-                  current.pending ||
-                  !!contextError
-                }
+                disabled={!state.context?.snapshotId || current.pending}
                 onClick={() => void run()}
               >
                 {liveMode
@@ -263,6 +261,11 @@ export default function App() {
             </p>
           )}
           {liveMode && <LiveAccountContext />}
+          {current.runNotice && (
+            <div role="status" className="notice">
+              {current.runNotice}
+            </div>
+          )}
           {current.error && (
             <div role="alert" className="notice error">
               {current.error}
@@ -274,8 +277,17 @@ export default function App() {
           <div
             className={`workspace ${current.slot ? "inspector-open" : ""} ${state.mode === "multi" ? "multi-workspace" : ""}`}
           >
-            <ConfigurationPanel />
-            <ResultWorkspace />
+            <fieldset
+              className="config-lock"
+              disabled={
+                current.pending && current.draft.optimizationMode === "thorough"
+              }
+            >
+              <ConfigurationPanel />
+            </fieldset>
+            <ErrorBoundary>
+              <ResultWorkspace />
+            </ErrorBoundary>
             <details
               className="analysis-column"
               aria-label="Simulation status and provenance"
@@ -293,13 +305,13 @@ export default function App() {
                         : "Simulation pending"
                       : current.result
                         ? liveMode
-                          ? "Python result ready"
+                          ? "Result ready"
                           : "Fixture ready"
                         : "Awaiting execution"}
                   </h3>
                   <p>
                     {liveMode
-                      ? "Python evaluates ordinary-attack DPS with account requirements, concrete equipment identities, locks, exclusions, and purchase budgets. Search is bounded; results are the best configurations found."
+                      ? "Calculates ordinary-attack DPS using your account requirements, exact items, locks, exclusions and purchase budget. The search is bounded, so results are the best configurations found."
                       : "Deterministic UI fixtures demonstrate the workflow. Configuration is recorded, but no search or calculation runs."}
                   </p>
                 </div>
@@ -316,7 +328,7 @@ export default function App() {
                 <p>
                   {liveMode
                     ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
-                    : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for Python validation."}
+                    : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for full validation."}
                 </p>
                 {!liveMode && (
                   <>
@@ -359,7 +371,9 @@ export default function App() {
                     {liveMode ? "Account" : "Fixture"} snapshot:{" "}
                     {current.result.snapshotId}
                   </p>
-                  <p>Evaluated: {current.result.evaluatedAt}</p>
+                  <p>
+                    Evaluated: <Timestamp value={current.result.evaluatedAt} />
+                  </p>
                   <p>
                     {current.result.catalogVersion}
                     <br />
@@ -407,22 +421,11 @@ export default function App() {
                             ? "No additional purchases required"
                             : "No additional purchases in this fixture")}
                       </p>
-                      <button
-                        onClick={() => {
-                          setCopyStatus("");
-                          setHandoff(true);
-                        }}
-                      >
-                        Copy scenario & purchases
+                      <button onClick={openHandoff}>
+                        Open handoff with purchases
                       </button>
                     </>
                   )}
-                  <button
-                    disabled
-                    title="Unavailable until a verified export format exists"
-                  >
-                    RuneLite tag export · unavailable
-                  </button>
                 </section>
               )}
               <section className="panel">
@@ -431,20 +434,28 @@ export default function App() {
                   Copy a labeled scenario for discussion. No simulated assistant
                   responses.
                 </p>
-                <button onClick={() => setHandoff(true)}>Open handoff</button>
+                <button onClick={openHandoff}>Open handoff</button>
               </section>
             </details>
           </div>
           <footer>
-            RUNIC LEDGER // MILESTONE 5{" "}
+            RUNIC LEDGER // GEAR{" "}
             <span>
               {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
-              {state.context?.observedAt ?? "not loaded"}
+              {state.context?.observedAt ? (
+                <Timestamp value={state.context.observedAt} />
+              ) : (
+                "not loaded"
+              )}
             </span>
           </footer>
         </main>
       </div>
-      {current.slot && <ItemInspector />}
+      {current.slot && (
+        <ErrorBoundary>
+          <ItemInspector />
+        </ErrorBoundary>
+      )}
       {handoff && (
         <Dialog title="ChatGPT handoff" onClose={() => setHandoff(false)}>
           <p>
@@ -459,11 +470,28 @@ export default function App() {
             value={handoffText}
           />
           <button onClick={() => void copy(handoffText)}>
-            {liveMode ? "Copy scenario draft" : "Copy fixture scenario"}
+            Copy handoff text
           </button>
           <p role="status">{copyStatus}</p>
         </Dialog>
       )}
+    </div>
+  );
+}
+
+function RunStatus({ message }: { message: string }) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div className="run-status">
+      <Loader2 className="spinner" size={16} aria-hidden="true" />
+      <span role="status" aria-label="Optimization progress">
+        {message}
+      </span>
+      <span className="numeric">{elapsedSeconds}s</span>
     </div>
   );
 }
@@ -484,15 +512,17 @@ function LiveAccountContext() {
       )}
       <p>
         {live.account?.username ?? "No account"} · Last synchronization:{" "}
-        {live.account?.last_sync_at ?? "Never"}
+        {live.account?.last_sync_at ? (
+          <Timestamp value={live.account.last_sync_at} />
+        ) : (
+          "Never"
+        )}
       </p>
       <button onClick={() => void loadContext()}>Refresh account</button>
       {live.data_source && (
         <p>
           Data source: {live.data_source.label} · Last retrieved:{" "}
-          <time dateTime={live.data_source.fetched_at}>
-            {live.data_source.fetched_at}
-          </time>
+          <Timestamp value={live.data_source.fetched_at} />
         </p>
       )}
       <details>

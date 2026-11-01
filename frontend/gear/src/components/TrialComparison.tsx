@@ -1,6 +1,7 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import type { Trial } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
+import { PurchaseRows } from "./PurchaseRows";
 
 type LiveTrial = Extract<Trial, { source: "live" }>;
 const number = (value: number, digits = 2) => value.toFixed(digits);
@@ -60,7 +61,7 @@ export function TrialComparison({
     : [];
   return (
     <section className="trial" aria-label="Manual trial">
-      <h3>Manual trial · exact Python evaluation</h3>
+      <h3>Manual trial</h3>
       <p>Original recommendation and draft equipment remain unchanged.</p>
       {valid ? (
         <>
@@ -145,17 +146,7 @@ export function TrialComparison({
           ? "Total acquisition cost unavailable."
           : `${gp(proposed.purchase_cost_gp)} additional purchases`}
       </p>
-      {proposed.purchases.map((purchase) => (
-        <p key={purchase.item_id}>
-          {itemName(purchase.item_id)} ·{" "}
-          {purchase.cost_gp === null
-            ? "Price unavailable"
-            : gp(purchase.cost_gp)}
-          {purchase.conditional
-            ? " · conditional purchase: ownership uncertain"
-            : ""}
-        </p>
-      ))}
+      <PurchaseRows purchases={proposed.purchases} itemName={itemName} />
       {proposed.assumed_item_ids.length > 0 && (
         <p className="notice">
           Hypothetically acquired IDs: {proposed.assumed_item_ids.join(", ")}.

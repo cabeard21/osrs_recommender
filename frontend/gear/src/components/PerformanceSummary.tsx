@@ -31,7 +31,7 @@ export function PerformanceSummary({
       </div>
       <p>
         {live
-          ? "Python ordinary-attack calculation"
+          ? "Calculated for ordinary attacks"
           : "Authored fixture numbers · no combat calculation"}
       </p>
     </section>

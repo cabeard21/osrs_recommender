@@ -8,6 +8,7 @@ import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { PurchaseListCopy } from "./PurchaseListCopy";
+import { PurchaseRows, purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
@@ -66,7 +67,6 @@ export function LiveResultWorkspace() {
     );
   return (
     <div className="result-column">
-      <SupportPolicySummary result={result} />
       <SecondaryFrontier
         group={result.live?.result.secondary_frontiers?.find(
           (g) => g.swap_limit === result.scenario.request.max_swaps,
@@ -77,12 +77,8 @@ export function LiveResultWorkspace() {
           dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
         }
       />
-      <SecondaryPrioritySummary result={result} solution={selected} />
-      <OptimizationModeSummary result={result} solution={selected} />
       <section className="panel result-context">
-        <span className="eyebrow gold">
-          Submitted scenario // Python optimizer
-        </span>
+        <span className="eyebrow gold">Submitted scenario</span>
         <strong>{result.scenario.request.target.name}</strong>
         <p>
           {result.scenario.request.target.defence} defence ·{" "}
@@ -125,18 +121,6 @@ export function LiveResultWorkspace() {
               {previous ? "Reoptimized result" : "Optimized result"}
             </span>
           </div>
-          <p>Bounded search · select any slot to inspect its physical item.</p>
-          <EquipmentGrid
-            equipment={loadout.equipment}
-            selected={current.slot}
-            onSelect={select}
-            optimized
-          />
-          <CombatOptionSummary
-            option={loadout.combatOption}
-            role={result.scenario.request.roles[0]}
-            weapon={itemById(loadout.equipment.weapon ?? -1)?.name ?? "Unarmed"}
-          />
           {loadout.metrics && (
             <PerformanceSummary
               metrics={loadout.metrics}
@@ -144,6 +128,25 @@ export function LiveResultWorkspace() {
               title="Calculated combat performance"
             />
           )}
+          {solution && (
+            <p className="result-cost">
+              {purchaseSummary(solution.purchases.length, solution.cost)}
+            </p>
+          )}
+          <p>Bounded search · select any slot to inspect its item.</p>
+          <EquipmentGrid
+            equipment={loadout.equipment}
+            selected={current.slot}
+            onSelect={select}
+            optimized
+            purchaseIds={solution?.purchases}
+            roleId={loadout.roleId}
+          />
+          <CombatOptionSummary
+            option={loadout.combatOption}
+            role={result.scenario.request.roles[0]}
+            weapon={itemById(loadout.equipment.weapon ?? -1)?.name ?? "Unarmed"}
+          />
           <EquipmentBonuses
             bonuses={selected?.loadouts[loadout.roleId]?.performance.bonuses}
           />
@@ -170,17 +173,10 @@ export function LiveResultWorkspace() {
               ? "Concrete purchases counted once; cached estimates are not guaranteed execution prices."
               : "No additional purchases required."}
           </p>
-          {selected?.purchases.map((p) => (
-            <p key={p.item_id}>
-              {itemById(p.item_id)?.name ?? `Item #${p.item_id}`} ·{" "}
-              {p.cost_gp === null
-                ? "Price unavailable"
-                : `${p.cost_gp.toLocaleString()} GP`}
-              {p.conditional
-                ? " · conditional purchase: ownership uncertain"
-                : ""}
-            </p>
-          ))}
+          <PurchaseRows
+            purchases={selected?.purchases ?? []}
+            itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
+          />
           <PurchaseListCopy
             key={`${result.fingerprint}:${result.priceRevision}`}
             purchases={selected?.purchases ?? []}
@@ -249,6 +245,9 @@ export function LiveResultWorkspace() {
           </details>
         </details>
       )}
+      <SupportPolicySummary result={result} />
+      <SecondaryPrioritySummary result={result} solution={selected} />
+      <OptimizationModeSummary result={result} solution={selected} />
     </div>
   );
 }

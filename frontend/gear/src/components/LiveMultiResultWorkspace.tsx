@@ -8,6 +8,7 @@ import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
+import { purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
@@ -45,8 +46,8 @@ export function LiveMultiResultWorkspace() {
       <section className="panel">
         <h2>Configure a joint optimization</h2>
         <p>
-          Add two to four configurations, then run one Python joint
-          optimization. All views will use that joint result.
+          Add two to four configurations, then run one joint optimization. All
+          views will use that joint result.
         </p>
       </section>
     );
@@ -159,6 +160,8 @@ export function LiveMultiResultWorkspace() {
           selected={current.activeRole === id ? current.slot : null}
           onSelect={(slot: Slot) => ui({ slot, activeRole: id })}
           optimized
+          purchaseIds={solution.purchases.map((p) => p.item_id)}
+          roleId={id}
         />
         {scored ? (
           <PerformanceSummary
@@ -199,29 +202,14 @@ export function LiveMultiResultWorkspace() {
   }
   return (
     <div className="result-column">
-      <SupportPolicySummary result={result} />
       <SecondaryFrontier
         group={frontierGroup}
         selectedId={current.solutionId}
         priority={result.scenario.request.secondary_priority ?? "default"}
         onSelect={(solutionId) => ui({ solutionId })}
       />
-      <SecondaryPrioritySummary result={result} solution={solution} />
-      <OptimizationModeSummary
-        result={result}
-        solution={solution}
-        actionLimit={
-          point?.swap_limit ?? frontierGroup?.swap_limit ?? undefined
-        }
-        unrestricted={
-          current.solutionId === "unrestricted" ||
-          frontierGroup?.swap_limit === null
-        }
-      />
       <section className="panel result-context">
-        <span className="eyebrow gold">
-          Submitted joint scenario // Python optimizer
-        </span>
+        <span className="eyebrow gold">Submitted joint scenario</span>
         <h2>Best joint configuration found</h2>
         <p>
           {roles.length} configurations ·{" "}
@@ -292,8 +280,8 @@ export function LiveMultiResultWorkspace() {
           </select>
         </label>
         <p>
-          Only computed backend points are shown. Selection changes the
-          displayed solution without running optimization.
+          Only computed points are shown. Selection changes the displayed
+          solution without running optimization.
         </p>
         {point?.relative_performance !== null &&
           point?.relative_performance !== undefined && (
@@ -314,9 +302,9 @@ export function LiveMultiResultWorkspace() {
             (p) => p.swap_limit === raw.suggested_swap_limit && p.solution,
           ) && (
             <p>
-              Backend suggestion: {raw.suggested_swap_limit} equipment actions
-              for at least 95% of the best-found reference. This does not change
-              the selected point.
+              Suggested: {raw.suggested_swap_limit} equipment actions for at
+              least 95% of the best-found reference. This does not change the
+              selected point.
             </p>
           )}
       </section>
@@ -330,6 +318,12 @@ export function LiveMultiResultWorkspace() {
             >
               {solution.score.toFixed(2)}
             </strong>
+            <p className="result-cost">
+              {purchaseSummary(
+                solution.purchases.length,
+                solution.purchase_cost_gp,
+              )}
+            </p>
             <p>
               Active-time weighted ordinary-attack DPS. Unscored utility roles
               have no damage contribution.
@@ -492,6 +486,19 @@ export function LiveMultiResultWorkspace() {
           not proven.
         </p>
       </section>
+      <SupportPolicySummary result={result} />
+      <SecondaryPrioritySummary result={result} solution={solution} />
+      <OptimizationModeSummary
+        result={result}
+        solution={solution}
+        actionLimit={
+          point?.swap_limit ?? frontierGroup?.swap_limit ?? undefined
+        }
+        unrestricted={
+          current.solutionId === "unrestricted" ||
+          frontierGroup?.swap_limit === null
+        }
+      />
     </div>
   );
 }

@@ -41,7 +41,7 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
 
   const trialResponse = evaluationResponse(page);
   await page
-    .getByRole("button", { name: "Preview Adamant scimitar", exact: true })
+    .getByRole("button", { name: "Try Adamant scimitar", exact: true })
     .click();
   const evaluated = await trialResponse;
   expect(evaluated.status(), await evaluated.text()).toBe(200);
@@ -88,7 +88,7 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
     ).toHaveText(value);
   await expect(
     page.getByRole("heading", {
-      name: "Manual trial · exact Python evaluation",
+      name: "Manual trial",
     }),
   ).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -120,7 +120,7 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
   await page.getByRole("button", { name: /^weapon .*Rune scimitar/ }).click();
   const secondTrial = evaluationResponse(page);
   await page
-    .getByRole("button", { name: "Preview Adamant scimitar", exact: true })
+    .getByRole("button", { name: "Try Adamant scimitar", exact: true })
     .click();
   expect((await secondTrial).status()).toBe(200);
   await page
@@ -188,7 +188,7 @@ test("exact live weapon trial, compare, revert, lock, reoptimize and exclude", a
   ).toBe(false);
   await page.getByRole("button", { name: /^weapon .*Rune scimitar/ }).click();
   await expect(
-    page.getByRole("button", { name: "Preview Adamant scimitar", exact: true }),
+    page.getByRole("button", { name: "Try Adamant scimitar", exact: true }),
   ).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -208,12 +208,9 @@ test("infeasible catalog replacement explains the budget constraint without tria
   await page
     .getByRole("textbox", { name: "Search name or numeric ID" })
     .fill("Adamant scimitar");
-  await page
-    .getByRole("button", { name: "Inspect Adamant scimitar", exact: true })
-    .click();
   const invalidResponse = evaluationResponse(page);
   await page
-    .getByRole("button", { name: "Preview selected alternative", exact: true })
+    .getByRole("button", { name: "Try Adamant scimitar", exact: true })
     .click();
   const invalid = await invalidResponse;
   expect(invalid.status(), await invalid.text()).toBe(200);
@@ -229,7 +226,7 @@ test("infeasible catalog replacement explains the budget constraint without tria
   ).toBe(true);
   await expect(
     page.getByRole("heading", {
-      name: "Manual trial · exact Python evaluation",
+      name: "Manual trial",
     }),
   ).toBeVisible();
   for (const reason of data.proposed.reasons)

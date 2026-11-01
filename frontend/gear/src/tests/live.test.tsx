@@ -54,12 +54,12 @@ it("displays the Pi retrieval time and retains account data after a failed refre
     </GearProvider>,
   );
   await screen.findByText(/Data source: Homelab Pi/);
-  expect(screen.getByText("2026-10-31T12:00:00+00:00")).toBeVisible();
+  expect(screen.getByTitle("2026-10-31T12:00:00+00:00")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Refresh account" }));
   await screen.findByText("Displayed data may be stale.");
   expect(
     screen.getByRole("button", { name: "Run optimization" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect(
     screen.getByText("Synchronized ranger", { exact: true }),
   ).toBeVisible();

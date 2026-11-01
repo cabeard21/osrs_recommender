@@ -61,7 +61,7 @@ test("Fast default, Thorough submission, stale preservation and policy compariso
       r.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: "Preview Adamant scimitar", exact: true })
+    .getByRole("button", { name: "Try Adamant scimitar", exact: true })
     .click();
   const evaluated = await evaluation;
   expect(evaluated.status(), await evaluated.text()).toBe(200);

@@ -150,7 +150,7 @@ it("previews contextual replacements from an unchanged accepted loadout", async 
   const user = userEvent.setup();
   const { previewTrial, equipment, result, edit } = setupInspector();
   await user.click(
-    await screen.findByRole("button", { name: "Preview Rune scimitar" }),
+    await screen.findByRole("button", { name: "Try Rune scimitar" }),
   );
   expect(previewTrial).toHaveBeenCalledWith({ ...equipment, weapon: 1333 });
   expect(result.solutions[0].loadouts[0].equipment).toEqual(equipment);
@@ -167,11 +167,13 @@ it("uses an explicit unlock-and-exclude draft action", async () => {
   expect(edit.mock.calls[0][0].exclusions).toEqual([4151]);
 });
 
-it("blocks previews from an outdated result", async () => {
-  setupInspector({ outdated: true });
-  expect(
-    await screen.findByRole("button", { name: "Preview Rune scimitar" }),
-  ).toBeDisabled();
+it("blocks previews from an outdated result but still inspects items", async () => {
+  const user = userEvent.setup();
+  const { previewTrial } = setupInspector({ outdated: true });
+  await user.click(
+    await screen.findByRole("button", { name: "Try Rune scimitar" }),
+  );
+  expect(previewTrial).not.toHaveBeenCalled();
   expect(
     screen.getByRole("button", { name: "Preview empty slot" }),
   ).toBeDisabled();
@@ -186,9 +188,7 @@ it("locks an inspected alternative only in the draft", async () => {
   const region = within(
     screen.getByRole("region", { name: "Contextual alternatives" }),
   );
-  await user.click(
-    region.getByRole("button", { name: "Inspect Rune scimitar" }),
-  );
+  await user.click(region.getByRole("button", { name: "Try Rune scimitar" }));
   await screen.findByRole("heading", { name: "Rune scimitar" });
   await user.click(
     screen.getByRole("button", { name: "Lock weapon to #1333" }),
@@ -207,11 +207,8 @@ it("filters exclusions from alternatives and requires correction before locking 
     screen.getByRole("button", { name: "Exclude item in draft" }),
   ).toBeDisabled();
   expect(
-    screen.queryByRole("button", { name: "Preview Rune scimitar" }),
+    screen.queryByRole("button", { name: "Try Rune scimitar" }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("button", { name: "Preview selected alternative" }),
-  ).toBeDisabled();
 });
 
 it("provides cancellation while a manual evaluation runs", async () => {
@@ -263,7 +260,7 @@ it("shows exact comparisons and trial purchases without relabeling the recommend
   expect(comparison.getByText("-1.00")).toBeVisible();
   expect(comparison.getByText("+15,000 GP")).toBeVisible();
   expect(
-    screen.getByText(/ownership uncertain/, { selector: "p" }),
+    screen.getByText(/ownership uncertain/, { selector: "span" }),
   ).toBeVisible();
   expect(screen.getByText(/weapon: Item #4151 → Item #1333/)).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Clear preview" }));
