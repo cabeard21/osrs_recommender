@@ -16,7 +16,7 @@ from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.requirements import QuestLeaf, SkillLeaf, UnlockLeaf
 from tracker.domain.types import Tri
-from tracker.gear.combat import IBAN_STAVES, SPELLS
+from tracker.gear.combat import ANCIENT_SPELLS, IBAN_STAVES, SPELLS
 from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
 
@@ -159,6 +159,9 @@ def enumerate_combat_options(
     options: list[CombatOption] = []
     book = _standard_spellbook_status(snapshot)
     for spell, (level, _) in SPELLS.items():
+        ancient = spell in ANCIENT_SPELLS
+        if ancient and weapon is None and not include_weapon_restricted:
+            continue
         if (
             spell == "iban_blast"
             and not include_weapon_restricted
@@ -169,6 +172,21 @@ def enumerate_combat_options(
             continue
         extra_checks = (
             (
+                (
+                    evaluate_requirement(snapshot, QuestLeaf(quest_id="desert_treasure_i")).status,
+                    "Desert Treasure I completion is not confirmed",
+                ),
+                *(
+                    (
+                        evaluate_requirement(snapshot, UnlockLeaf(key=key)).status,
+                        "Ancient Magicks unlock is not confirmed",
+                    )
+                    for key in ("spellbook_ancient", "ancient_magicks")
+                    if key in snapshot.unlocks
+                ),
+            )
+            if ancient
+            else (
                 (_skill_status(snapshot, "attack", 50), "Attack level 50 required"),
                 (
                     evaluate_requirement(snapshot, QuestLeaf(quest_id="underground_pass")).status,
@@ -180,7 +198,7 @@ def enumerate_combat_options(
         )
         status, reasons = _account_status(
             (_skill_status(snapshot, "magic", level), f"Magic level {level} required"),
-            (book, "Standard spellbook unlock is not confirmed"),
+            *(((book, "Standard spellbook unlock is not confirmed"),) if not ancient else ()),
             *extra_checks,
         )
         stances = MAGIC_STANCES if weapon is not None else frozenset({"accurate"})
@@ -234,4 +252,26 @@ def eligible_combat_options(
             weapon, snapshot, discipline=discipline, levels=levels
         )
         if option.available
+    )
+
+
+def ancient_spell_problem(
+    weapon: EquipmentDefinition | None,
+    snapshot: AccountSnapshot,
+    spell: str,
+    stance: str,
+) -> str | None:
+    """Apply the same Ancient access gates to fixed and automatic roles."""
+    if spell not in ANCIENT_SPELLS:
+        return None
+    matches = tuple(
+        option
+        for option in enumerate_combat_options(weapon, snapshot, discipline="magic", levels={})
+        if option.spell == spell and option.stance == stance
+    )
+    if any(option.available for option in matches):
+        return None
+    return next(
+        (option.reason for option in matches if option.reason),
+        "Ancient Magicks requires a reviewed compatible autocast weapon and casting stance.",
     )

@@ -27,6 +27,7 @@ _RUNES = {
     562: "Chaos rune",
     560: "Death rune",
     565: "Blood rune",
+    566: "Soul rune",
     21880: "Wrath rune",
 }
 # Air quantity for wind/water/earth/fire, then elemental quantity for water/earth/fire.
@@ -40,6 +41,29 @@ _TIERS = {
 SPELL_RECIPES = MappingProxyType(
     {
         "iban_blast": MappingProxyType({554: 5, 560: 1}),
+        # Exact per-cast Ancient combat recipes; splash/AoE outcomes do not
+        # change rune consumption. https://oldschool.runescape.wiki/w/Ancient_Magicks
+        **{
+            spell: MappingProxyType(recipe)
+            for spell, recipe in {
+                "smoke_rush": {554: 1, 556: 1, 562: 2, 560: 2},
+                "shadow_rush": {556: 1, 566: 1, 562: 2, 560: 2},
+                "blood_rush": {565: 1, 562: 2, 560: 2},
+                "ice_rush": {555: 2, 562: 2, 560: 2},
+                "smoke_burst": {554: 2, 556: 2, 562: 4, 560: 2},
+                "shadow_burst": {556: 1, 566: 2, 562: 4, 560: 2},
+                "blood_burst": {565: 2, 562: 4, 560: 2},
+                "ice_burst": {555: 4, 562: 4, 560: 2},
+                "smoke_blitz": {554: 2, 556: 2, 565: 2, 560: 2},
+                "shadow_blitz": {556: 2, 566: 2, 565: 2, 560: 2},
+                "blood_blitz": {565: 4, 560: 2},
+                "ice_blitz": {555: 3, 565: 2, 560: 2},
+                "smoke_barrage": {554: 4, 556: 4, 565: 2, 560: 4},
+                "shadow_barrage": {556: 4, 566: 3, 565: 2, 560: 4},
+                "blood_barrage": {565: 4, 560: 4, 566: 1},
+                "ice_barrage": {555: 6, 565: 2, 560: 4},
+            }.items()
+        },
         **{
             f"{element}_{tier}": MappingProxyType(
                 {

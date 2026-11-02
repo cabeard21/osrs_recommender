@@ -342,7 +342,7 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
       name: "Optimize attack type, stance and spell with equipment",
     }),
   );
-  fireEvent.change(within(second).getByLabelText("Standard spell"), {
+  fireEvent.change(within(second).getByLabelText("Spell"), {
     target: { value: "fire_wave" },
   });
   fireEvent.change(screen.getByLabelText("Equipment access"), {

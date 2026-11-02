@@ -364,6 +364,22 @@ def evaluate_configurations(
         result = evaluate_configuration(
             equipment, catalog.items, facts, request, configured, levels
         )
+        if configured.style == "magic" and configured.powered_attack is None:
+            from tracker.gear.combat_options import ancient_spell_problem
+
+            problem = ancient_spell_problem(
+                catalog.items.get(equipment.get("weapon", -1)),
+                projected,
+                configured.spell,
+                configured.stance,
+            )
+            if problem:
+                return {
+                    **result,
+                    "status": "invalid",
+                    "performance": None,
+                    "reasons": [*result["reasons"], {"path": "spell", "message": problem}],
+                }
         return priced(result, equipment, configured, selected)
 
     first = fixed(baseline, baseline_combat_option)

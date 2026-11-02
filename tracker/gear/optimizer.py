@@ -22,7 +22,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
-from tracker.gear.combat_options import eligible_combat_options
+from tracker.gear.combat_options import ancient_spell_problem, eligible_combat_options
 from tracker.gear.evaluation import (
     evaluate_equipment,
     item_problems,
@@ -354,6 +354,23 @@ class _Search:
                 result = evaluate_equipment(equipment, self.items, role, self.levels).model_dump(
                     mode="json"
                 )
+                problem = (
+                    ancient_spell_problem(
+                        self.items.get(equipment.get("weapon", -1)),
+                        self.snapshot,
+                        role.spell,
+                        role.stance,
+                    )
+                    if role.style == "magic" and role.powered_attack is None
+                    else None
+                )
+                if problem:
+                    result = {
+                        **result,
+                        "supported": False,
+                        "dps": None,
+                        "limitations": [*result["limitations"], problem],
+                    }
                 self.option_cache[key] = {
                     "attack_type": role.style,
                     "stance": role.stance,

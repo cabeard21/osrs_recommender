@@ -28,6 +28,14 @@ See [current architecture](docs/ARCHITECTURE.md) for the product boundary and
 The dashboard shows account, sync, goal, Gear, skill, unlock, and settings facts.
 ChatGPT performs planning and recommendation reasoning from the MCP outputs.
 
+Magic setups support all 16 Ancient Magicks combat spells with ancient staff,
+including fixed spell selection and automatic search. Access requires the spell's
+Magic level and confirmed Desert Treasure I completion; explicit locked or unknown
+Ancient unlock observations block eligibility. Damage uses the spell's fixed base
+hit and five-tick casting, with per-cast rune costs. Scores cover one target's direct
+damage only, excluding healing, poison, freezes, stat drains and area damage.
+Spell data follows the [OSRS Wiki](https://oldschool.runescape.wiki/w/Ancient_Magicks).
+
 ## Getting started
 
 ```bash

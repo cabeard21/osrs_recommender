@@ -23,6 +23,9 @@ const FIXTURE_SPELLS = [
   "water_wave",
   "earth_wave",
   "fire_wave",
+  ...["rush", "burst", "blitz", "barrage"].flatMap((tier) =>
+    ["smoke", "shadow", "blood", "ice"].map((family) => `${family}_${tier}`),
+  ),
 ];
 
 function UtilityFields({
@@ -129,7 +132,7 @@ function FixedCombatFields({
       </label>
       {role.style === "magic" && (
         <label>
-          Standard spell
+          Spell
           <select
             value={role.spell}
             onChange={(e) => onChange({ spell: e.target.value })}
