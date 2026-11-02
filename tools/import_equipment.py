@@ -25,6 +25,12 @@ MANUAL_IDS = {7800}
 # Explicit ordinary-mechanics review. An unfamiliar item always remains inspectable
 # but is not numerically ranked; adding an item requires effects review and tests.
 REVIEWED = {
+    # Standard mystic elemental staves: ordinary Standard autocast, no damage
+    # multiplier. Exact wear/acquisition sources: items/mystic_staves.yaml.
+    1401,
+    1403,
+    1405,
+    1407,
     # Exact high-impact review: docs/GEAR_HIGH_IMPACT_COVERAGE.md.
     7460,
     7459,
