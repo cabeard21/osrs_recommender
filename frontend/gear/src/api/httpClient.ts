@@ -351,6 +351,7 @@ export function parseOptimization(
           name: "Best configuration found",
           equipment,
           metrics: performanceMetrics(loadout.performance as CombatPerformance),
+          performance: loadout.performance as CombatPerformance,
           combatOption: loadout.combat_option as CombatOption | undefined,
           discipline: loadout.discipline as
             import("./contracts").Style | undefined,

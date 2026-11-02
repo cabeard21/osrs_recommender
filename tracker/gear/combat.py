@@ -13,6 +13,7 @@ from typing import Any
 from tracker.gear.models import (
     CombatPerformance,
     CombatTarget,
+    ElementalWeakness,
     EquipmentBonuses,
     EquipmentDefinition,
 )
@@ -171,6 +172,7 @@ def _calculate(
     powered_attack: str | None,
 ) -> CombatPerformance:
     speed = weapon.attack_speed if weapon else 4
+    weakness = None
     if style == "magic":
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
@@ -190,11 +192,34 @@ def _calculate(
         element = spell.split("_")[0] if powered_attack is None else None
         if element == "wind":
             element = "air"
-        if element == target.weakness_element:
+        applied = (
+            element is not None
+            and element == target.weakness_element
+            and target.weakness_percent > 0
+        )
+        hit_bonus = base * target.weakness_percent // 100 if applied else 0
+        roll_bonus = attack * target.weakness_percent // 100 if applied else 0
+        weakness = ElementalWeakness(
+            element=target.weakness_element,
+            percent=target.weakness_percent,
+            applied=applied,
+            reason=None
+            if applied
+            else (
+                "Target has no active elemental weakness."
+                if target.weakness_element is None or target.weakness_percent == 0
+                else "Powered attacks do not receive elemental weakness bonuses."
+                if powered_attack is not None
+                else "Selected spell does not match the target's element."
+            ),
+            max_hit_bonus=hit_bonus,
+            attack_roll_bonus=roll_bonus,
+        )
+        if applied:
             # Weakness adds a separately truncated fraction of the unmodified
             # spell damage and base accuracy roll; it does not multiply gear%.
-            max_hit += base * target.weakness_percent // 100
-            attack += attack * target.weakness_percent // 100
+            max_hit += hit_bonus
+            attack += roll_bonus
         defence = (target.magic_level + 9) * (target.bonuses.magic + 64)
         speed = weapon.attack_speed if powered_attack is not None and weapon else 5
     else:
@@ -240,6 +265,7 @@ def _calculate(
     interval = speed * 0.6
     return CombatPerformance(
         supported=True,
+        elemental_weakness=weakness,
         accuracy=accuracy,
         max_hit=max(1, max_hit),
         attack_interval=interval,

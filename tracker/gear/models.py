@@ -84,7 +84,17 @@ class CombatTarget(GearModel):
     unsupported_mechanics: tuple[str, ...] = ()
 
 
+class ElementalWeakness(GearModel):
+    element: Literal["air", "water", "earth", "fire"] | None
+    percent: int
+    applied: bool
+    reason: str | None = None
+    max_hit_bonus: int = 0
+    attack_roll_bonus: int = 0
+
+
 class CombatPerformance(GearModel):
+    elemental_weakness: ElementalWeakness | None = None
     supported: bool
     limitations: tuple[str, ...] = ()
     accuracy: float | None = None

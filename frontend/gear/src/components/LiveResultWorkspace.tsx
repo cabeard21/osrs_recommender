@@ -290,6 +290,7 @@ export function LiveResultWorkspace() {
               roleId={loadout.roleId}
             />
             <CombatOptionSummary
+              performance={selected?.loadouts[loadout.roleId]?.performance}
               option={loadout.combatOption}
               role={result.scenario.request.roles[0]}
               weapon={
