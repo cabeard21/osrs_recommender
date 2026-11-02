@@ -25,6 +25,9 @@ MANUAL_IDS = {7800}
 # Explicit ordinary-mechanics review. An unfamiliar item always remains inspectable
 # but is not numerically ranked; adding an item requires effects review and tests.
 REVIEWED = {
+    # Fixed Barrelchest anchor: ordinary attacks only; Sunder is not scored.
+    # Exact wear/acquisition review: content/items/barrelchest_anchor.yaml.
+    10887,
     # Iban Blast: fixed 25 base damage, five-tick casting, exact charged forms.
     # https://oldschool.runescape.wiki/w/Iban%27s_staff
     1409,
@@ -317,6 +320,17 @@ def normalize(row: dict, *, bulk_reviews: dict[int, str] | None = None) -> dict:
         else:
             stances = ("accurate", "aggressive", "defensive")
         profiles.extend((style, stance) for stance in stances)
+    # Exact fixed form review. Do not bless broken/Bounty Hunter forms or
+    # infer all Spiked weapons' compatibility from this one review.
+    # https://oldschool.runescape.wiki/w/Barrelchest_anchor#Combat_stats
+    if item_id == 10887:
+        styles = ("crush", "stab")
+        profiles = [
+            ("crush", "accurate"),
+            ("crush", "aggressive"),
+            ("stab", "controlled"),
+            ("crush", "defensive"),
+        ]
     result = {
         "id": item_id,
         "name": row["name"],

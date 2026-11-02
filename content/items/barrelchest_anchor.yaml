@@ -1,0 +1,17 @@
+# Exact fixed form reviewed 2026-11-02.
+# https://oldschool.runescape.wiki/w/Barrelchest_anchor
+# 60 Attack AND 40 Strength to wield. Quest progress and repair concern
+# acquisition; completion of The Great Brain Robbery is not a wear gate.
+# Only fixed ID 10887; broken 10888 and Bounty Hunter 27855 are excluded.
+# Ordinary attacks have no conditional modifier. Sunder remains unscored.
+- id: barrelchest_anchor_fixed_reviewed
+  name: Barrelchest anchor
+  item_id: 10887
+  slot: weapon
+  requires:
+    all_of:
+      - skill:
+          attack: 60
+      - skill:
+          strength: 40
+  acquisition: untradeable
