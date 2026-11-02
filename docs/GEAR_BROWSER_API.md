@@ -636,3 +636,38 @@ registry fails before writing either file.
 Single Auto results open on **Auto overall**. Tabs for each searched discipline expose its best-found loadout and its own secondary tradeoff frontier, including disciplines dominated in the combined frontier. Default priority shows each discipline's best DPS loadout; select a named secondary priority to explore tradeoffs. Discipline DPS loss is measured from that discipline's best DPS under the same swap limit. Frontiers remain bounded best-found results and may be sampled to 64 points, preserving endpoints.
 
 The additive `result.discipline_results` list retains each searched discipline's status, reasons, selected solution, secondary frontiers, search diagnostics, limitations, and contextual alternatives. Existing overall fields retain their meaning. Switching tabs does not run another search or change the overall Auto winner.
+
+## Arrow running cost
+
+`POST /ui-api/gear/ammo-comparisons` accepts `scenario`, a fixed `loadout`
+(slot to physical item ID), and a resolved `combat_option` (`attack_type:
+"standard"` for ordinary bows). It freezes the bow, target, stance and other
+gear, then enumerates supported compatible arrows and Ava devices plus the
+current cape and an empty cape slot. Account access, locks, exclusions and
+purchase budget remain enforced by exact evaluation.
+
+The response preserves evaluation identity fields, `cost_model_version`,
+`limitations`, and `points`. Each point contains `ammo_id`, `ammo_name`,
+`cape_id`, `cape_name`, `dps`, `attack_interval`, `recovery_rate`,
+`arrows_lost_per_hour`, `gp_per_hour`, `gp_per_damage`, `price`, `current`,
+`frontier`, and string `reasons`. Null costs indicate unknown recovery or price;
+invalid equipment has null performance. All combinations remain inspectable.
+
+Rates assume continuous ordinary attacks and no ground pickup. Owned arrows
+still incur replacement cost. Ava recovery is reviewed by exact cape ID and
+body interference: attractor 60%, accumulator 72%, assembler 80%. Body armour
+outside the reviewed interference metadata yields unknown recovery rather than
+an assumed saving. Purchase cost is separate from arrow running cost. Special
+weapons, quivers, skillcapes and ammunition beyond current combat support are
+not granted additional mechanics by this endpoint.
+
+Armour recovery metadata covers ordinary ranged bodies and their reviewed
+variants, common cloth bodies, and the Wiki's metallic interference exceptions.
+This does not change the separate combat support or account access requirements.
+
+Price-cache maintenance runs on the authoritative Pi service, not the desktop.
+Empty market results and static hints no longer satisfy the market-cache TTL;
+the next scheduled refresh retries them. Deploy the Python cache fix to the Pi
+through the normal application update; no migration or configuration change is
+needed. All seven supported ordinary arrows are already in the price refresh
+scope. Restart desktop Gear after updating its armour comparison code.

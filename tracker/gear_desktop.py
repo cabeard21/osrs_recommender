@@ -77,6 +77,9 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     app.include_router(gear_ui)
     app.include_router(optimizations)
     app.include_router(evaluations)
+    from tracker.api.gear_ammo import router as ammo_router
+
+    app.include_router(ammo_router)
     mount_gear_preview(app)
 
     @app.get("/healthz")

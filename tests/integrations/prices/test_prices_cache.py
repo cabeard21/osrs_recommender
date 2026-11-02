@@ -8,9 +8,11 @@ out.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import httpx
+import pytest
 
 from tracker.config.settings import PricesSettings
 from tracker.content.loader import Content
@@ -144,6 +146,57 @@ class TestNoRequestWhileCacheIsFresh:
             now=_NOW,
         )
         assert result[_ITEM_ID].source is PriceSource.LIVE
+
+
+@pytest.mark.parametrize(
+    "source,high,low",
+    [
+        (PriceSource.UNKNOWN, None, None),
+        (PriceSource.LIVE, None, None),
+        (PriceSource.CACHED, None, None),
+        (PriceSource.STATIC_HINT, 10, None),
+    ],
+)
+def test_recent_missing_or_fallback_quote_retries_live(source, high, low):
+    """Recording a failed lookup must not suppress the next scheduled lookup."""
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={"data": {"892": {"high": 100, "highTime": 1}}})
+
+    cached = replace(_price(source, _NOW), item_id=892, high_price_gp=high, low_price_gp=low)
+    with PricesClient(
+        PricesSettings(), transport=httpx.MockTransport(handler), clock=lambda: _NOW
+    ) as client:
+        result = resolve_prices(
+            [892],
+            client=client,
+            cache=_FakeCacheReader({892: cached}),
+            content=Content(items={}),
+            settings=PricesSettings(),
+            now=_NOW,
+        )
+    assert len(calls) == 1
+    assert result[892].high_price_gp == 100
+    assert result[892].source is PriceSource.LIVE
+
+
+@pytest.mark.parametrize("high,low", [(None, 10), (0, None), (None, 0)])
+def test_recent_market_quote_with_one_price_stays_cached(high, low):
+    cached = replace(_price(PriceSource.LIVE, _NOW), high_price_gp=high, low_price_gp=low)
+    with _client_that_must_not_be_called() as client:
+        result = resolve_prices(
+            [_ITEM_ID],
+            client=client,
+            cache=_FakeCacheReader({_ITEM_ID: cached}),
+            content=_content(),
+            settings=PricesSettings(),
+            now=_NOW,
+        )
+    assert result[_ITEM_ID].source is PriceSource.CACHED
+    assert result[_ITEM_ID].high_price_gp == high
+    assert result[_ITEM_ID].low_price_gp == low
 
 
 class TestFallbackCascade:

@@ -133,5 +133,25 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded", "catalog_items": len(item_ids)}
 
+        @app.post("/test/seed-ammo")
+        def seed_ammo():
+            seed_joint()
+            now = datetime.now(UTC)
+            with factory() as session:
+                session.merge(
+                    ItemPrice(
+                        item_id=892,
+                        high_price_gp=100,
+                        low_price_gp=95,
+                        high_trade_at=now,
+                        low_trade_at=now,
+                        fetched_at=now,
+                        provider="deterministic-browser-fixture",
+                        source=PriceSourceLayer.CACHED,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         _mount_ui(app, app.state.settings)
         uvicorn.run(app, host="127.0.0.1", port=8766, log_level="warning")
