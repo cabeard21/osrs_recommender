@@ -177,11 +177,7 @@ it("keeps visualization selections separate and rejects a pending result after c
   state = reducer(state, {
     type: "ui",
     mode: "multi",
-    patch: {
-      comparisonRoles: ["role-2", "role-1"],
-      selectedTransition: "role-2:role-1",
-      view: "interactive",
-    },
+    patch: { selectedTransition: "role-2:role-1" },
   });
   expect(state.multi.pending).toBe(true);
   expect(state.multi.generation).toBe(1);
@@ -197,7 +193,7 @@ it("keeps visualization selections separate and rejects a pending result after c
   });
   expect(state.multi.result).toBeNull();
   expect(state.multi.pending).toBe(false);
-  expect(state.multi.comparisonRoles).toEqual(["role-2", "role-1"]);
+  expect(state.multi.selectedTransition).toBe("role-2:role-1");
   expect(state.single.result).toBeNull();
 });
 

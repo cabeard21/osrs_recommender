@@ -90,21 +90,11 @@ test("five cohesive states, keyboard inspector, persistence, and responsive layo
     path: `${screenshots}/${testInfo.project.name}-multi-side.png`,
     fullPage: true,
   });
-  await page
-    .getByRole("button", { name: "Interactive switching", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Configuration 2", exact: true })
-    .click();
   await expect(
     page.getByRole("button", {
       name: /Configuration 2 weapon .*Rune crossbow/,
     }),
   ).toBeVisible();
-  await page.screenshot({
-    path: `${screenshots}/${testInfo.project.name}-multi-interactive.png`,
-    fullPage: true,
-  });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

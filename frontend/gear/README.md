@@ -140,17 +140,17 @@ unavailable. Fixture demos keep their existing scope.
    Set 0–12 maximum equipment actions per transition and 0–28 reserved supply slots.
 4. Run one joint optimization. Every selected loadout comes from that single Python
    result; no independent per-role recommendations are combined in React.
-5. Inspect two equipment grids and role metrics. With three or four roles, choose
-   which two to compare. Shared indicators use exact physical IDs; differences remain
-   distinct from directed equipment actions.
+5. Inspect the equipment grid and role metrics for every configuration, all shown at
+   once. Shared indicators use exact physical IDs and mark an item used by more than
+   one configuration. A slot is marked different when it differs from any other
+   configuration; differences remain distinct from directed equipment actions.
 6. Select a returned **Swap-efficiency curve point**. Equipment, weighted aggregate
    DPS, purchases, transitions and inventory update together without another request.
    Missing solutions are explicit. The unrestricted reference means **best found
    without the swap-action limit**, with the other constraints still enforced.
-7. Select **Interactive switching**, choose the active configuration and a directed
-   transition, and inspect the backend's ordered equip/unequip actions, automatic
-   removals and transient inventory occupancy. Returning to side-by-side retains the
-   selected curve point.
+7. Choose a directed transition and inspect the backend's ordered equip/unequip actions,
+   automatic removals and transient inventory occupancy. The inventory panel lists the
+   gear carried outside each configuration.
 8. Inspect physical facts and edit draft locks/exclusions. Multi contextual alternatives
    and exact manual trials are unavailable: a single-role trial is not a joint
    contribution calculation. Reoptimize to evaluate new joint constraints.
