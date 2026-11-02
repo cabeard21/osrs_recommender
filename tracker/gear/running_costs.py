@@ -14,6 +14,7 @@ from types import MappingProxyType
 from typing import Any
 
 from tracker.estimation.prices import PriceRecord, resolve_price
+from tracker.gear.ammo import cape_recovery_rate
 from tracker.gear.models import EquipmentDefinition
 
 COST_MODEL_VERSION = "ordinary-resource-cost-v1"
@@ -65,7 +66,6 @@ STAFF_RUNES = MappingProxyType(
         **{item: frozenset({556, 557}) for item in (20736, 20739)},
     }
 )
-_RECOVERY = MappingProxyType({10498: 0.60, 10499: 0.72, 22109: 0.80})
 # Exact ordinary charged forms only. This metadata does not certify damage support.
 # https://oldschool.runescape.wiki/w/Trident_of_the_seas
 # https://oldschool.runescape.wiki/w/Trident_of_the_swamp
@@ -144,7 +144,9 @@ def _ranged_resources(
     ):
         return [], ["Ranged ammunition consumption has not been reviewed."]
     cape, body = equipment.get("cape"), equipment.get("body")
-    recovery = _RECOVERY.get(cape.id, 0) if cape else 0
+    recovery, notes = cape_recovery_rate(cape.id if cape else None)
+    if recovery is None:
+        return [], notes
     # Negative-Ranged metal body armour interferes with Ava's device. Applying
     # this restriction conservatively also avoids crediting unknown interference.
     if body and body.bonuses.ranged < 0:

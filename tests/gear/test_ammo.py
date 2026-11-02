@@ -24,6 +24,81 @@ def test_recovery_interference_and_unknown():
     assert recovery_rate(10499, 999999)[0] is None
     assert recovery_rate(28947, None)[0] is None
     assert recovery_rate(None, 999999)[0] == 0
+    assert recovery_rate(29289, 29280) == (0.0, [])
+
+
+@pytest.mark.parametrize("cape", [29289, 1007, 6570, 2412, 13329, 11901, 999999])
+def test_ordinary_capes_default_to_no_recovery(cape):
+    assert recovery_rate(cape, 999999) == (0.0, [])
+
+
+@pytest.mark.parametrize("cape,rate", [(13337, 0.72), (27359, 0.80), (21914, 0.80), (21916, 0.80)])
+def test_fixed_recovery_cape_variants(cape, rate):
+    assert recovery_rate(cape, 29280) == (rate, [])
+
+
+@pytest.mark.parametrize("cape", [9756, 9757, 13342, 28947, 28828, 28830])
+def test_upgrade_dependent_capes_do_not_guess_recovery(cape):
+    rate, reasons = recovery_rate(cape, 29280)
+    assert rate is None
+    assert "upgrade" in reasons[0]
+    assert recovery_rate(cape, 1127)[0] is None
+
+
+@pytest.mark.parametrize("cap,expected", [(0, [1]), (10, [1, 2]), (100, [1, 2, 3])])
+def test_comparison_filters_invalid_and_excess_loss(cap, expected):
+    from datetime import UTC, datetime
+    from threading import Event
+    from types import SimpleNamespace
+
+    from tracker.accounts.snapshot import AccountSnapshot
+    from tracker.gear.ammo import compare_arrows
+
+    items = {
+        861: SimpleNamespace(ammo_for=["arrow:ordinary"]),
+        **{
+            i: SimpleNamespace(ammo_type="arrow:ordinary", name=str(i))
+            for i in (882, 884, 886, 888)
+        },
+    }
+
+    class Gear:
+        def equipment_catalog(self):
+            return SimpleNamespace(items=items)
+
+        def evaluate(self, snapshot, scenario, baseline, proposed, **kwargs):
+            dps = {882: 10, 884: 9, 886: 8, 888: None}[proposed["ammunition"]]
+            return {
+                "proposed": {
+                    "performance": {"dps": dps, "attack_interval": 1.8} if dps else None,
+                    "reasons": [] if dps else [{"message": "Arrow is not owned."}],
+                    "discipline": "ranged",
+                }
+            }
+
+        def physical_item(self, snapshot, ammo, **kwargs):
+            return {"price": {"amount_gp": None if ammo == 884 else 10}}
+
+    scenario = SimpleNamespace(
+        skill_overrides={}, quest_overrides={}, support_policy="verified_only", max_dps_loss_pct=cap
+    )
+    points, limitations = compare_arrows(
+        AccountSnapshot(player_id=1, username="test"),
+        Gear(),
+        {},
+        scenario,
+        {"weapon": 861, "ammunition": 882},
+        {"attack_type": "standard", "stance": "rapid"},
+        datetime.now(UTC),
+        Event(),
+    )
+    assert [p["ammo_id"] - 880 for p in points] == [2 * i for i in expected]
+    assert [p["dps_loss_pct"] for p in points] == [10 * (i - 1) for i in expected]
+    assert any("Arrow is not owned." in note for note in limitations)
+    if cap >= 10:
+        missing_price = next(p for p in points if p["ammo_id"] == 884)
+        assert missing_price["gp_per_hour"] is None
+        assert "No price available for 884." in missing_price["reasons"]
 
 
 @pytest.mark.parametrize(

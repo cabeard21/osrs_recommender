@@ -937,7 +937,11 @@ def optimize(
         secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
             search, winners, unrestricted, local_refinement
         )
-    from tracker.gear.running_frontier import explore_running_costs, running_cost_policy
+    from tracker.gear.running_frontier import (
+        explore_running_costs,
+        running_cost_assumptions,
+        running_cost_policy,
+    )
 
     running_frontiers: list[dict[str, Any]] = []
     running_diagnostics = None
@@ -960,21 +964,7 @@ def optimize(
         "skills": dict(request.skill_overrides),
         "quests": dict(request.quest_overrides),
         "assumed_item_ids": request.assumed_item_ids,
-        "running_cost_policy": running_cost_policy(request, local_refinement),
-        "running_cost_prices": {
-            str(i): {
-                key: str(getattr(record, key, None))
-                for key in (
-                    "high_price_gp",
-                    "low_price_gp",
-                    "high_trade_at",
-                    "low_trade_at",
-                    "fetched_at",
-                    "source",
-                )
-            }
-            for i, record in sorted(price_records.items())
-        },
+        **running_cost_assumptions(request, price_records, local_refinement),
     }
     alternatives = _slot_alternatives(search, winners[-1])
     referenced = {
