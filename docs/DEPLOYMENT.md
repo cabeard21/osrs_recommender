@@ -90,6 +90,39 @@ than silently substituting a local database. Restore Tailscale/Pi connectivity t
 Authentication errors require checking the dedicated token; compatibility errors require
 updating the endpoint or desktop to a compatible transport version.
 
+### Prepare new Orca worktrees on Windows
+
+Set this repository's Orca **setup script** to the following command (the hook must
+run with the new worktree as its working directory):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\Repos\osrs_recommender\scripts\setup-gear-worktree.ps1"
+```
+
+The absolute script path lets the hook work before the script has been merged into
+the branch being checked out. Adjust it if the original checkout moves. Enable setup
+for new worktrees; from the CLI, `orca worktree create --name NAME --setup run` runs
+the configured hook explicitly. Wait for setup to finish before launching Gear.
+
+The hook requires Python 3.12 via `py.exe`, Node 22 or newer, and npm. It creates a
+separate `.venv`, installs the worktree with `.[dev]`, and copies the ignored private
+`config.gear-desktop.yaml` from the original checkout only if the new worktree has
+none. It validates settings without contacting the Pi. It preserves existing config
+and does not copy databases or share virtual environments. To use a different config,
+add `-ConfigSource "C:\private\config.gear-desktop.yaml"` to the hook command.
+
+To preview setup for an existing worktree without modifying files:
+
+```powershell
+.\scripts\setup-gear-worktree.ps1 -WorktreeRoot "C:\path\to\worktree" -DryRun
+```
+
+After setup, run `run-gear-desktop.bat` from the new worktree. The launcher installs
+the locked frontend dependencies, builds React, and fetches missing icons. The copied
+config retains its address and port: stop the other instance using that address/port,
+or edit the new worktree's private config to use a different port. Pi connectivity
+and token authentication are verified when Gear fetches live data.
+
 No database schema migration is needed for this feature. Roll back by stopping desktop
 Gear and removing the Pi read-token setting, then recreating only the application
 service. Existing Pi UI, RuneLite synchronization, and MCP remain the normal workflow.

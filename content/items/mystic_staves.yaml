@@ -1,0 +1,64 @@
+# Exact standard mystic elemental forms reviewed 2026-11-02.
+# https://oldschool.runescape.wiki/w/Mystic_staff
+# 40 Attack AND 40 Magic to wield; Scorpion Catcher unlocks creation only.
+# Ordinary Standard spellbook autocast; rune supply does not change DPS.
+# Physical statistics remain the pinned calculator capture. No aliases.
+- id: mystic_fire_staff_reviewed
+  name: Mystic fire staff
+  item_id: 1401
+  slot: weapon
+  requires:
+    all_of:
+      - skill:
+          attack: 40
+      - skill:
+          magic: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+  # https://oldschool.runescape.wiki/w/Mystic_fire_staff
+
+- id: mystic_water_staff_reviewed
+  name: Mystic water staff
+  item_id: 1403
+  slot: weapon
+  requires:
+    all_of:
+      - skill:
+          attack: 40
+      - skill:
+          magic: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+  # https://oldschool.runescape.wiki/w/Mystic_water_staff
+
+- id: mystic_air_staff_reviewed
+  name: Mystic air staff
+  item_id: 1405
+  slot: weapon
+  requires:
+    all_of:
+      - skill:
+          attack: 40
+      - skill:
+          magic: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+  # https://oldschool.runescape.wiki/w/Mystic_air_staff
+
+- id: mystic_earth_staff_reviewed
+  name: Mystic earth staff
+  item_id: 1407
+  slot: weapon
+  requires:
+    all_of:
+      - skill:
+          attack: 40
+      - skill:
+          magic: 40
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+  # https://oldschool.runescape.wiki/w/Mystic_earth_staff
