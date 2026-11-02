@@ -98,9 +98,9 @@ def test_known_special_attack_exceptions_stay_blocked(ordinary, item_id):
     )
 
 
-def test_unfamiliar_equipment_not_declared_ordinary(ordinary):
+def test_ordinary_equipment_does_not_require_a_name_category(ordinary):
     physical, external, capture = ordinary
-    assert classify_ordinary(physical, {**external, "name": "Strange blade"}, capture)[0] is None
+    assert classify_ordinary(physical, {**external, "name": "Strange blade"}, capture)[0]
 
 
 @pytest.mark.parametrize(
@@ -297,15 +297,26 @@ def test_tradeable_ordinary_items_without_requirement_data(ordinary, equipment):
     assert result["requirements_assumed_absent"] is True
 
 
-def test_steel_ring_is_ordinary_ungated_equipment():
+@pytest.mark.parametrize(
+    "item_id,name,examine",
+    [
+        (30895, "Steel ring", "A very old enchanted ring."),
+        (
+            6731,
+            "Seers ring",
+            "A ring reputed to bring out a powerful magical ability in its wearer.",
+        ),
+    ],
+)
+def test_tradeable_rings_are_ordinary_ungated_equipment(item_id, name, examine):
     physical = next(
         row
         for row in json.loads(Path("content/equipment/catalog.json").read_text())
-        if row["id"] == 30895
+        if row["id"] == item_id
     )
     external = {
-        "id": 30895,
-        "name": "Steel ring",
+        "id": item_id,
+        "name": name,
         "incomplete": False,
         "equipable_by_player": True,
         "tradeable_on_ge": True,
@@ -314,11 +325,11 @@ def test_steel_ring_is_ordinary_ungated_equipment():
         "placeholder": False,
         "duplicate": False,
         "quest_item": False,
-        "examine": "A very old enchanted ring.",
+        "examine": examine,
         "equipment": {"slot": "ring", "requirements": None},
     }
     result, reason = classify_ordinary(
-        physical, external, {"id": 30895, "version": "", "normalized": physical}
+        physical, external, {"id": item_id, "version": "", "normalized": physical}
     )
     assert reason is None
     assert result["requirements_assumed_absent"] is True
