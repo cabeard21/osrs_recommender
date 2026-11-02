@@ -41,6 +41,35 @@ const props = {
   loadout: { weapon: 861 },
   identity: { snapshot_id: "s", catalog_version: "c", price_revision: "p" },
 };
+it("explains missing prices and unreviewed recovery instead of generic unknown costs", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ...props.identity,
+        points: [
+          { ...points[1], dps_loss_pct: 10, price: { amount_gp: null } },
+          {
+            ...points[0],
+            recovery_rate: null,
+            arrows_lost_per_hour: null,
+            gp_per_hour: null,
+            gp_per_damage: null,
+            reasons: ["Ammo recovery for this cape has not been reviewed."],
+          },
+        ],
+      }),
+    }),
+  );
+  render(<AmmoComparison {...props} />);
+  await userEvent.click(screen.getByRole("button", { name: "Compare arrows" }));
+  await screen.findByRole("table");
+  expect(screen.getByRole("cell", { name: "10%" })).toBeInTheDocument();
+  expect(screen.getAllByText("Price unavailable")).toHaveLength(2);
+  expect(screen.getAllByText("Recovery not modeled")).toHaveLength(4);
+  expect(screen.queryByText("Unknown")).not.toBeInTheDocument();
+});
 it("shows current setup, unknown costs and linked selection without changing equipment", async () => {
   vi.stubGlobal(
     "fetch",

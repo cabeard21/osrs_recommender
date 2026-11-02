@@ -11,18 +11,39 @@ from tracker.gear.facts import hypothetical_snapshot
 # Reviewed ordinary physical forms, not ownership aliases.
 ARROWS = frozenset({882, 884, 886, 888, 890, 892, 21326})
 AVA_RECOVERY = {10498: 0.60, 10499: 0.72, 22109: 0.80}
+# Recovery-capable cape exceptions, including physical cosmetic/locked variants.
+# https://oldschool.runescape.wiki/w/Ava%27s_device
+# https://oldschool.runescape.wiki/w/Ranging_cape
+# https://oldschool.runescape.wiki/w/Dizana%27s_quiver
+# Reviewed against the bundled cape catalog 2026-11-02. Other capes have no recovery.
+CAPE_RECOVERY = {
+    **AVA_RECOVERY,
+    13337: 0.72,  # Accumulator max cape
+    **dict.fromkeys(
+        (21914, 24222, 21916, 24135, 21898, 27359, 27376, 27374, 27361, 27365, 27363),
+        0.80,
+    ),
+}
+UPGRADE_DEPENDENT_CAPES = frozenset(
+    {9756, 9757, 13342, 28828, 28957, 28955, 28830, 28906, 28902, 28951, 28947}
+)
+
+
+def cape_recovery_rate(cape: int | None) -> tuple[float | None, list[str]]:
+    if cape in UPGRADE_DEPENDENT_CAPES:
+        return None, ["Ammo recovery depends on an unobserved cape upgrade."]
+    return CAPE_RECOVERY.get(cape, 0.0), []
 
 
 def recovery_rate(cape: int | None, body: int | None) -> tuple[float | None, list[str]]:
-    if cape is None:
-        return 0.0, []
-    if cape not in AVA_RECOVERY:
-        return None, ["Ammo recovery for this cape has not been reviewed."]
+    rate, notes = cape_recovery_rate(cape)
+    if rate is None or rate == 0:
+        return rate, notes
     if body in INTERFERING_BODIES:
         return 0.0, ["Metal body armour blocks Ava's ammunition recovery."]
     if body is not None and body not in COMPATIBLE_BODIES:
         return None, ["Ava's interference for this body armour has not been reviewed."]
-    return AVA_RECOVERY[cape], []
+    return rate, notes
 
 
 def running_cost(
@@ -52,6 +73,23 @@ def mark_frontier(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
         }
         for p in points
     ]
+
+
+def _within_dps_limit(
+    points: list[dict[str, Any]], cap: float
+) -> tuple[list[dict[str, Any]], list[str]]:
+    valid = [p for p in points if p["dps"] is not None]
+    best = max((p["dps"] for p in valid), default=0)
+    measured = [{**p, "dps_loss_pct": 100 * (best - p["dps"]) / best if best else 0} for p in valid]
+    visible = [p for p in measured if p["dps_loss_pct"] <= cap]
+    notes = [f"Showing setups within {cap:g}% DPS loss of the highest valid arrow comparison."]
+    invalid = [p for p in points if p["dps"] is None]
+    if invalid:
+        reasons = list(dict.fromkeys(r for p in invalid for r in p["reasons"]))
+        notes.append(f"Excluded {len(invalid)} invalid or unsupported setups. " + " ".join(reasons))
+    if not valid:
+        notes.append("No valid arrow setups are available for this scenario.")
+    return mark_frontier(visible), notes
 
 
 def compare_arrows(
@@ -120,6 +158,8 @@ def compare_arrows(
                 now=now,
                 support_policy=scenario.support_policy,
             )["price"]
+            if price["amount_gp"] is None:
+                reasons.append(f"No price available for {catalog.items[ammo].name}.")
             points.append(
                 {
                     "ammo_id": ammo,
@@ -140,4 +180,4 @@ def compare_arrows(
                     ),
                 }
             )
-    return mark_frontier(points), []
+    return _within_dps_limit(points, scenario.max_dps_loss_pct)

@@ -27,6 +27,7 @@ from tracker.content.schema import ItemSlot
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
+from tracker.gear.running_frontier import running_cost_assumptions
 from tracker.gear.support import SupportPolicy, support_context
 
 router = APIRouter(
@@ -182,6 +183,7 @@ def calculate_evaluation(
         "skills": dict(scenario.skill_overrides),
         "quests": dict(scenario.quest_overrides),
         "assumed_item_ids": scenario.assumed_item_ids,
+        **running_cost_assumptions(scenario, prices, scenario.optimization_mode == "thorough"),
     }
     return EquipmentEvaluationResponse(
         **support_context(catalog, scenario.support_policy),

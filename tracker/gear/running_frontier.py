@@ -19,6 +19,29 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     }
 
 
+def running_cost_assumptions(
+    request: Any, prices: dict[int, Any], thorough: bool = False
+) -> dict[str, Any]:
+    """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
+    return {
+        "running_cost_policy": running_cost_policy(request, thorough),
+        "running_cost_prices": {
+            str(i): {
+                key: str(getattr(record, key, None))
+                for key in (
+                    "high_price_gp",
+                    "low_price_gp",
+                    "high_trade_at",
+                    "low_trade_at",
+                    "fetched_at",
+                    "source",
+                )
+            }
+            for i, record in sorted(prices.items())
+        },
+    }
+
+
 def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str, Any]:
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
