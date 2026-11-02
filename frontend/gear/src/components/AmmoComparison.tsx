@@ -7,6 +7,7 @@ interface Point {
   ammo_name: string;
   cape_name: string;
   dps: number | null;
+  dps_loss_pct?: number;
   recovery_rate: number | null;
   arrows_lost_per_hour: number | null;
   gp_per_hour: number | null;
@@ -25,6 +26,8 @@ interface Identity {
   scenario_fingerprint?: string;
 }
 const label = (p: Point) => `${p.ammo_name} / ${p.cape_name}`;
+const costUnavailable = (p: Point) =>
+  p.recovery_rate === null ? "Recovery not modeled" : "Price unavailable";
 const number = (n: number | null, digits = 2) =>
   n === null
     ? "Unknown"
@@ -255,18 +258,34 @@ export function AmmoComparison({
                     </th>
                     <td>{number(p.dps)}</td>
                     <td>
-                      {p.dps === null
-                        ? "Unknown"
-                        : `${number(actualMaxDps === 0 ? 0 : 100 * (1 - p.dps / actualMaxDps))}%`}
+                      {p.dps_loss_pct !== undefined
+                        ? `${number(p.dps_loss_pct)}%`
+                        : p.dps === null
+                          ? "Unknown"
+                          : `${number(actualMaxDps === 0 ? 0 : 100 * (1 - p.dps / actualMaxDps))}%`}
                     </td>
                     <td>
                       {p.recovery_rate === null
-                        ? "Unknown"
+                        ? "Recovery not modeled"
                         : `${number(p.recovery_rate * 100)}%`}
                     </td>
-                    <td>{number(p.arrows_lost_per_hour)}</td>
-                    <td>{number(p.gp_per_hour)}</td>
-                    <td>{number(p.gp_per_damage)}</td>
+                    <td>
+                      {p.arrows_lost_per_hour === null
+                        ? "Recovery not modeled"
+                        : number(p.arrows_lost_per_hour)}
+                    </td>
+                    <td>
+                      {p.gp_per_hour === null
+                        ? costUnavailable(p)
+                        : number(p.gp_per_hour)}
+                    </td>
+                    <td>
+                      {p.gp_per_damage === null
+                        ? p.dps === 0
+                          ? "No damage"
+                          : costUnavailable(p)
+                        : number(p.gp_per_damage)}
+                    </td>
                     <td>
                       {p.frontier && "Frontier · "}
                       {p.frontier &&
@@ -281,7 +300,7 @@ export function AmmoComparison({
                           Unit price:{" "}
                           {typeof p.price.amount_gp === "number"
                             ? `${number(p.price.amount_gp)} GP`
-                            : "Unknown"}
+                            : "Price unavailable"}
                           {p.price.layer ? ` · ${String(p.price.layer)}` : ""}
                           {p.price.confidence
                             ? ` · ${String(p.price.confidence)} confidence`

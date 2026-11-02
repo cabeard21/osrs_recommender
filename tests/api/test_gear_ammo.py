@@ -10,6 +10,8 @@ from tracker.domain.types import PriceSourceLayer
 def ammo_body(client, session_factory):
     submitted = scenario(client, session_factory, ids=(861, 882, 892, 10499, 22109))
     submitted["roles"] = [{"id": "single", "style": "ranged", "stance": "rapid"}]
+    # Recovery assertions below intentionally include the weakest current arrow.
+    submitted["max_dps_loss_pct"] = 100
     now = datetime.now(UTC)
     with session_factory() as session:
         session.merge(
@@ -43,14 +45,79 @@ def test_arrow_endpoint(client, session_factory):
     assert data["snapshot_id"] == body["scenario"]["expected_snapshot_id"]
     assert data["price_revision"]
     assert response.headers["cache-control"] == "no-store"
-    assert any(p["reasons"] for p in data["points"])
+    assert all(p["dps"] is not None for p in data["points"])
+    assert any("Excluded" in note for note in data["limitations"])
+
+
+@pytest.mark.parametrize("cap", [0, 10])
+def test_arrow_endpoint_applies_requested_loss_cap(client, session_factory, cap):
+    body = ammo_body(client, session_factory)
+    body["scenario"]["max_dps_loss_pct"] = cap
+    reply = client.post("/ui-api/gear/ammo-comparisons", json=body)
+    assert reply.status_code == 200, reply.text
+    points = reply.json()["points"]
+    assert points
+    assert all(0 <= point["dps_loss_pct"] <= cap for point in points)
+    assert all(point["dps"] is not None for point in points)
+    assert any(point["dps_loss_pct"] == 0 for point in points)
+
+
+def test_mixed_hide_cape_current_setup_has_known_cost(client, session_factory):
+    body = ammo_body(client, session_factory)
+    body["scenario"].update(
+        mode="future", support_policy="community_best_effort", assumed_item_ids=[29289, 29280]
+    )
+    body["loadout"].update(cape=29289, body=29280)
+    reply = client.post("/ui-api/gear/ammo-comparisons", json=body)
+    assert reply.status_code == 200, reply.text
+    current = next(point for point in reply.json()["points"] if point["current"])
+    assert current["recovery_rate"] == 0
+    assert current["arrows_lost_per_hour"] == pytest.approx(2000)
+    assert current["gp_per_hour"] == pytest.approx(20000)
+
+
+@pytest.mark.parametrize("optimization_mode", ["fast", "thorough"])
+def test_comparison_matches_optimization_sources(client, session_factory, optimization_mode):
+    body = ammo_body(client, session_factory)
+    body["scenario"]["roles"][0]["combat_options"] = {
+        "attack_types": ["standard"],
+        "stances": ["rapid"],
+        "spells": [],
+    }
+    body["scenario"].update(
+        support_policy="community_best_effort",
+        secondary_priority="balanced_defence",
+        optimization_mode=optimization_mode,
+        mode="future",
+        skill_overrides={"ranged": 90},
+    )
+    optimized = client.post("/ui-api/gear/optimizations", json=body["scenario"])
+    assert optimized.status_code == 200, optimized.text
+    source = optimized.json()
+    selected = source["result"]["selected_solution"]["loadouts"]["single"]
+    comparison = client.post(
+        "/ui-api/gear/ammo-comparisons",
+        json={
+            "scenario": source["scenario"],
+            "loadout": selected["equipment"],
+            "combat_option": selected["combat_option"],
+        },
+    )
+    assert comparison.status_code == 200, comparison.text
+    data = comparison.json()
+    for field in ("snapshot_id", "catalog_version", "model_version", "assumptions_fingerprint"):
+        assert data[field] == source["result"][field], field
+    for field in ("price_revision", "scenario_fingerprint"):
+        assert data[field] == source[field], field
+    assert any(point["current"] and point["dps"] is not None for point in data["points"])
 
 
 def test_locks_and_exclusions(client, session_factory):
     body = ammo_body(client, session_factory)
     body["scenario"]["locks"] = {"cape": 10499, "ammunition": 882}
     data = client.post("/ui-api/gear/ammo-comparisons", json=body).json()
-    assert all(p["dps"] is None for p in data["points"] if not p["current"])
+    assert all(p["current"] for p in data["points"])
+    assert any("lock" in note for note in data["limitations"])
 
 
 def test_stale_and_nonranged(client, session_factory):

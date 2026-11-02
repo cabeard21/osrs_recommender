@@ -10,7 +10,7 @@ from tools.import_equipment import REVIEWED
 from tracker.content.loader import load_content
 from tracker.domain.types import SkillState, Source
 from tracker.gear.catalog import load_catalog
-from tracker.gear.combat import SPELLS
+from tracker.gear.combat import ELEMENTAL_SPELLS
 from tracker.gear.combat_options import eligible_combat_options
 from tracker.gear.facts import equipment_fact
 from tracker.gear.optimizer import OptimizationRequest, RoleConfig, optimize
@@ -32,10 +32,10 @@ def test_mystic_staff_review_and_standard_spells(reviewed, item_id):
     assert item.tradeable
     assert not item.unsupported_effects
     assert item_id in REVIEWED  # A subsequent catalog import must retain the review.
-    assert set(item.spell_compatibility) == set(SPELLS)
+    assert set(item.spell_compatibility) == set(ELEMENTAL_SPELLS)
     assert {
         o.spell for o in eligible_combat_options(item, account(), discipline="magic", levels={})
-    } == set(SPELLS)
+    } == set(ELEMENTAL_SPELLS)
 
 
 @pytest.mark.parametrize("item_id", STAVES)

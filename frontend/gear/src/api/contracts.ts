@@ -328,6 +328,14 @@ export interface OptimizationReply {
   selectedSolutionId?: string;
 }
 export interface CombatPerformance {
+  elemental_weakness?: {
+    element: "air" | "water" | "earth" | "fire" | null;
+    percent: number;
+    applied: boolean;
+    reason: string | null;
+    max_hit_bonus: number;
+    attack_roll_bonus: number;
+  } | null;
   supported: boolean;
   dps: number | null;
   max_hit: number | null;

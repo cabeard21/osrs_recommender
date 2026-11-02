@@ -117,7 +117,19 @@ def test_reviewed_powered_recipe_includes_coins_and_ignores_staff_substitutions(
 
 
 @pytest.mark.parametrize(
-    "cape,body_bonus,expected", [(None, 0, 10), (10499, 0, 2.8), (22109, 0, 2), (10499, -10, 10)]
+    "cape,body_bonus,expected",
+    [
+        (None, 0, 10),
+        (10499, 0, 2.8),
+        (22109, 0, 2),
+        (10499, -10, 10),
+        (29289, 0, 10),
+        (6570, 0, 10),
+        (13337, 0, 2.8),
+        (27359, 0, 2),
+        (9756, 0, None),
+        (28947, -10, None),
+    ],
 )
 def test_ranged_automatic_recovery(cape, body_bonus, expected):
     from tracker.gear.models import EquipmentBonuses
@@ -142,7 +154,12 @@ def test_ranged_automatic_recovery(cape, body_bonus, expected):
         prices(**{"882": 10}),
         NOW,
     )
-    assert result["gp_per_attack"] == pytest.approx(expected)
+    if expected is None:
+        assert result["gp_per_attack"] is None
+        assert result["status"] == "unavailable"
+        assert any("upgrade" in reason for reason in result["reasons"])
+    else:
+        assert result["gp_per_attack"] == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(

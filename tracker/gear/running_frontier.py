@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from hashlib import sha256
 from math import isfinite
 from typing import Any
@@ -16,6 +17,29 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
         "cost_model_version": COST_MODEL_VERSION,
         "expansion_limit": 300_000 if thorough else 100_000,
         "complete_assignment_limit": 2000 if thorough else 0,
+    }
+
+
+def running_cost_assumptions(
+    request: Any, prices: Mapping[int, Any], thorough: bool = False
+) -> dict[str, Any]:
+    """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
+    return {
+        "running_cost_policy": running_cost_policy(request, thorough),
+        "running_cost_prices": {
+            str(i): {
+                key: str(getattr(record, key, None))
+                for key in (
+                    "high_price_gp",
+                    "low_price_gp",
+                    "high_trade_at",
+                    "low_trade_at",
+                    "fetched_at",
+                    "source",
+                )
+            }
+            for i, record in sorted(prices.items())
+        },
     }
 
 

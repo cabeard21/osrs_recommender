@@ -5,6 +5,50 @@ from tracker.gear.combat import accuracy_probability, evaluate_loadout
 from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 
 
+@pytest.mark.parametrize("element", ["air", "water", "earth", "fire"])
+def test_weakness_explanation_matches_actual_rolls(element):
+    spell = ("wind" if element == "air" else element) + "_bolt"
+    baseline = evaluate_loadout([], "magic", {"magic": 35}, spell=spell)
+    result = evaluate_loadout(
+        [],
+        "magic",
+        {"magic": 35},
+        CombatTarget(weakness_element=element, weakness_percent=35),
+        spell=spell,
+    )
+    explanation = result.elemental_weakness
+    assert explanation.applied
+    assert explanation.element == element
+    assert explanation.percent == 35
+    assert explanation.reason is None
+    assert explanation.max_hit_bonus == result.max_hit - baseline.max_hit
+    assert explanation.attack_roll_bonus == result.attack_roll - baseline.attack_roll
+
+
+def test_weakness_explanation_nonmatching_and_unsupported():
+    target = CombatTarget(weakness_element="water", weakness_percent=50)
+    result = evaluate_loadout([], "magic", {"magic": 35}, target, spell="fire_bolt")
+    assert not result.elemental_weakness.applied
+    assert result.elemental_weakness.reason
+    assert result.elemental_weakness.max_hit_bonus == 0
+    assert evaluate_loadout([], "magic", {}, target).elemental_weakness is None
+
+
+@pytest.mark.parametrize("element,percent", [(None, 0), ("fire", 0)])
+def test_no_active_weakness_explanation(element, percent):
+    result = evaluate_loadout(
+        [],
+        "magic",
+        {"magic": 35},
+        CombatTarget(weakness_element=element, weakness_percent=percent),
+        spell="fire_bolt",
+    )
+    assert not result.elemental_weakness.applied
+    assert result.elemental_weakness.max_hit_bonus == 0
+    assert result.elemental_weakness.attack_roll_bonus == 0
+    assert result.elemental_weakness.reason == "Target has no active elemental weakness."
+
+
 def test_accuracy_both_roll_branches():
     assert accuracy_probability(100, 50) == pytest.approx(1 - 52 / 202)
     assert accuracy_probability(50, 100) == pytest.approx(50 / 202)

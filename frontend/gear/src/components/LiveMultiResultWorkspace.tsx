@@ -107,6 +107,7 @@ export function LiveMultiResultWorkspace() {
           <p>Utility (unscored)</p>
         ) : (
           <CombatOptionSummary
+            performance={loadout.performance}
             option={loadout.combat_option}
             role={role}
             weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"}

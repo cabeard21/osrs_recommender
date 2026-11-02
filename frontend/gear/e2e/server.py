@@ -137,8 +137,27 @@ if __name__ == "__main__":
         @app.post("/test/seed-ammo")
         def seed_ammo():
             seed_joint()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {
+                    **app.state.gear_service._equipment.items,
+                    **{i: original_catalog.items[i] for i in (882, 10499, 22109, 29289)},
+                },
+                revision="browser-acceptance-arrow-comparison-v2",
+            )
             now = datetime.now(UTC)
             with factory() as session:
+                player = session.query(Player).first()
+                for item_id in (882, 29289):
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=100 if item_id == 882 else 1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
                 session.merge(
                     ItemPrice(
                         item_id=892,

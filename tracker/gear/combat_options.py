@@ -14,9 +14,9 @@ from pydantic import BaseModel, ConfigDict
 
 from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
-from tracker.content.requirements import SkillLeaf, UnlockLeaf
+from tracker.content.requirements import QuestLeaf, SkillLeaf, UnlockLeaf
 from tracker.domain.types import Tri
-from tracker.gear.combat import SPELLS
+from tracker.gear.combat import IBAN_STAVES, SPELLS
 from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
 
@@ -105,11 +105,14 @@ def enumerate_combat_options(
     *,
     discipline: str,
     levels: Mapping[str, int],
+    include_weapon_restricted: bool = False,
 ) -> tuple[CombatOption, ...]:
     """Return legal profiles including locked and unknown account options.
 
     `levels` is accepted for the optimizer's existing call contract. Factual
     eligibility comes from AccountSnapshot via the shared requirement evaluator.
+    `include_weapon_restricted` exposes staff-specific spells for account-facing
+    filters; actual attack enumeration leaves it false to enforce weapon pairing.
     """
     _ = levels
     if discipline == "melee":
@@ -156,11 +159,29 @@ def enumerate_combat_options(
     options: list[CombatOption] = []
     book = _standard_spellbook_status(snapshot)
     for spell, (level, _) in SPELLS.items():
+        if (
+            spell == "iban_blast"
+            and not include_weapon_restricted
+            and (weapon is None or weapon.id not in IBAN_STAVES)
+        ):
+            continue
         if weapon is not None and spell not in weapon.spell_compatibility:
             continue
+        extra_checks = (
+            (
+                (_skill_status(snapshot, "attack", 50), "Attack level 50 required"),
+                (
+                    evaluate_requirement(snapshot, QuestLeaf(quest_id="underground_pass")).status,
+                    "Underground Pass completion is not confirmed",
+                ),
+            )
+            if spell == "iban_blast"
+            else ()
+        )
         status, reasons = _account_status(
             (_skill_status(snapshot, "magic", level), f"Magic level {level} required"),
             (book, "Standard spellbook unlock is not confirmed"),
+            *extra_checks,
         )
         stances = MAGIC_STANCES if weapon is not None else frozenset({"accurate"})
         options.extend(
@@ -171,6 +192,7 @@ def enumerate_combat_options(
                 availability=status,
                 reasons=reasons,
                 runes="unknown",
+                charges="unknown" if spell == "iban_blast" else "not_applicable",
             )
             for stance in sorted(stances)
         )
