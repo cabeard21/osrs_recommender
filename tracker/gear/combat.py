@@ -20,7 +20,7 @@ from tracker.gear.models import (
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
 # only when that tier's spell is unlocked. Spell choice is an explicit assumption.
-SPELLS = {
+ELEMENTAL_SPELLS = {
     "wind_strike": (1, 2),
     "water_strike": (5, 4),
     "earth_strike": (9, 6),
@@ -42,6 +42,9 @@ SPELLS = {
     "earth_surge": (90, 23),
     "fire_surge": (95, 24),
 }
+# https://oldschool.runescape.wiki/w/Iban_Blast
+IBAN_STAVES = frozenset({1409, 12658})
+SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25)}
 
 
 def accuracy_probability(attack_roll: int, defence_roll: int) -> float:
@@ -140,6 +143,13 @@ def evaluate_loadout(
     if (
         style == "magic"
         and powered_attack is None
+        and spell == "iban_blast"
+        and (weapon is None or weapon.id not in IBAN_STAVES)
+    ):
+        problems.append("Iban Blast requires Iban's staff or Iban's staff (u).")
+    if (
+        style == "magic"
+        and powered_attack is None
         and weapon
         and weapon.spell_compatibility
         and spell not in weapon.spell_compatibility
@@ -180,16 +190,20 @@ def _calculate(
             if weapon is None or weapon.powered_attack_base_max_hit is None:
                 raise ValueError("Powered attack requires reviewed weapon damage metadata")
             base = weapon.powered_attack_base_max_hit
+        elif spell == "iban_blast":
+            base = SPELLS[spell][1]
         else:
             tier = spell.split("_")[1]
             base = max(
                 damage
-                for name, (level, damage) in SPELLS.items()
+                for name, (level, damage) in ELEMENTAL_SPELLS.items()
                 if name.endswith("_" + tier) and level <= levels["magic"]
             )
         max_hit = floor(base * (100 + bonuses.magic_damage) / 100)
         attack = (levels["magic"] + 9 + (2 if stance == "accurate" else 0)) * (bonuses.magic + 64)
-        element = spell.split("_")[0] if powered_attack is None else None
+        element = (
+            spell.split("_")[0] if powered_attack is None and spell in ELEMENTAL_SPELLS else None
+        )
         if element == "wind":
             element = "air"
         applied = (

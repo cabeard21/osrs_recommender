@@ -17,6 +17,7 @@ const STANCES: Record<Style, string[]> = {
   magic: ["accurate", "defensive"],
 };
 const FIXTURE_SPELLS = [
+  "iban_blast",
   "fire_strike",
   "wind_wave",
   "water_wave",

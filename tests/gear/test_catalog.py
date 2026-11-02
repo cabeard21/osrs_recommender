@@ -1,6 +1,6 @@
 from tests.gear.test_combat_options import account
 from tracker.gear.catalog import load_catalog
-from tracker.gear.combat import SPELLS
+from tracker.gear.combat import ELEMENTAL_SPELLS
 from tracker.gear.combat_options import eligible_combat_options
 
 
@@ -42,6 +42,6 @@ def test_reviewed_elemental_staves_expose_standard_spells(make_content):
     catalog = load_catalog(make_content())
     for item_id in (1381, 1387, 1405):
         staff = catalog.items[item_id]
-        assert set(staff.spell_compatibility) == set(SPELLS)
+        assert set(staff.spell_compatibility) == set(ELEMENTAL_SPELLS)
         options = eligible_combat_options(staff, account(), discipline="magic", levels={})
-        assert {option.spell for option in options} == set(SPELLS)
+        assert {option.spell for option in options} == set(ELEMENTAL_SPELLS)

@@ -313,6 +313,7 @@ def render_optimizer(service: GearService, context: ContextProvider) -> None:
                             "water_blast",
                             "earth_blast",
                             "fire_blast",
+                            "iban_blast",
                             "wind_wave",
                             "water_wave",
                             "earth_wave",
