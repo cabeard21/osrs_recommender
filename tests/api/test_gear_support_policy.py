@@ -1,5 +1,7 @@
 """Browser policy is explicit and shared by catalog, search and exact evaluation."""
 
+import pytest
+
 from tests.api.test_gear_optimizations import scenario
 
 
@@ -60,12 +62,24 @@ def test_invalid_support_policy_rejected(client, session_factory):
     assert client.get("/ui-api/gear/items?support_policy=invented").status_code == 422
 
 
-def test_owned_steel_ring_is_usable_without_requirement_data(client, session_factory):
-    ring, weapon = 30895, 4151
+@pytest.mark.parametrize(
+    "ring,support_status",
+    [
+        (30895, "community_assumed"),
+        (6731, "community_assumed"),
+        (6735, "community_assumed"),
+        (6733, "verified"),
+        (6737, "verified"),
+    ],
+)
+def test_owned_tradeable_ring_is_usable_without_requirement_data(
+    client, session_factory, ring, support_status
+):
+    weapon = 4151
     body = scenario(client, session_factory, ids=(ring, weapon))
     detail = client.get(f"/ui-api/gear/items/{ring}?support_policy=community_best_effort").json()
     assert detail["wear"]["status"] == "satisfied"
-    assert detail["support_status"] == "community_assumed"
+    assert detail["support_status"] == support_status
     body.update(support_policy="community_best_effort", locks={"weapon": weapon, "ring": ring})
     optimized = client.post("/ui-api/gear/optimizations", json=body)
     assert optimized.status_code == 200, optimized.text

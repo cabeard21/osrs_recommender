@@ -1,6 +1,6 @@
-"""Conservative ordinary-equipment evidence for the optional community policy.
+"""Ordinary-equipment evidence for the optional community policy.
 
-Category labels alone never qualify an item. Each candidate also needs exact-ID
+There is no item-name category allowlist. Each candidate needs exact-ID
 community wear gates, a normal GE/player form, and independently captured physical
 statistics and compatibility. Unresolved non-skill gates remain an explicit user
 assumption; this classification does not certify their absence.
@@ -11,24 +11,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-POLICY_VERSION = "ordinary-v2"
+POLICY_VERSION = "ordinary-v3"
 GENERIC_UNREVIEWED = "Offensive effects have not been validated."
 
-# Narrow ordinary categories, combined with the independent evidence below.
-# Do not extend this to arbitrary charged, set, location-specific or effect gear.
-_METALS = "Bronze|Iron|Steel|Black|Mithril|Adamant|Rune|White"
-_CATEGORIES = (
-    rf"(?:{_METALS}) (?:2h sword|axe|battleaxe|claws|crossbow|dagger|dart|halberd|"
-    r"hasta|knife|longsword|mace|pickaxe|scimitar|spear|sword|thrownaxe|warhammer)",
-    r"(?:Oak|Willow|Maple|Yew|Magic) (?:shortbow|longbow|comp bow)",
-    rf"(?:{_METALS}|Dragon|Gilded) (?:med helm|full helm|chainbody|platebody|platelegs|"
-    r"plateskirt|sq shield|kiteshield|boots|gloves)(?: \((?:g|t)\))?",
-    r"(?:Blue|Red|Black|Green) d'hide (?:body|chaps|vambraces|shield)(?: \((?:g|t)\))?",
-    r"(?:Mystic|Enchanted|Splitbark|Infinity) (?:hat|hood|robe top|robe bottom|top|"
-    r"bottoms|gloves|boots)(?: \((?:light|dark|blue|dusk)\))?",
-    r"3rd Age (?:full helmet|kiteshield|platebody|platelegs|plateskirt|range coif|"
-    r"range top|range legs|vambraces|mage hat|robe top|robe|amulet)",
-)
 _MECHANICS = re.compile(
     r"poison|venom|charg|degrad|broken|crumbl|set effect|special attack|wilderness|"
     r"barrows|ahrim|dharok|guthan|karil|torag|verac|slayer|crystal|moon|"
@@ -115,8 +100,6 @@ def classify_ordinary(
     steel_ring = physical["id"] == 30895 and name == "Steel ring" and physical["slot"] == "ring"
     if not steel_ring and _MECHANICS.search(name + " " + examine):
         return None, "known_or_conditional_mechanic"
-    if not steel_ring and not any(re.fullmatch(pattern, name) for pattern in _CATEGORIES):
-        return None, "outside_ordinary_categories"
     if physical["slot"] == "weapon":
         weapon = external.get("weapon")
         if not isinstance(weapon, dict) or weapon.get("weapon_type") not in _WEAPON_TYPES:
@@ -141,7 +124,7 @@ def classify_ordinary(
             if assumed_ungated
             else "normal player-equippable GE form with nonempty skill gates",
             "independent physical statistics, slot and compatibility agree",
-            "narrow ordinary category with no indicated conditional mechanic",
+            "no indicated conditional mechanic; no item-name category restriction",
         ],
         "tradeable": True,
         **({"requirements_assumed_absent": True} if assumed_ungated else {}),

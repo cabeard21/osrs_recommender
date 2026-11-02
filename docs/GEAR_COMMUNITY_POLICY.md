@@ -30,17 +30,20 @@ deterministic classification sidecar, not another approval/review workflow.
 
 ## Current ordinary-item policy
 
-The `ordinary-v2` sidecar also admits normal tradeable ordinary equipment whose
-equip requirement field is absent, null, or empty. Populated maps must still pass
-validation, and authored metadata takes precedence. Steel ring `30895` is an exact-ID
-ordinary exception: it supplies +24 stab/slash/crush defence and no special combat
-effect ([OSRS Wiki](https://oldschool.runescape.wiki/w/Steel_ring)). Its enchanted
-examine text does not imply a conditional mechanic. Other rings do not inherit
-this exception. Generic effects markers are cleared only for positively classified
-ordinary items; explicit unsupported mechanics remain blocked.
+The `ordinary-v3` sidecar has no item-name category allowlist. Normal tradeable
+equipment can qualify by default even when its equip requirement field is absent,
+null, or empty. Populated maps must still pass validation, and authored metadata
+takes precedence. Independent physical evidence, valid player-equippable forms,
+weapon compatibility, and checks for indicated conditional mechanics still apply.
+Generic effects markers are cleared for qualifying community items; explicit
+unsupported mechanics remain blocked.
 
-The regenerated sidecar contains 244 qualifying physical IDs (149 noncosmetic,
-95 cosmetic), including Steel ring. `verified_only` retains its reviewed-only rules.
+The regenerated sidecar contains 798 qualifying physical IDs (673 noncosmetic,
+125 cosmetic), including Seers ring `6731` and Warrior ring `6735`. Archers ring
+`6733` and Berserker ring `6737` retain their existing authored approvals. Steel
+ring `30895` retains its exception for harmless enchanted examine text; other
+items no longer need a name/category exception. `verified_only` retains its
+reviewed-only rules. Eligibility does not guarantee selection by the optimizer.
 
 ## Initial coverage and remaining exceptions (ordinary-v1)
 
