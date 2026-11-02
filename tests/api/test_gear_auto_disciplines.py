@@ -30,6 +30,9 @@ def test_auto_results_and_exact_roundtrip(client, session_factory):
         "magic",
     }
     selected = result["selected_solution"]["loadouts"]["single"]
+    assert [r["discipline"] for r in result["discipline_results"]] == ["melee", "ranged", "magic"]
+    assert result["discipline_results"][0]["selected_solution"] == result["selected_solution"]
+    assert all("search" in r and "alternatives" in r for r in result["discipline_results"])
     assert selected["discipline"] == "melee"
     assert response.json()["work_budget_policy"]["discipline_count"] == 3
     assert response.json()["baseline"]["status"] == "available"

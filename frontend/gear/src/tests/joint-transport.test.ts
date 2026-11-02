@@ -327,3 +327,126 @@ it("accepts unscored unsupported ordinary metrics without inventing zero perform
     parseJointSolution(raw, scenario, items, "curve-1", 1).loadouts[1].metrics,
   ).toBeNull();
 });
+
+function autoExample() {
+  const { scenario, reply } = example(1);
+  scenario.request.roles[0].autoDiscipline = true;
+  scenario.request.roles[0].allowedDisciplines = ["melee"];
+  reply.scenario = optimizationRequest(scenario);
+  Object.assign(reply.result.selected_solution.loadouts["role-1"], {
+    discipline: "melee",
+  });
+  const branch = {
+    discipline: "melee",
+    status: "best_found",
+    reasons: [],
+    score: 2,
+    purchase_cost_gp: 0,
+    selected_solution: structuredClone(reply.result.selected_solution),
+    secondary_frontiers: [],
+    search: {},
+    alternatives: {},
+    limitations: [],
+  };
+  Object.assign(reply.result, {
+    discipline_comparison: [
+      {
+        discipline: "melee",
+        status: "best_found",
+        reasons: [],
+        score: 2,
+        purchase_cost_gp: 0,
+      },
+    ],
+    discipline_results: [branch],
+  });
+  return { scenario, reply, branch };
+}
+it("retains each Auto discipline as an independently selectable solution", () => {
+  const { scenario, reply } = autoExample();
+  const parsed = parseOptimization(reply, scenario);
+  expect(parsed.solutions.map((s) => s.id)).toContain(
+    "discipline-melee-best-found",
+  );
+});
+it("rejects duplicate, unsearched, and mismatched Auto discipline results", () => {
+  const { scenario, reply, branch } = autoExample();
+  Object.assign(reply.result, { discipline_results: [branch, branch] });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/discipline/i);
+  Object.assign(reply.result, {
+    discipline_results: [{ ...branch, discipline: "magic" }],
+  });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/discipline/i);
+  Object.assign(reply.result, { discipline_results: [branch] });
+  branch.selected_solution.loadouts["role-1"] = {
+    ...branch.selected_solution.loadouts["role-1"],
+    discipline: "magic",
+  } as (typeof branch.selected_solution.loadouts)[string];
+  expect(() => parseOptimization(reply, scenario)).toThrow(/discipline/i);
+});
+it("retains independently scoped Auto frontiers and validates their identities and measurements", () => {
+  const { scenario, reply, branch } = autoExample();
+  const point = {
+    id: "discipline-melee-frontier-1-test",
+    solution: branch.selected_solution,
+    dps_loss: 0,
+    dps_loss_pct: 0,
+    secondary_gain: 0,
+  };
+  Object.assign(branch, {
+    secondary_frontiers: [
+      { swap_limit: 1, baseline_dps: 2, sampled: false, points: [point] },
+    ],
+  });
+  expect(
+    parseOptimization(reply, scenario).solutions.map((s) => s.id),
+  ).toContain(point.id);
+  point.id = "unscoped";
+  expect(() => parseOptimization(reply, scenario)).toThrow(
+    /discipline frontier/,
+  );
+  point.id = "discipline-melee-frontier-1-test";
+  point.dps_loss_pct = 101;
+  expect(() => parseOptimization(reply, scenario)).toThrow(/measurement/);
+  point.dps_loss_pct = 0;
+  Object.assign(point, {
+    solution: {
+      ...branch.selected_solution,
+      loadouts: {
+        "role-1": {
+          ...branch.selected_solution.loadouts["role-1"],
+          discipline: "magic",
+        },
+      },
+    },
+  });
+  expect(() => parseOptimization(reply, scenario)).toThrow(
+    /frontier discipline/,
+  );
+});
+it("retains an infeasible Auto discipline with no selectable setup", () => {
+  const { scenario, reply, branch } = autoExample();
+  Object.assign(branch, {
+    status: "no_feasible_solution_found",
+    selected_solution: null,
+    score: null,
+    purchase_cost_gp: null,
+    reasons: ["No legal setup"],
+  });
+  Object.assign(reply.result, {
+    discipline_comparison: [
+      {
+        discipline: "melee",
+        status: "no_feasible_solution_found",
+        score: null,
+        purchase_cost_gp: null,
+        reasons: ["No legal setup"],
+      },
+    ],
+  });
+  expect(
+    parseOptimization(reply, scenario).solutions.map((s) => s.id),
+  ).not.toContain("discipline-melee-best-found");
+  Object.assign(branch, { status: "best_found" });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/discipline/);
+});

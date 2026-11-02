@@ -293,8 +293,13 @@ function LiveItemInspector() {
   const [isBrowsing, setIsBrowsing] = useState(!!client.browseItems);
   const physicalSlot = slot === "ammo" ? "ammunition" : slot;
   const excluded = new Set(current.draft.exclusions);
+  const branch = current.result?.live?.result.discipline_results?.find((row) =>
+    current.solutionId.startsWith(`discipline-${row.discipline}-`),
+  );
   const contextual =
-    current.result?.live?.result.alternatives?.[physicalSlot] ?? [];
+    (branch?.alternatives ?? current.result?.live?.result.alternatives)?.[
+      physicalSlot
+    ] ?? [];
   const canPreview =
     !multi && !!optimized && !current.outdated && !current.pending;
   const namedItem = (itemId: number) =>

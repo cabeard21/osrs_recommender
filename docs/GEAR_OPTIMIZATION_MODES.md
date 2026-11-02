@@ -131,3 +131,9 @@ Wall/CPU time, container/host memory, cancellation responsiveness, dashboard lat
 ## Known limitations
 
 Search remains bounded and candidate-limited. Thorough improves only what the existing additional search visits and does not prove optimality or infeasibility. Unsupported combat mechanics remain unsupported. Cancellation is cooperative and may wait for an optimizer checkpoint, including candidate preparation. No reliable completion estimate is available. Production readiness additionally requires explicit acceptance of serving latency, resource use and concurrent dashboard, RuneLite sync and MCP behavior.
+
+### Browsing Auto disciplines
+
+Single Auto results open on **Auto overall**. Tabs for each searched discipline expose its best-found loadout and its own secondary tradeoff frontier, including disciplines dominated in the combined frontier. Default priority shows each discipline's best DPS loadout; select a named secondary priority to explore tradeoffs. Discipline DPS loss is measured from that discipline's best DPS under the same swap limit. Frontiers remain bounded best-found results and may be sampled to 64 points, preserving endpoints.
+
+The additive `result.discipline_results` list retains each searched discipline's status, reasons, selected solution, secondary frontiers, search diagnostics, limitations, and contextual alternatives. Existing overall fields retain their meaning. Switching tabs does not run another search or change the overall Auto winner.
