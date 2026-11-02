@@ -2562,7 +2562,6 @@
   item_id: 1409
   slot: weapon
   style: magic
-  tier: 2
   requires:
     all_of:
     - skill:
