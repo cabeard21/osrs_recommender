@@ -267,6 +267,18 @@ export interface SecondaryFrontierGroup {
     secondary_gain: number;
   }[];
 }
+export interface DisciplineResult {
+  discipline: Style;
+  status: "best_found" | "no_feasible_solution_found";
+  reasons: string[];
+  score: number | null;
+  purchase_cost_gp: number | null;
+  selected_solution: JointSolutionDTO | null;
+  secondary_frontiers: SecondaryFrontierGroup[];
+  search: Record<string, unknown>;
+  limitations: string[];
+  alternatives: NonNullable<OptimizationDTO["result"]["alternatives"]>;
+}
 export interface OptimizationReply {
   source: "fixture" | "live";
   scenario: Scenario;
@@ -347,6 +359,7 @@ export interface OptimizationDTO {
     >;
     frontier_policy?: Record<string, unknown> | null;
     secondary_frontiers?: SecondaryFrontierGroup[];
+    discipline_results?: DisciplineResult[];
     discipline_comparison?: {
       discipline: Style;
       status: string;

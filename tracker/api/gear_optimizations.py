@@ -177,6 +177,14 @@ class SecondaryFrontier(DTO):
     sampled: bool = False
 
 
+class DisciplineResult(DisciplineComparison):
+    selected_solution: Solution | None
+    secondary_frontiers: list[SecondaryFrontier]
+    search: dict[str, Any]
+    alternatives: dict[str, list[dict[str, Any]]]
+    limitations: list[str]
+
+
 class OptimizationResult(DTO):
     support_policy: SupportPolicy = "verified_only"
     support_provenance: str = ""
@@ -202,6 +210,7 @@ class OptimizationResult(DTO):
     search: dict[str, Any]
     limitations: list[str]
     discipline_comparison: list[DisciplineComparison] = Field(default_factory=list)
+    discipline_results: list[DisciplineResult] = Field(default_factory=list)
 
 
 class OptimizationResponse(DTO):

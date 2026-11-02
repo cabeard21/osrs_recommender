@@ -360,11 +360,11 @@ export function parseOptimization(
       transitions: [],
     });
   }
-  if (result.secondary_frontiers !== undefined) {
-    if (!Array.isArray(result.secondary_frontiers))
+  const frontierIds = new Set<string>();
+  function parseFrontiers(frontiers: unknown, discipline?: string) {
+    if (!Array.isArray(frontiers))
       throw new Error("Invalid secondary frontiers");
-    const frontierIds = new Set<string>();
-    for (const value of result.secondary_frontiers) {
+    for (const value of frontiers) {
       const group = requireFields(value, { sampled: "boolean" });
       if (
         group.swap_limit !== null &&
@@ -401,6 +401,18 @@ export function parseOptimization(
               point.dps_loss_pct > (scenario.request.max_dps_loss_pct ?? 10)))
         )
           throw new Error("Invalid frontier measurement");
+        if (
+          discipline &&
+          !String(point.id).startsWith(`discipline-${discipline}-`)
+        )
+          throw new Error("Invalid discipline frontier identity");
+        if (
+          discipline &&
+          Object.values(object(object(point.solution).loadouts)).some(
+            (loadout) => object(loadout).discipline !== discipline,
+          )
+        )
+          throw new Error("Mismatched frontier discipline");
         frontierIds.add(String(point.id));
         solutions.push(
           parseJointSolution(
@@ -414,9 +426,96 @@ export function parseOptimization(
       }
     }
   }
+  if (result.secondary_frontiers !== undefined)
+    parseFrontiers(result.secondary_frontiers);
+  const branchAlternatives = new Map<
+    string,
+    ReturnType<typeof parseAlternatives>
+  >();
+  if (result.discipline_results !== undefined) {
+    const allowed = scenario.request.roles[0]?.autoDiscipline
+      ? (scenario.request.roles[0].allowedDisciplines ?? [
+          "melee",
+          "ranged",
+          "magic",
+        ])
+      : [];
+    if (
+      !Array.isArray(result.discipline_results) ||
+      result.discipline_results.length !== allowed.length
+    )
+      throw new Error("Invalid Auto discipline results");
+    const seen = new Set<string>();
+    for (const value of result.discipline_results) {
+      const branch = object(value);
+      const discipline = String(branch.discipline);
+      if (
+        !allowed.includes(discipline as import("./contracts").Style) ||
+        seen.has(discipline) ||
+        !strings(branch.reasons) ||
+        !strings(branch.limitations) ||
+        !["best_found", "no_feasible_solution_found"].includes(
+          String(branch.status),
+        ) ||
+        (branch.status === "best_found") !== (branch.selected_solution !== null)
+      )
+        throw new Error("Invalid Auto discipline result");
+      const summary = (result.discipline_comparison as unknown[])
+        .map(object)
+        .find((row) => row.discipline === discipline);
+      if (
+        !summary ||
+        summary.status !== branch.status ||
+        summary.score !== branch.score ||
+        summary.purchase_cost_gp !== branch.purchase_cost_gp ||
+        (branch.selected_solution !== null &&
+          (object(branch.selected_solution).score !== branch.score ||
+            object(branch.selected_solution).purchase_cost_gp !==
+              branch.purchase_cost_gp))
+      )
+        throw new Error("Auto discipline summary does not match its result");
+      seen.add(discipline);
+      object(branch.search);
+      if (scenario.request.optimization_mode === "thorough")
+        validateRefinementDiagnostics(
+          object(branch.search).local_refinement,
+          scenario.request.max_swaps,
+        );
+      if (branch.selected_solution !== null) {
+        const parsed = parseJointSolution(
+          branch.selected_solution,
+          scenario,
+          items,
+          `discipline-${discipline}-best-found`,
+          scenario.request.max_swaps,
+        );
+        if (
+          parsed.loadouts.some((loadout) => loadout.discipline !== discipline)
+        )
+          throw new Error("Mismatched selected discipline");
+        solutions.push(parsed);
+      }
+      parseFrontiers(branch.secondary_frontiers, discipline);
+      branchAlternatives.set(
+        discipline,
+        parseAlternatives(
+          branch.alternatives,
+          items,
+          scenario.request.excluded_item_ids,
+        ),
+      );
+    }
+  }
   if (result.snapshot_id !== scenario.request.expected_snapshot_id)
     throw new Error("Account changed during optimization. Refresh and rerun.");
   const dto = structuredClone(value) as OptimizationDTO;
+  if (dto.result.discipline_results)
+    dto.result.discipline_results = dto.result.discipline_results.map(
+      (branch) => ({
+        ...branch,
+        alternatives: branchAlternatives.get(branch.discipline)!,
+      }),
+    );
   dto.result.alternatives = parseAlternatives(
     result.alternatives,
     items,

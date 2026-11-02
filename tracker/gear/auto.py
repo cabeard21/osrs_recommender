@@ -115,6 +115,37 @@ def optimize_auto(
                 "reasons": [] if row else result["limitations"],
             }
         )
+    discipline_results = []
+    for summary, (discipline, result) in zip(comparison, branches, strict=True):
+        groups = []
+        for group in result["secondary_frontiers"]:
+            points = group["points"]
+            sampled = len(points) > 64
+            visible = (
+                [points[round(i * (len(points) - 1) / 63)] for i in range(64)]
+                if sampled
+                else points
+            )
+            groups.append(
+                {
+                    **group,
+                    "sampled": sampled or group["sampled"],
+                    "points": [
+                        {**point, "id": f"discipline-{discipline}-{point['id']}"}
+                        for point in visible
+                    ],
+                }
+            )
+        discipline_results.append(
+            {
+                **summary,
+                "selected_solution": result["selected_solution"],
+                "secondary_frontiers": groups,
+                "search": result["search"],
+                "alternatives": result["alternatives"],
+                "limitations": result["limitations"],
+            }
+        )
     return {
         **chosen,
         "curve": curve,
@@ -122,6 +153,7 @@ def optimize_auto(
         "unrestricted": unrestricted,
         "secondary_frontiers": frontiers,
         "discipline_comparison": comparison,
+        "discipline_results": discipline_results,
         "items": list({i["item_id"]: i for _, r in branches for i in r["items"]}.values()),
         "suggested_swap_limit": next(
             (

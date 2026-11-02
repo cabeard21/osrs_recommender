@@ -132,6 +132,7 @@ def test_empty_filters_and_incompatible_locked_weapon():
     result = optimize(*args)
     assert result["selected_solution"] is None
     assert all(r["status"] == "no_feasible_solution_found" for r in result["discipline_comparison"])
+    assert all(r["selected_solution"] is None for r in result["discipline_results"])
     args = list(context())
     role = (
         args[1]
@@ -186,3 +187,62 @@ def test_auto_exact_evaluation_can_choose_different_disciplines_for_each_side():
     assert result["baseline"]["discipline"] == "melee"
     assert result["proposed"]["discipline"] == "magic"
     assert result["deltas"]["dps"] > 0
+
+
+@pytest.mark.parametrize("priority", ["default", "prayer_bonus"])
+def test_auto_retains_each_discipline_result(priority):
+    from tracker.gear.auto import branch_requests
+
+    args = list(context("magic"))
+    args[1] = args[1].model_copy(update={"secondary_priority": priority, "max_dps_loss_pct": 5})
+    result = optimize(*args)
+    assert [r["discipline"] for r in result["discipline_results"]] == ["melee", "ranged", "magic"]
+    for branch, (discipline, request) in zip(
+        result["discipline_results"], branch_requests(args[1]), strict=True
+    ):
+        manual = optimize(args[0], request, *args[2:])
+        assert branch["selected_solution"] == manual["selected_solution"]
+        assert branch["alternatives"] == manual["alternatives"]
+        assert branch["search"] == manual["search"]
+        for group in branch["secondary_frontiers"]:
+            assert len(group["points"]) <= 64
+            assert group["baseline_dps"] == branch["selected_solution"]["score"]
+            assert all(p["dps_loss_pct"] <= 5 for p in group["points"])
+            assert all(p["id"].startswith(f"discipline-{discipline}-") for p in group["points"])
+
+
+def test_auto_samples_branch_frontiers_after_combining(monkeypatch):
+    import tracker.gear.optimizer as module
+
+    original = module.optimize
+
+    def expanded(*args, **kwargs):
+        result = original(*args, **kwargs)
+        return {
+            **result,
+            "secondary_frontiers": [
+                {
+                    **group,
+                    "points": [
+                        {**group["points"][0], "id": f"point-{group['swap_limit']}-{i}"}
+                        for i in range(100)
+                    ]
+                    if group["points"]
+                    else [],
+                }
+                for group in result["secondary_frontiers"]
+            ],
+        }
+
+    monkeypatch.setattr(module, "optimize", expanded)
+    args = list(context())
+    args[1] = args[1].model_copy(update={"secondary_priority": "prayer_bonus"})
+    result = original(*args)
+    groups = [g for r in result["discipline_results"] for g in r["secondary_frontiers"]]
+    assert groups
+    for group in groups:
+        assert group["sampled"]
+        assert len(group["points"]) == 64
+        assert group["points"][0]["id"].endswith("-0")
+        assert group["points"][-1]["id"].endswith("-99")
+    assert all(len(g["points"]) <= 64 for g in result["secondary_frontiers"])
