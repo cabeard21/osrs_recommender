@@ -2550,6 +2550,26 @@
         magic: 50
     - skill:
         attack: 50
+    - quest: underground_pass
+  acquisition: untradeable
+  acquired_from: Underground Pass
+  price_mode: static
+
+# Charged ordinary form; the broken staff is a separate, unsupported item.
+# https://oldschool.runescape.wiki/w/Iban%27s_staff
+- id: ibans_staff
+  name: Iban's staff
+  item_id: 1409
+  slot: weapon
+  style: magic
+  tier: 2
+  requires:
+    all_of:
+    - skill:
+        magic: 50
+    - skill:
+        attack: 50
+    - quest: underground_pass
   acquisition: untradeable
   acquired_from: Underground Pass
   price_mode: static

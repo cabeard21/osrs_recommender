@@ -39,17 +39,20 @@ _TIERS = {
 }
 SPELL_RECIPES = MappingProxyType(
     {
-        f"{element}_{tier}": MappingProxyType(
-            {
-                catalyst: 1,
-                556: air[index],
-                **({rune: elements[index - 1]} if index else {}),
-            }
-        )
-        for tier, (catalyst, air, elements) in _TIERS.items()
-        for index, (element, rune) in enumerate(
-            (("wind", 556), ("water", 555), ("earth", 557), ("fire", 554))
-        )
+        "iban_blast": MappingProxyType({554: 5, 560: 1}),
+        **{
+            f"{element}_{tier}": MappingProxyType(
+                {
+                    catalyst: 1,
+                    556: air[index],
+                    **({rune: elements[index - 1]} if index else {}),
+                }
+            )
+            for tier, (catalyst, air, elements) in _TIERS.items()
+            for index, (element, rune) in enumerate(
+                (("wind", 556), ("water", 555), ("earth", 557), ("fire", 554))
+            )
+        },
     }
 )
 STAFF_RUNES = MappingProxyType(

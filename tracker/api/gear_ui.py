@@ -358,7 +358,9 @@ def combat_option_capabilities(
                 }
             )
     spells: list[dict[str, Any]] = []
-    for option in enumerate_combat_options(None, account, discipline="magic", levels=levels):
+    for option in enumerate_combat_options(
+        None, account, discipline="magic", levels=levels, include_weapon_restricted=True
+    ):
         if option.spell is None:
             continue
         spells.append(

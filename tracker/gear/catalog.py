@@ -13,7 +13,7 @@ from typing import Any
 
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf
-from tracker.gear.combat import SPELLS
+from tracker.gear.combat import ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.requirements_source import requirement_from_levels
 
@@ -119,8 +119,10 @@ def load_catalog(
             {
                 **row,
                 "spell_compatibility": (
-                    tuple(SPELLS)
+                    tuple(ELEMENTAL_SPELLS)
                     if row["id"] in REVIEWED_STANDARD_STAVES
+                    else ("iban_blast",)
+                    if row["id"] in IBAN_STAVES
                     else row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
@@ -145,7 +147,12 @@ def load_catalog(
         and evidence.get("requirements_sha256") == sha256(source_payload).hexdigest()
     )
     reviewed_spells = json.dumps(
-        {str(item_id): list(SPELLS) for item_id in sorted(REVIEWED_STANDARD_STAVES)},
+        {
+            **{
+                str(item_id): list(ELEMENTAL_SPELLS) for item_id in sorted(REVIEWED_STANDARD_STAVES)
+            },
+            **{str(item_id): ["iban_blast"] for item_id in sorted(IBAN_STAVES)},
+        },
         sort_keys=True,
     ).encode("utf-8")
     revision = (
