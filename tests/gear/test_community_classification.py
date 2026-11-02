@@ -62,7 +62,6 @@ def test_plain_weapon_is_ordinary_without_mutating_sources(ordinary):
         {"quest_item": True},
         {"tradeable_on_ge": False},
         {"equipable_by_player": False},
-        {"equipment": {"slot": "weapon", "requirements": None}},
         {"weapon": {"weapon_type": "powered_staff", "attack_speed": 7}},
         {"examine": "A charged sword."},
     ],
@@ -281,3 +280,64 @@ def test_repository_community_provenance_matches_portable_inputs():
         raw = (root / f"{name}.json").read_bytes()
         assert b"\r\n" not in raw
         assert provenance[f"{name}_sha256"] == hashlib.sha256(raw).hexdigest()
+
+
+@pytest.mark.parametrize(
+    "equipment",
+    [
+        {"slot": "weapon"},
+        {"slot": "weapon", "requirements": None},
+        {"slot": "weapon", "requirements": {}},
+    ],
+)
+def test_tradeable_ordinary_items_without_requirement_data(ordinary, equipment):
+    physical, external, capture = ordinary
+    result, reason = classify_ordinary(physical, {**external, "equipment": equipment}, capture)
+    assert reason is None
+    assert result["requirements_assumed_absent"] is True
+
+
+def test_steel_ring_is_ordinary_ungated_equipment():
+    physical = next(
+        row
+        for row in json.loads(Path("content/equipment/catalog.json").read_text())
+        if row["id"] == 30895
+    )
+    external = {
+        "id": 30895,
+        "name": "Steel ring",
+        "incomplete": False,
+        "equipable_by_player": True,
+        "tradeable_on_ge": True,
+        "tradeable": True,
+        "noted": False,
+        "placeholder": False,
+        "duplicate": False,
+        "quest_item": False,
+        "examine": "A very old enchanted ring.",
+        "equipment": {"slot": "ring", "requirements": None},
+    }
+    result, reason = classify_ordinary(
+        physical, external, {"id": 30895, "version": "", "normalized": physical}
+    )
+    assert reason is None
+    assert result["requirements_assumed_absent"] is True
+
+
+@pytest.mark.parametrize("levels", [[], "unknown", False])
+def test_malformed_requirement_data_is_not_assumed_absent(ordinary, levels):
+    physical, external, capture = ordinary
+    external = {**external, "equipment": {"slot": "weapon", "requirements": levels}}
+    assert classify_ordinary(physical, external, capture)[1] == "invalid_requirement_evidence"
+
+
+def test_invalid_populated_requirement_map_does_not_qualify(ordinary, monkeypatch):
+    from tools import build_community_equipment as tool
+
+    physical, external, capture = ordinary
+    monkeypatch.setattr(tool, "normalize", lambda *args, **kwargs: physical)
+    catalog = SimpleNamespace(items={1319: SimpleNamespace(content_ids=())})
+    external = {**external, "equipment": {"slot": "weapon", "requirements": {"unknown": 40}}}
+    items, exceptions = tool.build({"1319": external}, [physical], [capture], catalog, {})
+    assert not items
+    assert exceptions["1319"] == "missing_valid_requirement_map"

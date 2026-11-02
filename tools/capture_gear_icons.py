@@ -47,7 +47,12 @@ def capture(root: Path, ids: list[int], *, dry_run: bool = False) -> int:
     unknown = set(ids) - catalog.items.keys()
     if unknown:
         raise ValueError(f"IDs absent from physical equipment catalog: {sorted(unknown)}")
-    selected = sorted(set(ids) if ids else {i.id for i in catalog.items.values() if i.content_ids})
+    selected = sorted(
+        set(ids)
+        if ids
+        else {i.id for i in catalog.items.values() if i.content_ids}
+        | catalog.community_items.keys()
+    )
     missing = [item_id for item_id in selected if not (folder / f"{item_id}.png").exists()]
     print(f"{len(selected)} selected; {len(missing)} missing sprites")
     if dry_run:
@@ -83,7 +88,10 @@ def capture(root: Path, ids: list[int], *, dry_run: bool = False) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "item_ids", nargs="*", type=int, help="Default: all authored physical forms"
+        "item_ids",
+        nargs="*",
+        type=int,
+        help="Default: all authored physical forms and community-supported equipment",
     )
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument(

@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-POLICY_VERSION = "ordinary-v1"
+POLICY_VERSION = "ordinary-v2"
 GENERIC_UNREVIEWED = "Offensive effects have not been validated."
 
 # Narrow ordinary categories, combined with the independent evidence below.
@@ -89,8 +89,12 @@ def classify_ordinary(
     ):
         return None, "source_form_or_acquisition_unknown"
     equipment = external.get("equipment")
-    if not isinstance(equipment, dict) or not equipment.get("requirements"):
+    if not isinstance(equipment, dict):
         return None, "missing_requirement_evidence"
+    levels = equipment.get("requirements")
+    assumed_ungated = levels is None or levels == {}
+    if not assumed_ungated and not isinstance(levels, dict):
+        return None, "invalid_requirement_evidence"
     source_slot = equipment.get("slot")
     if ("weapon" if source_slot == "2h" else source_slot) != physical["slot"] or (
         source_slot == "2h" and physical.get("two_handed") is not True
@@ -106,9 +110,12 @@ def classify_ordinary(
     name, examine = external.get("name", ""), external.get("examine", "")
     if not isinstance(name, str) or not isinstance(examine, str) or not examine:
         return None, "missing_category_evidence"
-    if _MECHANICS.search(name + " " + examine):
+    # Steel ring has only +24 melee defence; its enchanted examine is flavour.
+    # https://oldschool.runescape.wiki/w/Steel_ring
+    steel_ring = physical["id"] == 30895 and name == "Steel ring" and physical["slot"] == "ring"
+    if not steel_ring and _MECHANICS.search(name + " " + examine):
         return None, "known_or_conditional_mechanic"
-    if not any(re.fullmatch(pattern, name) for pattern in _CATEGORIES):
+    if not steel_ring and not any(re.fullmatch(pattern, name) for pattern in _CATEGORIES):
         return None, "outside_ordinary_categories"
     if physical["slot"] == "weapon":
         weapon = external.get("weapon")
@@ -130,10 +137,13 @@ def classify_ordinary(
         "classification": "ordinary",
         "evidence": [
             "exact physical ID in both pinned sources",
-            "normal player-equippable GE form with nonempty skill gates",
+            "normal player-equippable GE form with absent equip requirements assumed ungated"
+            if assumed_ungated
+            else "normal player-equippable GE form with nonempty skill gates",
             "independent physical statistics, slot and compatibility agree",
             "narrow ordinary category with no indicated conditional mechanic",
         ],
         "tradeable": True,
+        **({"requirements_assumed_absent": True} if assumed_ungated else {}),
         "cosmetic_variant": bool(re.search(r"\((?:g|t)\)$", name) or name.startswith("Gilded ")),
     }, None

@@ -9,7 +9,9 @@ Best-effort results distinguish **community-assumed** items from verified items.
 For classified ordinary equipment, satisfied known requirements are accepted while
 unresolved quest/unlock gates are explicitly assumed absent. This is a hobby-use
 eligibility policy, not proof that every equip gate is known. Missing requirement
-maps remain unknown. Known unmet or unknown skill requirements still prevent use.
+maps on normal tradeable ordinary items are assumed to mean no equip requirements;
+this assumption is shown on the item. Known unmet or unknown skill requirements
+still prevent use.
 Authored skill/quest gates, explicitly unknown authored gates, and explicit mechanic
 blockers take precedence over community data.
 
@@ -26,7 +28,21 @@ Policy and classification provenance participate in result identity. The source
 and evidence are recorded in `content/equipment/community.json`. This is a small
 deterministic classification sidecar, not another approval/review workflow.
 
-## Coverage and remaining exceptions
+## Current ordinary-item policy
+
+The `ordinary-v2` sidecar also admits normal tradeable ordinary equipment whose
+equip requirement field is absent, null, or empty. Populated maps must still pass
+validation, and authored metadata takes precedence. Steel ring `30895` is an exact-ID
+ordinary exception: it supplies +24 stab/slash/crush defence and no special combat
+effect ([OSRS Wiki](https://oldschool.runescape.wiki/w/Steel_ring)). Its enchanted
+examine text does not imply a conditional mechanic. Other rings do not inherit
+this exception. Generic effects markers are cleared only for positively classified
+ordinary items; explicit unsupported mechanics remain blocked.
+
+The regenerated sidecar contains 244 qualifying physical IDs (149 noncosmetic,
+95 cosmetic), including Steel ring. `verified_only` retains its reviewed-only rules.
+
+## Initial coverage and remaining exceptions (ordinary-v1)
 
 The preimplementation estimate was 241 additional IDs. Requiring existing
 independent physical profiles and compatibility reduced this to **194 qualifying
@@ -52,6 +68,9 @@ mechanics and two are explicit special-attack exceptions: Rune thrownaxe `805`
 classification reasons; they are not additional automatic approval candidates.
 Charged/degrading/set/location-dependent equipment remains excluded. Existing
 reviewed skill/quest gates remain binding even where community data disagrees.
+
+The following counts and account results describe the original `ordinary-v1`
+measurement and are historical, rather than current catalog totals.
 
 ## Measured account improvement
 

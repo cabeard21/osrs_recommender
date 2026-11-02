@@ -26,18 +26,25 @@ def build(source, physical_rows, captured_rows, catalog, requirements):
         if catalog.items[row["id"]].content_ids:
             exceptions[key] = "authored_metadata_preserved"
             continue
-        if key not in requirements:
+        external = source.get(key)
+        equipment = external.get("equipment") if isinstance(external, dict) else None
+        levels = equipment.get("requirements") if isinstance(equipment, dict) else None
+        if key not in requirements and levels not in (None, {}):
             exceptions[key] = "missing_valid_requirement_map"
             continue
         variants = captures.get(row["id"], [])
         if len(variants) != 1:
-            exceptions[key] = "missing_or_ambiguous_physical_capture"
+            exceptions[key] = (
+                "missing_valid_requirement_map"
+                if key not in requirements
+                else "missing_or_ambiguous_physical_capture"
+            )
             continue
         item, reason = classify_ordinary(row, source.get(key), variants[0])
         if item:
             items[key] = item
         else:
-            exceptions[key] = reason
+            exceptions[key] = "missing_valid_requirement_map" if key not in requirements else reason
     return items, exceptions
 
 

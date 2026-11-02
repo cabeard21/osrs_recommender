@@ -29,6 +29,7 @@ def test_frontier_range_validation(client, session_factory, value):
 
 
 def test_frontier_real_tradeoff_and_selection_provenance(client, app, session_factory):
+    from tests.api.test_gear_auto_disciplines import auto_role
     from tracker.gear.catalog import EquipmentCatalog
     from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 
@@ -83,3 +84,14 @@ def test_frontier_real_tradeoff_and_selection_provenance(client, app, session_fa
         )
         assert set(solution["carried_item_ids"]) <= item_ids
         assert solution["loadouts"]["single"]["equipment"]["weapon"] == 4151
+
+    auto_response = client.post(
+        "/ui-api/gear/optimizations",
+        json={**body, "roles": [auto_role(["melee"])], "max_dps_loss_pct": 10},
+    )
+    assert auto_response.status_code == 200, auto_response.text
+    auto_result = auto_response.json()["result"]
+    branch = auto_result["discipline_results"][0]
+    for frontier in [*auto_result["secondary_frontiers"], *branch["secondary_frontiers"]]:
+        assert frontier["points"]
+        assert all(p["dps_loss_pct"] <= 10 for p in frontier["points"])

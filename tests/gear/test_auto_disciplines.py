@@ -211,7 +211,8 @@ def test_auto_retains_each_discipline_result(priority):
             assert all(p["id"].startswith(f"discipline-{discipline}-") for p in group["points"])
 
 
-def test_auto_samples_branch_frontiers_after_combining(monkeypatch):
+@pytest.mark.parametrize("visible_count", [51, 100])
+def test_auto_samples_branch_frontiers_after_combining(monkeypatch, visible_count):
     import tracker.gear.optimizer as module
 
     original = module.optimize
@@ -224,8 +225,12 @@ def test_auto_samples_branch_frontiers_after_combining(monkeypatch):
                 {
                     **group,
                     "points": [
-                        {**group["points"][0], "id": f"point-{group['swap_limit']}-{i}"}
-                        for i in range(100)
+                        {
+                            **group["points"][0],
+                            "id": f"point-{group['swap_limit']}-{i}",
+                            "dps_loss_pct": 10 if i < visible_count else 11,
+                        }
+                        for i in range(200)
                     ]
                     if group["points"]
                     else [],
@@ -241,8 +246,31 @@ def test_auto_samples_branch_frontiers_after_combining(monkeypatch):
     groups = [g for r in result["discipline_results"] for g in r["secondary_frontiers"]]
     assert groups
     for group in groups:
-        assert group["sampled"]
-        assert len(group["points"]) == 64
+        assert group["sampled"] == (visible_count > 64)
+        assert len(group["points"]) == min(64, visible_count)
         assert group["points"][0]["id"].endswith("-0")
-        assert group["points"][-1]["id"].endswith("-99")
+        assert group["points"][-1]["id"].endswith(f"-{visible_count - 1}")
+        assert all(p["dps_loss_pct"] <= 10 for p in group["points"])
     assert all(len(g["points"]) <= 64 for g in result["secondary_frontiers"])
+
+
+@pytest.mark.parametrize("loss_limit", [0, 10, 100])
+def test_auto_defence_frontiers_obey_loss_limit(loss_limit):
+    from tests.gear.test_secondary_priorities import armour
+
+    items = [weapon(1, "slash"), armour(20, melee_strength=100), armour(30, defence_stab=100)]
+    role = RoleConfig(id="a", style="slash", allowed_disciplines=("melee",), combat_options=OPTIONS)
+    result = run(
+        items,
+        (role,),
+        max_swaps=0,
+        secondary_priority="balanced_defence",
+        max_dps_loss_pct=loss_limit,
+    )
+    groups = result["discipline_results"][0]["secondary_frontiers"]
+    assert groups
+    for group in groups:
+        assert group["points"]
+        assert all(p["dps_loss_pct"] <= loss_limit for p in group["points"])
+        if loss_limit == 100:
+            assert any(p["dps_loss_pct"] > 10 for p in group["points"])

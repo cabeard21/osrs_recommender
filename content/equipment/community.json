@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "policy_version": "ordinary-v1",
+    "policy_version": "ordinary-v2",
     "source": {
       "repository": "https://github.com/DayV-git/osrsreboxed-db",
       "commit": "4b3ac03c6a5b1df8ce56bc2bad83813b382a913d",
@@ -817,6 +817,306 @@
       "tradeable": true,
       "cosmetic_variant": false
     },
+    "1307": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1351": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1375": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "4119": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1205": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "806": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12211": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12221": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12213": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12223": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "864": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1291": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1139": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12205": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12215": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12207": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12217": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "1087": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12209": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12219": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "1321": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1173": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1277": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "800": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1337": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
     "3140": {
       "classification": "ordinary",
       "evidence": [
@@ -1035,6 +1335,294 @@
         "narrow ordinary category with no indicated conditional mechanic"
       ],
       "tradeable": true,
+      "cosmetic_variant": false
+    },
+    "1309": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1349": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1363": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "4121": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1203": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "807": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12241": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12231": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12243": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12233": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "863": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1293": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1137": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12235": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12225": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12237": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12227": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "1081": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "12239": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "12229": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": true
+    },
+    "1175": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1279": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "801": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
+    "1335": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
       "cosmetic_variant": false
     },
     "1315": {
@@ -1972,6 +2560,18 @@
       "tradeable": true,
       "cosmetic_variant": true
     },
+    "30895": {
+      "classification": "ordinary",
+      "evidence": [
+        "exact physical ID in both pinned sources",
+        "normal player-equippable GE form with absent equip requirements assumed ungated",
+        "independent physical statistics, slot and compatibility agree",
+        "narrow ordinary category with no indicated conditional mechanic"
+      ],
+      "tradeable": true,
+      "requirements_assumed_absent": true,
+      "cosmetic_variant": false
+    },
     "1177": {
       "classification": "ordinary",
       "evidence": [
@@ -2150,22 +2750,23 @@
     }
   },
   "summary": {
-    "newly_qualifiable_ids": 194,
-    "noncosmetic_ids": 119,
-    "cosmetic_variant_ids": 75,
-    "distinct_physical_profiles": 137,
+    "newly_qualifiable_ids": 244,
+    "noncosmetic_ids": 149,
+    "cosmetic_variant_ids": 95,
+    "distinct_physical_profiles": 173,
     "by_slot": {
       "neck": 1,
-      "head": 26,
-      "shield": 22,
-      "body": 27,
-      "legs": 43,
+      "head": 32,
+      "shield": 28,
+      "body": 31,
+      "legs": 53,
       "hands": 10,
-      "weapon": 55,
-      "feet": 10
+      "weapon": 76,
+      "feet": 12,
+      "ring": 1
     },
     "exclusions": {
-      "missing_valid_requirement_map": 3423,
+      "missing_valid_requirement_map": 3373,
       "outside_ordinary_categories": 401,
       "unresolved_variant_or_mechanic": 148,
       "authored_metadata_preserved": 293,
@@ -3032,18 +3633,14 @@
     "474": "missing_valid_requirement_map",
     "478": "missing_valid_requirement_map",
     "472": "missing_valid_requirement_map",
-    "1307": "missing_valid_requirement_map",
     "883": "missing_valid_requirement_map",
     "5616": "missing_valid_requirement_map",
     "5622": "missing_valid_requirement_map",
     "882": "authored_metadata_preserved",
-    "1351": "missing_valid_requirement_map",
-    "1375": "missing_valid_requirement_map",
     "878": "missing_valid_requirement_map",
     "6061": "missing_valid_requirement_map",
     "6062": "missing_valid_requirement_map",
     "877": "missing_valid_requirement_map",
-    "4119": "missing_valid_requirement_map",
     "4773": "missing_valid_requirement_map",
     "1103": "authored_metadata_preserved",
     "3095": "missing_valid_requirement_map",
@@ -3053,11 +3650,9 @@
     "1221": "missing_valid_requirement_map",
     "5670": "missing_valid_requirement_map",
     "5688": "missing_valid_requirement_map",
-    "1205": "missing_valid_requirement_map",
     "812": "missing_valid_requirement_map",
     "5628": "missing_valid_requirement_map",
     "5635": "missing_valid_requirement_map",
-    "806": "missing_valid_requirement_map",
     "20449": "missing_valid_requirement_map",
     "24136": "missing_valid_requirement_map",
     "8844": "missing_valid_requirement_map",
@@ -3067,8 +3662,6 @@
     "598": "missing_valid_requirement_map",
     "8968": "missing_valid_requirement_map",
     "1155": "authored_metadata_preserved",
-    "12211": "missing_valid_requirement_map",
-    "12221": "missing_valid_requirement_map",
     "7454": "missing_valid_requirement_map",
     "3190": "missing_valid_requirement_map",
     "11381": "missing_valid_requirement_map",
@@ -3081,37 +3674,20 @@
     "5648": "missing_valid_requirement_map",
     "825": "missing_valid_requirement_map",
     "1189": "authored_metadata_preserved",
-    "12213": "missing_valid_requirement_map",
-    "12223": "missing_valid_requirement_map",
     "870": "missing_valid_requirement_map",
     "5654": "missing_valid_requirement_map",
     "5661": "missing_valid_requirement_map",
-    "864": "missing_valid_requirement_map",
-    "1291": "missing_valid_requirement_map",
     "1422": "missing_valid_requirement_map",
-    "1139": "missing_valid_requirement_map",
     "1265": "missing_valid_requirement_map",
     "1117": "authored_metadata_preserved",
-    "12205": "missing_valid_requirement_map",
-    "12215": "missing_valid_requirement_map",
     "1075": "authored_metadata_preserved",
-    "12207": "missing_valid_requirement_map",
-    "12217": "missing_valid_requirement_map",
-    "1087": "missing_valid_requirement_map",
-    "12209": "missing_valid_requirement_map",
-    "12219": "missing_valid_requirement_map",
-    "1321": "missing_valid_requirement_map",
     "3170": "missing_valid_requirement_map",
     "1251": "missing_valid_requirement_map",
     "5704": "missing_valid_requirement_map",
     "5718": "missing_valid_requirement_map",
     "1237": "missing_valid_requirement_map",
     "27418": "missing_valid_requirement_map",
-    "1173": "missing_valid_requirement_map",
     "30597": "missing_valid_requirement_map",
-    "1277": "missing_valid_requirement_map",
-    "800": "missing_valid_requirement_map",
-    "1337": "missing_valid_requirement_map",
     "6277": "source_form_or_acquisition_unknown",
     "6259": "unresolved_variant_or_mechanic",
     "6275": "source_form_or_acquisition_unknown",
@@ -5095,18 +5671,14 @@
     "7159": "outside_ordinary_categories",
     "13344": "missing_valid_requirement_map",
     "28837": "missing_valid_requirement_map",
-    "1309": "missing_valid_requirement_map",
     "885": "missing_valid_requirement_map",
     "5617": "missing_valid_requirement_map",
     "5623": "missing_valid_requirement_map",
     "884": "authored_metadata_preserved",
-    "1349": "missing_valid_requirement_map",
-    "1363": "missing_valid_requirement_map",
     "9287": "slot_mismatch",
     "9294": "slot_mismatch",
     "9301": "slot_mismatch",
     "9140": "slot_mismatch",
-    "4121": "missing_valid_requirement_map",
     "4778": "missing_valid_requirement_map",
     "1101": "authored_metadata_preserved",
     "3096": "missing_valid_requirement_map",
@@ -5114,11 +5686,9 @@
     "1219": "missing_valid_requirement_map",
     "5668": "missing_valid_requirement_map",
     "5686": "missing_valid_requirement_map",
-    "1203": "missing_valid_requirement_map",
     "813": "missing_valid_requirement_map",
     "5629": "missing_valid_requirement_map",
     "5636": "missing_valid_requirement_map",
-    "807": "missing_valid_requirement_map",
     "20451": "missing_valid_requirement_map",
     "24137": "missing_valid_requirement_map",
     "8845": "missing_valid_requirement_map",
@@ -5127,8 +5697,6 @@
     "2533": "missing_valid_requirement_map",
     "2532": "missing_valid_requirement_map",
     "1153": "authored_metadata_preserved",
-    "12241": "missing_valid_requirement_map",
-    "12231": "missing_valid_requirement_map",
     "7455": "missing_valid_requirement_map",
     "3192": "missing_valid_requirement_map",
     "11388": "missing_valid_requirement_map",
@@ -5141,26 +5709,14 @@
     "5649": "missing_valid_requirement_map",
     "826": "missing_valid_requirement_map",
     "1191": "authored_metadata_preserved",
-    "12243": "missing_valid_requirement_map",
-    "12233": "missing_valid_requirement_map",
     "871": "missing_valid_requirement_map",
     "5655": "missing_valid_requirement_map",
     "5662": "missing_valid_requirement_map",
-    "863": "missing_valid_requirement_map",
-    "1293": "missing_valid_requirement_map",
     "1420": "missing_valid_requirement_map",
-    "1137": "missing_valid_requirement_map",
     "1267": "missing_valid_requirement_map",
     "11721": "missing_valid_requirement_map",
     "1115": "authored_metadata_preserved",
-    "12235": "missing_valid_requirement_map",
-    "12225": "missing_valid_requirement_map",
     "1067": "authored_metadata_preserved",
-    "12237": "missing_valid_requirement_map",
-    "12227": "missing_valid_requirement_map",
-    "1081": "missing_valid_requirement_map",
-    "12239": "missing_valid_requirement_map",
-    "12229": "missing_valid_requirement_map",
     "1323": "authored_metadata_preserved",
     "3899": "missing_valid_requirement_map",
     "3171": "missing_valid_requirement_map",
@@ -5168,11 +5724,7 @@
     "5706": "missing_valid_requirement_map",
     "5720": "missing_valid_requirement_map",
     "1239": "missing_valid_requirement_map",
-    "1175": "missing_valid_requirement_map",
     "30599": "missing_valid_requirement_map",
-    "1279": "missing_valid_requirement_map",
-    "801": "missing_valid_requirement_map",
-    "1335": "missing_valid_requirement_map",
     "12810": "missing_valid_requirement_map",
     "12811": "missing_valid_requirement_map",
     "12812": "missing_valid_requirement_map",
@@ -6649,7 +7201,6 @@
     "1269": "missing_weapon_compatibility",
     "1119": "authored_metadata_preserved",
     "1069": "authored_metadata_preserved",
-    "30895": "missing_valid_requirement_map",
     "1325": "authored_metadata_preserved",
     "3172": "source_form_or_acquisition_unknown",
     "1255": "unresolved_variant_or_mechanic",

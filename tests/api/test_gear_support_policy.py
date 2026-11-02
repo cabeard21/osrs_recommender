@@ -58,3 +58,24 @@ def test_invalid_support_policy_rejected(client, session_factory):
     body["support_policy"] = "invented"
     assert client.post("/ui-api/gear/optimizations", json=body).status_code == 422
     assert client.get("/ui-api/gear/items?support_policy=invented").status_code == 422
+
+
+def test_owned_steel_ring_is_usable_without_requirement_data(client, session_factory):
+    ring, weapon = 30895, 4151
+    body = scenario(client, session_factory, ids=(ring, weapon))
+    detail = client.get(f"/ui-api/gear/items/{ring}?support_policy=community_best_effort").json()
+    assert detail["wear"]["status"] == "satisfied"
+    assert detail["support_status"] == "community_assumed"
+    body.update(support_policy="community_best_effort", locks={"weapon": weapon, "ring": ring})
+    optimized = client.post("/ui-api/gear/optimizations", json=body)
+    assert optimized.status_code == 200, optimized.text
+    selected = optimized.json()["result"]["selected_solution"]
+    assert selected is not None
+    assert selected["loadouts"]["single"]["equipment"]["ring"] == ring
+    loadout = {"single": {"weapon": weapon, "ring": ring}}
+    exact = client.post(
+        "/ui-api/gear/evaluations",
+        json={"scenario": body, "baseline_loadouts": loadout, "proposed_loadouts": loadout},
+    )
+    assert exact.status_code == 200, exact.text
+    assert exact.json()["proposed"]["status"] == "valid"

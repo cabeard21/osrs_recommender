@@ -119,7 +119,14 @@ def optimize_auto(
     for summary, (discipline, result) in zip(comparison, branches, strict=True):
         groups = []
         for group in result["secondary_frontiers"]:
-            points = group["points"]
+            # Full branch archives are needed above for the combined frontier;
+            # published discipline frontiers must obey the browser's loss cap.
+            points = [
+                point
+                for point in group["points"]
+                if point["dps_loss_pct"] is None
+                or point["dps_loss_pct"] <= request.max_dps_loss_pct
+            ]
             sampled = len(points) > 64
             visible = (
                 [points[round(i * (len(points) - 1) / 63)] for i in range(64)]

@@ -242,3 +242,36 @@ def test_stale_ordinary_sidecar_does_not_relax_new_catalog(tmp_path, make_conten
     assert not loaded.community_items
     assert not loaded.community_provenance
     assert project_catalog(loaded, "community_best_effort").items[123].unsupported_effects
+
+
+@pytest.mark.parametrize("tradeable", [True, False])
+def test_missing_gates_only_assumed_for_tradeable_ordinary_items(tradeable, make_content):
+    snapshot, catalog = context()
+    item = catalog.items[123].model_copy(update={"requires": None})
+    catalog = EquipmentCatalog(
+        {123: item},
+        community_items={
+            123: {
+                "classification": "ordinary",
+                "tradeable": tradeable,
+                "requirements_assumed_absent": True,
+            }
+        },
+    )
+    projected = project_catalog(catalog, "community_best_effort")
+    assert bool(projected.community_assumptions) is tradeable
+    if tradeable:
+        fact = equipment_fact(
+            snapshot,
+            projected.items[123],
+            make_content(),
+            {},
+            NOW,
+            support_assumptions=projected.community_assumptions[123],
+        )
+        assert fact["wear"]["status"] == "satisfied"
+        assert fact["wear"]["known_status"] == "unknown"
+        assert (
+            "No equip requirement data; tradeable item is assumed ungated."
+            in fact["support_assumptions"]
+        )

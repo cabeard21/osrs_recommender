@@ -315,6 +315,1226 @@
       "source": "https://static.runelite.net/cache/item/icon/28316.png",
       "retrieved_on": "2026-10-30",
       "sha256": "efb541b033ceb3a571e448d981fff6e7216a5f7c524ef51b5ac9c1c50127f4e8"
+    },
+    "30895": {
+      "source": "https://static.runelite.net/cache/item/icon/30895.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "feb0b6f395ffc247b45766c04ec95ed089d97dfff1ad256b426685ced3f0ea11"
+    },
+    "800": {
+      "source": "https://static.runelite.net/cache/item/icon/800.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0e808ebc31c7b0f086754167b2dd62838dfc3d644e15b4234b032c314660905b"
+    },
+    "801": {
+      "source": "https://static.runelite.net/cache/item/icon/801.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "29c635507b7c0afed6b22bfba71c32721fe5d9ac49e0735968ffff249cfb74f1"
+    },
+    "802": {
+      "source": "https://static.runelite.net/cache/item/icon/802.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "64a5421689d43719c998b2bb29a89235d8af3b68c154c4bab00f44d7f0b52cc2"
+    },
+    "803": {
+      "source": "https://static.runelite.net/cache/item/icon/803.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a91a2c75882d8e24a80b16d858b2f6bb19ab078c835eb72d1ac958647f16db4c"
+    },
+    "804": {
+      "source": "https://static.runelite.net/cache/item/icon/804.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "02bfea38d6892d7752bd432c5833cdeb51456768d3d2ebe5d7b6e33cbc4d5452"
+    },
+    "806": {
+      "source": "https://static.runelite.net/cache/item/icon/806.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9bd731a01d18f011a259e33840b394a1f8cd78e47d174ae5562d119425061755"
+    },
+    "807": {
+      "source": "https://static.runelite.net/cache/item/icon/807.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "df7488aedb3c744ae7466b45e43e0a7d79f347c21c43be9bf75799e40b0ebfee"
+    },
+    "808": {
+      "source": "https://static.runelite.net/cache/item/icon/808.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b02b5f8773482b412c817e38da145703e715a103ed0af759d9c3b95c9e87e443"
+    },
+    "809": {
+      "source": "https://static.runelite.net/cache/item/icon/809.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "85302ec9940e8bbfa195241f488de2b3a0a36ee079caaa85c0704c41d0effa4a"
+    },
+    "810": {
+      "source": "https://static.runelite.net/cache/item/icon/810.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "de853cc22d0a4da81de1ec556f5cf029b3d6302a8f5397545d0045205baf28e1"
+    },
+    "811": {
+      "source": "https://static.runelite.net/cache/item/icon/811.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "78b7c15045ed9d645ddadd391aff1add300c3580896ebb710f50248f6248d701"
+    },
+    "863": {
+      "source": "https://static.runelite.net/cache/item/icon/863.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3481d411fc7fe3af86c2304a743db7313953cf8eb5c8596a2bb889b622ae5e4c"
+    },
+    "864": {
+      "source": "https://static.runelite.net/cache/item/icon/864.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "82096834d9c720fca606318dd497dfe8831de2bbf72b7d98fef4f7dd3bafdd05"
+    },
+    "865": {
+      "source": "https://static.runelite.net/cache/item/icon/865.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1f4e6bfdb4ef7786c9778312315a72bee35588e5af74d66bc04add123a8f7eed"
+    },
+    "866": {
+      "source": "https://static.runelite.net/cache/item/icon/866.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "777afbbccc14ed5d426a1bfb07cb906d1ceb8f5fb0f1c1ad015a2ca03ab14ce8"
+    },
+    "867": {
+      "source": "https://static.runelite.net/cache/item/icon/867.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5707aa83a4f49a2bd6db7bbd734e3844a8153e318612ddcd3169eb8f21d378f6"
+    },
+    "868": {
+      "source": "https://static.runelite.net/cache/item/icon/868.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7171a2da9834626366247df9fa86dc158b785db9da41d019d2fb588def493bc6"
+    },
+    "869": {
+      "source": "https://static.runelite.net/cache/item/icon/869.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9679ef815bc8e343cc9377d402486cd5b6216fe1fb8adc7f064f3d23a7f40eea"
+    },
+    "1081": {
+      "source": "https://static.runelite.net/cache/item/icon/1081.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "aa2ee922a0601cbf7a29694017cc3507b0ff094210dd8a761409ea3ce6b089a3"
+    },
+    "1083": {
+      "source": "https://static.runelite.net/cache/item/icon/1083.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c6b58d229f3c8b00ee22564cf845f6d19e1cb22eee64170b675bd1ad707869a5"
+    },
+    "1085": {
+      "source": "https://static.runelite.net/cache/item/icon/1085.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "43436c75c472cc533919bb0c8d46777f9052cc200dec5d5edddb2986a04676b2"
+    },
+    "1087": {
+      "source": "https://static.runelite.net/cache/item/icon/1087.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e2db54632e58c3d049d672f89d9dca4ddca837acd419a39e6f4972a7555e5870"
+    },
+    "1089": {
+      "source": "https://static.runelite.net/cache/item/icon/1089.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "05c1efbb60670850a9e4c1a6d1e8d3fb25d28886f5aa7ac381c9d163145fc76b"
+    },
+    "1091": {
+      "source": "https://static.runelite.net/cache/item/icon/1091.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0b204225ab9c134874dad15ac9b3e9264d0a3267e341fa72cd1619a440481fd1"
+    },
+    "1093": {
+      "source": "https://static.runelite.net/cache/item/icon/1093.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6d8a00eb2cf09efad07f8115b4b6f1de3d8c101fb541c721b1cf2465227c6260"
+    },
+    "1137": {
+      "source": "https://static.runelite.net/cache/item/icon/1137.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ab4d26982a421f04e7966343c1bbc7ce7d8a4b24dfd0711a68e42d9d8f05bbe5"
+    },
+    "1139": {
+      "source": "https://static.runelite.net/cache/item/icon/1139.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1fbf4ef53daf8650586f49dc7538969a034fdda65265f5234759d1410fbabd1d"
+    },
+    "1141": {
+      "source": "https://static.runelite.net/cache/item/icon/1141.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "cb59e7b78bc5763828f94fdb7725b9af1a2239342e6fa28ed6147f32640fcb1d"
+    },
+    "1143": {
+      "source": "https://static.runelite.net/cache/item/icon/1143.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b617237ac5d325b4338b22120efcf088999fb4558dd5c5552bd0f0c55b200dc5"
+    },
+    "1145": {
+      "source": "https://static.runelite.net/cache/item/icon/1145.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f2f155dd72752128cdc21044a469bdec601ee8126aa9f235a1bcdf1ce6ea0d4b"
+    },
+    "1147": {
+      "source": "https://static.runelite.net/cache/item/icon/1147.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "975dc6bfb13640f79e9e27d66620cd0d89a0b5a4381ca1e3f638a73e3383eab8"
+    },
+    "1149": {
+      "source": "https://static.runelite.net/cache/item/icon/1149.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "accfd0a8204c0f09745966e7096a4b5d267b28db2a80faf60c9ca5337afd81b8"
+    },
+    "1151": {
+      "source": "https://static.runelite.net/cache/item/icon/1151.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "786280345747f3f65aeaf3f86ad8b5dd221be4f6a7b0467fd66c634418fe7502"
+    },
+    "1173": {
+      "source": "https://static.runelite.net/cache/item/icon/1173.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "bb0e63e3e715b0c5b4224f9930c8237e2e30b9ccb90b0a2451b6498f8d6e4a64"
+    },
+    "1175": {
+      "source": "https://static.runelite.net/cache/item/icon/1175.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "cfc76828863a8c9b47b3c57244ffe08eb83bfda926bbd024fc8b309f1e996522"
+    },
+    "1177": {
+      "source": "https://static.runelite.net/cache/item/icon/1177.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "706818737c5e3249ae892031504a50b9f3fb26ae6a6a2af925e4cca433c4e5b9"
+    },
+    "1179": {
+      "source": "https://static.runelite.net/cache/item/icon/1179.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f4a7dfa2214c1a6d9fcd493c844e2d348ec902060b8eec8e079de12ec6c94ea0"
+    },
+    "1181": {
+      "source": "https://static.runelite.net/cache/item/icon/1181.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2da92d812329e537e64d95cf970f747b14a370a8da8ffc5082dd6a0e08a3e407"
+    },
+    "1183": {
+      "source": "https://static.runelite.net/cache/item/icon/1183.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "047839f4e032c61da11256356137b803f0cd1ca5f4daf93993524ff1a82ec256"
+    },
+    "1185": {
+      "source": "https://static.runelite.net/cache/item/icon/1185.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9ba13e5e0cda4c360a946c5f83351e0dafdd9bf46fdad6b592067acbd1f582d7"
+    },
+    "1203": {
+      "source": "https://static.runelite.net/cache/item/icon/1203.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "05d52dea56f928c870d2ad2df2da17b3efde0632af317f13ce5eef3193e14fbd"
+    },
+    "1205": {
+      "source": "https://static.runelite.net/cache/item/icon/1205.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "643a85c878773815ba78d40814dd3711bdeb4134d34464544232587b07f281fc"
+    },
+    "1207": {
+      "source": "https://static.runelite.net/cache/item/icon/1207.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ef10ead598eb3cae1eb4146acc643a522d9578529b168e6af28ca23e1785e04c"
+    },
+    "1209": {
+      "source": "https://static.runelite.net/cache/item/icon/1209.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9b9abc3586211365a994c35d1dc1cb4da73bc4b963994cb89c8ea25c99a8d5e2"
+    },
+    "1211": {
+      "source": "https://static.runelite.net/cache/item/icon/1211.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "225f925f34635fd430e79a1a8aaff4f8e6c98e75bc4f3fa3560395508ec25864"
+    },
+    "1213": {
+      "source": "https://static.runelite.net/cache/item/icon/1213.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a5d3586baf047993246d2d5ca2e95c0f133deb817132ad9f477491c33f8ce2f1"
+    },
+    "1217": {
+      "source": "https://static.runelite.net/cache/item/icon/1217.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3ce7b9da1d7c60c22f38e771fe1926c6ef3d8e1644ad76e0f34f4a961d784b35"
+    },
+    "1277": {
+      "source": "https://static.runelite.net/cache/item/icon/1277.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7f9b2286490ae70901b0625e099c502fbcb10a50c6db53db65ee86a788849ed8"
+    },
+    "1279": {
+      "source": "https://static.runelite.net/cache/item/icon/1279.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "4e6e763c4c2df9e96ae8e41e022f8ce85951a611ec17cf4c1ff7eaeda2b86c53"
+    },
+    "1281": {
+      "source": "https://static.runelite.net/cache/item/icon/1281.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "bd7a9e0ca6f8ef658424c6d28371e922fa1e8d4cf01ea1223cf1ec285580e5eb"
+    },
+    "1283": {
+      "source": "https://static.runelite.net/cache/item/icon/1283.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "780a67193286aebbaf1a1e1da7893e14f5971f2bc88da855fd5750d178e18d3f"
+    },
+    "1285": {
+      "source": "https://static.runelite.net/cache/item/icon/1285.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7b2c4afb25497255fadbb724cc41e2d344fa05c14b7883f69dae69a59d4ef7dd"
+    },
+    "1287": {
+      "source": "https://static.runelite.net/cache/item/icon/1287.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "182612674ef398c483a8136674826ceea1924e135fd8b09d5b2a2d4956fbc827"
+    },
+    "1289": {
+      "source": "https://static.runelite.net/cache/item/icon/1289.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "24a033d571f8988cf46587c01f1fdb7bb4415a23e3718d2fbd776c160939dd01"
+    },
+    "1291": {
+      "source": "https://static.runelite.net/cache/item/icon/1291.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0f18cc2c66a219088c46117e5d8a7c42f73df2ce6de9ddab9229fefe900ca5aa"
+    },
+    "1293": {
+      "source": "https://static.runelite.net/cache/item/icon/1293.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c6908f9084693d69f0813f00951268193a95732ccd8ec948fb715062a3ca147f"
+    },
+    "1295": {
+      "source": "https://static.runelite.net/cache/item/icon/1295.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b54a444209cee5f79af544f7576b58c1f84d7b167bc3dce1166ce9b71c8bb35d"
+    },
+    "1297": {
+      "source": "https://static.runelite.net/cache/item/icon/1297.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "675fef1597f36ee99f78a69e661fdac7cddd09b3f38d59fce5e66afe793ac3bb"
+    },
+    "1299": {
+      "source": "https://static.runelite.net/cache/item/icon/1299.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "832db0f9fac58594186ca5347a94a60ff3a2d6a2d7fa717a1071bbb8de79c9cd"
+    },
+    "1301": {
+      "source": "https://static.runelite.net/cache/item/icon/1301.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2694105f40b59d2b844b5f996ab072b20ba4ee62270811cf4cfb7928f4697a80"
+    },
+    "1303": {
+      "source": "https://static.runelite.net/cache/item/icon/1303.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "46a032de49d6f56f32443b60b3e91e8aea548ee64357700f297f496ced197fc1"
+    },
+    "1307": {
+      "source": "https://static.runelite.net/cache/item/icon/1307.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c52baab4244bbed61b15a39c4adc962e2a69f40900f027941caceaed7e3014ad"
+    },
+    "1309": {
+      "source": "https://static.runelite.net/cache/item/icon/1309.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b17f22bf97cdf0a221c47ebe2773e3c45da6d53ff4b5a0dcd9a21a99c5d752e4"
+    },
+    "1311": {
+      "source": "https://static.runelite.net/cache/item/icon/1311.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "76612e7d3dc0be8ee425419665c17023f22d9ee4ce005d23349c79ded0023fec"
+    },
+    "1313": {
+      "source": "https://static.runelite.net/cache/item/icon/1313.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "585803f0e934e63ca8cccccf2e29ed7ba6e1592b008830215d9b33f0592daa23"
+    },
+    "1315": {
+      "source": "https://static.runelite.net/cache/item/icon/1315.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "720d2d667167b6bed55508875e9474da9a20688665d57068cf4a7625ea7da5c0"
+    },
+    "1317": {
+      "source": "https://static.runelite.net/cache/item/icon/1317.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2e67236eccb63743be5f8bf2b9af9269f7148ba3c2190da7456a0913fb57d1b8"
+    },
+    "1319": {
+      "source": "https://static.runelite.net/cache/item/icon/1319.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0cb1b2ea1fc4d079fb06a5245b94536c7fe7a00d59881d7887232884e2c4be1d"
+    },
+    "1321": {
+      "source": "https://static.runelite.net/cache/item/icon/1321.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b290e8fe90bf943b11e437344e580820a33112bd3775f9fcaf2399a947ef0870"
+    },
+    "1327": {
+      "source": "https://static.runelite.net/cache/item/icon/1327.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7236d1c9d57b62f1cab54a673d94fce58be9ba0249e0127b1fe65957884e88e6"
+    },
+    "1335": {
+      "source": "https://static.runelite.net/cache/item/icon/1335.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b6d31fb58aa057cbdc0691e5994208d9e556d326573126168e62d580bfcecf62"
+    },
+    "1337": {
+      "source": "https://static.runelite.net/cache/item/icon/1337.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9156858cb4156427afc2d383d76384ddad82f159eba51e54462bf311ae5fa22b"
+    },
+    "1339": {
+      "source": "https://static.runelite.net/cache/item/icon/1339.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1488749dd9d4f5922035b1ea14cf4c654a0cdf223085947d967b30021df42d25"
+    },
+    "1341": {
+      "source": "https://static.runelite.net/cache/item/icon/1341.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b9f02cd158ea3ce72a6a706fead96b6fb2a28ee28297cafbf40cd363d525c552"
+    },
+    "1343": {
+      "source": "https://static.runelite.net/cache/item/icon/1343.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f2c63a79920d356b7c5c52141594881d389708b3c5999634faec15252d7073af"
+    },
+    "1345": {
+      "source": "https://static.runelite.net/cache/item/icon/1345.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e77d3c33e0fbf11722f8faba79c8ccf3b5a8958cbbeb54198a9a1efbe75e1a03"
+    },
+    "1347": {
+      "source": "https://static.runelite.net/cache/item/icon/1347.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "bd6691cecae9faa8b73960eab45db050282c82f90e2a8d7ebabed99946c29765"
+    },
+    "1349": {
+      "source": "https://static.runelite.net/cache/item/icon/1349.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "281222abd1c5f1eea4af9aca7c2b7a0a92d019f0266f9b758e85cd0859d50114"
+    },
+    "1351": {
+      "source": "https://static.runelite.net/cache/item/icon/1351.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "63fddd9f1d77d0c8532e3908b0a9b78954c6e34adeddf9032737f0d629a6387e"
+    },
+    "1353": {
+      "source": "https://static.runelite.net/cache/item/icon/1353.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "437e791d0f9038d4dafd7728a929529fdc9b6e5217262a4e15027cc466a25072"
+    },
+    "1355": {
+      "source": "https://static.runelite.net/cache/item/icon/1355.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3b8605051e2d31bb43eef5208aefd5a9dcad6470730754782610736918d8ac2f"
+    },
+    "1357": {
+      "source": "https://static.runelite.net/cache/item/icon/1357.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9940d423951d2f5c8f91ea8eff4c7ae95aa4be7fd996e389e848d9e43d68f9c1"
+    },
+    "1359": {
+      "source": "https://static.runelite.net/cache/item/icon/1359.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "be216d12349bfba12a009b3b154c147a33c43d3e60dfce4bfcf4630d9070721a"
+    },
+    "1361": {
+      "source": "https://static.runelite.net/cache/item/icon/1361.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "d7ee6f857322bedda3fdd706b439fd4a63137f2ab973c08f79eeb1b0f7e31c5e"
+    },
+    "1363": {
+      "source": "https://static.runelite.net/cache/item/icon/1363.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c733e3dea805a59cfae3f9be5976e1fca6c42226643858beb1ff31507fc893f9"
+    },
+    "1365": {
+      "source": "https://static.runelite.net/cache/item/icon/1365.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "92c190e951e740199f7283bfbcf33a00f498b6cc95980adf927b42c19a15965c"
+    },
+    "1367": {
+      "source": "https://static.runelite.net/cache/item/icon/1367.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "45bacd19540ef54ab68c9c9ca4b5c5e871cb873445f83b20dacb2eded039976d"
+    },
+    "1369": {
+      "source": "https://static.runelite.net/cache/item/icon/1369.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0b362d088886562c50932a0814d950de7f5e4c507871fa022157446074535ab9"
+    },
+    "1371": {
+      "source": "https://static.runelite.net/cache/item/icon/1371.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "632256de27d6de7ede49910998b512679a562b71f455aca60677d8dabe06c54f"
+    },
+    "1373": {
+      "source": "https://static.runelite.net/cache/item/icon/1373.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ba7b84124b2f2cf83c502efdfacacb36c3f8747ac73b5b60211c8fcfc8a55304"
+    },
+    "1375": {
+      "source": "https://static.runelite.net/cache/item/icon/1375.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "83ce06032193a78a6074abc3c154ec5b14795fcba3c3eca1bc85aed55d2b3cc1"
+    },
+    "2487": {
+      "source": "https://static.runelite.net/cache/item/icon/2487.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a8327124e8ff7a8dcb1d4084eb872805c118e6f757eaf445d145ff0a2dc08363"
+    },
+    "2489": {
+      "source": "https://static.runelite.net/cache/item/icon/2489.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "438e178e465de7e336b3965061038d13829330d5789415fda8659686a6374b50"
+    },
+    "2491": {
+      "source": "https://static.runelite.net/cache/item/icon/2491.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f4ec701b663f1177e6e32a155e1cfb60c8637b4b000dc960f72626bb889fc6d4"
+    },
+    "2583": {
+      "source": "https://static.runelite.net/cache/item/icon/2583.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "deee64adaca5cbf53887343122ead1ea60e9aba5e75d136bc68b9fe327be1400"
+    },
+    "2585": {
+      "source": "https://static.runelite.net/cache/item/icon/2585.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b83775669e4422003b349f8dac31b99282a124b9be58916356b0d0d39c13d801"
+    },
+    "2587": {
+      "source": "https://static.runelite.net/cache/item/icon/2587.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "644617a8638666c3dfcbf2ada0709e0e52127c12de28bf2a204f6163cc937bac"
+    },
+    "2589": {
+      "source": "https://static.runelite.net/cache/item/icon/2589.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "43a9232046e5004cf8f27a44727d7b4a2df6954294b40fb9842a0ead98a4d597"
+    },
+    "2591": {
+      "source": "https://static.runelite.net/cache/item/icon/2591.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2e57c0c4968402356d8a47941b9fc882470ca686cafe08879cda2c5ffb528c74"
+    },
+    "2593": {
+      "source": "https://static.runelite.net/cache/item/icon/2593.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "cb840382d1f57db95470406e5c50054ef9215a1a51918fe88fd5f3f0e5ab69ab"
+    },
+    "2595": {
+      "source": "https://static.runelite.net/cache/item/icon/2595.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "595564f7a7c5d246858f717c80179c2ae377fac5030f9bb30aff66ac07f67970"
+    },
+    "2597": {
+      "source": "https://static.runelite.net/cache/item/icon/2597.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "18349d227050abd3f300d3445667856b8543f9efaec73e12a870c803a680c9d8"
+    },
+    "2599": {
+      "source": "https://static.runelite.net/cache/item/icon/2599.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0c18157591a428ea583cc0c2c8a634629033aa01b1dd23770946b91bb822724e"
+    },
+    "2601": {
+      "source": "https://static.runelite.net/cache/item/icon/2601.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "54cbaf088450eb29848ae2aef3cedbf4e6fa28d9d76482e424719e420fdf9db9"
+    },
+    "2603": {
+      "source": "https://static.runelite.net/cache/item/icon/2603.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "8a450618a90a96bcd98d32282154470b14ea511361a6304cf776a4f9dfb9a609"
+    },
+    "2605": {
+      "source": "https://static.runelite.net/cache/item/icon/2605.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6954585ff1af59bcfd04438ec63f7d64b04d974fe323a5dccf6dc087e9e97405"
+    },
+    "2607": {
+      "source": "https://static.runelite.net/cache/item/icon/2607.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e5bc87919f4c33bdbcb76e16ab746f40e8575e75b5f01d7c0befc2c2e48e4e00"
+    },
+    "2609": {
+      "source": "https://static.runelite.net/cache/item/icon/2609.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e240bf03710ae4c92f9f4e39245e8a52664c346ee29a413af1915a67346a8812"
+    },
+    "2611": {
+      "source": "https://static.runelite.net/cache/item/icon/2611.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5adb1856a69b634cebac581603cca6039db8b61f5babaead4e5ba36b4a99625c"
+    },
+    "2613": {
+      "source": "https://static.runelite.net/cache/item/icon/2613.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5d1a7dbaa29946273f01780b2a30ce37548d09983ca75fbeb697563185b43bf8"
+    },
+    "2615": {
+      "source": "https://static.runelite.net/cache/item/icon/2615.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3029e9fb4099e977643697866c882065c9b53f98e4ec777490fe465895459380"
+    },
+    "2617": {
+      "source": "https://static.runelite.net/cache/item/icon/2617.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7b2ead4bcc4cd659256ceb1c4744c6f4a5a6aae5df148cb91baf2ea4845bd91b"
+    },
+    "2619": {
+      "source": "https://static.runelite.net/cache/item/icon/2619.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a096287142da90dccd3071ea653f5fa6668402cbe2730a08e805cb1c2fca2d03"
+    },
+    "2621": {
+      "source": "https://static.runelite.net/cache/item/icon/2621.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9832336678e5d5739225c08ee6dc15f1b97bdf6f54bfc1013b8989867c15b7e1"
+    },
+    "2623": {
+      "source": "https://static.runelite.net/cache/item/icon/2623.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a7f752fc52824b37272420502dab09bba49b87a83ceeb8af135ae3ba985db005"
+    },
+    "2625": {
+      "source": "https://static.runelite.net/cache/item/icon/2625.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7a1d15ed4852c7baba096e7554541afccc91fbd2ee0ba1c88c43f888659d445d"
+    },
+    "2627": {
+      "source": "https://static.runelite.net/cache/item/icon/2627.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a924445ae93a544b400d726d19277639f1bb0fd18546c21c39be71c2e877d495"
+    },
+    "2629": {
+      "source": "https://static.runelite.net/cache/item/icon/2629.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "75602110035bfef2cc3d25758c0a7e41e11cf4e95b459150ae1d23a9b1c6c262"
+    },
+    "3093": {
+      "source": "https://static.runelite.net/cache/item/icon/3093.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "160f49ac82d9d9af4f72f489edff837aa3bc9752bf73d85009ad7940e185abc8"
+    },
+    "3140": {
+      "source": "https://static.runelite.net/cache/item/icon/3140.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "d31178e81d482c1ed1d658f1e1cee500b05ad5312fa9c6abe1416b21bd041dce"
+    },
+    "3393": {
+      "source": "https://static.runelite.net/cache/item/icon/3393.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e45a16075e24cdf856f68c378242aaea248a78463f9e27a04e75433ec1f5e45a"
+    },
+    "3472": {
+      "source": "https://static.runelite.net/cache/item/icon/3472.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5e9b129028d09c72d2df3ebc5c7fea519ce2b6335451d757618618cc1b7cf0d2"
+    },
+    "3473": {
+      "source": "https://static.runelite.net/cache/item/icon/3473.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "162ff7f80a4f19d7c7a96799980a62ad96cc2eaa9ca6aadb36989d11f592cc8c"
+    },
+    "3474": {
+      "source": "https://static.runelite.net/cache/item/icon/3474.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "dc4159c83581ea00ac763f98b221079770f654594dd8d1d5322754cfbb72e487"
+    },
+    "3475": {
+      "source": "https://static.runelite.net/cache/item/icon/3475.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "066eab598811acc7cdf1434cf293396f0ca9b3a09dfe2e2f174e3e29b4bac5ed"
+    },
+    "3476": {
+      "source": "https://static.runelite.net/cache/item/icon/3476.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2bc196656bef6e7f41b5a7bb4afa7ff6d5a7ef4d4f9ff3e0503d41ce53e7f3ef"
+    },
+    "3477": {
+      "source": "https://static.runelite.net/cache/item/icon/3477.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c3a5953156ea8fe95a97a57a3385ba48edd66e56ea26392f09a7ae828c8b6f22"
+    },
+    "3481": {
+      "source": "https://static.runelite.net/cache/item/icon/3481.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "177738d1ac88c4e05dc0f4842afd20a720eb9267adf90783ccf709568f1d2171"
+    },
+    "3483": {
+      "source": "https://static.runelite.net/cache/item/icon/3483.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c663444a3ae926fffc7461cae95a17414f20743b1844f88366545eed8145407b"
+    },
+    "3485": {
+      "source": "https://static.runelite.net/cache/item/icon/3485.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f40fda7caa9b74b1c1d8b11e014da43bb1a2e733ff44c7bc155a70787e385e1d"
+    },
+    "3486": {
+      "source": "https://static.runelite.net/cache/item/icon/3486.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "429fce555298ce3940c8fa912fa222e62eb86a0ef063379a46650572a50c1901"
+    },
+    "3488": {
+      "source": "https://static.runelite.net/cache/item/icon/3488.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "127174bfb7f3bbbaf90548a021c73aaa974554f0fdd7af9eb6edfcb377c95528"
+    },
+    "4095": {
+      "source": "https://static.runelite.net/cache/item/icon/4095.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3e9477d5b06aac7e3566f212d280ceced66023200624ed091ab1d9635b8766e8"
+    },
+    "4099": {
+      "source": "https://static.runelite.net/cache/item/icon/4099.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "79f9e94c870fb1343da78f552772d53d9439b92e3c9929c152a7d6ab5c10a0ab"
+    },
+    "4105": {
+      "source": "https://static.runelite.net/cache/item/icon/4105.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6e5c9f191a0f5f1d218f297a7b478030e9db13b2707c234030af58b9bdda40ed"
+    },
+    "4107": {
+      "source": "https://static.runelite.net/cache/item/icon/4107.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "d2ac71da9317f84451c9caa6f529d0359afa7868b7b287850d2dc774a311824c"
+    },
+    "4109": {
+      "source": "https://static.runelite.net/cache/item/icon/4109.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2fc129951e15fbfce5e8eca45aa15917f808436f34e6c025abf88c6ec51587fd"
+    },
+    "4115": {
+      "source": "https://static.runelite.net/cache/item/icon/4115.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "065ac8a5a7151966b6f48e4332f15dd2f870a9be13d88cbc43c4b4b86c64d82d"
+    },
+    "4117": {
+      "source": "https://static.runelite.net/cache/item/icon/4117.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e04db2a486edd265302561b9447a52b8c9e5f5f1b2c1c2ea03277bcb9675657d"
+    },
+    "4119": {
+      "source": "https://static.runelite.net/cache/item/icon/4119.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f0615c98da722d71d8e7413e0e108ba0f1f446238dfeff3750de9d34e0f242d9"
+    },
+    "4121": {
+      "source": "https://static.runelite.net/cache/item/icon/4121.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3734c4143ce49a0692a3a0a3cf201684a79fefee9339ba7583a52d94defe50f7"
+    },
+    "4123": {
+      "source": "https://static.runelite.net/cache/item/icon/4123.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1d231c3d2a846ce11e7552f3e2b54de785448ad7a42ffd162a536f8c41e747a8"
+    },
+    "4125": {
+      "source": "https://static.runelite.net/cache/item/icon/4125.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "00a90aa07deacd464b4cf1a49b8f6bf7698019cf63a8c49cc8aec10e51e6b1ec"
+    },
+    "4127": {
+      "source": "https://static.runelite.net/cache/item/icon/4127.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "03dab47fe18f44f943f3ffa22930dc9c5151fcf8961e61c9e709ad3dd01633f8"
+    },
+    "4129": {
+      "source": "https://static.runelite.net/cache/item/icon/4129.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "063311f8255f7a265d1d169861885af594e97c41bef6b1a6acd1f87955368a51"
+    },
+    "4585": {
+      "source": "https://static.runelite.net/cache/item/icon/4585.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "885dfeb2993f9ae6d2f96e381f1e363387f53246dc4dbf328e834c3824b1f189"
+    },
+    "6589": {
+      "source": "https://static.runelite.net/cache/item/icon/6589.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "55c4eb4a688203e1628e623c81bfc1a83d79f7fbd6634c2ee3ecd007d8530cab"
+    },
+    "6591": {
+      "source": "https://static.runelite.net/cache/item/icon/6591.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "59c55b67a630ab57e2e5aa8395d4225258302f065b698ff485af08643820064a"
+    },
+    "6605": {
+      "source": "https://static.runelite.net/cache/item/icon/6605.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7b8843542fb2f38aca7bb1db2210fffdabd2379f0bad9311362b6ff11ebf1354"
+    },
+    "6607": {
+      "source": "https://static.runelite.net/cache/item/icon/6607.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c26c25bdbc69f9477ab7df9f8d1f5c96a0bb380d2158079d34fc48da4213615d"
+    },
+    "6609": {
+      "source": "https://static.runelite.net/cache/item/icon/6609.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "bbb9d0d237fc65a27365483726b72b1d04f0842c1d9d15b342866f49d15d92ff"
+    },
+    "6613": {
+      "source": "https://static.runelite.net/cache/item/icon/6613.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "03f2dd1e217ea10f20a48a2c21021a7843539f973db3a05fe3a37d412ea419e9"
+    },
+    "6615": {
+      "source": "https://static.runelite.net/cache/item/icon/6615.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6c22084971ca7e74d1f0ec78ed0fed72773c57d5a6bf3b41be20e8a0410f6000"
+    },
+    "6619": {
+      "source": "https://static.runelite.net/cache/item/icon/6619.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e5c915fed7a241908a0e4789bbb3cb78644625041bae8d6f7b6e5bfa7a1cd603"
+    },
+    "6621": {
+      "source": "https://static.runelite.net/cache/item/icon/6621.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "bdb44a42f6a609dcac0fbdc4b430ca22dda320a977632e67d5bf19a55a6a62cb"
+    },
+    "6627": {
+      "source": "https://static.runelite.net/cache/item/icon/6627.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "efb7eb65e6c474e7436e32458fba7a9b124eeb43d3c427146d97cf5389076818"
+    },
+    "6629": {
+      "source": "https://static.runelite.net/cache/item/icon/6629.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "209def92a70dd06db78132e19497a6df839042f34d0c0f91a4805390316490c5"
+    },
+    "6631": {
+      "source": "https://static.runelite.net/cache/item/icon/6631.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "390139610b6054f12df9580e5cdc3b346366ccfc72481e8882e9f1d6fad4a70c"
+    },
+    "6916": {
+      "source": "https://static.runelite.net/cache/item/icon/6916.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "4da3d4b4d5203a89dffde0214c1f6b315d8ae86abafcbe8b6ed962698e1eb6ad"
+    },
+    "6918": {
+      "source": "https://static.runelite.net/cache/item/icon/6918.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "8120531beeff0bf778f57212a9ace0b5b320c81412af82a81184c05957a474b0"
+    },
+    "6922": {
+      "source": "https://static.runelite.net/cache/item/icon/6922.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b5dd7c2c7c4b58e42f37124ab15f44f3f2fe50b7af145348cb7ad8971545ef11"
+    },
+    "6924": {
+      "source": "https://static.runelite.net/cache/item/icon/6924.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "4bb2b984cb778678e75614d2c01a7b0f80bd5e152945a3235509b097db4cc2df"
+    },
+    "7370": {
+      "source": "https://static.runelite.net/cache/item/icon/7370.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b6dc722f01887c9fe2c5e422957d516210b0fcf144c828bd6d0a1d3d65deae94"
+    },
+    "7372": {
+      "source": "https://static.runelite.net/cache/item/icon/7372.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "45703095e15b108dd3432b4a9657ae2841fb09fb98e912b7801995bffd14c934"
+    },
+    "7374": {
+      "source": "https://static.runelite.net/cache/item/icon/7374.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "35b8101f565bda960774886f7b9e90a9905f8b4cb0385877d395df5047f3535b"
+    },
+    "7376": {
+      "source": "https://static.runelite.net/cache/item/icon/7376.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "8afab676ca20905af17fcd768db05cb1fd49c71ba7b2db90985e4dab86c08e7f"
+    },
+    "7378": {
+      "source": "https://static.runelite.net/cache/item/icon/7378.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9ec30479289f3619ea6056410affc71a1a786888586574af39044d15cda16569"
+    },
+    "7380": {
+      "source": "https://static.runelite.net/cache/item/icon/7380.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3d05beb9896a4718774e797a07d1d007109b799d75172a786a224a1fe3fabae1"
+    },
+    "7382": {
+      "source": "https://static.runelite.net/cache/item/icon/7382.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ecaa85fc90e0933190af10ab4c191bdded492d6c378ee37874695b7eef8f92e3"
+    },
+    "7384": {
+      "source": "https://static.runelite.net/cache/item/icon/7384.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "28edde82e5d07f748f082200f17cb6e0061e799bb0f819121aa18d06d0d88568"
+    },
+    "10330": {
+      "source": "https://static.runelite.net/cache/item/icon/10330.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "4926b97bcff336197d040d589496c3856d734f132e25831e9949fa66acd0118f"
+    },
+    "10332": {
+      "source": "https://static.runelite.net/cache/item/icon/10332.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "091d16855e24cd46dde416b4a9ec6662c0c8a593f92de42bce918cd210d14aa3"
+    },
+    "10334": {
+      "source": "https://static.runelite.net/cache/item/icon/10334.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f49580be733d4b47313738da49658d4b8409e627d8e19ac2d854527ff0dc74bb"
+    },
+    "10336": {
+      "source": "https://static.runelite.net/cache/item/icon/10336.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ae2fe8820f4ddb7f5c20812ccba31fcd64e1275367cab4e5547482ac978b5caf"
+    },
+    "10338": {
+      "source": "https://static.runelite.net/cache/item/icon/10338.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "167371a8104ab40bc37476655681e56903205b97efd8c4b7c18d3de77b479fec"
+    },
+    "10340": {
+      "source": "https://static.runelite.net/cache/item/icon/10340.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "95b88433e91f3cd76052149e3c821f9e85dd962ebe923172ea92d05c9543b614"
+    },
+    "10342": {
+      "source": "https://static.runelite.net/cache/item/icon/10342.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3c05c0fb9d0abed1939376acba17115ec6f7d3bc49d8843811d72e0a347eed3f"
+    },
+    "10344": {
+      "source": "https://static.runelite.net/cache/item/icon/10344.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "ec22041b83e16dabea2fc00301a34e3dc2ba0ce85a19b2c2f6467948455cf364"
+    },
+    "10346": {
+      "source": "https://static.runelite.net/cache/item/icon/10346.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "841952c300ac73e54abfdcb6d974659fe761a42792cb6afe15438fb850058140"
+    },
+    "10348": {
+      "source": "https://static.runelite.net/cache/item/icon/10348.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a94e613de71b5a8bc9deadacc62a08ecca639e1de9739b453ebf22cbe209b5f3"
+    },
+    "10350": {
+      "source": "https://static.runelite.net/cache/item/icon/10350.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7ab4c556238dc5673c93dff87d8e9b671fb57dc339090b74a4e2c55cc0650f61"
+    },
+    "10352": {
+      "source": "https://static.runelite.net/cache/item/icon/10352.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e54403c365d75dfdae3bd05de414e93147ccb66d82966364846907da531ddc11"
+    },
+    "12205": {
+      "source": "https://static.runelite.net/cache/item/icon/12205.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c853457d0b7b549822398119bebac114498d33eb7512895539a3ddcac3124f49"
+    },
+    "12207": {
+      "source": "https://static.runelite.net/cache/item/icon/12207.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "61a386a0f52f7b0628f2164918e47d8bbc8d8298916060373841f21e27f029b2"
+    },
+    "12209": {
+      "source": "https://static.runelite.net/cache/item/icon/12209.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0c39ddc67b80a718062261e8ab87d3897ace5fab3028b180fad159c8f7cf8a9e"
+    },
+    "12211": {
+      "source": "https://static.runelite.net/cache/item/icon/12211.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "343583a3f6cdbb6ab7e5e4733e446ed420f237a1166f20cd3ef1107d793a4be5"
+    },
+    "12213": {
+      "source": "https://static.runelite.net/cache/item/icon/12213.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f33620738b0ba5c56bd3e2adb4cac9102f917bb910a80470e05f714cd59e7998"
+    },
+    "12215": {
+      "source": "https://static.runelite.net/cache/item/icon/12215.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f8a04258d460496a8531c0f065592d33b507675859d4d843bb8aa3ea002327a1"
+    },
+    "12217": {
+      "source": "https://static.runelite.net/cache/item/icon/12217.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "29a0b0891e744a4fc081494d28881326fdd1ea0d555e151b88505bf11d7c7983"
+    },
+    "12219": {
+      "source": "https://static.runelite.net/cache/item/icon/12219.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "35180dce0716d1fdc7e99cc5a0273acfac34aef24938b65a64043a4bd8d86711"
+    },
+    "12221": {
+      "source": "https://static.runelite.net/cache/item/icon/12221.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "13b3c6335bdfa4d395362a4c42e805484c8456b3fe03d273b9f6cc006639eeba"
+    },
+    "12223": {
+      "source": "https://static.runelite.net/cache/item/icon/12223.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "57bddf694e21cb5e561458c8fccd29258df0e2e5a5d4b2b9495c5fabb0a27fae"
+    },
+    "12225": {
+      "source": "https://static.runelite.net/cache/item/icon/12225.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "10476021d15253f9497264c622623ea72c2dd9e95edf23fd17da7831a2174412"
+    },
+    "12227": {
+      "source": "https://static.runelite.net/cache/item/icon/12227.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "dea545a7d0e002172cd89de794e09d2ccc8fb5f37e127d90ac2686299f723c19"
+    },
+    "12229": {
+      "source": "https://static.runelite.net/cache/item/icon/12229.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9061f6910da92758327728a1efa4633f20ad7b23bb292e3cadb60515245ed181"
+    },
+    "12231": {
+      "source": "https://static.runelite.net/cache/item/icon/12231.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "06c3d02314815969019b403ad2238f51cc9cee1221d24544f7679d648bb5fb67"
+    },
+    "12233": {
+      "source": "https://static.runelite.net/cache/item/icon/12233.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "107b7995846ff3f098b34aadb1b53b84c77007d2209f772a382bc100236a0e94"
+    },
+    "12235": {
+      "source": "https://static.runelite.net/cache/item/icon/12235.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c5a42078887d57c16a76a6337d7cc1cf8272674548149a637b3e34a6261d5777"
+    },
+    "12237": {
+      "source": "https://static.runelite.net/cache/item/icon/12237.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2028ecabc6c2e3b36946adb2f798b1a9c485716f6a6128a8e5267e48a7b6d207"
+    },
+    "12239": {
+      "source": "https://static.runelite.net/cache/item/icon/12239.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1e070595b12ed5f0b8848fc8349fdfb3f63a1776b278363d4096277c16727307"
+    },
+    "12241": {
+      "source": "https://static.runelite.net/cache/item/icon/12241.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "1e21ee478550be2660150e7918f79d17dbd11ab075c4defa526aba8dcfc6ab8f"
+    },
+    "12243": {
+      "source": "https://static.runelite.net/cache/item/icon/12243.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "b225c267a8a0a319606a9aed1be5db2a5249f8c5cf6bc8616c15957c4680930c"
+    },
+    "12277": {
+      "source": "https://static.runelite.net/cache/item/icon/12277.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "883d3674e2b859577b734d8508566556c660d7bccfe70517581d772e6e0f7f6a"
+    },
+    "12279": {
+      "source": "https://static.runelite.net/cache/item/icon/12279.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "139b1d48b9246336b06e550d16815a21413b305e129e7ad1677ddb87aefd749d"
+    },
+    "12281": {
+      "source": "https://static.runelite.net/cache/item/icon/12281.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c75edc2574eb95906e8e5522007f9116961828d20d8acac2260523dbce368844"
+    },
+    "12283": {
+      "source": "https://static.runelite.net/cache/item/icon/12283.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "819e464c2b59bff575c5733f192be06c986199c33c3dd9380487ee4cb8500fa8"
+    },
+    "12285": {
+      "source": "https://static.runelite.net/cache/item/icon/12285.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "d9ecc6b5b00c521336612554b178e4bb7834891957f93c7cbffbaa42eca3ca71"
+    },
+    "12287": {
+      "source": "https://static.runelite.net/cache/item/icon/12287.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "655a31aa95b51d1d1ecc8928557e60288b9eeb60c94e0d10074c6ebb7c25ed41"
+    },
+    "12289": {
+      "source": "https://static.runelite.net/cache/item/icon/12289.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5be81cf6282754d93e22cad4977acde92691f1cf2b618e4ab3236469a349acd6"
+    },
+    "12291": {
+      "source": "https://static.runelite.net/cache/item/icon/12291.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f99a52d74ff7f8e9ba22fa56f186626a18adc4149fa6d6525126d1524edc6515"
+    },
+    "12293": {
+      "source": "https://static.runelite.net/cache/item/icon/12293.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6ba19ecd206a75283b6d718b7538e430b8ec97fbb157ac38430ab685ec078bc7"
+    },
+    "12295": {
+      "source": "https://static.runelite.net/cache/item/icon/12295.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "8d881f2511c57039701705c9ae247ce30342230961bb93b7ceaec01699e41b84"
+    },
+    "12327": {
+      "source": "https://static.runelite.net/cache/item/icon/12327.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "7764f719a9e63a057eda70b26bdaf2449da4c032970340ed829002d7219e1c17"
+    },
+    "12329": {
+      "source": "https://static.runelite.net/cache/item/icon/12329.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "75932e1a68cb371640f01533486805c0675c48a40d69f6bb1cc288fe00d6b318"
+    },
+    "12331": {
+      "source": "https://static.runelite.net/cache/item/icon/12331.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "13b17d908a8d8f813cecf5960291d897f99c030aada3e748817328ea217d5ba1"
+    },
+    "12333": {
+      "source": "https://static.runelite.net/cache/item/icon/12333.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "f57bb34ed5cd1305a0f4d3d07d061b5fd11763b50687d8471edd13fe23892f33"
+    },
+    "12381": {
+      "source": "https://static.runelite.net/cache/item/icon/12381.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "2b45110f36f0218ee5fdd385ce2836c9c0d703304f9847935a93cd4df5203e88"
+    },
+    "12383": {
+      "source": "https://static.runelite.net/cache/item/icon/12383.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "382bcfb9774241bf07f9fdb95df49034cb5a3f6b66b3f4c3cde08f2c699c1f00"
+    },
+    "12385": {
+      "source": "https://static.runelite.net/cache/item/icon/12385.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "50ab39b1d5a0710d949528fad973855d582f2335469f87af0a5f89329eda0a82"
+    },
+    "12387": {
+      "source": "https://static.runelite.net/cache/item/icon/12387.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "74afe1a0b4257b15e49f5c17aa596e16fb40635e3119c6543296a804be0f176e"
+    },
+    "12391": {
+      "source": "https://static.runelite.net/cache/item/icon/12391.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "9c6152016a25bdc8f21f25773f2b1467ed002edc521af40fa88e517dc0041bb0"
+    },
+    "20146": {
+      "source": "https://static.runelite.net/cache/item/icon/20146.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "59c5239b543b8ab3943deca736d11877f3283ce91f69716cde3c11b0be71c9c0"
+    },
+    "20149": {
+      "source": "https://static.runelite.net/cache/item/icon/20149.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "13ed325245c14ef70a1e3eb88268cd10078009fec3ad79d9e0fc6f74fc8ffbca"
+    },
+    "20152": {
+      "source": "https://static.runelite.net/cache/item/icon/20152.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "4b1ae55ddcbcdfd29330b306bc9e2eae55ad4209fd59c8f9e7cb0c73917d02b5"
+    },
+    "20169": {
+      "source": "https://static.runelite.net/cache/item/icon/20169.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "c47dd7dfd665abc0db5381e398adb8d281c3002b698b14f66bf895ad33da3fc5"
+    },
+    "20172": {
+      "source": "https://static.runelite.net/cache/item/icon/20172.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e53961a436d0d6ef62297f39c5a8fd0cb32d662ce2570a863feb0f98531289de"
+    },
+    "20175": {
+      "source": "https://static.runelite.net/cache/item/icon/20175.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3bcfad5d15631e1b7b063da0c06c63b6cac5f4e86ddd430c73b85f72bd876704"
+    },
+    "20178": {
+      "source": "https://static.runelite.net/cache/item/icon/20178.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "3c2fd287ad21a55acb3a67a336b8aa7c50d6347283ccc3ead9c7289b4c5a702b"
+    },
+    "20181": {
+      "source": "https://static.runelite.net/cache/item/icon/20181.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "a7a42aeed139adbf5ab5e827d50b6920a4f24c3dcf5e7f61faaec306fd47493d"
+    },
+    "20184": {
+      "source": "https://static.runelite.net/cache/item/icon/20184.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "d44b1a0676e6ae6a5f6bac22120218ce4c4634a0ca5bd485d53cf43bb9925840"
+    },
+    "20187": {
+      "source": "https://static.runelite.net/cache/item/icon/20187.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "be47104459d3cdd6ba8ba5e64c1547b36fced48e59b7c1880659f4b2a39d4c03"
+    },
+    "20190": {
+      "source": "https://static.runelite.net/cache/item/icon/20190.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "54c32df8a46f939bd99336d5c3956b2bf3aad951818d4a7a094764abd8ab3d67"
+    },
+    "20193": {
+      "source": "https://static.runelite.net/cache/item/icon/20193.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "35e8943752770fef8bef6074018b4fc9b3b715d938d8002d107c6de9698b60d2"
+    },
+    "20196": {
+      "source": "https://static.runelite.net/cache/item/icon/20196.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "fd0b4ef4b912a760af023d4d611905858b2e90e0d3fb93adb0b83a6ca6ee0cc3"
+    },
+    "22278": {
+      "source": "https://static.runelite.net/cache/item/icon/22278.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "fd02b76627ee6dfa2db2c9b5556b450fbccbfb9eefacafde4df57a0dfcd004e1"
+    },
+    "22281": {
+      "source": "https://static.runelite.net/cache/item/icon/22281.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "92617c3f55def996e2260c276b5da104c4d21fe875c1f4cba1ffec77d2fd0a5e"
+    },
+    "22284": {
+      "source": "https://static.runelite.net/cache/item/icon/22284.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5ec03b08d2e515bff6428d5a093153c6395dc1e276769370f5e0ed7032a5b656"
+    },
+    "23047": {
+      "source": "https://static.runelite.net/cache/item/icon/23047.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e308d75b7fb20e4bf1dbcfb3857eb9f441d0b69b2e22ac52826fadbeae5e5e11"
+    },
+    "23050": {
+      "source": "https://static.runelite.net/cache/item/icon/23050.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "e68e6649b3274c081a71269ccd4ec9630b3a2d30d302f446f5cfcce6c5deaeb9"
+    },
+    "23053": {
+      "source": "https://static.runelite.net/cache/item/icon/23053.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "86252369040b863f01d834bee5684437d691fda4c7a77d04e36dd1fad063fd08"
+    },
+    "23056": {
+      "source": "https://static.runelite.net/cache/item/icon/23056.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "6a6141c171b0d4b84f54e5de4b331eb7f0ff3efdf6a313851442736d18b39a36"
+    },
+    "23059": {
+      "source": "https://static.runelite.net/cache/item/icon/23059.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "0b626b5218094c705048cb97c3111041f02f6c0f683f5e88ba7dae3687c64417"
+    },
+    "23242": {
+      "source": "https://static.runelite.net/cache/item/icon/23242.png",
+      "retrieved_on": "2026-11-02",
+      "sha256": "5a5fd5d4b92a9ada785652dc4789d7ef59aab35dd55627961257d13ee944651d"
     }
   }
 }

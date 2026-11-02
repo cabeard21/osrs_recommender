@@ -28,6 +28,31 @@ def mock_client(monkeypatch, handler):
     )
 
 
+def test_default_capture_includes_community_equipment(icon_root, monkeypatch):
+    from tracker.content.loader import load_content
+    from tracker.gear.catalog import load_catalog
+
+    root, folder = icon_root
+    catalog = load_catalog(load_content(root / "content"), root / "content/equipment")
+    assert 30895 in catalog.community_items
+    assert not catalog.items[30895].content_ids
+    selected = {item.id for item in catalog.items.values() if item.content_ids}
+    selected.update(catalog.community_items)
+    for item_id in selected - {30895}:
+        (folder / f"{item_id}.png").write_bytes(b"existing artwork")
+    payload = Path("tracker/ui/assets/items/7462.png").read_bytes()
+    calls = []
+
+    def respond(request):
+        calls.append(str(request.url))
+        return httpx.Response(200, content=payload)
+
+    mock_client(monkeypatch, respond)
+    assert capture(root, []) == 0
+    assert calls == ["https://static.runelite.net/cache/item/icon/30895.png"]
+    assert (folder / "30895.png").read_bytes() == payload
+
+
 def test_capture_skips_existing_and_records_exact_bytes(icon_root, monkeypatch):
     root, folder = icon_root
     payload = Path("tracker/ui/assets/items/7462.png").read_bytes()

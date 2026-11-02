@@ -31,13 +31,23 @@ def project_catalog(catalog: Any, policy: SupportPolicy) -> Any:
             or not isinstance(evidence, dict)
             or evidence.get("classification") != "ordinary"
             or type(evidence.get("tradeable")) is not bool
-            or item.requires is None
+            or (
+                item.requires is None
+                and not (
+                    evidence.get("requirements_assumed_absent") is True
+                    and evidence.get("tradeable") is True
+                )
+            )
             or (item.content_ids and not item.requirements_complete)
             or any(effect != GENERIC_UNREVIEWED for effect in item.unsupported_effects)
             or (item.requirements_complete and not item.unsupported_effects)
         ):
             continue
-        assumptions[item_id] = COMMUNITY_ASSUMPTIONS
+        assumptions[item_id] = COMMUNITY_ASSUMPTIONS + (
+            ("No equip requirement data; tradeable item is assumed ungated.",)
+            if item.requires is None
+            else ()
+        )
         items[item_id] = item.model_copy(
             update={
                 "unsupported_effects": (),
