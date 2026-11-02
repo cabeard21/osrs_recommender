@@ -1,3 +1,4 @@
+import { validateRunningCost } from "./runningCosts";
 import { slots } from "./contracts";
 import { validateSecondaryPriority } from "./secondaryPriorities";
 import type {
@@ -28,6 +29,7 @@ export function parseJointSolution(
     score: "number",
     purchase_cost_gp: "number",
   });
+  validateRunningCost(row.running_cost);
   validateSecondaryPriority(
     row,
     scenario.request.secondary_priority ?? "default",
@@ -63,6 +65,7 @@ export function parseJointSolution(
   const loadouts = roles.map((role) => {
     const loadout = object(byRole[role.id]),
       equipment = equipmentMap(loadout.equipment);
+    validateRunningCost(loadout.running_cost);
     if (
       role.autoDiscipline &&
       !(role.allowedDisciplines ?? ["melee", "ranged", "magic"]).includes(

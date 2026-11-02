@@ -14,6 +14,7 @@ from tracker.config.settings import PricesSettings
 from tracker.content.loader import load_content
 from tracker.db.models import ItemPrice, Player, QuestState
 from tracker.domain.types import Source
+from tracker.gear.running_costs import resource_item_ids
 from tracker.integrations.prices.client import PriceDTO, PricesClient, PriceSource
 from tracker.sync.pipeline import _price_scope, run_pipeline
 
@@ -61,7 +62,8 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
         and not item.unsupported_effects
         and (item.requirements_complete or item.id in catalog.community_assumptions)
     )
-    assert _price_scope(content) == expected | supported
+    assert _price_scope(content) == expected | supported | resource_item_ids()
+    assert {556, 558, 21880, 12934} <= _price_scope(content)
     assert 1207 in _price_scope(content)  # Community Steel dagger, absent from authored scope.
 
 

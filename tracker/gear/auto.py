@@ -47,6 +47,7 @@ def optimize_auto(
             price_records,
             now,
             _complete_frontiers=True,
+            _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
             **options,
         )
         branches.append((discipline, result))
@@ -104,6 +105,25 @@ def optimize_auto(
                 {"swap_limit": limit, "baseline_dps": dps, "points": points, "sampled": sampled}
             )
     comparison = []
+    from tracker.gear.running_frontier import publish_groups
+
+    running_archives: dict[int | None, list[dict[str, Any]]] = {
+        limit: [] for limit in [*range(request.max_swaps + 1), None]
+    }
+    running_baselines = {}
+    for limit in running_archives:
+        baselines = []
+        for _, result in branches:
+            for group in result.get("running_cost_frontiers", []):
+                if group["swap_limit"] != limit:
+                    continue
+                running_archives[limit].extend(p["solution"] for p in group["points"])
+                if group.get("baseline_solution"):
+                    baselines.append(group["baseline_solution"])
+        running_baselines[limit] = max(baselines, key=lambda r: r["score"], default=None)
+    running_groups = publish_groups(running_archives, running_baselines, request.max_dps_loss_pct)
+    if not any(r.get("running_cost_frontiers") for _, r in branches):
+        running_groups = []
     for discipline, result in branches:
         row = result["selected_solution"]
         comparison.append(
@@ -148,6 +168,26 @@ def optimize_auto(
                 **summary,
                 "selected_solution": result["selected_solution"],
                 "secondary_frontiers": groups,
+                "running_cost_frontiers": [
+                    {
+                        **group,
+                        "points": [
+                            {**p, "id": f"discipline-{discipline}-{p['id']}"}
+                            for p in group["points"]
+                        ],
+                    }
+                    for group in publish_groups(
+                        {
+                            g["swap_limit"]: [p["solution"] for p in g["points"]]
+                            for g in result.get("running_cost_frontiers", [])
+                        },
+                        {
+                            g["swap_limit"]: g.get("baseline_solution")
+                            for g in result.get("running_cost_frontiers", [])
+                        },
+                        request.max_dps_loss_pct,
+                    )
+                ],
                 "search": result["search"],
                 "alternatives": result["alternatives"],
                 "limitations": result["limitations"],
@@ -159,6 +199,7 @@ def optimize_auto(
         "selected_solution": selected,
         "unrestricted": unrestricted,
         "secondary_frontiers": frontiers,
+        "running_cost_frontiers": running_groups,
         "discipline_comparison": comparison,
         "discipline_results": discipline_results,
         "items": list({i["item_id"]: i for _, r in branches for i in r["items"]}.values()),

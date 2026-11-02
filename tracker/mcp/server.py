@@ -265,6 +265,9 @@ def build_server(
             Future assumptions are request-local. Combat filters and selected attack type,
             stance, and spell (where applicable) travel through this existing operation.
             Inspect limitations and search quality.
+            Mage scenarios also include best-found running-cost frontiers. GP per damage
+            uses expected attack consumption, including staff-provided runes; unavailable
+            prices or unreviewed consumption are explicitly unknown, never free.
             """
             account = accounts.get_snapshot()
             records = prices.get_prices()

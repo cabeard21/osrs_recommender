@@ -1,5 +1,6 @@
 import { DisciplineTabs } from "./DisciplineTabs";
 import { EquipmentBonuses } from "./EquipmentBonuses";
+import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
@@ -163,6 +164,29 @@ export function LiveResultWorkspace() {
           </section>
         )}
 
+        {(branch
+          ? branch.discipline === "magic"
+          : result.scenario.request.roles.some(
+              (role) =>
+                role.style === "magic" ||
+                (role.autoDiscipline &&
+                  (
+                    role.allowedDisciplines ?? ["melee", "ranged", "magic"]
+                  ).includes("magic")),
+            )) && (
+          <RunningCostFrontier
+            group={(
+              branch?.running_cost_frontiers ??
+              result.live?.result.running_cost_frontiers
+            )?.find((g) => g.swap_limit === result.scenario.request.max_swaps)}
+            selectedId={current.solutionId}
+            selected={selected}
+            itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
+            onSelect={(solutionId) =>
+              dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
+            }
+          />
+        )}
         <SecondaryFrontier
           group={(
             branch?.secondary_frontiers ??

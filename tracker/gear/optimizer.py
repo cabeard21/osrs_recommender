@@ -223,6 +223,9 @@ def required_transitions(request: OptimizationRequest) -> tuple[tuple[str, str],
 
 
 class _Search:
+    running_prices: Mapping[int, PriceRecord]
+    running_at: datetime
+
     def __init__(
         self,
         snapshot: AccountSnapshot,
@@ -656,7 +659,7 @@ class _Search:
             if r.style != "special"
         ) / (weight or 1)
         peak = max([*occupancies, *(t["max_gear_inventory_slots"] for t in transitions)], default=0)
-        return {
+        result = {
             "score": score,
             "secondary_priority": self.request.secondary_priority,
             "secondary_value": self.secondary(loadouts)
@@ -689,6 +692,11 @@ class _Search:
             "reserved_supply_slots": self.request.reserved_supply_slots,
             "maximum_actions": max((t["action_count"] for t in transitions), default=0),
         }
+        if hasattr(self, "running_prices"):
+            from tracker.gear.running_frontier import add_solution_costs
+
+            return add_solution_costs(result, self)
+        return result
 
 
 def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
@@ -768,6 +776,7 @@ def optimize(
     targeted_head_refinement: bool = False,
     local_refinement: bool = False,
     _complete_frontiers: bool = False,
+    _running_frontier: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     request = (
@@ -806,6 +815,8 @@ def optimize(
         for i, item in catalog.items.items()
     }
     search = _Search(projected, request, catalog.items, facts, cancelled)
+    search.running_prices = price_records
+    search.running_at = now
     search.complete_frontiers = _complete_frontiers
     individual = {role.id: search.loadouts((role,)) for role in request.roles}
     for role in request.roles:
@@ -926,6 +937,14 @@ def optimize(
         secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
             search, winners, unrestricted, local_refinement
         )
+    from tracker.gear.running_frontier import explore_running_costs, running_cost_policy
+
+    running_frontiers: list[dict[str, Any]] = []
+    running_diagnostics = None
+    if _running_frontier or any(r.style == "magic" for r in request.roles):
+        running_frontiers, running_diagnostics = explore_running_costs(
+            search, winners, unrestricted, local_refinement
+        )
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -941,6 +960,21 @@ def optimize(
         "skills": dict(request.skill_overrides),
         "quests": dict(request.quest_overrides),
         "assumed_item_ids": request.assumed_item_ids,
+        "running_cost_policy": running_cost_policy(request, local_refinement),
+        "running_cost_prices": {
+            str(i): {
+                key: str(getattr(record, key, None))
+                for key in (
+                    "high_price_gp",
+                    "low_price_gp",
+                    "high_trade_at",
+                    "low_trade_at",
+                    "fetched_at",
+                    "source",
+                )
+            }
+            for i, record in sorted(price_records.items())
+        },
     }
     alternatives = _slot_alternatives(search, winners[-1])
     referenced = {
@@ -952,7 +986,7 @@ def optimize(
     }
     referenced |= {
         i
-        for group in secondary_frontiers
+        for group in [*secondary_frontiers, *running_frontiers]
         for point in group["points"]
         for loadout in point["solution"]["loadouts"].values()
         for i in loadout["equipment"].values()
@@ -1003,6 +1037,8 @@ def optimize(
         "unrestricted": unrestricted,
         "selected_solution": winners[-1],
         "secondary_frontiers": secondary_frontiers,
+        "running_cost_frontiers": running_frontiers,
+        "running_cost_policy": running_cost_policy(request, local_refinement),
         "alternatives": alternatives,
         "suggested_swap_limit": next(
             (
@@ -1015,6 +1051,7 @@ def optimize(
         "search": {
             "quality": "best_found",
             **({"secondary_frontier": frontier_diagnostics} if frontier_diagnostics else {}),
+            **({"running_cost_frontier": running_diagnostics} if running_diagnostics else {}),
             **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),
             **(
                 {"targeted_head_refinement": targeted_diagnostics}
