@@ -15,6 +15,7 @@ from pydantic import Field, model_validator
 from tracker.api.gear_optimizations import (
     BrowserOptimizationRequest,
     Purchase,
+    RunningCost,
     consume,
     error,
     same_origin,
@@ -88,6 +89,7 @@ class FixedEvaluation(DTO):
     assumed_item_ids: list[int]
     discipline: Literal["melee", "ranged", "magic"] | None = None
     combat_option: FixedCombatOption | None = None
+    running_cost: RunningCost | None = None
 
 
 class EquipmentChange(DTO):

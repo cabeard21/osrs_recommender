@@ -8,6 +8,33 @@ Fast is the default for existing and new browser requests. It runs the existing 
 
 The existing complete validator and final ordering govern every accepted replacement. Original valid incumbents are preserved in refinement diagnostics. Combat formulas, candidate pools, beam widths, pruning and final scoring are unchanged. Reaching the refinement cap is a normal bounded-search outcome, not an optimization failure.
 
+## Running attack costs
+
+Scenarios containing Magic also calculate a separate best-found frontier comparing
+DPS with running GP per damage, alongside the selected secondary priority. Mixed
+Multi scenarios include all active roles; Auto compares the allowed disciplines.
+Equipment purchase costs remain separate and the equipment budget is unchanged.
+
+Standard spell recipes subtract runes supplied by the equipped staff before
+pricing remaining runes from the frozen cached price snapshot. Result details
+identify the supplied runes and their source. Owned runes retain replacement value.
+Costs apply to attack attempts, including misses. GP/hour assumes continuous
+attacks; GP/damage divides running GP/second by expected DPS. Multi uses the ratio
+of weighted consumption and damage rates, rather than averaging efficiency ratios.
+
+Ranged comparisons include reviewed ammunition consumption and automatic recovery;
+manual ground collection is excluded. Ordinary nondegrading melee has no attack
+resource cost. Missing prices and unreviewed charge/consumption mechanics are
+unavailable, never free. Cost recipes do not enable unsupported combat mechanics.
+Potions, prayer supplies, loot and combat downtime are excluded.
+
+The additive `running_cost` summaries and `running_cost_frontiers` use a separate
+bounded work policy. Selecting a cost point selects its equipment and combat
+options. The existing DPS-loss limit applies, with at most 64 displayed points per
+group and endpoints retained. An unknown-cost DPS baseline remains visible without
+participating in numerical cost dominance. Refresh market prices before comparing
+costs; cached observations retain their provenance labels.
+
 ## Contract and identity
 
 The browser endpoint remains `POST /ui-api/gear/optimizations`. `optimization_mode` is separate from the existing equipment-access `mode` (`owned`, `usable`, `future`). Omitted `optimization_mode` means `fast`; its only accepted explicit values are `fast` and `thorough`. Unknown values, nulls and other types are rejected with structured 422 validation errors.

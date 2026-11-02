@@ -1,4 +1,5 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
+import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
@@ -185,6 +186,26 @@ export function LiveMultiResultWorkspace() {
   }
   return (
     <div className="result-column">
+      {roles.some((role) => role.style === "magic") && (
+        <RunningCostFrontier
+          group={
+            raw.running_cost_frontiers?.find((g) =>
+              g.points.some((p) => p.id === current.solutionId),
+            ) ??
+            raw.running_cost_frontiers?.find(
+              (g) =>
+                g.swap_limit ===
+                (current.solutionId === "unrestricted"
+                  ? null
+                  : (point?.swap_limit ?? result.scenario.request.max_swaps)),
+            )
+          }
+          selectedId={current.solutionId}
+          selected={solution}
+          itemName={itemName}
+          onSelect={(solutionId) => ui({ solutionId })}
+        />
+      )}
       <SecondaryFrontier
         group={frontierGroup}
         selectedId={current.solutionId}

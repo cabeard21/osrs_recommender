@@ -1,3 +1,4 @@
+import { validateRunningCost } from "./runningCosts";
 import {
   object,
   requireFields,
@@ -300,6 +301,7 @@ export function parseOptimization(
       score: "number",
       purchase_cost_gp: "number",
     });
+    validateRunningCost(selected.running_cost);
     validateSecondaryPriority(selected, priority, true);
     if (
       !Number.isFinite(selected.score) ||
@@ -317,6 +319,7 @@ export function parseOptimization(
       )
     )
       throw new Error("Invalid resolved Auto discipline");
+    validateRunningCost(loadout.running_cost);
     const equipment = equipmentMap(loadout.equipment);
     for (const id of Object.values(equipment))
       if (
@@ -361,7 +364,11 @@ export function parseOptimization(
     });
   }
   const frontierIds = new Set<string>();
-  function parseFrontiers(frontiers: unknown, discipline?: string) {
+  function parseFrontiers(
+    frontiers: unknown,
+    discipline?: string,
+    runningCost = false,
+  ) {
     if (!Array.isArray(frontiers))
       throw new Error("Invalid secondary frontiers");
     for (const value of frontiers) {
@@ -386,14 +393,22 @@ export function parseOptimization(
         const point = requireFields(value, {
           id: "string",
           dps_loss: "number",
-          secondary_gain: "number",
+          ...(runningCost ? {} : { secondary_gain: "number" as const }),
         });
+        if (runningCost) {
+          const cost = object(object(point.solution).running_cost);
+          validateRunningCost(cost);
+          if (cost.status !== "known" || cost.gp_per_damage === null)
+            throw new Error(
+              "Cost frontier point requires a known GP per damage",
+            );
+        }
         if (
           frontierIds.has(String(point.id)) ||
           solutions.some((s) => s.id === point.id) ||
           !Number.isFinite(point.dps_loss) ||
           Number(point.dps_loss) < 0 ||
-          !Number.isFinite(point.secondary_gain) ||
+          (!runningCost && !Number.isFinite(point.secondary_gain)) ||
           (point.dps_loss_pct !== null &&
             (typeof point.dps_loss_pct !== "number" ||
               !Number.isFinite(point.dps_loss_pct) ||
@@ -428,6 +443,8 @@ export function parseOptimization(
   }
   if (result.secondary_frontiers !== undefined)
     parseFrontiers(result.secondary_frontiers);
+  if (result.running_cost_frontiers !== undefined)
+    parseFrontiers(result.running_cost_frontiers, undefined, true);
   const branchAlternatives = new Map<
     string,
     ReturnType<typeof parseAlternatives>
@@ -496,6 +513,8 @@ export function parseOptimization(
         solutions.push(parsed);
       }
       parseFrontiers(branch.secondary_frontiers, discipline);
+      if (branch.running_cost_frontiers !== undefined)
+        parseFrontiers(branch.running_cost_frontiers, discipline, true);
       branchAlternatives.set(
         discipline,
         parseAlternatives(

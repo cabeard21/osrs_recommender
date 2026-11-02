@@ -231,6 +231,33 @@ def evaluate_configurations(
     }
     levels = {k: v.level for k, v in projected.skills.items()}
 
+    def priced(
+        result: dict[str, Any],
+        equipment: Mapping[str, int],
+        configured: Any,
+        option: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        from tracker.gear.running_costs import evaluate_running_cost
+
+        if result["status"] != "valid":
+            return result
+        selected_option = option or {
+            "attack_type": configured.style,
+            "stance": configured.stance,
+            "spell": configured.spell if configured.style == "magic" else None,
+            "powered_attack": configured.powered_attack,
+        }
+        return {
+            **result,
+            "running_cost": evaluate_running_cost(
+                {slot: catalog.items[i] for slot, i in equipment.items()},
+                selected_option,
+                result["performance"],
+                price_records,
+                now,
+            ),
+        }
+
     def fixed(equipment: Mapping[str, int], selected: Mapping[str, Any] | None) -> dict[str, Any]:
         configured = role
         if role.allowed_disciplines is not None:
@@ -263,7 +290,7 @@ def evaluate_configurations(
                 equipment, catalog.items, facts, request, configured, levels
             )
             return {
-                **result,
+                **priced(result, equipment, configured, chosen_option),
                 "discipline": "melee"
                 if configured.style in {"stab", "slash", "crush"}
                 else configured.style,
@@ -334,7 +361,10 @@ def evaluate_configurations(
                     "combat_options": None,
                 }
             )
-        return evaluate_configuration(equipment, catalog.items, facts, request, configured, levels)
+        result = evaluate_configuration(
+            equipment, catalog.items, facts, request, configured, levels
+        )
+        return priced(result, equipment, configured, selected)
 
     first = fixed(baseline, baseline_combat_option)
     second = fixed(proposed, proposed_combat_option)

@@ -25,7 +25,7 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 2
 # Exact physical elemental staves with reviewed Standard spellbook autocast.
 # https://oldschool.runescape.wiki/w/Autocast
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
-REVIEWED_STANDARD_STAVES = frozenset({1381, 1387, 1401, 1403, 1405, 1407})
+REVIEWED_STANDARD_STAVES = frozenset({1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407})
 
 
 def _reviewed_equivalent(
