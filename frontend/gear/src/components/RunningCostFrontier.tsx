@@ -30,7 +30,9 @@ function CostDetails({ cost }: { cost?: RunningCost }) {
             : ""}
           {r.consumed_quantity} consumed per attack
           {r.consumed_quantity > 0
-            ? ` at ${number(r.unit_price_gp)} GP each (${r.price_layer})`
+            ? r.unit_price_gp == null
+              ? " · price unavailable"
+              : ` at ${number(r.unit_price_gp)} GP each (${r.price_layer})`
             : ""}
         </p>
       ))}
@@ -43,7 +45,9 @@ export function RunningCostFrontier({
   selected,
   onSelect,
   itemName,
+  roleName,
 }: {
+  roleName?: (roleId: string) => string;
   group?: RunningCostFrontierGroup;
   selectedId: string;
   selected?: JointSolutionDTO | null;
@@ -151,45 +155,49 @@ export function RunningCostFrontier({
               </tr>
             </thead>
             <tbody>
-              {points.map((p, i) => (
-                <tr key={p.id} aria-selected={p.id === selectedId}>
-                  <td>
-                    <button
-                      aria-label={`Select cost tradeoff ${i + 1}`}
-                      aria-pressed={p.id === selectedId}
-                      onClick={() => onSelect(p.id)}
-                    >
-                      {i === 0
-                        ? p.solution.score === group?.baseline_dps
-                          ? "Highest DPS"
-                          : "Highest priced DPS"
-                        : "Tradeoff " + (i + 1)}
-                    </button>
-                  </td>
-                  <td>
-                    {Object.entries(p.solution.loadouts).map(([role, l]) => (
-                      <div key={role}>
-                        {(
-                          l.combat_option?.powered_attack ??
-                          l.combat_option?.spell ??
-                          l.discipline ??
-                          "Attack"
-                        ).replaceAll("_", " ")}{" "}
-                        ·{" "}
-                        {l.equipment.weapon
-                          ? itemName(l.equipment.weapon)
-                          : "Unarmed"}
-                      </div>
-                    ))}
-                  </td>
-                  <td>{number(p.solution.score, 3)}</td>
-                  <td>{number(p.dps_loss_pct)}%</td>
-                  <td>{number(p.solution.running_cost?.gp_per_damage, 4)}</td>
-                  <td>{number(p.solution.running_cost?.gp_per_attack)}</td>
-                  <td>{number(p.solution.running_cost?.gp_per_hour)}</td>
-                  <td>{number(p.solution.purchase_cost_gp, 0)}</td>
-                </tr>
-              ))}
+              {points.map((p, i) => {
+                const pointLabel =
+                  i === 0
+                    ? p.solution.score === group?.baseline_dps
+                      ? "Highest DPS"
+                      : "Highest priced DPS"
+                    : `Tradeoff ${i + 1}`;
+                return (
+                  <tr key={p.id} aria-selected={p.id === selectedId}>
+                    <td>
+                      <button
+                        aria-label={`Select cost tradeoff ${i + 1}: ${pointLabel}`}
+                        aria-pressed={p.id === selectedId}
+                        onClick={() => onSelect(p.id)}
+                      >
+                        {pointLabel}
+                      </button>
+                    </td>
+                    <td>
+                      {Object.entries(p.solution.loadouts).map(([role, l]) => (
+                        <div key={role}>
+                          {(
+                            l.combat_option?.powered_attack ??
+                            l.combat_option?.spell ??
+                            l.discipline ??
+                            "Attack"
+                          ).replaceAll("_", " ")}{" "}
+                          ·{" "}
+                          {l.equipment.weapon
+                            ? itemName(l.equipment.weapon)
+                            : "Unarmed"}
+                        </div>
+                      ))}
+                    </td>
+                    <td>{number(p.solution.score, 3)}</td>
+                    <td>{number(p.dps_loss_pct)}%</td>
+                    <td>{number(p.solution.running_cost?.gp_per_damage, 4)}</td>
+                    <td>{number(p.solution.running_cost?.gp_per_attack)}</td>
+                    <td>{number(p.solution.running_cost?.gp_per_hour)}</td>
+                    <td>{number(p.solution.purchase_cost_gp, 0)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -200,7 +208,7 @@ export function RunningCostFrontier({
           <CostDetails cost={selected.running_cost} />
           {Object.entries(selected.loadouts).map(([role, l]) => (
             <details key={role} open>
-              <summary>{role} resources</summary>
+              <summary>{roleName?.(role) ?? "Loadout"} resources</summary>
               <CostDetails cost={l.running_cost} />
             </details>
           ))}

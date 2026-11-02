@@ -1,7 +1,24 @@
+import type { ReactNode } from "react";
 import type { CombatTarget, Draft } from "../api/contracts";
 import type { DraftFieldErrors } from "../state/scenario";
 import { FieldError, fieldProps } from "./FieldError";
 import { NpcTargetPicker } from "./NpcTargetPicker";
+
+function CustomTargetWrapper({
+  isCollapsible,
+  children,
+}: {
+  isCollapsible: boolean;
+  children: ReactNode;
+}) {
+  if (!isCollapsible) return <>{children}</>;
+  return (
+    <details className="control-help">
+      <summary>Use custom target stats</summary>
+      {children}
+    </details>
+  );
+}
 
 export function TargetFields({
   draft,
@@ -35,8 +52,14 @@ export function TargetFields({
           }
         />
       )}
+      {liveMode && !draft.targetSelection && (
+        <p className="target-hint">
+          No NPC selected · using “{draft.target}”, defence {draft.defence}.
+          Search above for a real target.
+        </p>
+      )}
       {!draft.targetSelection && (
-        <>
+        <CustomTargetWrapper isCollapsible={liveMode}>
           {liveMode && (
             <label>
               Target selection
@@ -86,6 +109,7 @@ export function TargetFields({
               type="number"
               min="0"
               max="1000"
+              data-run-on-enter
               value={draft.defence}
               {...fieldProps("defence", errors.defence)}
               onChange={(e) =>
@@ -116,7 +140,7 @@ export function TargetFields({
                 : "Custom target assumes Magic level 1 and zero defence bonuses."}
             </p>
           )}
-        </>
+        </CustomTargetWrapper>
       )}
     </div>
   );

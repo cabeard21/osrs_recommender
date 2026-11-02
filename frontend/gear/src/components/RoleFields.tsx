@@ -170,6 +170,9 @@ export function RoleFields({
   const hasDependentUtility = draft.roles.some(
     (candidate) => candidate.utility && candidate.parentRole === role.id,
   );
+  const noDisciplines =
+    !!role.autoDiscipline && role.allowedDisciplines?.length === 0;
+  const isAtMinimumRoles = draft.roles.length <= 2;
   return (
     <fieldset>
       <legend>
@@ -274,6 +277,7 @@ export function RoleFields({
                 <label className="check" key={style}>
                   <input
                     type="checkbox"
+                    aria-invalid={noDisciplines || undefined}
                     checked={(
                       role.allowedDisciplines ?? ["melee", "ranged", "magic"]
                     ).includes(style)}
@@ -301,6 +305,11 @@ export function RoleFields({
                   {style}
                 </label>
               ))}
+              {noDisciplines && (
+                <p role="alert" className="field-error">
+                  Choose at least one combat discipline.
+                </p>
+              )}
               <p>
                 Auto compares each permitted discipline at full search effort.
                 All three can take roughly three manual searches.
@@ -342,9 +351,12 @@ export function RoleFields({
               />
             </label>
           )}
-          <button disabled={draft.roles.length <= 2} onClick={onRemove}>
+          <button disabled={isAtMinimumRoles} onClick={onRemove}>
             <Trash2 size={14} /> Remove configuration
           </button>
+          {isAtMinimumRoles && (
+            <small>At least two configurations are required.</small>
+          )}
         </>
       )}
     </fieldset>

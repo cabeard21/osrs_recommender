@@ -61,6 +61,7 @@ export function EquipmentGrid({
   equipment,
   shared = [],
   differences = [],
+  differenceLabel = "Different",
   selected,
   onSelect,
   prefix = "",
@@ -71,6 +72,7 @@ export function EquipmentGrid({
   equipment: Equipment;
   shared?: number[];
   differences?: Slot[];
+  differenceLabel?: string;
   selected: Slot | null;
   onSelect: (slot: Slot) => void;
   prefix?: string;
@@ -121,7 +123,7 @@ export function EquipmentGrid({
           <button
             key={slot}
             className={`equipment-slot slot-${slot} ${selected === slot ? "selected" : ""}`}
-            aria-label={`${prefix}${slot} ${label}${differences.includes(slot) ? " · Different" : ""} ${name}${item?.facts?.support_status === "community_assumed" ? " Community-assumed" : item?.facts?.support_status === "verified" ? " Verified" : ""}`}
+            aria-label={`${prefix}${slot} ${label}${differences.includes(slot) ? ` · ${differenceLabel}` : ""} ${name}${item?.facts?.support_status === "community_assumed" ? " Community-assumed" : item?.facts?.support_status === "verified" ? " Verified" : ""}`}
             aria-pressed={selected === slot}
             onClick={() => onSelect(slot)}
           >
@@ -130,13 +132,17 @@ export function EquipmentGrid({
               <span
                 className={
                   (optimized && statusColor[status]) ||
-                  (isShared ? "green" : "blue")
+                  (isShared
+                    ? "green"
+                    : status === "Empty" && optimized
+                      ? "muted"
+                      : "blue")
                 }
               >
                 {label}
               </span>
               {differences.includes(slot) && (
-                <span className="blue"> · Different</span>
+                <span className="blue"> · {differenceLabel}</span>
               )}
             </span>{" "}
             <span className="item-content">
@@ -149,7 +155,7 @@ export function EquipmentGrid({
                   <small className="gold"> Community-assumed</small>
                 )}
                 {item?.facts?.support_status === "verified" && (
-                  <small className="green"> Verified</small>
+                  <small className="muted"> Verified</small>
                 )}
               </span>
             </span>

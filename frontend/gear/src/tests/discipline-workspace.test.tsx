@@ -227,9 +227,7 @@ it("does not fall back to the winner for an infeasible discipline", async () => 
     screen.getByText(/Viewing magic loadouts: No eligible spell/),
   ).toBeVisible();
   expect(screen.queryByText(/Equipped weapon/)).toBeNull();
-  expect(
-    screen.queryByRole("heading", { name: "Acquisition requirements" }),
-  ).toBeNull();
+  expect(screen.queryByRole("heading", { name: "What to buy" })).toBeNull();
   await userEvent.click(
     screen.getByText("Secondary priority", { selector: "summary" }),
   );

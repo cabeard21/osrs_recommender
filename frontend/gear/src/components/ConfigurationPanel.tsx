@@ -1,6 +1,12 @@
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useGear } from "../state/GearProvider";
+import {
+  BUDGET_PRESETS,
+  SLIDER_MAX,
+  budgetToSlider,
+  sliderToBudget,
+} from "../state/budget";
 import { draftFieldErrors, newRole, parseGp } from "../state/scenario";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
@@ -12,7 +18,6 @@ import { nextRoleIndex, removeMultiRole } from "./multiDraft";
 import { RoleFields } from "./RoleFields";
 import { TargetFields } from "./TargetFields";
 
-const BUDGET_SLIDER_MAX = 100_000_000;
 const DEFAULT_SUPPORT_POLICY = "community_best_effort";
 
 export function ConfigurationPanel() {
@@ -54,6 +59,89 @@ export function ConfigurationPanel() {
   const supportPolicy = draft.supportPolicy ?? DEFAULT_SUPPORT_POLICY;
   const hasAdvancedChanges =
     supportPolicy !== DEFAULT_SUPPORT_POLICY || secondaryPriority !== "default";
+  const budgetSection = (
+    <>
+      <span className="eyebrow">Budget and equipment</span>
+      <div className="raised">
+        <label>
+          Additional purchase budget (GP)
+          <input
+            inputMode="numeric"
+            placeholder="10m, 500k or 12345"
+            data-run-on-enter
+            value={draft.budget}
+            {...fieldProps("budget", errors.budget)}
+            onChange={(e) => change({ budget: e.target.value })}
+          />
+        </label>
+        <FieldError id="budget" message={errors.budget} />
+        {!errors.budget && budgetGp > 0 && (
+          <span className="numeric">{budgetGp.toLocaleString()} GP</span>
+        )}
+        <input
+          aria-label="Budget slider"
+          aria-valuetext={`${(budgetGp || 0).toLocaleString()} GP`}
+          type="range"
+          min="0"
+          max={SLIDER_MAX}
+          step="1"
+          value={budgetToSlider(budgetGp)}
+          onChange={(e) =>
+            change({ budget: String(sliderToBudget(Number(e.target.value))) })
+          }
+        />
+        <div
+          className="budget-presets"
+          role="group"
+          aria-label="Budget presets"
+        >
+          {BUDGET_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              aria-pressed={draft.budget === preset}
+              onClick={() => change({ budget: preset })}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <p>
+          {liveMode
+            ? "Additional purchases only. Items you own are reused; prices are cached estimates."
+            : "Fixture quotes only. Shared purchases counted once in the demo summary."}
+        </p>
+        {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
+          <p className="notice">
+            Budget is 0, so only items you already own can be used.
+          </p>
+        )}
+      </div>
+    </>
+  );
+  const roleSummary = (role: Role) =>
+    [
+      role.name,
+      role.utility ? "Utility" : role.style,
+      role.combatTarget?.name,
+      role.utility ? null : `weight ${role.weight}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  const roleFields = (role: Role, index: number) => (
+    <RoleFields
+      key={role.id}
+      role={role}
+      index={index}
+      mode={state.mode}
+      draft={draft}
+      context={state.context}
+      liveMode={liveMode}
+      targets={targets}
+      onChange={(patch) => roleChange(role.id, patch)}
+      onRemove={() => removeRole(role.id)}
+    />
+  );
   return (
     <section className="panel configuration" aria-labelledby="parameters">
       <h2 id="parameters" className="eyebrow">
@@ -68,21 +156,20 @@ export function ConfigurationPanel() {
           change={change}
         />
       )}
+      {!isSingle && budgetSection}
       <span className="eyebrow">Combat configurations</span>
-      {draft.roles.map((role, index) => (
-        <RoleFields
-          key={role.id}
-          role={role}
-          index={index}
-          mode={state.mode}
-          draft={draft}
-          context={state.context}
-          liveMode={liveMode}
-          targets={targets}
-          onChange={(patch) => roleChange(role.id, patch)}
-          onRemove={() => removeRole(role.id)}
-        />
-      ))}
+      {isSingle ? (
+        draft.roles.map(roleFields)
+      ) : (
+        <div className="role-cards">
+          {draft.roles.map((role, index) => (
+            <details className="role-card" key={role.id} open={!current.result}>
+              <summary>{roleSummary(role)}</summary>
+              {roleFields(role, index)}
+            </details>
+          ))}
+        </div>
+      )}
       {!isSingle && (
         <>
           <button
@@ -101,42 +188,7 @@ export function ConfigurationPanel() {
           <MultiTransitions draft={draft} change={change} />
         </>
       )}
-      <span className="eyebrow">Budget and equipment</span>
-      <div className="raised">
-        <label>
-          Additional purchase budget (GP)
-          <input
-            inputMode="numeric"
-            placeholder="10m, 500k or 12345"
-            value={draft.budget}
-            {...fieldProps("budget", errors.budget)}
-            onChange={(e) => change({ budget: e.target.value })}
-          />
-        </label>
-        <FieldError id="budget" message={errors.budget} />
-        {!errors.budget && budgetGp > 0 && (
-          <span className="numeric">{budgetGp.toLocaleString()} GP</span>
-        )}
-        <input
-          aria-label="Budget slider"
-          type="range"
-          min="0"
-          max={BUDGET_SLIDER_MAX}
-          step="100000"
-          value={Math.min(budgetGp || 0, BUDGET_SLIDER_MAX)}
-          onChange={(e) => change({ budget: e.target.value })}
-        />
-        <p>
-          {liveMode
-            ? "Additional purchases only. Items you own are reused; prices are cached estimates."
-            : "Fixture quotes only. Shared purchases counted once in the demo summary."}
-        </p>
-        {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
-          <p className="notice">
-            Budget is 0, so only items you already own can be used.
-          </p>
-        )}
-      </div>
+      {isSingle && budgetSection}
       <label>
         Equipment access
         <select
@@ -284,6 +336,7 @@ export function ConfigurationPanel() {
               min="0"
               max="100"
               step="0.1"
+              data-run-on-enter
               value={draft.maxDpsLossPct ?? "10"}
               {...fieldProps("loss", errors.maxDpsLoss)}
               onChange={(e) => change({ maxDpsLossPct: e.target.value })}
@@ -302,6 +355,7 @@ export function ConfigurationPanel() {
                 type="number"
                 min="0"
                 max="28"
+                data-run-on-enter
                 value={draft.supplies}
                 {...fieldProps("supplies", errors.supplies)}
                 onChange={(e) => change({ supplies: e.target.value })}

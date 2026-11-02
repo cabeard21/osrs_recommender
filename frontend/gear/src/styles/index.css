@@ -1094,8 +1094,12 @@ li {
   top: 0;
   z-index: 5;
 }
-.result-column {
-  scroll-margin-top: 120px;
+html {
+  /* Keeps anchors and focused fields clear of the sticky run bar. */
+  scroll-padding-top: calc(var(--protocol-height, 96px) + 12px);
+}
+.stacked-only {
+  display: none;
 }
 .field-error {
   display: block;
@@ -1321,7 +1325,149 @@ li {
   .config-lock {
     order: 1;
   }
-  .analysis-column {
+  .result-column,
+  .empty-result {
     order: 2;
   }
+  .analysis-column {
+    order: 3;
+  }
+  summary {
+    padding-block: 13px;
+  }
+  .check {
+    min-height: 44px;
+  }
+  .stacked-only {
+    display: inline-flex;
+  }
+}
+@media (max-width: 700px) {
+  /* The live account panel repeats the name; fixtures have no such panel. */
+  .account-live {
+    display: none;
+  }
+  .header:has(.account-live) {
+    flex-wrap: nowrap;
+  }
+  .header-modes button {
+    padding-inline: 8px;
+  }
+  .protocol {
+    flex-direction: row;
+    align-items: center;
+    padding-block: 8px;
+  }
+  .protocol > div:first-child:not(:has(.badge, .run-status, [role="alert"])) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .protocol h1 {
+    font-size: 16px;
+  }
+  .protocol .button-row {
+    flex: 1;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+  .protocol .button-row button {
+    padding: 8px 10px;
+    font-size: 12px;
+    box-shadow: none;
+  }
+}
+
+/* Result hierarchy */
+.verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 12px;
+}
+.verdict-dps {
+  display: block;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #f0bf5c;
+}
+.verdict-note {
+  color: #94a3b8;
+  font-size: 13px;
+}
+.verdict-caveat {
+  flex-basis: 100%;
+}
+.is-stale .verdict,
+.is-stale .verdict-dps,
+.is-stale .telemetry,
+.is-stale .result-cost {
+  opacity: 0.65;
+}
+.result-column table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.result-column th,
+.result-column td {
+  padding: 8px 12px 8px 0;
+  text-align: left;
+  border-bottom: 1px solid #262d3b;
+  text-transform: capitalize;
+}
+.budget-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 8px;
+}
+.budget-presets button {
+  padding: 6px 4px;
+  font-size: 12px;
+}
+.target-hint {
+  font-size: 12px;
+}
+.sidebar nav a[aria-current="page"],
+dialog nav a[aria-current="page"] {
+  color: #f0bf5c;
+  background: #262d3b;
+  border-radius: 6px;
+}
+.equipment-slot[aria-pressed="true"] {
+  color: #e0e2ec;
+  border-color: #7bd0ff;
+  box-shadow: 0 0 0 1px #7bd0ff;
+  background: #262d3b;
+}
+.equipment-slot.selected {
+  border-color: #7bd0ff;
+  box-shadow: 0 0 0 1px #7bd0ff;
+}
+footer a {
+  text-decoration: underline;
+}
+
+/* Multi-style setup uses the full width until a result needs the space. */
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.role-card > summary {
+  text-transform: capitalize;
+  padding-bottom: 8px;
+}
+.multi-workspace:not(.has-result) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.multi-workspace:not(.has-result) .role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: start;
 }

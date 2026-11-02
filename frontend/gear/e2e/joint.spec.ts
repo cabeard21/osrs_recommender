@@ -61,6 +61,7 @@ test("live joint curve and transitions share one backend solution", async ({
     name: "Configuration 2",
     exact: true,
   });
+  await second.getByText("Use custom target stats", { exact: true }).click();
   await second.getByLabel("Role target defence", { exact: true }).fill("50");
   await second.getByLabel("Active-time weight", { exact: true }).fill("3");
   const reply = await runJoint(page);

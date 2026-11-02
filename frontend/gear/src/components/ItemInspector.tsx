@@ -527,26 +527,53 @@ function LiveItemInspector() {
       )}
       {loading && <p role="status">Loading item metadata…</p>}
       {error && <p role="alert">{error}</p>}
+      {facts && (
+        <div className="button-row">
+          <button
+            disabled={
+              !canLock ||
+              isSlotLocked ||
+              facts.slot !== physicalSlot ||
+              (id !== null && excluded.has(id))
+            }
+            onClick={() => lockItem(id)}
+          >
+            Lock {slot} to{" "}
+            {id === null ? "empty" : (item?.name ?? namedItem(id))}
+          </button>
+          <button
+            disabled={id === null || excluded.has(id)}
+            onClick={excludeItem}
+          >
+            {isLocked ? "Unlock and exclude" : "Exclude item"} in draft
+          </button>
+        </div>
+      )}
       <section
         className="candidate-comparison"
         aria-label="Candidate comparison"
       >
-        <p className="eyebrow">
-          {solution?.loadouts.find((role) => role.roleId === current.activeRole)
-            ?.name ?? "Selected configuration"}{" "}
-          · {slot}
-        </p>
-        <div className="candidate-heading">
-          <span>
-            <ItemSprite id={originalId} />
-            {originalId === null ? "Empty" : namedItem(originalId)}
-          </span>
-          <span aria-hidden="true">→</span>
-          <span>
-            <ItemSprite id={id} />
-            {id === null ? "Empty" : (item?.name ?? namedItem(id))}
-          </span>
-        </div>
+        {originalId !== id && (
+          <p className="eyebrow">
+            {solution?.loadouts.find(
+              (role) => role.roleId === current.activeRole,
+            )?.name ?? "Selected configuration"}{" "}
+            · {slot}
+          </p>
+        )}
+        {originalId !== id && (
+          <div className="candidate-heading">
+            <span>
+              <ItemSprite id={originalId} />
+              {originalId === null ? "Empty" : namedItem(originalId)}
+            </span>
+            <span aria-hidden="true">→</span>
+            <span>
+              <ItemSprite id={id} />
+              {id === null ? "Empty" : (item?.name ?? namedItem(id))}
+            </span>
+          </div>
+        )}
         {selected !== undefined && !current.trial && (
           <button
             onClick={() => {
@@ -557,14 +584,10 @@ function LiveItemInspector() {
             Clear preview
           </button>
         )}
-        {facts && (multi || !current.trial) && (
+        {facts && selected !== undefined && (multi || !current.trial) && (
           <EquipmentBonuses
             bonuses={facts.equipment.bonuses}
-            baseline={
-              selected !== undefined
-                ? itemById(originalId)?.facts?.equipment.bonuses
-                : undefined
-            }
+            baseline={itemById(originalId)?.facts?.equipment.bonuses}
             title={multi ? "Item bonuses only" : "Item bonuses"}
           />
         )}
@@ -644,25 +667,15 @@ function LiveItemInspector() {
       )}
       {facts && (
         <>
-          <div className="button-row">
-            <button
-              disabled={
-                !canLock ||
-                isSlotLocked ||
-                facts.slot !== physicalSlot ||
-                (id !== null && excluded.has(id))
-              }
-              onClick={() => lockItem(id)}
-            >
-              Lock {slot} to #{id}
-            </button>
-            <button
-              disabled={id === null || excluded.has(id)}
-              onClick={excludeItem}
-            >
-              {isLocked ? "Unlock and exclude" : "Exclude item"} in draft
-            </button>
-          </div>
+          {selected === undefined && (multi || !current.trial) && (
+            <details className="item-metadata">
+              <summary>{multi ? "Item bonuses only" : "Item bonuses"}</summary>
+              <EquipmentBonuses
+                bonuses={facts.equipment.bonuses}
+                title={multi ? "Item bonuses only" : "Item bonuses"}
+              />
+            </details>
+          )}
           <details className="item-metadata">
             <summary>Item facts, requirements and provenance</summary>{" "}
             <dl>

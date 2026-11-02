@@ -10,6 +10,7 @@ import type {
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import { selectedCombatOptions } from "../api/combatOptions";
+import type { SavedResult, SavedResults } from "./resultStorage";
 export const newRole = (index: number) => ({
   id: `role-${index}`,
   name: `Configuration ${index}`,
@@ -435,6 +436,7 @@ export interface WorkspaceState {
   generation: number;
   pending: boolean;
   error: string | null;
+  errorIsValidation: boolean;
   runNotice: string | null;
   outdated: boolean;
   activeRole: string;
@@ -456,6 +458,7 @@ const workspace = (): WorkspaceState => ({
   generation: 0,
   pending: false,
   error: null,
+  errorIsValidation: false,
   runNotice: null,
   outdated: false,
   activeRole: "role-1",
@@ -485,6 +488,7 @@ export type Action =
       type: "restore";
       drafts: { single: Draft; multi: Draft; multiSeeded: boolean };
     }
+  | { type: "restore-results"; results: SavedResults }
   | { type: "edit"; mode: Workspace; draft: Draft }
   | { type: "start"; mode: Workspace; scenario: Scenario; generation: number }
   | {
@@ -493,7 +497,13 @@ export type Action =
       generation: number;
       result: OptimizationReply;
     }
-  | { type: "error"; mode: Workspace; generation: number; error: string }
+  | {
+      type: "error";
+      mode: Workspace;
+      generation: number;
+      error: string;
+      validation?: boolean;
+    }
   | { type: "cancel"; mode: Workspace }
   | {
       type: "ui";
@@ -532,7 +542,44 @@ function clearedTrial(current: WorkspaceState) {
     trialGeneration: current.trialGeneration + 1,
   };
 }
+function resultIsStale(
+  result: OptimizationReply,
+  context: GearContext | null,
+): boolean {
+  if (!context) return true;
+  return (
+    result.snapshotId !== context.snapshotId ||
+    (!!context.live &&
+      (result.catalogVersion !== context.live.catalog_version ||
+        result.modelVersion !== context.live.model_version ||
+        result.priceRevision !== context.live.price_revision))
+  );
+}
 export function reducer(state: State, action: Action): State {
+  if (action.type === "restore-results")
+    return {
+      ...state,
+      ...Object.fromEntries(
+        (Object.entries(action.results) as [Workspace, SavedResult][])
+          .filter(
+            ([mode, saved]) =>
+              !state[mode].result &&
+              saved.result.snapshotId === state.context?.snapshotId,
+          )
+          .map(([mode, saved]) => [
+            mode,
+            {
+              ...state[mode],
+              result: saved.result,
+              submitted: saved.result.scenario,
+              solutionId: saved.solutionId,
+              activeRole: saved.result.scenario.request.roles[0].id,
+              outdated:
+                saved.outdated || resultIsStale(saved.result, state.context),
+            },
+          ]),
+      ),
+    };
   if (action.type === "context")
     return {
       ...state,
@@ -559,14 +606,7 @@ export function reducer(state: State, action: Action): State {
             outdated:
               state[mode].outdated ||
               (!!state[mode].result &&
-                (state[mode].result.snapshotId !== action.context.snapshotId ||
-                  (!!action.context.live &&
-                    (state[mode].result.catalogVersion !==
-                      action.context.live.catalog_version ||
-                      state[mode].result.modelVersion !==
-                        action.context.live.model_version ||
-                      state[mode].result.priceRevision !==
-                        action.context.live.price_revision)))),
+                resultIsStale(state[mode].result, action.context)),
           },
         ]),
       ),
@@ -685,6 +725,7 @@ export function reducer(state: State, action: Action): State {
         generation: current.generation + 1,
         pending: false,
         error: null,
+        errorIsValidation: false,
         runNotice: current.pending
           ? "Run cancelled because settings changed. Run again when you're ready."
           : current.runNotice,
@@ -699,6 +740,7 @@ export function reducer(state: State, action: Action): State {
         generation: action.generation,
         pending: true,
         error: null,
+        errorIsValidation: false,
         runNotice: null,
         ...clearedTrial(current),
       };
@@ -792,7 +834,12 @@ export function reducer(state: State, action: Action): State {
       break;
     case "error":
       if (current.generation !== action.generation) return state;
-      next = { ...current, pending: false, error: action.error };
+      next = {
+        ...current,
+        pending: false,
+        error: action.error,
+        errorIsValidation: !!action.validation,
+      };
       break;
     case "cancel":
       next = {

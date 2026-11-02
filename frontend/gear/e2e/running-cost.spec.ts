@@ -20,8 +20,7 @@ test("mage cost comparison shows staff rune savings and selects its setup", asyn
     page.getByRole("heading", { name: "DPS and running cost" }),
   ).toBeVisible();
   const choose = page.getByRole("button", {
-    name: "Select cost tradeoff 1",
-    exact: true,
+    name: /^Select cost tradeoff 1: /,
   });
   await expect(choose).toBeVisible();
   await choose.click();
