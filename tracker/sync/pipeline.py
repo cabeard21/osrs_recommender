@@ -19,6 +19,7 @@ from tracker.db.persist_prices import DatabasePriceCache, persist_prices
 from tracker.db.repository import get_player_by_username
 from tracker.domain.types import Source
 from tracker.gear.catalog import load_catalog
+from tracker.gear.running_costs import resource_item_ids
 from tracker.gear.support import project_catalog
 from tracker.integrations.prices.cache import resolve_prices
 from tracker.integrations.prices.client import PricesClient
@@ -48,7 +49,7 @@ def _price_scope(content: Content) -> frozenset[int]:
         and not item.unsupported_effects
         and (item.requirements_complete or item.id in catalog.community_assumptions)
     )
-    return scoped_item_ids(content) | supported
+    return scoped_item_ids(content) | supported | resource_item_ids()
 
 
 def _refresh_prices(

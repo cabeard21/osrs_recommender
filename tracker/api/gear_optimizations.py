@@ -86,12 +86,17 @@ def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
 
 def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
     """Identify both requested inputs and the effective, server-owned search policy."""
+    from tracker.gear.running_frontier import running_cost_policy
+
     return hashlib.sha256(
         json.dumps(
             {
                 "scenario": body.model_dump(mode="json"),
                 "work_budget_policy": work_budget_policy(body).model_dump(mode="json"),
                 "frontier_policy": frontier_policy(body),
+                "running_cost_policy": running_cost_policy(
+                    body, thorough=body.optimization_mode == "thorough"
+                ),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -99,11 +104,36 @@ def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
     ).hexdigest()
 
 
+class RunningResource(DTO):
+    item_id: int
+    name: str
+    required_quantity: float
+    consumed_quantity: float
+    supplied_quantity: float
+    supplied_by: str | None = None
+    unit_price_gp: float | None = None
+    price_layer: str
+    price_confidence: str | None = None
+    price_trade_at: str | None = None
+
+
+class RunningCost(DTO):
+    status: Literal["known", "unavailable"]
+    model_version: str | None = None
+    gp_per_attack: float | None
+    gp_per_second: float | None = None
+    gp_per_hour: float | None
+    gp_per_damage: float | None
+    resources: list[RunningResource]
+    reasons: list[str]
+
+
 class Loadout(DTO):
     equipment: dict[str, int]
     performance: CombatPerformance
     combat_option: dict[str, Any] | None = None
     discipline: Literal["melee", "ranged", "magic"] | None = None
+    running_cost: RunningCost | None = None
 
 
 class DisciplineComparison(DTO):
@@ -153,6 +183,7 @@ class Solution(DTO):
     remaining_inventory_slots: int
     reserved_supply_slots: int
     maximum_actions: int
+    running_cost: RunningCost | None = None
 
 
 class CurvePoint(DTO):
@@ -177,12 +208,29 @@ class SecondaryFrontier(DTO):
     sampled: bool = False
 
 
+class RunningCostPoint(DTO):
+    id: str
+    solution: Solution
+    dps_loss: float
+    dps_loss_pct: float | None
+
+
+class RunningCostFrontier(DTO):
+    swap_limit: int | None
+    baseline_dps: float | None
+    baseline_solution: Solution | None = None
+    points: list[RunningCostPoint]
+    sampled: bool = False
+
+
 class DisciplineResult(DisciplineComparison):
     selected_solution: Solution | None
     secondary_frontiers: list[SecondaryFrontier]
     search: dict[str, Any]
     alternatives: dict[str, list[dict[str, Any]]]
     limitations: list[str]
+    running_cost_frontiers: list[RunningCostFrontier] = Field(default_factory=list)
+    running_cost_policy: dict[str, Any] | None = None
 
 
 class OptimizationResult(DTO):
@@ -211,6 +259,8 @@ class OptimizationResult(DTO):
     limitations: list[str]
     discipline_comparison: list[DisciplineComparison] = Field(default_factory=list)
     discipline_results: list[DisciplineResult] = Field(default_factory=list)
+    running_cost_frontiers: list[RunningCostFrontier] = Field(default_factory=list)
+    running_cost_policy: dict[str, Any] | None = None
 
 
 class OptimizationResponse(DTO):
@@ -220,6 +270,7 @@ class OptimizationResponse(DTO):
     secondary_priority: SecondaryPriority
     work_budget_policy: WorkBudgetPolicy
     frontier_policy: dict[str, Any] | None = None
+    running_cost_policy: dict[str, Any] | None = None
     scenario: BrowserOptimizationRequest
     scenario_fingerprint: str
     price_revision: str
@@ -372,12 +423,19 @@ def calculate(
         else:
             reasons.extend(calculated.limitations)
     referenced = {r["item_id"] for r in result["items"]} | set(projection.equipment.values())
+    for branch in [result, *result.get("discipline_results", [])]:
+        for group in branch.get("running_cost_frontiers", []):
+            solutions = [p["solution"] for p in group["points"]]
+            if group.get("baseline_solution") is not None:
+                solutions.append(group["baseline_solution"])
+            referenced.update(i for solution in solutions for i in solution["carried_item_ids"])
     return OptimizationResponse(
         evaluated_at=now,
         optimization_mode=body.optimization_mode,
         secondary_priority=body.secondary_priority,
         work_budget_policy=policy,
         frontier_policy=frontier_policy(body),
+        running_cost_policy=result.get("running_cost_policy"),
         scenario=body,
         scenario_fingerprint=scenario_fingerprint(body),
         price_revision=hashlib.sha256(

@@ -230,7 +230,37 @@ export interface JointTransitionDTO {
   changed_slots: number;
   max_gear_inventory_slots: number;
 }
+export interface RunningCost {
+  status: "known" | "unavailable";
+  gp_per_attack: number | null;
+  gp_per_hour: number | null;
+  gp_per_damage: number | null;
+  resources: {
+    item_id: number;
+    name: string;
+    required_quantity: number;
+    consumed_quantity: number;
+    supplied_quantity: number;
+    supplied_by: string | null;
+    unit_price_gp: number | null;
+    price_layer: string;
+  }[];
+  reasons: string[];
+}
+export interface RunningCostFrontierGroup {
+  swap_limit: number | null;
+  baseline_dps: number | null;
+  baseline_solution?: JointSolutionDTO | null;
+  sampled: boolean;
+  points: {
+    id: string;
+    solution: JointSolutionDTO;
+    dps_loss: number;
+    dps_loss_pct: number | null;
+  }[];
+}
 export interface JointSolutionDTO {
+  running_cost?: RunningCost;
   secondary_priority?: SecondaryPriority;
   secondary_value?: number | null;
   score: number;
@@ -240,6 +270,7 @@ export interface JointSolutionDTO {
       equipment: Record<string, number>;
       performance: CombatPerformance;
       combat_option?: CombatOption;
+      running_cost?: RunningCost;
       discipline?: Style;
     }
   >;
@@ -275,6 +306,7 @@ export interface DisciplineResult {
   purchase_cost_gp: number | null;
   selected_solution: JointSolutionDTO | null;
   secondary_frontiers: SecondaryFrontierGroup[];
+  running_cost_frontiers?: RunningCostFrontierGroup[];
   search: Record<string, unknown>;
   limitations: string[];
   alternatives: NonNullable<OptimizationDTO["result"]["alternatives"]>;
@@ -359,6 +391,8 @@ export interface OptimizationDTO {
     >;
     frontier_policy?: Record<string, unknown> | null;
     secondary_frontiers?: SecondaryFrontierGroup[];
+    running_cost_frontiers?: RunningCostFrontierGroup[];
+    running_cost_policy?: Record<string, unknown>;
     discipline_results?: DisciplineResult[];
     discipline_comparison?: {
       discipline: Style;

@@ -1,5 +1,6 @@
 """Disposable real FastAPI + NiceGUI server for preview acceptance tests."""
 
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -153,5 +154,41 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-running-cost")
+        def seed_running_cost():
+            seed_joint()
+            now = datetime.now(UTC)
+            with factory() as session:
+                for item_id, price in (
+                    (556, 5),
+                    (555, 5),
+                    (557, 5),
+                    (554, 5),
+                    (558, 4),
+                    (562, 50),
+                    (560, 100),
+                    (565, 200),
+                    (21880, 250),
+                ):
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=price,
+                            low_price_gp=price,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
         _mount_ui(app, app.state.settings)
-        uvicorn.run(app, host="127.0.0.1", port=8766, log_level="warning")
+        uvicorn.run(
+            app,
+            host="127.0.0.1",
+            port=int(os.environ.get("GEAR_E2E_PORT", "8766")),
+            log_level="warning",
+        )
