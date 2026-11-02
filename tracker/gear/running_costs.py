@@ -129,7 +129,7 @@ def _resource(
         "supplied_quantity": supplied,
         "supplied_by": supplier,
         "unit_price_gp": 1 if item_id == 995 else quote.gp if quote else 0,
-        "price_layer": "fixed" if item_id == 995 else str(quote.layer) if quote else "free",
+        "price_layer": "fixed" if item_id == 995 else quote.layer.value if quote else "free",
         "price_confidence": str(quote.confidence) if quote else None,
         "price_trade_at": quote.trade_at.isoformat() if quote and quote.trade_at else None,
     }

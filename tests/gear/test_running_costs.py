@@ -64,6 +64,12 @@ def test_missing_consumed_rune_price_is_not_free():
     assert result["reasons"]
 
 
+def test_price_layer_is_a_display_value_not_an_enum_repr():
+    consumed = [row for row in evaluate()["resources"] if row["consumed_quantity"] > 0]
+    assert consumed
+    assert all("PriceSourceLayer" not in row["price_layer"] for row in consumed)
+
+
 def test_zero_dps_keeps_attack_price_but_not_efficiency():
     result = evaluate(dps=0)
     assert result["gp_per_attack"] == 15

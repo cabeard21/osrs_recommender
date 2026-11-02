@@ -74,7 +74,7 @@ it("shows casting costs, free runes, spell and selectable points", async () => {
   ).toBeGreaterThan(0);
   expect(screen.getByText(/fire strike/i)).toBeInTheDocument();
   await userEvent.click(
-    screen.getByRole("button", { name: "Select cost tradeoff 1" }),
+    screen.getByRole("button", { name: /^Select cost tradeoff 1: / }),
   );
   expect(onSelect).toHaveBeenCalledWith("running-0-a");
 });
@@ -153,7 +153,7 @@ it("supports keyboard selection, paid resources, sampled data and unknown baseli
   ).toBeInTheDocument();
   expect(screen.getByText(/Showing a sample/)).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Select cost tradeoff 1" }),
+    screen.getByRole("button", { name: /^Select cost tradeoff 1: / }),
   ).toHaveTextContent("Highest priced DPS");
   const chart = screen.getByRole("button", {
     name: "Select cost chart tradeoff 1",

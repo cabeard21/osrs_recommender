@@ -149,7 +149,7 @@ it("renders actual results, baseline and immutable scenarios, then preserves a c
   ).toHaveTextContent("2.35");
   expect(
     screen.getByLabelText("Calculated combat performance"),
-  ).toHaveTextContent("2.4 seconds");
+  ).toHaveTextContent("4 ticks (2.4s)");
   expect(
     screen.queryByRole("heading", { name: "Current equipment comparison" }),
   ).not.toBeInTheDocument();

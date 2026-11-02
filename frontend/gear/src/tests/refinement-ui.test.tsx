@@ -191,7 +191,7 @@ it("locks an inspected alternative only in the draft", async () => {
   await user.click(region.getByRole("button", { name: "Try Rune scimitar" }));
   await screen.findByRole("heading", { name: "Rune scimitar" });
   await user.click(
-    screen.getByRole("button", { name: "Lock weapon to #1333" }),
+    screen.getByRole("button", { name: "Lock weapon to Rune scimitar" }),
   );
   expect(edit.mock.calls[0][0].roles[0].locks).toEqual({ weapon: 1333 });
   expect(result.solutions[0].loadouts[0].equipment).toEqual(equipment);
@@ -201,7 +201,7 @@ it("locks an inspected alternative only in the draft", async () => {
 it("filters exclusions from alternatives and requires correction before locking an excluded item", async () => {
   setupInspector({ exclusions: [4151, 1333] });
   expect(
-    await screen.findByRole("button", { name: "Lock weapon to #4151" }),
+    await screen.findByRole("button", { name: /^Lock weapon to / }),
   ).toBeDisabled();
   expect(
     screen.getByRole("button", { name: "Exclude item in draft" }),

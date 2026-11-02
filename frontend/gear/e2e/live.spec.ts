@@ -43,7 +43,7 @@ test("live browser uses real account endpoints, preserves uncertain equipment an
   expect(result.status(), await result.text()).toBe(202);
   await page.getByRole("button", { name: "Refresh account" }).click();
   await expect(
-    page.getByRole("heading", { name: "Account observations" }),
+    page.getByRole("heading", { name: "Account", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Find your best configuration" }),

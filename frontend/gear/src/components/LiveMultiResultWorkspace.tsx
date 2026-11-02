@@ -3,8 +3,8 @@ import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
-import { emptyEquipment, slots } from "../api/contracts";
-import type { Equipment, JointSolutionDTO, Slot } from "../api/contracts";
+import { slots } from "../api/contracts";
+import type { JointSolutionDTO, Slot } from "../api/contracts";
 import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
@@ -13,23 +13,13 @@ import { purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
+import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import {
   JointInventory,
   JointPurchases,
   JointTransition,
 } from "./JointSolutionDetails";
 
-function equipmentFor(equipment: Record<string, number>): Equipment {
-  return {
-    ...emptyEquipment(),
-    ...Object.fromEntries(
-      Object.entries(equipment).map(([slot, id]) => [
-        slot === "ammunition" ? "ammo" : slot,
-        id,
-      ]),
-    ),
-  };
-}
 function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
   const counts = new Map<number, number>();
   for (const role of roles) {
@@ -40,11 +30,11 @@ function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
 }
 
 export function LiveMultiResultWorkspace() {
-  const { current, dispatch, itemById } = useGear();
+  const { state, current, dispatch, itemById } = useGear();
   const result = current.result;
   if (!result?.live)
     return (
-      <section className="panel">
+      <section className="panel empty-result">
         <h2>Configure a joint optimization</h2>
         <p>
           Add two to four configurations, then run one joint optimization. All
@@ -85,6 +75,7 @@ export function LiveMultiResultWorkspace() {
     >,
   ) => dispatch({ type: "ui", mode: "multi", patch });
   const shared = solution ? sharedIds(solution, roleIds) : [];
+  const isUnsynced = !state.context?.live?.account?.last_sync_at;
   function equipmentCard(id: string) {
     if (!solution?.loadouts[id]) return null;
     const loadout = solution.loadouts[id];
@@ -172,10 +163,13 @@ export function LiveMultiResultWorkspace() {
           Differs from another configuration: {differences.join(", ") || "None"}
           .
         </p>
-        <EquipmentBonuses
-          bonuses={performance.bonuses}
-          title={`${role.name} equipment bonuses`}
-        />
+        <details>
+          <summary>{role.name} equipment bonuses</summary>
+          <EquipmentBonuses
+            bonuses={performance.bonuses}
+            title={`${role.name} equipment bonuses`}
+          />
+        </details>
         <details>
           <summary>Role assumptions</summary>
           <pre className="fact-json">
@@ -185,126 +179,80 @@ export function LiveMultiResultWorkspace() {
       </section>
     );
   }
+  const curvePanel = (
+    <section className="panel">
+      <label>
+        Swap-efficiency curve point
+        <select
+          value={
+            point
+              ? `curve-${point.swap_limit}`
+              : frontierGroup?.swap_limit != null
+                ? `curve-${frontierGroup.swap_limit}`
+                : current.solutionId
+          }
+          onChange={(e) => ui({ solutionId: e.target.value })}
+        >
+          {curve.map((p) => (
+            <option key={p.swap_limit} value={`curve-${p.swap_limit}`}>
+              {p.swap_limit} equipment-action limit ·{" "}
+              {p.solution
+                ? `${p.solution.score.toFixed(2)} weighted DPS`
+                : "No feasible solution found"}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p>
+        Only computed points are shown. Selection changes the displayed solution
+        without running optimization.
+      </p>
+      {point?.relative_performance !== null &&
+        point?.relative_performance !== undefined && (
+          <p>
+            Selected point: {(point.relative_performance * 100).toFixed(1)}% of
+            the best-found reference.
+          </p>
+        )}
+      <p>
+        Best found without the swap-action limit:{" "}
+        {raw.unrestricted
+          ? `${raw.unrestricted.score.toFixed(2)} weighted DPS`
+          : "Unavailable"}
+        . Account, acquisition, inventory and model constraints still apply.
+      </p>
+      {raw.suggested_swap_limit != null &&
+        curve.some(
+          (p) => p.swap_limit === raw.suggested_swap_limit && p.solution,
+        ) && (
+          <p>
+            Suggested: {raw.suggested_swap_limit} equipment actions for at least
+            95% of the best-found reference. This does not change the selected
+            point.
+          </p>
+        )}
+    </section>
+  );
   return (
     <div className="result-column">
-      {roles.some((role) => role.style === "magic") && (
-        <RunningCostFrontier
-          group={
-            raw.running_cost_frontiers?.find((g) =>
-              g.points.some((p) => p.id === current.solutionId),
-            ) ??
-            raw.running_cost_frontiers?.find(
-              (g) =>
-                g.swap_limit ===
-                (current.solutionId === "unrestricted"
-                  ? null
-                  : (point?.swap_limit ?? result.scenario.request.max_swaps)),
-            )
-          }
-          selectedId={current.solutionId}
-          selected={solution}
-          itemName={itemName}
-          onSelect={(solutionId) => ui({ solutionId })}
-        />
+      {current.outdated && (
+        <p role="status" className="notice">
+          Result outdated — draft inputs, account, prices, catalog or model
+          changed. The original submitted result remains displayed.
+        </p>
       )}
-      <SecondaryFrontier
-        group={frontierGroup}
-        selectedId={current.solutionId}
-        priority={result.scenario.request.secondary_priority ?? "default"}
-        onSelect={(solutionId) => ui({ solutionId })}
-      />
-      <section className="panel result-context">
-        <span className="eyebrow gold">Submitted joint scenario</span>
-        <h2>Best joint configuration found</h2>
-        <p>
-          {roles.length} configurations ·{" "}
-          {result.scenario.request.budget_gp.toLocaleString()} GP additional
-          budget · {result.scenario.request.mode}
+      {result.scenario.request.mode === "future" && (
+        <p className="notice">
+          Hypothetical submitted result · assumptions retained with this result.
         </p>
-        {current.outdated && (
-          <p role="status" className="notice">
-            Result outdated — draft inputs, account, prices, catalog or model
-            changed. The original submitted result remains displayed.
-          </p>
-        )}
-        {result.scenario.request.mode === "future" && (
-          <p className="notice">
-            Hypothetical submitted result · assumptions retained with this
-            result.
-          </p>
-        )}
-        <details>
-          <summary>Result provenance and submitted scenario</summary>
-          <p>Account: {result.snapshotId}</p>
-          <p>Catalog: {result.catalogVersion}</p>
-          <p>Model: {result.modelVersion}</p>
-          <p>Prices: {result.priceRevision}</p>
-          <p>Evaluated: {result.evaluatedAt}</p>
-          <p>Scenario: {result.fingerprint}</p>
-          <p>Assumptions: {raw.assumptions_fingerprint}</p>
-          <pre className="fact-json">
-            {JSON.stringify(result.live.scenario, null, 2)}
-          </pre>
-        </details>
-      </section>
-      <section className="panel">
-        <label>
-          Swap-efficiency curve point
-          <select
-            value={
-              point
-                ? `curve-${point.swap_limit}`
-                : frontierGroup?.swap_limit != null
-                  ? `curve-${frontierGroup.swap_limit}`
-                  : current.solutionId
-            }
-            onChange={(e) => ui({ solutionId: e.target.value })}
-          >
-            {curve.map((p) => (
-              <option key={p.swap_limit} value={`curve-${p.swap_limit}`}>
-                {p.swap_limit} equipment-action limit ·{" "}
-                {p.solution
-                  ? `${p.solution.score.toFixed(2)} weighted DPS`
-                  : "No feasible solution found"}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p>
-          Only computed points are shown. Selection changes the displayed
-          solution without running optimization.
-        </p>
-        {point?.relative_performance !== null &&
-          point?.relative_performance !== undefined && (
-            <p>
-              Selected point: {(point.relative_performance * 100).toFixed(1)}%
-              of the best-found reference.
-            </p>
-          )}
-        <p>
-          Best found without the swap-action limit:{" "}
-          {raw.unrestricted
-            ? `${raw.unrestricted.score.toFixed(2)} weighted DPS`
-            : "Unavailable"}
-          . Account, acquisition, inventory and model constraints still apply.
-        </p>
-        {raw.suggested_swap_limit != null &&
-          curve.some(
-            (p) => p.swap_limit === raw.suggested_swap_limit && p.solution,
-          ) && (
-            <p>
-              Suggested: {raw.suggested_swap_limit} equipment actions for at
-              least 95% of the best-found reference. This does not change the
-              selected point.
-            </p>
-          )}
-      </section>
+      )}
       {solution ? (
         <>
-          <section className="panel">
-            <h2>Joint performance</h2>
+          <section className={`panel ${current.outdated ? "is-stale" : ""}`}>
+            <h2>Best joint configuration found</h2>
+            <h3>Joint performance</h3>
             <strong
-              className="gold numeric"
+              className="verdict-dps gold numeric"
               aria-label="Weighted aggregate DPS"
             >
               {solution.score.toFixed(2)}
@@ -325,6 +273,63 @@ export function LiveMultiResultWorkspace() {
             </p>
           </section>
           <div className="comparison-grid">{roleIds.map(equipmentCard)}</div>
+          <JointPurchases
+            solution={solution}
+            identity={`${result.fingerprint}:${current.solutionId}:${result.priceRevision}`}
+            itemName={itemName}
+          />
+          {curvePanel}
+        </>
+      ) : (
+        <>
+          <section className="panel">
+            <h2>No feasible solution found within this search</h2>
+            {isUnsynced && (
+              <p className="notice">
+                No account data has been synced, so nothing can be confirmed as
+                owned or wearable. Sync with RuneLite, then refresh your
+                account.
+              </p>
+            )}
+            <p>
+              No legal combat configuration may satisfy the selected filters and
+              equipment constraints. Select another computed point or revise
+              constraints and rerun. Bounded search does not prove mathematical
+              infeasibility.
+            </p>
+          </section>
+          {curvePanel}
+        </>
+      )}
+      {roles.some((role) => role.style === "magic") && (
+        <RunningCostFrontier
+          group={
+            raw.running_cost_frontiers?.find((g) =>
+              g.points.some((p) => p.id === current.solutionId),
+            ) ??
+            raw.running_cost_frontiers?.find(
+              (g) =>
+                g.swap_limit ===
+                (current.solutionId === "unrestricted"
+                  ? null
+                  : (point?.swap_limit ?? result.scenario.request.max_swaps)),
+            )
+          }
+          selectedId={current.solutionId}
+          selected={solution}
+          itemName={itemName}
+          roleName={roleName}
+          onSelect={(solutionId) => ui({ solutionId })}
+        />
+      )}
+      <SecondaryFrontier
+        group={frontierGroup}
+        selectedId={current.solutionId}
+        priority={result.scenario.request.secondary_priority ?? "default"}
+        onSelect={(solutionId) => ui({ solutionId })}
+      />
+      {solution && (
+        <>
           <section className="panel">
             <h2>Shared physical equipment</h2>
             <p className="green">
@@ -344,23 +349,29 @@ export function LiveMultiResultWorkspace() {
             roles={roles}
             itemName={itemName}
           />
-          <JointPurchases
-            solution={solution}
-            identity={`${result.fingerprint}:${current.solutionId}:${result.priceRevision}`}
-            itemName={itemName}
-          />
         </>
-      ) : (
-        <section className="panel">
-          <h2>No feasible solution found within this search</h2>
-          <p>
-            No legal combat configuration may satisfy the selected filters and
-            equipment constraints. Select another computed point or revise
-            constraints and rerun. Bounded search does not prove mathematical
-            infeasibility.
-          </p>
-        </section>
       )}
+      <section className="panel result-context">
+        <span className="eyebrow gold">This result used</span>
+        <p>
+          {roles.length} configurations ·{" "}
+          {result.scenario.request.budget_gp.toLocaleString()} GP additional
+          budget · {EQUIPMENT_ACCESS_LABELS[result.scenario.request.mode]}
+        </p>
+        <details>
+          <summary>Result provenance and submitted scenario</summary>
+          <p>Account: {result.snapshotId}</p>
+          <p>Catalog: {result.catalogVersion}</p>
+          <p>Model: {result.modelVersion}</p>
+          <p>Prices: {result.priceRevision}</p>
+          <p>Evaluated: {result.evaluatedAt}</p>
+          <p>Scenario: {result.fingerprint}</p>
+          <p>Assumptions: {raw.assumptions_fingerprint}</p>
+          <pre className="fact-json">
+            {JSON.stringify(result.live.scenario, null, 2)}
+          </pre>
+        </details>
+      </section>
       {current.previous && (
         <section className="panel">
           <h2>Previous joint result</h2>

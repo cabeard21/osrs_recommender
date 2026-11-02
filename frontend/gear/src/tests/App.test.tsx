@@ -21,10 +21,9 @@ async function run(user: ReturnType<typeof userEvent.setup>) {
 }
 it("preserves configuration across Single/Multi navigation and reload", async () => {
   const user = setup();
-  expect(screen.getByRole("link", { name: "Existing Gear" })).toHaveAttribute(
-    "href",
-    "/gear-legacy",
-  );
+  expect(
+    screen.getByRole("link", { name: "Legacy gear view" }),
+  ).toHaveAttribute("href", "/gear-legacy");
   const budget = await screen.findByLabelText(
     "Additional purchase budget (GP)",
   );

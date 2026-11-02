@@ -92,9 +92,7 @@ it("locks the inspected item globally without changing any role equipment", asyn
   const { edit } = setup();
   await screen.findByRole("heading", { name: "Rune scimitar" });
   await user.selectOptions(screen.getByLabelText("Lock scope"), "global");
-  await user.click(
-    screen.getByRole("button", { name: "Lock weapon to #1333" }),
-  );
+  await user.click(screen.getByRole("button", { name: /^Lock weapon to / }));
   expect(edit.mock.calls[0][0].globalLocks).toEqual({ weapon: 1333 });
   expect(
     edit.mock.calls[0][0].roles.every(
@@ -122,7 +120,7 @@ it("withholds a role lock if the submitted role was removed from the draft", asy
   gear.current.draft.roles = [gear.current.draft.roles[0]];
   rerender(<ItemInspector />);
   expect(
-    await screen.findByRole("button", { name: "Lock weapon to #1333" }),
+    await screen.findByRole("button", { name: /^Lock weapon to / }),
   ).toBeDisabled();
   expect(screen.getByText(/no longer exists in the draft/)).toBeVisible();
 });

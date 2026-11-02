@@ -25,6 +25,7 @@ import {
   contextIdentity,
   type Action,
 } from "./scenario";
+import { readResults, saveResults } from "./resultStorage";
 function useGearState(client: GearClient) {
   const [state, rawDispatch] = useReducer(reducer, undefined, initialState);
   const stateRef = useRef(state);
@@ -95,12 +96,18 @@ function useGearState(client: GearClient) {
       )
         Object.values(controllers.current).forEach((c) => c.abort());
       snapshotId.current = context.snapshotId;
-      if (!restored.current) {
+      const isFirstLoad = !restored.current;
+      if (isFirstLoad) {
         const drafts = readDrafts(context.playerId, sessionStorage);
         if (drafts) dispatch({ type: "restore", drafts });
         restored.current = true;
       }
       dispatch({ type: "context", context });
+      if (isFirstLoad && context.live)
+        dispatch({
+          type: "restore-results",
+          results: readResults(context.playerId, sessionStorage),
+        });
       setContextError(null);
     } catch (error) {
       if (generation === contextGeneration.current)
@@ -125,6 +132,29 @@ function useGearState(client: GearClient) {
     saveDrafts(state, sessionStorage);
   }, [state.single.draft, state.multi.draft, state.context, state.multiSeeded]);
   useEffect(() => {
+    if (!state.context?.live) return;
+    const { playerId, snapshotId: currentSnapshot } = state.context;
+    const saved = Object.fromEntries(
+      (["single", "multi"] as const).flatMap((mode) => {
+        const { result, solutionId, outdated } = state[mode];
+        // A result from another snapshot may belong to another account.
+        return result?.snapshotId === currentSnapshot
+          ? [[mode, { result, solutionId, outdated }]]
+          : [];
+      }),
+    );
+    saveResults(playerId, saved, sessionStorage);
+  }, [
+    state.context?.playerId,
+    state.context?.snapshotId,
+    state.single.result,
+    state.single.solutionId,
+    state.single.outdated,
+    state.multi.result,
+    state.multi.solutionId,
+    state.multi.outdated,
+  ]);
+  useEffect(() => {
     const navigate = () =>
       dispatch({
         type: "navigate",
@@ -148,6 +178,7 @@ function useGearState(client: GearClient) {
     const mode = state.mode,
       generation = current.generation + 1;
     let started = false;
+    let isValidating = true;
     try {
       if (current.pending) return;
       const live = !(client instanceof FixtureGearClient);
@@ -159,6 +190,7 @@ function useGearState(client: GearClient) {
         live,
         state.context,
       );
+      isValidating = false;
       const controller = new AbortController();
       controllers.current[mode]?.abort();
       controllers.current[mode] = controller;
@@ -180,6 +212,7 @@ function useGearState(client: GearClient) {
           mode,
           generation: started ? generation : current.generation,
           error: (error as Error).message,
+          validation: isValidating,
         });
     }
   }

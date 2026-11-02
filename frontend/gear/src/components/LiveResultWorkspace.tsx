@@ -5,7 +5,7 @@ import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
-import { emptyEquipment } from "../api/contracts";
+import { emptyEquipment, slots } from "../api/contracts";
 import type { OptimizationReply } from "../api/contracts";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
@@ -15,6 +15,8 @@ import { PurchaseRows, purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
+import { ResultVerdict } from "./ResultVerdict";
+import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 import { matchesOptimizationPolicy } from "../api/optimizationModes";
 
@@ -95,29 +97,30 @@ export function LiveResultWorkspace() {
         </p>
       </section>
     );
+  const baseline = result.live?.baseline;
+  const baselineEquipment =
+    baseline?.status === "available" ? equipmentFor(baseline.equipment) : null;
+  const changedSlots =
+    baselineEquipment && loadout
+      ? slots.filter(
+          (slot) => baselineEquipment[slot] !== loadout.equipment[slot],
+        )
+      : [];
+  const request = result.scenario.request;
+  const isComparableToPrevious = !!previous && comparable(previous, result);
+  // The previous run only offers its overall best, so tabs and tradeoff points have no peer.
+  const previousDps =
+    isComparableToPrevious && solution === result.solutions[0]
+      ? previous.solutions[0]?.loadouts[0]?.metrics?.dps
+      : undefined;
+  const isAttackStyleOptimized =
+    !!request.roles[0].autoDiscipline || !!request.roles[0].combatOptions;
+  const isUnsynced = !state.context?.live?.account?.last_sync_at;
+  const itemName = (id: number) => itemById(id)?.name ?? `Item #${id}`;
+  const roleName = (roleId: string) =>
+    request.roles.find((role) => role.id === roleId)?.name ?? "Loadout";
   return (
     <div className="result-column">
-      {result.live &&
-        ammoLoadout &&
-        (ammoLoadout.discipline === "ranged" ||
-          ammoLoadout.combat_option?.attack_type === "ranged" ||
-          result.scenario.request.roles[0].style === "ranged") && (
-          <AmmoComparison
-            scenario={result.live.scenario}
-            loadout={ammoLoadout.equipment}
-            combatOption={ammoLoadout.combat_option}
-            identity={{
-              snapshot_id: result.snapshotId,
-              catalog_version: result.catalogVersion,
-              price_revision: result.priceRevision,
-              model_version: result.modelVersion,
-              assumptions_fingerprint:
-                result.live.result.assumptions_fingerprint,
-              scenario_fingerprint: result.live.scenario_fingerprint,
-            }}
-            outdated={current.outdated}
-          />
-        )}
       {branches.length > 0 && (
         <DisciplineTabs
           disciplines={branches.map((row) => row.discipline)}
@@ -151,8 +154,140 @@ export function LiveResultWorkspace() {
             {branch.reasons.length ? `: ${branch.reasons.join(" ")}` : ""}
           </p>
         )}
-
-        {result.live?.result.discipline_comparison && (
+        {current.outdated && (
+          <p role="status" className="notice">
+            Result outdated — draft inputs, account, prices, catalog or model
+            changed. Re-run to use the draft and current context.
+          </p>
+        )}
+        {request.mode === "future" && (
+          <p className="notice">
+            Hypothetical submitted result · assumptions retained with this
+            result
+          </p>
+        )}
+        {loadout ? (
+          <section
+            className={`panel equipment-panel ${current.outdated ? "is-stale" : ""}`}
+          >
+            <div className="section-title">
+              <h2>
+                <Shield size={19} />
+                Best configuration found
+              </h2>
+              <span className="badge">
+                {previous ? "Reoptimized result" : "Optimized result"}
+              </span>
+            </div>
+            {loadout.metrics && (
+              <ResultVerdict
+                dps={loadout.metrics.dps}
+                baseline={baseline}
+                previousDps={previousDps}
+                isAttackStyleOptimized={isAttackStyleOptimized}
+              />
+            )}
+            {solution && (
+              <p className="result-cost">
+                {purchaseSummary(solution.purchases.length, solution.cost)}
+              </p>
+            )}
+            {loadout.metrics && (
+              <PerformanceSummary
+                metrics={loadout.metrics}
+                live
+                title="Calculated combat performance"
+              />
+            )}
+            <p>
+              Select any slot to inspect it. Best found, not guaranteed optimal.
+            </p>
+            <EquipmentGrid
+              equipment={loadout.equipment}
+              selected={current.slot}
+              onSelect={select}
+              optimized
+              purchaseIds={solution?.purchases}
+              roleId={loadout.roleId}
+              differences={changedSlots}
+              differenceLabel="Changed"
+            />
+            <CombatOptionSummary
+              performance={selected?.loadouts[loadout.roleId]?.performance}
+              option={loadout.combatOption}
+              role={request.roles[0]}
+              weapon={
+                itemById(loadout.equipment.weapon ?? -1)?.name ?? "Unarmed"
+              }
+            />
+            <details>
+              <summary>Equipment bonuses</summary>
+              <EquipmentBonuses
+                bonuses={
+                  selected?.loadouts[loadout.roleId]?.performance.bonuses
+                }
+              />
+            </details>
+          </section>
+        ) : (
+          <section className="panel">
+            <h2>No feasible solution found within this search</h2>
+            {isUnsynced && (
+              <p className="notice">
+                No account data has been synced, so nothing can be confirmed as
+                owned or wearable. Sync with RuneLite, then refresh your
+                account.
+              </p>
+            )}
+            <p>
+              No legal combat configuration may satisfy the selected filters and
+              equipment constraints. Change the options or other constraints and
+              run again. Bounded search does not prove that no legal
+              configuration exists.
+            </p>
+          </section>
+        )}
+        {solution && (
+          <section className="panel">
+            <h2>What to buy</h2>
+            <strong className="gold numeric">
+              {solution.cost.toLocaleString()} GP additional purchases
+            </strong>
+            <p>
+              {solution.purchases.length
+                ? "Concrete purchases counted once; cached estimates are not guaranteed execution prices."
+                : "No additional purchases required."}
+            </p>
+            <PurchaseRows
+              purchases={selected?.purchases ?? []}
+              itemName={itemName}
+            />
+            <PurchaseListCopy
+              key={`${result.fingerprint}:${result.priceRevision}:${current.solutionId}`}
+              purchases={selected?.purchases ?? []}
+              itemName={itemName}
+            />
+            <h3 className="eyebrow">Gear you already own</h3>
+            <p>
+              {Object.values(loadout!.equipment)
+                .filter((id) => id !== null && itemById(id)?.owned)
+                .map((id) => itemById(id)?.name)
+                .join(" · ") || "None confirmed"}
+            </p>
+            {request.assumed_item_ids.length > 0 && (
+              <p className="notice">
+                Hypothetically acquired IDs:{" "}
+                {request.assumed_item_ids.join(", ")}. Acquisition is assumed;
+                no account ownership changes.
+              </p>
+            )}
+            <p>
+              Inspect each item for ownership observations, missing prices and
+              selected price provenance.
+            </p>
+          </section>
+        )}
+        {!!result.live?.result.discipline_comparison?.length && (
           <section className="panel" aria-label="Combat discipline comparison">
             <h2>Combat discipline comparison</h2>
             <table>
@@ -186,10 +321,9 @@ export function LiveResultWorkspace() {
             </table>
           </section>
         )}
-
         {(branch
           ? branch.discipline === "magic"
-          : result.scenario.request.roles.some(
+          : request.roles.some(
               (role) =>
                 role.style === "magic" ||
                 (role.autoDiscipline &&
@@ -201,10 +335,11 @@ export function LiveResultWorkspace() {
             group={(
               branch?.running_cost_frontiers ??
               result.live?.result.running_cost_frontiers
-            )?.find((g) => g.swap_limit === result.scenario.request.max_swaps)}
+            )?.find((g) => g.swap_limit === request.max_swaps)}
             selectedId={current.solutionId}
             selected={selected}
-            itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
+            itemName={itemName}
+            roleName={roleName}
             onSelect={(solutionId) =>
               dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
             }
@@ -214,42 +349,49 @@ export function LiveResultWorkspace() {
           group={(
             branch?.secondary_frontiers ??
             result.live?.result.secondary_frontiers
-          )?.find((g) => g.swap_limit === result.scenario.request.max_swaps)}
+          )?.find((g) => g.swap_limit === request.max_swaps)}
           selectedId={current.solutionId}
-          priority={result.scenario.request.secondary_priority ?? "default"}
+          priority={request.secondary_priority ?? "default"}
           onSelect={(solutionId) =>
             dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
           }
         />
+        {result.live &&
+          ammoLoadout &&
+          (ammoLoadout.discipline === "ranged" ||
+            ammoLoadout.combat_option?.attack_type === "ranged" ||
+            request.roles[0].style === "ranged") && (
+            <AmmoComparison
+              scenario={result.live.scenario}
+              loadout={ammoLoadout.equipment}
+              combatOption={ammoLoadout.combat_option}
+              identity={{
+                snapshot_id: result.snapshotId,
+                catalog_version: result.catalogVersion,
+                price_revision: result.priceRevision,
+                model_version: result.modelVersion,
+                assumptions_fingerprint:
+                  result.live.result.assumptions_fingerprint,
+                scenario_fingerprint: result.live.scenario_fingerprint,
+              }}
+              outdated={current.outdated}
+            />
+          )}
         <section className="panel result-context">
-          <span className="eyebrow gold">Submitted scenario</span>
-          <strong>{result.scenario.request.target.name}</strong>
+          <span className="eyebrow gold">This result used</span>
+          <strong>{request.target.name}</strong>
           <p>
-            {result.scenario.request.target.defence} defence ·{" "}
-            {result.scenario.request.budget_gp.toLocaleString()} GP additional
-            budget · {result.scenario.request.mode}
-          </p>
-          <p>
-            {result.scenario.request.roles[0].autoDiscipline
+            {request.target.defence} defence ·{" "}
+            {request.budget_gp.toLocaleString()} GP additional budget ·{" "}
+            {EQUIPMENT_ACCESS_LABELS[request.mode]} ·{" "}
+            {request.roles[0].autoDiscipline
               ? `Auto selected ${Object.values(result.live?.result.selected_solution?.loadouts ?? {})[0]?.discipline ?? "no discipline"}`
-              : `${result.scenario.request.roles[0].style} combat`}{" "}
+              : `${request.roles[0].style} combat`}{" "}
             ·{" "}
-            {result.scenario.request.roles[0].combatOptions
-              ? "option selection enabled"
-              : "fixed option"}
+            {request.roles[0].combatOptions
+              ? "attack style chosen automatically"
+              : "fixed attack style"}
           </p>
-          {current.outdated && (
-            <p role="status" className="notice">
-              Result outdated — draft inputs, account, prices, catalog or model
-              changed. Re-run to use the draft and current context.
-            </p>
-          )}
-          {result.scenario.request.mode === "future" && (
-            <p className="notice">
-              Hypothetical submitted result · assumptions retained with this
-              result
-            </p>
-          )}
           <details>
             <summary>Submitted constraints and assumptions</summary>
             <pre className="fact-json">
@@ -257,101 +399,6 @@ export function LiveResultWorkspace() {
             </pre>
           </details>
         </section>
-        {loadout ? (
-          <section className="panel equipment-panel">
-            <div className="section-title">
-              <h2>
-                <Shield size={19} />
-                Best configuration found
-              </h2>
-              <span className="badge">
-                {previous ? "Reoptimized result" : "Optimized result"}
-              </span>
-            </div>
-            {loadout.metrics && (
-              <PerformanceSummary
-                metrics={loadout.metrics}
-                live
-                title="Calculated combat performance"
-              />
-            )}
-            {solution && (
-              <p className="result-cost">
-                {purchaseSummary(solution.purchases.length, solution.cost)}
-              </p>
-            )}
-            <p>Bounded search · select any slot to inspect its item.</p>
-            <EquipmentGrid
-              equipment={loadout.equipment}
-              selected={current.slot}
-              onSelect={select}
-              optimized
-              purchaseIds={solution?.purchases}
-              roleId={loadout.roleId}
-            />
-            <CombatOptionSummary
-              performance={selected?.loadouts[loadout.roleId]?.performance}
-              option={loadout.combatOption}
-              role={result.scenario.request.roles[0]}
-              weapon={
-                itemById(loadout.equipment.weapon ?? -1)?.name ?? "Unarmed"
-              }
-            />
-            <EquipmentBonuses
-              bonuses={selected?.loadouts[loadout.roleId]?.performance.bonuses}
-            />
-          </section>
-        ) : (
-          <section className="panel">
-            <h2>No feasible solution found within this search</h2>
-            <p>
-              No legal combat configuration may satisfy the selected filters and
-              equipment constraints. Change the options or other constraints and
-              run again. Bounded search does not prove that no legal
-              configuration exists.
-            </p>
-          </section>
-        )}
-        {solution && (
-          <section className="panel">
-            <h2>Acquisition requirements</h2>
-            <strong className="gold numeric">
-              {solution.cost.toLocaleString()} GP additional purchases
-            </strong>
-            <p>
-              {solution.purchases.length
-                ? "Concrete purchases counted once; cached estimates are not guaranteed execution prices."
-                : "No additional purchases required."}
-            </p>
-            <PurchaseRows
-              purchases={selected?.purchases ?? []}
-              itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
-            />
-            <PurchaseListCopy
-              key={`${result.fingerprint}:${result.priceRevision}:${current.solutionId}`}
-              purchases={selected?.purchases ?? []}
-              itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
-            />
-            <h3 className="eyebrow">Reused observed owned equipment</h3>
-            <p>
-              {Object.values(loadout!.equipment)
-                .filter((id) => id !== null && itemById(id)?.owned)
-                .map((id) => itemById(id)?.name)
-                .join(" · ") || "None confirmed"}
-            </p>
-            {result.scenario.request.assumed_item_ids.length > 0 && (
-              <p className="notice">
-                Hypothetically acquired IDs:{" "}
-                {result.scenario.request.assumed_item_ids.join(", ")}.
-                Acquisition is assumed; no account ownership changes.
-              </p>
-            )}
-            <p>
-              Inspect each item for ownership observations, missing prices and
-              selected price provenance.
-            </p>
-          </section>
-        )}
         {previous && (
           <details className="panel">
             <summary>Previous configuration comparison</summary>
@@ -368,7 +415,7 @@ export function LiveResultWorkspace() {
               <p>Prices: {previous.priceRevision}</p>
               <p>Evaluated: {previous.evaluatedAt}</p>
             </details>
-            {comparable(previous, result) &&
+            {isComparableToPrevious &&
             previous.solutions[0]?.loadouts[0]?.metrics &&
             solution?.loadouts[0]?.metrics ? (
               <p>

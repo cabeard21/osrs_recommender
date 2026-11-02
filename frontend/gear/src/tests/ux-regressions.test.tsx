@@ -360,7 +360,7 @@ it("confirms a lock, marks the slot, and offers unlock and re-run in the inspect
   const dialog = within(await openInspector(user));
   await user.click(
     await dialog.findByRole("button", {
-      name: `Lock weapon to #${weaponId}`,
+      name: `Lock weapon to ${context.items[0].name}`,
     }),
   );
   expect(await dialog.findByText("Locked in draft")).toBeVisible();
@@ -435,13 +435,13 @@ it("flags settings changed from the sticky action bar", async () => {
   await user.click(screen.getByRole("button", { name: "Run optimization" }));
   await screen.findByRole("heading", { name: /Best configuration found/ });
   expect(
-    screen.queryByText("Settings changed since this result"),
+    screen.queryByText(/^Settings changed since this result/),
   ).not.toBeInTheDocument();
   await user.type(
     screen.getByLabelText("Additional purchase budget (GP)"),
     "5",
   );
-  expect(screen.getByText("Settings changed since this result")).toBeVisible();
+  expect(screen.getByText(/^Settings changed since this result/)).toBeVisible();
 });
 
 it("scrolls to results after a run only on the stacked layout", async () => {

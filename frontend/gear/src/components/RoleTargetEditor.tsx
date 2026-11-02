@@ -46,7 +46,8 @@ export function RoleTargetEditor({
         onChange={onChange}
       />
       {!role.targetSelection && (
-        <>
+        <details className="control-help">
+          <summary>Use custom target stats</summary>
           <label>
             Role target selection
             <select
@@ -184,7 +185,7 @@ export function RoleTargetEditor({
               encounter mechanics.
             </p>
           </details>
-        </>
+        </details>
       )}
     </div>
   );

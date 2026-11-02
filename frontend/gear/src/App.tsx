@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import {
   Box,
   History,
@@ -6,8 +7,10 @@ import {
   Loader2,
   Settings,
   SlidersHorizontal,
+  Swords,
 } from "lucide-react";
 import { useGear } from "./state/GearProvider";
+import { describeDraftChanges } from "./state/draftChanges";
 import { ConfigurationPanel } from "./components/ConfigurationPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ResultWorkspace } from "./components/ResultWorkspace";
@@ -17,6 +20,20 @@ import { Timestamp } from "./components/Timestamp";
 import type { FixtureFailure } from "./api/contracts";
 
 const STACKED_LAYOUT_QUERY = "(max-width: 900px)";
+
+function focusFirstInvalidField() {
+  const field = document.querySelector<HTMLElement>(
+    '.configuration [aria-invalid="true"]',
+  );
+  if (!field) return;
+  for (
+    let section = field.closest("details");
+    section;
+    section = section.parentElement?.closest("details") ?? null
+  )
+    section.open = true;
+  field.focus();
+}
 
 export default function App() {
   const {
@@ -37,6 +54,19 @@ export default function App() {
   const [menu, setMenu] = useState(false),
     [handoff, setHandoff] = useState(false),
     [copyStatus, setCopyStatus] = useState("");
+  const protocolRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const bar = protocolRef.current;
+    if (!bar || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      document.documentElement.style.setProperty(
+        "--protocol-height",
+        `${bar.offsetHeight}px`,
+      ),
+    );
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, []);
   const lastResult = useRef({ mode: state.mode, result: current.result });
   useEffect(() => {
     const previous = lastResult.current;
@@ -61,6 +91,24 @@ export default function App() {
     setCopyStatus("");
     setHandoff(true);
   };
+  const handleRun = () => {
+    void run();
+    focusFirstInvalidField();
+  };
+  const runOnEnter = (event: KeyboardEvent<HTMLFieldSetElement>) => {
+    const field = event.target;
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent.isComposing ||
+      !(field instanceof HTMLInputElement) ||
+      !field.matches("[data-run-on-enter]")
+    )
+      return;
+    event.preventDefault();
+    handleRun();
+  };
+  const scrollToSection = (selector: string) =>
+    document.querySelector(selector)?.scrollIntoView?.();
   const nav = (
     <>
       <div className="brand">
@@ -76,9 +124,13 @@ export default function App() {
           <LayoutDashboard size={18} />
           Dashboard
         </a>
+        <a href="/gear" aria-current="page">
+          <Swords size={18} />
+          Gear optimizer
+        </a>
         <a href="/gear-legacy">
           <History size={18} />
-          Existing Gear
+          Legacy gear view
         </a>
       </nav>
       <div className="sidebar-footer">
@@ -86,12 +138,16 @@ export default function App() {
           <Settings size={18} />
           Settings
         </a>
-        <div className="badge">
-          {liveMode ? "Live account mode" : "Fixture mode · offline data"}
-        </div>
+        {!liveMode && <div className="badge">Fixture mode · offline data</div>}
       </div>
     </>
   );
+  const outdatedChanges =
+    current.outdated && current.result
+      ? describeDraftChanges(current.draft, current.result.scenario.request)
+      : [];
+  const isRunEmphasized =
+    !current.result || current.outdated || current.pending;
   const hypothetical =
     current.draft.mode === "future" ||
     current.draft.assumptions.attack ||
@@ -149,16 +205,6 @@ export default function App() {
           >
             ☰
           </button>
-          <div>
-            <strong className="header-title">
-              RUNIC LEDGER <span className="gold">// GEAR</span>
-            </strong>
-            <small className="blue">
-              {liveMode
-                ? "LIVE ACCOUNT · LAST SYNCED DATA"
-                : "FIXTURE PREVIEW · NO LIVE CONNECTION"}
-            </small>
-          </div>
           <div className="header-modes">
             <button
               aria-pressed={state.mode === "single"}
@@ -173,7 +219,7 @@ export default function App() {
               Multi-style
             </button>
           </div>
-          <span className="account">
+          <span className={liveMode ? "account account-live" : "account"}>
             <strong>
               {state.context?.displayName ??
                 (liveMode
@@ -182,34 +228,25 @@ export default function App() {
                     : "Loading account…"
                   : "Loading demo…")}
             </strong>
-            <small>
-              {liveMode ? "Last synchronized observations" : "Account fixture"}
-            </small>
+            {!liveMode && <small>Account fixture</small>}
           </span>
           <button onClick={openHandoff}>ChatGPT handoff</button>
         </header>
         <main id="main" tabIndex={-1}>
-          <div className="demo-banner">
-            {liveMode ? (
-              <>
-                Live optimization · DPS for ordinary attacks only.{" "}
-                <a href="?mode=fixture">Open separate fixture demonstration</a>
-              </>
-            ) : (
-              <>
-                DEMO DATA · Deterministic fixtures only. No live account data,
-                optimizer output, or account changes.{" "}
-                <a href="?mode=live">Open live account</a>
-              </>
-            )}
-          </div>
+          {!liveMode && (
+            <div className="demo-banner">
+              DEMO DATA · Deterministic fixtures only. No live account data,
+              optimizer output, or account changes.{" "}
+              <a href="?mode=live">Open live account</a>
+            </div>
+          )}
           {hypothetical && (
             <div role="status" className="notice">
               Hypothetical draft · explicit assumptions apply only to this
               scenario.
             </div>
           )}
-          <section className="protocol panel">
+          <section className="protocol panel" ref={protocolRef}>
             <div>
               <h1>
                 {state.mode === "single"
@@ -220,14 +257,37 @@ export default function App() {
               {current.outdated && !current.pending && (
                 <span className="badge">
                   Settings changed since this result
+                  {outdatedChanges.length > 0 &&
+                    `: ${outdatedChanges.join(" · ")}`}
                 </span>
+              )}
+              {current.error && current.errorIsValidation && (
+                <p role="alert" className="field-error">
+                  {current.error}
+                </p>
               )}
             </div>
             <div className="button-row">
+              {current.result && (
+                <>
+                  <button
+                    className="stacked-only"
+                    onClick={() => scrollToSection(".configuration")}
+                  >
+                    Edit settings
+                  </button>
+                  <button
+                    className="stacked-only"
+                    onClick={() => scrollToSection(".result-column")}
+                  >
+                    View results
+                  </button>
+                </>
+              )}
               <button
-                className="primary"
+                className={isRunEmphasized ? "primary" : undefined}
                 disabled={!state.context?.snapshotId || current.pending}
-                onClick={() => void run()}
+                onClick={handleRun}
               >
                 {liveMode
                   ? current.pending
@@ -266,7 +326,7 @@ export default function App() {
               {current.runNotice}
             </div>
           )}
-          {current.error && (
+          {current.error && !current.errorIsValidation && (
             <div role="alert" className="notice error">
               {current.error}
               <button onClick={() => void run()}>
@@ -275,10 +335,11 @@ export default function App() {
             </div>
           )}
           <div
-            className={`workspace ${current.slot ? "inspector-open" : ""} ${state.mode === "multi" ? "multi-workspace" : ""}`}
+            className={`workspace ${current.slot ? "inspector-open" : ""} ${state.mode === "multi" ? "multi-workspace" : ""} ${current.result ? "has-result" : ""}`}
           >
             <fieldset
               className="config-lock"
+              onKeyDown={runOnEnter}
               disabled={
                 current.pending && current.draft.optimizationMode === "thorough"
               }
@@ -315,16 +376,7 @@ export default function App() {
                       : "Deterministic UI fixtures demonstrate the workflow. Configuration is recorded, but no search or calculation runs."}
                   </p>
                 </div>
-                <h3 className="eyebrow">Preview capabilities</h3>
-                <p className="green">✓ Eleven selectable equipment slots</p>
-                <p className="green">✓ Persistent workspace drafts</p>
-                <p className="blue">
-                  {liveMode
-                    ? state.mode === "multi"
-                      ? "Joint equipment comparisons, directed transitions, and physical item inspection"
-                      : "Physical item inspection, exact manual trials, and equipment comparisons"
-                    : "Contextual item inspection and isolated comparison trials"}
-                </p>
+                <h3 className="eyebrow">What this does not model</h3>
                 <p>
                   {liveMode
                     ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
@@ -440,14 +492,18 @@ export default function App() {
           </div>
           <footer>
             RUNIC LEDGER // GEAR{" "}
-            <span>
-              {liveMode ? "Last synchronized:" : "Fixture observations:"}{" "}
-              {state.context?.observedAt ? (
-                <Timestamp value={state.context.observedAt} />
-              ) : (
-                "not loaded"
-              )}
-            </span>
+            {liveMode ? (
+              <a href="?mode=fixture">Open separate fixture demonstration</a>
+            ) : (
+              <span>
+                Fixture observations:{" "}
+                {state.context?.observedAt ? (
+                  <Timestamp value={state.context.observedAt} />
+                ) : (
+                  "not loaded"
+                )}
+              </span>
+            )}
           </footer>
         </main>
       </div>
@@ -503,12 +559,13 @@ function LiveAccountContext() {
   return (
     <section className="panel account-context">
       <h2>
-        {live.account?.last_sync_at
-          ? "Account observations"
-          : "No synchronized account"}
+        {live.account?.last_sync_at ? "Account" : "No synchronized account"}
       </h2>
-      {!live.account && (
-        <p>Configure your account in Settings and synchronize with RuneLite.</p>
+      {!live.account?.last_sync_at && (
+        <p>
+          Sync with RuneLite, then refresh. Until then nothing can be confirmed
+          as owned or wearable. <a href="/settings">Open Settings</a>
+        </p>
       )}
       <p>
         {live.account?.username ?? "No account"} · Last synchronization:{" "}

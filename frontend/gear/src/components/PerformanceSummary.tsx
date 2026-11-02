@@ -1,4 +1,5 @@
 import type { Metrics } from "../api/contracts";
+import { formatInterval } from "./resultFormat";
 export function PerformanceSummary({
   metrics,
   title = "Illustrative combat telemetry",
@@ -19,7 +20,7 @@ export function PerformanceSummary({
           [
             "Interval",
             metrics.seconds !== undefined
-              ? `${metrics.seconds} seconds`
+              ? formatInterval(metrics.seconds)
               : `${metrics.ticks} ticks`,
           ],
         ].map(([label, value]) => (
