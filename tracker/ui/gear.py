@@ -16,6 +16,7 @@ from nicegui import ui
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.estimation.prices import PriceRecord
+from tracker.gear.combat import SPELLS
 from tracker.gear.service import GearService
 from tracker.ui.gear_presentation import (
     GEAR_CSS,
@@ -300,27 +301,9 @@ def render_optimizer(service: GearService, context: ContextProvider) -> None:
                         label="Stance",
                     )
                     spell = ui.select(
-                        [
-                            "wind_strike",
-                            "water_strike",
-                            "earth_strike",
-                            "fire_strike",
-                            "wind_bolt",
-                            "water_bolt",
-                            "earth_bolt",
-                            "fire_bolt",
-                            "wind_blast",
-                            "water_blast",
-                            "earth_blast",
-                            "fire_blast",
-                            "iban_blast",
-                            "wind_wave",
-                            "water_wave",
-                            "earth_wave",
-                            "fire_wave",
-                        ],
+                        list(SPELLS),
                         value="fire_strike",
-                        label="Standard spell",
+                        label="Spell",
                     )
                     weight = ui.number("Active-time share", value=1, min=0, step=0.1)
                 parent = None

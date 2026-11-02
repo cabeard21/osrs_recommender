@@ -44,7 +44,27 @@ ELEMENTAL_SPELLS = {
 }
 # https://oldschool.runescape.wiki/w/Iban_Blast
 IBAN_STAVES = frozenset({1409, 12658})
-SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25)}
+# Fixed direct damage, independent of elemental tier scaling and weaknesses.
+# https://oldschool.runescape.wiki/w/Ancient_Magicks
+ANCIENT_SPELLS = {
+    "smoke_rush": (50, 13),
+    "shadow_rush": (52, 14),
+    "blood_rush": (56, 15),
+    "ice_rush": (58, 16),
+    "smoke_burst": (62, 17),
+    "shadow_burst": (64, 18),
+    "blood_burst": (68, 21),
+    "ice_burst": (70, 22),
+    "smoke_blitz": (74, 23),
+    "shadow_blitz": (76, 24),
+    "blood_blitz": (80, 25),
+    "ice_blitz": (82, 26),
+    "smoke_barrage": (86, 27),
+    "shadow_barrage": (88, 28),
+    "blood_barrage": (92, 29),
+    "ice_barrage": (94, 30),
+}
+SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
 
 def accuracy_probability(attack_roll: int, defence_roll: int) -> float:
@@ -137,9 +157,16 @@ def evaluate_loadout(
         and powered_attack is None
         and (spell not in SPELLS or levels.get("magic", 0) < SPELLS[spell][0])
     ):
-        problems.append("Selected standard spell is unknown or its Magic level is unmet.")
+        problems.append("Selected spell is unknown or its Magic level is unmet.")
     if style == "magic" and powered_attack is None and weapon and weapon.powered_attack:
         problems.append("Powered weapon cannot autocast the selected standard spell.")
+    if (
+        style == "magic"
+        and powered_attack is None
+        and spell in ANCIENT_SPELLS
+        and (weapon is None or spell not in weapon.spell_compatibility)
+    ):
+        problems.append("Ancient Magicks requires a reviewed compatible autocast weapon.")
     if (
         style == "magic"
         and powered_attack is None
@@ -190,7 +217,7 @@ def _calculate(
             if weapon is None or weapon.powered_attack_base_max_hit is None:
                 raise ValueError("Powered attack requires reviewed weapon damage metadata")
             base = weapon.powered_attack_base_max_hit
-        elif spell == "iban_blast":
+        elif spell == "iban_blast" or spell in ANCIENT_SPELLS:
             base = SPELLS[spell][1]
         else:
             tier = spell.split("_")[1]
@@ -287,5 +314,13 @@ def _calculate(
         attack_roll=attack,
         defence_roll=defence,
         bonuses=bonuses,
-        limitations=("No prayers, boosts, combat downtime or consumable endurance are modeled.",),
+        limitations=("No prayers, boosts, combat downtime or consumable endurance are modeled.",)
+        + (
+            (
+                "Single-target direct damage only; Ancient healing, poison, stat drains, "
+                "freezes and area damage are not modeled.",
+            )
+            if style == "magic" and powered_attack is None and spell in ANCIENT_SPELLS
+            else ()
+        ),
     )

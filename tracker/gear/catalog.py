@@ -13,7 +13,7 @@ from typing import Any
 
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf
-from tracker.gear.combat import ELEMENTAL_SPELLS, IBAN_STAVES
+from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.requirements_source import requirement_from_levels
 
@@ -22,10 +22,22 @@ from tracker.gear.requirements_source import requirement_from_levels
 # Their physical rows must still match before sharing requirements/effects review.
 REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 26770: 11773})
 
-# Exact physical elemental staves with reviewed Standard spellbook autocast.
+# Exact physical staves with reviewed Standard spellbook autocast.
 # https://oldschool.runescape.wiki/w/Autocast
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
-REVIEWED_STANDARD_STAVES = frozenset({1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407})
+# https://oldschool.runescape.wiki/w/Ancient_staff
+REVIEWED_STANDARD_STAVES = frozenset({1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675})
+# Exact ordinary Ancient autocast review; no blessing of special staff effects.
+# https://oldschool.runescape.wiki/w/Ancient_staff
+REVIEWED_ANCIENT_STAVES = frozenset({4675})
+
+
+def _reviewed_spells(item_id: int) -> tuple[str, ...]:
+    return (
+        (tuple(ELEMENTAL_SPELLS) if item_id in REVIEWED_STANDARD_STAVES else ())
+        + (tuple(ANCIENT_SPELLS) if item_id in REVIEWED_ANCIENT_STAVES else ())
+        + (("iban_blast",) if item_id in IBAN_STAVES else ())
+    )
 
 
 def _reviewed_equivalent(
@@ -119,11 +131,7 @@ def load_catalog(
             {
                 **row,
                 "spell_compatibility": (
-                    tuple(ELEMENTAL_SPELLS)
-                    if row["id"] in REVIEWED_STANDARD_STAVES
-                    else ("iban_blast",)
-                    if row["id"] in IBAN_STAVES
-                    else row.get("spell_compatibility", ())
+                    _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
                 "requirements_complete": bool(entries) and not any(i.gate_unknown for i in entries),
@@ -148,10 +156,8 @@ def load_catalog(
     )
     reviewed_spells = json.dumps(
         {
-            **{
-                str(item_id): list(ELEMENTAL_SPELLS) for item_id in sorted(REVIEWED_STANDARD_STAVES)
-            },
-            **{str(item_id): ["iban_blast"] for item_id in sorted(IBAN_STAVES)},
+            str(item_id): list(_reviewed_spells(item_id))
+            for item_id in sorted(REVIEWED_STANDARD_STAVES | REVIEWED_ANCIENT_STAVES | IBAN_STAVES)
         },
         sort_keys=True,
     ).encode("utf-8")
