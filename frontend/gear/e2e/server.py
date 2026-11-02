@@ -134,6 +134,26 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded", "catalog_items": len(item_ids)}
 
+        @app.post("/test/seed-ammo")
+        def seed_ammo():
+            seed_joint()
+            now = datetime.now(UTC)
+            with factory() as session:
+                session.merge(
+                    ItemPrice(
+                        item_id=892,
+                        high_price_gp=100,
+                        low_price_gp=95,
+                        high_trade_at=now,
+                        low_trade_at=now,
+                        fetched_at=now,
+                        provider="deterministic-browser-fixture",
+                        source=PriceSourceLayer.CACHED,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-running-cost")
         def seed_running_cost():
             seed_joint()

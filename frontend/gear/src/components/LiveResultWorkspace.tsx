@@ -1,4 +1,5 @@
 import { DisciplineTabs } from "./DisciplineTabs";
+import { AmmoComparison } from "./AmmoComparison";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
@@ -78,6 +79,7 @@ export function LiveResultWorkspace() {
       : result?.live?.result.selected_solution);
   const loadout = solution?.loadouts[0];
   const previous = current.previous;
+  const ammoLoadout = Object.values(selected?.loadouts ?? {})[0];
   const select = (slot: keyof ReturnType<typeof emptyEquipment>) =>
     dispatch({
       type: "ui",
@@ -95,6 +97,27 @@ export function LiveResultWorkspace() {
     );
   return (
     <div className="result-column">
+      {result.live &&
+        ammoLoadout &&
+        (ammoLoadout.discipline === "ranged" ||
+          ammoLoadout.combat_option?.attack_type === "ranged" ||
+          result.scenario.request.roles[0].style === "ranged") && (
+          <AmmoComparison
+            scenario={result.live.scenario}
+            loadout={ammoLoadout.equipment}
+            combatOption={ammoLoadout.combat_option}
+            identity={{
+              snapshot_id: result.snapshotId,
+              catalog_version: result.catalogVersion,
+              price_revision: result.priceRevision,
+              model_version: result.modelVersion,
+              assumptions_fingerprint:
+                result.live.result.assumptions_fingerprint,
+              scenario_fingerprint: result.live.scenario_fingerprint,
+            }}
+            outdated={current.outdated}
+          />
+        )}
       {branches.length > 0 && (
         <DisciplineTabs
           disciplines={branches.map((row) => row.discipline)}

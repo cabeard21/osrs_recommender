@@ -150,7 +150,11 @@ def _resolve_one(
 
 
 def _cache_is_fresh(cached: PriceDTO | None, *, now: datetime, ttl: timedelta) -> bool:
-    if cached is None:
+    # A recent failed lookup or static fallback is not a cached market quote.
+    # Only successful market observations may suppress the next provider attempt.
+    if cached is None or cached.source not in {PriceSource.LIVE, PriceSource.CACHED}:
+        return False
+    if cached.high_price_gp is None and cached.low_price_gp is None:
         return False
     return now - cached.fetched_at <= ttl
 
