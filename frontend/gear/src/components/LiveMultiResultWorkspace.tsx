@@ -75,43 +75,26 @@ export function LiveMultiResultWorkspace() {
           ? null
           : (point?.swap_limit ?? result.scenario.request.max_swaps)),
     );
-  const first = roleIds.includes(current.comparisonRoles[0])
-    ? current.comparisonRoles[0]
-    : roleIds[0];
-  const second =
-    roleIds.includes(current.comparisonRoles[1]) &&
-    current.comparisonRoles[1] !== first
-      ? current.comparisonRoles[1]
-      : roleIds.find((id) => id !== first)!;
-  const pair: [string, string] = [first, second];
-  const active = roleIds.includes(current.activeRole)
-    ? current.activeRole
-    : first;
   const ui = (
     patch: Partial<
       Pick<
         typeof current,
-        | "solutionId"
-        | "view"
-        | "comparisonRoles"
-        | "activeRole"
-        | "selectedTransition"
-        | "slot"
+        "solutionId" | "activeRole" | "selectedTransition" | "slot"
       >
     >,
   ) => dispatch({ type: "ui", mode: "multi", patch });
-  const counterpart = pair[0] === active ? pair[1] : pair[0];
-  const displayedPair =
-    current.view === "interactive" ? [active, counterpart] : pair;
-  const shared = solution ? sharedIds(solution, displayedPair) : [];
+  const shared = solution ? sharedIds(solution, roleIds) : [];
   function equipmentCard(id: string) {
     if (!solution?.loadouts[id]) return null;
     const loadout = solution.loadouts[id];
     const role = roles.find((entry) => entry.id === id)!;
     const equipment = equipmentFor(loadout.equipment);
-    const comparedRole = pair[0] === id ? pair[1] : pair[0];
-    const other = equipmentFor(solution.loadouts[comparedRole].equipment);
-    const differences = slots.filter((slot) => equipment[slot] !== other[slot]);
+    const others = roleIds
+      .filter((otherId) => otherId !== id)
+      .map((otherId) => equipmentFor(solution.loadouts[otherId].equipment));
+    const differences = slots.filter((slot) =>
+      others.some((other) => equipment[slot] !== other[slot]),
+    );
     const performance = loadout.performance;
     const scored =
       performance.supported &&
@@ -184,8 +167,8 @@ export function LiveMultiResultWorkspace() {
           </>
         )}
         <p>
-          Equipment differences from {roleName(comparedRole)}:{" "}
-          {differences.join(", ") || "None"}.
+          Differs from another configuration: {differences.join(", ") || "None"}
+          .
         </p>
         <EquipmentBonuses
           bonuses={performance.bonuses}
@@ -243,20 +226,6 @@ export function LiveMultiResultWorkspace() {
         </details>
       </section>
       <section className="panel">
-        <div className="segmented">
-          <button
-            aria-pressed={current.view === "side"}
-            onClick={() => ui({ view: "side" })}
-          >
-            Side-by-side
-          </button>
-          <button
-            aria-pressed={current.view === "interactive"}
-            onClick={() => ui({ view: "interactive" })}
-          >
-            Interactive switching
-          </button>
-        </div>
         <label>
           Swap-efficiency curve point
           <select
@@ -333,88 +302,12 @@ export function LiveMultiResultWorkspace() {
               {solution.maximum_actions}.
             </p>
           </section>
-          {current.view === "side" ? (
-            <>
-              {roles.length > 2 && (
-                <section className="panel">
-                  <h2>Compare two configurations</h2>
-                  <label>
-                    Compare first configuration
-                    <select
-                      value={pair[0]}
-                      onChange={(e) =>
-                        ui({
-                          comparisonRoles: [
-                            e.target.value,
-                            e.target.value === pair[1] ? pair[0] : pair[1],
-                          ],
-                        })
-                      }
-                    >
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Compare second configuration
-                    <select
-                      value={pair[1]}
-                      onChange={(e) =>
-                        ui({
-                          comparisonRoles: [
-                            e.target.value === pair[0] ? pair[1] : pair[0],
-                            e.target.value,
-                          ],
-                        })
-                      }
-                    >
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </section>
-              )}
-              <div className="comparison-grid">{pair.map(equipmentCard)}</div>
-            </>
-          ) : (
-            <>
-              <section className="panel">
-                <label>
-                  Active combat configuration
-                  <select
-                    value={active}
-                    onChange={(e) =>
-                      ui({ activeRole: e.target.value, slot: null })
-                    }
-                  >
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </section>
-              {equipmentCard(active)}
-            </>
-          )}
+          <div className="comparison-grid">{roleIds.map(equipmentCard)}</div>
           <section className="panel">
             <h2>Shared physical equipment</h2>
             <p className="green">
-              Shared by {roleName(displayedPair[0])} and{" "}
-              {roleName(displayedPair[1])}:{" "}
-              {shared.map(itemName).join(" · ") || "None"}.
-            </p>
-            <p>
               Reused across the joint configuration:{" "}
-              {sharedIds(solution, roleIds).map(itemName).join(" · ") || "None"}
-              .
+              {shared.map(itemName).join(" · ") || "None"}.
             </p>
           </section>
           <JointTransition
@@ -426,8 +319,7 @@ export function LiveMultiResultWorkspace() {
           />
           <JointInventory
             solution={solution}
-            activeRole={active}
-            roleName={roleName(active)}
+            roles={roles}
             itemName={itemName}
           />
           <JointPurchases

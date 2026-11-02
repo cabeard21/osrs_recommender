@@ -440,8 +440,6 @@ export interface WorkspaceState {
   activeRole: string;
   slot: Slot | null;
   solutionId: string;
-  view: "side" | "interactive";
-  comparisonRoles: [string, string];
   selectedTransition: string;
 }
 const workspace = (): WorkspaceState => ({
@@ -463,8 +461,6 @@ const workspace = (): WorkspaceState => ({
   activeRole: "role-1",
   slot: null,
   solutionId: "best-found",
-  view: "side",
-  comparisonRoles: ["role-1", "role-2"],
   selectedTransition: "",
 });
 export interface State {
@@ -505,12 +501,7 @@ export type Action =
       patch: Partial<
         Pick<
           WorkspaceState,
-          | "activeRole"
-          | "slot"
-          | "view"
-          | "solutionId"
-          | "comparisonRoles"
-          | "selectedTransition"
+          "activeRole" | "slot" | "solutionId" | "selectedTransition"
         >
       >;
     }
@@ -796,11 +787,6 @@ export function reducer(state: State, action: Action): State {
           action.result.solutions[0]?.id ??
           "best-found",
         activeRole: action.result.scenario.request.roles[0].id,
-        comparisonRoles: [
-          action.result.scenario.request.roles[0].id,
-          action.result.scenario.request.roles[1]?.id ??
-            action.result.scenario.request.roles[0].id,
-        ],
         selectedTransition: "",
       };
       break;

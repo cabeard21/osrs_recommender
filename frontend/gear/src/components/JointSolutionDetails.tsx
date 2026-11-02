@@ -4,19 +4,19 @@ import { PurchaseRows } from "./PurchaseRows";
 
 export function JointInventory({
   solution,
-  activeRole,
-  roleName,
+  roles,
   itemName,
 }: {
   solution: JointSolutionDTO;
-  activeRole: string;
-  roleName: string;
+  roles: { id: string; name: string }[];
   itemName: (id: number) => string;
 }) {
-  const worn = new Set(
-    Object.values(solution.loadouts[activeRole]?.equipment ?? {}),
-  );
-  const inventory = solution.carried_item_ids.filter((id) => !worn.has(id));
+  const carriedOutside = (roleId: string) => {
+    const worn = new Set(
+      Object.values(solution.loadouts[roleId]?.equipment ?? {}),
+    );
+    return solution.carried_item_ids.filter((id) => !worn.has(id));
+  };
   return (
     <section className="panel" aria-label="Gear inventory requirements">
       <h2>Gear inventory and required equipment</h2>
@@ -38,11 +38,16 @@ export function JointInventory({
           </div>
         ))}
       </dl>
-      <p>
-        Carried outside {roleName}:{" "}
-        {inventory.map(itemName).join(" · ") || "None"} ({inventory.length} gear
-        inventory slots).
-      </p>
+      {roles.map((role) => {
+        const inventory = carriedOutside(role.id);
+        return (
+          <p key={role.id}>
+            Carried outside {role.name}:{" "}
+            {inventory.map(itemName).join(" · ") || "None"} ({inventory.length}{" "}
+            gear inventory slots).
+          </p>
+        );
+      })}
       <details>
         <summary>All required physical equipment</summary>
         <p>

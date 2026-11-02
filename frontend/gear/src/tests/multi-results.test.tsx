@@ -64,7 +64,6 @@ function jointSolution(limit: number) {
 function setup({
   roles = 3,
   selected = "curve-1",
-  view = "side",
   missing = false,
   outdated = false,
   utility = false,
@@ -142,11 +141,9 @@ function setup({
     result,
     previous: null,
     solutionId: selected,
-    comparisonRoles: ["a", utility ? "c" : "b"],
     activeRole: "a",
     selectedTransition: "a:b",
     slot: null,
-    view,
     outdated,
     draft: { roles: [] },
   };
@@ -172,18 +169,21 @@ function setup({
   return { ...rendered, dispatch, result, current };
 }
 
-it("renders exactly two selected joint configurations with shared items and distinct inventory counts", () => {
+it("renders every joint configuration at once with shared items and distinct inventory counts", () => {
   setup();
   expect(
-    screen.getAllByRole("heading", { level: 2, name: /^(Blade|Bow)$/ }),
-  ).toHaveLength(2);
+    screen.getAllByRole("heading", { level: 2, name: /^(Blade|Bow|Spell)$/ }),
+  ).toHaveLength(3);
+  expect(screen.getAllByLabelText(/equipment slots$/)).toHaveLength(3);
   expect(
-    screen.queryByRole("heading", { name: "Spell" }),
+    screen.queryByLabelText("Compare first configuration"),
   ).not.toBeInTheDocument();
-  expect(screen.getByLabelText("Compare first configuration")).toHaveValue("a");
-  expect(screen.getByLabelText("Compare second configuration")).toHaveValue(
-    "b",
-  );
+  expect(
+    screen.queryByRole("button", { name: "Interactive switching" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Active combat configuration"),
+  ).not.toBeInTheDocument();
   expect(screen.getByLabelText("Weighted aggregate DPS")).toHaveTextContent(
     "4.50",
   );
@@ -200,7 +200,7 @@ it("renders exactly two selected joint configurations with shared items and dist
     screen.getAllByRole("button", {
       name: /neck \S+ · Shared Shared necklace/,
     }),
-  ).toHaveLength(2);
+  ).toHaveLength(3);
   expect(
     screen.getByRole("button", {
       name: /^Blade weapon \S+ · Different One handed blade$/,
@@ -212,7 +212,7 @@ it("renders exactly two selected joint configurations with shared items and dist
   ).toBeVisible();
 });
 
-it("changes curve and comparison selections only through visualization actions", async () => {
+it("changes the curve selection only through visualization actions", async () => {
   const user = userEvent.setup();
   const { dispatch } = setup();
   await user.selectOptions(
@@ -223,23 +223,6 @@ it("changes curve and comparison selections only through visualization actions",
     type: "ui",
     mode: "multi",
     patch: { solutionId: "curve-0" },
-  });
-  await user.selectOptions(
-    screen.getByLabelText("Compare second configuration"),
-    "c",
-  );
-  expect(dispatch).toHaveBeenLastCalledWith({
-    type: "ui",
-    mode: "multi",
-    patch: { comparisonRoles: ["a", "c"] },
-  });
-  await user.click(
-    screen.getByRole("button", { name: "Interactive switching" }),
-  );
-  expect(dispatch).toHaveBeenLastCalledWith({
-    type: "ui",
-    mode: "multi",
-    patch: { view: "interactive" },
   });
   expect(dispatch.mock.calls.every(([action]) => action.type === "ui")).toBe(
     true,
@@ -274,8 +257,7 @@ it("labels only an actual backend suggested curve point without changing selecti
 });
 
 it("shows the backend directed sequence including automatic removals without inferring slot actions", () => {
-  setup({ view: "interactive" });
-  expect(screen.getAllByLabelText(/equipment slots$/)).toHaveLength(1);
+  setup();
   const panel = screen.getByLabelText("Directed equipment transition");
   expect(panel).toHaveTextContent("Changed equipment slots2");
   expect(panel).toHaveTextContent("Equipment actions1");
@@ -314,49 +296,50 @@ it("does not invent damage metrics for an unscored utility configuration", () =>
   ).not.toBeInTheDocument();
 });
 
-it("compares a chosen fourth configuration while preserving at most two grids", async () => {
+it("shows all four configurations and inspects a slot in any of them", async () => {
   const user = userEvent.setup();
-  const { current, rerender } = setup({ roles: 4 });
-  await user.selectOptions(
-    screen.getByLabelText("Compare first configuration"),
-    "d",
-  );
-  rerender(<LiveMultiResultWorkspace />);
-  expect(current.comparisonRoles).toEqual(["d", "b"]);
-  expect(screen.getByRole("heading", { name: "Second blade" })).toBeVisible();
-  expect(
-    screen.queryByRole("heading", { name: "Blade" }),
-  ).not.toBeInTheDocument();
-  expect(screen.getAllByLabelText(/equipment slots$/)).toHaveLength(2);
+  const { current } = setup({ roles: 4 });
+  for (const name of ["Blade", "Bow", "Spell", "Second blade"])
+    expect(screen.getByRole("heading", { name })).toBeVisible();
+  expect(screen.getAllByLabelText(/equipment slots$/)).toHaveLength(4);
   await user.click(screen.getByRole("button", { name: /Second blade weapon/ }));
   expect(current.activeRole).toBe("d");
   expect(current.slot).toBe("weapon");
 });
 
-it("switches the active role independently and uses its actual comparison counterpart", async () => {
-  const user = userEvent.setup();
-  const { dispatch, rerender } = setup({ view: "interactive", roles: 4 });
-  await user.selectOptions(
-    screen.getByLabelText("Active combat configuration"),
-    "d",
+it("measures differences and shared items across every configuration", () => {
+  setup({ roles: 4 });
+  const blade = screen
+    .getByRole("heading", { name: "Blade" })
+    .closest("section")!;
+  expect(
+    within(blade).getByText(/Differs from another configuration:/),
+  ).toHaveTextContent("Differs from another configuration: weapon, shield.");
+  expect(
+    screen.getByRole("button", {
+      name: /^Second blade weapon \S+ · Shared · Different One handed blade$/,
+    }),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Reused across the joint configuration:/),
+  ).toHaveTextContent("One handed blade · Shared necklace");
+});
+
+it("lists gear carried outside each configuration", () => {
+  setup({ roles: 4 });
+  const panel = screen.getByLabelText("Gear inventory requirements");
+  expect(within(panel).getByText(/Carried outside Bow/)).toHaveTextContent(
+    "One handed blade · Shield · Staff",
   );
-  expect(dispatch).toHaveBeenLastCalledWith({
-    type: "ui",
-    mode: "multi",
-    patch: { activeRole: "d", slot: null },
-  });
-  rerender(<LiveMultiResultWorkspace />);
-  expect(
-    screen.getByText(/Equipment differences from Blade:/),
-  ).toHaveTextContent("shield");
-  expect(
-    screen.getByText(/Shared by Second blade and Blade:/),
-  ).toHaveTextContent("One handed blade");
+  for (const name of ["Blade", "Spell", "Second blade"])
+    expect(
+      within(panel).getByText(new RegExp(`Carried outside ${name}:`)),
+    ).toBeVisible();
 });
 
 it("can select an asymmetric reverse backend sequence and displays explicit unequips", async () => {
   const user = userEvent.setup();
-  const { current, dispatch, rerender } = setup({ view: "interactive" });
+  const { current, dispatch, rerender } = setup();
   const solution = current.result.live.result.curve[1].solution!;
   solution.transitions.push({
     from_role: "b",
@@ -442,7 +425,9 @@ it("handles missing reference, metadata, shared equipment and purchases explicit
   expect(
     screen.getByRole("button", { name: /Blade weapon.*Item #999/ }),
   ).toBeVisible();
-  expect(screen.getByText(/Shared by Blade and Bow: None/)).toBeVisible();
+  expect(
+    screen.getByText(/Reused across the joint configuration: None/),
+  ).toBeVisible();
   expect(
     screen.getByText(/Price unavailable/, { selector: "span" }),
   ).toBeVisible();

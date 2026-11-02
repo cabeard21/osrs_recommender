@@ -44,7 +44,7 @@ async function checkLayout(page: Page) {
   ).toBe(true);
 }
 
-test("live joint curve and switching share one backend solution", async ({
+test("live joint curve and transitions share one backend solution", async ({
   page,
 }, info) => {
   const pageErrors: string[] = [];
@@ -120,12 +120,9 @@ test("live joint curve and switching share one backend solution", async ({
         .locator("dd"),
     ).toHaveText(String(value));
 
-  await page
-    .getByRole("button", { name: "Interactive switching", exact: true })
-    .click();
-  await page
-    .getByRole("combobox", { name: "Active combat configuration", exact: true })
-    .selectOption("role-2");
+  await expect(page.locator(".comparison-grid .equipment-panel")).toHaveCount(
+    2,
+  );
   const transition = point.solution.transitions.find(
     (entry: { from_role: string }) => entry.from_role === "role-2",
   );
@@ -165,14 +162,10 @@ test("live joint curve and switching share one backend solution", async ({
     path: `${screenshots}/${info.project.name}-switching.png`,
     fullPage: info.project.name !== "mobile",
   });
-  await page
-    .getByRole("button", { name: "Interactive switching", exact: true })
-    .scrollIntoViewIfNeeded();
   await page.getByRole("button", { name: /^Configuration 2 weapon / }).click();
   await expect(page.getByText(/Item differences only/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Preview/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Side-by-side", exact: true }).click();
   await expect(page.locator(".comparison-grid .equipment-panel")).toHaveCount(
     2,
   );
@@ -189,7 +182,7 @@ test("live joint curve and switching share one backend solution", async ({
 });
 
 for (const count of [3, 4])
-  test(`live ${count}-role result compares two selected configurations`, async ({
+  test(`live ${count}-role result shows every configuration`, async ({
     page,
   }, info) => {
     await openMulti(page);
@@ -213,20 +206,16 @@ for (const count of [3, 4])
     expect(Object.keys(reply.result.selected_solution.loadouts)).toHaveLength(
       count,
     );
-    await page
-      .getByRole("combobox", {
-        name: "Compare second configuration",
-        exact: true,
-      })
-      .selectOption(`role-${count}`);
     await expect(page.locator(".comparison-grid .equipment-panel")).toHaveCount(
-      2,
+      count,
     );
-    await expect(
-      page
-        .locator(".comparison-grid")
-        .getByRole("heading", { name: `Configuration ${count}`, exact: true }),
-    ).toBeVisible();
+    for (let index = 1; index <= count; index++)
+      await expect(
+        page.locator(".comparison-grid").getByRole("heading", {
+          name: `Configuration ${index}`,
+          exact: true,
+        }),
+      ).toBeVisible();
     await expect(
       page.getByLabel("Weighted aggregate DPS", { exact: true }),
     ).toHaveText(reply.result.selected_solution.score.toFixed(2));

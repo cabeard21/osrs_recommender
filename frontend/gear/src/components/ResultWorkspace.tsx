@@ -47,7 +47,16 @@ export function ResultWorkspace() {
             })
           }
         />
-        {loadout.metrics && <PerformanceSummary metrics={loadout.metrics} />}
+        {loadout.metrics && (
+          <PerformanceSummary
+            metrics={loadout.metrics}
+            title={
+              state.mode === "multi"
+                ? `${loadout.name} illustrative combat telemetry`
+                : undefined
+            }
+          />
+        )}
       </section>
     );
   }
@@ -79,9 +88,6 @@ export function ResultWorkspace() {
   const transition =
     solution.transitions.find((t) => `${t.from}:${t.to}` === transitionKey) ??
     solution.transitions[0];
-  const active =
-    solution.loadouts.find((l) => l.roleId === current.activeRole) ??
-    solution.loadouts[0];
   return (
     <div className="result-column">
       {state.mode === "single" && (
@@ -117,94 +123,35 @@ export function ResultWorkspace() {
         )}
       </div>
       {state.mode === "multi" && (
-        <>
-          <div className="panel">
-            <div className="segmented">
-              <button
-                aria-pressed={current.view === "side"}
-                onClick={() =>
-                  dispatch({
-                    type: "ui",
-                    mode: "multi",
-                    patch: { view: "side" },
-                  })
-                }
-              >
-                Side-by-side
-              </button>
-              <button
-                aria-pressed={current.view === "interactive"}
-                onClick={() =>
-                  dispatch({
-                    type: "ui",
-                    mode: "multi",
-                    patch: { view: "interactive" },
-                  })
-                }
-              >
-                Interactive switching
-              </button>
-            </div>
-            <label>
-              Swap-efficiency fixture
-              <select
-                value={current.solutionId}
-                onChange={(e) =>
-                  dispatch({
-                    type: "ui",
-                    mode: "multi",
-                    patch: { solutionId: e.target.value },
-                  })
-                }
-              >
-                {current.result.solutions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.id} · {s.actionLimit} action example ·{" "}
-                    {s.weightedDps.toFixed(2)} weighted DPS
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p>
-              Authored curve points; constraints are not calculated in this
-              preview.
-            </p>
-          </div>
-          {current.view === "interactive" && (
-            <div className="panel">
-              <span className="eyebrow">Active combat configuration</span>
-              <div className="segmented">
-                {solution.loadouts.map((l) => (
-                  <button
-                    key={l.roleId}
-                    aria-pressed={active.roleId === l.roleId}
-                    onClick={() =>
-                      dispatch({
-                        type: "ui",
-                        mode: "multi",
-                        patch: { activeRole: l.roleId, slot: null },
-                      })
-                    }
-                  >
-                    {l.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <div className="panel">
+          <label>
+            Swap-efficiency fixture
+            <select
+              value={current.solutionId}
+              onChange={(e) =>
+                dispatch({
+                  type: "ui",
+                  mode: "multi",
+                  patch: { solutionId: e.target.value },
+                })
+              }
+            >
+              {current.result.solutions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.id} · {s.actionLimit} action example ·{" "}
+                  {s.weightedDps.toFixed(2)} weighted DPS
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>
+            Authored curve points; constraints are not calculated in this
+            preview.
+          </p>
+        </div>
       )}
-      <div
-        className={
-          state.mode === "multi" && current.view === "side"
-            ? "comparison-grid"
-            : ""
-        }
-      >
-        {(state.mode === "multi" && current.view === "interactive"
-          ? [active]
-          : solution.loadouts
-        ).map((l) => equipmentCard(l, solution))}
+      <div className={state.mode === "multi" ? "comparison-grid" : ""}>
+        {solution.loadouts.map((l) => equipmentCard(l, solution))}
       </div>
       {state.mode === "multi" && (
         <section className="panel">

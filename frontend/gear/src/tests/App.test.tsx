@@ -129,16 +129,21 @@ it("renders context failures with retry", async () => {
     screen.getByRole("button", { name: "Run fixture optimization" }),
   ).toBeDisabled();
 });
-it("switches multi visualizations and active configuration over the same solution", async () => {
+it("shows every multi configuration at once across fixture curve points", async () => {
   const user = setup();
   await screen.findByText("Demo adventurer");
   await user.click(screen.getByRole("button", { name: "Multi-style" }));
   await run(user);
   expect(screen.getAllByRole("button", { name: /head / })).toHaveLength(2);
-  await user.click(
-    screen.getByRole("button", { name: "Interactive switching" }),
-  );
-  await user.click(screen.getByRole("button", { name: "Configuration 2" }));
+  expect(
+    screen.queryByRole("button", { name: "Interactive switching" }),
+  ).not.toBeInTheDocument();
+  for (const index of [1, 2])
+    expect(
+      screen.getByRole("region", {
+        name: `Configuration ${index} illustrative combat telemetry`,
+      }),
+    ).toBeInTheDocument();
   expect(
     screen.getByRole("button", {
       name: /Configuration 2 weapon .*Rune crossbow/,
