@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from hashlib import sha256
 from math import isfinite
 from typing import Any
@@ -20,7 +21,7 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
 
 
 def running_cost_assumptions(
-    request: Any, prices: dict[int, Any], thorough: bool = False
+    request: Any, prices: Mapping[int, Any], thorough: bool = False
 ) -> dict[str, Any]:
     """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
     return {

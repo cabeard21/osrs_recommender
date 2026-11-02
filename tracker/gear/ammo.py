@@ -30,6 +30,8 @@ UPGRADE_DEPENDENT_CAPES = frozenset(
 
 
 def cape_recovery_rate(cape: int | None) -> tuple[float | None, list[str]]:
+    if cape is None:
+        return 0.0, []
     if cape in UPGRADE_DEPENDENT_CAPES:
         return None, ["Ammo recovery depends on an unobserved cape upgrade."]
     return CAPE_RECOVERY.get(cape, 0.0), []
