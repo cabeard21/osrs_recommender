@@ -45,7 +45,7 @@ def secondary_value(
     if priority == "accuracy":
         return float(performance.get("accuracy") or 0)
     if priority == "balanced_defence":
-        fields = _DEFENCES
+        fields: tuple[str, ...] = _DEFENCES
     elif priority == "magic_ranged_defence":
         fields = ("defence_magic", "defence_ranged")
     else:
