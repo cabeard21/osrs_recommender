@@ -596,9 +596,24 @@ before prefixes and substrings; pagination uses a stable order.
 all remain inspectable, but only supported
 ordinary-attack targets can be optimized. Complete ordinary profiles are supported
 by default without individual review. Mechanical attributes, missing statistics,
-flat armour, and known NPC-specific rules can block scoring with explicit reasons;
+and known NPC-specific rules can block scoring with explicit reasons;
 ordinary classification tags do not automatically block a target. This is a
 static ordinary-attack calculation, not a full encounter simulation.
+Targets carry signed integer `flat_armour` (default `0`, range -10000 to 10000).
+Accurate melee and ranged hits first raise rolled zeroes to one, then subtract
+armour and clamp damage at zero; negative armour adds damage. Misses remain zero
+and magic ignores flat armour. Catalog armour cannot be overridden while retaining
+the NPC selection; custom targets can set it explicitly.
+Blood Moon, Blue Moon and Eclipse Moon Regular support ordinary attacks only;
+curses, healing, survival and encounter downtime are excluded. Eclipse Moon Clone
+remains unsupported because its phase changes accuracy, timing and hit behavior.
+Reviewed usable forms of dual macuahuitl, Torag's hammers, glacial temotli and
+sulphur blades apply armour separately to each hit. Dual macuahuitl's second hit
+requires the first accuracy check to succeed. Set effects and special attacks
+remain excluded. Torag's degradation cost is unavailable until reviewed.
+Performance `hitsplats` reports each hit's marginal accuracy and maximum damage;
+`max_hit` is maximum total damage per attack after armour (including zero), while
+`accuracy` remains the first hit's accuracy.
 Elemental weaknesses and separate light,
 standard, and heavy ranged defence values feed the existing Python evaluator.
 

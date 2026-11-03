@@ -133,18 +133,25 @@ export function RoleTargetEditor({
                 "ranged_standard",
                 "ranged_heavy",
                 "damage_cap",
+                "flat_armour",
               ] as const
             ).map((field) => (
               <label key={field}>
                 {field.replaceAll("_", " ")}
                 <input
                   type="number"
-                  min={field === "damage_cap" ? "1" : "-64"}
+                  min={
+                    field === "flat_armour"
+                      ? "-10000"
+                      : field === "damage_cap"
+                        ? "1"
+                        : "-64"
+                  }
                   max="10000"
                   value={
                     role.targetInputs?.[field] ??
                     (target[field] as number | undefined) ??
-                    ""
+                    (field === "flat_armour" ? 0 : "")
                   }
                   onChange={(event) => numeric(field, event.target.value)}
                 />

@@ -37,6 +37,7 @@ class EquipmentDefinition(GearModel):
     slot: ItemSlot
     bonuses: EquipmentBonuses = EquipmentBonuses()
     attack_speed: int = Field(default=4, ge=1)
+    attack_pattern: Literal["single", "independent_double", "conditional_double"] = "single"
     attack_styles: tuple[str, ...] = ()
     attack_profiles: tuple[tuple[str, str], ...] = ()
     # Reviewed autocast spell IDs only. An empty tuple makes compatibility unknown.
@@ -81,6 +82,7 @@ class CombatTarget(GearModel):
     weakness_element: Literal["air", "water", "earth", "fire"] | None = None
     weakness_percent: int = Field(default=0, ge=0, le=1000)
     damage_cap: int | None = Field(default=None, ge=1)
+    flat_armour: int = Field(default=0, ge=-10000, le=10000, strict=True)
     unsupported_mechanics: tuple[str, ...] = ()
 
 
@@ -93,11 +95,17 @@ class ElementalWeakness(GearModel):
     attack_roll_bonus: int = 0
 
 
+class HitsplatPerformance(GearModel):
+    accuracy: float
+    max_hit: int
+
+
 class CombatPerformance(GearModel):
     elemental_weakness: ElementalWeakness | None = None
     supported: bool
     limitations: tuple[str, ...] = ()
     accuracy: float | None = None
+    hitsplats: tuple[HitsplatPerformance, ...] = ()
     max_hit: int | None = None
     attack_interval: float | None = None
     dps: float | None = None

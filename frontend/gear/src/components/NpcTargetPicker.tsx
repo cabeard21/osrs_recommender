@@ -212,6 +212,7 @@ export function NpcTargetPicker({
                 {Object.entries({
                   Defence: target.defence_level,
                   Magic: target.magic_level,
+                  "flat armour": target.flat_armour ?? 0,
                   ...target.bonuses,
                   light: target.ranged_light,
                   standard: target.ranged_standard,
@@ -227,6 +228,11 @@ export function NpcTargetPicker({
                     </div>
                   ))}
               </dl>
+              <p>
+                Flat armour applies to each accurate melee or ranged hitsplat.
+                Negative values increase damage; magic ignores it. Catalog
+                armour cannot be overridden.
+              </p>
               <button
                 type="button"
                 aria-expanded={editing}

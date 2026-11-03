@@ -16,6 +16,7 @@ from tracker.gear.models import (
     ElementalWeakness,
     EquipmentBonuses,
     EquipmentDefinition,
+    HitsplatPerformance,
 )
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 
@@ -197,6 +198,19 @@ def evaluate_prepared_loadout(
     return _calculate(weapon, style, levels, target, stance, spell, bonuses, powered_attack)
 
 
+def _armoured_mean(maximum: int, armour: int) -> float:
+    """Exact mean after raising accurate zeroes, subtracting armour and flooring.
+
+    The zero roll contributes the same damage as a one roll; the remaining
+    positive rolls form an arithmetic progression. No damage outcomes are
+    enumerated in this optimizer hot path.
+    """
+    first = max(1, armour + 1)
+    count = max(0, maximum - first + 1)
+    positive_sum = count * (first + maximum - 2 * armour) / 2
+    return (max(0, 1 - armour) + positive_sum) / (maximum + 1)
+
+
 def _calculate(
     weapon: EquipmentDefinition | None,
     style: str,
@@ -291,7 +305,10 @@ def _calculate(
                 defence = (target.defence_level + 9) * (value + 64)
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
-    if target.damage_cap is not None and max_hit > target.damage_cap:
+    max_hit = max(0, max_hit)
+    pattern = weapon.attack_pattern if weapon and style != "magic" else "single"
+    maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
+    if target.damage_cap is not None and any(max(1, m) > target.damage_cap for m in maxima):
         return CombatPerformance(
             supported=False,
             bonuses=bonuses,
@@ -299,17 +316,29 @@ def _calculate(
                 "Damage above the target cap requires an unsupported reroll distribution.",
             ),
         )
-    max_hit = max(0, max_hit)
     accuracy = accuracy_probability(attack, defence)
-    expected = max_hit / 2 + 1 / (max_hit + 1)
+    probabilities = (
+        (accuracy,)
+        if pattern == "single"
+        else (accuracy, accuracy**2 if pattern == "conditional_double" else accuracy)
+    )
+    armour = target.flat_armour if style != "magic" else 0
+    hitsplats = tuple(
+        HitsplatPerformance(accuracy=p, max_hit=max(0, max(1, m) - armour))
+        for m, p in zip(maxima, probabilities, strict=True)
+    )
+    expected = sum(
+        p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True)
+    )
     interval = speed * 0.6
     return CombatPerformance(
         supported=True,
         elemental_weakness=weakness,
         accuracy=accuracy,
-        max_hit=max(1, max_hit),
+        hitsplats=hitsplats,
+        max_hit=sum(h.max_hit for h in hitsplats),
         attack_interval=interval,
-        dps=accuracy * expected / interval,
+        dps=expected / interval,
         attack_roll=attack,
         defence_roll=defence,
         bonuses=bonuses,

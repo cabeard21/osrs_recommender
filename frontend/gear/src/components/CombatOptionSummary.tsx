@@ -36,6 +36,16 @@ export function CombatOptionSummary({
         {weapon} · {attack} · {stance}
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
+      {performance?.hitsplats && performance.hitsplats.length > 1 && (
+        <p aria-label="Hitsplat details">
+          {performance.hitsplats
+            .map(
+              (hit, index) =>
+                `Hit ${index + 1}: max ${hit.max_hit}, ${(hit.accuracy * 100).toFixed(1)}% accuracy`,
+            )
+            .join("; ")}
+        </p>
+      )}
       {weakness && (
         <p aria-label="Elemental weakness effect">
           {weakness.element
