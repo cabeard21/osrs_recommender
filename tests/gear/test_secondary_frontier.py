@@ -132,8 +132,8 @@ def test_thorough_substitution_budget_is_shared(monkeypatch):
         secondary_priority="stab_defence",
     )
     diagnostics = result["search"]["secondary_frontier"]
-    assert 0 < diagnostics["assignment_attempts"] <= 2000
-    assert diagnostics["explored_nodes"] <= 300000
+    assert 0 < diagnostics["assignment_attempts"] <= 10000
+    assert diagnostics["explored_nodes"] <= 1500000
 
 
 def test_display_sampling_preserves_extremes():
@@ -187,7 +187,7 @@ def test_shared_armour_compromises_survive_one_weapon_switch(thorough, monkeypat
     assert all(p["solution"]["maximum_actions"] <= 1 for p in group["points"])
     diagnostics = result["search"]["secondary_frontier"]
     assert diagnostics["explored_nodes"] <= diagnostics["expansion_limit"]
-    assert 0 < diagnostics["shared_assignment_attempts"] <= 2000
+    assert 0 < diagnostics["shared_assignment_attempts"] <= 10000
 
 
 @pytest.mark.parametrize("global_lock", [False, True])

@@ -38,12 +38,12 @@ def test_thorough_identity_diagnostics_and_original_incumbent(client, app, sessi
     assert thorough["optimization_mode"] == thorough["scenario"]["optimization_mode"] == "thorough"
     assert thorough["result"]["optimization_mode"] == "thorough"
     assert thorough["work_budget_policy"] == thorough["result"]["work_budget_policy"]
-    assert thorough["work_budget_policy"]["complete_assignment_limit"] == 2000
+    assert thorough["work_budget_policy"]["complete_assignment_limit"] == 10000
     assert thorough["work_budget_policy"]["targeted_head_refinement"] is False
     assert fast["scenario_fingerprint"] != thorough["scenario_fingerprint"]
     diagnostics = thorough["result"]["search"]["local_refinement"]
-    assert diagnostics["work_budget"] == 2000
-    assert diagnostics["assignment_attempts"] <= 2000
+    assert diagnostics["work_budget"] == 10000
+    assert diagnostics["assignment_attempts"] <= 10000
     assert diagnostics["baseline"]["curve_solutions"][0] == fast["result"]["selected_solution"]
     assert "targeted_head_refinement" not in thorough["result"]["search"]
     for field in ("snapshot_id", "catalog_version", "model_version"):
@@ -65,6 +65,7 @@ def test_modes_preserve_busy_guard(client, app, session_factory, mode):
 
 @pytest.mark.parametrize("count", [1, 2, 3, 4])
 def test_thorough_supports_all_role_counts_and_curve_ordering(client, app, session_factory, count):
+    from tracker.api.gear_optimizations import Solution
     from tracker.gear.optimizer import _solution_key
 
     body = {**joint_scenario(client, app, session_factory, count), "optimization_mode": "thorough"}
@@ -78,7 +79,10 @@ def test_thorough_supports_all_role_counts_and_curve_ordering(client, app, sessi
     ):
         if baseline is not None:
             assert point["solution"] is not None
-            assert _solution_key(point["solution"]) <= _solution_key(baseline)
+            # Compare both through the response schema; raw diagnostics retain
+            # integer bonuses while the response serializes them as floats.
+            normalized = Solution.model_validate(baseline).model_dump(mode="json")
+            assert _solution_key(point["solution"]) <= _solution_key(normalized)
 
 
 @pytest.mark.parametrize("disconnect", [True, False])

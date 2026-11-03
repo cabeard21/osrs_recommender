@@ -149,9 +149,12 @@ export function parseOptimization(
       : {
           policy: "secondary-frontier-v1",
           expansion_limit:
-            scenario.request.optimization_mode === "thorough" ? 300000 : 100000,
+            scenario.request.optimization_mode === "thorough"
+              ? 1500000
+              : 500000,
           refinement_assignment_limit:
-            scenario.request.optimization_mode === "thorough" ? 2000 : 0,
+            scenario.request.optimization_mode === "thorough" ? 10000 : 0,
+          finalist_assignment_limit: 2048,
         };
   for (const row of [envelope, result]) {
     if (

@@ -264,4 +264,4 @@ def test_secondary_priority_survives_opt_in_refinement(monkeypatch, count, prior
     assert selected["secondary_priority"] == priority
     assert _solution_key(selected) <= _solution_key(baseline)
     assert len(selected["loadouts"]) == count
-    assert result["search"]["local_refinement"]["work_budget"] == 2000
+    assert result["search"]["local_refinement"]["work_budget"] == 10000

@@ -88,7 +88,7 @@ it("validates preserved baseline metrics and bounded work before presenting diag
   };
   expect(() => validateRefinementDiagnostics(diagnostic, 0)).not.toThrow();
   for (const patch of [
-    { assignment_attempts: 2001 },
+    { assignment_attempts: 10001 },
     { tie_improvements: -1 },
     { baseline: {} },
     {

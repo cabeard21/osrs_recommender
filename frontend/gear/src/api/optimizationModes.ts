@@ -10,7 +10,7 @@ export function workBudgetPolicy(
 ): WorkBudgetPolicy {
   return {
     policy: mode === "thorough" ? "local-refinement-v1" : "baseline-v1",
-    complete_assignment_limit: mode === "thorough" ? 2000 : 0,
+    complete_assignment_limit: mode === "thorough" ? 10000 : 0,
     targeted_head_refinement: false,
   };
 }
@@ -97,7 +97,7 @@ export function validateRefinementDiagnostics(
   ])
     if (!Number.isSafeInteger(row[key]) || Number(row[key]) < 0)
       throw new Error("Invalid refinement work diagnostics");
-  if (Number(row.assignment_attempts) > 2000)
+  if (Number(row.assignment_attempts) > 10000)
     throw new Error("Invalid refinement assignment cap");
   const baseline = object(row.baseline);
   if (

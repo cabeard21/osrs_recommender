@@ -73,7 +73,14 @@ def test_work_budget_is_exact_and_incumbent_never_worsens(limit):
     assert all(key(row) <= key(solution()) for row in [*winners, unrestricted])
 
 
-@pytest.mark.parametrize("limit", [-1, 2001, True, 1.0])
+@pytest.mark.parametrize("limit", [2001, 10_000])
+def test_temporary_larger_budget_is_accepted(limit):
+    _, _, diagnostic = run(Search(), limit)
+    assert diagnostic["work_budget"] == limit
+    assert diagnostic["assignment_attempts"] <= limit
+
+
+@pytest.mark.parametrize("limit", [-1, 10_001, True, 1.0])
 def test_invalid_budget(limit):
     with pytest.raises(ValueError, match="refinement limit"):
         run(Search(), limit)
@@ -153,4 +160,4 @@ def test_accepted_neutral_history_survives_a_later_tie_breakpoint_valley():
     winners, _, diagnostic = refine_completed(search, [original], original, ordering)
     assert winners[0]["score"] == 2
     assert diagnostic["tie_improvements"] > 0
-    assert diagnostic["assignment_attempts"] <= 2000
+    assert diagnostic["assignment_attempts"] <= diagnostic["work_budget"] == 10000

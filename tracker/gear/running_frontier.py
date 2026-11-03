@@ -10,13 +10,15 @@ from typing import Any
 
 
 def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
+    from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
         "policy": "running-cost-frontier-v1",
         "cost_model_version": COST_MODEL_VERSION,
-        "expansion_limit": 300_000 if thorough else 100_000,
-        "complete_assignment_limit": 2000 if thorough else 0,
+        "expansion_limit": 1_500_000 if thorough else 500_000,
+        "complete_assignment_limit": 10000 if thorough else 0,
+        "finalist_assignment_limit": ASSIGNMENT_LIMIT,
     }
 
 
