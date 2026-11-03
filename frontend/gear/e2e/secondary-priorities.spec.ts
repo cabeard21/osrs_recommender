@@ -36,9 +36,21 @@ test("secondary priority persists, identifies requests/results, and invalidates 
     "magic_ranged_defence",
   );
   expect(typeof body.result.selected_solution.secondary_value).toBe("number");
+  const loadouts = body.result.selected_solution.loadouts;
+  const roleIds = Object.keys(loadouts);
+  expect(roleIds).toHaveLength(1);
+  const bonuses = loadouts[roleIds[0]].performance.bonuses;
+  expect(body.result.selected_solution.secondary_value).toBe(
+    Math.min(bonuses.defence_magic, bonuses.defence_ranged),
+  );
   await page.getByText("Secondary priority", { exact: true }).click();
   await expect(
     page.getByText(/Secondary priority: Magic & ranged defence/),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByText(/lower of the magic and ranged equipment defence bonuses/)
+      .first(),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Best-found tradeoff frontier" }),

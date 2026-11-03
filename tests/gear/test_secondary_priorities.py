@@ -26,7 +26,7 @@ def armour(item_id, **bonuses):
         ("crush_defence", {"defence_crush": 7}, 7),
         ("ranged_defence", {"defence_ranged": 7}, 7),
         ("magic_defence", {"defence_magic": 7}, 7),
-        ("magic_ranged_defence", {"defence_magic": 8, "defence_ranged": 3}, 5.5),
+        ("magic_ranged_defence", {"defence_magic": 8, "defence_ranged": 3}, 3),
         ("prayer_bonus", {"prayer": 7}, 7),
         ("melee_strength_bonus", {"melee_strength": 1}, 1),
         ("ranged_strength_bonus", {"ranged_strength": 1}, 1),
@@ -85,15 +85,70 @@ def test_unknown_priority_is_rejected():
     "bonuses,expected",
     [
         ({}, 0),
-        ({"defence_magic": 7}, 3.5),
-        ({"defence_magic": -8, "defence_ranged": 3}, -2.5),
-        ({"defence_magic": 8, "defence_ranged": 3, "defence_stab": 999}, 5.5),
+        ({"defence_magic": 7}, 0),
+        ({"defence_ranged": 7}, 0),
+        ({"defence_magic": -8, "defence_ranged": 3}, -8),
+        ({"defence_magic": 3, "defence_ranged": -8}, -8),
+        ({"defence_magic": 8, "defence_ranged": 8}, 8),
+        ({"defence_magic": 3, "defence_ranged": 8}, 3),
+        ({"defence_magic": 8, "defence_ranged": 3, "defence_stab": 999}, 3),
     ],
 )
 def test_magic_ranged_defence_formula(bonuses, expected):
     from tracker.gear.priorities import secondary_value
 
     assert secondary_value("magic_ranged_defence", {"bonuses": bonuses}) == expected
+
+
+def test_magic_ranged_defence_prefers_improving_the_weaker_bonus():
+    items = [
+        weapon(1, "slash"),
+        armour(20, defence_magic=100, defence_ranged=10),
+        armour(30, defence_magic=20, defence_ranged=20),
+    ]
+    result = run(
+        items,
+        (RoleConfig(id="a", style="slash"),),
+        max_swaps=0,
+        secondary_priority="magic_ranged_defence",
+    )
+    selected = result["selected_solution"]
+    assert selected["loadouts"]["a"]["equipment"]["head"] == 30
+    assert selected["secondary_value"] == 20
+
+
+def test_magic_ranged_defence_uses_complete_loadout_bonuses():
+    body = EquipmentDefinition(
+        id=30,
+        name="Complementary body",
+        slot="body",
+        requirements_complete=True,
+        bonuses=EquipmentBonuses(defence_ranged=40),
+    )
+    result = run(
+        [weapon(1, "slash"), armour(20, defence_magic=40), body],
+        (RoleConfig(id="a", style="slash", locks={"head": 20, "body": 30}),),
+        max_swaps=0,
+        secondary_priority="magic_ranged_defence",
+    )
+    assert result["selected_solution"]["secondary_value"] == 40
+
+
+def test_magic_ranged_defence_weights_each_roles_minimum():
+    result = run(
+        [
+            weapon(1, "slash"),
+            armour(20, defence_magic=100, defence_ranged=10),
+            armour(30, defence_magic=20, defence_ranged=100),
+        ],
+        (
+            RoleConfig(id="a", style="slash", weight=1, locks={"head": 20}),
+            RoleConfig(id="b", style="slash", weight=3, locks={"head": 30}),
+        ),
+        max_swaps=1,
+        secondary_priority="magic_ranged_defence",
+    )
+    assert result["selected_solution"]["secondary_value"] == 17.5
 
 
 def test_active_time_weighting_excludes_utility_and_zero_weight_roles():

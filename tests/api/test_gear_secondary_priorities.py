@@ -54,8 +54,12 @@ def test_priority_provenance_and_weighted_value(
         assert solution["secondary_priority"] == priority
         expected = sum(
             result["active_time_shares"][role]
-            * sum(loadout["performance"]["bonuses"][f"defence_{style}"] for style in styles)
-            / len(styles)
+            * (
+                min(loadout["performance"]["bonuses"][f"defence_{style}"] for style in styles)
+                if priority == "magic_ranged_defence"
+                else sum(loadout["performance"]["bonuses"][f"defence_{style}"] for style in styles)
+                / len(styles)
+            )
             for role, loadout in solution["loadouts"].items()
         )
         assert solution["secondary_value"] == pytest.approx(expected)

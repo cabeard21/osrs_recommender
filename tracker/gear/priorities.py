@@ -44,11 +44,11 @@ def secondary_value(
         return 0.0
     if priority == "accuracy":
         return float(performance.get("accuracy") or 0)
+    bonuses = performance.get("bonuses", {})
+    if priority == "magic_ranged_defence":
+        return float(min(bonuses.get("defence_magic", 0), bonuses.get("defence_ranged", 0)))
     if priority == "balanced_defence":
         fields: tuple[str, ...] = _DEFENCES
-    elif priority == "magic_ranged_defence":
-        fields = ("defence_magic", "defence_ranged")
     else:
         fields = (_BONUSES[priority],)
-    bonuses = performance.get("bonuses", {})
     return float(sum(bonuses.get(field, 0) for field in fields) / len(fields))

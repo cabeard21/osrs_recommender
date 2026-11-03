@@ -44,7 +44,7 @@ export function SecondaryFrontier({
       )}
       {priority === "magic_ranged_defence" && (
         <p>
-          Magic &amp; ranged defence is the mean of the magic and ranged
+          Magic &amp; ranged defence is the lower of the magic and ranged
           equipment defence bonuses; it does not measure damage reduction.
         </p>
       )}
