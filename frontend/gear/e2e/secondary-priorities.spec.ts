@@ -14,8 +14,8 @@ test("secondary priority persists, identifies requests/results, and invalidates 
     exact: true,
   });
   await expect(priority).toHaveValue("default");
-  await expect(priority.locator("option")).toHaveCount(12);
-  await priority.selectOption("prayer_bonus");
+  await expect(priority.locator("option")).toHaveCount(13);
+  await priority.selectOption("magic_ranged_defence");
   const response = page.waitForResponse(
     (r) =>
       r.url().endsWith("/ui-api/gear/optimizations") &&
@@ -27,15 +27,18 @@ test("secondary priority persists, identifies requests/results, and invalidates 
   const reply = await response;
   expect(reply.status(), await reply.text()).toBe(200);
   expect(reply.request().postDataJSON().secondary_priority).toBe(
-    "prayer_bonus",
+    "magic_ranged_defence",
   );
   const body = await reply.json();
-  expect(body.secondary_priority).toBe("prayer_bonus");
-  expect(body.result.secondary_priority).toBe("prayer_bonus");
-  expect(body.result.selected_solution.secondary_priority).toBe("prayer_bonus");
+  expect(body.secondary_priority).toBe("magic_ranged_defence");
+  expect(body.result.secondary_priority).toBe("magic_ranged_defence");
+  expect(body.result.selected_solution.secondary_priority).toBe(
+    "magic_ranged_defence",
+  );
   expect(typeof body.result.selected_solution.secondary_value).toBe("number");
+  await page.getByText("Secondary priority", { exact: true }).click();
   await expect(
-    page.getByText(/Secondary priority: Prayer bonus/),
+    page.getByText(/Secondary priority: Magic & ranged defence/),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Best-found tradeoff frontier" }),
@@ -58,10 +61,21 @@ test("secondary priority persists, identifies requests/results, and invalidates 
   await priority.selectOption("accuracy");
   await expect(page.getByText(/Result outdated/)).toBeVisible();
   await expect(
-    page.getByText(/Secondary priority: Prayer bonus/),
+    page.getByText(/Secondary priority: Magic & ranged defence/),
   ).toBeVisible();
   await page.reload();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
   await expect(priority).toHaveValue("accuracy");
+  await priority.selectOption("magic_ranged_defence");
+  await page.reload();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
+  await expect(priority).toHaveValue("magic_ranged_defence");
 });
 
 test("selecting a lower-DPS frontier point updates the complete result", async ({

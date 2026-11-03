@@ -8,6 +8,7 @@ from typing import Any, Literal
 SecondaryPriority = Literal[
     "default",
     "balanced_defence",
+    "magic_ranged_defence",
     "stab_defence",
     "slash_defence",
     "crush_defence",
@@ -43,6 +44,11 @@ def secondary_value(
         return 0.0
     if priority == "accuracy":
         return float(performance.get("accuracy") or 0)
-    fields = _DEFENCES if priority == "balanced_defence" else (_BONUSES[priority],)
+    if priority == "balanced_defence":
+        fields = _DEFENCES
+    elif priority == "magic_ranged_defence":
+        fields = ("defence_magic", "defence_ranged")
+    else:
+        fields = (_BONUSES[priority],)
     bonuses = performance.get("bonuses", {})
     return float(sum(bonuses.get(field, 0) for field in fields) / len(fields))

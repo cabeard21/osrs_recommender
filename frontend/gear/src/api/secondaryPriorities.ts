@@ -4,6 +4,7 @@ import type { OptimizationReply, SecondaryPriority } from "./contracts";
 export const secondaryPriorities = [
   ["default", "Default"],
   ["balanced_defence", "Balanced defence"],
+  ["magic_ranged_defence", "Magic & ranged defence"],
   ["stab_defence", "Stab defence"],
   ["slash_defence", "Slash defence"],
   ["crush_defence", "Crush defence"],

@@ -18,6 +18,7 @@ export type OptimizationMode = "fast" | "thorough";
 export type SecondaryPriority =
   | "default"
   | "balanced_defence"
+  | "magic_ranged_defence"
   | "stab_defence"
   | "slash_defence"
   | "crush_defence"

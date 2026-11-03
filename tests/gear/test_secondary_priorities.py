@@ -26,6 +26,7 @@ def armour(item_id, **bonuses):
         ("crush_defence", {"defence_crush": 7}, 7),
         ("ranged_defence", {"defence_ranged": 7}, 7),
         ("magic_defence", {"defence_magic": 7}, 7),
+        ("magic_ranged_defence", {"defence_magic": 8, "defence_ranged": 3}, 5.5),
         ("prayer_bonus", {"prayer": 7}, 7),
         ("melee_strength_bonus", {"melee_strength": 1}, 1),
         ("ranged_strength_bonus", {"ranged_strength": 1}, 1),
@@ -78,6 +79,21 @@ def test_unknown_priority_is_rejected():
         OptimizationRequest(
             roles=(RoleConfig(id="a", style="slash"),), secondary_priority="survival"
         )
+
+
+@pytest.mark.parametrize(
+    "bonuses,expected",
+    [
+        ({}, 0),
+        ({"defence_magic": 7}, 3.5),
+        ({"defence_magic": -8, "defence_ranged": 3}, -2.5),
+        ({"defence_magic": 8, "defence_ranged": 3, "defence_stab": 999}, 5.5),
+    ],
+)
+def test_magic_ranged_defence_formula(bonuses, expected):
+    from tracker.gear.priorities import secondary_value
+
+    assert secondary_value("magic_ranged_defence", {"bonuses": bonuses}) == expected
 
 
 def test_active_time_weighting_excludes_utility_and_zero_weight_roles():

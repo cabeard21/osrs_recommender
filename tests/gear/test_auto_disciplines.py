@@ -258,16 +258,21 @@ def test_auto_samples_branch_frontiers_after_combining(monkeypatch, visible_coun
 
 
 @pytest.mark.parametrize("loss_limit", [0, 10, 100])
-def test_auto_defence_frontiers_obey_loss_limit(loss_limit):
+@pytest.mark.parametrize("priority", ["balanced_defence", "magic_ranged_defence"])
+def test_auto_defence_frontiers_obey_loss_limit(loss_limit, priority):
     from tests.gear.test_secondary_priorities import armour
 
-    items = [weapon(1, "slash"), armour(20, melee_strength=100), armour(30, defence_stab=100)]
+    items = [
+        weapon(1, "slash"),
+        armour(20, melee_strength=100),
+        armour(30, defence_stab=100, defence_magic=40, defence_ranged=60),
+    ]
     role = RoleConfig(id="a", style="slash", allowed_disciplines=("melee",), combat_options=OPTIONS)
     result = run(
         items,
         (role,),
         max_swaps=0,
-        secondary_priority="balanced_defence",
+        secondary_priority=priority,
         max_dps_loss_pct=loss_limit,
     )
     groups = result["discipline_results"][0]["secondary_frontiers"]

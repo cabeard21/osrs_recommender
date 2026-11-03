@@ -12,8 +12,8 @@ export function SecondaryPrioritySummary({
   const priorityLabel = secondaryPriorities.find(
     ([value]) => value === priority,
   )?.[1];
-  const secondaryValue = (solution ?? result.live?.result.selected_solution)
-    ?.secondary_value;
+  const selected = solution ?? result.live?.result.selected_solution;
+  const secondaryValue = selected?.secondary_value;
   return (
     <details
       className="panel result-explanation"
@@ -43,11 +43,23 @@ export function SecondaryPrioritySummary({
         <p>
           {priority === "balanced_defence"
             ? "Balanced defence is the mean of the five equipment defence bonuses. "
-            : ""}
+            : priority === "magic_ranged_defence"
+              ? "Magic & ranged defence is the mean of the magic and ranged equipment defence bonuses; it does not measure damage reduction. "
+              : ""}
           Multi-style values use normalized active-time weights across scored
           roles; utility roles do not contribute.
         </p>
       )}
+      {priority === "magic_ranged_defence" &&
+        result.source !== "fixture" &&
+        selected &&
+        Object.entries(selected.loadouts).map(([role, loadout]) => (
+          <p key={role}>
+            {role} defence bonuses: magic{" "}
+            {loadout.performance.bonuses.defence_magic ?? 0} / ranged{" "}
+            {loadout.performance.bonuses.defence_ranged ?? 0}
+          </p>
+        ))}
     </details>
   );
 }

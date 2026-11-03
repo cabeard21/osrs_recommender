@@ -23,19 +23,27 @@ def test_default_priority_preserves_omitted_behavior(client, session_factory):
 
 @pytest.mark.parametrize("count", [1, 2, 3, 4])
 @pytest.mark.parametrize("mode", ["fast", "thorough"])
-def test_priority_provenance_and_weighted_value(client, app, session_factory, count, mode):
+@pytest.mark.parametrize("priority", ["balanced_defence", "magic_ranged_defence"])
+def test_priority_provenance_and_weighted_value(
+    client, app, session_factory, count, mode, priority
+):
     body = {
         **joint_scenario(client, app, session_factory, count),
         "optimization_mode": mode,
-        "secondary_priority": "balanced_defence",
+        "secondary_priority": priority,
     }
     response = client.post("/ui-api/gear/optimizations", json=body)
     assert response.status_code == 200, response.text
     data = response.json()
     result = data["result"]
-    assert data["secondary_priority"] == "balanced_defence"
-    assert data["scenario"]["secondary_priority"] == "balanced_defence"
-    assert result["secondary_priority"] == "balanced_defence"
+    assert data["secondary_priority"] == priority
+    assert data["scenario"]["secondary_priority"] == priority
+    assert result["secondary_priority"] == priority
+    styles = (
+        ("magic", "ranged")
+        if priority == "magic_ranged_defence"
+        else ("stab", "slash", "crush", "ranged", "magic")
+    )
     for solution in [
         result["selected_solution"],
         result["unrestricted"],
@@ -43,14 +51,11 @@ def test_priority_provenance_and_weighted_value(client, app, session_factory, co
     ]:
         if solution is None:
             continue
-        assert solution["secondary_priority"] == "balanced_defence"
+        assert solution["secondary_priority"] == priority
         expected = sum(
             result["active_time_shares"][role]
-            * sum(
-                loadout["performance"]["bonuses"][f"defence_{style}"]
-                for style in ("stab", "slash", "crush", "ranged", "magic")
-            )
-            / 5
+            * sum(loadout["performance"]["bonuses"][f"defence_{style}"] for style in styles)
+            / len(styles)
             for role, loadout in solution["loadouts"].items()
         )
         assert solution["secondary_value"] == pytest.approx(expected)

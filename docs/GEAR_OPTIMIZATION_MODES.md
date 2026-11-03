@@ -77,7 +77,7 @@ claim. See the browser API contract for request and diagnostic fields.
 
 ### Secondary priority
 
-Both modes accept `secondary_priority`, defaulting to `default` (the existing inventory/cost/action/identity ordering). The configuration dropdown also offers Balanced defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee strength bonus, Ranged strength bonus, Magic damage bonus and Accuracy. All options remain available for one to four roles.
+Both modes accept `secondary_priority`, defaulting to `default` (the existing inventory/cost/action/identity ordering). The configuration dropdown also offers Balanced defence, Magic & ranged defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee strength bonus, Ranged strength bonus, Magic damage bonus and Accuracy. All options remain available for one to four roles.
 
 Weighted ordinary-attack DPS remains the primary objective. A priority is maximized only when modeled DPS compares exactly equal under the existing float ordering; there is no tolerance or rounded-DPS comparison. Remaining ties use the existing ordering. Candidate retention and partial beams use the selected priority after their DPS estimate, while preserving the existing Fast/Thorough work limits and complete legality checks. Bounded search does not guarantee the best secondary value, or a global DPS optimum.
 

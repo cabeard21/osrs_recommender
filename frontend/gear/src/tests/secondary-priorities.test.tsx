@@ -142,7 +142,7 @@ it("switches priorities while keeping accepted results outdated", async () => {
   expect(screen.getByLabelText("Secondary priority")).toHaveValue("default");
   expect(
     screen.getByLabelText("Secondary priority").querySelectorAll("option"),
-  ).toHaveLength(12);
+  ).toHaveLength(13);
   await user.click(
     screen.getByRole("button", { name: "Run fixture optimization" }),
   );
@@ -152,4 +152,55 @@ it("switches priorities while keeping accepted results outdated", async () => {
     "prayer_bonus",
   );
   expect(screen.getByText(/Result outdated/)).toBeVisible();
+});
+
+it("retains the combined defence priority through saved drafts and requests", () => {
+  const draft = {
+    ...newDraft(),
+    secondaryPriority: "magic_ranged_defence" as const,
+  };
+  sessionStorage.setItem(
+    storageKey("combined-defence"),
+    JSON.stringify({ version: 2, single: draft, multi: draft }),
+  );
+  const restored = readDrafts("combined-defence", sessionStorage)!;
+  expect(restored.single.secondaryPriority).toBe("magic_ranged_defence");
+  expect(
+    optimizationRequest(normalize(restored.single, "snapshot"))
+      .secondary_priority,
+  ).toBe("magic_ranged_defence");
+});
+
+it("explains the combined score and selected bonuses in the result summary", async () => {
+  const result = await new FixtureGearClient("none", 0).optimize(
+    normalize(
+      { ...newDraft(), secondaryPriority: "magic_ranged_defence" },
+      "fixture-snapshot-01",
+    ),
+    new AbortController().signal,
+  );
+  const solution = {
+    secondary_value: 7.5,
+    loadouts: {
+      single: {
+        performance: { bonuses: { defence_magic: -5, defence_ranged: 20 } },
+      },
+    },
+  } as unknown as JointSolutionDTO;
+  render(
+    <SecondaryPrioritySummary
+      result={{ ...result, source: "live" }}
+      solution={solution}
+    />,
+  );
+  screen.getByText("Secondary priority", { exact: true }).click();
+  expect(
+    screen.getByText(/Secondary priority: Magic & ranged defence/),
+  ).toHaveTextContent("7.50 bonus");
+  expect(
+    screen.getByText(/mean of the magic and ranged equipment defence bonuses/),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),
+  ).toBeVisible();
 });

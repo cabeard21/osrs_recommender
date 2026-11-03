@@ -1,5 +1,7 @@
 """Exact frontier semantics over completed solutions."""
 
+import pytest
+
 from tracker.gear.frontier import pareto
 
 
@@ -24,16 +26,19 @@ def test_negative_secondary_and_zero_dps():
     assert pareto(rows) == [rows[1]]
 
 
-def test_real_defensive_tradeoff_and_baseline_preservation():
+@pytest.mark.parametrize("priority", ["balanced_defence", "magic_ranged_defence"])
+def test_real_defensive_tradeoff_and_baseline_preservation(priority):
     from tests.gear.test_optimizer import run, weapon
     from tests.gear.test_secondary_priorities import armour
     from tracker.gear.optimizer import RoleConfig
 
-    items = [weapon(1, "slash"), armour(20, melee_strength=10), armour(30, defence_stab=100)]
+    items = [
+        weapon(1, "slash"),
+        armour(20, melee_strength=10),
+        armour(30, defence_stab=100, defence_magic=40, defence_ranged=60),
+    ]
     roles = (RoleConfig(id="a", style="slash"),)
-    result = run(
-        items, roles, max_swaps=0, secondary_priority="balanced_defence", max_dps_loss_pct=100
-    )
+    result = run(items, roles, max_swaps=0, secondary_priority=priority, max_dps_loss_pct=100)
     points = result["secondary_frontiers"][0]["points"]
     assert len(points) >= 2
     assert points[0]["dps_loss_pct"] == 0

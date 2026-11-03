@@ -201,3 +201,42 @@ it("shows the selected five defence bonuses and allows chart pointer selection",
   await userEvent.keyboard(" ");
   expect(select).toHaveBeenCalledTimes(2);
 });
+
+it("explains combined defence and shows the selected component bonuses", () => {
+  const solution = {
+    ...solutionDefaults,
+    secondary_value: 7.5,
+    loadouts: {
+      single: {
+        performance: { bonuses: { defence_magic: -5, defence_ranged: 20 } },
+      },
+    },
+  } as unknown as JointSolutionDTO;
+  render(
+    <SecondaryFrontier
+      priority="magic_ranged_defence"
+      selectedId="combined"
+      onSelect={() => {}}
+      group={{
+        swap_limit: 0,
+        baseline_dps: 10,
+        sampled: false,
+        points: [
+          {
+            id: "combined",
+            dps_loss: 0,
+            dps_loss_pct: 0,
+            secondary_gain: 0,
+            solution,
+          },
+        ],
+      }}
+    />,
+  );
+  expect(
+    screen.getByText(/mean of the magic and ranged equipment defence bonuses/),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),
+  ).toBeInTheDocument();
+});

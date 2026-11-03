@@ -42,12 +42,22 @@ export function SecondaryFrontier({
           does not measure damage reduction.
         </p>
       )}
-      {priority === "balanced_defence" &&
+      {priority === "magic_ranged_defence" && (
+        <p>
+          Magic &amp; ranged defence is the mean of the magic and ranged
+          equipment defence bonuses; it does not measure damage reduction.
+        </p>
+      )}
+      {(priority === "balanced_defence" ||
+        priority === "magic_ranged_defence") &&
         active &&
         Object.entries(active.loadouts).map(([role, loadout]) => (
           <p key={role}>
             {role} defence bonuses:{" "}
-            {(["stab", "slash", "crush", "ranged", "magic"] as const)
+            {(priority === "magic_ranged_defence"
+              ? (["magic", "ranged"] as const)
+              : (["stab", "slash", "crush", "ranged", "magic"] as const)
+            )
               .map(
                 (style) =>
                   `${style} ${loadout.performance.bonuses[`defence_${style}`] ?? 0}`,
