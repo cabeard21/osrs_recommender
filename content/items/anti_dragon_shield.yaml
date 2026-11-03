@@ -1,0 +1,15 @@
+# Exact physical-ID wear and ordinary-stat review, 2026-11-02.
+# https://oldschool.runescape.wiki/w/Anti-dragon_shield
+# Starting Dragon Slayer I is sufficient; completion also qualifies.
+# Dragonfire mitigation is not scored by the ordinary-attack optimizer.
+- id: anti_dragon_shield_reviewed
+  name: Anti-dragon shield
+  item_id: 1540
+  slot: shield
+  requires:
+    quest:
+      id: dragon_slayer_i
+      status: in_progress
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30

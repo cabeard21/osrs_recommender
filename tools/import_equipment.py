@@ -25,6 +25,7 @@ MANUAL_IDS = {7800}
 # Explicit ordinary-mechanics review. An unfamiliar item always remains inspectable
 # but is not numerically ranked; adding an item requires effects review and tests.
 REVIEWED = {
+    1540,  # Anti-dragon shield: ordinary stats; dragonfire mitigation remains unscored.
     # Fixed Barrelchest anchor: ordinary attacks only; Sunder is not scored.
     # Exact wear/acquisition review: content/items/barrelchest_anchor.yaml.
     10887,
