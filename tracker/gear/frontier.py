@@ -208,6 +208,22 @@ def explore(
     for seed in option_seeds.values():
         for row in _combat_variants(search, seed, tick):
             accept(row)
+    # Later equipment and combat-option searches can reintroduce inert ammo.
+    # Normalize complete rows before ranking and hashing the published results.
+    from tracker.gear.refinement import refine_ammunition
+
+    cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
+    cleaned = {_identity(row["loadouts"]): row for archive in archives.values() for row in archive}
+    cleaned = {
+        identity: refine_ammunition(search, row, _solution_key, cleanup)
+        for identity, row in cleaned.items()
+    }
+    archives = {
+        limit: pareto(
+            row for row in cleaned.values() if limit is None or row["maximum_actions"] <= limit
+        )
+        for limit in archives
+    }
     updated = [archives[i][0] if archives[i] else winners[i] for i in range(len(winners))]
     unlimited = archives[None][0] if archives[None] else unrestricted
     groups = []
@@ -240,6 +256,7 @@ def explore(
             {"swap_limit": limit, "baseline_dps": dps, "points": points, "sampled": sampled}
         )
     diagnostics.update(
+        ammunition_refinement=cleanup,
         explored_nodes=search.nodes,
         valid_assignments=len(seen),
         work_budget_exhausted=search.nodes >= budget - 5000

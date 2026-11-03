@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, MutableMapping
 from copy import deepcopy
 from datetime import datetime
 from functools import lru_cache
@@ -248,8 +248,12 @@ class _Search:
         self.truncated = False
         self.complete_frontiers = False
         self.edges = required_transitions(request)
-        self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
-        self.option_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None] = {}
+        self.performance_cache: MutableMapping[
+            tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]
+        ] = {}
+        self.option_cache: MutableMapping[
+            tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None
+        ] = {}
         self.scorer = EquipmentScorer(items)
         self.configured_option_cache: dict[
             tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
@@ -994,6 +998,13 @@ def optimize(
         winners, unrestricted, local_diagnostics = refine_completed(
             search, winners, unrestricted, _solution_key
         )
+    # Local refinement may introduce new assignments after the initial cleanup.
+    winners = [
+        refine_ammunition(search, row, _solution_key, refinement) if row else None
+        for row in winners
+    ]
+    if unrestricted is not None:
+        unrestricted = refine_ammunition(search, unrestricted, _solution_key, refinement)
     secondary_frontiers: list[dict[str, Any]] = []
     frontier_diagnostics = None
     if request.secondary_priority != "default":

@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from collections import ChainMap
 from collections.abc import Callable
+from copy import copy
 from itertools import product
 from typing import TYPE_CHECKING, Any
+
+from tracker.gear.combat_options import CombatOption
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -53,6 +57,22 @@ def _role_options(
                 proposed = {s: i for s, i in equipment.items() if s != "ammunition"}
                 if item_id is not None:
                     proposed["ammunition"] = item_id
+                option = loadout.get("combat_option")
+                if option is not None:
+                    selected = CombatOption(**option)
+                    configured = role.model_copy(
+                        update={
+                            "style": selected.style,
+                            "stance": selected.stance,
+                            "spell": selected.spell or role.spell,
+                            "powered_attack": selected.powered_attack,
+                        }
+                    )
+                    cache_key = (role.id, tuple(sorted(proposed.items())))
+                    search.performance_cache[cache_key] = search.evaluate(
+                        proposed, configured
+                    ).model_dump(mode="json")
+                    search.option_cache[cache_key] = option
                 performance = search.performance(proposed, role)
                 if performance["supported"] and _equivalent(loadout["performance"], performance):
                     choices.append(proposed)
@@ -61,13 +81,21 @@ def _role_options(
 
 
 def _no_worse(original: dict[str, Any], proposed: dict[str, Any]) -> bool:
-    return all(
-        proposed[k] <= original[k]
-        for k in ("purchase_cost_gp", "gear_inventory_slots", "max_gear_inventory_slots")
-    ) and all(
-        after["action_count"] <= before["action_count"]
-        and after["max_gear_inventory_slots"] <= before["max_gear_inventory_slots"]
-        for before, after in zip(original["transitions"], proposed["transitions"], strict=True)
+    return (
+        original.get("running_cost") == proposed.get("running_cost")
+        and all(
+            loadout.get("running_cost") == proposed["loadouts"][role_id].get("running_cost")
+            for role_id, loadout in original["loadouts"].items()
+        )
+        and all(
+            proposed[k] <= original[k]
+            for k in ("purchase_cost_gp", "gear_inventory_slots", "max_gear_inventory_slots")
+        )
+        and all(
+            after["action_count"] <= before["action_count"]
+            and after["max_gear_inventory_slots"] <= before["max_gear_inventory_slots"]
+            for before, after in zip(original["transitions"], proposed["transitions"], strict=True)
+        )
     )
 
 
@@ -96,6 +124,16 @@ def refine_ammunition(
     ]
     if len(ammunition) == 1:
         return solution
+
+    # Frontier rows can intentionally use a slower stance or cheaper spell.
+    # Keep their chosen attacks fixed, and isolate the overrides from the search.
+    search = copy(search)
+    search.performance_cache = ChainMap({}, search.performance_cache)
+    search.option_cache = ChainMap({}, search.option_cache)
+    for role_id, loadout in solution["loadouts"].items():
+        cache_key = (role_id, tuple(sorted(loadout["equipment"].items())))
+        search.performance_cache[cache_key] = loadout["performance"]
+        search.option_cache[cache_key] = loadout.get("combat_option")
 
     def key(row: dict[str, Any]) -> tuple[Any, ...]:
         existing = solution_key(row)

@@ -11,7 +11,14 @@ from tracker.domain.types import Container, SkillState, Source
 from tracker.gear.evaluation import evaluate_equipment
 from tracker.gear.facts import equipment_fact
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
-from tracker.gear.optimizer import OptimizationRequest, RoleConfig, _Search, _solution_key, optimize
+from tracker.gear.optimizer import (
+    CombatOptionFilters,
+    OptimizationRequest,
+    RoleConfig,
+    _Search,
+    _solution_key,
+    optimize,
+)
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.integrations.prices.client import PriceDTO, PriceSource
 
@@ -434,3 +441,83 @@ def test_ammunition_refinement_and_curve_output_are_deterministic():
     second = run(items, roles, max_swaps=1)
     for key in ("curve", "unrestricted", "selected_solution", "search"):
         assert first[key] == second[key]
+
+
+def test_final_frontiers_remove_unused_arrows_without_changing_combat_options():
+    items = [
+        weapon(
+            806,
+            "ranged",
+            1,
+            attack_speed=3,
+            attack_profiles=(("ranged", "accurate"), ("ranged", "rapid")),
+        ),
+        EquipmentDefinition(
+            id=21326,
+            name="Amethyst arrow",
+            slot="ammunition",
+            ammo_type="arrow:21326",
+            requirements_complete=True,
+            bonuses=EquipmentBonuses(ranged_strength=55),
+        ),
+    ]
+    roles = (
+        RoleConfig(
+            id="dart",
+            style="ranged",
+            combat_options=CombatOptionFilters(
+                attack_types=("light",), stances=("accurate", "rapid"), spells=()
+            ),
+        ),
+    )
+    snapshot = AccountSnapshot(
+        1,
+        "dart-cleanup",
+        skills={"ranged": SkillState(70, None, Source.MANUAL, NOW)},
+        observed_items={
+            (i.id, Container.BANK): ObservedItemFact(i.id, Container.BANK, 1, "test", NOW)
+            for i in items
+        },
+    )
+    price = PriceDTO(
+        item_id=806,
+        high_price_gp=30,
+        high_trade_at=NOW,
+        low_price_gp=None,
+        low_trade_at=None,
+        fetched_at=NOW,
+        source=PriceSource.LIVE,
+        provider="dart-cleanup-test",
+    )
+    result = optimize(
+        snapshot,
+        OptimizationRequest(
+            roles=roles,
+            mode="owned",
+            max_swaps=0,
+            secondary_priority="accuracy",
+            max_dps_loss_pct=100,
+        ),
+        SimpleNamespace(items={i.id: i for i in items}),
+        Content(),
+        {806: price},
+        NOW,
+        _running_frontier=True,
+    )
+    points = result["secondary_frontiers"][0]["points"]
+    assert {p["solution"]["loadouts"]["dart"]["combat_option"]["stance"] for p in points} == {
+        "accurate",
+        "rapid",
+    }
+    running = result["running_cost_frontiers"][0]
+    assert running["points"]
+    assert all(p["solution"]["running_cost"]["status"] == "known" for p in running["points"])
+    solutions = [
+        result["selected_solution"],
+        result["unrestricted"],
+        running["baseline_solution"],
+        *(p["solution"] for p in [*points, *running["points"]]),
+    ]
+    for solution in solutions:
+        assert "ammunition" not in solution["loadouts"]["dart"]["equipment"]
+        assert 21326 not in solution["carried_item_ids"]
