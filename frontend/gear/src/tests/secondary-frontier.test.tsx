@@ -205,7 +205,7 @@ it("shows the selected five defence bonuses and allows chart pointer selection",
 it("explains combined defence and shows the selected component bonuses", () => {
   const solution = {
     ...solutionDefaults,
-    secondary_value: 7.5,
+    secondary_value: -5,
     loadouts: {
       single: {
         performance: { bonuses: { defence_magic: -5, defence_ranged: 20 } },
@@ -234,7 +234,7 @@ it("explains combined defence and shows the selected component bonuses", () => {
     />,
   );
   expect(
-    screen.getByText(/mean of the magic and ranged equipment defence bonuses/),
+    screen.getByText(/lower of the magic and ranged equipment defence bonuses/),
   ).toBeInTheDocument();
   expect(
     screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),

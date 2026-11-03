@@ -180,7 +180,7 @@ it("explains the combined score and selected bonuses in the result summary", asy
     new AbortController().signal,
   );
   const solution = {
-    secondary_value: 7.5,
+    secondary_value: -5,
     loadouts: {
       single: {
         performance: { bonuses: { defence_magic: -5, defence_ranged: 20 } },
@@ -196,9 +196,9 @@ it("explains the combined score and selected bonuses in the result summary", asy
   screen.getByText("Secondary priority", { exact: true }).click();
   expect(
     screen.getByText(/Secondary priority: Magic & ranged defence/),
-  ).toHaveTextContent("7.50 bonus");
+  ).toHaveTextContent("-5.00 bonus");
   expect(
-    screen.getByText(/mean of the magic and ranged equipment defence bonuses/),
+    screen.getByText(/lower of the magic and ranged equipment defence bonuses/),
   ).toBeVisible();
   expect(
     screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),

@@ -44,7 +44,7 @@ export function SecondaryPrioritySummary({
           {priority === "balanced_defence"
             ? "Balanced defence is the mean of the five equipment defence bonuses. "
             : priority === "magic_ranged_defence"
-              ? "Magic & ranged defence is the mean of the magic and ranged equipment defence bonuses; it does not measure damage reduction. "
+              ? "Magic & ranged defence is the lower of the magic and ranged equipment defence bonuses; it does not measure damage reduction. "
               : ""}
           Multi-style values use normalized active-time weights across scored
           roles; utility roles do not contribute.
