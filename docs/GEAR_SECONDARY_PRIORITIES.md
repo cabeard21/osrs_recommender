@@ -23,6 +23,8 @@ The chart and accessible table default to highest DPS. Selecting a point changes
 
 Search retains secondary diversity in candidates, branches, and beams, and validates complete solutions with existing legality and resource constraints. Legal combat-option variants participate when option selection is enabled. These remain best-found frontiers: candidate/beam truncation and work limits can omit useful alternatives. Absence of a point does not establish infeasibility or global dominance.
 
+For multi-style results, Fast and Thorough also explore coordinated same-slot changes across configurations, so shared armour alternatives can retain a low action limit. This phase checks at most 2,000 assignments within the existing expansion budget, preserves global and role locks, and validates complete assignments before offering them to each compatible limit. Diagnostics expose `shared_assignment_attempts` and `shared_assignment_limit`. In the joint result UI, selecting either a resource-cost or secondary tradeoff keeps both frontier panels on that point's action limit, including unrestricted points.
+
 Manual single-role evaluations accept optional `baseline_combat_options` and `proposed_combat_options`, keyed by role ID, so selected stance/spell variants retain their modeled performance. Options must match an eligible configuration for that side's weapon and the original scenario's combat-option filters; fixed scenarios retain their fixed configuration. Equipment changes that invalidate the selected option produce an invalid evaluation rather than silently changing combat configuration.
 
 

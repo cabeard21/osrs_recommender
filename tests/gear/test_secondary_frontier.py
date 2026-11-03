@@ -1,5 +1,7 @@
 """Exact frontier semantics over completed solutions."""
 
+import pytest
+
 from tracker.gear.frontier import pareto
 
 
@@ -142,3 +144,71 @@ def test_display_sampling_preserves_extremes():
     retained = diverse(rows, rank, 8)
     assert rows[0] in retained and rows[-1] in retained
     assert len(retained) == 8
+
+
+@pytest.mark.parametrize("thorough", [False, True])
+def test_shared_armour_compromises_survive_one_weapon_switch(thorough, monkeypatch):
+    import tracker.gear.frontier as frontier
+    from tests.gear.test_optimizer import run, weapon
+    from tests.gear.test_secondary_priorities import armour
+    from tracker.gear.optimizer import RoleConfig
+
+    explore = frontier.explore
+    monkeypatch.setattr(frontier, "explore", lambda s, w, u, _: explore(s, w, u, thorough))
+
+    items = [
+        weapon(1, "slash", 50),
+        weapon(2, "ranged", 50),
+        *[
+            armour(
+                10 + i, melee_strength=80 - 10 * i, ranged_strength=80 - 10 * i, defence_stab=10 * i
+            )
+            for i in range(7)
+        ],
+    ]
+    result = run(
+        items,
+        (RoleConfig(id="a", style="slash"), RoleConfig(id="b", style="ranged")),
+        max_swaps=8,
+        secondary_priority="stab_defence",
+        max_dps_loss_pct=100,
+    )
+    group = next(g for g in result["secondary_frontiers"] if g["swap_limit"] == 1)
+    shared_heads = {
+        p["solution"]["loadouts"]["a"]["equipment"].get("head")
+        for p in group["points"]
+        if p["solution"]["loadouts"]["a"]["equipment"].get("head")
+        == p["solution"]["loadouts"]["b"]["equipment"].get("head")
+    }
+    assert {12, 13, 14} <= shared_heads
+    assert all(p["solution"]["maximum_actions"] <= 1 for p in group["points"])
+    diagnostics = result["search"]["secondary_frontier"]
+    assert diagnostics["explored_nodes"] <= diagnostics["expansion_limit"]
+    assert 0 < diagnostics["shared_assignment_attempts"] <= 2000
+
+
+@pytest.mark.parametrize("global_lock", [False, True])
+def test_shared_substitutions_preserve_locks_and_seeds(global_lock):
+    from copy import deepcopy
+    from types import SimpleNamespace
+
+    from tracker.gear.frontier import _shared_assignments
+    from tracker.gear.optimizer import SLOTS, RoleConfig
+
+    seed = {
+        **point(10, 1, "a"),
+        "loadouts": {"a": {"equipment": {"head": 12}}, "b": {"equipment": {"head": 12}}},
+    }
+    before = deepcopy(seed)
+    search = SimpleNamespace(
+        request=SimpleNamespace(
+            locks={"head": 12} if global_lock else {},
+            roles=(
+                RoleConfig(id="a", style="slash", locks={} if global_lock else {"head": 12}),
+                RoleConfig(id="b", style="ranged"),
+            ),
+        ),
+        pools={slot: [None, 12, 13] if slot == "head" else [None] for slot in SLOTS},
+    )
+    assert list(_shared_assignments(search, [[seed]])) == []
+    assert seed == before
