@@ -55,17 +55,24 @@ export function LiveMultiResultWorkspace() {
   const solution = point
     ? point.solution
     : result.solutions.find((s) => s.id === current.solutionId)?.live;
-  const frontierGroup =
-    raw.secondary_frontiers?.find((g) =>
-      g.points.some((p) => p.id === current.solutionId),
-    ) ??
-    raw.secondary_frontiers?.find(
-      (g) =>
-        g.swap_limit ===
-        (current.solutionId === "unrestricted"
-          ? null
-          : (point?.swap_limit ?? result.scenario.request.max_swaps)),
-    );
+  const selectedFrontierGroup = [
+    ...(raw.secondary_frontiers ?? []),
+    ...(raw.running_cost_frontiers ?? []),
+  ].find((g) => g.points.some((p) => p.id === current.solutionId));
+  // Both tradeoff panels describe the same action cap, even when the selected
+  // solution belongs to the other frontier. Null explicitly means unrestricted.
+  const selectedSwapLimit =
+    current.solutionId === "unrestricted"
+      ? null
+      : selectedFrontierGroup
+        ? selectedFrontierGroup.swap_limit
+        : (point?.swap_limit ?? result.scenario.request.max_swaps);
+  const frontierGroup = raw.secondary_frontiers?.find(
+    (g) => g.swap_limit === selectedSwapLimit,
+  );
+  const runningCostGroup = raw.running_cost_frontiers?.find(
+    (g) => g.swap_limit === selectedSwapLimit,
+  );
   const ui = (
     patch: Partial<
       Pick<
@@ -185,11 +192,9 @@ export function LiveMultiResultWorkspace() {
         Swap-efficiency curve point
         <select
           value={
-            point
-              ? `curve-${point.swap_limit}`
-              : frontierGroup?.swap_limit != null
-                ? `curve-${frontierGroup.swap_limit}`
-                : current.solutionId
+            selectedSwapLimit != null
+              ? `curve-${selectedSwapLimit}`
+              : "unrestricted"
           }
           onChange={(e) => ui({ solutionId: e.target.value })}
         >
@@ -201,6 +206,9 @@ export function LiveMultiResultWorkspace() {
                 : "No feasible solution found"}
             </option>
           ))}
+          {raw.unrestricted && (
+            <option value="unrestricted">Unrestricted equipment actions</option>
+          )}
         </select>
       </label>
       <p>
@@ -303,18 +311,7 @@ export function LiveMultiResultWorkspace() {
       )}
       {roles.some((role) => role.style === "magic") && (
         <RunningCostFrontier
-          group={
-            raw.running_cost_frontiers?.find((g) =>
-              g.points.some((p) => p.id === current.solutionId),
-            ) ??
-            raw.running_cost_frontiers?.find(
-              (g) =>
-                g.swap_limit ===
-                (current.solutionId === "unrestricted"
-                  ? null
-                  : (point?.swap_limit ?? result.scenario.request.max_swaps)),
-            )
-          }
+          group={runningCostGroup}
           selectedId={current.solutionId}
           selected={solution}
           itemName={itemName}

@@ -69,6 +69,44 @@ def _identity(loadouts: dict[str, Any]) -> str:
     return json.dumps(loadouts, sort_keys=True, separators=(",", ":"))
 
 
+def _shared_assignments(
+    search: Any, archives: Iterable[list[Solution]]
+) -> Iterator[dict[str, Any]]:
+    """Round-robin shared slot alternatives without spending extra switch actions."""
+    from tracker.gear.optimizer import SLOTS, _solution_key
+
+    seeds = {
+        _identity(row["loadouts"]): row
+        for archive in archives
+        for row in diverse(archive, _solution_key, 8)
+    }
+    locked = set(search.request.locks) | {
+        slot for role in search.request.roles for slot in role.locks
+    }
+    schedules = deque(
+        (seed, slot, iter(search.pools[slot]))
+        for seed in seeds.values()
+        for slot in SLOTS
+        if slot not in locked and slot != "weapon" and len(search.pools[slot]) > 1
+    )
+    while schedules:
+        seed, slot, candidates = schedules.popleft()
+        try:
+            item = next(candidates)
+        except StopIteration:
+            continue
+        schedules.append((seed, slot, candidates))
+        assignment = {
+            role: {
+                **{s: i for s, i in row["equipment"].items() if s != slot},
+                **({slot: item} if item is not None else {}),
+            }
+            for role, row in seed["loadouts"].items()
+        }
+        if any(assignment[r] != seed["loadouts"][r]["equipment"] for r in assignment):
+            yield assignment
+
+
 def explore(
     original: _Search,
     winners: list[Solution | None],
@@ -90,6 +128,8 @@ def explore(
         "explored_nodes": 0,
         "assignment_attempts": 0,
         "complete_assignment_limit": 2000 if thorough else 0,
+        "shared_assignment_limit": 2000,
+        "shared_assignment_attempts": 0,
         "work_budget_exhausted": False,
     }
 
@@ -163,6 +203,14 @@ def explore(
         for limit in archives:
             for assignment in search.joint_loadouts(limit):
                 accept(search.solution(assignment, None))
+        # Split the reserved 5,000 expansions between coordinated equipment
+        # changes and combat options. Both Fast and Thorough keep their total cap.
+        phase_limit = budget - 3000
+        for assignment in _shared_assignments(search, archives.values()):
+            if diagnostics["shared_assignment_attempts"] >= 2000 or not tick():
+                break
+            diagnostics["shared_assignment_attempts"] += 1
+            accept(search.solution(assignment, None))
     if thorough:
         # Fair deterministic substitution schedule, shared across all frontier seeds.
         seeds = []
@@ -260,6 +308,7 @@ def explore(
         explored_nodes=search.nodes,
         valid_assignments=len(seen),
         work_budget_exhausted=search.nodes >= budget - 5000
+        or diagnostics["shared_assignment_attempts"] >= 2000
         or (thorough and diagnostics["assignment_attempts"] >= 2000),
     )
     return groups, diagnostics, updated, unlimited

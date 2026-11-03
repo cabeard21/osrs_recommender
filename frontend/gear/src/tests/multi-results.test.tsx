@@ -229,6 +229,121 @@ it("changes the curve selection only through visualization actions", async () =>
   );
 });
 
+it("keeps both tradeoff panels on the selected action limit when crossing frontiers", async () => {
+  const user = userEvent.setup();
+  const { current, result, rerender } = setup();
+  Object.assign(result.scenario.request, {
+    max_swaps: 8,
+    secondary_priority: "prayer_bonus",
+  });
+  const cost = {
+    status: "known",
+    gp_per_damage: 2,
+    gp_per_attack: 3,
+    gp_per_hour: 4500,
+    resources: [],
+    reasons: [],
+  };
+  const lowSolution = {
+    ...jointSolution(1),
+    score: 3.25,
+    secondary_value: 20,
+    running_cost: cost,
+  };
+  const point = (id: string, solution = lowSolution) => ({
+    id,
+    solution,
+    dps_loss: 0,
+    dps_loss_pct: 0,
+    secondary_gain: 0,
+  });
+  const groups = (prefix: string) => [
+    {
+      swap_limit: 1,
+      baseline_dps: 4.5,
+      sampled: false,
+      points: [point(`${prefix}-1`), point(`${prefix}-1-other`)],
+    },
+    {
+      swap_limit: 8,
+      baseline_dps: 9,
+      sampled: false,
+      points: [point(`${prefix}-8`)],
+    },
+    {
+      swap_limit: null,
+      baseline_dps: 9,
+      sampled: false,
+      points: [point(`${prefix}-unrestricted`)],
+    },
+  ];
+  Object.assign(result.live.result, {
+    secondary_frontiers: groups("secondary"),
+    running_cost_frontiers: groups("cost"),
+  });
+  result.live.result.curve.push({
+    swap_limit: 8,
+    solution: jointSolution(1),
+    status: "best_found",
+    relative_performance: 1,
+  });
+  Object.assign(result, {
+    solutions: [
+      ...groups("secondary").flatMap((group) => group.points),
+      ...groups("cost").flatMap((group) => group.points),
+    ].map((entry) => ({ id: entry.id, live: entry.solution })),
+  });
+  rerender(<LiveMultiResultWorkspace />);
+  const secondary = () => within(screen.getByLabelText("Secondary tradeoffs"));
+  const running = () => within(screen.getByLabelText("Running cost tradeoffs"));
+  const expectLowLimit = () => {
+    expect(screen.getByLabelText("Swap-efficiency curve point")).toHaveValue(
+      "curve-1",
+    );
+    expect(
+      secondary().getByRole("button", { name: "Select tradeoff 2" }),
+    ).toBeVisible();
+    expect(
+      running().getByRole("button", { name: /^Select cost tradeoff 2:/ }),
+    ).toBeVisible();
+  };
+  expectLowLimit();
+  await user.click(
+    running().getByRole("button", { name: /^Select cost tradeoff 1:/ }),
+  );
+  rerender(<LiveMultiResultWorkspace />);
+  expect(current.solutionId).toBe("cost-1");
+  expectLowLimit();
+  expect(screen.getByLabelText("Weighted aggregate DPS")).toHaveTextContent(
+    "3.25",
+  );
+  expect(
+    screen.getByLabelText("Directed equipment transition"),
+  ).toHaveTextContent("Equip Two handed bow");
+  await user.click(
+    secondary().getByRole("button", { name: "Select tradeoff 2" }),
+  );
+  rerender(<LiveMultiResultWorkspace />);
+  expect(current.solutionId).toBe("secondary-1-other");
+  expectLowLimit();
+  expect(screen.getByLabelText("Weighted aggregate DPS")).toHaveTextContent(
+    "3.25",
+  );
+  for (const id of ["cost-unrestricted", "secondary-unrestricted"]) {
+    current.solutionId = id;
+    rerender(<LiveMultiResultWorkspace />);
+    expect(screen.getByLabelText("Swap-efficiency curve point")).toHaveValue(
+      "unrestricted",
+    );
+    expect(
+      secondary().queryByRole("button", { name: "Select tradeoff 2" }),
+    ).not.toBeInTheDocument();
+    expect(
+      running().queryByRole("button", { name: /^Select cost tradeoff 2:/ }),
+    ).not.toBeInTheDocument();
+  }
+});
+
 it("uses the selected curve solution for all dependent panels", () => {
   setup({ selected: "curve-0" });
   expect(screen.getByLabelText("Weighted aggregate DPS")).toHaveTextContent(
