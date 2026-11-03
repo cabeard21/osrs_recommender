@@ -508,4 +508,10 @@ async def optimizations(request: Request, body: BrowserOptimizationRequest) -> O
             ) from exc
         if message.startswith("optimization_cancelled"):
             raise error("optimization_cancelled", "Optimization cancelled", 499) from exc
+        if message.startswith("optimizer_worker_"):
+            raise error(
+                "optimizer_worker_unavailable",
+                "A desktop optimizer worker is unavailable; retry the calculation",
+                503,
+            ) from exc
         raise error("invalid_request", message) from exc

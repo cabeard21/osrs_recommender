@@ -91,6 +91,10 @@ def test_one_through_four_roles_keep_every_role_and_complete_constraints(
         for i, item in case.catalog.items.items()
     }
     validator = _Search(case.snapshot, case.request, case.catalog.items, facts, None)
+    # Replay the same frozen resource-cost context used by optimize(); loadout
+    # metadata participates in the deterministic final tie key.
+    validator.running_prices = case.prices
+    validator.running_at = case.at
     for old, new in zip(before["curve"], after["curve"], strict=True):
         if old["solution"]:
             assert new["solution"]

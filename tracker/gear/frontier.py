@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections import deque
+from collections import ChainMap, deque
 from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from hashlib import sha256
@@ -36,26 +36,28 @@ def diverse[Row](
     rows: Iterable[Row], rank: Callable[[Row], tuple[Any, ...]], limit: int
 ) -> list[Row]:
     """Keep extremes and round-robin secondary leaders from eight DPS bands."""
-    ordered = sorted(rows, key=rank)
+    # Rank evaluation can include exact combat/resource scoring. Decorate once,
+    # retaining stable sort order and the original row equality semantics.
+    ordered = sorted(((rank(row), row) for row in rows), key=lambda entry: entry[0])
     if len(ordered) <= limit:
-        return ordered
-    scores = [-rank(row)[0] for row in ordered]
+        return [row for _, row in ordered]
+    scores = [-key[0] for key, _ in ordered]
     low, high = min(scores), max(scores)
-    bands: list[list[Row]] = [[] for _ in range(8)]
-    for row, score in zip(ordered, scores, strict=True):
+    bands: list[list[tuple[tuple[Any, ...], Row]]] = [[] for _ in range(8)]
+    for entry, score in zip(ordered, scores, strict=True):
         band = min(7, int(8 * (score - low) / (high - low))) if high > low else 0
-        bands[band].append(row)
+        bands[band].append(entry)
     for bucket in bands:
-        bucket.sort(key=lambda row: (rank(row)[1], *rank(row)))
-    selected = [ordered[0]]
-    extreme = min(ordered, key=lambda row: (rank(row)[1], *rank(row)))
+        bucket.sort(key=lambda entry: (entry[0][1], *entry[0]))
+    selected = [ordered[0][1]]
+    extreme = min(ordered, key=lambda entry: (entry[0][1], *entry[0]))[1]
     if extreme != selected[0]:
         selected.append(extreme)
     queues = [deque(band) for band in bands]
     while len(selected) < limit and any(queues):
         for queue in queues:
             if queue:
-                row = queue.popleft()
+                _, row = queue.popleft()
                 if row not in selected:
                     selected.append(row)
                     if len(selected) == limit:
@@ -154,12 +156,10 @@ def explore(
     roles = search.request.roles
     individual = {role.id: search.loadouts((role,)) for role in roles}
     # Shared and joint searches preserve constrained joint solutions.
-    for equipment in search.loadouts(roles):
+    common = individual[roles[0].id] if len(roles) == 1 else search.loadouts(roles)
+    for equipment in common:
         accept(search.solution({r.id: equipment for r in roles}, None))
-    if len(roles) == 1:
-        for equipment in individual[roles[0].id]:
-            accept(search.solution({roles[0].id: equipment}, None))
-    else:
+    if len(roles) > 1:
         for limit in archives:
             for assignment in search.joint_loadouts(limit):
                 accept(search.solution(assignment, None))
@@ -250,8 +250,6 @@ def explore(
 
 def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> Iterator[Solution]:
     """Enumerate legal option changes with isolated cache overrides and exact validation."""
-    from tracker.gear.combat_options import eligible_combat_options
-    from tracker.gear.evaluation import evaluate_equipment
     from tracker.gear.optimizer import _solution_key
 
     states = [seed]
@@ -263,38 +261,17 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
         for state in states:
             equipment = state["loadouts"][role.id]["equipment"]
             weapon = search.items.get(equipment.get("weapon", -1))
-            discipline = "melee" if role.style in {"stab", "slash", "crush"} else role.style
-            for option in eligible_combat_options(
-                weapon, search.snapshot, discipline=discipline, levels=search.levels
-            ):
-                spell = option.spell or (
-                    f"powered:{weapon.id}" if option.powered_attack and weapon else None
-                )
-                if (
-                    not option.available
-                    or option.attack_type not in allowed.attack_types
-                    or option.stance not in allowed.stances
-                    or (spell is not None and spell not in allowed.spells)
-                ):
-                    continue
+            for configured, option in search.configured_options(role, weapon):
                 if not tick():
                     return
-                configured = role.model_copy(
-                    update={
-                        "style": option.style,
-                        "stance": option.stance,
-                        "spell": option.spell or role.spell,
-                        "powered_attack": option.powered_attack,
-                    }
-                )
-                performance = evaluate_equipment(
-                    equipment, search.items, configured, search.levels
-                ).model_dump(mode="json")
+                performance = search.evaluate(equipment, configured).model_dump(mode="json")
                 if not performance["supported"]:
                     continue
                 variant = copy(search)
-                variant.performance_cache = dict(search.performance_cache)
-                variant.option_cache = dict(search.option_cache)
+                # Only the selected roles differ. Keep writes local while using
+                # the shared immutable cached evaluations for other lookups.
+                variant.performance_cache = ChainMap({}, search.performance_cache)
+                variant.option_cache = ChainMap({}, search.option_cache)
                 # Retain previously chosen options for all other roles in this state.
                 for rid, loadout in state["loadouts"].items():
                     key = (rid, tuple(sorted(loadout["equipment"].items())))

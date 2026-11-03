@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
@@ -23,6 +23,9 @@ from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.support import SupportPolicy, project_catalog
+
+if TYPE_CHECKING:
+    from tracker.gear.parallel import AutoProcessPool
 
 _STYLES = frozenset({"melee", "ranged", "magic"})
 _OWNERSHIP = frozenset({"owned", "unowned", "unknown"})
@@ -39,13 +42,20 @@ _LIMITATIONS = (
 class GearService:
     """Pure gear projection over one immutable snapshot and injected price rows."""
 
-    def __init__(self, content: Content, *, equipment_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        content: Content,
+        *,
+        equipment_root: Path | None = None,
+        auto_pool: AutoProcessPool | None = None,
+    ) -> None:
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
         self._equipment_root = equipment_root
         self._equipment: EquipmentCatalog | None = None
         self._optimization_lock = Lock()
+        self.auto_pool = auto_pool
 
     def equipment_catalog(self) -> EquipmentCatalog:
         """Load bundled metadata once; no network, database session or refresh."""
@@ -77,7 +87,15 @@ class GearService:
         if not self._optimization_lock.acquire(blocking=False):
             raise ValueError("optimizer_busy: another equipment search is running")
         try:
-            return optimize(
+            runner: Callable[..., dict[str, Any]] = optimize
+            execution = {}
+            pool = self.auto_pool
+            if pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
+                from tracker.gear.auto import optimize_auto
+
+                runner = optimize_auto
+                execution["branch_runner"] = pool.run
+            return runner(
                 snapshot,
                 request,
                 self.equipment_catalog(),
@@ -86,6 +104,7 @@ class GearService:
                 now or datetime.now(UTC),
                 cancelled=cancelled,
                 **({"local_refinement": True} if local_refinement else {}),
+                **execution,
             )
         finally:
             self._optimization_lock.release()

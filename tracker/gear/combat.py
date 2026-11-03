@@ -17,6 +17,7 @@ from tracker.gear.models import (
     EquipmentBonuses,
     EquipmentDefinition,
 )
+from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
 # only when that tier's spell is unlocked. Spell choice is an explicit assumption.
@@ -84,28 +85,26 @@ def evaluate_loadout(
     spell: str = "fire_strike",
 ) -> CombatPerformance:
     """Calculate one legal ordinary attack, or return explicit limitations."""
-    equipment = tuple(items.values()) if isinstance(items, Mapping) else tuple(items)
+    return evaluate_prepared_loadout(prepare_equipment(items), role, levels, target, stance, spell)
+
+
+def evaluate_prepared_loadout(
+    prepared: PreparedEquipment,
+    role: Any,
+    levels: Mapping[str, int],
+    target: CombatTarget | None = None,
+    stance: str = "accurate",
+    spell: str = "fire_strike",
+) -> CombatPerformance:
+    """Reuse immutable bonus totals while retaining all ordinary attack checks."""
+    equipment = prepared.equipment
     style = role if isinstance(role, str) else role.style
     stance = getattr(role, "stance", stance)
     spell = getattr(role, "spell", spell)
     powered_attack = getattr(role, "powered_attack", None)
     target = target or getattr(role, "target", None) or CombatTarget()
-    weapon = next((i for i in equipment if i.slot == "weapon"), None)
-    bonuses = EquipmentBonuses(
-        **{
-            field: sum(
-                getattr(item.bonuses, field)
-                for item in equipment
-                if not (
-                    style == "ranged"
-                    and item.slot == "ammunition"
-                    and field in {"ranged", "ranged_strength"}
-                    and (not weapon or not weapon.ammo_for)
-                )
-            )
-            for field in EquipmentBonuses.model_fields
-        }
-    )
+    weapon = prepared.weapon
+    bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
     problems.extend(effect for item in equipment for effect in item.unsupported_effects)
     if len({i.slot for i in equipment}) != len(equipment):
@@ -125,7 +124,7 @@ def evaluate_loadout(
         problems.append("The selected attack requires a compatible weapon.")
     if weapon and weapon.two_handed and any(i.slot == "shield" for i in equipment):
         problems.append("Two-handed weapon cannot be equipped with a shield.")
-    ammo = next((i for i in equipment if i.slot == "ammunition"), None)
+    ammo = prepared.ammunition
     if (
         style == "ranged"
         and weapon

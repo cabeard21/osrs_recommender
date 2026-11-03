@@ -1,7 +1,10 @@
 """Private Gear execution using authoritative Pi facts, without a local DB."""
 
+import asyncio
 import ipaddress
+import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
@@ -11,6 +14,14 @@ from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from tracker.config.settings import _YamlSettingsSource
+
+logger = logging.getLogger(__name__)
+
+
+def _process_pool(workers: int):
+    from tracker.gear.parallel import AutoProcessPool
+
+    return AutoProcessPool(workers)
 
 
 class _DesktopYamlSource(_YamlSettingsSource):
@@ -30,9 +41,17 @@ class DesktopSettings(BaseSettings):
     bind_address: str = "127.0.0.1"
     port: int = Field(default=8502, gt=0, lt=65536)
     content_dir: Path = Path("content")
+    optimization_workers: int = Field(default=3, ge=1, le=3)
     pi_url: str
     player_id: int = Field(gt=0)
     read_token: SecretStr
+
+    @field_validator("optimization_workers", mode="before")
+    @classmethod
+    def worker_count(cls, value):
+        if isinstance(value, bool):
+            raise ValueError("optimization_workers must be an integer from 1 through 3")
+        return value
 
     @field_validator("bind_address")
     @classmethod
@@ -68,9 +87,44 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     from tracker.gear.service import GearService
     from tracker.ui.gear_preview import mount_gear_preview
 
-    app = FastAPI(title="Desktop Gear")
     content = load_content(settings.content_dir)
-    app.state.gear_service = GearService(content, equipment_root=settings.content_dir / "equipment")
+    gear = GearService(content, equipment_root=settings.content_dir / "equipment")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        pool = None
+        try:
+            if settings.optimization_workers > 1:
+                try:
+                    pool = _process_pool(settings.optimization_workers)
+                    await asyncio.to_thread(pool.start, content, gear.equipment_catalog())
+                except Exception as exc:
+                    if pool is not None:
+                        await asyncio.to_thread(pool.close)
+                        pool = None
+                    app.state.gear_execution = "serial_startup_fallback"
+                    logger.warning(
+                        "Desktop Auto process pool could not start (%s); using serial execution",
+                        type(exc).__name__,
+                    )
+                else:
+                    gear.auto_pool = pool
+                    app.state.gear_execution = "processes"
+                    logger.info(
+                        "Desktop Auto ready with %d worker processes", settings.optimization_workers
+                    )
+            yield
+        finally:
+            if pool is not None:
+                try:
+                    await asyncio.to_thread(pool.close)
+                finally:
+                    gear.auto_pool = None
+
+    app = FastAPI(title="Desktop Gear", lifespan=lifespan)
+    app.state.gear_execution = "serial"
+    gear.auto_pool = None
+    app.state.gear_service = gear
     app.state.gear_data_source = RemoteGearDataSource(
         settings.pi_url, settings.player_id, settings.read_token.get_secret_value()
     )
