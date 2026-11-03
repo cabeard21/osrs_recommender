@@ -88,17 +88,19 @@ def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[
         return ()
     if fact["acquisition"] != "tradeable":
         return (f"Physical item {item_id} cannot be acquired through a supported purchase.",)
-    if fact["price"]["amount_gp"] is None:
+    if not fact.get("budget_exempt", False) and fact["price"]["amount_gp"] is None:
         return (f"Physical item {item_id} has no usable purchase price.",)
     return ()
 
 
 def purchase_cost(ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any) -> int:
-    """Count the distinct concrete purchases; unknown ownership is conditional, not free."""
+    """Count distinct gear purchases, excluding consumable ammunition and darts."""
     return sum(
         facts[i]["price"]["amount_gp"] or 0
         for i in ids
-        if facts[i]["ownership"]["status"] != "owned" and i not in request.assumed_item_ids
+        if facts[i]["ownership"]["status"] != "owned"
+        and i not in request.assumed_item_ids
+        and not facts[i].get("budget_exempt", False)
     )
 
 
@@ -112,7 +114,9 @@ def purchases(
             "conditional": facts[i]["ownership"]["status"] == "unknown",
         }
         for i in sorted(ids)
-        if facts[i]["ownership"]["status"] != "owned" and i not in request.assumed_item_ids
+        if facts[i]["ownership"]["status"] != "owned"
+        and i not in request.assumed_item_ids
+        and not facts[i].get("budget_exempt", False)
     ]
 
 

@@ -191,6 +191,7 @@ class ItemResponse(DTO):
     catalog_version: str
     support_status: Literal["verified", "community_assumed", "unreviewed"] = "unreviewed"
     support_assumptions: list[str] = []
+    budget_exempt: bool = False
     effect_status: Literal[
         "community_assumed", "unsupported_mechanic", "generic_unreviewed", "reviewed_ordinary"
     ] = "generic_unreviewed"

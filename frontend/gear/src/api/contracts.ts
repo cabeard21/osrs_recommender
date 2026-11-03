@@ -497,6 +497,7 @@ export const emptyEquipment = (): Equipment =>
 export interface PhysicalItem {
   support_status?: "verified" | "community_assumed" | "unreviewed";
   support_assumptions?: string[];
+  budget_exempt?: boolean;
   effect_status?:
     | "generic_unreviewed"
     | "unsupported_mechanic"

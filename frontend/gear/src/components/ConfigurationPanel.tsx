@@ -108,12 +108,12 @@ export function ConfigurationPanel() {
         </div>
         <p>
           {liveMode
-            ? "Additional purchases only. Items you own are reused; prices are cached estimates."
+            ? "Additional gear purchases only. Ammo and darts ignore this budget. Items you own are reused; prices are cached estimates."
             : "Fixture quotes only. Shared purchases counted once in the demo summary."}
         </p>
         {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
           <p className="notice">
-            Budget is 0, so only items you already own can be used.
+            Budget is 0, so gear must already be owned. Ammo and darts are exempt.
           </p>
         )}
       </div>
