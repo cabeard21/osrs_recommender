@@ -120,15 +120,15 @@ def explore(
     search: Any = copy(original)
     search.frontier_search = True
     search.nodes = 0
-    budget = 300_000 if thorough else 100_000
-    phase_limit = budget - 5000
+    budget = 1_500_000 if thorough else 500_000
+    phase_limit = budget - 25000
     diagnostics: dict[str, Any] = {
         "policy": "secondary-frontier-v1",
         "expansion_limit": budget,
         "explored_nodes": 0,
         "assignment_attempts": 0,
-        "complete_assignment_limit": 2000 if thorough else 0,
-        "shared_assignment_limit": 2000,
+        "complete_assignment_limit": 10000 if thorough else 0,
+        "shared_assignment_limit": 10000,
         "shared_assignment_attempts": 0,
         "work_budget_exhausted": False,
     }
@@ -166,7 +166,7 @@ def explore(
             *[lane + [None] * max(0, len(candidates) - len(lane)) for lane in lanes], strict=False
         ):
             for item in candidate_row:
-                if item is not None and item not in keep and len(keep) < 23:
+                if item is not None and item not in keep and len(keep) < 47:
                     keep.append(item)
         pools[slot] = [None, *keep]
     search.pools = pools
@@ -203,11 +203,11 @@ def explore(
         for limit in archives:
             for assignment in search.joint_loadouts(limit):
                 accept(search.solution(assignment, None))
-        # Split the reserved 5,000 expansions between coordinated equipment
+        # Split the reserved 25,000 expansions between coordinated equipment
         # changes and combat options. Both Fast and Thorough keep their total cap.
-        phase_limit = budget - 3000
+        phase_limit = budget - 15000
         for assignment in _shared_assignments(search, archives.values()):
-            if diagnostics["shared_assignment_attempts"] >= 2000 or not tick():
+            if diagnostics["shared_assignment_attempts"] >= 10000 or not tick():
                 break
             diagnostics["shared_assignment_attempts"] += 1
             accept(search.solution(assignment, None))
@@ -233,7 +233,7 @@ def explore(
                     schedules.append(
                         (assignment, role.id, group, iter(product(*(pools[s] for s in group))))
                     )
-        while schedules and diagnostics["assignment_attempts"] < 2000:
+        while schedules and diagnostics["assignment_attempts"] < 10000:
             assignment, role, group, iterator = schedules.popleft()
             try:
                 values = next(iterator)
@@ -258,6 +258,7 @@ def explore(
             accept(row)
     # Later equipment and combat-option searches can reintroduce inert ammo.
     # Normalize complete rows before ranking and hashing the published results.
+    from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT, refine_finalist
     from tracker.gear.refinement import refine_ammunition
 
     cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
@@ -266,6 +267,21 @@ def explore(
         identity: refine_ammunition(search, row, _solution_key, cleanup)
         for identity, row in cleaned.items()
     }
+    finalists = {
+        "assignment_limit_per_finalist": ASSIGNMENT_LIMIT,
+        "evaluated_assignments": 0,
+        "improved_finalists": 0,
+        "exhausted_finalists": 0,
+        "finalists": len(cleaned),
+    }
+    refined = {}
+    for identity, row in cleaned.items():
+        candidate, work = refine_finalist(search, row)
+        refined[identity] = candidate
+        finalists["evaluated_assignments"] += work["evaluated_assignments"]
+        finalists["improved_finalists"] += int(work["improvements"] > 0)
+        finalists["exhausted_finalists"] += int(work["work_budget_exhausted"])
+    cleaned = refined
     archives = {
         limit: pareto(
             row for row in cleaned.values() if limit is None or row["maximum_actions"] <= limit
@@ -305,11 +321,12 @@ def explore(
         )
     diagnostics.update(
         ammunition_refinement=cleanup,
+        finalist_refinement=finalists,
         explored_nodes=search.nodes,
         valid_assignments=len(seen),
-        work_budget_exhausted=search.nodes >= budget - 5000
-        or diagnostics["shared_assignment_attempts"] >= 2000
-        or (thorough and diagnostics["assignment_attempts"] >= 2000),
+        work_budget_exhausted=search.nodes >= budget - 25000
+        or diagnostics["shared_assignment_attempts"] >= 10000
+        or (thorough and diagnostics["assignment_attempts"] >= 10000),
     )
     return groups, diagnostics, updated, unlimited
 

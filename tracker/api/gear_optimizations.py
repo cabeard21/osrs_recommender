@@ -58,7 +58,7 @@ class Baseline(DTO):
 
 class WorkBudgetPolicy(DTO):
     policy: Literal["baseline-v1", "local-refinement-v1"]
-    complete_assignment_limit: Literal[0, 2000]
+    complete_assignment_limit: Literal[0, 10000]
     targeted_head_refinement: Literal[False] = False
     budget_scope: Literal["per_discipline"] = "per_discipline"
     discipline_count: int = Field(default=1, ge=1, le=3)
@@ -68,19 +68,22 @@ def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
     thorough = body.optimization_mode == "thorough"
     return WorkBudgetPolicy(
         policy="local-refinement-v1" if thorough else "baseline-v1",
-        complete_assignment_limit=2000 if thorough else 0,
+        complete_assignment_limit=10000 if thorough else 0,
         discipline_count=len(body.roles[0].allowed_disciplines or ()) or 1,
     )
 
 
 def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
+    from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT
+
     if body.secondary_priority == "default":
         return None
     thorough = body.optimization_mode == "thorough"
     return {
         "policy": "secondary-frontier-v1",
-        "expansion_limit": 300000 if thorough else 100000,
-        "refinement_assignment_limit": 2000 if thorough else 0,
+        "expansion_limit": 1500000 if thorough else 500000,
+        "refinement_assignment_limit": 10000 if thorough else 0,
+        "finalist_assignment_limit": ASSIGNMENT_LIMIT,
     }
 
 

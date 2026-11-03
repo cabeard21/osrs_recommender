@@ -84,8 +84,8 @@ def test_auto_policy_and_fingerprint():
     common = {"expected_snapshot_id": "frozen", "optimization_mode": "thorough"}
     one = BrowserOptimizationRequest(**common, roles=[auto_role(["melee"])])
     three = BrowserOptimizationRequest(**common, roles=[auto_role()])
-    assert work_budget_policy(one).complete_assignment_limit == 2000
-    assert work_budget_policy(three).complete_assignment_limit == 2000
+    assert work_budget_policy(one).complete_assignment_limit == 10000
+    assert work_budget_policy(three).complete_assignment_limit == 10000
     assert work_budget_policy(three).budget_scope == "per_discipline"
     assert work_budget_policy(three).discipline_count == 3
     assert scenario_fingerprint(one) != scenario_fingerprint(three)

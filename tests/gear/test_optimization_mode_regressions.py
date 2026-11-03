@@ -9,6 +9,14 @@ from tracker.gear.facts import equipment_fact
 from tracker.gear.optimizer import _Search, _solution_key, optimize
 
 
+@pytest.fixture(autouse=True)
+def original_baseline_limits(monkeypatch):
+    # These witnesses describe omissions under the original bounded search.
+    monkeypatch.setattr("tracker.gear.optimizer.CANDIDATES_PER_SLOT", 12)
+    monkeypatch.setattr("tracker.gear.optimizer.BEAM_WIDTH", 128)
+    monkeypatch.setattr("tracker.gear.optimizer.MAX_EXPANSIONS", 1_000_000)
+
+
 def run(case, thorough=False):
     return optimize(
         case.snapshot,
@@ -27,7 +35,7 @@ def assert_complete_no_worse(case, before, after):
     diagnostic = after["search"]["local_refinement"]
     assert diagnostic["baseline"]["curve_solutions"] == [p["solution"] for p in before["curve"]]
     assert diagnostic["baseline"]["unrestricted"] == before["unrestricted"]
-    assert diagnostic["assignment_attempts"] <= diagnostic["work_budget"] == 2000
+    assert diagnostic["assignment_attempts"] <= diagnostic["work_budget"] == 10000
     for old, new in zip(before["curve"], after["curve"], strict=True):
         if old["solution"]:
             assert new["solution"]

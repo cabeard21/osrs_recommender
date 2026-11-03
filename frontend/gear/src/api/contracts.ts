@@ -33,7 +33,7 @@ export interface WorkBudgetPolicy {
   budget_scope?: "per_discipline";
   discipline_count?: number;
   policy: "baseline-v1" | "local-refinement-v1";
-  complete_assignment_limit: 0 | 2000;
+  complete_assignment_limit: 0 | 10000;
   targeted_head_refinement: false;
 }
 export type Style = "melee" | "ranged" | "magic";

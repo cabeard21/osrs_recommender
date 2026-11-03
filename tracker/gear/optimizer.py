@@ -60,9 +60,11 @@ SLOTS: tuple[ItemSlot, ...] = (
     "feet",
     "ring",
 )
-BEAM_WIDTH = 128
-CANDIDATES_PER_SLOT = 12
-MAX_EXPANSIONS = 1_000_000
+# Temporary larger search for investigating material-tier selection.
+# Previous limits: beam 128, candidates 12, expansions 1,000,000.
+BEAM_WIDTH = 256
+CANDIDATES_PER_SLOT = 24
+MAX_EXPANSIONS = 5_000_000
 ItemId = Annotated[int, Field(strict=True, gt=0)]
 
 

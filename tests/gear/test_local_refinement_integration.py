@@ -44,7 +44,10 @@ def assert_legal_no_worse(case, baseline, result):
 
 
 @pytest.mark.parametrize("case", tiny_cases(), ids=lambda c: c.name)
-def test_complete_validation_and_independent_exhaustive_reference(case):
+def test_complete_validation_and_independent_exhaustive_reference(case, monkeypatch):
+    # Keep the deliberately pruned baseline that refinement is meant to recover.
+    monkeypatch.setattr("tracker.gear.optimizer.CANDIDATES_PER_SLOT", 12)
+    monkeypatch.setattr("tracker.gear.optimizer.BEAM_WIDTH", 128)
     baseline = run(case)
     assert baseline == run(case, local_refinement=False)
     result = run(case, local_refinement=True)
@@ -54,7 +57,7 @@ def test_complete_validation_and_independent_exhaustive_reference(case):
         "curve_solutions": [p["solution"] for p in baseline["curve"]],
         "unrestricted": baseline["unrestricted"],
     }
-    assert diagnostic["assignment_attempts"] <= diagnostic["work_budget"] <= 2000
+    assert diagnostic["assignment_attempts"] <= diagnostic["work_budget"] <= 10000
     reference = exhaustive(case)
     for after, expected in zip(result["curve"], reference["curve"], strict=True):
         if after["solution"] is None:

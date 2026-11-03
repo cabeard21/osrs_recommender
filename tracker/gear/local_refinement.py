@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 Solution = dict[str, Any]
 Assignment = dict[str, dict[str, int]]
-_MAX_ASSIGNMENTS = 2000
+_MAX_ASSIGNMENTS = 10000
 _MAX_HISTORY_SEEDS = 8
 _SLOTS = (
     "weapon",
@@ -159,7 +159,7 @@ def refine_completed(
     entries (at most four per assignment). Baseline search limits are untouched.
     """
     if type(limit) is not int or not 0 <= limit <= _MAX_ASSIGNMENTS:
-        raise ValueError("refinement limit must be an integer from 0 to 2000")
+        raise ValueError("refinement limit must be an integer from 0 to 10000")
     started = perf_counter()
     cached_before = len(search.performance_cache)
     _cancel(search)
