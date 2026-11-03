@@ -69,9 +69,12 @@ class QuestLeaf(RequirementNode):
 
     type: Literal["quest"] = "quest"
     quest_id: str
+    status: Literal["in_progress", "complete"] = "complete"
 
     def to_yaml(self) -> dict[str, Any]:
-        return {"quest": self.quest_id}
+        if self.status == "complete":
+            return {"quest": self.quest_id}
+        return {"quest": {"id": self.quest_id, "status": self.status}}
 
 
 class ItemLeaf(RequirementNode):
@@ -326,6 +329,19 @@ def _parse_skill(
     return _construct(where, lambda: SkillLeaf(skill=str(skill), level=level))
 
 
+def _parse_quest(
+    value: Any, file: Path | None, path: str, location: ContentLocation
+) -> Requirement:
+    if not isinstance(value, Mapping):
+        return _string_leaf("quest", lambda key: QuestLeaf(quest_id=key))(
+            value, file, path, location
+        )
+    where = location.with_path(path)
+    if set(value) != {"id", "status"} or not isinstance(value.get("id"), str) or not value["id"]:
+        raise RequirementSyntaxError("quest mapping requires a nonempty id and status", where)
+    return _construct(where, lambda: QuestLeaf(quest_id=value["id"], status=value["status"]))
+
+
 def _string_leaf(label: str, build: Callable[[str], Requirement]) -> _NodeParser:
     def parser(value: Any, _file: Path | None, path: str, location: ContentLocation) -> Requirement:
         where = location.with_path(path)
@@ -423,7 +439,7 @@ def _parse_sequence(
 _PARSERS: dict[str, _NodeParser] = {
     "skill": _parse_skill,
     "unlock": _string_leaf("unlock", lambda value: UnlockLeaf(key=value)),
-    "quest": _string_leaf("quest", lambda value: QuestLeaf(quest_id=value)),
+    "quest": _parse_quest,
     "item": _string_leaf("item", lambda value: ItemLeaf(item_id=value)),
     "combat_level": _integer_leaf("combat_level", lambda value: CombatLevelLeaf(level=value)),
     "quest_points": _integer_leaf("quest_points", lambda value: QuestPointsLeaf(points=value)),

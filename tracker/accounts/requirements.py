@@ -111,10 +111,13 @@ def evaluate_requirement(
         current = skill.level if skill else None
         status = level_status(current, requirement.level)
     elif isinstance(requirement, QuestLeaf):
-        key, required = requirement.quest_id, "complete"
+        key, required = requirement.quest_id, requirement.status
         observed = snapshot.quests.get(key, QuestStatus.UNKNOWN)
         current = observed.value
-        status = quest_status(observed)
+        if requirement.status == "in_progress" and observed is not QuestStatus.UNKNOWN:
+            status = Tri.from_bool(observed in {QuestStatus.IN_PROGRESS, QuestStatus.COMPLETE})
+        else:
+            status = quest_status(observed)
     elif isinstance(requirement, QuestPointsLeaf | CombatLevelLeaf):
         required = (
             requirement.points if isinstance(requirement, QuestPointsLeaf) else requirement.level

@@ -360,3 +360,21 @@ equipment, high Ranger boots cost, initial pool omissions and bounded discovery
 losses. Encounter utility, ammunition recovery, special attacks and production
 packaging/ARM64 latency acceptance remain outside this expansion. **No production
 routing change, deployment, cutover or Milestone 6 work was performed.**
+
+
+## Anti-dragon shield eligibility (2026-11-02)
+
+Exact physical item 1540 uses the reviewed wear gate in
+`content/items/anti_dragon_shield.yaml`: Dragon Slayer I must be in progress or
+complete. Missing/unknown quest observations remain unknown; not started is
+ineligible. Ordinary `quest: quest_id` requirements still require completion.
+The explicit started form is `quest: {id: dragon_slayer_i, status: in_progress}`.
+The requirement is verified against the
+[Anti-dragon shield page](https://oldschool.runescape.wiki/w/Anti-dragon_shield).
+
+The shield's ordinary equipment stats are supported in melee, one-handed ranged,
+and magic setups, including a role shield lock in Auto. Dragonfire mitigation
+is not scored by the ordinary-attack model. Other physical forms remain separate.
+Catalog and community provenance checksums are updated together so this review
+does not invalidate existing community classifications. Focused regressions live
+in `tests/gear/test_anti_dragon_shield.py`.

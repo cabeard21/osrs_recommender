@@ -61,6 +61,11 @@ not apply it.
 
 ### Equipment optimizer
 
+Deployment intent: gear optimization runs on the development computer, not on the
+resource-constrained Raspberry Pi. The Pi remains the authoritative source of account
+observations and cached prices for desktop Gear, as described in
+[Desktop Gear using live Pi data](DEPLOYMENT.md#desktop-gear-using-live-pi-data).
+
 `tracker.gear` owns one deterministic calculation boundary shared by the dashboard
 and MCP. The optimizer consumes a frozen account snapshot, reviewed equipment metadata,
 cached price observations, explicit role/target constraints, and evaluation time. It
