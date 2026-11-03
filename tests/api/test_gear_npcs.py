@@ -117,3 +117,20 @@ def test_reported_lizardman_scenario_can_optimize(client, session_factory):
     assert target["name"] == "Lizardman (Level 53)"
     assert target["defence_level"] == 43
     assert target["bonuses"]["stab"] == -20
+
+
+@pytest.mark.parametrize("armour", [-2, -5, 6])
+def test_custom_armour_roundtrip(client, session_factory, armour):
+    body = scenario(client, session_factory)
+    body["roles"][0]["target"] = {"flat_armour": armour}
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 200, reply.text
+    assert reply.json()["scenario"]["roles"][0]["target"]["flat_armour"] == armour
+
+
+@pytest.mark.parametrize("armour", [True, 1.5, "2", 10001, -10001])
+def test_invalid_custom_armour(client, session_factory, armour):
+    body = scenario(client, session_factory)
+    body["roles"][0]["target"] = {"flat_armour": armour}
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 422, reply.text

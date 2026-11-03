@@ -339,3 +339,78 @@ def test_powered_staff_uses_authored_hit_speed_and_stances():
         ),
         {"magic": 50},
     ).supported
+
+
+@pytest.mark.parametrize("armour", [-5, -2, 0, 4, 6, 100])
+@pytest.mark.parametrize("pattern", ["single", "independent_double", "conditional_double"])
+def test_flat_armour_and_multihit_match_enumerated_damage(armour, pattern):
+    weapon = EquipmentDefinition(
+        id=1,
+        name="Fixture",
+        slot="weapon",
+        attack_styles=("stab",),
+        attack_pattern=pattern,
+        bonuses=EquipmentBonuses(melee_strength=64),
+    )
+    result = evaluate_loadout(
+        [weapon], "stab", {"attack": 50, "strength": 50}, CombatTarget(flat_armour=armour)
+    )
+    maxima = [12] if pattern == "single" else [6, 6]
+    probabilities = [result.accuracy] * len(maxima)
+    if pattern == "conditional_double":
+        probabilities[1] = result.accuracy**2
+    means = [sum(max(0, max(r, 1) - armour) for r in range(m + 1)) / (m + 1) for m in maxima]
+    assert result.dps == pytest.approx(
+        sum(p * mean for p, mean in zip(probabilities, means, strict=True)) / 2.4
+    )
+    assert [h.accuracy for h in result.hitsplats] == pytest.approx(probabilities)
+    assert [h.max_hit for h in result.hitsplats] == [max(0, m - armour) for m in maxima]
+    assert result.max_hit == sum(h.max_hit for h in result.hitsplats)
+
+
+@pytest.mark.parametrize("armour", [-5, 6])
+def test_magic_bypasses_flat_armour(armour):
+    baseline = evaluate_loadout([], "magic", {"magic": 50})
+    result = evaluate_loadout([], "magic", {"magic": 50}, CombatTarget(flat_armour=armour))
+    assert result.dps == baseline.dps
+    assert result.max_hit == baseline.max_hit
+
+
+@pytest.mark.parametrize("value", [True, 1.5, "2", -10001, 10001])
+def test_flat_armour_requires_bounded_strict_integer(value):
+    with pytest.raises(ValidationError):
+        CombatTarget(flat_armour=value)
+
+
+def test_double_hit_odd_maximum_and_zero_rolls():
+    weapon = EquipmentDefinition(
+        id=1,
+        name="Fixture",
+        slot="weapon",
+        attack_styles=("crush",),
+        attack_pattern="conditional_double",
+        bonuses=EquipmentBonuses(melee_strength=59),
+    )
+    result = evaluate_loadout([weapon], "crush", {"attack": 50, "strength": 50})
+    assert [h.max_hit for h in result.hitsplats] == [5, 6]
+    weak = weapon.model_copy(update={"bonuses": EquipmentBonuses(melee_strength=-64)})
+    zero = evaluate_loadout([weak], "crush", {"attack": 1, "strength": 1})
+    assert [h.max_hit for h in zero.hitsplats] == [1, 1]
+    assert zero.dps == pytest.approx((zero.accuracy + zero.accuracy**2) / 2.4)
+
+
+def test_armour_cannot_hide_unsupported_damage_cap():
+    weapon = EquipmentDefinition(
+        id=1,
+        name="Fixture",
+        slot="weapon",
+        attack_styles=("crush",),
+        bonuses=EquipmentBonuses(melee_strength=64),
+    )
+    result = evaluate_loadout(
+        [weapon],
+        "crush",
+        {"attack": 50, "strength": 50},
+        CombatTarget(flat_armour=100, damage_cap=5),
+    )
+    assert not result.supported

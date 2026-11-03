@@ -240,3 +240,32 @@ it("rejects publication when the account fixture changes during a pending run", 
   expect(state.single.result).toBeNull();
   expect(state.single.error).toContain("context changed");
 });
+
+it.each(["", "1.5", "10001", "-10001"])(
+  "rejects invalid global flat armour %s",
+  (armour) => {
+    const draft = newDraft();
+    draft.targetInputs = { flat_armour: armour };
+    draft.combatTarget = {
+      name: "Custom",
+      defence_level: 1,
+      magic_level: 1,
+      bonuses: {},
+      flat_armour: Number(armour),
+    };
+    expect(() => normalize(draft, "snapshot")).toThrow(/flat armour/i);
+  },
+);
+it("preserves negative custom global armour", () => {
+  const draft = newDraft();
+  draft.combatTarget = {
+    name: "Custom",
+    defence_level: 1,
+    magic_level: 1,
+    bonuses: {},
+    flat_armour: -5,
+  };
+  expect(
+    normalize(draft, "snapshot").request.target.definition?.flat_armour,
+  ).toBe(-5);
+});

@@ -161,6 +161,16 @@ export function normalize(
     if (role.combatOptionOptimization === false)
       throw new Error("Auto requires combat option optimization.");
   }
+  const globalArmour = draft.combatTarget?.flat_armour ?? 0;
+  if (
+    (draft.targetInputs?.flat_armour !== undefined &&
+      !draft.targetInputs.flat_armour.trim()) ||
+    !Number.isSafeInteger(globalArmour) ||
+    Math.abs(globalArmour) > 10000
+  )
+    throw new Error(
+      "Target flat armour requires a whole number between -10000 and 10000.",
+    );
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -205,11 +215,13 @@ export function normalize(
         }
         const n = Number(value);
         const min =
-          key.startsWith("bonuses.") || key.startsWith("ranged_")
-            ? -64
-            : key === "damage_cap"
-              ? 1
-              : 0;
+          key === "flat_armour"
+            ? -10000
+            : key.startsWith("bonuses.") || key.startsWith("ranged_")
+              ? -64
+              : key === "damage_cap"
+                ? 1
+                : 0;
         if (
           !value.trim() ||
           !Number.isSafeInteger(n) ||
@@ -269,9 +281,11 @@ export function normalize(
       );
     if (
       role.combatTarget &&
-      ([role.combatTarget.defence_level, role.combatTarget.magic_level].some(
-        (n) => !Number.isSafeInteger(n) || n < 0 || n > 10000,
-      ) ||
+      (!Number.isSafeInteger(role.combatTarget.flat_armour ?? 0) ||
+        Math.abs(role.combatTarget.flat_armour ?? 0) > 10000 ||
+        [role.combatTarget.defence_level, role.combatTarget.magic_level].some(
+          (n) => !Number.isSafeInteger(n) || n < 0 || n > 10000,
+        ) ||
         Object.values(role.combatTarget.bonuses).some(
           (n) => !Number.isSafeInteger(n),
         ))

@@ -126,6 +126,39 @@ export function TargetFields({
             />
           </label>
           <FieldError id="defence" message={errors.defence} />
+          <label>
+            Flat armour
+            <input
+              type="number"
+              min="-10000"
+              max="10000"
+              value={
+                draft.targetInputs?.flat_armour ??
+                draft.combatTarget?.flat_armour ??
+                0
+              }
+              onChange={(event) =>
+                change({
+                  targetInputs: {
+                    ...draft.targetInputs,
+                    flat_armour: event.target.value,
+                  },
+                  combatTarget: {
+                    name: draft.target,
+                    defence_level: Number(draft.defence),
+                    magic_level: 1,
+                    bonuses: {},
+                    ...draft.combatTarget,
+                    flat_armour: Number(event.target.value),
+                  },
+                })
+              }
+            />
+          </label>
+          <p>
+            Applied to each accurate melee or ranged hitsplat; negative values
+            increase damage. Magic ignores flat armour.
+          </p>
           <details className="control-help">
             <summary>About custom targets</summary>
             <p>

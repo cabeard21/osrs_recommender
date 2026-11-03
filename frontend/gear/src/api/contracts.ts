@@ -97,6 +97,7 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  flat_armour?: number;
   name: string;
   defence_level: number;
   magic_level: number;
@@ -329,6 +330,7 @@ export interface OptimizationReply {
   selectedSolutionId?: string;
 }
 export interface CombatPerformance {
+  hitsplats?: { accuracy: number; max_hit: number }[];
   elemental_weakness?: {
     element: "air" | "water" | "earth" | "fire" | null;
     percent: number;

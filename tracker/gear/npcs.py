@@ -45,7 +45,7 @@ class NpcCatalog:
             payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-attributes-v2"
+            + b"ordinary-npc-flat-armour-v3"
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)
@@ -86,12 +86,18 @@ class NpcCatalog:
                     status = "not_reviewed"
                 reasons.append(f"Unknown NPC mechanic attribute: {attribute}.")
         exception = manifest.get("mechanic_exceptions", {}).get(str(row["id"]))
-        if exception:
+        if exception and not (
+            row["id"] == 13012
+            and row.get("version") == "Regular"
+            and exception["reasons"] == ["Target has phase-specific damage rules."]
+        ):
             status = "unsupported"
             reasons.extend(exception["reasons"])
-        if defence.get("flat_armour", 0):
+        if row["id"] == 13012 and row.get("version") == "Clone":
             status = "unsupported"
-            reasons.append("Flat armour is not supported.")
+            reasons.append(
+                "Eclipse Moon Clone accuracy, timing and hitsplat rules are not supported."
+            )
         if not all(type(value) is int for value in required):
             status = "unsupported"
             reasons.append("Required combat statistics are missing.")
@@ -111,6 +117,7 @@ class NpcCatalog:
                     ranged_heavy=defence["heavy"],
                     weakness_element=weakness.get("element"),
                     weakness_percent=weakness.get("severity", 0),
+                    flat_armour=defence.get("flat_armour", 0),
                     damage_cap=50 if row["name"] == "Zulrah" else None,
                     unsupported_mechanics=tuple(reasons) if status != "supported" else (),
                 ).model_dump(mode="json")
@@ -128,7 +135,12 @@ class NpcCatalog:
             "source_url": manifest["source_url"],
             "wiki_url": "https://oldschool.runescape.wiki/w/"
             + quote(row["name"].replace(" ", "_")),
-            "limitations": review.get("limitations", [])
+            "limitations": [
+                "Ordinary attacks only; Moon curses, healing, survival and encounter "
+                "downtime are not simulated."
+            ]
+            if row["id"] in {13011, 13012, 13013}
+            else review.get("limitations", [])
             if review
             else [
                 "Ordinary direct attacks using catalog base stats only; encounter phases, "
@@ -198,7 +210,7 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         )
     canonical = CombatTarget.model_validate(entry["target"])
     effective = role.target or canonical
-    for field in ("damage_cap", "unsupported_mechanics"):
+    for field in ("damage_cap", "flat_armour", "unsupported_mechanics"):
         if getattr(effective, field) != getattr(canonical, field):
             raise ValueError("NPC mechanic restrictions cannot be overridden.")
     return role.model_copy(update={"target": effective})

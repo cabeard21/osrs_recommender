@@ -16,8 +16,9 @@ from typing import Any
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.ammo import cape_recovery_rate
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v1"
+COST_MODEL_VERSION = "ordinary-resource-cost-v2"
 _RUNES = {
     556: "Air rune",
     555: "Water rune",
@@ -237,6 +238,9 @@ def evaluate_running_cost(
         resources, reasons = _ranged_resources(equipment, price_records, now)
     elif style not in {"stab", "slash", "crush"}:
         reasons = ["Attack resource consumption has not been reviewed."]
+    # Ordinary damage support does not imply reviewed repair costs.
+    if any(item.id in TORAG_USABLE_IDS for item in equipment.values()):
+        reasons.append("Torag's hammers degradation and repair costs have not been reviewed.")
     reasons += [
         f"No price available for {r['name']}."
         for r in resources
