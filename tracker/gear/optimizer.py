@@ -22,9 +22,10 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
-from tracker.gear.combat_options import ancient_spell_problem, eligible_combat_options
+from tracker.gear.combat import evaluate_prepared_loadout
+from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
 from tracker.gear.evaluation import (
-    evaluate_equipment,
+    equipment_problems,
     item_problems,
     loadout_problems,
     purchase_cost,
@@ -33,9 +34,15 @@ from tracker.gear.evaluation import (
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.local_refinement import refine_completed
-from tracker.gear.models import CombatTarget, EquipmentDefinition, TargetSelection
+from tracker.gear.models import (
+    CombatPerformance,
+    CombatTarget,
+    EquipmentDefinition,
+    TargetSelection,
+)
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
+from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.transitions import inventory_slots, plan_transition
@@ -243,6 +250,10 @@ class _Search:
         self.edges = required_transitions(request)
         self.performance_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any]] = {}
         self.option_cache: dict[tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None] = {}
+        self.scorer = EquipmentScorer(items)
+        self.configured_option_cache: dict[
+            tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
+        ] = {}
 
         # Catalog definitions are fixed for this search; bound retained plans per
         # request and include inventory context as well as directional equipment.
@@ -286,22 +297,16 @@ class _Search:
     def cost(self, ids: set[int]) -> int:
         return purchase_cost(ids, self.facts, self.request)
 
-    def performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
-        key = (role.id, tuple(sorted(equipment.items())))
-        if key not in self.performance_cache:
-            if role.style == "special":
-                result: dict[str, Any] = {
-                    "supported": True,
-                    "dps": None,
-                    "limitations": [
-                        "Special role is unscored; no damage or utility benefit assumed."
-                    ],
-                }
-            elif role.combat_options is not None:
-                weapon = self.items.get(equipment.get("weapon", -1))
+    def configured_options(
+        self, role: RoleConfig, weapon: EquipmentDefinition | None
+    ) -> tuple[tuple[RoleConfig, CombatOption], ...]:
+        """Account, role filters and catalog stay fixed for this search."""
+        key = (role.id, weapon.id if weapon else None)
+        if key not in self.configured_option_cache:
+            allowed = role.combat_options
+            configured = []
+            if allowed is not None:
                 discipline = "melee" if role.style in {"stab", "slash", "crush"} else role.style
-                allowed = role.combat_options
-                evaluated = []
                 for option in eligible_combat_options(
                     weapon, self.snapshot, discipline=discipline, levels=self.levels
                 ):
@@ -315,7 +320,7 @@ class _Search:
                         or (spell_id is not None and spell_id not in allowed.spells)
                     ):
                         continue
-                    configured = role.model_copy(
+                    selected = role.model_copy(
                         update={
                             "style": option.style,
                             "stance": option.stance,
@@ -323,8 +328,47 @@ class _Search:
                             "powered_attack": option.powered_attack,
                         }
                     )
-                    performance = evaluate_equipment(
-                        equipment, self.items, configured, self.levels
+                    configured.append((selected, option))
+            self.configured_option_cache[key] = tuple(configured)
+        return self.configured_option_cache[key]
+
+    def prepare(self, equipment: Mapping[str, int]) -> PreparedEquipment | CombatPerformance:
+        """Validate physical slots before using cached incremental bonus totals."""
+        problems = equipment_problems(equipment, self.items)
+        if problems:
+            return CombatPerformance(supported=False, limitations=problems)
+        return self.scorer.prepare(equipment)
+
+    def evaluate(self, equipment: Mapping[str, int], role: RoleConfig) -> CombatPerformance:
+        prepared = self.prepare(equipment)
+        return (
+            prepared
+            if isinstance(prepared, CombatPerformance)
+            else evaluate_prepared_loadout(prepared, role, self.levels)
+        )
+
+    def performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
+        key = (role.id, tuple(sorted(equipment.items())))
+        if key not in self.performance_cache:
+            if role.style == "special":
+                result: dict[str, Any] = {
+                    "supported": True,
+                    "dps": None,
+                    "limitations": [
+                        "Special role is unscored; no damage or utility benefit assumed."
+                    ],
+                }
+            elif role.combat_options is not None:
+                weapon = self.items.get(equipment.get("weapon", -1))
+                evaluated = []
+                options = self.configured_options(role, weapon)
+                prepared = self.prepare(equipment) if options else None
+                for configured, option in options:
+                    assert prepared is not None
+                    performance = (
+                        prepared
+                        if isinstance(prepared, CombatPerformance)
+                        else evaluate_prepared_loadout(prepared, configured, self.levels)
                     ).model_dump(mode="json")
                     if performance["supported"]:
                         evaluated.append((performance, option))
@@ -351,9 +395,7 @@ class _Search:
                     }
                     self.option_cache[key] = None
             else:
-                result = evaluate_equipment(equipment, self.items, role, self.levels).model_dump(
-                    mode="json"
-                )
+                result = self.evaluate(equipment, role).model_dump(mode="json")
                 problem = (
                     ancient_spell_problem(
                         self.items.get(equipment.get("weapon", -1)),
@@ -851,15 +893,21 @@ def optimize(
                 individual[role.id].append(seeded)
     # Direct common-equipment search avoids losing the zero-swap setup in independent
     # role beams. More complex disconnected graphs are explored by the joint beam.
-    common = search.loadouts(request.roles)
+    # Single has no transitions: its individual beam already contains every
+    # shared seed, and all feasible finalists apply to every action cap.
+    common = (
+        individual[request.roles[0].id]
+        if len(request.roles) == 1
+        else search.loadouts(request.roles)
+    )
     tuples: list[dict[str, dict[str, int]]] = [
         {role.id: equipment for role in request.roles} for equipment in common
     ]
-    if len(request.roles) > 1:
-        # Joint per-slot search comes first so independent tuple expansion cannot
-        # consume the deterministic node budget before shared gear is explored.
-        for swap_limit in [*range(request.max_swaps + 1), None]:
-            tuples.extend(search.joint_loadouts(swap_limit))
+    swap_limits = [*range(request.max_swaps + 1), None] if len(request.roles) > 1 else []
+    # Joint per-slot search comes first so independent tuple expansion cannot
+    # consume the deterministic node budget before shared gear is explored.
+    for swap_limit in swap_limits:
+        tuples.extend(search.joint_loadouts(swap_limit))
 
     def partial_rank(c: dict[str, dict[str, int]]) -> tuple[Any, ...]:
         score = sum(
@@ -876,7 +924,7 @@ def optimize(
 
     # Search each constraint separately. A high-scoring unrestricted beam must not
     # evict all feasible low-action tuples before the action limit is considered.
-    for swap_limit in [*range(request.max_swaps + 1), None]:
+    for swap_limit in swap_limits:
         beam: list[dict[str, dict[str, int]]] = [{}]
         for role in request.roles:
             expanded = []

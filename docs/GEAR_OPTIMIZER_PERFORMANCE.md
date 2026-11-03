@@ -1,5 +1,238 @@
 # Gear performance and equipment presentation — 2026-10-19
 
+## November 2, 2026: repeated search and frontier work
+
+Single-role optimization now reuses its individual equipment beam for common
+equipment and skips action-cap tuple searches: there are no role transitions,
+and every feasible finalist applies to every cap. Secondary and running-cost
+frontier searches also enumerate Single equipment once. Multi-role searches
+retain their separate cap-specific beams.
+
+Frontier diversity selection evaluates each candidate's ranking once and reuses
+it for sorting, DPS bands and secondary ordering. Combat-option variants use
+small request-local cache overlays instead of copying the entire performance
+and option caches; writes remain isolated from other variants and the base search.
+Combat formulas, eligibility and final exact validation are unchanged. Node
+diagnostics count actual expansions, so Single counts decrease. Removing duplicate
+work can leave more of a bounded search's existing budget available.
+
+The following direct-service measurements use Python 3.12.10 on Windows, the
+bundled redacted `gear_search_quality_account.json` fixture, its frozen clock and
+prices, and the pre-change versus changed optimizer/frontier sources. Each cell
+is the median of three calls, with the two versions measured sequentially and
+without concurrent tests or profiling. There is no separate warmup; these are
+local fixture measurements, not live account, HTTP or Pi acceptance.
+
+| Frozen case | Before | After | Reduction in time |
+| --- | ---: | ---: | ---: |
+| Owned Slash | 0.5555 s | 0.4564 s | 17.8% |
+| Owned Slash, automatic melee options and accuracy frontier | 4.6938 s | 3.5640 s | 24.1% |
+| Owned Magic | 3.1554 s | 1.2384 s | 60.8% |
+| Joint melee/Ranged, four-action cap | 3.1249 s | 3.0579 s | 2.1% |
+
+Cases come from `tools.benchmark_gear_search_quality.benchmark_case`. The automatic
+melee case uses stab/slash/crush, accurate/aggressive/controlled/defensive, and no
+spells. All four complete responses match except `explored_nodes` diagnostics;
+the small joint timing difference should be treated as noise. Owned Slash's
+primary expansion count falls from 18,678 to 8,699. Selected equipment, combat
+options, DPS, purchases, transitions, curves and frontier points remain equal.
+
+Focused verification: 236 optimizer and real API tests passed with 95.12% coverage
+across `optimizer.py` and `frontier.py`. Regression cases cover Single expansion
+counts and cap invariance, stable rank ties and duplicate equality, cache lookup
+without enumeration, multi-role option preservation and base-cache isolation.
+Ruff lint/format, mypy and independent code review also passed.
+
+## November 2, 2026: incremental combat scoring
+
+The next pass adds immutable prepared equipment in `tracker/gear/scoring.py`.
+A request-local prefix cache retains at most 8,192 equipment aggregates. Child
+states add integer bonuses to the parent's totals and track weapon/ammunition
+metadata directly. Fractional magic damage still uses Python's original ordered
+`sum` over item terms, preserving floating-point and max-hit breakpoints. The
+ranged ammunition correction is a lazy view, so melee/magic do not build it.
+
+The full evaluator and incremental path share the same legality checks and
+combat formulas. Physical slot validation precedes incremental preparation.
+Automatic attacks reuse filtered, configured options per role and weapon within
+the frozen request; each physical loadout is prepared once across its options.
+Frontier combat variants reuse the same scoring and option preparation while
+retaining isolated performance/option overrides. Nothing is cached across
+account snapshots or optimization requests.
+
+The comparison below starts from the completed repeated-work improvements above,
+not the earlier October implementation. It uses Python 3.12.10 on Windows and the
+same bundled frozen fixture, with medians of three direct optimizer calls per
+case. Versions were measured sequentially without concurrent tests or profiling;
+there is no separate warmup. These are local compute measurements, not Pi/API
+latency or real-account acceptance.
+
+| Frozen case | Before incremental scoring | After | Change in time |
+| --- | ---: | ---: | ---: |
+| Owned Slash | 0.4564 s | 0.4282 s | 6.2% less |
+| Automatic melee options, accuracy frontier | 3.4790 s | 1.8504 s | 46.8% less |
+| Owned Magic | 1.1851 s | 1.1519 s | 2.8% less |
+| Joint melee/Ranged, four-action cap | 3.0849 s | 2.9496 s | 4.4% less |
+| Auto melee/Ranged/Magic | 13.2928 s | 4.5540 s | 65.7% less |
+| Owned Slash, Thorough | 0.9823 s | 1.0314 s | 5.0% more |
+
+The strongest measured gains are in option-heavy searches: approximately 1.9x
+for the accuracy frontier and 2.9x for Auto. Fixed-attack changes are small and
+this three-sample comparison does not establish a Thorough improvement. Auto
+allows all attack categories, accurate/aggressive/controlled/defensive/rapid,
+and Fire Bolt; the accuracy case uses the same filters with no spells. Thorough
+uses the existing bounded local refinement. Complete responses for all six
+cases match, including node counts, gear, options, purchases, transitions and
+frontiers; only observational `duration_seconds` fields are excluded.
+
+Independent review also matched 2,000 randomized cases against the saved original
+combat evaluator. Regression coverage includes exact fractional sums and input
+order, append/replace/remove, ammo exclusions, invalid physical slots, unsupported
+effects/targets, damage caps, Ancient/Iban/powered attacks, request-local cache
+bounds, distinct role filters/targets, and preparation reuse across options.
+Final focused verification: 376 tests passed with 95.81% coverage across combat,
+optimizer, frontier and scoring modules (scoring itself 100%). Ruff lint/format,
+mypy, diff checks and independent review passed.
+
+## November 2, 2026: Auto process-parallelism investigation
+
+This section records the local research prototype preceding the desktop integration
+described below; these measurements are not serving-process acceptance.
+Single Auto currently searches melee, Ranged and Magic sequentially in
+`tracker/gear/auto.py`. Those independent alternatives can run concurrently.
+Joint multi-role optimization remains coupled by shared purchases, carried gear,
+inventory and transitions; independent per-role searches would change its meaning.
+
+An ignored prototype at `.tmp/gear-parallel/benchmark.py` compares the same
+three-discipline frozen request used above, using explicit detached payloads and
+the existing pure optimizer. Every branch retains `_complete_frontiers=True`
+and `_running_frontier=True` because the original Auto request includes Magic.
+Complete branch responses are returned to the parent and merged by the actual
+Auto merger in canonical melee/Ranged/Magic order. Full output matches ordinary
+serial Auto; elapsed-time diagnostics are excluded from equality checks.
+
+Measurements use Windows CPython 3.12.10 on a 12-logical-CPU host. Each warm cell
+is a median of three requests. Thread/process pools remain alive across requests;
+the first request includes lazy worker startup/imports. Process pools explicitly
+use `spawn`, and all strategies use the same process-visible cancellation event.
+Payload reconstruction, IPC result return and Auto merging are timed. The frozen
+serialized payload plus three requests is 91,292 bytes. No database, network
+price refresh, serving API or Pi participates.
+
+| Execution | Warm median | First request with new pool |
+| --- | ---: | ---: |
+| Serial branches | 4.7811 s | Not measured separately |
+| Three threads | 6.2145 s | 6.2178 s |
+| Two worker processes | 3.4325 s | 3.5631 s |
+| Three worker processes | 2.0829 s | 2.7366 s |
+
+Three processes achieve about 2.3x versus serial in this fixture. The serial
+branch imbalance alone limits ideal speedup to roughly 2.5x, before overhead.
+Thread timings varied from 5.94 to 7.39 seconds and did not improve CPU throughput.
+Python's process pool bypasses the GIL, while requiring serializable inputs:
+[official Python 3.12 documentation](https://docs.python.org/3.12/library/concurrent.futures.html#processpoolexecutor).
+
+Sampled child resident memory is approximately 100 MiB per worker. Summed
+per-worker lifetime peak working sets were 203.3 MiB for two workers and 306.6
+MiB for three, in addition to the parent. These sums are not simultaneous
+whole-service peaks, and the small fixture does not establish full-catalog RAM
+needs. A separate warmed three-process cancellation probe signaled after 0.2s;
+all three branches raised `optimization_cancelled` and drained in 0.0315s.
+The pool accepted a subsequent lightweight task. This does not measure browser
+disconnect latency, API lock release or cancellation recovery under worker death.
+
+Recommended implementation boundaries:
+
+- Use an optional app-owned warm pool with configurable capacity up to three,
+  explicit `spawn`, startup/shutdown ownership and broken-worker recovery.
+- Keep `GearService` and its busy lock in the parent. Children invoke the pure
+  optimizer and receive frozen account/request/prices/time; they do not access
+  the database, scheduler or price refresh clients.
+- Snapshot, request and catalog objects cannot be submitted directly because
+  their `MappingProxyType` fields are not picklable. Reuse the existing
+  `AccountFacts.from_snapshot()/snapshot()` transport and request model dumps;
+  load or reconstruct a catalog/content revision matching the parent's context.
+- Merge in the original discipline order, preserve all Auto flags and exact
+  result semantics, and retain fresh-snapshot acceptance checks in the API.
+- Give each request its own process-visible cancellation state. Cancel pending
+  jobs and drain active branches before releasing the service lock or reusing
+  worker state. Cancelling a running future alone cannot stop the calculation.
+- Leave joint multi-role search intact. Account for separate web/MCP services:
+  creating an independent three-worker pool in both can double child RAM.
+- Before selecting Pi defaults, measure the full catalog through the actual API,
+  including total parent/child/container memory, responsiveness, disconnects,
+  pool failures and serial fallback. No Pi latency or memory claim follows from
+  these Windows prototype results.
+
+## November 2, 2026: desktop integration
+
+Desktop Gear now owns a persistent three-process pool by default. Its lifespan
+warms every child with the same content/catalog context and closes the pool on
+shutdown. `optimization_workers` accepts one (serial), two or three; the existing
+launcher and private desktop config remain the entry point. Normal app/MCP
+services retain their default serial execution. Pi optimizer performance is not
+a gate for this desktop feature; the Pi continues supplying authoritative facts.
+
+Only Single Auto requests with multiple allowed disciplines use the pool. The
+existing Auto merger consumes complete branch results in canonical discipline
+order, preserves the running/secondary frontier flags, and refuses partial or
+duplicate result sets. Fixed-discipline and joint multi-role searches retain
+their existing paths. Account facts, explicit assumptions, quoted prices and
+the evaluation clock are frozen per request. Worker contexts are content-hashed;
+authored requirement expressions, community metadata and verified catalogs are
+preserved by the detached transport. Browser-only fields stay in the parent.
+
+The parent retains the service busy guard until all work drains. Cancellation
+uses a process-visible byte flag without per-node semaphore locking. After a
+five-second cooperative grace, cleanup terminates/kills only the pool's own
+children and checks their exit. A broken pool rebuilds for a fresh request;
+the failed calculation is never silently recomputed. A child or executor
+management thread that cannot be stopped poisons the pool and prevents reuse.
+Startup failures fall back to serial only after cleanup; running-worker and
+context failures return sanitized retryable HTTP 503 responses. The API's fresh
+snapshot acceptance check remains in the parent.
+
+Validation includes actual Windows spawn, full authored-catalog transport,
+serial/parallel Fast and Thorough API response parity, cancellation/reuse,
+real worker crashes, forced cleanup of an unresponsive child, and surviving
+child/manager guards. The 368-case focused regression selection exposed four
+stale replay fixtures that omitted the existing running-price/time context;
+restoring that context preserved their exact tie-key assertions and all four
+replays passed. The selection's coverage gate reached 90.25%; the final process
+and payload suite separately passed 20 tests with 89.75% combined coverage
+(87% pool, 100% payload). Ruff lint/format, mypy and independent review passed.
+
+The actual desktop HTTP path was then measured on unique loopback ports using
+the full 5,435-item catalog, an isolated public level-99 account, deterministic
+quotes and a 5,000,000 GP budget. Account/prices came from frozen synthetic
+facts, not the Pi or operator database. Both serial and parallel servers used
+the real desktop lifespan, API, service guard and result serialization. Each
+cell is one measured request with concurrent health/context probes, not a
+statistical latency estimate or real-account acceptance.
+
+| Desktop HTTP execution | Auto Fast | Auto Thorough |
+| --- | ---: | ---: |
+| Serial, one worker setting | 8.518 s | 11.249 s |
+| Three worker processes | 3.249 s | 4.232 s |
+
+Complete HTTP responses matched except observational `duration_seconds` fields.
+These samples are approximately 2.6x faster with processes. Initial app readiness
+took 1.260s serial versus 4.352s with all workers warmed. Maximum sampled summed
+parent/child resident memory was 216 MiB serial versus 732 MiB parallel; sampling
+does not establish an exact allocation peak. All concurrent health/context probes
+returned 200. Context-probe medians during the process-backed requests were about
+4ms, compared with 253–316ms during serial requests.
+
+Real HTTP disconnect probes first established an overlapping `optimizer_busy`
+503, then measured reuse of the same service guard through a valid exact-loadout
+evaluation: 0.352s after disconnect serial and 0.322s parallel. The parallel probe
+observed six busy responses before the successful valid evaluation; invalid
+responses did not count as guard release. Both test servers shut down normally,
+and all observed parent/worker PIDs exited. Ignored local evidence lives under
+`.tmp/gear-pool/desktop-http/`; no production process was restarted.
+
+## October 19, 2026 investigation
+
 The reported 33.62-second full Gear-page calculation was dominated by repeated
 serialization of one immutable account snapshot. This pass retains the accepted
 physical-variant and melee breakpoint beam fixes, and changes no combat formula,

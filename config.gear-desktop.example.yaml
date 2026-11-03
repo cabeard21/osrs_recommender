@@ -4,6 +4,9 @@
 bind_address: 127.0.0.1
 port: 8502
 content_dir: content
+# Single Auto searches melee, ranged and magic in desktop worker processes.
+# Set to 1 for serial execution, or 2 to reduce process memory use.
+optimization_workers: 3
 
 # Use the Pi's private Tailscale address. No database file is mounted or copied.
 pi_url: http://100.117.157.57:8502

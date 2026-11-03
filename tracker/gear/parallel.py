@@ -1,0 +1,328 @@
+"""Desktop-owned spawned workers for independent Single Auto alternatives."""
+
+from __future__ import annotations
+
+import logging
+import multiprocessing
+import os
+from collections.abc import Mapping
+from concurrent.futures import Future, ProcessPoolExecutor, wait
+from concurrent.futures.process import BrokenProcessPool
+from datetime import datetime
+from functools import partial
+from threading import Lock
+from time import monotonic, sleep
+from typing import Any
+
+from tracker.accounts.snapshot import AccountSnapshot
+from tracker.content.loader import Content
+from tracker.estimation.prices import PriceRecord
+from tracker.gear.auto import branch_requests
+from tracker.gear.catalog import EquipmentCatalog
+from tracker.gear.optimizer import OptimizationRequest
+from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
+
+logger = logging.getLogger(__name__)
+_CONTEXT: tuple[Content, EquipmentCatalog, str, Any] | None = None
+_UNAVAILABLE = "optimizer_worker_unavailable: desktop workers unavailable; retry the calculation"
+
+
+class _CancellationFlag:
+    """One parent writes one shared byte; child polling never acquires a semaphore.
+
+    A killed child cannot leave the cancellation token locked. The desktop's
+    single-byte shared-memory reads/writes require no compound read-modify-write.
+    """
+
+    def __init__(self, context: Any) -> None:
+        self._value = context.RawValue("b", 0)
+
+    def is_set(self) -> bool:
+        return bool(self._value.value)
+
+    def set(self) -> None:
+        self._value.value = 1
+
+    def clear(self) -> None:
+        self._value.value = 0
+
+    def wait(self, timeout: float) -> bool:
+        deadline = monotonic() + timeout
+        while not self.is_set() and monotonic() < deadline:
+            sleep(0.005)
+        return self.is_set()
+
+
+def _initialize(payload: dict[str, Any], identity: str, stopped: Any, ready: Any) -> None:
+    global _CONTEXT
+    content, catalog = decode_context(payload, identity)
+    _CONTEXT = content, catalog, identity, stopped
+    # Ensure startup has initialized every child, not just one quick warmup task.
+    ready.wait(timeout=30)
+
+
+def _warm() -> int:
+    return os.getpid()
+
+
+def _execute_branch(payload: dict[str, Any], options: dict[str, bool]) -> dict[str, Any]:
+    from tracker.gear.optimizer import optimize
+
+    if _CONTEXT is None:
+        raise ValueError(_UNAVAILABLE)
+    content, catalog, identity, stopped = _CONTEXT
+    snapshot, request, prices, now = decode_job(payload, identity)
+    if len(request.roles) != 1 or request.roles[0].allowed_disciplines is not None:
+        raise ValueError("Worker requires a concrete Single discipline")
+    return optimize(
+        snapshot,
+        request,
+        catalog,
+        content,
+        prices,
+        now,
+        cancelled=stopped.is_set,
+        _complete_frontiers=True,
+        **options,
+    )
+
+
+class AutoProcessPool:
+    """One app's warm pool; a request owns its cancellation token until all jobs drain."""
+
+    GRACE_SECONDS = 5.0
+    REAP_SECONDS = 1.0
+
+    def __init__(self, workers: int) -> None:
+        if isinstance(workers, bool) or workers not in (1, 2, 3):
+            raise ValueError("Gear worker count must be between one and three")
+        self.workers = workers
+        self._context = multiprocessing.get_context("spawn")
+        self._run_lock = Lock()
+        self._closed = False
+        self._executor: ProcessPoolExecutor | None = None
+        self._payload: dict[str, Any] | None = None
+        self._identity: str | None = None
+        self._stopped: Any = None
+        self._unsafe_children: tuple[Any, ...] = ()
+        self._unsafe_manager: Any = None
+
+    def _new_executor(self) -> ProcessPoolExecutor:
+        assert self._payload is not None and self._identity is not None
+        return ProcessPoolExecutor(
+            max_workers=self.workers,
+            mp_context=self._context,
+            initializer=partial(
+                _initialize,
+                self._payload,
+                self._identity,
+                self._stopped,
+                self._context.Barrier(self.workers),
+            ),
+        )
+
+    def _build(self) -> None:
+        self._stopped = _CancellationFlag(self._context)
+        try:
+            self._executor = self._new_executor()
+            futures = [self._executor.submit(_warm) for _ in range(self.workers)]
+            for future in futures:
+                future.result(timeout=35)
+        except Exception as error:
+            self._stopped.set()
+            self._dispose()
+            raise ValueError(_UNAVAILABLE) from error
+
+    def start(self, content: Content, catalog: EquipmentCatalog) -> None:
+        payload, identity = context_payload(content, catalog)
+        with self._run_lock:
+            if self._closed:
+                raise ValueError(_UNAVAILABLE)
+            if self._identity is not None and self._identity != identity:
+                raise ValueError("optimizer_worker_context_mismatch")
+            self._payload, self._identity = payload, identity
+            if self._executor is None:
+                self._build()
+
+    def _dispose(self, *, force: bool = False) -> None:
+        executor, self._executor = self._executor, None
+        if executor is not None:
+            # Python 3.12 has no public terminate_workers API. Capture only this
+            # executor's owned Process handles before shutdown detaches them.
+            children = tuple((getattr(executor, "_processes", None) or {}).values())
+            manager = getattr(executor, "_executor_manager_thread", None)
+            if manager is not None:
+                self._unsafe_manager = manager
+            try:
+                executor.shutdown(wait=False, cancel_futures=True)
+                if manager is not None and not force:
+                    manager.join(timeout=self.GRACE_SECONDS)
+            except Exception:
+                logger.exception("Desktop Gear worker shutdown failed")
+            try:
+                self._stop_children(children)
+            finally:
+                self._join_manager(manager)
+
+    def _join_manager(self, manager: Any) -> None:
+        if manager is None:
+            return
+        self._unsafe_manager = manager
+        try:
+            manager.join(timeout=self.REAP_SECONDS)
+        except RuntimeError:
+            # A thread which never started has nothing to reap. A live manager
+            # must remain retained even if its join failed during shutdown.
+            logger.exception("Desktop Gear worker manager join failed")
+        if manager.is_alive():
+            self._closed = True
+            raise ValueError(_UNAVAILABLE)
+        self._unsafe_manager = None
+
+    def _stop_children(self, children: tuple[Any, ...]) -> None:
+        for child in children:
+            if child.is_alive():
+                try:
+                    child.terminate()
+                except Exception:
+                    logger.exception("Desktop Gear child termination failed")
+        for child in children:
+            child.join(timeout=self.REAP_SECONDS)
+            if child.is_alive():
+                try:
+                    child.kill()
+                except Exception:
+                    logger.exception("Desktop Gear child kill failed")
+                child.join(timeout=self.REAP_SECONDS)
+        self._unsafe_children = tuple(child for child in children if child.is_alive())
+        if self._unsafe_children:
+            # Never rebuild alongside a child the OS refused to stop. Preserve
+            # the cancellation flag and fail closed until a desktop restart.
+            self._closed = True
+            raise ValueError(_UNAVAILABLE)
+
+    def close(self) -> None:
+        self._closed = True
+        if self._stopped is not None:
+            self._stopped.set()
+        with self._run_lock:
+            if self._unsafe_children:
+                self._stop_children(self._unsafe_children)
+            if self._unsafe_manager is not None:
+                self._join_manager(self._unsafe_manager)
+            self._dispose()
+
+    def _abort(self, futures: list[Future[dict[str, Any]]]) -> bool:
+        """Drain actual running jobs before another request can clear their token."""
+        self._stopped.set()
+        broken = False
+        for future in futures:
+            future.cancel()
+        deadline = monotonic() + self.GRACE_SECONDS
+        while any(not future.done() for future in futures):
+            if monotonic() >= deadline:
+                self._dispose(force=True)
+                return True
+            sleep(0.01)
+        for future in futures:
+            try:
+                future.result()
+            except BrokenProcessPool:
+                broken = True
+            except BaseException:
+                # Cancellation/worker exceptions have already failed the whole request.
+                # Every future is still consumed so none can outlive this job's token.
+                continue
+        return broken
+
+    def _dispatch(
+        self,
+        jobs: list[dict[str, Any]],
+        options: dict[str, bool],
+        cancelled: Any,
+    ) -> list[dict[str, Any]]:
+        futures: list[Future[dict[str, Any]]] = []
+        try:
+            assert self._executor is not None
+            for job in jobs:
+                futures.append(self._executor.submit(_execute_branch, job, options))
+            pending = set(futures)
+            while pending:
+                if self._closed or (cancelled is not None and cancelled()):
+                    raise ValueError("optimization_cancelled")
+                completed, pending = wait(pending, timeout=0.025)
+                for future in completed:
+                    future.result()
+            if self._closed or (cancelled is not None and cancelled()):
+                raise ValueError("optimization_cancelled")
+            return [future.result() for future in futures]
+        except BaseException as error:
+            broken = self._abort(futures) or isinstance(error, BrokenProcessPool)
+            if broken:
+                self._dispose()
+            if isinstance(error, (KeyboardInterrupt, SystemExit)):
+                raise
+            if str(error) == "optimization_cancelled":
+                raise ValueError("optimization_cancelled") from error
+            raise ValueError(_UNAVAILABLE) from error
+
+    def run(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest,
+        catalog: EquipmentCatalog,
+        content: Content,
+        price_records: Mapping[int, PriceRecord],
+        now: datetime,
+        **options: Any,
+    ) -> list[tuple[str, dict[str, Any]]]:
+        cancelled = options.pop("cancelled", None)
+        if self._closed or self._identity is None:
+            raise ValueError(_UNAVAILABLE)
+        if cancelled is not None and cancelled():
+            raise ValueError("optimization_cancelled")
+        if not self._run_lock.acquire(blocking=False):
+            raise ValueError("optimizer_busy: another desktop worker job is running")
+        try:
+            return self._run(
+                snapshot, request, catalog, content, price_records, now, options, cancelled
+            )
+        finally:
+            if self._stopped is not None and not self._closed:
+                self._stopped.clear()
+            self._run_lock.release()
+
+    def _run(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest,
+        catalog: EquipmentCatalog,
+        content: Content,
+        prices: Mapping[int, PriceRecord],
+        now: datetime,
+        options: dict[str, Any],
+        cancelled: Any,
+    ) -> list[tuple[str, dict[str, Any]]]:
+        if self._closed:
+            raise ValueError(_UNAVAILABLE)
+        if context_payload(content, catalog)[1] != self._identity:
+            raise ValueError("optimizer_worker_context_mismatch")
+        if any(key not in ("local_refinement", "targeted_head_refinement") for key in options):
+            raise ValueError("Unsupported desktop worker options")
+        if any(not isinstance(value, bool) for value in options.values()):
+            raise ValueError("Invalid desktop worker options")
+        if len(request.roles) != 1 or request.roles[0].allowed_disciplines is None:
+            raise ValueError("Desktop workers require Single Auto")
+        if self._executor is None:
+            self._build()  # A broken pool is recreated only for a fresh request.
+        self._stopped.clear()
+        branches = list(branch_requests(request))
+        assert self._identity is not None
+        jobs = [
+            job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
+        ]
+        selected = {**options, "_running_frontier": "magic" in request.roles[0].allowed_disciplines}
+        results = self._dispatch(jobs, selected, cancelled)
+        return [
+            (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)
+        ]

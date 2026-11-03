@@ -72,6 +72,26 @@ database migrations or provider refresh scheduler and exposes no RuneLite ingest
 endpoint. Stop any normal local app using port 8502 first, or change the desktop port.
 The Pi token stays in the Python process and is never delivered to React.
 
+Desktop Gear defaults to three persistent worker processes for Single-mode Auto
+discipline searches. Workers warm at application startup and stop with the app.
+Melee, Ranged and Magic branches use the same frozen account/prices and the existing
+result merger. Fixed-discipline and joint multi-role searches retain their normal
+execution path. The Pi and standalone MCP service do not create these desktop pools.
+
+Set `optimization_workers` in the private desktop YAML to `1` for serial execution,
+`2` for two workers, or `3` for the default. An environment override is also supported:
+
+```powershell
+$env:TRACKER_DESKTOP_OPTIMIZATION_WORKERS = "3"
+.\run-gear-desktop.bat
+```
+
+Existing desktop configs need no change to use the default. Restart the launcher
+after updating the code or worker setting. If the pool cannot start, the startup log
+reports serial fallback. A failed running worker returns a retryable optimizer error;
+the current request is not silently recomputed or partially published. Cancellation
+drains outstanding work before the service accepts another calculation.
+
 For access from another Tailscale device, run `tailscale ip -4` on the development
 PC and set `bind_address` in `config.gear-desktop.yaml` to that address. Restart the
 desktop launcher, then open `http://PC_TAILSCALE_IP:8502/gear` from your phone or

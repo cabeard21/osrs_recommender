@@ -56,6 +56,46 @@ def test_single_style_chooses_supported_better_weapon():
     assert result["selected_solution"]["loadouts"]["melee"]["equipment"]["weapon"] == 2
 
 
+@pytest.mark.parametrize("max_swaps", [0, 8, 12])
+def test_single_search_expands_loadouts_once_without_swap_tuple_search(monkeypatch, max_swaps):
+    from tracker.gear.optimizer import _Search
+
+    original = _Search.loadouts
+    expansions = []
+
+    def measured(search, roles):
+        before = search.nodes
+        result = original(search, roles)
+        expansions.append(search.nodes - before)
+        return result
+
+    monkeypatch.setattr(_Search, "loadouts", measured)
+    result = run(
+        [weapon(1, "slash"), weapon(2, "slash", 50)],
+        (RoleConfig(id="melee", style="slash"),),
+        max_swaps=max_swaps,
+    )
+    assert len(expansions) == 1
+    assert result["search"]["explored_nodes"] == expansions[0]
+    selected = result["selected_solution"]
+    assert selected["loadouts"]["melee"]["equipment"]["weapon"] == 2
+    assert selected["maximum_actions"] == 0
+    assert selected["transitions"] == []
+    assert len(result["curve"]) == max_swaps + 1
+    assert all(point["solution"] == selected for point in result["curve"])
+    assert result["unrestricted"] == selected
+
+
+def test_single_swap_cap_does_not_change_search_work_or_results():
+    items = [weapon(1, "slash"), weapon(2, "slash", 50)]
+    roles = (RoleConfig(id="melee", style="slash", locks={"weapon": 1}),)
+    zero = run(items, roles, max_swaps=0)
+    twelve = run(items, roles, max_swaps=12)
+    assert twelve["search"]["explored_nodes"] == zero["search"]["explored_nodes"]
+    assert twelve["selected_solution"] == zero["selected_solution"]
+    assert twelve["selected_solution"]["loadouts"]["melee"]["equipment"]["weapon"] == 1
+
+
 def test_partial_melee_ties_retain_strength_for_a_later_max_hit_breakpoint(monkeypatch):
     # At level 70, either +3 alone still hits 8; +6 together hits 9. A bounded
     # beam must not prefer the lower IDs with zero strength during exact ties.

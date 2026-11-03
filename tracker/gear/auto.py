@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from hashlib import sha256
 from typing import Any
 
@@ -29,28 +29,50 @@ def optimize_auto(
     content: Any,
     price_records: Any,
     now: Any,
+    *,
+    branch_runner: Callable[..., list[tuple[str, dict[str, Any]]]] | None = None,
     **options: Any,
 ) -> dict[str, Any]:
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _solution_key, optimize
 
     branches = []
-    for discipline, concrete in branch_requests(request):
-        cancelled = options.get("cancelled")
-        if cancelled and cancelled():
-            raise ValueError("optimization_cancelled")
-        result = optimize(
-            snapshot,
-            concrete,
-            catalog,
-            content,
-            price_records,
-            now,
-            _complete_frontiers=True,
-            _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
-            **options,
+    cancelled = options.get("cancelled")
+    if cancelled and cancelled():
+        raise ValueError("optimization_cancelled")
+    if branch_runner is not None:
+        from tracker.gear.evaluation import validate_request_context
+        from tracker.gear.support import project_catalog
+
+        validate_request_context(
+            request, snapshot, project_catalog(catalog, request.support_policy).items, content
         )
-        branches.append((discipline, result))
+        completed = branch_runner(
+            snapshot, request, catalog, content, price_records, now, **options
+        )
+        by_discipline = dict(completed)
+        expected = [discipline for discipline, _ in branch_requests(request)]
+        if len(completed) != len(expected) or set(by_discipline) != set(expected):
+            raise ValueError("optimizer_worker_unavailable: incomplete discipline results")
+        branches = [(discipline, by_discipline[discipline]) for discipline in expected]
+    else:
+        for discipline, concrete in branch_requests(request):
+            if cancelled and cancelled():
+                raise ValueError("optimization_cancelled")
+            result = optimize(
+                snapshot,
+                concrete,
+                catalog,
+                content,
+                price_records,
+                now,
+                _complete_frontiers=True,
+                _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
+                **options,
+            )
+            branches.append((discipline, result))
+    if cancelled and cancelled():
+        raise ValueError("optimization_cancelled")
 
     def best(rows: Any) -> dict[str, Any] | None:
         return min((r for r in rows if r is not None), key=_solution_key, default=None)
