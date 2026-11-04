@@ -55,18 +55,18 @@ def secondary_value(
         if performance.get("supported") is False:
             return 0.0  # Incomplete search beams may not yet have a legal weapon.
         rolls = performance.get("player_defence_rolls") or {}
-        fields = (
+        roll_fields = (
             ("stab", "slash", "crush", "ranged", "magic")
             if priority == "balanced_defence_roll"
             else ("magic", "ranged")
             if priority == "magic_ranged_defence_roll"
             else (priority.removesuffix("_defence_roll"),)
         )
-        if any(rolls.get(field) is None for field in fields):
+        if any(rolls.get(field) is None for field in roll_fields):
             raise ValueError(
                 "Player defensive roll is unavailable: required combat levels are unknown"
             )
-        values = [rolls[field] for field in fields]
+        values = [rolls[field] for field in roll_fields]
         return float(
             min(values) if priority == "magic_ranged_defence_roll" else sum(values) / len(values)
         )
