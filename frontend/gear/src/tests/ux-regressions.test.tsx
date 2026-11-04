@@ -68,7 +68,7 @@ function setup(
   } = {},
 ) {
   const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    const path = String(url);
+    const path = new URL(String(url), "http://localhost").pathname;
     if (path.endsWith("/context"))
       return handlers.context
         ? handlers.context(init)
@@ -77,7 +77,7 @@ function setup(
       return handlers.optimize
         ? handlers.optimize(init)
         : new Response(JSON.stringify(reply(JSON.parse(String(init?.body)))));
-    if (path.includes("/items?"))
+    if (path.endsWith("/items"))
       return handlers.browse
         ? handlers.browse(init)
         : new Response(
@@ -370,7 +370,11 @@ it("confirms a lock, marks the slot, and offers unlock and re-run in the inspect
   const optimizations = () =>
     vi
       .mocked(fetcher)
-      .mock.calls.filter(([url]) => String(url).endsWith("/optimizations"));
+      .mock.calls.filter(([url]) =>
+        new URL(String(url), "http://localhost").pathname.endsWith(
+          "/optimizations",
+        ),
+      );
   const before = optimizations().length;
   await user.click(dialog.getByRole("button", { name: "Re-run optimization" }));
   await waitFor(() => expect(optimizations().length).toBe(before + 1));
@@ -409,7 +413,11 @@ it("submits shorthand budgets as whole GP and shows the readback", async () => {
   await screen.findByRole("heading", { name: /Best configuration found/ });
   const call = vi
     .mocked(fetcher)
-    .mock.calls.find(([url]) => String(url).endsWith("/optimizations"));
+    .mock.calls.find(([url]) =>
+      new URL(String(url), "http://localhost").pathname.endsWith(
+        "/optimizations",
+      ),
+    );
   expect(JSON.parse(String(call?.[1]?.body)).budget_gp).toBe(2500000);
 });
 

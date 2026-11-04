@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from threading import Event
 from typing import Any, Literal
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import Field, model_validator
@@ -21,6 +22,8 @@ from tracker.gear.evaluation import equipment_problems, evaluate_equipment
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import OptimizationRequest, RoleConfig
+from tracker.gear.potions import boosted_levels
+from tracker.gear.potions import catalog as potion_catalog
 from tracker.gear.priorities import SecondaryPriority
 from tracker.gear.support import SupportPolicy
 
@@ -95,6 +98,7 @@ def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
         json.dumps(
             {
                 "scenario": body.model_dump(mode="json"),
+                "potion_catalog": potion_catalog(),
                 "work_budget_policy": work_budget_policy(body).model_dump(mode="json"),
                 "frontier_policy": frontier_policy(body),
                 "running_cost_policy": running_cost_policy(
@@ -171,6 +175,7 @@ class EquipmentTransition(DTO):
 
 
 class Solution(DTO):
+    potions: dict[str, Any] | None = None
     score: float
     secondary_priority: SecondaryPriority
     secondary_value: float | None
@@ -349,6 +354,15 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
         level = body.skill_overrides.get(
             "magic", snapshot.skills.get("magic").level if snapshot.skills.get("magic") else 0
         )
+        if body.potions.mode != "disabled":
+            # Validation may use the strongest permitted setup; the search still
+            # checks each fixed setup independently.
+            ids = (
+                body.potions.selected_ids
+                if body.potions.mode == "fixed"
+                else body.potions.allowed_ids
+            )
+            level = boosted_levels({"magic": level}, ids).get("magic", level)
         if role.style == "magic" and role.combat_options is None and level < SPELLS[role.spell][0]:
             raise error(
                 "invalid_request",
@@ -358,7 +372,13 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
 
 
 def calculate(
-    snapshot: Any, gear: Any, prices: Any, body: BrowserOptimizationRequest, stopped: Event
+    snapshot: Any,
+    gear: Any,
+    prices: Any,
+    body: BrowserOptimizationRequest,
+    stopped: Event,
+    *,
+    progress_identity: str | None = None,
 ) -> OptimizationResponse:
     now = datetime.now(UTC)
     if stopped.is_set():
@@ -370,6 +390,14 @@ def calculate(
         price_records=prices,
         now=now,
         cancelled=stopped.is_set,
+        **(
+            {
+                "progress_identity": progress_identity,
+                "progress_fingerprint": scenario_fingerprint(body),
+            }
+            if progress_identity is not None
+            else {}
+        ),
         **({"local_refinement": True} if body.optimization_mode == "thorough" else {}),
     )
     policy = work_budget_policy(body)
@@ -383,6 +411,18 @@ def calculate(
         raise ValueError("optimization_cancelled")
     projection = project_equipment(snapshot, gear)
     projected = hypothetical_snapshot(snapshot, body.skill_overrides, body.quest_overrides, now)
+    baseline_body = body
+    if body.potions.mode == "optimize":
+        chosen_ids = (
+            (result.get("selected_solution") or {}).get("potions", {}).get("selected_ids", ())
+        )
+        baseline_body = body.model_copy(
+            update={
+                "potions": body.potions.model_copy(
+                    update={"mode": "fixed", "selected_ids": tuple(chosen_ids), "allowed_ids": ()}
+                )
+            }
+        )
     reasons = list(projection.warnings)
     if projection.status != "observed" or any(
         s.status not in ("observed", "empty") for s in projection.slots.values()
@@ -403,7 +443,7 @@ def calculate(
     if not reasons and body.roles[0].allowed_disciplines is not None:
         evaluated = gear.evaluate(
             snapshot,
-            body,
+            baseline_body,
             projection.equipment,
             projection.equipment,
             price_records=prices,
@@ -419,7 +459,10 @@ def calculate(
             projection.equipment,
             gear.supported_catalog(body.support_policy).items,
             body.roles[0],
-            {k: v.level for k, v in projected.skills.items()},
+            boosted_levels(
+                {k: v.level for k, v in projected.skills.items()},
+                baseline_body.potions.selected_ids,
+            ),
         )
         if calculated.supported:
             performance = calculated
@@ -465,8 +508,25 @@ def consume(task: asyncio.Task) -> None:
         task.exception()
 
 
+class OptimizationProgressResponse(DTO):
+    progress_id: str
+    progress: dict[str, Any] | None
+
+
+@router.get("/optimizations/progress", response_model=OptimizationProgressResponse)
+def optimization_progress(request: Request, progress_id: UUID) -> OptimizationProgressResponse:
+    """Read the latest bounded service snapshot for exactly one browser attempt."""
+    gear = request.app.state.gear_service
+    identity = str(progress_id)
+    return OptimizationProgressResponse(
+        progress_id=identity, progress=gear.optimization_progress(identity)
+    )
+
+
 @router.post("/optimizations", response_model=OptimizationResponse)
-async def optimizations(request: Request, body: BrowserOptimizationRequest) -> OptimizationResponse:
+async def optimizations(
+    request: Request, body: BrowserOptimizationRequest, progress_id: UUID | None = None
+) -> OptimizationResponse:
     same_origin(request)
     snapshot, gear, prices = await asyncio.to_thread(resources, request)
     if snapshot is None:
@@ -480,7 +540,15 @@ async def optimizations(request: Request, body: BrowserOptimizationRequest) -> O
         )
     stopped = Event()
     worker = asyncio.create_task(
-        asyncio.to_thread(calculate, snapshot, gear, prices, body, stopped)
+        asyncio.to_thread(
+            calculate,
+            snapshot,
+            gear,
+            prices,
+            body,
+            stopped,
+            **({"progress_identity": str(progress_id)} if progress_id is not None else {}),
+        )
     )
     try:
         while not worker.done():

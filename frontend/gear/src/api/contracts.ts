@@ -104,7 +104,26 @@ export interface CombatTarget {
   bonuses: Record<string, number>;
   [key: string]: unknown;
 }
+export interface PotionPolicy {
+  mode: "disabled" | "optimize" | "fixed";
+  allowed_ids: string[];
+  selected_ids: string[];
+}
+export interface PotionSummary {
+  base_levels?: Record<string, number>;
+  resources?: { name: string; cost_per_dose_gp: number | null }[];
+  hp_cost?: number;
+  selected_ids: string[];
+  boosted_levels: Record<string, number>;
+  cost_per_application_gp: number | null;
+  model_version: string;
+}
+export interface PotionDefinition {
+  id: string;
+  name: string;
+}
 export interface Draft {
+  potions?: PotionPolicy;
   targetInputs?: Record<string, string>;
   targetSelection?: TargetSelection;
   supportPolicy?: SupportPolicy;
@@ -131,6 +150,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    potions?: PotionPolicy;
     support_policy?: SupportPolicy;
     secondary_priority?: SecondaryPriority;
     max_dps_loss_pct?: number;
@@ -262,6 +282,7 @@ export interface RunningCostFrontierGroup {
   }[];
 }
 export interface JointSolutionDTO {
+  potions?: PotionSummary;
   running_cost?: RunningCost;
   secondary_priority?: SecondaryPriority;
   secondary_value?: number | null;
@@ -473,6 +494,12 @@ export type Trial = TrialIdentity &
       }
   );
 export type FixtureFailure = "none" | "busy" | "no-solution" | "error";
+export interface OptimizationProgress {
+  phase: string;
+  completed: number;
+  total: number;
+  elapsed_seconds: number;
+}
 export interface GearClient {
   getContext(): Promise<GearContext>;
   getItem(id: number, supportPolicy?: SupportPolicy): Promise<Item>;
@@ -483,7 +510,11 @@ export interface GearClient {
     supportPolicy?: SupportPolicy,
   ): Promise<ItemPage>;
   alternatives(slot: Slot, scenario: Scenario): Promise<Item[]>;
-  optimize(scenario: Scenario, signal: AbortSignal): Promise<OptimizationReply>;
+  optimize(
+    scenario: Scenario,
+    signal: AbortSignal,
+    onProgress?: (progress: OptimizationProgress) => void,
+  ): Promise<OptimizationReply>;
   evaluate(
     result: OptimizationReply,
     solutionId: string,
@@ -556,6 +587,7 @@ export interface SlotObservation {
   candidate_item_ids: number[];
 }
 export interface ContextDTO {
+  potion_catalog?: PotionDefinition[];
   data_source?: { label: string; fetched_at: string } | null;
   api_version: "gear-ui-v1";
   evaluated_at: string;

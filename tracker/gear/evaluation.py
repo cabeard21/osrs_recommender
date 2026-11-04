@@ -203,6 +203,8 @@ def evaluate_configurations(
     proposed_combat_option: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Both sides share exactly one account projection, price set and calculation time."""
+    if request.potions.mode == "optimize":
+        raise ValueError("Fixed evaluation requires an explicit fixed potion setup")
     if (
         len(request.roles) != 1
         or request.roles[0].style == "special"
@@ -233,7 +235,12 @@ def evaluate_configurations(
         )
         for i in referenced
     }
-    levels = {k: v.level for k, v in projected.skills.items()}
+    from tracker.gear.potions import boosted_levels, potion_summary
+
+    base_levels = {k: v.level for k, v in projected.skills.items()}
+    levels = boosted_levels(base_levels, request.potions.selected_ids)
+    if levels.get("magic") != base_levels.get("magic"):
+        levels = {**levels, "_base_magic": base_levels.get("magic", 0)}
 
     def priced(
         result: dict[str, Any],
@@ -253,6 +260,9 @@ def evaluate_configurations(
         }
         return {
             **result,
+            "potions": potion_summary(
+                base_levels, request.potions.selected_ids, price_records, now
+            ),
             "running_cost": evaluate_running_cost(
                 {slot: catalog.items[i] for slot, i in equipment.items()},
                 selected_option,
@@ -376,6 +386,7 @@ def evaluate_configurations(
                 projected,
                 configured.spell,
                 configured.stance,
+                levels,
             )
             if problem:
                 return {

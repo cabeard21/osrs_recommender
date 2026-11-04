@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
+from time import monotonic
 from typing import TYPE_CHECKING, Any, cast
 
 from tracker.accounts.requirements import evaluate_requirement
@@ -56,6 +57,17 @@ class GearService:
         self._equipment: EquipmentCatalog | None = None
         self._optimization_lock = Lock()
         self.auto_pool = auto_pool
+        self._progress_record: tuple[str, dict[str, Any], float] | None = None
+
+    def optimization_progress(self, identity: str) -> dict[str, Any] | None:
+        """Read the latest request-local progress without exposing another request."""
+        record = self._progress_record
+        if record is None or record[0] != identity:
+            return None
+        progress = dict(record[1])
+        if progress.get("phase") not in {"complete", "failed"}:
+            return {**progress, "elapsed_seconds": monotonic() - record[2]}
+        return progress
 
     def equipment_catalog(self) -> EquipmentCatalog:
         """Load bundled metadata once; no network, database session or refresh."""
@@ -77,6 +89,8 @@ class GearService:
         now: datetime | None = None,
         cancelled: Callable[[], bool] | None = None,
         local_refinement: bool = False,
+        progress_identity: str | None = None,
+        progress_fingerprint: str | None = None,
     ) -> dict[str, Any]:
         """Shared complete-loadout optimizer, separate from legacy factual change tools."""
         from tracker.gear.npcs import resolve_request
@@ -87,15 +101,40 @@ class GearService:
         if not self._optimization_lock.acquire(blocking=False):
             raise ValueError("optimizer_busy: another equipment search is running")
         try:
+            started = monotonic()
+            if progress_identity is not None:
+                self._progress_record = None
+
+            def publish(event: dict[str, Any]) -> None:
+                if progress_identity is not None:
+                    previous = self.optimization_progress(progress_identity) or {}
+                    merged = {**previous, **event}
+                    self._progress_record = (
+                        progress_identity,
+                        {
+                            **merged,
+                            "elapsed_seconds": monotonic() - started,
+                            "completed": merged.get("completed_profiles", 0),
+                            "total": merged.get("total_profiles", 0),
+                            "scenario_fingerprint": progress_fingerprint,
+                        },
+                        started,
+                    )
+
+            publish({"phase": "preparation"})
             runner: Callable[..., dict[str, Any]] = optimize
-            execution = {}
+            execution: dict[str, Any] = {}
             pool = self.auto_pool
-            if pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
+            if request.potions.mode == "optimize":
+                execution["progress"] = publish
+                if pool is not None:
+                    execution["potion_branch_runner"] = pool.run_potions
+            elif pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
                 from tracker.gear.auto import optimize_auto
 
                 runner = optimize_auto
                 execution["branch_runner"] = pool.run
-            return runner(
+            result = runner(
                 snapshot,
                 request,
                 self.equipment_catalog(),
@@ -106,6 +145,19 @@ class GearService:
                 **({"local_refinement": True} if local_refinement else {}),
                 **execution,
             )
+            previous = self.optimization_progress(progress_identity) if progress_identity else None
+            publish(
+                {
+                    **(previous or {}),
+                    "phase": "complete",
+                    "completed_profiles": (previous or {}).get("total_profiles", 0),
+                }
+            )
+            return result
+        except BaseException:
+            previous = self.optimization_progress(progress_identity) if progress_identity else None
+            publish({**(previous or {}), "phase": "failed"})
+            raise
         finally:
             self._optimization_lock.release()
 

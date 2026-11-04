@@ -26,10 +26,160 @@ def inputs():
     return snapshot, request, EquipmentCatalog(catalog.items), content, prices, now
 
 
+def without_timings(value):
+    if isinstance(value, dict):
+        return {key: without_timings(row) for key, row in value.items() if key != "timings_seconds"}
+    if isinstance(value, list):
+        return [without_timings(row) for row in value]
+    return value
+
+
 @pytest.mark.parametrize("workers", [0, 4, True])
 def test_worker_capacity_is_bounded(workers):
     with pytest.raises(ValueError):
         AutoProcessPool(workers)
+
+
+@pytest.mark.parametrize("multi", [False, True, "auto"])
+def test_potion_workers_match_serial_for_concrete_and_multi_roles(multi):
+    from tracker.gear.optimizer import RoleConfig
+    from tracker.gear.potions import PotionPolicy
+
+    snapshot, request, catalog, content, prices, now = inputs()
+    roles = (RoleConfig(id="melee", style="slash"),)
+    if multi is True:
+        roles = (*roles, RoleConfig(id="ranged", style="ranged"))
+    if multi == "auto":
+        roles = request.roles
+    request = request.model_copy(update={"roles": roles})
+    branches = [
+        request.model_copy(update={"potions": PotionPolicy(mode="fixed", selected_ids=ids)})
+        for ids in ((), ("super_strength",))
+    ]
+    progress = []
+    pool = AutoProcessPool(2)
+    try:
+        pool.start(content, catalog)
+        results = pool.run_potions(
+            snapshot,
+            request,
+            catalog,
+            content,
+            prices,
+            now,
+            branches=branches,
+            progress=progress.append,
+        )
+        expected = [
+            optimize(snapshot, branch, catalog, content, prices, now, _complete_frontiers=True)
+            for branch in branches
+        ]
+        assert without_timings(results) == without_timings(expected)
+        assert progress[-1]["completed_profiles"] == len(branches)
+        assert progress[-1]["total_profiles"] == len(branches)
+    finally:
+        pool.close()
+
+
+def test_potion_pool_cancellation_drains_and_recovers(monkeypatch):
+    from tracker.gear.potions import PotionPolicy
+
+    args = inputs()
+    request = args[1].model_copy(update={"potions": PotionPolicy(mode="fixed")})
+    pool, executors = fake_pool(monkeypatch)
+    executors[0].block = True
+    checks = []
+
+    def cancelled():
+        checks.append(True)
+        return len(checks) > 1
+
+    try:
+        with pytest.raises(ValueError, match="optimization_cancelled"):
+            pool.run_potions(*args, branches=[request], cancelled=cancelled)
+        assert all(job.done() for job in executors[0].jobs)
+        executors[0].block = False
+        assert len(pool.run_potions(*args, branches=[request])) == 1
+    finally:
+        pool.close()
+
+
+def test_worker_preparation_reuses_only_identical_validated_base_inputs(monkeypatch):
+    from types import SimpleNamespace
+
+    from tracker.gear import optimizer, parallel
+    from tracker.gear.parallel_payload import context_payload, job_payload
+    from tracker.gear.potions import PotionPolicy
+
+    snapshot, request, catalog, content, prices, now = inputs()
+    request = request.model_copy(update={"potions": PotionPolicy(mode="fixed")})
+    identity = context_payload(content, catalog)[1]
+    monkeypatch.setattr(
+        parallel, "_CONTEXT", (content, catalog, identity, SimpleNamespace(is_set=lambda: False))
+    )
+    monkeypatch.setattr(parallel, "_PREPARATION", None)
+    preparations = []
+
+    def prepare(*args):
+        preparations.append(object())
+        return preparations[-1]
+
+    monkeypatch.setattr(optimizer, "prepare_optimization", prepare)
+    monkeypatch.setattr(optimizer, "optimize", lambda *args, **kwargs: kwargs["_prepared"])
+    first = parallel._execute_branch(job_payload(snapshot, request, prices, now, identity), {})
+    boosted = request.model_copy(
+        update={"potions": PotionPolicy(mode="fixed", selected_ids=("super_strength",))}
+    )
+    assert (
+        parallel._execute_branch(job_payload(snapshot, boosted, prices, now, identity), {}) is first
+    )
+    changed_request = request.model_copy(update={"budget_gp": request.budget_gp + 1})
+    second = parallel._execute_branch(
+        job_payload(snapshot, changed_request, prices, now, identity), {}
+    )
+    assert second is not first
+    changed_snapshot = replace(snapshot, username="changed")
+    third = parallel._execute_branch(
+        job_payload(changed_snapshot, changed_request, prices, now, identity), {}
+    )
+    assert third is not second
+    price = SimpleNamespace(
+        item_id=2436,
+        high_price_gp=100,
+        high_trade_at=now,
+        low_price_gp=90,
+        low_trade_at=now,
+        fetched_at=now,
+        source="live",
+    )
+    fourth = parallel._execute_branch(
+        job_payload(changed_snapshot, changed_request, {2436: price}, now, identity), {}
+    )
+    assert fourth is not third
+    invalid = job_payload(changed_snapshot, changed_request, prices, now, identity)
+    invalid["snapshot_id"] = "invalid"
+    with pytest.raises(ValueError, match="fingerprint_mismatch"):
+        parallel._execute_branch(invalid, {})
+    assert len(preparations) == 4
+
+
+def test_potion_pool_validates_base_context_before_dispatch(monkeypatch):
+    from tracker.gear.potions import PotionPolicy
+
+    snapshot, request, catalog, content, prices, now = inputs()
+    request = request.model_copy(
+        update={"excluded_item_ids": (999999,), "potions": PotionPolicy(mode="fixed")}
+    )
+    pool, executors = fake_pool(monkeypatch)
+    try:
+        with pytest.raises(ValueError) as serial:
+            optimize(snapshot, request, catalog, content, prices, now)
+        with pytest.raises(ValueError) as pooled:
+            pool.run_potions(snapshot, request, catalog, content, prices, now, branches=[request])
+        assert str(serial.value) == str(pooled.value)
+        assert not executors[0].jobs
+    finally:
+        pool.close()
 
 
 def test_real_spawn_branches_match_serial_and_reuse_pool():

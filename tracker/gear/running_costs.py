@@ -128,8 +128,12 @@ _THROWN = frozenset(
 
 def resource_item_ids() -> frozenset[int]:
     """Extra market scope; normal supported ammunition is already equipment-scoped."""
-    return frozenset(_RUNES) | frozenset(
-        i for recipe in _CHARGES.values() for i, _ in recipe if i != 995
+    from tracker.gear.potions import resource_item_ids as potion_item_ids
+
+    return (
+        potion_item_ids()
+        | frozenset(_RUNES)
+        | frozenset(i for recipe in _CHARGES.values() for i, _ in recipe if i != 995)
     )
 
 

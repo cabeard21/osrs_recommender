@@ -33,8 +33,7 @@ def optimize_auto(
     branch_runner: Callable[..., list[tuple[str, dict[str, Any]]]] | None = None,
     **options: Any,
 ) -> dict[str, Any]:
-    from tracker.gear.frontier import pareto
-    from tracker.gear.optimizer import _solution_key, optimize
+    from tracker.gear.optimizer import optimize
 
     branches = []
     cancelled = options.get("cancelled")
@@ -73,6 +72,14 @@ def optimize_auto(
             branches.append((discipline, result))
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
+
+    return merge_auto_results(request, branches)
+
+
+def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
+    """Combine complete concrete-discipline archives using the requested global cap."""
+    from tracker.gear.frontier import pareto
+    from tracker.gear.optimizer import _solution_key
 
     def best(rows: Any) -> dict[str, Any] | None:
         return min((r for r in rows if r is not None), key=_solution_key, default=None)

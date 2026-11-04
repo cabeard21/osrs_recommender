@@ -1,6 +1,6 @@
 """Ordinary auto-attack model; unsupported mechanics fail closed.
 
-No prayers, boosts, special attacks or set effects are approximated.
+No prayers, special attacks or set effects are approximated.
 Accurate zero-damage rolls become one; target magic defence uses Magic level.
 """
 
@@ -107,6 +107,10 @@ def evaluate_prepared_loadout(
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
+    if powered_attack is not None and levels.get("_base_magic", levels.get("magic")) != levels.get(
+        "magic"
+    ):
+        problems.append("Potion-boosted powered-attack damage has not been reviewed.")
     problems.extend(effect for item in equipment for effect in item.unsupported_effects)
     if len({i.slot for i in equipment}) != len(equipment):
         problems.append("Multiple items occupy one equipment slot.")
@@ -342,7 +346,10 @@ def _calculate(
         attack_roll=attack,
         defence_roll=defence,
         bonuses=bonuses,
-        limitations=("No prayers, boosts, combat downtime or consumable endurance are modeled.",)
+        limitations=(
+            "Fresh combat levels only; no prayers, boost decay, combat downtime "
+            "or consumable endurance are modeled.",
+        )
         + (
             (
                 "Single-target direct damage only; Ancient healing, poison, stat drains, "

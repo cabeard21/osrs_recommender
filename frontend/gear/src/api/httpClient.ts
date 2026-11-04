@@ -1,3 +1,4 @@
+import { createProgressId, pollOptimizationProgress } from "./progress";
 import { validateRunningCost } from "./runningCosts";
 import {
   object,
@@ -25,6 +26,7 @@ import type {
   Item,
   ItemPage,
   OptimizationReply,
+  OptimizationProgress,
   OptimizationDTO,
   CombatPerformance,
   CombatOption,
@@ -81,6 +83,11 @@ export function parseOptimization(
     optimization_mode: object(envelope.scenario).optimization_mode ?? "fast",
     secondary_priority:
       object(envelope.scenario).secondary_priority ?? "default",
+    potions: object(envelope.scenario).potions ?? {
+      mode: "disabled",
+      allowed_ids: [],
+      selected_ids: [],
+    },
   };
   if (!matches(submitted, normalizedServerScenario))
     throw new Error(
@@ -638,6 +645,11 @@ export function optimizationRequest(scenario: Scenario) {
     support_policy: r.support_policy ?? "verified_only",
     mode: r.mode,
     optimization_mode: r.optimization_mode ?? "fast",
+    potions: r.potions ?? {
+      mode: "disabled",
+      allowed_ids: [],
+      selected_ids: [],
+    },
     secondary_priority: r.secondary_priority ?? "default",
     max_dps_loss_pct: r.max_dps_loss_pct ?? 10,
     budget_gp: r.budget_gp,
@@ -770,14 +782,32 @@ export function parseEvaluation(
     envelope.snapshot_id !== result.snapshotId ||
     envelope.catalog_version !== result.catalogVersion ||
     envelope.model_version !== result.modelVersion ||
-    envelope.assumptions_fingerprint !==
-      result.live.result.assumptions_fingerprint ||
+    ((result.scenario.request.potions?.mode ?? "disabled") === "disabled" &&
+      envelope.assumptions_fingerprint !==
+        result.live.result.assumptions_fingerprint) ||
     envelope.price_revision !== result.priceRevision
   )
     throw new GearApiError(
       "Evaluation context changed; refresh and reoptimize",
       "stale_context",
     );
+  if ((result.scenario.request.potions?.mode ?? "disabled") !== "disabled") {
+    const expectedIds = result.solutions.find((s) => s.id === solutionId)?.live
+      ?.potions?.selected_ids;
+    if (
+      !expectedIds ||
+      [envelope.baseline, envelope.proposed].some(
+        (evaluation) =>
+          !sameValue(
+            object(object(evaluation).potions).selected_ids,
+            expectedIds,
+          ),
+      )
+    )
+      throw new Error(
+        "Evaluation potions do not match the selected recommendation",
+      );
+  }
   const items = envelope.items.map(parseItem);
   if (items.some((i) => i.facts?.catalog_version !== result.catalogVersion))
     throw new Error(
@@ -1105,33 +1135,52 @@ export class HttpGearClient implements GearClient {
   async optimize(
     scenario: Scenario,
     signal: AbortSignal,
+    onProgress?: (progress: OptimizationProgress) => void,
   ): Promise<OptimizationReply> {
     const submitted = structuredClone(scenario);
-    const response = await this.transport(`${this.base}/optimizations`, {
-      method: "POST",
-      credentials: "same-origin",
-      cache: "no-store",
-      signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(optimizationRequest(submitted)),
-    });
-    const body = await response.json();
-    if (!response.ok) {
-      const error = object(object(body).error);
-      const fields = Array.isArray(error.fields)
-        ? error.fields
-            .map((f) => {
-              const row = object(f);
-              return `${row.field ?? row.path ?? "scenario"}: ${row.message}`;
-            })
-            .join("; ")
-        : "";
-      throw new GearApiError(
-        `${typeof error.message === "string" ? error.message : `Optimization failed (${response.status})`}${fields ? ` · ${fields}` : ""}`,
-        String(error.code ?? "optimization_failed"),
+    const progressId = onProgress ? createProgressId() : null;
+    const stop =
+      progressId && onProgress
+        ? pollOptimizationProgress(
+            this.base,
+            progressId,
+            signal,
+            this.transport,
+            onProgress,
+          )
+        : () => {};
+    try {
+      const response = await this.transport(
+        `${this.base}/optimizations${progressId ? `?progress_id=${progressId}` : ""}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(optimizationRequest(submitted)),
+        },
       );
+      const body = await response.json();
+      if (!response.ok) {
+        const error = object(object(body).error);
+        const fields = Array.isArray(error.fields)
+          ? error.fields
+              .map((f) => {
+                const row = object(f);
+                return `${row.field ?? row.path ?? "scenario"}: ${row.message}`;
+              })
+              .join("; ")
+          : "";
+        throw new GearApiError(
+          `${typeof error.message === "string" ? error.message : `Optimization failed (${response.status})`}${fields ? ` · ${fields}` : ""}`,
+          String(error.code ?? "optimization_failed"),
+        );
+      }
+      return parseOptimization(body, submitted);
+    } finally {
+      stop();
     }
-    return parseOptimization(body, submitted);
   }
   async evaluate(
     result: OptimizationReply,
@@ -1163,6 +1212,9 @@ export class HttpGearClient implements GearClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         scenario: result.live.scenario,
+        selected_potion_ids:
+          result.solutions.find((s) => s.id === solution)?.live?.potions
+            ?.selected_ids ?? [],
         baseline_loadouts: { [role]: concreteEquipment(baseline) },
         proposed_loadouts: { [role]: concreteEquipment(proposal) },
         ...(combatOption

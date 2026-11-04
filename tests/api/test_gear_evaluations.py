@@ -31,6 +31,51 @@ def evaluation_body(client, session_factory, **scenario_changes):
     }
 
 
+def test_potion_evaluation_requires_and_preserves_exact_setup(client, session_factory):
+    body = evaluation_body(
+        client,
+        session_factory,
+        potions={
+            "mode": "optimize",
+            "allowed_ids": ["super_strength"],
+        },
+    )
+    assert client.post("/ui-api/gear/evaluations", json=body).status_code == 422
+
+
+def test_optimized_potion_setup_roundtrips_to_exact_evaluation(client, session_factory):
+    body = evaluation_body(
+        client,
+        session_factory,
+        potions={
+            "mode": "optimize",
+            "allowed_ids": ["super_strength"],
+        },
+    )
+    optimized = client.post("/ui-api/gear/optimizations", json=body["scenario"])
+    assert optimized.status_code == 200, optimized.text
+    result = optimized.json()
+    selected = result["result"]["selected_solution"]
+    assert selected["potions"]["selected_ids"] == ["super_strength"]
+    equipment = selected["loadouts"]["single"]["equipment"]
+    body["selected_potion_ids"] = selected["potions"]["selected_ids"]
+    body["baseline_loadouts"] = body["proposed_loadouts"] = {"single": equipment}
+    evaluated = client.post("/ui-api/gear/evaluations", json=body)
+    assert evaluated.status_code == 200, evaluated.text
+    fixed = evaluated.json()
+    assert fixed["scenario_fingerprint"] == result["scenario_fingerprint"]
+    assert fixed["proposed"]["performance"] == selected["loadouts"]["single"]["performance"]
+    body["selected_potion_ids"] = ["super_strength"]
+    reply = client.post("/ui-api/gear/evaluations", json=body)
+    assert reply.status_code == 200, reply.text
+    result = reply.json()
+    assert result["scenario"]["potions"]["mode"] == "optimize"
+    assert result["baseline"]["potions"]["selected_ids"] == ["super_strength"]
+    assert result["baseline"]["potions"]["boosted_levels"]["strength"] == 118
+    body["selected_potion_ids"] = ["ranging"]
+    assert client.post("/ui-api/gear/evaluations", json=body).status_code == 422
+
+
 def test_evaluation_parity_and_complete_provenance(client, app, session_factory, monkeypatch):
     body = evaluation_body(client, session_factory)
     optimized = client.post("/ui-api/gear/optimizations", json=body["scenario"]).json()

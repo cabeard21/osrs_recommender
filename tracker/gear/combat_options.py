@@ -109,12 +109,11 @@ def enumerate_combat_options(
 ) -> tuple[CombatOption, ...]:
     """Return legal profiles including locked and unknown account options.
 
-    `levels` is accepted for the optimizer's existing call contract. Factual
-    eligibility comes from AccountSnapshot via the shared requirement evaluator.
+    `levels` supplies effective combat levels for spell casting. Equipment and
+    non-skill access gates continue to use the factual account snapshot.
     `include_weapon_restricted` exposes staff-specific spells for account-facing
     filters; actual attack enumeration leaves it false to enforce weapon pairing.
     """
-    _ = levels
     if discipline == "melee":
         profiles: tuple[tuple[str, str], ...]
         if weapon is None:
@@ -197,7 +196,13 @@ def enumerate_combat_options(
             else ()
         )
         status, reasons = _account_status(
-            (_skill_status(snapshot, "magic", level), f"Magic level {level} required"),
+            (
+                Tri.SATISFIED
+                if snapshot.skills.get("magic") is not None
+                and levels.get("magic", snapshot.skills["magic"].level) >= level
+                else _skill_status(snapshot, "magic", level),
+                f"Magic level {level} required",
+            ),
             *(((book, "Standard spellbook unlock is not confirmed"),) if not ancient else ()),
             *extra_checks,
         )
@@ -260,13 +265,16 @@ def ancient_spell_problem(
     snapshot: AccountSnapshot,
     spell: str,
     stance: str,
+    levels: Mapping[str, int] | None = None,
 ) -> str | None:
     """Apply the same Ancient access gates to fixed and automatic roles."""
     if spell not in ANCIENT_SPELLS:
         return None
     matches = tuple(
         option
-        for option in enumerate_combat_options(weapon, snapshot, discipline="magic", levels={})
+        for option in enumerate_combat_options(
+            weapon, snapshot, discipline="magic", levels=levels or {}
+        )
         if option.spell == spell and option.stance == stance
     )
     if any(option.available for option in matches):
