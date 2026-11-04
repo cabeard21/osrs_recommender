@@ -151,7 +151,7 @@ it("remembers chosen NPCs as recent targets", async () => {
   );
 });
 
-it("summarizes NPC stats on one line and labels defence bonuses", async () => {
+it("summarizes NPC stats as short lines and labels defence bonuses", async () => {
   stubCatalog();
   render(
     <NpcTargetPicker
@@ -160,11 +160,16 @@ it("summarizes NPC stats on one line and labels defence bonuses", async () => {
       onChange={vi.fn()}
     />,
   );
+  expect(await screen.findByText("Defence 7 · Magic 1")).toBeInTheDocument();
   expect(
-    await screen.findByText(
-      "Defence 7 · Magic 1 · Defence bonuses: stab 4 / slash 6 / crush 8 / magic 4 / ranged 4 · Weak to fire (10%)",
+    screen.getByText(
+      "Defence bonuses: stab 4 / slash 6 / crush 8 / magic 4 / ranged 4",
     ),
   ).toBeInTheDocument();
+  expect(screen.getByText("Weak to fire (10%)")).toBeInTheDocument();
+  expect(npcStatSummary(detail.target)).toBe(
+    "Defence 7 · Magic 1 · Defence bonuses: stab 4 / slash 6 / crush 8 / magic 4 / ranged 4 · Weak to fire (10%)",
+  );
   expect(
     screen.queryByRole("button", { name: "Reset to NPC stats" }),
   ).not.toBeInTheDocument();

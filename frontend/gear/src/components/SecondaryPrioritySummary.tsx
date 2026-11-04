@@ -1,12 +1,96 @@
-import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
+import type {
+  JointSolutionDTO,
+  OptimizationReply,
+  PotionDefinition,
+  PotionSummary,
+} from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
+import {
+  boostedSkillChanges,
+  noPotionScore,
+  potionDisplayName,
+  potionGainText,
+} from "./potionFormat";
+
+function formatGp(gp: number): string {
+  return `${gp.toLocaleString()} GP`;
+}
+
+function PotionResult({
+  potions,
+  skillOverrides,
+  catalog,
+  gain,
+}: {
+  potions: PotionSummary;
+  skillOverrides: Record<string, number | undefined>;
+  catalog: readonly PotionDefinition[];
+  gain: string | null;
+}) {
+  const changes = boostedSkillChanges(potions.boosted_levels, {
+    ...skillOverrides,
+    ...potions.base_levels,
+  });
+  const resources = potions.resources ?? [];
+  const isAnyPriced =
+    potions.cost_per_application_gp != null ||
+    resources.some((resource) => resource.cost_per_dose_gp != null);
+  const hasDivine = potions.selected_ids.some((id) => id.startsWith("divine"));
+  return (
+    <section className="panel" aria-label="Selected potions">
+      <h2>Combat potions</h2>
+      <p>
+        {potions.selected_ids
+          .map((id) => potionDisplayName(id, catalog))
+          .join(", ")}
+      </p>
+      {gain && (
+        <p>
+          <strong>{gain}</strong> compared with the best loadout found without
+          potions.
+        </p>
+      )}
+      <p>
+        Boosted levels:{" "}
+        {changes.length ? changes.join(" · ") : "no skill changes"}
+      </p>
+      {isAnyPriced ? (
+        <>
+          <p>
+            {potions.cost_per_application_gp == null
+              ? "Application price unavailable"
+              : `${formatGp(potions.cost_per_application_gp)} per complete application`}
+            . Separate from equipment budget and attack-resource GP/hour.
+          </p>
+          {resources.map((resource) => (
+            <p key={resource.name}>
+              {resource.name}:{" "}
+              {resource.cost_per_dose_gp == null
+                ? "price unavailable"
+                : `${formatGp(resource.cost_per_dose_gp)} per dose`}
+            </p>
+          ))}
+        </>
+      ) : (
+        <p>Potion prices unavailable.</p>
+      )}
+      <p>
+        Fresh boost only: no decay, duration benefit, drinking downtime or
+        survival benefit is modeled.
+        {hasDivine ? " Divine potions consume HP when drunk." : ""}
+      </p>
+    </section>
+  );
+}
 
 export function SecondaryPrioritySummary({
   result,
   solution,
+  potionCatalog = [],
 }: {
   result: OptimizationReply;
   solution?: JointSolutionDTO | null;
+  potionCatalog?: readonly PotionDefinition[];
 }) {
   const priority = result.scenario.request.secondary_priority ?? "default";
   const priorityLabel = secondaryPriorities.find(
@@ -17,41 +101,16 @@ export function SecondaryPrioritySummary({
   return (
     <>
       {selected?.potions && selected.potions.selected_ids.length > 0 && (
-        <section className="panel" aria-label="Selected potions">
-          <h2>Combat potions</h2>
-          <p>
-            {selected.potions.selected_ids
-              .map((id) => id.replaceAll("_", " "))
-              .join(", ")}
-          </p>
-          <p>
-            Freshly boosted levels:{" "}
-            {Object.entries(selected.potions.boosted_levels)
-              .map(
-                ([skill, level]) =>
-                  `${skill} ${selected.potions?.base_levels?.[skill] ?? result.scenario.request.skill_overrides[skill] ?? "base"} → ${level}`,
-              )
-              .join(" · ")}
-          </p>
-          <p>
-            {selected.potions.cost_per_application_gp == null
-              ? "Potion price unavailable"
-              : `${selected.potions.cost_per_application_gp.toLocaleString()} GP per complete application`}
-            . Separate from equipment budget and attack-resource GP/hour.
-          </p>
-          {selected.potions.resources?.map((resource) => (
-            <p key={resource.name}>
-              {resource.name}:{" "}
-              {resource.cost_per_dose_gp == null
-                ? "price unavailable"
-                : `${resource.cost_per_dose_gp.toLocaleString()} GP per dose`}
-            </p>
-          ))}
-          <p>
-            No decay, duration benefit, drinking downtime or survival benefit is
-            modeled. Divine potions consume HP when drunk.
-          </p>
-        </section>
+        <PotionResult
+          potions={selected.potions}
+          skillOverrides={result.scenario.request.skill_overrides}
+          catalog={potionCatalog}
+          gain={potionGainText(
+            selected.score,
+            noPotionScore(result.live?.result.search),
+            result.scenario.request.roles.length > 1 ? "weighted DPS" : "DPS",
+          )}
+        />
       )}
       <details
         className="panel result-explanation"

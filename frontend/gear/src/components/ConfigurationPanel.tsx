@@ -17,6 +17,7 @@ import { LockConstraints } from "./LockConstraints";
 import { MultiLockEditor } from "./MultiLockEditor";
 import { MultiTemplates } from "./MultiTemplates";
 import { MultiTransitions } from "./MultiTransitions";
+import { PotionFields } from "./PotionFields";
 import {
   applyTargetToAll,
   isTargetSharedByAll,
@@ -280,59 +281,11 @@ export function ConfigurationPanel() {
         />
         <LockConstraints draft={draft} change={change} itemLabel={itemLabel} />
       </details>
-      <fieldset>
-        <legend>Combat potions</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={draft.potions?.mode === "optimize"}
-            onChange={(e) =>
-              change({
-                potions: {
-                  mode: e.target.checked ? "optimize" : "disabled",
-                  allowed_ids: draft.potions?.allowed_ids ?? [],
-                  selected_ids: [],
-                },
-              })
-            }
-          />
-          Optimize potions
-        </label>
-        {draft.potions?.mode === "optimize" && (
-          <>
-            <p>
-              Choose allowed potions. Empty selection permits no potions.
-              Supplies are assumed available in every equipment mode.
-            </p>
-            {(state.context?.live?.potion_catalog ?? []).map((potion) => (
-              <label key={potion.id}>
-                <input
-                  type="checkbox"
-                  checked={draft.potions!.allowed_ids.includes(potion.id)}
-                  onChange={(e) =>
-                    change({
-                      potions: {
-                        ...draft.potions!,
-                        allowed_ids: e.target.checked
-                          ? [...draft.potions!.allowed_ids, potion.id]
-                          : draft.potions!.allowed_ids.filter(
-                              (id) => id !== potion.id,
-                            ),
-                      },
-                    })
-                  }
-                />
-                {potion.name}
-              </label>
-            ))}
-            <p>
-              Freshly boosted DPS; no decay, duration benefit or supply
-              endurance. Potion cost is per application, separate from gear
-              budget and attack resources.
-            </p>
-          </>
-        )}
-      </fieldset>
+      <PotionFields
+        policy={draft.potions}
+        catalog={state.context?.live?.potion_catalog ?? []}
+        onChange={(potions) => change({ potions })}
+      />
       <details>
         <summary>
           Advanced settings{hasAdvancedChanges ? " · modified" : ""}
