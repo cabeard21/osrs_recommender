@@ -100,7 +100,17 @@ class HitsplatPerformance(GearModel):
     max_hit: int
 
 
+class PlayerDefenceRolls(GearModel):
+    stab: int | None = Field(default=None, ge=0)
+    slash: int | None = Field(default=None, ge=0)
+    crush: int | None = Field(default=None, ge=0)
+    ranged: int | None = Field(default=None, ge=0)
+    magic: int | None = Field(default=None, ge=0)
+    limitations: tuple[str, ...] = ()
+
+
 class CombatPerformance(GearModel):
+    player_defence_rolls: PlayerDefenceRolls | None = None
     elemental_weakness: ElementalWeakness | None = None
     supported: bool
     limitations: tuple[str, ...] = ()

@@ -24,6 +24,13 @@ export type SecondaryPriority =
   | "crush_defence"
   | "ranged_defence"
   | "magic_defence"
+  | "balanced_defence_roll"
+  | "magic_ranged_defence_roll"
+  | "stab_defence_roll"
+  | "slash_defence_roll"
+  | "crush_defence_roll"
+  | "ranged_defence_roll"
+  | "magic_defence_roll"
   | "prayer_bonus"
   | "melee_strength_bonus"
   | "ranged_strength_bonus"
@@ -350,7 +357,16 @@ export interface OptimizationReply {
   unrestricted?: Solution | null;
   selectedSolutionId?: string;
 }
+export interface PlayerDefenceRolls {
+  stab: number | null;
+  slash: number | null;
+  crush: number | null;
+  ranged: number | null;
+  magic: number | null;
+  limitations: string[];
+}
 export interface CombatPerformance {
+  player_defence_rolls?: PlayerDefenceRolls | null;
   hitsplats?: { accuracy: number; max_hit: number }[];
   elemental_weakness?: {
     element: "air" | "water" | "earth" | "fire" | null;

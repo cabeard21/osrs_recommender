@@ -1,8 +1,12 @@
+import { formatDefenceRoll, formatRollGainPercent } from "./defenceRollFormat";
 import type {
   SecondaryFrontierGroup,
   SecondaryPriority,
 } from "../api/contracts";
-import { secondaryPriorities } from "../api/secondaryPriorities";
+import {
+  secondaryPriorities,
+  defenceRollStyles,
+} from "../api/secondaryPriorities";
 export function SecondaryFrontier({
   group,
   selectedId,
@@ -20,11 +24,14 @@ export function SecondaryFrontier({
   const points = group.points;
   const label =
     secondaryPriorities.find(([id]) => id === priority)?.[1] ?? priority;
+  const rollStyles = defenceRollStyles(priority);
   const percent = priority === "accuracy" ? 100 : 1;
   const unit =
     priority === "accuracy" || priority === "magic_damage_bonus"
       ? " percentage points"
-      : " bonus";
+      : rollStyles.length
+        ? " roll"
+        : " bonus";
   const values = points.map((p) => p.solution.secondary_value ?? 0);
   const low = Math.min(...values, 0),
     high = Math.max(...values, 1);
@@ -46,6 +53,34 @@ export function SecondaryFrontier({
           Historical capped frontier. Run optimization again to explore the full
           range.
         </p>
+      )}
+      {rollStyles.length > 0 && (
+        <>
+          <p>
+            {priority === "balanced_defence_roll"
+              ? "Balanced defence roll is the mean of all five player defence rolls. "
+              : priority === "magic_ranged_defence_roll"
+                ? "Magic & ranged defence roll is the lower of those two player defence rolls. "
+                : ""}
+            Player defence rolls include boosted levels, equipment and legal
+            stance bonuses. Larger rolls resist ordinary attack accuracy; they
+            do not measure damage reduction or survival probability.
+          </p>
+          {active &&
+            Object.entries(active.loadouts)
+              .filter(([, loadout]) => loadout.performance.player_defence_rolls)
+              .map(([role, loadout]) => (
+                <p key={role}>
+                  {role} defence rolls:{" "}
+                  {rollStyles
+                    .map(
+                      (style) =>
+                        `${style} ${formatDefenceRoll(loadout.performance.player_defence_rolls?.[style])}`,
+                    )
+                    .join(" / ")}
+                </p>
+              ))}
+        </>
       )}
       {priority === "balanced_defence" && (
         <p>
@@ -122,10 +157,14 @@ export function SecondaryFrontier({
               {maxDps.toFixed(1)}
             </text>
             <text x="5" y="150" fill="currentColor" fontSize="10">
-              {(low * percent).toFixed(0)}
+              {rollStyles.length
+                ? formatDefenceRoll(low)
+                : (low * percent).toFixed(0)}
             </text>
             <text x="5" y="30" fill="currentColor" fontSize="10">
-              {(high * percent).toFixed(0)}
+              {rollStyles.length
+                ? formatDefenceRoll(high)
+                : (high * percent).toFixed(0)}
             </text>
             {points.map((p, i) => (
               <circle
@@ -153,7 +192,7 @@ export function SecondaryFrontier({
                 r={p.id === selectedId ? 7 : 5}
                 fill="currentColor"
               >
-                <title>{`Tradeoff ${i + 1}: ${p.solution.score.toFixed(3)} DPS, ${((p.solution.secondary_value ?? 0) * percent).toFixed(2)} ${label}`}</title>
+                <title>{`Tradeoff ${i + 1}: ${p.solution.score.toFixed(3)} DPS, ${rollStyles.length ? formatDefenceRoll(p.solution.secondary_value) : ((p.solution.secondary_value ?? 0) * percent).toFixed(2)} ${label}`}</title>
               </circle>
             ))}
           </svg>
@@ -168,7 +207,9 @@ export function SecondaryFrontier({
                   <th>DPS</th>
                   <th>DPS loss</th>
                   <th>{label}</th>
-                  <th>Gain</th>
+                  <th>
+                    {rollStyles.length ? "Gain vs highest-DPS roll" : "Gain"}
+                  </th>
                   <th>Cost (GP)</th>
                   <th>Swaps</th>
                 </tr>
@@ -200,11 +241,19 @@ export function SecondaryFrontier({
                       )
                     </td>
                     <td>
-                      {((p.solution.secondary_value ?? 0) * percent).toFixed(2)}
+                      {rollStyles.length
+                        ? formatDefenceRoll(p.solution.secondary_value)
+                        : ((p.solution.secondary_value ?? 0) * percent).toFixed(
+                            2,
+                          )}
                     </td>
                     <td>
-                      {(p.secondary_gain * percent).toFixed(2)}
+                      {rollStyles.length
+                        ? formatDefenceRoll(p.secondary_gain)
+                        : (p.secondary_gain * percent).toFixed(2)}
                       {unit}
+                      {rollStyles.length > 0 &&
+                        ` (${formatRollGainPercent(p.secondary_gain, first?.solution.secondary_value)})`}
                     </td>
                     <td>{p.solution.purchase_cost_gp.toLocaleString()}</td>
                     <td>{p.solution.maximum_actions}</td>

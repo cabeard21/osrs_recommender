@@ -51,6 +51,18 @@ def validate_request_context(
     content: Content,
 ) -> None:
     """Validate catalog-bound request facts for every transport, before any search."""
+    from tracker.gear.defensive_rolls import required_defensive_skills
+
+    required = required_defensive_skills(request.secondary_priority)
+    levels = {
+        **{key: value.level for key, value in snapshot.skills.items()},
+        **request.skill_overrides,
+    }
+    missing = sorted(skill for skill in required if levels.get(skill, 0) < 1)
+    if missing:
+        raise ValueError(
+            "Player defensive roll is unavailable: unknown " + ", ".join(missing) + " level"
+        )
     if request.expected_snapshot_id and request.expected_snapshot_id != snapshot.fingerprint:
         raise ValueError("snapshot_changed: retrieve current account facts")
     for field, allowed in (

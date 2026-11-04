@@ -155,6 +155,9 @@ export function parseOptimization(
       ? null
       : {
           policy: "tradeoff-frontier-v2",
+          ...(priority.endsWith("_defence_roll")
+            ? { defensive_roll_model: "player-defence-roll-v1" }
+            : {}),
           metric_lane_equipment_fraction: 0.25,
           expansion_limit:
             scenario.request.optimization_mode === "thorough"

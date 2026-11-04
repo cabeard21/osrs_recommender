@@ -4,6 +4,20 @@ The configuration offers a **Tradeoff metric** alongside DPS: Balanced defence, 
 
 Magic & ranged defence is the minimum of magic and ranged equipment defence bonuses in each complete loadout. Balanced defence is the arithmetic mean of all five defence bonuses. These describe equipment bonuses, not damage reduction or survivability. Negative bonuses remain negative. Multi averages per-loadout metric values using normalized active-time role weights; unscored utility roles do not contribute.
 
+## Player defensive rolls
+
+Seven additional tradeoff metrics use player defence rolls: Balanced defence roll, Magic & ranged defence roll, and individual Stab/Slash/Crush/Ranged/Magic defence rolls. Existing equipment-bonus metrics retain their meanings.
+
+Rolls use freshly boosted Defence and Magic levels, complete equipment defence bonuses and the selected legal combat stance. Defensive and longrange stances add 3 effective levels; controlled adds 1. Physical effective defence is `Defence + stance + 8`. Magic effective defence is `floor(7 * Magic / 10) + floor(3 * Defence / 10) + stance + 8`, with the contributions truncated separately. Each usable roll is `max(0, effective_defence * (equipment_defence_bonus + 64))`. These rules follow the [OSRS Wiki calculator player-defence implementation](https://github.com/weirdgloop/osrs-dps-calc/blob/main/src/lib/NPCVsPlayerCalc.ts).
+
+The UI displays all roll values in thousands with two decimal places (for example, `12.34k`). Frontier roll gains show both the absolute increase and the percentage increase relative to the highest-DPS point in the same swap-limit group, using unrounded values. A zero baseline shows percentage unavailable. These percentages describe roll increases, not damage reduction.
+
+Balanced averages the five rolls. Magic & ranged takes the lower of those two rolls within each complete role loadout, before Multi applies normalized active-time weights. Individual metrics use the corresponding roll. Utility roles remain unscored. Required unknown levels make the requested roll metric unavailable rather than being treated as zero.
+
+Potion search retains Defence boosts for roll metrics and Magic boosts when magic defence contributes, even for melee or ranged outgoing attacks. Fixed combat settings and legal-option filters are respected. Larger rolls resist ordinary attack accuracy; they are not damage reduction or survival percentages. No incoming enemy attacks, prayers, boost decay, drinking downtime, supply endurance or encounter survival are simulated. Divine potion HP costs remain separate disclosures.
+
+New results expose optional `player_defence_rolls` alongside combat performance; the existing singular `defence_roll` continues to describe the enemy defence used for outgoing accuracy. Historical results without player rolls remain readable and require a fresh optimization to measure a new roll metric.
+
 ## Best-found tradeoff frontiers
 
 Named metrics produce nondominated DPS/metric alternatives for every swap limit and unrestricted results. Both objectives must be at least as high, with one strictly higher, for dominance. Comparisons use unrounded values and existing resource/identity tie-breakers. Highest DPS favors metric on equal damage; highest metric favors DPS on equal metric.
