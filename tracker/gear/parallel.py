@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import multiprocessing
 import os
 from collections.abc import Mapping
-from concurrent.futures import Future, ProcessPoolExecutor, wait
+from concurrent.futures import FIRST_COMPLETED, Future, ProcessPoolExecutor, wait
 from concurrent.futures.process import BrokenProcessPool
 from datetime import datetime
 from functools import partial
@@ -24,6 +26,7 @@ from tracker.gear.parallel_payload import context_payload, decode_context, decod
 
 logger = logging.getLogger(__name__)
 _CONTEXT: tuple[Content, EquipmentCatalog, str, Any] | None = None
+_PREPARATION: tuple[str, Any] | None = None
 _UNAVAILABLE = "optimizer_worker_unavailable: desktop workers unavailable; retry the calculation"
 
 
@@ -54,9 +57,10 @@ class _CancellationFlag:
 
 
 def _initialize(payload: dict[str, Any], identity: str, stopped: Any, ready: Any) -> None:
-    global _CONTEXT
+    global _CONTEXT, _PREPARATION
     content, catalog = decode_context(payload, identity)
     _CONTEXT = content, catalog, identity, stopped
+    _PREPARATION = None
     # Ensure startup has initialized every child, not just one quick warmup task.
     ready.wait(timeout=30)
 
@@ -65,15 +69,34 @@ def _warm() -> int:
     return os.getpid()
 
 
-def _execute_branch(payload: dict[str, Any], options: dict[str, bool]) -> dict[str, Any]:
-    from tracker.gear.optimizer import optimize
+def _execute_branch(payload: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
+    from tracker.gear.optimizer import optimize, prepare_optimization
+
+    global _PREPARATION
 
     if _CONTEXT is None:
         raise ValueError(_UNAVAILABLE)
     content, catalog, identity, stopped = _CONTEXT
     snapshot, request, prices, now = decode_job(payload, identity)
-    if len(request.roles) != 1 or request.roles[0].allowed_disciplines is not None:
+    if request.potions.mode != "fixed" and (
+        len(request.roles) != 1 or request.roles[0].allowed_disciplines is not None
+    ):
         raise ValueError("Worker requires a concrete Single discipline")
+    prepared = None
+    if request.potions.mode == "fixed":
+        # Decode/validate every job before consulting the single-entry cache. The
+        # entire frozen input identity participates except the boost selection.
+        base_request = {k: v for k, v in payload["request"].items() if k != "potions"}
+        base_payload = {**payload, "request": base_request}
+        key = hashlib.sha256(
+            json.dumps(base_payload, sort_keys=True, default=str).encode()
+        ).hexdigest()
+        if _PREPARATION is None or _PREPARATION[0] != key:
+            _PREPARATION = (
+                key,
+                prepare_optimization(snapshot, request, catalog, content, prices, now),
+            )
+        prepared = _PREPARATION[1]
     return optimize(
         snapshot,
         request,
@@ -83,6 +106,7 @@ def _execute_branch(payload: dict[str, Any], options: dict[str, bool]) -> dict[s
         now,
         cancelled=stopped.is_set,
         _complete_frontiers=True,
+        _prepared=prepared,
         **options,
     )
 
@@ -240,6 +264,7 @@ class AutoProcessPool:
         jobs: list[dict[str, Any]],
         options: dict[str, bool],
         cancelled: Any,
+        progress: Any = None,
     ) -> list[dict[str, Any]]:
         futures: list[Future[dict[str, Any]]] = []
         try:
@@ -247,12 +272,22 @@ class AutoProcessPool:
             for job in jobs:
                 futures.append(self._executor.submit(_execute_branch, job, options))
             pending = set(futures)
+            started = monotonic()
             while pending:
                 if self._closed or (cancelled is not None and cancelled()):
                     raise ValueError("optimization_cancelled")
-                completed, pending = wait(pending, timeout=0.025)
+                completed, pending = wait(pending, timeout=0.025, return_when=FIRST_COMPLETED)
                 for future in completed:
                     future.result()
+                if completed and progress is not None:
+                    progress(
+                        {
+                            "phase": "potion_search",
+                            "completed_profiles": len(futures) - len(pending),
+                            "total_profiles": len(futures),
+                            "elapsed_seconds": monotonic() - started,
+                        }
+                    )
             if self._closed or (cancelled is not None and cancelled()):
                 raise ValueError("optimization_cancelled")
             return [future.result() for future in futures]
@@ -265,6 +300,62 @@ class AutoProcessPool:
             if str(error) == "optimization_cancelled":
                 raise ValueError("optimization_cancelled") from error
             raise ValueError(_UNAVAILABLE) from error
+
+    def run_potions(
+        self,
+        snapshot: AccountSnapshot,
+        request: OptimizationRequest,
+        catalog: EquipmentCatalog,
+        content: Content,
+        price_records: Mapping[int, PriceRecord],
+        now: datetime,
+        *,
+        branches: list[OptimizationRequest],
+        progress: Any = None,
+        **options: Any,
+    ) -> list[dict[str, Any]]:
+        """Run frozen potion setups through the same bounded, cancellable desktop pool."""
+        cancelled = options.pop("cancelled", None)
+        if self._closed or self._identity is None:
+            raise ValueError(_UNAVAILABLE)
+        if cancelled is not None and cancelled():
+            raise ValueError("optimization_cancelled")
+        if not self._run_lock.acquire(blocking=False):
+            raise ValueError("optimizer_busy: another desktop worker job is running")
+        try:
+            if context_payload(content, catalog)[1] != self._identity:
+                raise ValueError("optimizer_worker_context_mismatch")
+            from tracker.gear.evaluation import validate_request_context
+            from tracker.gear.support import project_catalog
+
+            projected = project_catalog(catalog, request.support_policy)
+            validate_request_context(request, snapshot, projected.items, content)
+            allowed = {
+                "local_refinement",
+                "targeted_head_refinement",
+                "_complete_frontiers",
+                "_running_frontier",
+            }
+            if any(k not in allowed or not isinstance(v, bool) for k, v in options.items()):
+                raise ValueError("Invalid desktop worker options")
+            if not branches or any(branch.potions.mode != "fixed" for branch in branches):
+                raise ValueError("Desktop potion workers require fixed potion branches")
+            if self._executor is None:
+                self._build()
+            self._stopped.clear()
+            jobs = [
+                job_payload(snapshot, branch, price_records, now, self._identity)
+                for branch in branches
+            ]
+            # _execute_branch always requests complete archives before global merging.
+            selected = {
+                key: value for key, value in options.items() if key != "_complete_frontiers"
+            }
+            return self._dispatch(jobs, selected, cancelled, progress)
+        finally:
+            if self._stopped is not None and not self._closed:
+                self._stopped.clear()
+            self._run_lock.release()
 
     def run(
         self,

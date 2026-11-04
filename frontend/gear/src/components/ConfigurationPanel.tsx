@@ -9,6 +9,7 @@ import {
 } from "../state/budget";
 import { draftFieldErrors, newRole, parseGp } from "../state/scenario";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
+import { potionCombatContext } from "../api/combatOptions";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import { AssumptionFields } from "./AssumptionFields";
 import { FieldError, fieldProps } from "./FieldError";
@@ -151,7 +152,7 @@ export function ConfigurationPanel() {
       index={index}
       mode={state.mode}
       draft={draft}
-      context={state.context}
+      context={potionCombatContext(state.context, draft.potions)}
       liveMode={liveMode}
       targets={targets}
       onChange={(patch) => roleChange(role.id, patch)}
@@ -279,6 +280,59 @@ export function ConfigurationPanel() {
         />
         <LockConstraints draft={draft} change={change} itemLabel={itemLabel} />
       </details>
+      <fieldset>
+        <legend>Combat potions</legend>
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.potions?.mode === "optimize"}
+            onChange={(e) =>
+              change({
+                potions: {
+                  mode: e.target.checked ? "optimize" : "disabled",
+                  allowed_ids: draft.potions?.allowed_ids ?? [],
+                  selected_ids: [],
+                },
+              })
+            }
+          />
+          Optimize potions
+        </label>
+        {draft.potions?.mode === "optimize" && (
+          <>
+            <p>
+              Choose allowed potions. Empty selection permits no potions.
+              Supplies are assumed available in every equipment mode.
+            </p>
+            {(state.context?.live?.potion_catalog ?? []).map((potion) => (
+              <label key={potion.id}>
+                <input
+                  type="checkbox"
+                  checked={draft.potions!.allowed_ids.includes(potion.id)}
+                  onChange={(e) =>
+                    change({
+                      potions: {
+                        ...draft.potions!,
+                        allowed_ids: e.target.checked
+                          ? [...draft.potions!.allowed_ids, potion.id]
+                          : draft.potions!.allowed_ids.filter(
+                              (id) => id !== potion.id,
+                            ),
+                      },
+                    })
+                  }
+                />
+                {potion.name}
+              </label>
+            ))}
+            <p>
+              Freshly boosted DPS; no decay, duration benefit or supply
+              endurance. Potion cost is per application, separate from gear
+              budget and attack resources.
+            </p>
+          </>
+        )}
+      </fieldset>
       <details>
         <summary>
           Advanced settings{hasAdvancedChanges ? " · modified" : ""}

@@ -207,3 +207,22 @@ it("uses the latest callback after a delayed detail response", async () => {
   await waitFor(() => expect(latestChange).toHaveBeenCalled());
   expect(oldChange).not.toHaveBeenCalled();
 });
+
+it("shows signed catalog armour without offering a mechanic override", async () => {
+  const moon = { ...detail, target: { ...detail.target, flat_armour: -5 } };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response(moon)),
+  );
+  render(
+    <NpcTargetPicker
+      selection={selection}
+      target={moon.target}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("flat armour")).toBeInTheDocument();
+  expect(screen.getByText("-5")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Edit stats" }));
+  expect(screen.queryByLabelText("flat armour")).not.toBeInTheDocument();
+});

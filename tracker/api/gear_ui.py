@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from tracker.accounts.requirements import RequirementResult
 from tracker.accounts.snapshot import AccountSnapshot
@@ -29,6 +29,7 @@ from tracker.gear.encounters import encounter_presets
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.npcs import npc_catalog
 from tracker.gear.optimizer import SLOTS
+from tracker.gear.potions import catalog as potion_catalog
 from tracker.gear.service import GearService
 from tracker.gear.support import SupportPolicy
 from tracker.ui.staleness import scan_note
@@ -198,6 +199,7 @@ class ItemResponse(DTO):
 
 
 class ContextResponse(DTO):
+    potion_catalog: list[dict[str, Any]] = Field(default_factory=list)
     data_source: dict[str, str] | None = None
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
@@ -304,11 +306,15 @@ def resources(request: Request):
 
 
 def combat_option_capabilities(
-    snapshot: AccountSnapshot | None, gear: GearService
+    snapshot: AccountSnapshot | None, gear: GearService, *, potion_boost: bool = False
 ) -> dict[str, Any]:
     """Account-facing controls; weapon pairing remains checked during optimization."""
     account = snapshot or AccountSnapshot(0, "")
     levels = {key: state.level for key, state in account.skills.items()}
+    if potion_boost:
+        from tracker.gear.potions import boosted_levels
+
+        levels = boosted_levels(levels, ("magic",))
     powered_longrange = any(
         weapon.powered_attack
         and weapon.powered_attack_base_max_hit
@@ -402,6 +408,7 @@ def context(request: Request) -> ContextResponse:
     projection = project_equipment(snapshot, gear)
 
     return ContextResponse(
+        potion_catalog=potion_catalog(),
         evaluated_at=now,
         data_source={"label": "Homelab Pi", "fetched_at": now.isoformat()}
         if getattr(request.app.state, "gear_data_source", None) is not None
@@ -436,6 +443,7 @@ def context(request: Request) -> ContextResponse:
             "slots": list(SLOTS),
             "spells": [{"id": k, "level": v[0], "base_max_hit": v[1]} for k, v in SPELLS.items()],
             "combat_options": combat_option_capabilities(snapshot, gear),
+            "potion_combat_options": combat_option_capabilities(snapshot, gear, potion_boost=True),
             "encounter_presets": [p.__dict__ for p in encounter_presets()],
             "npc_catalog": {"available": True, "catalog_revision": npc_catalog().revision},
             "configurations": ["melee", "ranged", "magic"],

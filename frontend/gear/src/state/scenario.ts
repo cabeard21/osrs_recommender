@@ -12,6 +12,7 @@ import { secondaryPriorities } from "../api/secondaryPriorities";
 import {
   emptyCombatOptionGroups,
   selectedCombatOptions,
+  potionCombatContext,
 } from "../api/combatOptions";
 import type { SavedResult, SavedResults } from "./resultStorage";
 const EMPTY_GROUP_NOUNS = {
@@ -169,6 +170,16 @@ export function normalize(
     if (role.combatOptionOptimization === false)
       throw new Error("Auto requires combat option optimization.");
   }
+  const globalArmour = draft.combatTarget?.flat_armour ?? 0;
+  if (
+    (draft.targetInputs?.flat_armour !== undefined &&
+      !draft.targetInputs.flat_armour.trim()) ||
+    !Number.isSafeInteger(globalArmour) ||
+    Math.abs(globalArmour) > 10000
+  )
+    throw new Error(
+      "Target flat armour requires a whole number between -10000 and 10000.",
+    );
   const roles = draft.roles.map((r) => {
     const role = { ...structuredClone(r), weight: Number(r.weight) };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -190,12 +201,18 @@ export function normalize(
       !role.utility &&
       role.combatOptionOptimization !== false
     ) {
-      const options = selectedCombatOptions(role, context);
+      const options = selectedCombatOptions(
+        role,
+        potionCombatContext(context, draft.potions),
+      );
       if (!options)
         throw new Error(
           "Synced combat options are unavailable. Refresh account context.",
         );
-      const [empty] = emptyCombatOptionGroups(role, context);
+      const [empty] = emptyCombatOptionGroups(
+        role,
+        potionCombatContext(context, draft.potions),
+      );
       if (empty)
         throw new Error(
           `${role.name}: choose at least one ${EMPTY_GROUP_NOUNS[empty]} in Combat Options.`,
@@ -218,11 +235,13 @@ export function normalize(
         }
         const n = Number(value);
         const min =
-          key.startsWith("bonuses.") || key.startsWith("ranged_")
-            ? -64
-            : key === "damage_cap"
-              ? 1
-              : 0;
+          key === "flat_armour"
+            ? -10000
+            : key.startsWith("bonuses.") || key.startsWith("ranged_")
+              ? -64
+              : key === "damage_cap"
+                ? 1
+                : 0;
         if (
           !value.trim() ||
           !Number.isSafeInteger(n) ||
@@ -282,9 +301,11 @@ export function normalize(
       );
     if (
       role.combatTarget &&
-      ([role.combatTarget.defence_level, role.combatTarget.magic_level].some(
-        (n) => !Number.isSafeInteger(n) || n < 0 || n > 10000,
-      ) ||
+      (!Number.isSafeInteger(role.combatTarget.flat_armour ?? 0) ||
+        Math.abs(role.combatTarget.flat_armour ?? 0) > 10000 ||
+        [role.combatTarget.defence_level, role.combatTarget.magic_level].some(
+          (n) => !Number.isSafeInteger(n) || n < 0 || n > 10000,
+        ) ||
         Object.values(role.combatTarget.bonuses).some(
           (n) => !Number.isSafeInteger(n),
         ))
@@ -392,6 +413,11 @@ export function normalize(
     objective: "weighted_dps",
     request: {
       support_policy: draft.supportPolicy ?? "community_best_effort",
+      potions: draft.potions ?? {
+        mode: "disabled",
+        allowed_ids: [],
+        selected_ids: [],
+      },
       secondary_priority: draft.secondaryPriority ?? "default",
       max_dps_loss_pct: loss,
       optimization_mode: draft.optimizationMode ?? "fast",

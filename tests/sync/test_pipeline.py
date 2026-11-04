@@ -64,6 +64,7 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
     )
     assert _price_scope(content) == expected | supported | resource_item_ids()
     assert {556, 558, 21880, 12934} <= _price_scope(content)
+    assert {2436, 2440, 2444, 3040} <= _price_scope(content)  # Combat potion prices.
     assert 1207 in _price_scope(content)  # Community Steel dagger, absent from authored scope.
 
 

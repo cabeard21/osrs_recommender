@@ -46,6 +46,7 @@ class FixedCombatOption(DTO):
 
 
 class EquipmentEvaluationRequest(DTO):
+    selected_potion_ids: tuple[str, ...] | None = None
     scenario: BrowserOptimizationRequest
     baseline_loadouts: dict[str, dict[ItemSlot, ItemId]]
     proposed_loadouts: dict[str, dict[ItemSlot, ItemId]]
@@ -54,6 +55,20 @@ class EquipmentEvaluationRequest(DTO):
 
     @model_validator(mode="after")
     def exact_role(self) -> EquipmentEvaluationRequest:
+        if self.scenario.potions.mode == "optimize" and self.selected_potion_ids is None:
+            raise ValueError("Fixed evaluation requires the selected fixed potion setup")
+        if self.selected_potion_ids is not None:
+            from tracker.gear.potions import PotionPolicy
+
+            PotionPolicy(mode="fixed", selected_ids=self.selected_potion_ids)
+            if self.scenario.potions.mode == "optimize" and not set(
+                self.selected_potion_ids
+            ) <= set(self.scenario.potions.allowed_ids):
+                raise ValueError("Selected potions must belong to the scenario allowlist")
+            if self.scenario.potions.mode != "optimize" and tuple(
+                self.selected_potion_ids
+            ) != tuple(self.scenario.potions.selected_ids):
+                raise ValueError("Selected potions must match the scenario setup")
         if (
             len(self.scenario.roles) != 1
             or self.scenario.roles[0].style == "special"
@@ -81,6 +96,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(DTO):
+    potions: dict[str, Any] | None = None
     status: Literal["valid", "invalid", "unsupported"]
     equipment: dict[ItemSlot, int]
     performance: CombatPerformance | None
@@ -135,6 +151,12 @@ def calculate_evaluation(
         raise ValueError("evaluation_cancelled")
     now = datetime.now(UTC)
     scenario = body.scenario
+    if body.selected_potion_ids is not None:
+        from tracker.gear.potions import PotionPolicy
+
+        scenario = scenario.model_copy(
+            update={"potions": PotionPolicy(mode="fixed", selected_ids=body.selected_potion_ids)}
+        )
     validate_scenario(scenario, gear, snapshot)
     catalog = gear.equipment_catalog()
     role_id = scenario.roles[0].id
@@ -178,7 +200,22 @@ def calculate_evaluation(
     referenced = set(body.baseline_loadouts[role_id].values()) | set(
         body.proposed_loadouts[role_id].values()
     )
+    from tracker.gear.potions import potion_summary
+
     assumptions = {
+        **(
+            {
+                "potions": scenario.potions.model_dump(mode="json"),
+                "potion_setup": potion_summary(
+                    {k: v.level for k, v in projected.skills.items()},
+                    scenario.potions.selected_ids,
+                    prices,
+                    now,
+                ),
+            }
+            if scenario.potions.mode != "disabled"
+            else {}
+        ),
         **support_context(catalog, scenario.support_policy),
         "skills": dict(scenario.skill_overrides),
         "quests": dict(scenario.quest_overrides),
@@ -188,8 +225,8 @@ def calculate_evaluation(
     return EquipmentEvaluationResponse(
         **support_context(catalog, scenario.support_policy),
         evaluated_at=now,
-        scenario=scenario,
-        scenario_fingerprint=scenario_fingerprint(scenario),
+        scenario=body.scenario,
+        scenario_fingerprint=scenario_fingerprint(body.scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
         model_version="normal-attacks-v1",

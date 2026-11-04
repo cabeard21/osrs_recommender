@@ -266,6 +266,17 @@ export function NpcTargetPicker({
           {base && target && (
             <>
               <p className="npc-stats">{npcStatSummary(target)}</p>
+              <dl>
+                <div>
+                  <dt>flat armour</dt>
+                  <dd>{target.flat_armour ?? 0}</dd>
+                </div>
+              </dl>
+              <p>
+                Flat armour applies to each accurate melee or ranged hitsplat.
+                Negative values increase damage; magic ignores it. Catalog
+                armour cannot be overridden.
+              </p>
               <button
                 type="button"
                 aria-expanded={editing}

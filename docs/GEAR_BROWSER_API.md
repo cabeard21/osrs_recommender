@@ -596,9 +596,24 @@ before prefixes and substrings; pagination uses a stable order.
 all remain inspectable, but only supported
 ordinary-attack targets can be optimized. Complete ordinary profiles are supported
 by default without individual review. Mechanical attributes, missing statistics,
-flat armour, and known NPC-specific rules can block scoring with explicit reasons;
+and known NPC-specific rules can block scoring with explicit reasons;
 ordinary classification tags do not automatically block a target. This is a
 static ordinary-attack calculation, not a full encounter simulation.
+Targets carry signed integer `flat_armour` (default `0`, range -10000 to 10000).
+Accurate melee and ranged hits first raise rolled zeroes to one, then subtract
+armour and clamp damage at zero; negative armour adds damage. Misses remain zero
+and magic ignores flat armour. Catalog armour cannot be overridden while retaining
+the NPC selection; custom targets can set it explicitly.
+Blood Moon, Blue Moon and Eclipse Moon Regular support ordinary attacks only;
+curses, healing, survival and encounter downtime are excluded. Eclipse Moon Clone
+remains unsupported because its phase changes accuracy, timing and hit behavior.
+Reviewed usable forms of dual macuahuitl, Torag's hammers, glacial temotli and
+sulphur blades apply armour separately to each hit. Dual macuahuitl's second hit
+requires the first accuracy check to succeed. Set effects and special attacks
+remain excluded. Torag's degradation cost is unavailable until reviewed.
+Performance `hitsplats` reports each hit's marginal accuracy and maximum damage;
+`max_hit` is maximum total damage per attack after armour (including zero), while
+`accuracy` remains the first hit's accuracy.
 Elemental weaknesses and separate light,
 standard, and heavy ranged defence values feed the existing Python evaluator.
 
@@ -671,3 +686,57 @@ the next scheduled refresh retries them. Deploy the Python cache fix to the Pi
 through the normal application update; no migration or configuration change is
 needed. All seven supported ordinary arrows are already in the price refresh
 scope. Restart desktop Gear after updating its armour comparison code.
+
+# Combat potion assumptions
+
+Scenarios accept `potions` with `mode` (`disabled`, `optimize`, or `fixed`),
+`allowed_ids` (catalog family IDs), and `selected_ids` (an exact setup for fixed
+evaluation). Omitted policies default to disabled. Gear context exposes
+`potion_catalog`; use its IDs rather than inventing item forms.
+
+Optimization compares compatible potion setups alongside gear. One setup applies
+to every Multi role. Potions are assumed available regardless of observed ownership.
+Their boosts affect combat and spell-level checks, while equipment requirements
+continue to use base account levels (or future-mode base-level assumptions).
+
+Solutions carry their exact potion setup, base and boosted levels, and cost per
+application. Prices use the frozen market snapshot; unavailable prices remain
+unknown. Potion application costs are separate from gear acquisition budgets and
+ammo/rune/charge GP/hour and GP/damage. A fixed comparison must retain the selected
+setup rather than silently optimizing potions again.
+
+DPS is a fresh-boost snapshot. Decay, duration advantages, drinking downtime,
+healing costs, survival, and supply endurance are not modeled. Divine HP costs are
+disclosed. Boosted Defence is informational and does not alter equipment-bonus
+secondary objectives. Potions do not count as equipment swaps or automatically
+change reserved supply slots.
+
+Potion optimization collapses equivalent boost vectors using only skills scored
+by the configured roles. Single Auto enumerates profiles separately for each
+permitted discipline, then schedules the concrete jobs in the same worker pool.
+For example, nine melee profiles and two each for ranged and magic require 13
+searches, rather than 36 combinations each repeating all three disciplines. Combined
+potions remain eligible when cheaper, even if they also boost an unscored skill.
+For melee, Defence and Ranged boosts do not create additional searches.
+Base equipment facts are shared across profiles; boost-dependent candidate
+rankings and performance caches remain independent. Individually unaffordable
+equipment is removed before candidate ranking and attack-scaffold evaluation;
+owned, assumed and budget-exempt items retain their existing cost treatment.
+The full catalog facts remain available for validation and explanations.
+Desktop uses its existing
+bounded worker pool for potion branches, with serial fallback when no pool is
+configured. This does not move optimization onto the Pi.
+
+Clients may attach a fresh UUID `progress_id` query parameter to optimization
+POSTs, then poll `GET /optimizations/progress?progress_id=<uuid>`. The response
+contains the matching attempt's progress or null; previous attempts are never
+substituted. Progress reports phase, completed/total profiles and elapsed seconds.
+Result search diagnostics include potion preparation, branch and merge timings.
+Polling is observational and does not alter the request's search effort or
+cancel an active job.
+
+Secondary frontier insertion retains ranked archives incrementally and shares
+updates across identical action-cap archives. Elemental attack scoring collapses
+equivalent tier/stance/weakness outcomes while retaining the original spell tie
+winner. Full spell choices remain available to resource-cost frontier searches.
+These optimizations preserve the configured search limits.

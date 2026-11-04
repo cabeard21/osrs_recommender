@@ -1,4 +1,5 @@
 import type {
+  PotionPolicy,
   CombatOptionAvailability,
   CombatOptionCapabilities,
   CombatOptionSelection,
@@ -238,6 +239,35 @@ export function setCombatOptionEnabled(
     combatOptionExplicitlyEmpty: {
       ...role.combatOptionExplicitlyEmpty,
       [field]: enabled ? false : explicitlyEmpty,
+    },
+  };
+}
+
+/** Use server-reviewed spell access at the maximum allowed fresh Magic boost. */
+export function potionCombatContext(
+  context: GearContext | null,
+  policy?: PotionPolicy,
+): GearContext | null {
+  const ids =
+    policy?.mode === "fixed"
+      ? policy.selected_ids
+      : policy?.mode === "optimize"
+        ? policy.allowed_ids
+        : [];
+  if (
+    !context?.live ||
+    !ids?.some((id) => id === "magic" || id === "divine_magic") ||
+    !context.live.capabilities.potion_combat_options
+  )
+    return context;
+  return {
+    ...context,
+    live: {
+      ...context.live,
+      capabilities: {
+        ...context.live.capabilities,
+        combat_options: context.live.capabilities.potion_combat_options,
+      },
     },
   };
 }

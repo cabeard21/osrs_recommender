@@ -104,6 +104,9 @@ def cost_pareto(rows: Any) -> list[dict[str, Any]]:
             -r["score"],
             r["running_cost"]["gp_per_damage"],
             r["purchase_cost_gp"],
+            (r.get("potions") or {}).get("cost_per_application_gp") is None,
+            (r.get("potions") or {}).get("cost_per_application_gp") or 0,
+            len((r.get("potions") or {}).get("selected_ids", ())),
             json.dumps(r["loadouts"], sort_keys=True),
         ),
     )

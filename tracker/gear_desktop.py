@@ -104,14 +104,14 @@ def create_app(settings: DesktopSettings) -> FastAPI:
                         pool = None
                     app.state.gear_execution = "serial_startup_fallback"
                     logger.warning(
-                        "Desktop Auto process pool could not start (%s); using serial execution",
+                        "Desktop Gear process pool could not start (%s); using serial execution",
                         type(exc).__name__,
                     )
                 else:
                     gear.auto_pool = pool
                     app.state.gear_execution = "processes"
                     logger.info(
-                        "Desktop Auto ready with %d worker processes", settings.optimization_workers
+                        "Desktop Gear ready with %d worker processes", settings.optimization_workers
                     )
             yield
         finally:

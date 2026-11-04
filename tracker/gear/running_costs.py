@@ -16,8 +16,9 @@ from typing import Any
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.ammo import cape_recovery_rate
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v1"
+COST_MODEL_VERSION = "ordinary-resource-cost-v2"
 _RUNES = {
     556: "Air rune",
     555: "Water rune",
@@ -127,8 +128,12 @@ _THROWN = frozenset(
 
 def resource_item_ids() -> frozenset[int]:
     """Extra market scope; normal supported ammunition is already equipment-scoped."""
-    return frozenset(_RUNES) | frozenset(
-        i for recipe in _CHARGES.values() for i, _ in recipe if i != 995
+    from tracker.gear.potions import resource_item_ids as potion_item_ids
+
+    return (
+        potion_item_ids()
+        | frozenset(_RUNES)
+        | frozenset(i for recipe in _CHARGES.values() for i, _ in recipe if i != 995)
     )
 
 
@@ -237,6 +242,9 @@ def evaluate_running_cost(
         resources, reasons = _ranged_resources(equipment, price_records, now)
     elif style not in {"stab", "slash", "crush"}:
         reasons = ["Attack resource consumption has not been reviewed."]
+    # Ordinary damage support does not imply reviewed repair costs.
+    if any(item.id in TORAG_USABLE_IDS for item in equipment.values()):
+        reasons.append("Torag's hammers degradation and repair costs have not been reviewed.")
     reasons += [
         f"No price available for {r['name']}."
         for r in resources

@@ -133,13 +133,38 @@ def test_attribute_classification(attributes, expected):
     assert bool(entry["target"]["unsupported_mechanics"]) == (expected != "supported")
 
 
-def test_flat_armour_remains_blocked_without_review():
+@pytest.mark.parametrize(
+    "name,variant,armour",
+    [("Blood Moon", "", -2), ("Blue Moon", "", -5), ("Eclipse Moon", "Regular", 6)],
+)
+def test_flat_armour_moons_supported(name, variant, armour):
     catalog = npc_catalog()
-    row = dict(catalog.detail("49faa2e0a60a37be29725d55")["source_record"])
-    row["defensive"] = {**row["defensive"], "flat_armour": 5}
-    entry = catalog._entry("armoured", row, {"source_url": "https://example.com"})
+    entry = next(
+        e for e in catalog.entries.values() if e["name"] == name and e["variant"] == variant
+    )
+    assert entry["support_status"] == "supported"
+    assert entry["target"]["flat_armour"] == armour
+    role = RoleConfig(
+        id="moon",
+        style="slash",
+        target_selection={"key": entry["key"], "catalog_revision": catalog.revision},
+    )
+    assert resolve_target(role).target.flat_armour == armour
+    role = role.model_copy(
+        update={"target": resolve_target(role).target.model_copy(update={"flat_armour": 0})}
+    )
+    with pytest.raises(ValueError, match="restrictions"):
+        resolve_target(role)
+
+
+def test_eclipse_clone_phase_stays_blocked():
+    entry = next(
+        e
+        for e in npc_catalog().entries.values()
+        if e["name"] == "Eclipse Moon" and e["variant"] == "Clone"
+    )
     assert entry["support_status"] == "unsupported"
-    assert "Flat armour" in entry["reasons"][0]
+    assert "Clone" in " ".join(entry["reasons"])
 
 
 @pytest.mark.parametrize("style", ["stab", "slash", "crush"])
@@ -155,3 +180,22 @@ def test_zulrah_melee_immunity_preserved_with_supported_cap_subset(style):
     )
     with pytest.raises(ValueError, match="immune to melee"):
         resolve_target(role)
+
+
+def test_eclipse_regular_does_not_bypass_new_manifest_restrictions():
+    catalog = npc_catalog()
+    original = next(
+        e
+        for e in catalog.entries.values()
+        if e["name"] == "Eclipse Moon" and e["variant"] == "Regular"
+    )
+    entry = catalog._entry(
+        "future",
+        original["source_record"],
+        {
+            "source_url": "https://example.com",
+            "mechanic_exceptions": {"13012": {"reasons": ["A new unsupported restriction."]}},
+        },
+    )
+    assert entry["support_status"] == "unsupported"
+    assert entry["reasons"] == ["A new unsupported restriction."]

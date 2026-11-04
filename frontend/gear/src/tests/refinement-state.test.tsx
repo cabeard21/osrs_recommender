@@ -170,6 +170,7 @@ describe("live refinement transport", () => {
     });
     expect(JSON.parse(String(init?.body))).toEqual({
       scenario: accepted.live!.scenario,
+      selected_potion_ids: [],
       baseline_loadouts: { "role-1": { weapon: 4151 } },
       proposed_loadouts: { "role-1": {} },
     });

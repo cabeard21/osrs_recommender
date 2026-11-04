@@ -12,10 +12,11 @@ from types import MappingProxyType
 from typing import Any
 
 from tracker.content.loader import Content
-from tracker.content.requirements import AllOf
+from tracker.content.requirements import AllOf, SkillLeaf
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.requirements_source import requirement_from_levels
+from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -101,6 +102,22 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
+        review = DOUBLE_ATTACKS.get(row["id"])
+        if review:
+            if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
+                raise ValueError(f"Reviewed attack physical form changed: {row['id']}")
+            row = {
+                **row,
+                "attack_pattern": review[1],
+                "unsupported_effects": []
+                if row["unsupported_effects"] == ["Offensive effects have not been validated."]
+                else row["unsupported_effects"],
+                **(
+                    {"attack_styles": ("crush", "stab"), "attack_profiles": DUAL_PROFILES}
+                    if row["id"] == 28997
+                    else {}
+                ),
+            }
         entries = overlays.get(row["id"], [])
         primary = _reviewed_equivalent(row, by_id)
         if primary is not None:
@@ -126,6 +143,14 @@ def load_catalog(
         # Community skill maps cannot certify absent quest/unlock gates.
         if not entries:
             requirement = source_requirements.get(row["id"])
+        if review:
+            reviewed_requirements = tuple(SkillLeaf(skill=k, level=v) for k, v in review[2])
+            requirement = AllOf(
+                children=(
+                    *((requirement,) if requirement is not None else ()),
+                    *reviewed_requirements,
+                )
+            )
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -134,13 +159,14 @@ def load_catalog(
                     _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
-                "requirements_complete": bool(entries) and not any(i.gate_unknown for i in entries),
+                "requirements_complete": bool(entries or review)
+                and not any(i.gate_unknown for i in entries),
                 "tradeable": (
                     True
                     if acquisition == {"tradeable"}
                     else False
                     if acquisition == {"untradeable"}
-                    else None
+                    else (row["id"] in {28997, 29889, 29084, 4747} if review else None)
                 ),
                 "content_ids": tuple(item.id for item in entries),
             }
@@ -162,9 +188,21 @@ def load_catalog(
         sort_keys=True,
     ).encode("utf-8")
     revision = (
-        sha256(payload + source_payload + community_payload + reviewed_spells).hexdigest()
+        sha256(
+            payload
+            + source_payload
+            + community_payload
+            + reviewed_spells
+            + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
+            + json.dumps(DUAL_PROFILES).encode()
+        ).hexdigest()
         if source_payload or community_payload
-        else sha256(payload + reviewed_spells).hexdigest()
+        else sha256(
+            payload
+            + reviewed_spells
+            + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
+            + json.dumps(DUAL_PROFILES).encode()
+        ).hexdigest()
     )
     return EquipmentCatalog(
         result,

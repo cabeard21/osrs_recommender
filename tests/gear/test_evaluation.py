@@ -23,6 +23,57 @@ def test_exact_evaluation_matches_existing_validated_combat_function():
     assert actual.supported
 
 
+def test_boosted_powered_damage_fails_closed_until_formula_is_reviewed():
+    from types import SimpleNamespace
+
+    weapon = EquipmentDefinition(
+        id=1,
+        name="Fixture powered staff",
+        slot="weapon",
+        powered_attack="fixture",
+        powered_attack_base_max_hit=18,
+        powered_attack_stances=("accurate",),
+    )
+    result = evaluate_loadout(
+        {"weapon": weapon},
+        SimpleNamespace(style="magic", powered_attack="fixture", stance="accurate"),
+        {"magic": 74, "_base_magic": 70},
+    )
+    assert not result.supported
+    assert any("powered-attack damage" in reason for reason in result.limitations)
+
+
+def test_fixed_potions_boost_scoring_but_cannot_unlock_equipment(make_content):
+    from tracker.content.requirements import SkillLeaf
+    from tracker.gear.optimizer import OptimizationRequest
+    from tracker.gear.potions import PotionPolicy
+
+    service, snapshot, now = fixed_context(make_content)
+    equipment = {"weapon": 1, "ammunition": 2}
+    plain = OptimizationRequest(roles=(RoleConfig(id="single", style="ranged"),), mode="owned")
+    boosted = plain.model_copy(
+        update={"potions": PotionPolicy(mode="fixed", selected_ids=("ranging",))}
+    )
+    before = service.evaluate(snapshot, plain, equipment, equipment, now=now)
+    after = service.evaluate(snapshot, boosted, equipment, equipment, now=now)
+    assert after["baseline"]["performance"]["dps"] > before["baseline"]["performance"]["dps"]
+    assert after["baseline"]["potions"]["boosted_levels"]["ranged"] == 81
+    assert snapshot.skills["ranged"].level == 70
+    original = service.equipment_catalog()
+    service._equipment = type(original)(
+        {
+            **original.items,
+            1: original.items[1].model_copy(
+                update={"requires": SkillLeaf(skill="ranged", level=75)}
+            ),
+        }
+    )
+    assert (
+        service.evaluate(snapshot, boosted, equipment, equipment, now=now)["baseline"]["status"]
+        == "invalid"
+    )
+
+
 @pytest.mark.parametrize(
     "equipment,reason",
     [

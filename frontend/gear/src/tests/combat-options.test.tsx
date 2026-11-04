@@ -5,6 +5,7 @@ import { contextFixture } from "../fixtures/client";
 import { newDraft, normalize } from "../state/scenario";
 import { optimizationRequest } from "../api/httpClient";
 import {
+  potionCombatContext,
   selectedCombatOptions,
   setCombatOptionEnabled,
 } from "../api/combatOptions";
@@ -249,4 +250,34 @@ test("Auto deduplicates stances shared by discipline capability categories", () 
   ];
   const role = { ...newDraft().roles[0], autoDiscipline: true };
   expect(selectedCombatOptions(role, synced)?.stances).toEqual(["accurate"]);
+});
+
+test("fresh magic potion allows server-reviewed boosted spells only", () => {
+  const base = context();
+  base.live!.capabilities.potion_combat_options = {
+    ...(base.live!.capabilities.combat_options as object),
+    spells: [
+      { id: "ice_barrage", available: true },
+      { id: "blood_barrage", available: false, reason: "Quest unmet" },
+    ],
+  };
+  const policy = {
+    mode: "optimize" as const,
+    allowed_ids: ["magic"],
+    selected_ids: [],
+  };
+  const role = { ...newDraft().roles[0], style: "magic" as const };
+  expect(
+    selectedCombatOptions(role, potionCombatContext(base, policy))?.spells,
+  ).toEqual(["ice_barrage"]);
+  const draft = { ...newDraft(), roles: [role], potions: policy };
+  expect(
+    optimizationRequest(normalize(draft, "snapshot", true, base)),
+  ).toHaveProperty("roles.0.combat_options.spells", ["ice_barrage"]);
+  expect(
+    selectedCombatOptions(
+      role,
+      potionCombatContext(base, { ...policy, allowed_ids: ["strength"] }),
+    )?.spells,
+  ).not.toContain("ice_barrage");
 });

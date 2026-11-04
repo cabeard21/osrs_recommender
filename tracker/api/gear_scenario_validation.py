@@ -178,10 +178,15 @@ def _validate_target(target: Any, path: tuple[str | int, ...], issue: Issue) -> 
         "ranged_heavy",
         "weakness_percent",
         "damage_cap",
+        "flat_armour",
     }
     for name in numeric & target.keys():
         if target[name] is not None and type(target[name]) is not int:
             issue((*path, "target", name), "Target values require integers")
+        elif name == "flat_armour" and (
+            target[name] is None or not -10000 <= target[name] <= 10000
+        ):
+            issue((*path, "target", name), "Flat armour must be between -10000 and 10000")
         elif (
             name.startswith("ranged_")
             and target[name] is not None

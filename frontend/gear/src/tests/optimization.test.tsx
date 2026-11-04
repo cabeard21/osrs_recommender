@@ -84,9 +84,23 @@ function setup(
   optimize?: (init?: RequestInit) => Promise<Response>,
 ) {
   const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    if (String(url).includes("/optimizations/progress?"))
+      return new Response(
+        JSON.stringify({
+          progress_id: new URL(
+            String(url),
+            "http://localhost",
+          ).searchParams.get("progress_id"),
+          progress: null,
+        }),
+      );
     if (String(url).endsWith("/context"))
       return new Response(JSON.stringify(context));
-    if (String(url).endsWith("/optimizations"))
+    if (
+      new URL(String(url), "http://localhost").pathname.endsWith(
+        "/optimizations",
+      )
+    )
       return optimize
         ? optimize(init)
         : new Response(
@@ -293,6 +307,16 @@ it("cancels and rejects an account refresh during optimization", async () => {
   let signal: AbortSignal | null | undefined;
   let reads = 0;
   const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    if (String(url).includes("/optimizations/progress?"))
+      return new Response(
+        JSON.stringify({
+          progress_id: new URL(
+            String(url),
+            "http://localhost",
+          ).searchParams.get("progress_id"),
+          progress: null,
+        }),
+      );
     if (String(url).endsWith("/context"))
       return new Response(
         JSON.stringify(
@@ -399,7 +423,11 @@ it("retains backend target metadata when editing preset defence", async () => {
   await screen.findByRole("heading", { name: /Best configuration found/ });
   const call = vi
     .mocked(fetcher)
-    .mock.calls.find(([url]) => String(url).endsWith("/optimizations"))!;
+    .mock.calls.find(([url]) =>
+      new URL(String(url), "http://localhost").pathname.endsWith(
+        "/optimizations",
+      ),
+    )!;
   const target = JSON.parse(String(call[1]?.body)).roles[0].target;
   const source = context.capabilities.encounter_presets[0].roles[0].target;
   expect(target).toEqual({ ...source, defence_level: 120 });

@@ -70,13 +70,13 @@ const reply = (
 type Reply = (scenario: unknown) => unknown;
 function fetcherFor(makeReply: Reply = reply, ctx: unknown = context) {
   return vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    const path = String(url);
+    const path = new URL(String(url), "http://localhost").pathname;
     if (path.endsWith("/context")) return new Response(JSON.stringify(ctx));
     if (path.endsWith("/optimizations"))
       return new Response(
         JSON.stringify(makeReply(JSON.parse(String(init?.body)))),
       );
-    if (path.includes("/items?"))
+    if (path.endsWith("/items"))
       return new Response(
         JSON.stringify({ items: context.items, total: 1, next_offset: null }),
       );
@@ -97,7 +97,11 @@ function mount(fetcher: typeof fetch) {
 const optimizeCalls = (fetcher: typeof fetch) =>
   vi
     .mocked(fetcher)
-    .mock.calls.filter(([url]) => String(url).endsWith("/optimizations"));
+    .mock.calls.filter(([url]) =>
+      new URL(String(url), "http://localhost").pathname.endsWith(
+        "/optimizations",
+      ),
+    );
 const ready = () => screen.findByText("Synchronized ranger", { exact: true });
 const runAndWait = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "Run optimization" }));
