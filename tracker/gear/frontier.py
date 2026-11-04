@@ -130,7 +130,7 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
     """Round-robin metric, component, damage and affordable candidates."""
     from tracker.gear.optimizer import SLOTS
 
-    pools = {}
+    pools: dict[str, list[int | None]] = {}
     for slot in SLOTS:
         candidates = [i for i, item in search.eligible.items() if item.slot == slot]
         lanes = []
@@ -167,7 +167,7 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
             ]
         )
         queues = deque(iter(lane) for lane in lanes)
-        keep = []
+        keep: list[int] = []
         while queues and len(keep) < 47:
             lane = queues.popleft()
             item = next(lane, None)

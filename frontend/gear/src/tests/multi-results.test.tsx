@@ -294,7 +294,7 @@ it("keeps both tradeoff panels on the selected action limit when crossing fronti
     ].map((entry) => ({ id: entry.id, live: entry.solution })),
   });
   rerender(<LiveMultiResultWorkspace />);
-  const secondary = () => within(screen.getByLabelText("Secondary tradeoffs"));
+  const secondary = () => within(screen.getByLabelText("Metric tradeoffs"));
   const running = () => within(screen.getByLabelText("Running cost tradeoffs"));
   const expectLowLimit = () => {
     expect(screen.getByLabelText("Swap-efficiency curve point")).toHaveValue(

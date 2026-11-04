@@ -1,6 +1,6 @@
 # Gear Optimizer tradeoff metrics
 
-The configuration offers a **Tradeoff metric** alongside DPS: Balanced defence, Magic & ranged defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee/Ranged strength, Magic damage bonus, and Accuracy. **None — DPS only** retains the ordinary DPS search. Existing API identifiers (`secondary_priority`, `secondary_value`, `secondary_frontiers`) remain compatible.
+The configuration offers a **Tradeoff metric** alongside DPS: Balanced defence, Magic & ranged defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee/Ranged strength, Magic damage bonus, and Accuracy. **None â€” DPS only** retains the ordinary DPS search. Existing API identifiers (`secondary_priority`, `secondary_value`, `secondary_frontiers`) remain compatible.
 
 Magic & ranged defence is the minimum of magic and ranged equipment defence bonuses in each complete loadout. Balanced defence is the arithmetic mean of all five defence bonuses. These describe equipment bonuses, not damage reduction or survivability. Negative bonuses remain negative. Multi averages per-loadout metric values using normalized active-time role weights; unscored utility roles do not contribute.
 

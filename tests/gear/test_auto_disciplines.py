@@ -300,5 +300,6 @@ def test_complete_auto_archive_survives_nested_merge():
     # Full child archives must be accepted independently of the publication cap.
     assert any(
         (point["dps_loss_pct"] or 0) > 0
-        for group in result["secondary_frontiers"] for point in group["points"]
+        for group in result["secondary_frontiers"]
+        for point in group["points"]
     )

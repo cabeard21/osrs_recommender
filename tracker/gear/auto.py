@@ -74,9 +74,7 @@ def optimize_auto(
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
 
-    return merge_auto_results(
-        request, branches, complete_frontiers=complete_frontiers
-    )
+    return merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
 
 
 def merge_auto_results(
