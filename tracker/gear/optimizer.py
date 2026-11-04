@@ -311,6 +311,15 @@ class _Search:
             return sorted(rows, key=rank)[:limit]
         from tracker.gear.frontier import diverse
 
+        if getattr(self, "metric_first", False):
+
+            def metric_rank(row: Row) -> tuple[Any, ...]:
+                key = rank(row)
+                return (key[1], key[0], *key[2:])
+
+            # Preserve both extremes even in this lane; complementary partial
+            # loadouts can temporarily have an equal weakest-side metric.
+            return diverse(rows, metric_rank, limit)[:limit]
         return diverse(rows, rank, limit)
 
     def tick(self) -> bool:
@@ -436,7 +445,14 @@ class _Search:
                     result, selected = max(
                         evaluated,
                         key=lambda row: (
-                            row[0].get("dps") or 0,
+                            *(
+                                (
+                                    secondary_value(self.request.secondary_priority, row[0]),
+                                    row[0].get("dps") or 0,
+                                )
+                                if getattr(self, "metric_first", False)
+                                else (row[0].get("dps") or 0,)
+                            ),
                             row[1].attack_type,
                             row[1].stance,
                             row[1].spell or "",
@@ -997,6 +1013,7 @@ def optimize(
             targeted_head_refinement=targeted_head_refinement,
             local_refinement=local_refinement,
             _prepared=_prepared,
+            _complete_frontiers=_complete_frontiers,
             progress=progress,
         )
     prepared = _prepared or prepare_optimization(

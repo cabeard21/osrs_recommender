@@ -154,7 +154,8 @@ export function parseOptimization(
     priority === "default"
       ? null
       : {
-          policy: "secondary-frontier-v1",
+          policy: "tradeoff-frontier-v2",
+          metric_lane_equipment_fraction: 0.25,
           expansion_limit:
             scenario.request.optimization_mode === "thorough"
               ? 1500000
@@ -651,7 +652,7 @@ export function optimizationRequest(scenario: Scenario) {
       selected_ids: [],
     },
     secondary_priority: r.secondary_priority ?? "default",
-    max_dps_loss_pct: r.max_dps_loss_pct ?? 10,
+    max_dps_loss_pct: 100,
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,
     max_swaps: r.max_swaps,

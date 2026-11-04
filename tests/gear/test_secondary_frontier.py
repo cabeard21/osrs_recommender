@@ -215,3 +215,69 @@ def test_shared_substitutions_preserve_locks_and_seeds(global_lock):
     )
     assert list(_shared_assignments(search, [[seed]])) == []
     assert seed == before
+
+
+def test_metric_lane_ranks_metric_before_damage():
+    from types import SimpleNamespace
+
+    from tracker.gear.optimizer import _Search
+
+    search = SimpleNamespace(frontier_search=True, metric_first=True)
+    rows = [(10, 1), (3, 50), (7, 20)]
+    selected = _Search.retain(search, rows, lambda row: (-row[0], -row[1]), 1)
+    assert selected == [(3, 50)]
+
+
+def test_metric_lane_runs_with_separate_equipment_allowance():
+    from tests.gear.test_optimizer import run, weapon
+    from tests.gear.test_secondary_priorities import armour
+    from tracker.gear.optimizer import RoleConfig
+
+    result = run(
+        [weapon(1, "slash"), armour(20, melee_strength=30), armour(30, defence_stab=100)],
+        (RoleConfig(id="a", style="slash"),),
+        max_swaps=0,
+        secondary_priority="stab_defence",
+        max_dps_loss_pct=100,
+    )
+    diagnostics = result["search"]["secondary_frontier"]
+    assert diagnostics["metric_lane"]["explored_nodes"] > 0
+    assert diagnostics["metric_lane"]["expansion_limit"] == (500000 - 25000) // 4
+    points = result["secondary_frontiers"][0]["points"]
+    assert points[-1]["solution"]["secondary_value"] == 100
+
+
+def test_complementary_defence_frontier_matches_tiny_exhaustive_oracle():
+    from itertools import product
+
+    from tests.gear.test_optimizer import run, weapon
+    from tests.gear.test_secondary_priorities import armour
+    from tracker.gear.optimizer import RoleConfig
+
+    heads = [
+        armour(20, melee_strength=35),
+        armour(21, defence_magic=90, defence_ranged=-10),
+        armour(22, defence_magic=25, defence_ranged=25, melee_strength=10),
+    ]
+    bodies = [
+        armour(30, melee_strength=35).model_copy(update={"slot": "body"}),
+        armour(31, defence_magic=-10, defence_ranged=90).model_copy(update={"slot": "body"}),
+        armour(32, defence_magic=25, defence_ranged=25, melee_strength=10).model_copy(
+            update={"slot": "body"}
+        ),
+    ]
+    items = [weapon(1, "slash"), *heads, *bodies]
+    roles = (RoleConfig(id="a", style="slash"),)
+    args = {"max_swaps": 0, "secondary_priority": "magic_ranged_defence", "max_dps_loss_pct": 100}
+    exhaustive = [
+        run(items, roles, locks={"weapon": 1, "head": h, "body": b}, **args)["selected_solution"]
+        for h, b in product([None, 20, 21, 22], [None, 30, 31, 32])
+    ]
+    expected = {(r["score"], r["secondary_value"]) for r in pareto(exhaustive)}
+    result = run(items, roles, **args)
+    points = result["secondary_frontiers"][0]["points"]
+    assert {(p["solution"]["score"], p["solution"]["secondary_value"]) for p in points} == expected
+    assert points[-1]["solution"]["secondary_value"] == 80
+    assert points[-1]["dps_loss_pct"] > 10
+    diagnostics = result["search"]["secondary_frontier"]
+    assert diagnostics["explored_nodes"] <= diagnostics["expansion_limit"]

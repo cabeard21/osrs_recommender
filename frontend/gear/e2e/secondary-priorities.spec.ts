@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("secondary priority persists, identifies requests/results, and invalidates accepted results", async ({
+test("tradeoff metric persists, identifies requests/results, and invalidates accepted results", async ({
   page,
 }, testInfo) => {
   await page.request.post("/test/seed-optimization");
@@ -10,7 +10,7 @@ test("secondary priority persists, identifies requests/results, and invalidates 
     .filter({ hasText: /^Advanced settings/ })
     .click();
   const priority = page.getByRole("combobox", {
-    name: "Secondary priority",
+    name: "Tradeoff metric",
     exact: true,
   });
   await expect(priority).toHaveValue("default");
@@ -18,7 +18,7 @@ test("secondary priority persists, identifies requests/results, and invalidates 
   await priority.selectOption("magic_ranged_defence");
   const response = page.waitForResponse(
     (r) =>
-      r.url().endsWith("/ui-api/gear/optimizations") &&
+      new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
       r.request().method() === "POST",
   );
   await page
@@ -43,9 +43,9 @@ test("secondary priority persists, identifies requests/results, and invalidates 
   expect(body.result.selected_solution.secondary_value).toBe(
     Math.min(bonuses.defence_magic, bonuses.defence_ranged),
   );
-  await page.getByText("Secondary priority", { exact: true }).click();
+  await page.getByText("Tradeoff metric", { exact: true }).click();
   await expect(
-    page.getByText(/Secondary priority: Magic & ranged defence/),
+    page.getByText(/Tradeoff metric: Magic & ranged defence/),
   ).toBeVisible();
   await expect(
     page
@@ -56,7 +56,7 @@ test("secondary priority persists, identifies requests/results, and invalidates 
     page.getByRole("heading", { name: "Best-found tradeoff frontier" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("table", { name: "DPS and secondary tradeoffs" }),
+    page.getByRole("table", { name: "DPS and metric tradeoffs" }),
   ).toBeVisible();
   const point = page.getByRole("button", {
     name: "Select tradeoff 1",
@@ -65,15 +65,16 @@ test("secondary priority persists, identifies requests/results, and invalidates 
   await point.click();
   await expect(point).toHaveAttribute("aria-pressed", "true");
   await page
-    .getByRole("region", { name: "Secondary tradeoffs" })
+    .getByRole("region", { name: "Metric tradeoffs" })
     .screenshot({ path: testInfo.outputPath("secondary-frontier.png") });
-  expect(body.scenario.max_dps_loss_pct).toBe(10);
-  await page.getByRole("spinbutton", { name: /Maximum DPS loss/ }).fill("15");
-  await expect(page.getByText(/Result outdated/)).toBeVisible();
+  expect(body.scenario.max_dps_loss_pct).toBe(100);
+  await expect(
+    page.getByRole("spinbutton", { name: /Maximum DPS loss/ }),
+  ).toHaveCount(0);
   await priority.selectOption("accuracy");
   await expect(page.getByText(/Result outdated/)).toBeVisible();
   await expect(
-    page.getByText(/Secondary priority: Magic & ranged defence/),
+    page.getByText(/Tradeoff metric: Magic & ranged defence/),
   ).toBeVisible();
   await page.reload();
   await page
@@ -94,7 +95,7 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
   page,
 }, testInfo) => {
   await page.request.post("/test/seed-optimization");
-  await page.route("**/ui-api/gear/optimizations", async (route) => {
+  await page.route("**/ui-api/gear/optimizations*", async (route) => {
     const response = await route.fetch();
     const body = await response.json();
     const group = body.result.secondary_frontiers.find(
@@ -124,7 +125,7 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
     .filter({ hasText: /^Advanced settings/ })
     .click();
   await page
-    .getByRole("combobox", { name: "Secondary priority", exact: true })
+    .getByRole("combobox", { name: "Tradeoff metric", exact: true })
     .selectOption("balanced_defence");
   await page
     .getByRole("button", { name: "Run optimization", exact: true })
@@ -140,7 +141,42 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
     page.getByRole("button", { name: "Select chart tradeoff 2", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(/role-1 defence bonuses:/)).toBeVisible();
-  await page.getByRole("region", { name: "Secondary tradeoffs" }).screenshot({
+  await page.getByRole("region", { name: "Metric tradeoffs" }).screenshot({
     path: testInfo.outputPath("secondary-frontier-tradeoff.png"),
   });
+});
+
+test("Multi frontier endpoints select complete joint solutions", async ({
+  page,
+}) => {
+  await page.request.post("/test/seed-joint");
+  await page.goto("/gear-next/");
+  await page.getByRole("button", { name: "Multi-style", exact: true }).click();
+  await page.getByLabel("Additional purchase budget (GP)").fill("10000");
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Tradeoff metric", exact: true })
+    .selectOption("balanced_defence");
+  await page
+    .getByRole("button", { name: "Run optimization", exact: true })
+    .click();
+  const endpoints = page.getByRole("group", { name: "Frontier endpoints" });
+  const metric = endpoints.getByRole("button", {
+    name: "Highest Balanced defence",
+  });
+  await expect(metric).toBeVisible();
+  await metric.click();
+  await expect(metric).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("heading", { name: "Best joint configuration found" }),
+  ).toBeVisible();
+  const dps = endpoints.getByRole("button", {
+    name: "Highest DPS",
+    exact: true,
+  });
+  await dps.click();
+  await expect(dps).toHaveAttribute("aria-pressed", "true");
 });

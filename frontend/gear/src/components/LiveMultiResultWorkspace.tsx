@@ -323,6 +323,7 @@ export function LiveMultiResultWorkspace() {
         group={frontierGroup}
         selectedId={current.solutionId}
         priority={result.scenario.request.secondary_priority ?? "default"}
+        legacyCapped={(result.scenario.request.max_dps_loss_pct ?? 10) < 100}
         onSelect={(solutionId) => ui({ solutionId })}
       />
       {solution && (

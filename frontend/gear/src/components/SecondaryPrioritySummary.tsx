@@ -55,11 +55,11 @@ export function SecondaryPrioritySummary({
       )}
       <details
         className="panel result-explanation"
-        aria-label="Secondary optimization priority"
+        aria-label="Tradeoff metric explanation"
       >
-        <summary>Secondary priority</summary>
+        <summary>Tradeoff metric</summary>
         <p>
-          Secondary priority: {priorityLabel} ·{" "}
+          Tradeoff metric: {priorityLabel} ·{" "}
           {priority === "default"
             ? "inventory / cost / actions / identity ordering"
             : result.source === "fixture"
@@ -72,10 +72,9 @@ export function SecondaryPrioritySummary({
           .
         </p>
         <p>
-          Weighted ordinary-attack DPS remains the primary objective. Secondary
-          priorities break exact DPS ties for the initial selection; the
-          tradeoff frontier also explores DPS sacrifices. Bounded search does
-          not guarantee the best secondary value.
+          The frontier explores DPS and the selected metric as equal objectives.
+          The initial selection has the highest DPS found. Bounded search does
+          not guarantee either global optimum or a complete frontier.
         </p>
         {priority !== "default" && (
           <p>

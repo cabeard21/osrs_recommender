@@ -35,6 +35,7 @@ def optimize_auto(
 ) -> dict[str, Any]:
     from tracker.gear.optimizer import optimize
 
+    complete_frontiers = options.pop("_complete_frontiers", False)
     branches = []
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
@@ -73,10 +74,12 @@ def optimize_auto(
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
 
-    return merge_auto_results(request, branches)
+    return merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
 
 
-def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
+def merge_auto_results(
+    request: Any, branches: list[tuple[str, dict[str, Any]]], *, complete_frontiers: bool = False
+) -> dict[str, Any]:
     """Combine complete concrete-discipline archives using the requested global cap."""
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _solution_key
@@ -114,9 +117,11 @@ def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]])
             visible = [
                 r
                 for r in rows
-                if not dps or 100 * (dps - r["score"]) / dps <= request.max_dps_loss_pct
+                if complete_frontiers
+                or not dps
+                or 100 * (dps - r["score"]) / dps <= request.max_dps_loss_pct
             ]
-            sampled = len(visible) > 64
+            sampled = len(visible) > 64 and not complete_frontiers
             if sampled:
                 visible = [visible[round(i * (len(visible) - 1) / 63)] for i in range(64)]
             points = [
@@ -150,7 +155,9 @@ def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]])
                 if group.get("baseline_solution"):
                     baselines.append(group["baseline_solution"])
         running_baselines[limit] = max(baselines, key=lambda r: r["score"], default=None)
-    running_groups = publish_groups(running_archives, running_baselines, request.max_dps_loss_pct)
+    running_groups = publish_groups(
+        running_archives, running_baselines, request.max_dps_loss_pct, complete_frontiers
+    )
     if not any(r.get("running_cost_frontiers") for _, r in branches):
         running_groups = []
     for discipline, result in branches:
@@ -173,10 +180,11 @@ def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]])
             points = [
                 point
                 for point in group["points"]
-                if point["dps_loss_pct"] is None
+                if complete_frontiers
+                or point["dps_loss_pct"] is None
                 or point["dps_loss_pct"] <= request.max_dps_loss_pct
             ]
-            sampled = len(points) > 64
+            sampled = len(points) > 64 and not complete_frontiers
             visible = (
                 [points[round(i * (len(points) - 1) / 63)] for i in range(64)]
                 if sampled
@@ -215,6 +223,7 @@ def merge_auto_results(request: Any, branches: list[tuple[str, dict[str, Any]]])
                             for g in result.get("running_cost_frontiers", [])
                         },
                         request.max_dps_loss_pct,
+                        complete_frontiers,
                     )
                 ],
                 "search": result["search"],

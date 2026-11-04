@@ -8,11 +8,13 @@ export function SecondaryFrontier({
   selectedId,
   onSelect,
   priority,
+  legacyCapped = false,
 }: {
   group?: SecondaryFrontierGroup;
   selectedId: string;
   onSelect: (id: string) => void;
   priority: SecondaryPriority;
+  legacyCapped?: boolean;
 }) {
   if (priority === "default" || !group) return null;
   const points = group.points;
@@ -27,15 +29,24 @@ export function SecondaryFrontier({
   const low = Math.min(...values, 0),
     high = Math.max(...values, 1);
   const active = points.find((p) => p.id === selectedId)?.solution;
-  const maxLoss = Math.max(...points.map((p) => p.dps_loss_pct ?? 0), 1);
+  const minDps = Math.min(...points.map((p) => p.solution.score), 0);
+  const maxDps = Math.max(...points.map((p) => p.solution.score), 1);
+  const first = points[0];
+  const last = points.at(-1);
   return (
-    <section className="panel" aria-label="Secondary tradeoffs">
+    <section className="panel" aria-label="Metric tradeoffs">
       <style>{`.frontier-table { border-collapse: collapse; min-width: max-content; } .frontier-table th, .frontier-table td { padding: .4rem .6rem; text-align: left; white-space: nowrap; } .frontier-table tbody tr[aria-selected="true"] { background: #253040; }`}</style>
       <h2>Best-found tradeoff frontier</h2>
       <p>
-        {label} versus DPS loss under the same swap limit. Bounded search does
-        not establish the global frontier.
+        {label} versus DPS under the same swap limit. Bounded search does not
+        establish the global frontier.
       </p>
+      {legacyCapped && (
+        <p>
+          Historical capped frontier. Run optimization again to explore the full
+          range.
+        </p>
+      )}
       {priority === "balanced_defence" && (
         <p>
           Balanced defence is the mean of the five equipment defence bonuses; it
@@ -65,6 +76,22 @@ export function SecondaryFrontier({
               .join(" / ")}
           </p>
         ))}
+      {first && last && (
+        <div role="group" aria-label="Frontier endpoints">
+          <button
+            onClick={() => onSelect(first.id)}
+            aria-pressed={first.id === selectedId}
+          >
+            Highest DPS
+          </button>
+          <button
+            onClick={() => onSelect(last.id)}
+            aria-pressed={last.id === selectedId}
+          >
+            Highest {label}
+          </button>
+        </div>
+      )}
       {points.length <= 1 && (
         <p>No additional tradeoff found within the search limits.</p>
       )}
@@ -79,20 +106,20 @@ export function SecondaryFrontier({
             viewBox="0 0 500 190"
             style={{ width: "100%", maxHeight: 240 }}
             role="group"
-            aria-label={`${label} against DPS loss; use the table to select a solution`}
+            aria-label={`${label} against DPS; use the table to select a solution`}
           >
             <path d="M45 10 V155 H480" fill="none" stroke="currentColor" />
             <text x="220" y="185" fill="currentColor" fontSize="12">
-              DPS loss (%)
+              DPS
             </text>
             <text x="50" y="14" fill="currentColor" fontSize="12">
               {label}
             </text>
             <text x="45" y="170" fill="currentColor" fontSize="10">
-              0%
+              {minDps.toFixed(1)}
             </text>
             <text x="450" y="170" fill="currentColor" fontSize="10">
-              {maxLoss.toFixed(1)}%
+              {maxDps.toFixed(1)}
             </text>
             <text x="5" y="150" fill="currentColor" fontSize="10">
               {(low * percent).toFixed(0)}
@@ -103,7 +130,10 @@ export function SecondaryFrontier({
             {points.map((p, i) => (
               <circle
                 key={p.id}
-                cx={45 + (430 * (p.dps_loss_pct ?? 0)) / maxLoss}
+                cx={
+                  45 +
+                  (430 * (p.solution.score - minDps)) / (maxDps - minDps || 1)
+                }
                 cy={
                   150 -
                   (120 * ((p.solution.secondary_value ?? 0) - low)) /
@@ -130,7 +160,7 @@ export function SecondaryFrontier({
           <div style={{ overflowX: "auto" }}>
             <table
               className="frontier-table"
-              aria-label="DPS and secondary tradeoffs"
+              aria-label="DPS and metric tradeoffs"
             >
               <thead>
                 <tr>
@@ -152,7 +182,13 @@ export function SecondaryFrontier({
                         aria-pressed={selectedId === p.id}
                         onClick={() => onSelect(p.id)}
                       >
-                        {i === 0 ? "Highest DPS" : `Tradeoff ${i + 1}`}
+                        {points.length === 1
+                          ? `Highest DPS and highest ${label}`
+                          : i === 0
+                            ? "Highest DPS"
+                            : i === points.length - 1
+                              ? `Highest ${label}`
+                              : `Tradeoff ${i + 1}`}
                       </button>
                     </td>
                     <td>{p.solution.score.toFixed(3)}</td>

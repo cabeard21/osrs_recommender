@@ -24,15 +24,11 @@ const solutionDefaults: JointSolutionDTO = {
   reserved_supply_slots: 0,
   maximum_actions: 0,
 };
-it("retains and validates DPS loss range", () => {
-  const scenario = normalize(
-    { ...newDraft(), maxDpsLossPct: "15" },
-    "snapshot",
-  );
-  expect(optimizationRequest(scenario).max_dps_loss_pct).toBe(15);
-  expect(() =>
-    normalize({ ...newDraft(), maxDpsLossPct: "101" }, "snapshot"),
-  ).toThrow(/DPS/);
+it("requests the full frontier even when a restored draft has an old cap", () => {
+  for (const maxDpsLossPct of ["15", "101", ""]) {
+    const scenario = normalize({ ...newDraft(), maxDpsLossPct }, "snapshot");
+    expect(optimizationRequest(scenario).max_dps_loss_pct).toBe(100);
+  }
 });
 it("selects a tradeoff without optimization", async () => {
   const select = vi.fn();
@@ -78,6 +74,12 @@ it("selects a tradeoff without optimization", async () => {
     />,
   );
   expect(screen.getByRole("table")).toBeInTheDocument();
+  expect(screen.getByText("DPS", { selector: "svg text" })).toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Highest Balanced defence" }),
+  );
+  expect(select).toHaveBeenCalledWith("frontier-8-b");
+  select.mockClear();
   await userEvent.click(
     screen.getByRole("button", { name: "Select tradeoff 2" }),
   );
@@ -239,4 +241,38 @@ it("explains combined defence and shows the selected component bonuses", () => {
   expect(
     screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),
   ).toBeInTheDocument();
+});
+
+it("marks a single solution as both endpoints and explains historical caps", async () => {
+  const onSelect = vi.fn();
+  render(
+    <SecondaryFrontier
+      priority="prayer_bonus"
+      selectedId="only"
+      onSelect={onSelect}
+      legacyCapped
+      group={{
+        swap_limit: 0,
+        baseline_dps: 0,
+        sampled: false,
+        points: [
+          {
+            id: "only",
+            dps_loss: 0,
+            dps_loss_pct: null,
+            secondary_gain: 0,
+            solution: { ...solutionDefaults, score: 0, secondary_value: -2 },
+          },
+        ],
+      }}
+    />,
+  );
+  expect(
+    screen.getByText(/Highest DPS and highest Prayer bonus/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Historical capped frontier/)).toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Highest Prayer bonus" }),
+  );
+  expect(onSelect).toHaveBeenCalledWith("only");
 });

@@ -295,7 +295,9 @@ def optimize_potions(
             for discipline, concrete in disciplines
             if discipline is not None
         ]
-        result = merge_auto_results(request, results)
+        result = merge_auto_results(
+            request, results, complete_frontiers=options.get("_complete_frontiers", False)
+        )
     else:
         result = merge_results(
             request, branches, complete_frontiers=options.get("_complete_frontiers", False)

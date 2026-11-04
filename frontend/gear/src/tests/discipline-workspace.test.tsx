@@ -229,7 +229,7 @@ it("does not fall back to the winner for an infeasible discipline", async () => 
   expect(screen.queryByText(/Equipped weapon/)).toBeNull();
   expect(screen.queryByRole("heading", { name: "What to buy" })).toBeNull();
   await userEvent.click(
-    screen.getByText("Secondary priority", { selector: "summary" }),
+    screen.getByText("Tradeoff metric", { selector: "summary" }),
   );
   expect(screen.getByText(/no feasible measurement/)).toBeVisible();
 });

@@ -33,7 +33,6 @@ export const newRole = (index: number) => ({
 export const newDraft = (): Draft => ({
   supportPolicy: "community_best_effort",
   secondaryPriority: "default",
-  maxDpsLossPct: "10",
   optimizationMode: "fast",
   target: "Custom ordinary-attack target",
   defence: "1",
@@ -67,17 +66,6 @@ function integer(value: string, name: string, min: number, max: number) {
     throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
   return n;
 }
-function parseDpsLoss(draft: Draft) {
-  const loss = Number(draft.maxDpsLossPct ?? "10");
-  if (
-    !(draft.maxDpsLossPct ?? "10").trim() ||
-    !Number.isFinite(loss) ||
-    loss < 0 ||
-    loss > 100
-  )
-    throw new Error("Maximum DPS loss must be from 0 to 100 percent.");
-  return loss;
-}
 function parseAcquiredIds(acquired: string) {
   return acquired.trim()
     ? acquired
@@ -97,13 +85,7 @@ function parseSkillLevels(skillLevels: string | undefined) {
 }
 export type DraftFieldErrors = Partial<
   Record<
-    | "budget"
-    | "defence"
-    | "supplies"
-    | "maxDpsLoss"
-    | "attack"
-    | "skillLevels"
-    | "acquired",
+    "budget" | "defence" | "supplies" | "attack" | "skillLevels" | "acquired",
     string
   >
 >;
@@ -121,7 +103,6 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
     budget: () => integer(parseGp(draft.budget), "Budget", 0, 2147483647),
     defence: () => integer(draft.defence, "Target defence", 0, 10000),
     supplies: () => integer(draft.supplies, "Supply slots", 0, 28),
-    maxDpsLoss: () => parseDpsLoss(draft),
     attack: () =>
       draft.assumptions.attack &&
       integer(draft.assumptions.attack, "Assumed Attack", 1, 99),
@@ -152,10 +133,9 @@ export function normalize(
       ([priority]) => priority === (draft.secondaryPriority ?? "default"),
     )
   )
-    throw new Error("Choose a valid secondary priority.");
+    throw new Error("Choose a valid tradeoff metric.");
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
-  const loss = parseDpsLoss(draft);
   for (const role of draft.roles) {
     if (!role.autoDiscipline) continue;
     if (draft.roles.length !== 1 || role.utility)
@@ -419,7 +399,7 @@ export function normalize(
         selected_ids: [],
       },
       secondary_priority: draft.secondaryPriority ?? "default",
-      max_dps_loss_pct: loss,
+      max_dps_loss_pct: 100,
       optimization_mode: draft.optimizationMode ?? "fast",
       roles,
       target: {
@@ -809,7 +789,7 @@ export function reducer(state: State, action: Action): State {
           [action.mode]: {
             ...current,
             pending: false,
-            error: "Secondary priority changed; rerun the selected priority.",
+            error: "Tradeoff metric changed; rerun the selected priority.",
           },
         };
       if (

@@ -361,7 +361,7 @@ export function ConfigurationPanel() {
           </p>
         </details>
         <label>
-          Secondary priority
+          Tradeoff metric
           <select
             value={secondaryPriority}
             onChange={(e) =>
@@ -377,25 +377,6 @@ export function ConfigurationPanel() {
             ))}
           </select>
         </label>
-        {secondaryPriority !== "default" && (
-          <label>
-            Maximum DPS loss (%)
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              data-run-on-enter
-              value={draft.maxDpsLossPct ?? "10"}
-              {...fieldProps("loss", errors.maxDpsLoss)}
-              onChange={(e) => change({ maxDpsLossPct: e.target.value })}
-            />
-            <span>Run optimization to apply the range.</span>
-          </label>
-        )}
-        {secondaryPriority !== "default" && (
-          <FieldError id="loss" message={errors.maxDpsLoss} />
-        )}
         {isSingle && (
           <>
             <label>

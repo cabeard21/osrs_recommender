@@ -11,9 +11,8 @@ test("ranged arrow comparison links plot and table and rejects outdated inputs",
     .filter({ hasText: /^Advanced settings/ })
     .click();
   await page
-    .getByRole("combobox", { name: "Secondary priority", exact: true })
+    .getByRole("combobox", { name: "Tradeoff metric", exact: true })
     .selectOption("balanced_defence");
-  await page.getByRole("spinbutton", { name: /Maximum DPS loss/ }).fill("0");
   await page
     .getByRole("button", { name: "Run optimization", exact: true })
     .click();

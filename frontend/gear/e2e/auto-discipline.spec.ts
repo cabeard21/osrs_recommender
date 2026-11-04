@@ -12,7 +12,7 @@ for (const priority of ["default", "prayer_bonus"]) {
         .filter({ hasText: /^Advanced settings/ })
         .click();
       await page
-        .getByRole("combobox", { name: "Secondary priority", exact: true })
+        .getByRole("combobox", { name: "Tradeoff metric", exact: true })
         .selectOption(priority);
     }
     const auto = page.getByRole("button", { name: "Auto", exact: true });
@@ -21,7 +21,7 @@ for (const priority of ["default", "prayer_bonus"]) {
     await page.getByRole("checkbox", { name: "magic", exact: true }).uncheck();
     const response = page.waitForResponse(
       (r) =>
-        r.url().endsWith("/ui-api/gear/optimizations") &&
+        new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
         r.request().method() === "POST",
     );
     await page
@@ -53,7 +53,7 @@ for (const priority of ["default", "prayer_bonus"]) {
     await expect(page.getByText("Viewing melee loadouts")).toBeVisible();
     if (priority !== "default") {
       await expect(
-        page.getByRole("table", { name: "DPS and secondary tradeoffs" }),
+        page.getByRole("table", { name: "DPS and metric tradeoffs" }),
       ).toBeVisible();
       await page
         .getByRole("button", { name: "Select tradeoff 1", exact: true })
