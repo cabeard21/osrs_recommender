@@ -2,7 +2,7 @@ import { sameValue } from "./runtime";
 import type { OptimizationReply, SecondaryPriority } from "./contracts";
 
 export const secondaryPriorities = [
-  ["default", "Default"],
+  ["default", "None — DPS only"],
   ["balanced_defence", "Balanced defence"],
   ["magic_ranged_defence", "Magic & ranged defence"],
   ["stab_defence", "Stab defence"],
@@ -23,18 +23,18 @@ export function validateSecondaryPriority(
   measured = false,
 ) {
   if ((value.secondary_priority ?? "default") !== expected)
-    throw new Error("Secondary priority does not match the submitted priority");
+    throw new Error("Tradeoff metric does not match the submitted priority");
   if (!measured) return;
   if (expected === "default") {
     if (value.secondary_value !== undefined && value.secondary_value !== null)
       throw new Error(
-        "Default secondary priority must not invent a measured value",
+        "Default tradeoff metric must not invent a measured value",
       );
   } else if (
     typeof value.secondary_value !== "number" ||
     !Number.isFinite(value.secondary_value)
   )
-    throw new Error("Invalid secondary priority measured value");
+    throw new Error("Invalid tradeoff metric measured value");
 }
 
 export function matchesSecondaryPriority(

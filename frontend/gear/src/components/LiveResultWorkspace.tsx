@@ -352,6 +352,7 @@ export function LiveResultWorkspace() {
           )?.find((g) => g.swap_limit === request.max_swaps)}
           selectedId={current.solutionId}
           priority={request.secondary_priority ?? "default"}
+          legacyCapped={(request.max_dps_loss_pct ?? 10) < 100}
           onSelect={(solutionId) =>
             dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
           }

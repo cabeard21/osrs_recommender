@@ -10,7 +10,8 @@ def test_frontier_contract(client, session_factory):
     response = client.post("/ui-api/gear/optimizations", json=body)
     assert response.status_code == 200, response.text
     data = response.json()
-    assert data["frontier_policy"]["policy"] == "secondary-frontier-v1"
+    assert data["frontier_policy"]["policy"] == "tradeoff-frontier-v2"
+    assert data["frontier_policy"]["metric_lane_equipment_fraction"] == 0.25
     assert data["result"]["secondary_frontiers"]
     group = data["result"]["secondary_frontiers"][-1]
     assert "baseline_dps" in group

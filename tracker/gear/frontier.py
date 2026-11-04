@@ -126,6 +126,59 @@ def _shared_assignments(
             yield assignment
 
 
+def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
+    """Round-robin metric, component, damage and affordable candidates."""
+    from tracker.gear.optimizer import SLOTS
+
+    pools = {}
+    for slot in SLOTS:
+        candidates = [i for i, item in search.eligible.items() if item.slot == slot]
+        lanes = []
+        for role in search.request.roles:
+            if role.style == "special":
+                continue
+            lanes.append(
+                sorted(
+                    candidates,
+                    key=lambda i: (
+                        -search.secondary_marginals.get((role.id, i), 0),
+                        -search.marginals.get((role.id, i), -1),
+                        i,
+                    ),
+                )
+            )
+        if search.request.secondary_priority == "magic_ranged_defence":
+            # Individual minima cannot express complementary pieces. Keep both
+            # component leaders and score their combinations in partial beams.
+            for field in ("defence_magic", "defence_ranged"):
+                lanes.append(
+                    sorted(
+                        candidates,
+                        key=lambda i: (
+                            -getattr(search.items[i].bonuses, field),
+                            i,
+                        ),
+                    )
+                )
+        lanes.extend(
+            [
+                [i for i in original.pools[slot] if i is not None],
+                sorted(candidates, key=lambda i: (search.cost({i}), i)),
+            ]
+        )
+        queues = deque(iter(lane) for lane in lanes)
+        keep = []
+        while queues and len(keep) < 47:
+            lane = queues.popleft()
+            item = next(lane, None)
+            if item is not None:
+                if item not in keep:
+                    keep.append(item)
+                queues.append(lane)
+        pools[slot] = [None, *keep]
+    return pools
+
+
 def explore(
     original: _Search,
     winners: list[Solution | None],
@@ -142,7 +195,7 @@ def explore(
     budget = 1_500_000 if thorough else 500_000
     phase_limit = budget - 25000
     diagnostics: dict[str, Any] = {
-        "policy": "secondary-frontier-v1",
+        "policy": "tradeoff-frontier-v2",
         "expansion_limit": budget,
         "explored_nodes": 0,
         "assignment_attempts": 0,
@@ -231,6 +284,50 @@ def explore(
     for solution in [*winners, unrestricted]:
         accept(solution)
     roles = search.request.roles
+    # This lane gets its own caches: option choice follows the metric first,
+    # while the original DPS and diverse lanes retain their existing evaluations.
+    metric: Any = copy(search)
+    metric.metric_first = True
+    metric.performance_cache = {}
+    metric.option_cache = {}
+    metric.nodes = 0
+    total_metric_limit = (budget - 25000) // 4
+    # Multi must leave room for cap-specific assignments even when its shared
+    # seed search exhausts the allowance.
+    metric_limit = total_metric_limit // 2 if len(roles) > 1 else total_metric_limit
+
+    def metric_tick() -> bool:
+        if metric.cancelled and metric.cancelled():
+            raise ValueError("optimization_cancelled")
+        if metric.nodes >= metric_limit:
+            return False
+        metric.nodes += 1
+        return True
+
+    metric.tick = metric_tick
+    metric.pools = _metric_pools(metric, original)
+    metric_solutions = []
+    for equipment in metric.loadouts(roles):
+        metric_solutions.append(metric.solution({r.id: equipment for r in roles}, None))
+    if len(roles) > 1:
+        # Cap-specific allowances prevent unrestricted/early caps from starving
+        # constrained defensive alternatives.
+        shared_work = metric.nodes
+        limits = list(archives)
+        per_cap = max(0, (total_metric_limit - shared_work) // len(limits))
+        for index, limit in enumerate(limits):
+            metric_limit = shared_work + per_cap * (index + 1)
+            for assignment in metric.joint_loadouts(limit):
+                metric_solutions.append(metric.solution(assignment, limit))
+    metric_limit = total_metric_limit
+    diagnostics["metric_lane"] = {
+        "expansion_limit": metric_limit,
+        "explored_nodes": metric.nodes,
+        "work_budget_exhausted": metric.nodes >= metric_limit,
+    }
+    # Charge actual metric work to the shared total; unused reserved work is
+    # available to the diverse lane.
+    phase_limit = budget - 25000 - metric.nodes
     individual = {role.id: search.loadouts((role,)) for role in roles}
     # Shared and joint searches preserve constrained joint solutions.
     common = individual[roles[0].id] if len(roles) == 1 else search.loadouts(roles)
@@ -242,7 +339,7 @@ def explore(
                 accept(search.solution(assignment, None))
         # Split the reserved 25,000 expansions between coordinated equipment
         # changes and combat options. Both Fast and Thorough keep their total cap.
-        phase_limit = budget - 15000
+        phase_limit = budget - 15000 - metric.nodes
         for assignment in _shared_assignments(search, archives.values()):
             if diagnostics["shared_assignment_attempts"] >= 10000 or not tick():
                 break
@@ -284,7 +381,12 @@ def explore(
             diagnostics["assignment_attempts"] += 1
             accept(search.solution({**assignment, role: replacement}, None))
     # Reserve work for option tradeoffs even if equipment beam expansion exhausts its share.
-    phase_limit = budget
+    # Keep the existing shared/refinement seed schedule intact before adding
+    # the metric lane; extra early seeds can otherwise crowd out DPS refinements.
+    diverse_finalists = [row for archive in archives.values() for row in archive]
+    for solution in metric_solutions:
+        accept(solution)
+    phase_limit = budget - metric.nodes
     option_seeds = {
         _identity(row["loadouts"]): row
         for archive in [option_candidates, *archives.values()]
@@ -299,7 +401,12 @@ def explore(
     from tracker.gear.refinement import refine_ammunition
 
     cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
-    cleaned = {_identity(row["loadouts"]): row for archive in archives.values() for row in archive}
+    # A newly dominating metric point must not discard a diverse seed before
+    # its local refinement: that seed may improve beyond the new point.
+    cleaned = {
+        _identity(row["loadouts"]): row
+        for row in [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
+    }
     cleaned = {
         identity: refine_ammunition(search, row, _solution_key, cleanup)
         for identity, row in cleaned.items()
@@ -359,9 +466,10 @@ def explore(
     diagnostics.update(
         ammunition_refinement=cleanup,
         finalist_refinement=finalists,
-        explored_nodes=search.nodes,
+        explored_nodes=search.nodes + metric.nodes,
         valid_assignments=len(seen),
-        work_budget_exhausted=search.nodes >= budget - 25000
+        work_budget_exhausted=metric.nodes >= metric_limit
+        or search.nodes >= budget - 25000 - metric.nodes
         or diagnostics["shared_assignment_attempts"] >= 10000
         or (thorough and diagnostics["assignment_attempts"] >= 10000),
     )

@@ -282,3 +282,23 @@ def test_auto_defence_frontiers_obey_loss_limit(loss_limit, priority):
         assert all(p["dps_loss_pct"] <= loss_limit for p in group["points"])
         if loss_limit == 100:
             assert any(p["dps_loss_pct"] > 10 for p in group["points"])
+
+
+def test_complete_auto_archive_survives_nested_merge():
+    args = list(context())
+    args[1] = args[1].model_copy(
+        update={"secondary_priority": "prayer_bonus", "max_dps_loss_pct": 0}
+    )
+    from tracker.gear.models import EquipmentBonuses
+
+    items = dict(args[2].items)
+    items[3] = items[3].model_copy(update={"bonuses": EquipmentBonuses(prayer=100)})
+    args[2] = SimpleNamespace(items=items, version="test")
+    result = optimize(*args, _complete_frontiers=True)
+    assert result["secondary_frontiers"]
+    assert all(not group["sampled"] for group in result["secondary_frontiers"])
+    # Full child archives must be accepted independently of the publication cap.
+    assert any(
+        (point["dps_loss_pct"] or 0) > 0
+        for group in result["secondary_frontiers"] for point in group["points"]
+    )

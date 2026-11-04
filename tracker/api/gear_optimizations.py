@@ -83,7 +83,8 @@ def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
         return None
     thorough = body.optimization_mode == "thorough"
     return {
-        "policy": "secondary-frontier-v1",
+        "policy": "tradeoff-frontier-v2",
+        "metric_lane_equipment_fraction": 0.25,
         "expansion_limit": 1500000 if thorough else 500000,
         "refinement_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,

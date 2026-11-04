@@ -53,12 +53,12 @@ it("migrates historical drafts and rejects unknown priority values", () => {
       { ...newDraft(), secondaryPriority: "unknown" as "default" },
       "snapshot",
     ),
-  ).toThrow(/priority/);
+  ).toThrow(/metric/);
 });
 it("rejects changed priority provenance and missing or invalid measurements", () => {
   expect(() => validateSecondaryPriority({}, "default", true)).not.toThrow();
   expect(() => validateSecondaryPriority({}, "accuracy", true)).toThrow(
-    /priority/,
+    /metric/,
   );
   expect(() =>
     validateSecondaryPriority(
@@ -76,7 +76,7 @@ it("rejects changed priority provenance and missing or invalid measurements", ()
       ),
     ).toThrow(/value/);
 });
-it("rejects a result from a different secondary priority", async () => {
+it("rejects a result from a different tradeoff metric", async () => {
   const client = new FixtureGearClient("none", 0);
   const result = await client.optimize(
     normalize(newDraft(), "fixture-snapshot-01"),
@@ -99,7 +99,7 @@ it("rejects a result from a different secondary priority", async () => {
     generation: 1,
   });
   expect(rejected.single.result).toBeNull();
-  expect(rejected.single.error).toMatch(/priority changed/);
+  expect(rejected.single.error).toMatch(/metric changed/);
   expect(matchesSecondaryPriority(result, { ...result, scenario })).toBe(false);
 });
 it("shows a measured secondary value separately from primary DPS", async () => {
@@ -121,13 +121,13 @@ it("shows a measured secondary value separately from primary DPS", async () => {
       }
     />,
   );
-  expect(screen.getByText(/Secondary priority: Accuracy/)).toHaveTextContent(
+  expect(screen.getByText(/Tradeoff metric: Accuracy/)).toHaveTextContent(
     "75.00%",
   );
-  screen.getByText("Secondary priority", { exact: true }).click();
+  screen.getByText("Tradeoff metric", { exact: true }).click();
   expect(
     screen.getByText(
-      /Weighted ordinary-attack DPS remains the primary objective/,
+      /frontier explores DPS and the selected metric as equal objectives/,
     ),
   ).toBeVisible();
 });
@@ -139,16 +139,16 @@ it("switches priorities while keeping accepted results outdated", async () => {
     </GearProvider>,
   );
   await screen.findByText("Demo adventurer", { exact: true });
-  expect(screen.getByLabelText("Secondary priority")).toHaveValue("default");
+  expect(screen.getByLabelText("Tradeoff metric")).toHaveValue("default");
   expect(
-    screen.getByLabelText("Secondary priority").querySelectorAll("option"),
+    screen.getByLabelText("Tradeoff metric").querySelectorAll("option"),
   ).toHaveLength(13);
   await user.click(
     screen.getByRole("button", { name: "Run fixture optimization" }),
   );
   await screen.findByText("Fixture result", { exact: true });
   await user.selectOptions(
-    screen.getByLabelText("Secondary priority"),
+    screen.getByLabelText("Tradeoff metric"),
     "prayer_bonus",
   );
   expect(screen.getByText(/Result outdated/)).toBeVisible();
@@ -193,9 +193,9 @@ it("explains the combined score and selected bonuses in the result summary", asy
       solution={solution}
     />,
   );
-  screen.getByText("Secondary priority", { exact: true }).click();
+  screen.getByText("Tradeoff metric", { exact: true }).click();
   expect(
-    screen.getByText(/Secondary priority: Magic & ranged defence/),
+    screen.getByText(/Tradeoff metric: Magic & ranged defence/),
   ).toHaveTextContent("-5.00 bonus");
   expect(
     screen.getByText(/lower of the magic and ranged equipment defence bonuses/),
