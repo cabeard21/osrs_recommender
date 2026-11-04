@@ -1,10 +1,14 @@
+import { formatDefenceRoll } from "./defenceRollFormat";
 import type {
   JointSolutionDTO,
   OptimizationReply,
   PotionDefinition,
   PotionSummary,
 } from "../api/contracts";
-import { secondaryPriorities } from "../api/secondaryPriorities";
+import {
+  secondaryPriorities,
+  defenceRollStyles,
+} from "../api/secondaryPriorities";
 import {
   boostedSkillChanges,
   noPotionScore,
@@ -76,7 +80,8 @@ function PotionResult({
       )}
       <p>
         Fresh boost only: no decay, duration benefit, drinking downtime or
-        survival benefit is modeled.
+        survival estimates are modeled. Defensive-roll metrics include Defence
+        and Magic boosts.
         {hasDivine ? " Divine potions consume HP when drunk." : ""}
       </p>
     </section>
@@ -93,6 +98,7 @@ export function SecondaryPrioritySummary({
   potionCatalog?: readonly PotionDefinition[];
 }) {
   const priority = result.scenario.request.secondary_priority ?? "default";
+  const rollStyles = defenceRollStyles(priority);
   const priorityLabel = secondaryPriorities.find(
     ([value]) => value === priority,
   )?.[1];
@@ -126,7 +132,7 @@ export function SecondaryPrioritySummary({
               : typeof secondaryValue === "number"
                 ? priority === "accuracy"
                   ? `${(secondaryValue * 100).toFixed(2)}% hit chance`
-                  : `${secondaryValue.toFixed(2)}${priority === "magic_damage_bonus" ? "%" : " bonus"}`
+                  : `${rollStyles.length ? formatDefenceRoll(secondaryValue) : secondaryValue.toFixed(2)}${priority === "magic_damage_bonus" ? "%" : rollStyles.length ? " roll" : " bonus"}`
                 : "no feasible measurement"}
           .
         </p>
@@ -135,6 +141,29 @@ export function SecondaryPrioritySummary({
           The initial selection has the highest DPS found. Bounded search does
           not guarantee either global optimum or a complete frontier.
         </p>
+        {rollStyles.length > 0 && (
+          <p>
+            Defensive rolls include boosted levels, equipment and the selected
+            legal stance. Higher rolls resist ordinary attack accuracy; they are
+            not damage-reduction or survival percentages.
+          </p>
+        )}
+        {rollStyles.length > 0 &&
+          result.source !== "fixture" &&
+          selected &&
+          Object.entries(selected.loadouts)
+            .filter(([, loadout]) => loadout.performance.player_defence_rolls)
+            .map(([role, loadout]) => (
+              <p key={role}>
+                {role} defence rolls:{" "}
+                {rollStyles
+                  .map(
+                    (style) =>
+                      `${style} ${formatDefenceRoll(loadout.performance.player_defence_rolls?.[style])}`,
+                  )
+                  .join(" / ")}
+              </p>
+            ))}
         {priority !== "default" && (
           <p>
             {priority === "balanced_defence"

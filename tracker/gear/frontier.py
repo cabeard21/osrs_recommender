@@ -147,7 +147,10 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
                     ),
                 )
             )
-        if search.request.secondary_priority == "magic_ranged_defence":
+        if search.request.secondary_priority in {
+            "magic_ranged_defence",
+            "magic_ranged_defence_roll",
+        }:
             # Individual minima cannot express complementary pieces. Keep both
             # component leaders and score their combinations in partial beams.
             for field in ("defence_magic", "defence_ranged"):

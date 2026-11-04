@@ -14,7 +14,7 @@ test("tradeoff metric persists, identifies requests/results, and invalidates acc
     exact: true,
   });
   await expect(priority).toHaveValue("default");
-  await expect(priority.locator("option")).toHaveCount(13);
+  await expect(priority.locator("option")).toHaveCount(20);
   await priority.selectOption("magic_ranged_defence");
   const response = page.waitForResponse(
     (r) =>

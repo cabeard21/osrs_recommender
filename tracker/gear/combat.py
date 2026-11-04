@@ -10,6 +10,7 @@ from collections.abc import Mapping, Sequence
 from math import floor
 from typing import Any
 
+from tracker.gear.defensive_rolls import player_defence_rolls
 from tracker.gear.models import (
     CombatPerformance,
     CombatTarget,
@@ -345,6 +346,7 @@ def _calculate(
         dps=expected / interval,
         attack_roll=attack,
         defence_roll=defence,
+        player_defence_rolls=player_defence_rolls(levels, bonuses, stance),
         bonuses=bonuses,
         limitations=(
             "Fresh combat levels only; no prayers, boost decay, combat downtime "

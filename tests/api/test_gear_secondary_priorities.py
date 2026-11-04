@@ -8,6 +8,29 @@ from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 
 
+@pytest.mark.parametrize(
+    "metric", ["balanced", "magic_ranged", "stab", "slash", "crush", "ranged", "magic"]
+)
+def test_player_roll_metrics_roundtrip_and_provenance(client, session_factory, metric):
+    from tracker.gear.priorities import secondary_value
+
+    priority = metric + "_defence_roll"
+    response = client.post(
+        "/ui-api/gear/optimizations",
+        json={
+            **scenario(client, session_factory),
+            "secondary_priority": priority,
+        },
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["frontier_policy"]["defensive_roll_model"] == "player-defence-roll-v1"
+    solution = data["result"]["selected_solution"]
+    performance = solution["loadouts"]["single"]["performance"]
+    assert performance["player_defence_rolls"]["stab"] is not None
+    assert solution["secondary_value"] == secondary_value(priority, performance)
+
+
 def test_default_priority_preserves_omitted_behavior(client, session_factory):
     body = scenario(client, session_factory)
     omitted = client.post("/ui-api/gear/optimizations", json=body)

@@ -84,6 +84,11 @@ def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
     thorough = body.optimization_mode == "thorough"
     return {
         "policy": "tradeoff-frontier-v2",
+        **(
+            {"defensive_roll_model": "player-defence-roll-v1"}
+            if body.secondary_priority.endswith("_defence_roll")
+            else {}
+        ),
         "metric_lane_equipment_fraction": 0.25,
         "expansion_limit": 1500000 if thorough else 500000,
         "refinement_assignment_limit": 10000 if thorough else 0,

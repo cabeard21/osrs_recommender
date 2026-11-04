@@ -6,6 +6,13 @@ from collections.abc import Mapping
 from typing import Any, Literal
 
 SecondaryPriority = Literal[
+    "balanced_defence_roll",
+    "magic_ranged_defence_roll",
+    "stab_defence_roll",
+    "slash_defence_roll",
+    "crush_defence_roll",
+    "ranged_defence_roll",
+    "magic_defence_roll",
     "default",
     "balanced_defence",
     "magic_ranged_defence",
@@ -44,6 +51,25 @@ def secondary_value(
         return 0.0
     if priority == "accuracy":
         return float(performance.get("accuracy") or 0)
+    if priority.endswith("_defence_roll"):
+        if performance.get("supported") is False:
+            return 0.0  # Incomplete search beams may not yet have a legal weapon.
+        rolls = performance.get("player_defence_rolls") or {}
+        roll_fields = (
+            ("stab", "slash", "crush", "ranged", "magic")
+            if priority == "balanced_defence_roll"
+            else ("magic", "ranged")
+            if priority == "magic_ranged_defence_roll"
+            else (priority.removesuffix("_defence_roll"),)
+        )
+        if any(rolls.get(field) is None for field in roll_fields):
+            raise ValueError(
+                "Player defensive roll is unavailable: required combat levels are unknown"
+            )
+        values = [rolls[field] for field in roll_fields]
+        return float(
+            min(values) if priority == "magic_ranged_defence_roll" else sum(values) / len(values)
+        )
     bonuses = performance.get("bonuses", {})
     if priority == "magic_ranged_defence":
         return float(min(bonuses.get("defence_magic", 0), bonuses.get("defence_ranged", 0)))

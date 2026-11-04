@@ -172,7 +172,7 @@ def potion_summary(
         "limitations": [
             "Freshly boosted stats; no decay, drinking downtime or supply endurance.",
             "Potion access is assumed regardless of observed ownership.",
-            "Defence boosts are displayed; survival is not scored.",
+            "Defence boosts contribute to defensive-roll metrics; survival is not scored.",
         ],
     }
 
@@ -229,7 +229,9 @@ def relevant_boost_skills(request: Any) -> frozenset[str]:
         "ranged": ("ranged",),
         "magic": ("magic",),
     }
-    return frozenset(
+    from tracker.gear.defensive_rolls import required_defensive_skills
+
+    return required_defensive_skills(getattr(request, "secondary_priority", "default")) | frozenset(
         skill
         for role in request.roles
         if role.style != "special"

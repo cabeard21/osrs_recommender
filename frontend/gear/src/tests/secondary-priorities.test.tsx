@@ -142,7 +142,7 @@ it("switches priorities while keeping accepted results outdated", async () => {
   expect(screen.getByLabelText("Tradeoff metric")).toHaveValue("default");
   expect(
     screen.getByLabelText("Tradeoff metric").querySelectorAll("option"),
-  ).toHaveLength(13);
+  ).toHaveLength(20);
   await user.click(
     screen.getByRole("button", { name: "Run fixture optimization" }),
   );
