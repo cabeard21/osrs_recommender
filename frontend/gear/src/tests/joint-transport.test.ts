@@ -424,6 +424,33 @@ it("retains independently scoped Auto frontiers and validates their identities a
     /frontier discipline/,
   );
 });
+it("accepts the same potion loadout at different caps with distinct point identities", () => {
+  const { scenario, reply, branch } = autoExample();
+  const groups = [0, 1, null].map((swap_limit) => ({
+    swap_limit,
+    baseline_dps: 2,
+    sampled: false,
+    points: [
+      {
+        id: `discipline-melee-potion-${swap_limit === null ? "None" : swap_limit}-same-loadout`,
+        solution: branch.selected_solution,
+        dps_loss: 0,
+        dps_loss_pct: 0,
+        secondary_gain: 0,
+      },
+    ],
+  }));
+  Object.assign(branch, { secondary_frontiers: groups });
+  const parsed = parseOptimization(reply, scenario);
+  for (const group of groups)
+    expect(parsed.solutions.map((solution) => solution.id)).toContain(
+      group.points[0].id,
+    );
+  groups[1].points[0].id = groups[0].points[0].id;
+  expect(() => parseOptimization(reply, scenario)).toThrow(
+    "Invalid frontier measurement",
+  );
+});
 it("retains an infeasible Auto discipline with no selectable setup", () => {
   const { scenario, reply, branch } = autoExample();
   Object.assign(branch, {

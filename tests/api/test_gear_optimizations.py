@@ -15,6 +15,64 @@ from tracker.domain.types import PriceSourceLayer, Source
 NOW = datetime(2026, 10, 23, tzinfo=UTC)
 
 
+def test_progress_poll_is_attempt_scoped_and_not_cached(client, app, monkeypatch):
+    from uuid import uuid4
+
+    active, other = str(uuid4()), str(uuid4())
+    snapshot = {"phase": "search", "completed": 1, "total": 3, "elapsed_seconds": 0.2}
+    monkeypatch.setattr(
+        app.state.gear_service,
+        "optimization_progress",
+        lambda identity: snapshot if identity == active else None,
+    )
+    reply = client.get("/ui-api/gear/optimizations/progress", params={"progress_id": active})
+    assert reply.status_code == 200, reply.text
+    assert reply.json() == {"progress_id": active, "progress": snapshot}
+    assert reply.headers["cache-control"] == "no-store"
+    assert (
+        client.get("/ui-api/gear/optimizations/progress", params={"progress_id": other}).json()[
+            "progress"
+        ]
+        is None
+    )
+    assert (
+        client.get(
+            "/ui-api/gear/optimizations/progress", params={"progress_id": "invalid"}
+        ).status_code
+        == 422
+    )
+
+
+def test_optimization_progress_uses_original_request_identity(
+    client, app, session_factory, monkeypatch
+):
+    from uuid import uuid4
+
+    from tracker.api.gear_optimizations import BrowserOptimizationRequest, scenario_fingerprint
+
+    body = scenario(client, session_factory)
+    identity = str(uuid4())
+    captured = {}
+    original = app.state.gear_service.optimize
+
+    def observed(*args, **kwargs):
+        captured.update({key: kwargs[key] for key in ("progress_identity", "progress_fingerprint")})
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(app.state.gear_service, "optimize", observed)
+    reply = client.post("/ui-api/gear/optimizations", params={"progress_id": identity}, json=body)
+    assert reply.status_code == 200, reply.text
+    assert captured == {
+        "progress_identity": identity,
+        "progress_fingerprint": scenario_fingerprint(
+            BrowserOptimizationRequest.model_validate(body)
+        ),
+    }
+    polled = client.get("/ui-api/gear/optimizations/progress", params={"progress_id": identity})
+    assert polled.status_code == 200, polled.text
+    assert polled.json()["progress"]["scenario_fingerprint"] == captured["progress_fingerprint"]
+
+
 def scenario(client, session_factory, *, scans=True, ids=(4151,)):
     player_id = seed(session_factory, ids=ids, scans=scans)
     with session_factory() as session:

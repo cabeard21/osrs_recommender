@@ -17,7 +17,7 @@ import { ResultWorkspace } from "./components/ResultWorkspace";
 import { ItemInspector } from "./components/ItemInspector";
 import { Dialog } from "./components/Dialog";
 import { Timestamp } from "./components/Timestamp";
-import type { FixtureFailure } from "./api/contracts";
+import type { FixtureFailure, OptimizationProgress } from "./api/contracts";
 
 const STACKED_LAYOUT_QUERY = "(max-width: 900px)";
 
@@ -40,6 +40,7 @@ export default function App() {
     state,
     liveMode,
     current,
+    progress,
     itemById,
     dispatch,
     run,
@@ -253,7 +254,13 @@ export default function App() {
                   ? "Single-style optimizer"
                   : "Multi-style planner"}
               </h1>
-              {current.pending && <RunStatus message={pendingMessage} />}
+              {current.pending && (
+                <RunStatus
+                  key={`${state.mode}:${current.generation}`}
+                  message={pendingMessage}
+                  progress={progress}
+                />
+              )}
               {current.outdated && !current.pending && (
                 <span className="badge">
                   Settings changed since this result
@@ -379,7 +386,7 @@ export default function App() {
                 <h3 className="eyebrow">What this does not model</h3>
                 <p>
                   {liveMode
-                    ? "No prayers, potions, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
+                    ? "Fresh-boost potions supported; no prayers, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
                     : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for full validation."}
                 </p>
                 {!liveMode && (
@@ -535,7 +542,13 @@ export default function App() {
   );
 }
 
-function RunStatus({ message }: { message: string }) {
+function RunStatus({
+  message,
+  progress,
+}: {
+  message: string;
+  progress?: OptimizationProgress;
+}) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
@@ -545,9 +558,13 @@ function RunStatus({ message }: { message: string }) {
     <div className="run-status">
       <Loader2 className="spinner" size={16} aria-hidden="true" />
       <span role="status" aria-label="Optimization progress">
-        {message}
+        {progress
+          ? `${progress.phase.replaceAll("_", " ")}${progress.total > 0 ? ` · ${progress.completed}/${progress.total} profiles complete` : ""}`
+          : message}
       </span>
-      <span className="numeric">{elapsedSeconds}s</span>
+      <span className="numeric">
+        {Math.max(elapsedSeconds, Math.floor(progress?.elapsed_seconds ?? 0))}s
+      </span>
     </div>
   );
 }

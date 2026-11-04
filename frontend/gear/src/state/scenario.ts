@@ -9,7 +9,10 @@ import type {
   Workspace,
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
-import { selectedCombatOptions } from "../api/combatOptions";
+import {
+  selectedCombatOptions,
+  potionCombatContext,
+} from "../api/combatOptions";
 import type { SavedResult, SavedResults } from "./resultStorage";
 export const newRole = (index: number) => ({
   id: `role-${index}`,
@@ -182,7 +185,10 @@ export function normalize(
       !role.utility &&
       role.combatOptionOptimization !== false
     ) {
-      const options = selectedCombatOptions(role, context);
+      const options = selectedCombatOptions(
+        role,
+        potionCombatContext(context, draft.potions),
+      );
       if (!options)
         throw new Error(
           "Synced combat options are unavailable. Refresh account context.",
@@ -379,6 +385,11 @@ export function normalize(
     objective: "weighted_dps",
     request: {
       support_policy: draft.supportPolicy ?? "community_best_effort",
+      potions: draft.potions ?? {
+        mode: "disabled",
+        allowed_ids: [],
+        selected_ids: [],
+      },
       secondary_priority: draft.secondaryPriority ?? "default",
       max_dps_loss_pct: loss,
       optimization_mode: draft.optimizationMode ?? "fast",

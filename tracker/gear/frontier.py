@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from bisect import bisect_right
 from collections import ChainMap, deque
 from collections.abc import Callable, Iterable, Iterator
 from copy import copy
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
 
 Solution = dict[str, Any]
+RankedArchive = tuple[tuple[tuple[Any, ...], Solution], ...]
 
 
 def pareto(rows: Iterable[Solution]) -> list[Solution]:
@@ -30,6 +32,23 @@ def pareto(rows: Iterable[Solution]) -> list[Solution]:
             result.append(row)
             best = secondary
     return result
+
+
+def _insert_pareto(archive: RankedArchive, row: Solution, key: tuple[Any, ...]) -> RankedArchive:
+    """Insert into an ordered frontier without reranking existing rich solutions.
+
+    Secondary values strictly increase through the archive. An insertion can
+    therefore only be dominated by its predecessor and dominate successors.
+    Right insertion preserves the stable full-sort winner when keys are equal.
+    """
+    position = bisect_right(archive, key, key=lambda entry: entry[0])
+    secondary = row["secondary_value"]
+    if position and archive[position - 1][1]["secondary_value"] >= secondary:
+        return archive
+    end = position
+    while end < len(archive) and archive[end][1]["secondary_value"] <= secondary:
+        end += 1
+    return (*archive[:position], (key, row), *archive[end:])
 
 
 def diverse[Row](
@@ -173,10 +192,12 @@ def explore(
     archives: dict[int | None, list[Solution]] = {
         limit: [] for limit in [*range(search.request.max_swaps + 1), None]
     }
+    ranked_archives: dict[int | None, RankedArchive] = dict.fromkeys(archives, ())
     seen = set()
     option_candidates = []
 
     def accept(solution: Solution | None) -> None:
+        nonlocal archives, ranked_archives
         if solution is None:
             return
         identity = _identity(solution["loadouts"])
@@ -187,9 +208,25 @@ def explore(
             option_candidates.append(solution)
             if len(option_candidates) > 256:
                 option_candidates[:] = diverse(option_candidates, _solution_key, 128)
+        # Rank once across all caps. Identical archives (all Single caps, and
+        # often adjacent Multi caps) also share the same immutable update.
+        key = _solution_key(solution)
+        updates: dict[int, tuple[RankedArchive, list[Solution]]] = {}
+        next_archives, next_ranked = dict(archives), dict(ranked_archives)
         for limit in archives:
             if limit is None or solution["maximum_actions"] <= limit:
-                archives[limit] = pareto([*archives[limit], solution])
+                previous = ranked_archives[limit]
+                archive_id = id(previous)
+                if archive_id not in updates:
+                    inserted = _insert_pareto(previous, solution, key)
+                    rows = (
+                        archives[limit]
+                        if inserted is previous
+                        else [entry[1] for entry in inserted]
+                    )
+                    updates[archive_id] = inserted, rows
+                next_ranked[limit], next_archives[limit] = updates[archive_id]
+        archives, ranked_archives = next_archives, next_ranked
 
     for solution in [*winners, unrestricted]:
         accept(solution)

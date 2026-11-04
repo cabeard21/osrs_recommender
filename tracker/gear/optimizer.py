@@ -10,9 +10,11 @@ import hashlib
 import json
 from collections.abc import Callable, Mapping, MutableMapping
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from itertools import product
+from time import perf_counter
 from types import MappingProxyType
 from typing import Annotated, Any, Literal
 
@@ -22,7 +24,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
-from tracker.gear.combat import evaluate_prepared_loadout
+from tracker.gear.combat import ELEMENTAL_SPELLS, evaluate_prepared_loadout
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
 from tracker.gear.evaluation import (
     equipment_problems,
@@ -40,6 +42,7 @@ from tracker.gear.models import (
     EquipmentDefinition,
     TargetSelection,
 )
+from tracker.gear.potions import PotionPolicy, boosted_levels, potion_summary
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
@@ -121,6 +124,7 @@ class RoleConfig(BaseModel):
 
 class OptimizationRequest(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    potions: PotionPolicy = PotionPolicy()
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     mode: Literal["owned", "usable", "future"] = "usable"
     support_policy: SupportPolicy = "verified_only"
@@ -242,9 +246,15 @@ class _Search:
         items: Mapping[int, EquipmentDefinition],
         facts: Mapping[int, dict[str, Any]],
         cancelled: Callable[[], bool] | None,
+        prepared_eligible: Mapping[int, EquipmentDefinition] | None = None,
     ) -> None:
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
         self.levels = {k: v.level for k, v in snapshot.skills.items()}
+        if request.potions.mode == "fixed":
+            base_magic = self.levels.get("magic", 0)
+            self.levels = boosted_levels(self.levels, request.potions.selected_ids)
+            if self.levels.get("magic", 0) != base_magic:
+                self.levels = {**self.levels, "_base_magic": base_magic}
         self.cancelled = cancelled
         self.nodes = 0
         self.truncated = False
@@ -258,6 +268,9 @@ class _Search:
         ] = {}
         self.scorer = EquipmentScorer(items)
         self.configured_option_cache: dict[
+            tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
+        ] = {}
+        self.scoring_option_cache: dict[
             tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
         ] = {}
 
@@ -275,7 +288,18 @@ class _Search:
             )
 
         self._transition = transition
-        self.eligible = {i: item for i, item in items.items() if self.allowed(i)}
+        eligible = (
+            prepared_eligible
+            if prepared_eligible is not None
+            else {i: item for i, item in items.items() if self.allowed(i)}
+        )
+        # Purchases are distinct, nonnegative costs. An item costing more than
+        # the entire budget cannot appear in any feasible shared loadout. Prune
+        # before building attack scaffolds and scoring expensive marginals;
+        # keep the full catalog/facts for request validation and diagnostics.
+        self.eligible = {
+            i: item for i, item in eligible.items() if self.cost({i}) <= request.budget_gp
+        }
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
         self.pools = self.candidate_pools()
@@ -338,6 +362,36 @@ class _Search:
             self.configured_option_cache[key] = tuple(configured)
         return self.configured_option_cache[key]
 
+    def scoring_options(
+        self, role: RoleConfig, weapon: EquipmentDefinition | None
+    ) -> tuple[tuple[RoleConfig, CombatOption], ...]:
+        """Score equivalent elemental attacks once, retaining the existing tie winner.
+
+        The ordinary model scales every element in a tier to the same base hit.
+        Weakness matches remain separate. Full configured options remain available
+        to the resource-cost and combat-option frontier searches.
+        """
+        key = (role.id, weapon.id if weapon else None)
+        if key not in self.scoring_option_cache:
+            target = role.target or CombatTarget()
+            representatives: dict[tuple[Any, ...], tuple[RoleConfig, CombatOption]] = {}
+            for index, (configured, option) in enumerate(self.configured_options(role, weapon)):
+                identity: tuple[Any, ...] = ("option", index)
+                if (
+                    configured.style == "magic"
+                    and option.powered_attack is None
+                    and option.spell in ELEMENTAL_SPELLS
+                ):
+                    element, tier = option.spell.split("_")
+                    element = "air" if element == "wind" else element
+                    matched = element == target.weakness_element and target.weakness_percent > 0
+                    identity = ("elemental", option.stance, tier, matched)
+                previous = representatives.get(identity)
+                if previous is None or (option.spell or "") > (previous[1].spell or ""):
+                    representatives[identity] = (configured, option)
+            self.scoring_option_cache[key] = tuple(representatives.values())
+        return self.scoring_option_cache[key]
+
     def prepare(self, equipment: Mapping[str, int]) -> PreparedEquipment | CombatPerformance:
         """Validate physical slots before using cached incremental bonus totals."""
         problems = equipment_problems(equipment, self.items)
@@ -367,7 +421,7 @@ class _Search:
             elif role.combat_options is not None:
                 weapon = self.items.get(equipment.get("weapon", -1))
                 evaluated = []
-                options = self.configured_options(role, weapon)
+                options = self.scoring_options(role, weapon)
                 prepared = self.prepare(equipment) if options else None
                 for configured, option in options:
                     assert prepared is not None
@@ -408,6 +462,7 @@ class _Search:
                         self.snapshot,
                         role.spell,
                         role.stance,
+                        self.levels,
                     )
                     if role.style == "magic" and role.powered_attack is None
                     else None
@@ -756,10 +811,21 @@ class _Search:
             "remaining_inventory_slots": 28 - peak - self.request.reserved_supply_slots,
             "reserved_supply_slots": self.request.reserved_supply_slots,
             "maximum_actions": max((t["action_count"] for t in transitions), default=0),
+            "potions": None,
         }
         if hasattr(self, "running_prices"):
             from tracker.gear.running_frontier import add_solution_costs
 
+            if self.request.potions.mode == "fixed":
+                result = {
+                    **result,
+                    "potions": potion_summary(
+                        {k: v.level for k, v in self.snapshot.skills.items()},
+                        self.request.potions.selected_ids,
+                        self.running_prices,
+                        self.running_at,
+                    ),
+                }
             return add_solution_costs(result, self)
         return result
 
@@ -771,6 +837,9 @@ def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         solution["max_gear_inventory_slots"],
         solution["purchase_cost_gp"],
         sum(t["action_count"] for t in solution["transitions"]),
+        (solution.get("potions") or {}).get("cost_per_application_gp") is None,
+        (solution.get("potions") or {}).get("cost_per_application_gp") or 0,
+        len((solution.get("potions") or {}).get("selected_ids", ())),
         json.dumps(solution["loadouts"], sort_keys=True),
     )
 
@@ -829,40 +898,24 @@ def _slot_alternatives(search: _Search, solution: dict[str, Any] | None) -> dict
     return alternatives
 
 
-def optimize(
+@dataclass(frozen=True)
+class PreparedOptimization:
+    """Base facts reusable across potion branches; no combat scoring caches."""
+
+    catalog: Any
+    snapshot: AccountSnapshot
+    facts: Mapping[int, dict[str, Any]]
+    eligible: Mapping[int, EquipmentDefinition]
+
+
+def prepare_optimization(
     snapshot: AccountSnapshot,
-    request: OptimizationRequest | Mapping[str, Any],
+    request: OptimizationRequest,
     catalog: Any,
     content: Content,
     price_records: Mapping[int, PriceRecord],
     now: datetime,
-    cancelled: Callable[[], bool] | None = None,
-    *,
-    targeted_head_refinement: bool = False,
-    local_refinement: bool = False,
-    _complete_frontiers: bool = False,
-    _running_frontier: bool = False,
-) -> dict[str, Any]:
-    """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
-    request = (
-        request
-        if isinstance(request, OptimizationRequest)
-        else OptimizationRequest.model_validate(request)
-    )
-    if request.roles[0].allowed_disciplines is not None:
-        from tracker.gear.auto import optimize_auto
-
-        return optimize_auto(
-            snapshot,
-            request,
-            catalog,
-            content,
-            price_records,
-            now,
-            cancelled=cancelled,
-            targeted_head_refinement=targeted_head_refinement,
-            local_refinement=local_refinement,
-        )
+) -> PreparedOptimization:
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
@@ -879,7 +932,84 @@ def optimize(
         )
         for i, item in catalog.items.items()
     }
-    search = _Search(projected, request, catalog.items, facts, cancelled)
+    eligible = {
+        i: item for i, item in catalog.items.items() if not item_problems(i, facts[i], request)
+    }
+    return PreparedOptimization(
+        catalog, projected, MappingProxyType(facts), MappingProxyType(eligible)
+    )
+
+
+def optimize(
+    snapshot: AccountSnapshot,
+    request: OptimizationRequest | Mapping[str, Any],
+    catalog: Any,
+    content: Content,
+    price_records: Mapping[int, PriceRecord],
+    now: datetime,
+    cancelled: Callable[[], bool] | None = None,
+    *,
+    targeted_head_refinement: bool = False,
+    local_refinement: bool = False,
+    _complete_frontiers: bool = False,
+    _running_frontier: bool = False,
+    _prepared: PreparedOptimization | None = None,
+    progress: Callable[[dict[str, Any]], None] | None = None,
+    potion_branch_runner: Callable[..., list[dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
+    started = perf_counter()
+    request = (
+        request
+        if isinstance(request, OptimizationRequest)
+        else OptimizationRequest.model_validate(request)
+    )
+    if request.potions.mode == "optimize":
+        from tracker.gear.potion_search import optimize_potions
+
+        return optimize_potions(
+            snapshot,
+            request,
+            catalog,
+            content,
+            price_records,
+            now,
+            cancelled=cancelled,
+            targeted_head_refinement=targeted_head_refinement,
+            local_refinement=local_refinement,
+            _complete_frontiers=_complete_frontiers,
+            _running_frontier=_running_frontier,
+            _prepared=_prepared,
+            progress=progress,
+            branch_runner=potion_branch_runner,
+        )
+    if request.roles[0].allowed_disciplines is not None:
+        from tracker.gear.auto import optimize_auto
+
+        return optimize_auto(
+            snapshot,
+            request,
+            catalog,
+            content,
+            price_records,
+            now,
+            cancelled=cancelled,
+            targeted_head_refinement=targeted_head_refinement,
+            local_refinement=local_refinement,
+            _prepared=_prepared,
+            progress=progress,
+        )
+    prepared = _prepared or prepare_optimization(
+        snapshot, request, catalog, content, price_records, now
+    )
+    catalog, projected, facts = prepared.catalog, prepared.snapshot, prepared.facts
+    prepared_at = perf_counter()
+    if progress:
+        progress({"phase": "candidate_ranking", "elapsed_seconds": prepared_at - started})
+    search = _Search(projected, request, catalog.items, facts, cancelled, prepared.eligible)
+    candidates_at = perf_counter()
+    if progress:
+        progress({"phase": "gear_search", "elapsed_seconds": candidates_at - started})
     search.running_prices = price_records
     search.running_at = now
     search.complete_frontiers = _complete_frontiers
@@ -965,6 +1095,9 @@ def optimize(
             previous = winners[limit]
             if previous is None or _solution_key(solution) < _solution_key(previous):
                 winners[limit] = solution
+    searched_at = perf_counter()
+    if progress:
+        progress({"phase": "refinement", "elapsed_seconds": searched_at - started})
     # Irrelevant-slot beam ties can evict the ranged role's ammunition from a
     # melee/magic beam. Revalidate equivalent sharing on the small finalist set,
     # then offer lower-action variants to every compatible curve point.
@@ -1008,6 +1141,9 @@ def optimize(
     if unrestricted is not None:
         unrestricted = refine_ammunition(search, unrestricted, _solution_key, refinement)
     secondary_frontiers: list[dict[str, Any]] = []
+    refined_at = perf_counter()
+    if progress:
+        progress({"phase": "frontiers", "elapsed_seconds": refined_at - started})
     frontier_diagnostics = None
     if request.secondary_priority != "default":
         from tracker.gear.frontier import explore
@@ -1027,6 +1163,7 @@ def optimize(
         running_frontiers, running_diagnostics = explore_running_costs(
             search, winners, unrestricted, local_refinement
         )
+    frontiers_at = perf_counter()
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {
@@ -1043,6 +1180,19 @@ def optimize(
         "quests": dict(request.quest_overrides),
         "assumed_item_ids": request.assumed_item_ids,
         **running_cost_assumptions(request, price_records, local_refinement),
+        **(
+            {
+                "potions": request.potions.model_dump(mode="json"),
+                "potion_setup": potion_summary(
+                    {k: v.level for k, v in projected.skills.items()},
+                    request.potions.selected_ids,
+                    price_records,
+                    now,
+                ),
+            }
+            if request.potions.mode == "fixed"
+            else {}
+        ),
     }
     alternatives = _slot_alternatives(search, winners[-1])
     referenced = {
@@ -1118,6 +1268,21 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            **(
+                {
+                    "timings_seconds": {
+                        "preparation": prepared_at - started,
+                        "candidate_ranking": candidates_at - prepared_at,
+                        "gear_search": searched_at - candidates_at,
+                        "refinement": refined_at - searched_at,
+                        "frontiers": frontiers_at - refined_at,
+                        "publication": perf_counter() - frontiers_at,
+                        "total": perf_counter() - started,
+                    }
+                }
+                if request.potions.mode != "disabled"
+                else {}
+            ),
             **({"secondary_frontier": frontier_diagnostics} if frontier_diagnostics else {}),
             **({"running_cost_frontier": running_diagnostics} if running_diagnostics else {}),
             **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),

@@ -94,6 +94,21 @@ def test_magic_requires_level_spellbook_and_reviewed_weapon_compatibility():
     assert eligible_combat_options(weapon(), account(), discipline="magic", levels={}) == ()
 
 
+def test_boosted_magic_unlocks_spells_without_changing_account_facts():
+    snapshot = account(magic=9)
+    options = eligible_combat_options(
+        weapon(spells=("fire_strike",)), snapshot, discipline="magic", levels={"magic": 13}
+    )
+    assert any(o.spell == "fire_strike" for o in options)
+    assert snapshot.skills["magic"].level == 9
+    assert not eligible_combat_options(
+        weapon(spells=("fire_strike",)),
+        account(magic=9, standard=UnlockState.LOCKED),
+        discipline="magic",
+        levels={"magic": 13},
+    )
+
+
 def test_powered_staff_requires_authored_damage_and_reports_unknown_charges():
     incomplete = weapon(powered="fixture", powered_stances=("accurate",))
     assert eligible_combat_options(incomplete, account(), discipline="magic", levels={}) == ()

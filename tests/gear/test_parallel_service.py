@@ -91,6 +91,74 @@ def test_service_dispatches_auto_and_keeps_serial_default():
     assert default.auto_pool is None
 
 
+def test_service_potion_dispatch_and_progress_are_request_scoped():
+    from tracker.gear.potions import PotionPolicy
+
+    snapshot, request, catalog, content, prices, now = context()
+    role = RoleConfig(id="melee", style="slash")
+    request = request.model_copy(
+        update={
+            "roles": (role,),
+            "potions": PotionPolicy(mode="optimize", allowed_ids=("super_strength",)),
+        }
+    )
+    calls = []
+
+    def run_potions(
+        snapshot, request, catalog, content, prices, now, *, branches, progress=None, **options
+    ):
+        calls.append(len(branches))
+        results = []
+        for branch in branches:
+            results.append(optimize(snapshot, branch, catalog, content, prices, now, **options))
+            progress(
+                {
+                    "phase": "potion_search",
+                    "completed_profiles": len(results),
+                    "total_profiles": len(branches),
+                }
+            )
+        return results
+
+    service = GearService(content, auto_pool=SimpleNamespace(run_potions=run_potions))
+    service._equipment = EquipmentCatalog(catalog.items)
+    result = service.optimize(
+        snapshot,
+        request,
+        price_records=prices,
+        now=now,
+        progress_identity="request-one",
+        progress_fingerprint="scenario",
+    )
+    assert result["selected_solution"]["potions"]["selected_ids"] == ["super_strength"]
+    assert calls == [2]
+    progress = service.optimization_progress("request-one")
+    assert progress["completed"] == progress["total"] == 2
+    assert progress["phase"] == "complete"
+    assert progress["scenario_fingerprint"] == "scenario"
+    assert service.optimization_progress("request-two") is None
+
+
+def test_service_phase_updates_preserve_profile_counts(monkeypatch):
+    from tracker.gear import optimizer
+    from tracker.gear.potions import PotionPolicy
+
+    snapshot, request, catalog, content, prices, now = context()
+    request = request.model_copy(update={"potions": PotionPolicy(mode="optimize")})
+    service = GearService(content)
+    service._equipment = EquipmentCatalog(catalog.items)
+
+    def run(*args, progress, **kwargs):
+        progress({"phase": "potion_search", "completed_profiles": 3, "total_profiles": 9})
+        progress({"phase": "frontiers"})
+        assert service.optimization_progress("request")["completed"] == 3
+        assert service.optimization_progress("request")["total"] == 9
+        return {}
+
+    monkeypatch.setattr(optimizer, "optimize", run)
+    service.optimize(snapshot, request, price_records=prices, now=now, progress_identity="request")
+
+
 @pytest.mark.parametrize("mode", ["fixed", "one_discipline", "multi_role"])
 def test_non_auto_and_one_discipline_searches_do_not_use_pool(mode):
     snapshot, request, catalog, content, prices, now = context()

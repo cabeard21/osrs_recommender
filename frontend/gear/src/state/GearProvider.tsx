@@ -11,6 +11,7 @@ import type {
   Draft,
   Equipment,
   FixtureFailure,
+  OptimizationProgress,
   GearClient,
   Workspace,
 } from "../api/contracts";
@@ -34,6 +35,9 @@ function useGearState(client: GearClient) {
   const [equipmentStatus, setEquipmentStatus] = useState<
     "observed" | "partial" | "unknown"
   >("observed");
+  const [progress, setProgress] = useState<
+    Partial<Record<Workspace, OptimizationProgress>>
+  >({});
   const [failure, setFailure] = useState<FixtureFailure>("none");
   const restored = useRef(false);
   const contextGeneration = useRef(0);
@@ -194,10 +198,21 @@ function useGearState(client: GearClient) {
       const controller = new AbortController();
       controllers.current[mode]?.abort();
       controllers.current[mode] = controller;
+      setProgress((previous) => ({ ...previous, [mode]: undefined }));
       dispatch({ type: "start", mode, scenario, generation });
       started = true;
       if (client instanceof FixtureGearClient) client.failure = failure;
-      const result = await client.optimize(scenario, controller.signal);
+      const result = await client.optimize(
+        scenario,
+        controller.signal,
+        (value) => {
+          if (
+            !controller.signal.aborted &&
+            controllers.current[mode] === controller
+          )
+            setProgress((previous) => ({ ...previous, [mode]: value }));
+        },
+      );
       if (controller.signal.aborted) return;
       dispatch({ type: "success", mode, generation, result });
     } catch (error) {
@@ -283,6 +298,7 @@ function useGearState(client: GearClient) {
       state[state.mode].result?.items?.find((item) => item.id === id) ??
       state.context?.items.find((item) => item.id === id),
     current,
+    progress: current.pending ? progress[state.mode] : undefined,
     dispatch,
     client,
     edit,

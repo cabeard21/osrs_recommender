@@ -70,7 +70,8 @@ export function RunningCostFrontier({
       <h2>DPS and running cost</h2>
       <p>
         Best-found DPS versus GP per damage. Lower GP per damage is more
-        efficient. Continuous attacks; equipment purchases are separate.
+        efficient. Ammo, runes and charges during continuous attacks; equipment
+        purchases and potion applications are separate.
       </p>
       {group?.sampled && (
         <p>Showing a sample including the frontier endpoints.</p>
