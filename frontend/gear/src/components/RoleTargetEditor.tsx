@@ -1,24 +1,35 @@
 import { NpcTargetPicker } from "./NpcTargetPicker";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
 
-export function RoleTargetEditor({
-  role,
-  draft,
-  targets,
-  onChange,
-}: {
-  role: Role;
-  draft: Draft;
-  targets: CombatTarget[];
-  onChange: (patch: Partial<Role>) => void;
-}) {
-  const target = role.combatTarget ??
+/** The target a configuration uses, falling back to the draft-level target. */
+export function effectiveRoleTarget(role: Role, draft: Draft): CombatTarget {
+  return (
+    role.combatTarget ??
     draft.combatTarget ?? {
       name: draft.target,
       defence_level: Number(draft.defence),
       magic_level: 1,
       bonuses: {},
-    };
+    }
+  );
+}
+
+export function RoleTargetEditor({
+  role,
+  draft,
+  targets,
+  onChange,
+  onApplyToAll,
+  isSharedByAll = false,
+}: {
+  role: Role;
+  draft: Draft;
+  targets: CombatTarget[];
+  onChange: (patch: Partial<Role>) => void;
+  onApplyToAll?: () => void;
+  isSharedByAll?: boolean;
+}) {
+  const target = effectiveRoleTarget(role, draft);
   const update = (patch: Partial<CombatTarget>) =>
     onChange({ combatTarget: { ...target, ...patch } });
   const numeric = (key: string, value: string) => {
@@ -45,6 +56,20 @@ export function RoleTargetEditor({
         target={target}
         onChange={onChange}
       />
+      {onApplyToAll && (
+        <button
+          type="button"
+          disabled={isSharedByAll}
+          title={
+            isSharedByAll
+              ? "Every configuration already uses this target"
+              : undefined
+          }
+          onClick={onApplyToAll}
+        >
+          Use this target for all configurations
+        </button>
+      )}
       {!role.targetSelection && (
         <details className="control-help">
           <summary>Use custom target stats</summary>

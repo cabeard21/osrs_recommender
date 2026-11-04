@@ -83,7 +83,7 @@ test("newly eligible options are selected when the user did not explicitly empty
   ]);
 });
 
-test("empty filters are sent explicitly and disabled optimization retains fixed assumptions", () => {
+test("empty filters block the run and disabled optimization retains fixed assumptions", () => {
   const draft = newDraft();
   draft.roles[0] = {
     ...draft.roles[0],
@@ -93,10 +93,9 @@ test("empty filters are sent explicitly and disabled optimization retains fixed 
       spells: [],
     },
   };
-  const request = optimizationRequest(
+  expect(() =>
     normalize(draft, "fixture-snapshot-01", true, context()),
-  );
-  expect(request.roles[0].combat_options?.attack_types).toEqual([]);
+  ).toThrow(/at least one attack type in Combat Options/);
   draft.roles[0].combatOptionOptimization = false;
   expect(
     optimizationRequest(

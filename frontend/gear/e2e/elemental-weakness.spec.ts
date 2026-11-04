@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { npcEntryLabel } from "../src/components/npcEntries";
 
 test("NPC weakness selects a matching spell and keeps the evaluated explanation after edits", async ({
   page,
@@ -20,7 +21,7 @@ test("NPC weakness selects a matching spell and keeps the evaluated explanation 
     .fill("Blue dragon");
   await page
     .getByRole("button", {
-      name: `${entry.name} · ${entry.variant || "Standard"} · Level ${entry.combat_level} · supported`,
+      name: npcEntryLabel(entry),
       exact: true,
     })
     .click();

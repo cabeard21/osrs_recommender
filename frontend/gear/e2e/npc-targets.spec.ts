@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { npcEntryLabel } from "../src/components/npcEntries";
 
 async function choose(
   page: Page,
@@ -19,7 +20,7 @@ async function choose(
   await container.getByRole("searchbox", { name: "Search NPCs" }).fill(query);
   await container
     .getByRole("button", {
-      name: `${entry.name} · ${entry.variant || "Standard"} · Level ${entry.combat_level} · ${entry.support_status.replaceAll("_", " ")}`,
+      name: npcEntryLabel(entry),
       exact: true,
     })
     .click();
@@ -106,12 +107,10 @@ test("Multi roles retain independent NPC selections", async ({ page }) => {
   const chicken = await choose(page, first, "Chicken");
   const cow = await choose(page, second, "Cow");
   await expect(
-    first.getByText(`Chicken · ${chicken.variant || "Standard"}`, {
-      exact: true,
-    }),
+    first.getByText(npcEntryLabel(chicken), { exact: true }),
   ).toBeVisible();
   await expect(
-    second.getByText(`Cow · ${cow.variant || "Standard"}`, { exact: true }),
+    second.getByText(npcEntryLabel(cow), { exact: true }),
   ).toBeVisible();
   const pending = page.waitForResponse(
     (response) =>

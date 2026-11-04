@@ -6,22 +6,29 @@ export function MultiLockEditor({
   draft,
   change,
   itemLabel = (id) => `Item #${id}`,
+  isSingle = false,
 }: {
   draft: Draft;
   change: (patch: Partial<Draft>) => void;
   itemLabel?: (id: number) => string;
+  isSingle?: boolean;
 }) {
   const [scope, setScope] = useState("global");
   const [slot, setSlot] = useState<Slot>("weapon");
   const [item, setItem] = useState("");
   const [error, setError] = useState("");
-  const validScope =
-    scope === "global" || draft.roles.some((role) => role.id === scope)
+  // Single-style has one configuration, so its locks are always role locks.
+  const validScope = isSingle
+    ? draft.roles[0].id
+    : scope === "global" || draft.roles.some((role) => role.id === scope)
       ? scope
       : "global";
-  function setLock() {
-    const id = item.trim().toLowerCase() === "empty" ? null : Number(item);
-    if (id !== null && (!item.trim() || !Number.isSafeInteger(id) || id <= 0)) {
+  function setLock(value: string) {
+    const id = value.trim().toLowerCase() === "empty" ? null : Number(value);
+    if (
+      id !== null &&
+      (!value.trim() || !Number.isSafeInteger(id) || id <= 0)
+    ) {
       setError("Enter a positive physical item ID or empty.");
       return;
     }
@@ -40,20 +47,22 @@ export function MultiLockEditor({
   }
   return (
     <div className="raised">
-      <label>
-        Constraint scope
-        <select
-          value={validScope}
-          onChange={(event) => setScope(event.target.value)}
-        >
-          <option value="global">All configurations</option>
-          {draft.roles.map((role) => (
-            <option value={role.id} key={role.id}>
-              {role.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {!isSingle && (
+        <label>
+          Constraint scope
+          <select
+            value={validScope}
+            onChange={(event) => setScope(event.target.value)}
+          >
+            <option value="global">All configurations</option>
+            {draft.roles.map((role) => (
+              <option value={role.id} key={role.id}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         Equipment slot
         <select
@@ -68,7 +77,16 @@ export function MultiLockEditor({
       <ItemSearch
         label="Find item to lock"
         slot={slot}
-        onPick={(picked) => setItem(String(picked.id))}
+        onPick={(picked) => setLock(String(picked.id))}
+      />
+      <ItemSearch
+        label="Find item to exclude"
+        slot={slot}
+        onPick={(picked) => {
+          setError("");
+          if (!draft.exclusions.includes(picked.id))
+            change({ exclusions: [...draft.exclusions, picked.id] });
+        }}
       />
       <label>
         Physical item ID or empty
@@ -78,7 +96,7 @@ export function MultiLockEditor({
           onChange={(event) => setItem(event.target.value)}
         />
       </label>
-      <button onClick={setLock}>Set equipment lock</button>
+      <button onClick={() => setLock(item)}>Set equipment lock</button>
       {error && <p role="alert">{error}</p>}
       {Object.entries(draft.globalLocks ?? {}).map(([key, id]) => (
         <div className="constraint" key={key}>
@@ -95,8 +113,9 @@ export function MultiLockEditor({
         </div>
       ))}
       <p>
-        Locks require a compatible physical item, and global and role locks must
-        agree. Requirements and conflicts are checked when you run.
+        {isSingle
+          ? "Picking an item locks or excludes it right away. Enter empty to keep a slot empty. Requirements are checked when you run."
+          : "Picking an item locks or excludes it right away. Exclusions apply to every configuration. Global and role locks must agree. Requirements and conflicts are checked when you run."}
       </p>
     </div>
   );

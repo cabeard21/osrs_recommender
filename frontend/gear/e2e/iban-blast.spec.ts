@@ -7,7 +7,11 @@ for (const spellId of ["iban_blast", "ice_burst", "blood_barrage"]) {
     await page.request.post("/test/seed-optimization");
     await page.goto("/gear-next/");
     await page.getByRole("button", { name: "magic", exact: true }).click();
-    await page.getByText("Combat Options", { exact: true }).click();
+    // The summary also shows a selection count after the title.
+    await page
+      .locator("summary")
+      .filter({ hasText: /^Combat Options/ })
+      .click();
     await page
       .getByRole("checkbox", {
         name: "Optimize attack type, stance and spell with equipment",

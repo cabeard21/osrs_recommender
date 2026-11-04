@@ -12,10 +12,18 @@ import type { CombatTarget, Draft, Role } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import { AssumptionFields } from "./AssumptionFields";
 import { FieldError, fieldProps } from "./FieldError";
+import { LockConstraints } from "./LockConstraints";
 import { MultiLockEditor } from "./MultiLockEditor";
+import { MultiTemplates } from "./MultiTemplates";
 import { MultiTransitions } from "./MultiTransitions";
-import { nextRoleIndex, removeMultiRole } from "./multiDraft";
+import {
+  applyTargetToAll,
+  isTargetSharedByAll,
+  nextRoleIndex,
+  removeMultiRole,
+} from "./multiDraft";
 import { RoleFields } from "./RoleFields";
+import { SavedSetups } from "./SavedSetups";
 import { TargetFields } from "./TargetFields";
 
 const DEFAULT_SUPPORT_POLICY = "community_best_effort";
@@ -113,7 +121,8 @@ export function ConfigurationPanel() {
         </p>
         {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
           <p className="notice">
-            Budget is 0, so gear must already be owned. Ammo and darts are exempt.
+            Budget is 0, so gear must already be owned. Ammo and darts are
+            exempt.
           </p>
         )}
       </div>
@@ -122,12 +131,19 @@ export function ConfigurationPanel() {
   const roleSummary = (role: Role) =>
     [
       role.name,
-      role.utility ? "Utility" : role.style,
+      // Template names such as "Magic" already say the style.
+      role.utility
+        ? "Utility"
+        : role.name.toLowerCase() === role.style
+          ? null
+          : role.style,
       role.combatTarget?.name,
       role.utility ? null : `weight ${role.weight}`,
     ]
       .filter(Boolean)
       .join(" · ");
+  const hasSeveralScoredRoles =
+    !isSingle && draft.roles.filter((role) => !role.utility).length > 1;
   const roleFields = (role: Role, index: number) => (
     <RoleFields
       key={role.id}
@@ -140,6 +156,12 @@ export function ConfigurationPanel() {
       targets={targets}
       onChange={(patch) => roleChange(role.id, patch)}
       onRemove={() => removeRole(role.id)}
+      onApplyTargetToAll={
+        hasSeveralScoredRoles
+          ? () => edit(applyTargetToAll(draft, role.id))
+          : undefined
+      }
+      isTargetSharedByAll={isTargetSharedByAll(draft, role.id)}
     />
   );
   return (
@@ -147,6 +169,7 @@ export function ConfigurationPanel() {
       <h2 id="parameters" className="eyebrow">
         <SlidersHorizontal size={17} /> Optimization parameters
       </h2>
+      <SavedSetups draft={draft} mode={state.mode} edit={edit} />
       {isSingle && (
         <TargetFields
           draft={draft}
@@ -158,6 +181,7 @@ export function ConfigurationPanel() {
       )}
       {!isSingle && budgetSection}
       <span className="eyebrow">Combat configurations</span>
+      {!isSingle && <MultiTemplates draft={draft} edit={edit} />}
       {isSingle ? (
         draft.roles.map(roleFields)
       ) : (
@@ -247,42 +271,13 @@ export function ConfigurationPanel() {
               : "Locks and exclusions apply on the next optimization. Inspect a slot to preview an alternative, lock an item or an empty slot, or exclude an item."
             : "These controls edit the fixture draft only. Fixture trials use authored examples."}
         </p>
-        {!isSingle && (
-          <MultiLockEditor
-            draft={draft}
-            change={change}
-            itemLabel={itemLabel}
-          />
-        )}
-        {draft.roles.map((r) => (
-          <div key={r.id}>
-            <strong>{r.name}</strong>
-            {Object.entries(r.locks).map(([slot, id]) => (
-              <div className="constraint" key={slot}>
-                {slot}: {id === null ? "empty" : itemLabel(id)}
-                <button
-                  onClick={() => {
-                    const locks = { ...r.locks };
-                    delete locks[slot as keyof typeof locks];
-                    roleChange(r.id, { locks });
-                  }}
-                >
-                  Unlock {slot}
-                </button>
-              </div>
-            ))}
-          </div>
-        ))}
-        {draft.exclusions.map((id) => (
-          <button
-            key={id}
-            onClick={() =>
-              change({ exclusions: draft.exclusions.filter((i) => i !== id) })
-            }
-          >
-            Remove exclusion {itemLabel(id)}
-          </button>
-        ))}
+        <MultiLockEditor
+          draft={draft}
+          change={change}
+          itemLabel={itemLabel}
+          isSingle={isSingle}
+        />
+        <LockConstraints draft={draft} change={change} itemLabel={itemLabel} />
       </details>
       <details>
         <summary>

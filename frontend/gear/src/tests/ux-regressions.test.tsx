@@ -490,9 +490,30 @@ it("finds items by name for a multi-style lock", async () => {
       name: `${context.items[0].name} (#${weaponId})`,
     }),
   );
-  expect(screen.getByLabelText("Physical item ID or empty")).toHaveValue(
-    String(weaponId),
+  expect(
+    screen.getByRole("button", { name: "Unlock global weapon" }),
+  ).toBeInTheDocument();
+});
+
+it("excludes an item picked from the exclusion search before a run", async () => {
+  const user = userEvent.setup();
+  setup();
+  await ready();
+  await user.click(screen.getByText("Equipment locks & exclusions"));
+  await user.type(screen.getByLabelText("Find item to exclude"), "whip");
+  await user.click(
+    await screen.findByRole("button", {
+      name: `${context.items[0].name} (#${weaponId})`,
+    }),
   );
+  expect(
+    screen.getByRole("button", {
+      name: `Remove exclusion ${context.items[0].name} (#${weaponId})`,
+    }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Clear all exclusions" }),
+  ).toBeVisible();
 });
 
 it("formats timestamps relative to now", () => {

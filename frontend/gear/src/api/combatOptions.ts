@@ -106,6 +106,111 @@ export function selectedCombatOptions(
   };
 }
 
+type OptionField = keyof CombatOptionSelection;
+type OptionPatch = Pick<
+  Role,
+  "combatOptionDisabled" | "combatOptionExplicitlyEmpty"
+>;
+
+const disciplinesOf = (
+  role: Pick<Role, "style" | "autoDiscipline" | "allowedDisciplines">,
+): Style[] =>
+  role.autoDiscipline
+    ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"])
+    : [role.style];
+
+/** Groups that apply to the role's disciplines but have nothing selected. */
+export function emptyCombatOptionGroups(
+  role: Parameters<typeof selectedCombatOptions>[0],
+  context: GearContext | null,
+): OptionField[] {
+  const selected = selectedCombatOptions(role, context);
+  if (!selected) return [];
+  const fields: OptionField[] = disciplinesOf(role).includes("magic")
+    ? ["attack_types", "stances", "spells"]
+    : ["attack_types", "stances"];
+  return fields.filter((field) => selected[field].length === 0);
+}
+
+/** Replaces one group's selection with exactly `ids` (eligible ones only). */
+export function selectOnlyCombatOptions(
+  role: Role,
+  field: OptionField,
+  ids: string[],
+  context: GearContext | null,
+): OptionPatch {
+  const disabled = role.combatOptionDisabled ?? emptyCombatOptions();
+  const rows = availableCombatOptions(role, context)?.[field] ?? [];
+  const shown = new Set(rows.map((row) => row.id));
+  const keep = new Set(ids);
+  return {
+    combatOptionDisabled: {
+      ...disabled,
+      // Entries for other disciplines are not visible here, so leave them.
+      [field]: [
+        ...disabled[field].filter((id) => !shown.has(id)),
+        ...rows.filter((row) => !keep.has(row.id)).map((row) => row.id),
+      ],
+    },
+    combatOptionExplicitlyEmpty: {
+      ...role.combatOptionExplicitlyEmpty,
+      [field]: !rows.some((row) => row.available && keep.has(row.id)),
+    },
+  };
+}
+
+const STANDARD_SPELL =
+  /^(wind|water|earth|fire)_(strike|bolt|blast|wave|surge)$/;
+const ANCIENT_SPELL = /^(smoke|shadow|blood|ice)_(rush|burst|blitz|barrage)$/;
+const STANDARD_TIERS = ["strike", "bolt", "blast", "wave", "surge"];
+const ANCIENT_TIERS = ["rush", "burst", "blitz", "barrage"];
+const ELEMENTS = ["fire", "water", "earth", "air"] as const;
+
+export interface SpellQuickPick {
+  label: string;
+  ids: string[];
+}
+
+function highestTier(ids: string[], pattern: RegExp, tiers: string[]) {
+  const tierOf = (id: string) => tiers.indexOf(pattern.exec(id)![2]);
+  const matching = ids.filter((id) => pattern.test(id));
+  const top = Math.max(-1, ...matching.map(tierOf));
+  return matching.filter((id) => tierOf(id) === top);
+}
+
+/** One-click spell selections built from the spells the account can cast. */
+export function spellQuickPicks(
+  role: Pick<Role, "style" | "autoDiscipline" | "allowedDisciplines">,
+  context: GearContext | null,
+): SpellQuickPick[] {
+  const eligible = (availableCombatOptions(role, context)?.spells ?? [])
+    .filter((row) => row.available)
+    .map((row) => row.id);
+  const picks: SpellQuickPick[] = [
+    {
+      label: "Standard",
+      ids: eligible.filter((id) => STANDARD_SPELL.test(id)),
+    },
+    { label: "Ancient", ids: eligible.filter((id) => ANCIENT_SPELL.test(id)) },
+    {
+      label: "Highest tier",
+      ids: [
+        ...highestTier(eligible, STANDARD_SPELL, STANDARD_TIERS),
+        ...highestTier(eligible, ANCIENT_SPELL, ANCIENT_TIERS),
+      ],
+    },
+    ...ELEMENTS.map((element) => ({
+      label: element[0].toUpperCase() + element.slice(1),
+      ids: eligible.filter(
+        (id) =>
+          STANDARD_SPELL.test(id) &&
+          id.startsWith(`${element === "air" ? "wind" : element}_`),
+      ),
+    })),
+  ];
+  return picks.filter((pick) => pick.ids.length > 0);
+}
+
 export function setCombatOptionEnabled(
   role: Role,
   field: keyof CombatOptionSelection,

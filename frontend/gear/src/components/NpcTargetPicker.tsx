@@ -1,4 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
+import {
+  npcEntryLabel,
+  npcStatSummary,
+  readRecentNpcs,
+  rememberNpc,
+  sortNpcEntries,
+} from "./npcEntries";
 import { sameValue } from "../api/runtime";
 import { getTarget, searchTargets } from "../api/targetCatalog";
 import type { CombatTarget, Role, TargetSelection } from "../api/contracts";
@@ -47,6 +55,9 @@ export function NpcTargetPicker({
   const [error, setError] = useState(""),
     [loading, setLoading] = useState(false),
     [retry, setRetry] = useState(0);
+  const [recent, setRecent] = useState(readRecentNpcs);
+  const searchRef = useRef<HTMLInputElement>(null),
+    listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -108,6 +119,8 @@ export function NpcTargetPicker({
       if (request !== serial.current) return;
       setDetail(row);
       setEditing(false);
+      rememberNpc(row);
+      setRecent(readRecentNpcs());
       latestChange.current({
         combatTarget: row.target ? structuredClone(row.target) : undefined,
         targetSelection: {
@@ -127,6 +140,31 @@ export function NpcTargetPicker({
   };
   const base = detail?.target;
   const modified = base && target && !sameValue(base, target);
+  const results = sortNpcEntries(items);
+  const recentTargets = recent.filter((row) => row.key !== selection?.key);
+  const resultButtons = () =>
+    Array.from(
+      listRef.current?.querySelectorAll<HTMLButtonElement>("button") ?? [],
+    );
+  const onSearchKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown" && results.length) {
+      event.preventDefault();
+      resultButtons()[0]?.focus();
+    } else if (event.key === "Enter" && results.length) {
+      event.preventDefault();
+      void choose(results[0].key);
+    }
+  };
+  const onResultKey = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    const next = index + (event.key === "ArrowDown" ? 1 : -1);
+    if (next < 0) searchRef.current?.focus();
+    else resultButtons()[Math.min(next, results.length - 1)]?.focus();
+  };
   return (
     <div className="npc-picker">
       <label htmlFor={id}>Search NPCs</label>
@@ -136,6 +174,8 @@ export function NpcTargetPicker({
         value={query}
         maxLength={100}
         placeholder="NPC name, variant, or ID"
+        ref={searchRef}
+        onKeyDown={onSearchKey}
         onChange={(event) => {
           serial.current++;
           setQuery(event.target.value);
@@ -152,12 +192,33 @@ export function NpcTargetPicker({
         </p>
       )}
       {!loading && query && !items.length && !error && <p>No NPCs found.</p>}
-      <ul aria-label="NPC search results">
-        {items.map((entry) => (
+      {!query.trim() && recentTargets.length > 0 && (
+        <div
+          className="option-shortcuts"
+          role="group"
+          aria-label="Recent targets"
+        >
+          {recentTargets.map((row) => (
+            <button
+              type="button"
+              key={row.key}
+              aria-label={`Recent target ${npcEntryLabel(row)}`}
+              onClick={() => void choose(row.key)}
+            >
+              {npcEntryLabel(row)}
+            </button>
+          ))}
+        </div>
+      )}
+      <ul aria-label="NPC search results" ref={listRef}>
+        {results.map((entry, index) => (
           <li key={entry.key}>
-            <button type="button" onClick={() => void choose(entry.key)}>
-              {entry.name} · {entry.variant || "Standard"} · Level{" "}
-              {entry.combat_level} · {entry.support_status.replaceAll("_", " ")}
+            <button
+              type="button"
+              onClick={() => void choose(entry.key)}
+              onKeyDown={(event) => onResultKey(event, index)}
+            >
+              {npcEntryLabel(entry)}
             </button>
           </li>
         ))}
@@ -182,12 +243,9 @@ export function NpcTargetPicker({
       {detail && (
         <div className="raised">
           <strong>
-            {detail.name} · {detail.variant || "Standard"}
+            {npcEntryLabel(detail)}
+            {modified && " · Modified"}
           </strong>
-          <p>
-            {detail.support_status.replaceAll("_", " ")}{" "}
-            {modified && "· Modified"}
-          </p>
           {detail.support_status !== "supported" && (
             <p role="alert">
               {detail.name} cannot be optimized. Choose a supported NPC target.
@@ -207,26 +265,7 @@ export function NpcTargetPicker({
             )}
           {base && target && (
             <>
-              <p>NPC stats</p>
-              <dl>
-                {Object.entries({
-                  Defence: target.defence_level,
-                  Magic: target.magic_level,
-                  ...target.bonuses,
-                  light: target.ranged_light,
-                  standard: target.ranged_standard,
-                  heavy: target.ranged_heavy,
-                  weakness: target.weakness_element,
-                  "weakness percent": target.weakness_percent,
-                })
-                  .filter(([, value]) => value !== undefined && value !== null)
-                  .map(([label, value]) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>{String(value)}</dd>
-                    </div>
-                  ))}
-              </dl>
+              <p className="npc-stats">{npcStatSummary(target)}</p>
               <button
                 type="button"
                 aria-expanded={editing}
@@ -234,22 +273,24 @@ export function NpcTargetPicker({
               >
                 Edit stats
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  latestChange.current({
-                    combatTarget: structuredClone(base),
-                    targetSelection: {
-                      key: detail.key,
-                      catalog_revision: detail.catalog_revision,
-                    },
-                    targetInputs: {},
-                  });
-                  setEditing(false);
-                }}
-              >
-                Reset to NPC stats
-              </button>
+              {(modified || editing) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    latestChange.current({
+                      combatTarget: structuredClone(base),
+                      targetSelection: {
+                        key: detail.key,
+                        catalog_revision: detail.catalog_revision,
+                      },
+                      targetInputs: {},
+                    });
+                    setEditing(false);
+                  }}
+                >
+                  Reset to NPC stats
+                </button>
+              )}
               {editing && (
                 <fieldset>
                   <legend>NPC stat overrides</legend>
@@ -345,7 +386,7 @@ export function NpcTargetPicker({
             });
           }}
         >
-          Custom target
+          Clear NPC and use custom stats
         </button>
       )}
     </div>
