@@ -34,7 +34,7 @@ it("searches NPC variants and selects the exact catalog identity", async () => {
     target: { value: "Goblin" },
   });
   fireEvent.click(
-    await screen.findByRole("button", { name: /Goblin · Standard/ }),
+    await screen.findByRole("button", { name: "Goblin · Level 2" }),
   );
   await waitFor(() => expect(change).toHaveBeenCalled());
   expect(screen.getByRole("link", { name: "NPC source" })).toHaveAttribute(
@@ -131,7 +131,9 @@ it("retains incomplete overrides without losing mechanic metadata and resets the
     targetSelection: selection,
     targetInputs: {},
   });
-  fireEvent.click(screen.getByRole("button", { name: "Custom target" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear NPC and use custom stats" }),
+  );
   expect(change).toHaveBeenLastCalledWith(
     expect.objectContaining({ targetSelection: undefined }),
   );

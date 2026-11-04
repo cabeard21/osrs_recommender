@@ -1430,6 +1430,39 @@ html {
   padding: 6px 4px;
   font-size: 12px;
 }
+.option-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.option-shortcuts button {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.saved-setups {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.saved-setups-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.saved-setups-row label {
+  flex-basis: 100%;
+}
+.saved-setups-row select,
+.saved-setups-row input {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.option-count {
+  color: #9aa4b5;
+  font-size: 12px;
+}
 .target-hint {
   font-size: 12px;
 }

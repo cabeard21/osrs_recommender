@@ -10,10 +10,16 @@ import type {
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import {
+  emptyCombatOptionGroups,
   selectedCombatOptions,
   potionCombatContext,
 } from "../api/combatOptions";
 import type { SavedResult, SavedResults } from "./resultStorage";
+const EMPTY_GROUP_NOUNS = {
+  attack_types: "attack type",
+  stances: "stance",
+  spells: "spell",
+} as const;
 export const newRole = (index: number) => ({
   id: `role-${index}`,
   name: `Configuration ${index}`,
@@ -202,6 +208,14 @@ export function normalize(
       if (!options)
         throw new Error(
           "Synced combat options are unavailable. Refresh account context.",
+        );
+      const [empty] = emptyCombatOptionGroups(
+        role,
+        potionCombatContext(context, draft.potions),
+      );
+      if (empty)
+        throw new Error(
+          `${role.name}: choose at least one ${EMPTY_GROUP_NOUNS[empty]} in Combat Options.`,
         );
       role.combatOptions = options;
     } else {
@@ -1005,54 +1019,8 @@ export function readDrafts(
         "null",
     );
     if (![1, 2, version].includes(data?.version)) return null;
-    for (const draft of [data.single, data.multi]) {
-      if (draft.supportPolicy === undefined)
-        draft.supportPolicy = "community_best_effort";
-      if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
-      if (draft.secondaryPriority === undefined)
-        draft.secondaryPriority = "default";
-      if (
-        !secondaryPriorities.some(
-          ([priority]) => priority === draft.secondaryPriority,
-        ) ||
-        !["fast", "thorough"].includes(draft.optimizationMode) ||
-        !["verified_only", "community_best_effort"].includes(
-          draft.supportPolicy,
-        ) ||
-        typeof draft.target !== "string" ||
-        typeof draft.budget !== "string" ||
-        typeof draft.defence !== "string" ||
-        !["owned", "usable", "future"].includes(draft.mode) ||
-        !draft.assumptions ||
-        typeof draft.assumptions.attack !== "string" ||
-        typeof draft.assumptions.quest !== "boolean" ||
-        typeof draft.assumptions.acquired !== "string" ||
-        typeof draft.maxActions !== "string" ||
-        typeof draft.supplies !== "string" ||
-        !["base", "ordered", "explicit"].includes(draft.topology) ||
-        !Array.isArray(draft.exclusions) ||
-        !draft.exclusions.every((id: unknown) => Number.isSafeInteger(id)) ||
-        !Array.isArray(draft.roles) ||
-        draft.roles.length < 1 ||
-        draft.roles.length > 4 ||
-        !draft.roles.every(
-          (r: {
-            id: unknown;
-            name: unknown;
-            style: string;
-            weight: unknown;
-            locks: unknown;
-          }) =>
-            typeof r.id === "string" &&
-            typeof r.name === "string" &&
-            ["melee", "ranged", "magic"].includes(r.style) &&
-            typeof r.weight === "string" &&
-            typeof r.locks === "object" &&
-            r.locks !== null,
-        )
-      )
-        return null;
-    }
+    if (!upgradeStoredDraft(data.single) || !upgradeStoredDraft(data.multi))
+      return null;
     if (data.version === 1) {
       data.multi.roles = data.multi.roles.map(
         (role: import("../api/contracts").Role) =>
@@ -1078,4 +1046,58 @@ export function readDrafts(
   } catch {
     return null;
   }
+}
+/**
+ * Checks a draft parsed from storage and fills in settings added since it was
+ * written. Returns null when the value is not a usable draft.
+ */
+export function upgradeStoredDraft(value: unknown): Draft | null {
+  if (!value || typeof value !== "object") return null;
+  // Parsed JSON belongs to the caller, so defaults are filled in place.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const draft = value as any;
+  if (draft.supportPolicy === undefined)
+    draft.supportPolicy = "community_best_effort";
+  if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
+  if (draft.secondaryPriority === undefined)
+    draft.secondaryPriority = "default";
+  const isValid = !(
+    !secondaryPriorities.some(
+      ([priority]) => priority === draft.secondaryPriority,
+    ) ||
+    !["fast", "thorough"].includes(draft.optimizationMode) ||
+    !["verified_only", "community_best_effort"].includes(draft.supportPolicy) ||
+    typeof draft.target !== "string" ||
+    typeof draft.budget !== "string" ||
+    typeof draft.defence !== "string" ||
+    !["owned", "usable", "future"].includes(draft.mode) ||
+    !draft.assumptions ||
+    typeof draft.assumptions.attack !== "string" ||
+    typeof draft.assumptions.quest !== "boolean" ||
+    typeof draft.assumptions.acquired !== "string" ||
+    typeof draft.maxActions !== "string" ||
+    typeof draft.supplies !== "string" ||
+    !["base", "ordered", "explicit"].includes(draft.topology) ||
+    !Array.isArray(draft.exclusions) ||
+    !draft.exclusions.every((id: unknown) => Number.isSafeInteger(id)) ||
+    !Array.isArray(draft.roles) ||
+    draft.roles.length < 1 ||
+    draft.roles.length > 4 ||
+    !draft.roles.every(
+      (r: {
+        id: unknown;
+        name: unknown;
+        style: string;
+        weight: unknown;
+        locks: unknown;
+      }) =>
+        typeof r.id === "string" &&
+        typeof r.name === "string" &&
+        ["melee", "ranged", "magic"].includes(r.style) &&
+        typeof r.weight === "string" &&
+        typeof r.locks === "object" &&
+        r.locks !== null,
+    )
+  );
+  return isValid ? (draft as Draft) : null;
 }

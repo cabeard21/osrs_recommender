@@ -159,6 +159,8 @@ export function RoleFields({
   targets,
   onChange,
   onRemove,
+  onApplyTargetToAll,
+  isTargetSharedByAll,
 }: {
   role: Role;
   index: number;
@@ -169,6 +171,8 @@ export function RoleFields({
   targets: CombatTarget[];
   onChange: (patch: Partial<Role>) => void;
   onRemove: () => void;
+  onApplyTargetToAll?: () => void;
+  isTargetSharedByAll?: boolean;
 }) {
   const isMulti = mode === "multi";
   const hasDependentUtility = draft.roles.some(
@@ -218,6 +222,8 @@ export function RoleFields({
               draft={draft}
               targets={targets}
               onChange={onChange}
+              onApplyToAll={onApplyTargetToAll}
+              isSharedByAll={isTargetSharedByAll}
             />
           )}
         </>
