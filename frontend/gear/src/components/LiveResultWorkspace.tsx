@@ -444,7 +444,11 @@ export function LiveResultWorkspace() {
           </details>
         )}
         <SupportPolicySummary result={viewResult!} />
-        <SecondaryPrioritySummary result={viewResult!} solution={selected} />
+        <SecondaryPrioritySummary
+          result={viewResult!}
+          solution={selected}
+          potionCatalog={state.context?.live?.potion_catalog}
+        />
         <OptimizationModeSummary result={viewResult!} solution={selected} />
       </div>
     </div>

@@ -410,7 +410,11 @@ export function LiveMultiResultWorkspace() {
         </p>
       </section>
       <SupportPolicySummary result={result} />
-      <SecondaryPrioritySummary result={result} solution={solution} />
+      <SecondaryPrioritySummary
+        result={result}
+        solution={solution}
+        potionCatalog={state.context?.live?.potion_catalog}
+      />
       <OptimizationModeSummary
         result={result}
         solution={solution}

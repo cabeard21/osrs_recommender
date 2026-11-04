@@ -59,7 +59,7 @@ test("NPC selection, overrides, reload and optimization retain catalog identity"
   await page.goto("/gear-next/");
   const entry = await choose(page, page, "Chicken");
   await page.getByRole("button", { name: "Edit stats", exact: true }).click();
-  await page.getByLabel("defence level", { exact: true }).fill("25");
+  await page.getByLabel("Defence level", { exact: true }).fill("25");
   await expect(page.getByText(/· Modified/)).toBeVisible();
   await page.reload();
   await expect(page.getByText(/· Modified/)).toBeVisible();

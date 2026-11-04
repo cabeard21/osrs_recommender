@@ -28,6 +28,21 @@ def test_optimized_potions_merge_curve_and_preserve_setup():
     assert result["search"]["potion_selection"]["branch_count"] == 2
 
 
+def test_potion_selection_reports_best_score_without_potions_per_swap_limit():
+    items = [weapon(1, "slash", 40)]
+    roles = (RoleConfig(id="a", style="slash"),)
+    base = run(items, roles, max_swaps=1)
+    result = run(
+        items,
+        roles,
+        max_swaps=1,
+        potions={"mode": "optimize", "allowed_ids": ("super_strength",)},
+    )
+    no_potion = result["search"]["potion_selection"]["no_potion_score_by_swap_limit"]
+    assert no_potion == [p["solution"]["score"] for p in base["curve"]]
+    assert result["selected_solution"]["score"] > no_potion[-1]
+
+
 def test_empty_potion_allowlist_preserves_unboosted_score():
     items = [weapon(1, "slash", 40)]
     roles = (RoleConfig(id="a", style="slash"),)

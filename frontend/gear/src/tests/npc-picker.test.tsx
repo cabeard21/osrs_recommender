@@ -110,14 +110,14 @@ it("retains incomplete overrides without losing mechanic metadata and resets the
     />,
   );
   fireEvent.click(await screen.findByRole("button", { name: "Edit stats" }));
-  fireEvent.change(screen.getByLabelText("defence level"), {
+  fireEvent.change(screen.getByLabelText("Defence level"), {
     target: { value: "" },
   });
   expect(change).toHaveBeenLastCalledWith({
     targetInputs: { defence_level: "" },
     combatTarget: detail.target,
   });
-  fireEvent.change(screen.getByLabelText("bonuses.stab"), {
+  fireEvent.change(screen.getByLabelText("Stab defence"), {
     target: { value: "20" },
   });
   expect(change).toHaveBeenLastCalledWith(
@@ -221,8 +221,8 @@ it("shows signed catalog armour without offering a mechanic override", async () 
       onChange={vi.fn()}
     />,
   );
-  expect(await screen.findByText("flat armour")).toBeInTheDocument();
+  expect(await screen.findByText("Flat armour")).toBeInTheDocument();
   expect(screen.getByText("-5")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Edit stats" }));
-  expect(screen.queryByLabelText("flat armour")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Flat armour")).not.toBeInTheDocument();
 });

@@ -184,6 +184,31 @@ def merge_results(
     }
 
 
+def _no_potion_scores(
+    request: Any, requests: list[Any], branches: list[dict[str, Any]]
+) -> list[float | None]:
+    """Best score found without potions at each swap limit, across disciplines.
+
+    The empty setup is always one of the frozen branches, so this costs no
+    extra search; it lets the UI report how much the chosen potions add.
+    """
+    unboosted = [
+        branch
+        for fixed, branch in zip(requests, branches, strict=True)
+        if not fixed.potions.selected_ids
+    ]
+
+    def best(limit: int) -> float | None:
+        scores = [
+            branch["curve"][limit]["solution"]["score"]
+            for branch in unboosted
+            if branch["curve"][limit]["solution"]
+        ]
+        return max(scores, default=None)
+
+    return [best(limit) for limit in range(request.max_swaps + 1)]
+
+
 def optimize_potions(
     snapshot: Any, request: Any, catalog: Any, content: Any, prices: Any, now: Any, **options: Any
 ) -> dict[str, Any]:
@@ -308,6 +333,7 @@ def optimize_potions(
     }
     selection = {
         "branch_count": total,
+        "no_potion_score_by_swap_limit": _no_potion_scores(request, requests, branches),
         "policy": "discipline-relevant-potion-branches-v2",
         "timings_seconds": {
             "preparation": prepared_at - started,

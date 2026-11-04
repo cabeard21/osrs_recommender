@@ -42,6 +42,11 @@ const BONUS_ORDER = ["stab", "slash", "crush", "magic", "ranged"];
 
 /** One-line stat summary; every bonus is labelled as a defence bonus. */
 export function npcStatSummary(target: CombatTarget): string {
+  return npcStatLines(target).join(" · ");
+}
+
+/** The stat summary split into short lines: levels, defence bonuses, weakness. */
+export function npcStatLines(target: CombatTarget): string[] {
   const bonuses = BONUS_ORDER.map(
     (key) => `${key} ${target.bonuses[key] ?? 0}`,
   ).join(" / ");
@@ -52,8 +57,7 @@ export function npcStatSummary(target: CombatTarget): string {
   // The light/standard/heavy split only adds information when it differs.
   const rangedDiffers = ranged.some(([, value]) => value !== rangedBonus);
   const parts = [
-    `Defence ${target.defence_level}`,
-    `Magic ${target.magic_level}`,
+    `Defence ${target.defence_level} · Magic ${target.magic_level}`,
     `Defence bonuses: ${bonuses}${
       rangedDiffers
         ? ` (ranged ${ranged.map(([kind, value]) => `${kind} ${value}`).join(" / ")})`
@@ -64,8 +68,23 @@ export function npcStatSummary(target: CombatTarget): string {
     parts.push(
       `Weak to ${target.weakness_element} (${target.weakness_percent ?? 0}%)`,
     );
-  return parts.join(" · ");
+  return parts;
 }
+
+/** Readable labels for the NPC stat override inputs, keyed by target field. */
+export const NPC_OVERRIDE_LABELS: Readonly<Record<string, string>> = {
+  defence_level: "Defence level",
+  magic_level: "Magic level",
+  weakness_percent: "Weakness %",
+  "bonuses.stab": "Stab defence",
+  "bonuses.slash": "Slash defence",
+  "bonuses.crush": "Crush defence",
+  "bonuses.magic": "Magic defence",
+  "bonuses.ranged": "Ranged defence",
+  ranged_light: "Ranged defence (light)",
+  ranged_standard: "Ranged defence (standard)",
+  ranged_heavy: "Ranged defence (heavy)",
+};
 
 const RECENT_KEY = "gear.recentNpcTargets";
 const MAX_RECENT = 6;

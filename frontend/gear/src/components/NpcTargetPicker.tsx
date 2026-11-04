@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import {
+  NPC_OVERRIDE_LABELS,
   npcEntryLabel,
-  npcStatSummary,
+  npcStatLines,
   readRecentNpcs,
   rememberNpc,
   sortNpcEntries,
@@ -210,7 +211,7 @@ export function NpcTargetPicker({
           ))}
         </div>
       )}
-      <ul aria-label="NPC search results" ref={listRef}>
+      <ul aria-label="NPC search results" className="npc-results" ref={listRef}>
         {results.map((entry, index) => (
           <li key={entry.key}>
             <button
@@ -241,11 +242,16 @@ export function NpcTargetPicker({
         </div>
       )}
       {detail && (
-        <div className="raised">
-          <strong>
-            {npcEntryLabel(detail)}
-            {modified && " · Modified"}
-          </strong>
+        <div className="raised npc-detail">
+          <div className="npc-detail-head">
+            <strong>
+              {npcEntryLabel(detail)}
+              {modified && " · Modified"}
+            </strong>
+            <a href={detail.wiki_url} target="_blank" rel="noreferrer">
+              NPC source
+            </a>
+          </div>
           {detail.support_status !== "supported" && (
             <p role="alert">
               {detail.name} cannot be optimized. Choose a supported NPC target.
@@ -254,9 +260,6 @@ export function NpcTargetPicker({
           {detail.reasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
-          <a href={detail.wiki_url} target="_blank" rel="noreferrer">
-            NPC source
-          </a>
           {selection &&
             detail.catalog_revision !== selection.catalog_revision && (
               <p role="alert">
@@ -265,45 +268,51 @@ export function NpcTargetPicker({
             )}
           {base && target && (
             <>
-              <p className="npc-stats">{npcStatSummary(target)}</p>
-              <dl>
+              <div className="npc-stats">
+                {npcStatLines(target).map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+              <dl className="npc-flat-armour">
                 <div>
-                  <dt>flat armour</dt>
+                  <dt>Flat armour</dt>
                   <dd>{target.flat_armour ?? 0}</dd>
                 </div>
               </dl>
-              <p>
+              <p className="npc-note">
                 Flat armour applies to each accurate melee or ranged hitsplat.
                 Negative values increase damage; magic ignores it. Catalog
                 armour cannot be overridden.
               </p>
-              <button
-                type="button"
-                aria-expanded={editing}
-                onClick={() => setEditing(!editing)}
-              >
-                Edit stats
-              </button>
-              {(modified || editing) && (
+              <div className="npc-actions">
                 <button
                   type="button"
-                  onClick={() => {
-                    latestChange.current({
-                      combatTarget: structuredClone(base),
-                      targetSelection: {
-                        key: detail.key,
-                        catalog_revision: detail.catalog_revision,
-                      },
-                      targetInputs: {},
-                    });
-                    setEditing(false);
-                  }}
+                  aria-expanded={editing}
+                  onClick={() => setEditing(!editing)}
                 >
-                  Reset to NPC stats
+                  Edit stats
                 </button>
-              )}
+                {(modified || editing) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      latestChange.current({
+                        combatTarget: structuredClone(base),
+                        targetSelection: {
+                          key: detail.key,
+                          catalog_revision: detail.catalog_revision,
+                        },
+                        targetInputs: {},
+                      });
+                      setEditing(false);
+                    }}
+                  >
+                    Reset to NPC stats
+                  </button>
+                )}
+              </div>
               {editing && (
-                <fieldset>
+                <fieldset className="npc-overrides">
                   <legend>NPC stat overrides</legend>
                   {[
                     "defence_level",
@@ -317,7 +326,7 @@ export function NpcTargetPicker({
                     ),
                   ].map((key) => (
                     <label key={key}>
-                      {key.replaceAll("_", " ")}
+                      {NPC_OVERRIDE_LABELS[key] ?? key.replaceAll("_", " ")}
                       <input
                         type="number"
                         value={
