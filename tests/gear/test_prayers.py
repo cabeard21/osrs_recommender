@@ -91,3 +91,33 @@ def test_melee_prayer_rounds_before_stance():
     result = evaluate_loadout([], role, {"attack": 59, "strength": 51})
     assert result.attack_roll == (59 * 120 // 100 + 8) * 64
     assert result.max_hit == int(0.5 + (51 * 123 // 100 + 11) * 64 / 640)
+
+
+def test_effects_reuses_canonical_immutable_results(monkeypatch):
+    from dataclasses import FrozenInstanceError
+
+    import tracker.gear.prayers as prayers
+
+    prayers._cached_effects.cache_clear()
+    original = prayers.legal
+    checked = []
+
+    def measured(ids):
+        checked.append(ids)
+        return original(ids)
+
+    monkeypatch.setattr(prayers, "legal", measured)
+    first = effects(["ultimate_strength", "steel_skin"])
+    second = effects(("steel_skin", "ultimate_strength"))
+    assert first is second
+    assert len(checked) == 1
+    assert effects(()) is prayers.NO_PRAYERS
+    assert len(checked) == 1
+    with pytest.raises(FrozenInstanceError):
+        first.defence = 999
+
+
+def test_cached_effects_still_rejects_duplicates_and_conflicts():
+    for ids in (("steel_skin", "steel_skin"), ("piety", "steel_skin")):
+        with pytest.raises(ValueError):
+            effects(ids)

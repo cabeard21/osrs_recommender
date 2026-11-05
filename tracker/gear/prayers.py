@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from itertools import combinations
 from typing import Any, Literal
 
@@ -315,6 +316,14 @@ def setups(
 
 
 def effects(ids: Sequence[str]) -> PrayerEffects:
+    """Reuse immutable modifiers regardless of the caller's prayer selection order."""
+    if not ids:
+        return NO_PRAYERS
+    return _cached_effects(tuple(sorted(ids)))
+
+
+@lru_cache(maxsize=2048)
+def _cached_effects(ids: tuple[str, ...]) -> PrayerEffects:
     if not legal(ids):
         raise ValueError("Selected prayers conflict or are unknown")
     return PrayerEffects(

@@ -82,7 +82,10 @@ def validate_request_context(
     for role in request.roles:
         from tracker.gear.prayers import setups as prayer_setups
 
-        prayer_setups(role.prayers, snapshot, levels)
+        # Policy schemas already validate IDs and conflicts. Only a fixed setup
+        # requires account eligibility here; Optimize filters once in the search.
+        if role.prayers.mode == "fixed":
+            prayer_setups(role.prayers, snapshot, levels)
         for slot, item_id in {**request.locks, **role.locks}.items():
             if item_id is None:
                 continue

@@ -7,6 +7,7 @@ getPlayerDefenceRoll (reviewed 2026-11-04). Reviewed active stat prayers; no spe
 from __future__ import annotations
 
 from collections.abc import Mapping
+from types import MappingProxyType
 
 from tracker.gear.models import EquipmentBonuses, PlayerDefenceRolls
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects
@@ -25,12 +26,12 @@ def required_defensive_skills(priority: str) -> frozenset[str]:
     )
 
 
-def player_defence_rolls(
+def raw_player_defence_rolls(
     levels: Mapping[str, int],
     bonuses: EquipmentBonuses,
     stance: str,
     prayers: PrayerEffects = NO_PRAYERS,
-) -> PlayerDefenceRolls:
+) -> Mapping[str, int | None]:
     """Floor weighted Magic and Defence separately before adding stance and eight."""
     defence = levels.get("defence", 0)
     magic = levels.get("magic", 0)
@@ -44,16 +45,31 @@ def player_defence_rolls(
         else None
     )
     effective = {style: magical if style == "magic" else physical for style in STYLES}
-    return PlayerDefenceRolls(
-        **{
+    return MappingProxyType(
+        {
             style: None
             if level is None
             else max(0, level * (getattr(bonuses, "defence_" + style) + 64))
             for style, level in effective.items()
-        },
+        }
+    )
+
+
+def player_defence_rolls(
+    levels: Mapping[str, int],
+    bonuses: EquipmentBonuses,
+    stance: str,
+    prayers: PrayerEffects = NO_PRAYERS,
+) -> PlayerDefenceRolls:
+    """Report the same raw rolls with explicit unknown-stat limitations."""
+    return PlayerDefenceRolls(
+        **raw_player_defence_rolls(levels, bonuses, stance, prayers),
         limitations=tuple(
             f"Player {name} level is unknown."
-            for name, level in (("Defence", defence), ("Magic", magic))
+            for name, level in (
+                ("Defence", levels.get("defence", 0)),
+                ("Magic", levels.get("magic", 0)),
+            )
             if level < 1
         ),
     )

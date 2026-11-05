@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from math import floor
-from typing import Any
+from typing import Any, NamedTuple
 
-from tracker.gear.defensive_rolls import player_defence_rolls
+from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.models import (
     CombatPerformance,
     CombatTarget,
@@ -71,6 +71,19 @@ ANCIENT_SPELLS = {
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
 
+_DEFAULT_TARGET = CombatTarget()
+
+
+class CombatScore(NamedTuple):
+    """Immutable optimizer score, without public reporting model allocation."""
+
+    supported: bool
+    dps: float | None
+    accuracy: float | None
+    bonuses: EquipmentBonuses
+    player_defence_rolls: Mapping[str, int | None] | None = None
+
+
 def accuracy_probability(attack_roll: int, defence_roll: int) -> float:
     """Ordinary positive-roll accuracy, including roll equality."""
     attack_roll, defence_roll = max(0, attack_roll), max(0, defence_roll)
@@ -100,12 +113,44 @@ def evaluate_prepared_loadout(
     spell: str = "fire_strike",
 ) -> CombatPerformance:
     """Reuse immutable bonus totals while retaining all ordinary attack checks."""
+    result = _evaluate_prepared(prepared, role, levels, target, stance, spell)
+    assert isinstance(result, CombatPerformance)
+    return result
+
+
+def evaluate_prepared_score(
+    prepared: PreparedEquipment,
+    role: Any,
+    levels: Mapping[str, int],
+    *,
+    include_defence: bool = False,
+) -> CombatScore:
+    """Score with identical legality/formulas, deferring rich reporting objects."""
+    result = _evaluate_prepared(
+        prepared, role, levels, score_only=True, include_defence=include_defence
+    )
+    assert isinstance(result, CombatScore)
+    return result
+
+
+def _evaluate_prepared(
+    prepared: PreparedEquipment,
+    role: Any,
+    levels: Mapping[str, int],
+    target: CombatTarget | None = None,
+    stance: str = "accurate",
+    spell: str = "fire_strike",
+    *,
+    score_only: bool = False,
+    include_defence: bool = False,
+) -> CombatPerformance | CombatScore:
+    """Reuse immutable bonus totals while retaining all ordinary attack checks."""
     equipment = prepared.equipment
     style = role if isinstance(role, str) else role.style
     stance = getattr(role, "stance", stance)
     spell = getattr(role, "spell", spell)
     powered_attack = getattr(role, "powered_attack", None)
-    target = target or getattr(role, "target", None) or CombatTarget()
+    target = target or getattr(role, "target", None) or _DEFAULT_TARGET
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
@@ -198,6 +243,8 @@ def evaluate_prepared_loadout(
     ):
         problems.append("Illegal powered-attack casting stance.")
     if problems:
+        if score_only:
+            return CombatScore(False, None, None, bonuses)
         return CombatPerformance(
             supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
         )
@@ -211,6 +258,8 @@ def evaluate_prepared_loadout(
         bonuses,
         powered_attack,
         effects(getattr(role, "active_prayer_ids", ())),
+        score_only=score_only,
+        include_defence=include_defence,
     )
 
 
@@ -237,7 +286,10 @@ def _calculate(
     bonuses: EquipmentBonuses,
     powered_attack: str | None,
     prayers: PrayerEffects = NO_PRAYERS,
-) -> CombatPerformance:
+    *,
+    score_only: bool = False,
+    include_defence: bool = False,
+) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
     if style == "magic":
@@ -272,22 +324,23 @@ def _calculate(
         )
         hit_bonus = base * target.weakness_percent // 100 if applied else 0
         roll_bonus = attack * target.weakness_percent // 100 if applied else 0
-        weakness = ElementalWeakness(
-            element=target.weakness_element,
-            percent=target.weakness_percent,
-            applied=applied,
-            reason=None
-            if applied
-            else (
-                "Target has no active elemental weakness."
-                if target.weakness_element is None or target.weakness_percent == 0
-                else "Powered attacks do not receive elemental weakness bonuses."
-                if powered_attack is not None
-                else "Selected spell does not match the target's element."
-            ),
-            max_hit_bonus=hit_bonus,
-            attack_roll_bonus=roll_bonus,
-        )
+        if not score_only:
+            weakness = ElementalWeakness(
+                element=target.weakness_element,
+                percent=target.weakness_percent,
+                applied=applied,
+                reason=None
+                if applied
+                else (
+                    "Target has no active elemental weakness."
+                    if target.weakness_element is None or target.weakness_percent == 0
+                    else "Powered attacks do not receive elemental weakness bonuses."
+                    if powered_attack is not None
+                    else "Selected spell does not match the target's element."
+                ),
+                max_hit_bonus=hit_bonus,
+                attack_roll_bonus=roll_bonus,
+            )
         if applied:
             # Weakness adds a separately truncated fraction of the unmodified
             # spell damage and base accuracy roll; it does not multiply gear%.
@@ -338,6 +391,8 @@ def _calculate(
     pattern = weapon.attack_pattern if weapon and style != "magic" else "single"
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
     if target.damage_cap is not None and any(max(1, m) > target.damage_cap for m in maxima):
+        if score_only:
+            return CombatScore(False, None, None, bonuses)
         return CombatPerformance(
             supported=False,
             bonuses=bonuses,
@@ -352,14 +407,22 @@ def _calculate(
         else (accuracy, accuracy**2 if pattern == "conditional_double" else accuracy)
     )
     armour = target.flat_armour if style != "magic" else 0
-    hitsplats = tuple(
-        HitsplatPerformance(accuracy=p, max_hit=max(0, max(1, m) - armour))
-        for m, p in zip(maxima, probabilities, strict=True)
-    )
     expected = sum(
         p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True)
     )
     interval = speed * 0.6
+    if score_only:
+        return CombatScore(
+            True,
+            expected / interval,
+            accuracy,
+            bonuses,
+            raw_player_defence_rolls(levels, bonuses, stance, prayers) if include_defence else None,
+        )
+    hitsplats = tuple(
+        HitsplatPerformance(accuracy=p, max_hit=max(0, max(1, m) - armour))
+        for m, p in zip(maxima, probabilities, strict=True)
+    )
     return CombatPerformance(
         supported=True,
         elemental_weakness=weakness,
