@@ -122,9 +122,21 @@ export interface PrayerPolicy {
   allowed_ids: string[];
   selected_ids: string[];
 }
+export interface PrayerModifiers {
+  attack: number;
+  strength: number;
+  ranged_accuracy: number;
+  ranged_strength: number;
+  magic_accuracy: number;
+  defence: number;
+  magic_defence: number;
+  magic_damage: number;
+}
 export interface PrayerDefinition {
   id: string;
   name: string;
+  group?: string;
+  modifiers?: PrayerModifiers;
   availability?: "satisfied" | "unsatisfied" | "unknown";
   reasons?: string[];
   conflicts?: string[];
