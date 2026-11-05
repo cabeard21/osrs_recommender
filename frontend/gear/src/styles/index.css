@@ -1538,21 +1538,67 @@ html {
 .npc-overrides label {
   margin: 6px 0;
 }
-.potion-group {
+.potion-group,
+.prayer-group {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0 12px;
   margin-top: 8px;
 }
-.potion-group-name {
+.potion-group-name,
+.prayer-group-name {
   grid-column: 1 / -1;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #94a3b8;
 }
-.potion-group label.check {
+.potion-group label.check,
+.prayer-group label.check {
   margin: 4px 0;
+}
+.prayer-fields legend .option-count {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.prayer-group {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+.prayer-group label.prayer-option {
+  align-items: flex-start;
+}
+.prayer-option input {
+  margin-top: 2px;
+}
+.prayer-option small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+.prayer-level {
+  color: #94a3b8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.prayer-reason {
+  color: #f0bf5c;
+}
+.prayer-option.is-disabled .prayer-name,
+.prayer-option.is-disabled .prayer-level {
+  opacity: 0.6;
+}
+.prayer-locked {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.prayer-locked summary {
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.prayer-mode-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 6px 0;
 }
 .sidebar nav a[aria-current="page"],
 dialog nav a[aria-current="page"] {
