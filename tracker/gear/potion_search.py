@@ -173,7 +173,7 @@ def merge_results(
             None,
         ),
         "search": {
-            **chosen["search"],
+            **{k: v for k, v in chosen["search"].items() if k != "timings_seconds"},
             "explored_nodes": sum(r["search"]["explored_nodes"] for r in branches),
             "candidate_truncation": any(r["search"]["candidate_truncation"] for r in branches),
             "potion_selection": {
@@ -331,23 +331,47 @@ def optimize_potions(
         **result["assumptions"],
         "potion_policy": request.potions.model_dump(mode="json"),
     }
+    assumptions_fingerprint = hashlib.sha256(
+        json.dumps(assumptions, sort_keys=True).encode()
+    ).hexdigest()
+    no_potion_scores = _no_potion_scores(request, requests, branches)
+    profiles = [
+        {
+            "discipline": discipline
+            or (
+                "melee"
+                if fixed.roles[0].style in {"stab", "slash", "crush"}
+                else fixed.roles[0].style
+            )
+            if len(fixed.roles) == 1
+            else None,
+            "selected_ids": list(fixed.potions.selected_ids),
+            "search": branch["search"],
+        }
+        for (discipline, fixed), branch in zip(jobs, branches, strict=True)
+    ]
+    finished = perf_counter()
+    timings = {
+        "preparation": prepared_at - started,
+        "branches": branches_at - prepared_at,
+        "merge": finished - branches_at,
+        "total": finished - started,
+    }
     selection = {
         "branch_count": total,
-        "no_potion_score_by_swap_limit": _no_potion_scores(request, requests, branches),
+        "no_potion_score_by_swap_limit": no_potion_scores,
         "policy": "discipline-relevant-potion-branches-v2",
-        "timings_seconds": {
-            "preparation": prepared_at - started,
-            "branches": branches_at - prepared_at,
-            "merge": perf_counter() - branches_at,
-            "total": perf_counter() - started,
-        },
+        "profiles": profiles,
+        "timings_seconds": timings,
     }
     report("complete", total)
     return {
         **result,
-        "search": {**result["search"], "potion_selection": selection},
+        "search": {
+            **result["search"],
+            "timings_seconds": timings,
+            "potion_selection": selection,
+        },
         "assumptions": assumptions,
-        "assumptions_fingerprint": hashlib.sha256(
-            json.dumps(assumptions, sort_keys=True).encode()
-        ).hexdigest(),
+        "assumptions_fingerprint": assumptions_fingerprint,
     }

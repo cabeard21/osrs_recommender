@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tests.gear.test_auto_disciplines import context
+from tests.gear.test_auto_disciplines import context, without_timings
 from tracker.gear.auto import branch_requests, optimize_auto
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.optimizer import RoleConfig, optimize
@@ -40,7 +40,9 @@ def test_merger_preserves_canonical_order_even_when_runner_finishes_in_reverse()
     def reversed_branches(*args, **kwargs):
         return list(reversed(serial_branches(*args, **kwargs)))
 
-    assert optimize_auto(*args, branch_runner=reversed_branches) == expected
+    assert without_timings(
+        optimize_auto(*args, branch_runner=reversed_branches)
+    ) == without_timings(expected)
 
 
 @pytest.mark.parametrize("bad", [[], [("melee", {})], [("melee", {}), ("melee", {})]])
@@ -84,7 +86,9 @@ def test_service_dispatches_auto_and_keeps_serial_default():
     service = GearService(content, auto_pool=SimpleNamespace(run=run))
     service._equipment = EquipmentCatalog(catalog.items)
     result = service.optimize(snapshot, request, price_records=prices, now=now)
-    assert result == optimize(snapshot, request, service._equipment, content, prices, now)
+    assert without_timings(result) == without_timings(
+        optimize(snapshot, request, service._equipment, content, prices, now)
+    )
     assert len(calls) == 1
     assert calls[0]["cancelled"] is None
     default = GearService(content)
@@ -176,14 +180,9 @@ def test_non_auto_and_one_discipline_searches_do_not_use_pool(mode):
 
     service = GearService(content, auto_pool=SimpleNamespace(run=unexpected))
     service._equipment = EquipmentCatalog(catalog.items)
-    assert service.optimize(snapshot, request, price_records=prices, now=now) == optimize(
-        snapshot,
-        request,
-        service._equipment,
-        content,
-        prices,
-        now,
-    )
+    assert without_timings(
+        service.optimize(snapshot, request, price_records=prices, now=now)
+    ) == without_timings(optimize(snapshot, request, service._equipment, content, prices, now))
 
 
 def test_service_remains_busy_until_failed_parallel_job_drains_then_recovers():

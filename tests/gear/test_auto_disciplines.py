@@ -19,6 +19,14 @@ OPTIONS = CombatOptionFilters(
 )
 
 
+def without_timings(value):
+    if isinstance(value, dict):
+        return {k: without_timings(v) for k, v in value.items() if k != "timings_seconds"}
+    if isinstance(value, list):
+        return [without_timings(v) for v in value]
+    return value
+
+
 def test_auto_one_discipline_matches_manual():
     items = [weapon(1, "slash", 50, attack_profiles=(("slash", "accurate"),))]
     fixed = RoleConfig(id="a", style="slash", combat_options=OPTIONS)
@@ -204,9 +212,11 @@ def test_auto_retains_each_discipline_result(priority):
         assert branch["selected_solution"] == manual["selected_solution"]
         assert branch["alternatives"] == manual["alternatives"]
         # Auto also explores resource-cost alternatives in non-magic branches.
-        assert {k: v for k, v in branch["search"].items() if k != "running_cost_frontier"} == {
-            k: v for k, v in manual["search"].items() if k != "running_cost_frontier"
-        }
+        assert without_timings(
+            {k: v for k, v in branch["search"].items() if k != "running_cost_frontier"}
+        ) == without_timings(
+            {k: v for k, v in manual["search"].items() if k != "running_cost_frontier"}
+        )
         for group in branch["secondary_frontiers"]:
             assert len(group["points"]) <= 64
             assert group["baseline_dps"] == branch["selected_solution"]["score"]

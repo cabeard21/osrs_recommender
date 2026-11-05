@@ -115,6 +115,15 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-untradeables")
+        def seed_untradeables():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in (1331, 1333, 6585, 6570)},
+                revision="browser-acceptance-untradeables-v1",
+            )
+            return {"status": "seeded"}
+
         @app.post("/test/seed-joint")
         def seed_joint():
             seed_optimization()

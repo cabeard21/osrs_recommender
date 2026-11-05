@@ -114,6 +114,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(DTO):
+    unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     selected_prayer_ids: list[str] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
     status: Literal["valid", "invalid", "unsupported"]
@@ -241,6 +242,7 @@ def calculate_evaluation(
     from tracker.gear.potions import potion_summary
 
     assumptions = {
+        "include_untradeables": scenario.include_untradeables,
         "prayer_model_version": PRAYER_MODEL_VERSION,
         "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
         "prayers": {role.id: role.prayers.model_dump(mode="json") for role in scenario.roles},

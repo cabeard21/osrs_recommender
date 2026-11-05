@@ -9,9 +9,11 @@ from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from hashlib import sha256
 from itertools import combinations, product
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from tracker.content.schema import ItemSlot
+from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -191,6 +193,7 @@ def explore(
     """Preserve the DPS lane and independently explore secondary-diverse beams."""
     from tracker.gear.optimizer import SLOTS, _solution_key
 
+    started = perf_counter()
     # This isolated search overrides its tick method for a separate work budget.
     search: Any = copy(original)
     search.frontier_search = True
@@ -289,13 +292,18 @@ def explore(
 
     for solution in [*winners, unrestricted]:
         accept(solution)
+    pools_at = perf_counter()
     roles = search.request.roles
-    # This lane gets its own caches: option choice follows the metric first,
-    # while the original DPS and diverse lanes retain their existing evaluations.
+    # Equipment bonuses do not depend on attack or prayer choice, so these
+    # priorities select the same option winner as the DPS lane. Share those
+    # evaluations in both directions without changing either equipment beam.
+    # Accuracy, defence rolls and CostSearch's accuracy projection still need
+    # independent winners, including their recorded options and prayers.
     metric: Any = copy(search)
     metric.metric_first = True
-    metric.performance_cache = {}
-    metric.option_cache = {}
+    if search.request.secondary_priority not in EQUIPMENT_BONUS_PRIORITIES:
+        metric.performance_cache = {}
+        metric.option_cache = {}
     metric.nodes = 0
     total_metric_limit = (budget - 25000) // 4
     # Multi must leave room for cap-specific assignments even when its shared
@@ -331,6 +339,7 @@ def explore(
         "explored_nodes": metric.nodes,
         "work_budget_exhausted": metric.nodes >= metric_limit,
     }
+    metric_at = perf_counter()
     # Charge actual metric work to the shared total; unused reserved work is
     # available to the diverse lane.
     phase_limit = budget - 25000 - metric.nodes
@@ -339,6 +348,7 @@ def explore(
     common = individual[roles[0].id] if len(roles) == 1 else search.loadouts(roles)
     for equipment in common:
         accept(search.solution({r.id: equipment for r in roles}, None))
+    equipment_at = perf_counter()
     if len(roles) > 1:
         for limit in archives:
             for assignment in search.joint_loadouts(limit):
@@ -386,6 +396,7 @@ def explore(
             replacement.update({s: i for s, i in zip(group, values, strict=True) if i is not None})
             diagnostics["assignment_attempts"] += 1
             accept(search.solution({**assignment, role: replacement}, None))
+    assignments_at = perf_counter()
     # Reserve work for option tradeoffs even if equipment beam expansion exhausts its share.
     # Keep the existing shared/refinement seed schedule intact before adding
     # the metric lane; extra early seeds can otherwise crowd out DPS refinements.
@@ -401,6 +412,7 @@ def explore(
     for seed in option_seeds.values():
         for row in _combat_variants(search, seed, tick):
             accept(row)
+    options_at = perf_counter()
     # Later equipment and combat-option searches can reintroduce inert ammo.
     # Normalize complete rows before ranking and hashing the published results.
     from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT, refine_finalist
@@ -417,6 +429,7 @@ def explore(
         identity: refine_ammunition(search, row, _solution_key, cleanup)
         for identity, row in cleaned.items()
     }
+    ammunition_at = perf_counter()
     finalists = {
         "assignment_limit_per_finalist": ASSIGNMENT_LIMIT,
         "evaluated_assignments": 0,
@@ -432,6 +445,7 @@ def explore(
         finalists["improved_finalists"] += int(work["improvements"] > 0)
         finalists["exhausted_finalists"] += int(work["work_budget_exhausted"])
     cleaned = refined
+    finalists_at = perf_counter()
     archives = {
         limit: pareto(
             row for row in cleaned.values() if limit is None or row["maximum_actions"] <= limit
@@ -479,6 +493,18 @@ def explore(
         or diagnostics["shared_assignment_attempts"] >= 10000
         or (thorough and diagnostics["assignment_attempts"] >= 10000),
     )
+    published_at = perf_counter()
+    diagnostics["timings_seconds"] = {
+        "pool_preparation": pools_at - started,
+        "metric_lane": metric_at - pools_at,
+        "diverse_equipment": equipment_at - metric_at,
+        "assignments": assignments_at - equipment_at,
+        "combat_variants": options_at - assignments_at,
+        "ammunition_refinement": ammunition_at - options_at,
+        "finalist_refinement": finalists_at - ammunition_at,
+        "publication": published_at - finalists_at,
+        "total": published_at - started,
+    }
     return groups, diagnostics, updated, unlimited
 
 

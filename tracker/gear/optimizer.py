@@ -38,6 +38,7 @@ from tracker.gear.evaluation import (
     loadout_problems,
     purchase_cost,
     purchases,
+    unowned_untradeables,
     validate_request_context,
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
@@ -152,6 +153,7 @@ class OptimizationRequest(BaseModel):
     potions: PotionPolicy = PotionPolicy()
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     mode: Literal["owned", "usable", "future"] = "usable"
+    include_untradeables: bool = Field(default=False, strict=True)
     support_policy: SupportPolicy = "verified_only"
     budget_gp: int = Field(default=0, ge=0, strict=True)
     secondary_priority: SecondaryPriority = "default"
@@ -362,6 +364,18 @@ class _Search:
 
     def cost(self, ids: set[int]) -> int:
         return purchase_cost(ids, self.facts, self.request)
+
+    def untradeable_acquisitions(self, ids: set[int]) -> int:
+        """Break otherwise equal choices by acquisitions, without pricing effort."""
+        return len(unowned_untradeables(ids, self.facts, self.request))
+
+    def acquisition_tie(self, ids: set[int]) -> tuple[int, int]:
+        """Preserve historical candidate ordering when the option is disabled."""
+        return (
+            (self.cost(ids), self.untradeable_acquisitions(ids))
+            if self.request.include_untradeables
+            else (0, 0)
+        )
 
     def prayer_options(self, role: RoleConfig, style: str) -> tuple[tuple[str, ...], ...]:
         """Reuse legal setups and collapse only identical reported combat effects.
@@ -784,10 +798,17 @@ class _Search:
                 by_role.append(
                     sorted(
                         candidates,
-                        key=lambda i: (-marginal(i), -self.secondary_marginals[role.id, i], i),
+                        key=lambda i: (
+                            -marginal(i),
+                            -self.secondary_marginals[role.id, i],
+                            *self.acquisition_tie({i}),
+                            i,
+                        ),
                     )
                 )
-            cheap = sorted(candidates, key=lambda i: (self.cost({i}), i))
+            cheap = sorted(
+                candidates, key=lambda i: (self.cost({i}), self.untradeable_acquisitions({i}), i)
+            )
             ordered = sorted(locked & set(candidates))
             for row in zip(
                 *[lst + [None] * (len(candidates) - len(lst)) for lst in [cheap, *by_role]],
@@ -835,6 +856,7 @@ class _Search:
                         for r in roles
                         if r.style != "special"
                     ),
+                    *self.acquisition_tie({i}),
                     i,
                 ),
             )[:1]
@@ -846,6 +868,7 @@ class _Search:
                     key=lambda i: (
                         -self.marginals.get((role.id, i), -1),
                         -self.secondary_marginals.get((role.id, i), 0),
+                        *self.acquisition_tie({i}),
                         i,
                     ),
                 )
@@ -863,6 +886,7 @@ class _Search:
                                         candidates,
                                         key=lambda i: (
                                             -self.secondary_marginals.get((role.id, i), 0),
+                                            *self.acquisition_tie({i}),
                                             i,
                                         ),
                                     )[:2]
@@ -921,6 +945,7 @@ class _Search:
                     -self.secondary(c),
                     len(union),
                     self.cost(union),
+                    self.untradeable_acquisitions(union),
                     json.dumps(c, sort_keys=True),
                 )
 
@@ -979,6 +1004,7 @@ class _Search:
                     -self.secondary({r.id: e for r in roles}),
                     self.cost(set(e.values())),
                     -strength,
+                    self.untradeable_acquisitions(set(e.values())),
                     tuple(sorted(e.items())),
                 )
 
@@ -1048,6 +1074,7 @@ class _Search:
             "transitions": transitions,
             "purchase_cost_gp": cost,
             "purchases": purchases(carried, self.facts, self.request),
+            "unowned_untradeable_item_ids": unowned_untradeables(carried, self.facts, self.request),
             "carried_item_ids": sorted(carried),
             "distinct_items": len(carried),
             "gear_inventory_slots": inventory_slots(loadouts[base], carried, self.items),
@@ -1081,6 +1108,7 @@ def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         -(solution.get("secondary_value") or 0),
         solution["max_gear_inventory_slots"],
         solution["purchase_cost_gp"],
+        len(solution.get("unowned_untradeable_item_ids", ())),
         sum(t["action_count"] for t in solution["transitions"]),
         (solution.get("potions") or {}).get("cost_per_application_gp") is None,
         (solution.get("potions") or {}).get("cost_per_application_gp") or 0,
@@ -1301,6 +1329,7 @@ def optimize(
             -score,
             -search.secondary(c),
             len({i for e in c.values() for i in e.values()}),
+            *search.acquisition_tie({i for e in c.values() for i in e.values()}),
             json.dumps(c, sort_keys=True),
         )
 
@@ -1428,6 +1457,7 @@ def optimize(
         "skills": dict(request.skill_overrides),
         "quests": dict(request.quest_overrides),
         "assumed_item_ids": request.assumed_item_ids,
+        "include_untradeables": request.include_untradeables,
         **running_cost_assumptions(request, price_records, local_refinement),
         **(
             {

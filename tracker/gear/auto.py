@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Mapping
 from hashlib import sha256
+from time import perf_counter
 from typing import Any
 
 
@@ -35,6 +36,7 @@ def optimize_auto(
 ) -> dict[str, Any]:
     from tracker.gear.optimizer import optimize
 
+    started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
     branches = []
     cancelled = options.get("cancelled")
@@ -74,7 +76,20 @@ def optimize_auto(
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
 
-    return merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
+    branches_at = perf_counter()
+    result = merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
+    finished = perf_counter()
+    return {
+        **result,
+        "search": {
+            **result["search"],
+            "timings_seconds": {
+                "branches": branches_at - started,
+                "merge": finished - branches_at,
+                "total": finished - started,
+            },
+        },
+    }
 
 
 def merge_auto_results(
@@ -250,7 +265,7 @@ def merge_auto_results(
             None,
         ),
         "search": {
-            **chosen["search"],
+            **{k: v for k, v in chosen["search"].items() if k != "timings_seconds"},
             "explored_nodes": sum(r["search"]["explored_nodes"] for _, r in branches),
             "candidate_truncation": any(r["search"]["candidate_truncation"] for _, r in branches),
             "discipline_selection": {

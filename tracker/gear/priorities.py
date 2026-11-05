@@ -41,6 +41,11 @@ _BONUSES = {
     "magic_damage_bonus": "magic_damage",
 }
 
+# These metrics are constant across attacks/prayers for a fixed equipment set
+# and concrete discipline. Their metric-first option rank has the same winner
+# as DPS-first; accuracy and player defence rolls deliberately remain separate.
+EQUIPMENT_BONUS_PRIORITIES = frozenset({"balanced_defence", "magic_ranged_defence", *_BONUSES})
+
 
 def secondary_value(
     priority: SecondaryPriority,

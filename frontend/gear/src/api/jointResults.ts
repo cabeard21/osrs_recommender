@@ -1,4 +1,5 @@
 import { validateRunningCost } from "./runningCosts";
+import { validateUntradeables } from "./untradeables";
 import { slots } from "./contracts";
 import { validateSecondaryPriority } from "./secondaryPriorities";
 import type {
@@ -143,6 +144,13 @@ export function parseJointSolution(
       throw new Error("Invalid shared purchase union");
     purchaseIds.add(Number(p.item_id));
   }
+  validateUntradeables(
+    row.unowned_untradeable_item_ids,
+    required,
+    [...purchaseIds],
+    scenario.request.include_untradeables === true &&
+      scenario.request.mode !== "owned",
+  );
   const transitions = row.transitions.map((value) => {
     const t = requireFields(value, { from_role: "string", to_role: "string" });
     if (

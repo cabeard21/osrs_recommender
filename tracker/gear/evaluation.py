@@ -109,6 +109,8 @@ def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[
         return (f"Physical item {item_id} is not observed owned.",)
     if item_id in request.assumed_item_ids:
         return ()
+    if getattr(request, "include_untradeables", False) and fact["acquisition"] == "untradeable":
+        return ()
     if fact["acquisition"] != "tradeable":
         return (f"Physical item {item_id} cannot be acquired through a supported purchase.",)
     if not fact.get("budget_exempt", False) and fact["price"]["amount_gp"] is None:
@@ -116,13 +118,28 @@ def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[
     return ()
 
 
+def unowned_untradeables(
+    ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any
+) -> list[int]:
+    """Hypothetical acquisitions, distinct from observations and GE purchases."""
+    if not getattr(request, "include_untradeables", False) or request.mode == "owned":
+        return []
+    return sorted(
+        i
+        for i in ids
+        if facts[i]["ownership"]["status"] != "owned" and facts[i]["acquisition"] == "untradeable"
+    )
+
+
 def purchase_cost(ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any) -> int:
     """Count distinct gear purchases, excluding consumable ammunition and darts."""
+    untradeables = set(unowned_untradeables(ids, facts, request))
     return sum(
         facts[i]["price"]["amount_gp"] or 0
         for i in ids
         if facts[i]["ownership"]["status"] != "owned"
         and i not in request.assumed_item_ids
+        and i not in untradeables
         and not facts[i].get("budget_exempt", False)
     )
 
@@ -130,6 +147,7 @@ def purchase_cost(ids: set[int], facts: Mapping[int, dict[str, Any]], request: A
 def purchases(
     ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any
 ) -> list[dict[str, Any]]:
+    untradeables = set(unowned_untradeables(ids, facts, request))
     return [
         {
             "item_id": i,
@@ -139,6 +157,7 @@ def purchases(
         for i in sorted(ids)
         if facts[i]["ownership"]["status"] != "owned"
         and i not in request.assumed_item_ids
+        and i not in untradeables
         and not facts[i].get("budget_exempt", False)
     ]
 
@@ -209,6 +228,7 @@ def evaluate_configuration(
         "purchase_cost_gp": cost,
         "purchases": required,
         "assumed_item_ids": sorted(ids.intersection(request.assumed_item_ids)),
+        "unowned_untradeable_item_ids": unowned_untradeables(ids, facts, request),
     }
 
 
