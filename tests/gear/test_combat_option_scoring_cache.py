@@ -75,13 +75,13 @@ def test_equivalent_elemental_attacks_are_scored_once_but_remain_available(monke
     import tracker.gear.optimizer as optimizer
 
     calls = []
-    original = optimizer.evaluate_prepared_loadout
+    original = optimizer.evaluate_prepared_score
 
     def count(*args, **kwargs):
         calls.append(args[1].spell)
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(optimizer, "evaluate_prepared_loadout", count)
+    monkeypatch.setattr(optimizer, "evaluate_prepared_score", count)
     assert len(search.configured_options(role, search.items[1])) == 40
     search.performance({"weapon": 1, "body": 2}, role)
     assert len(calls) == 10

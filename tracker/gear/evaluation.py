@@ -41,6 +41,11 @@ def evaluate_equipment(
     problems = equipment_problems(equipment, items)
     if problems:
         return CombatPerformance(supported=False, limitations=problems)
+    if (
+        getattr(getattr(role, "prayers", None), "mode", None) == "fixed"
+        and not role.active_prayer_ids
+    ):
+        role = role.model_copy(update={"active_prayer_ids": role.prayers.selected_ids})
     return evaluate_loadout({slot: items[i] for slot, i in equipment.items()}, role, levels)
 
 
@@ -75,6 +80,12 @@ def validate_request_context(
         if any(item_id not in items for item_id in getattr(request, field)):
             raise ValueError(f"unknown physical item ID in {field}")
     for role in request.roles:
+        from tracker.gear.prayers import setups as prayer_setups
+
+        # Policy schemas already validate IDs and conflicts. Only a fixed setup
+        # requires account eligibility here; Optimize filters once in the search.
+        if role.prayers.mode == "fixed":
+            prayer_setups(role.prayers, snapshot, levels)
         for slot, item_id in {**request.locks, **role.locks}.items():
             if item_id is None:
                 continue
@@ -228,6 +239,10 @@ def evaluate_configurations(
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     role = request.roles[0]
+    if role.prayers.mode == "optimize":
+        raise ValueError("Fixed evaluation requires an explicit fixed prayer setup")
+    if role.prayers.mode == "fixed":
+        role = role.model_copy(update={"active_prayer_ids": role.prayers.selected_ids})
     referenced = set(baseline.values()) | set(proposed.values())
     if any(type(i) is not int or i <= 0 for i in referenced):
         raise ValueError("Fixed equipment requires positive integer physical item IDs")
@@ -272,6 +287,7 @@ def evaluate_configurations(
         }
         return {
             **result,
+            "selected_prayer_ids": list(configured.active_prayer_ids),
             "potions": potion_summary(
                 base_levels, request.potions.selected_ids, price_records, now
             ),

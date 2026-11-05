@@ -22,6 +22,7 @@ _PERFORMANCE = (
     "attack_roll",
     "defence_roll",
     "limitations",
+    "player_defence_rolls",
 )
 _PROTECTED_BONUSES = (
     "defence_stab",
@@ -66,13 +67,17 @@ def _role_options(
                             "stance": selected.stance,
                             "spell": selected.spell or role.spell,
                             "powered_attack": selected.powered_attack,
+                            "active_prayer_ids": tuple(loadout.get("selected_prayer_ids", ())),
                         }
                     )
                     cache_key = (role.id, tuple(sorted(proposed.items())))
                     search.performance_cache[cache_key] = search.evaluate(
                         proposed, configured
                     ).model_dump(mode="json")
-                    search.option_cache[cache_key] = option
+                    search.option_cache[cache_key] = {
+                        **option,
+                        "__prayer_ids": loadout.get("selected_prayer_ids", []),
+                    }
                 performance = search.performance(proposed, role)
                 if performance["supported"] and _equivalent(loadout["performance"], performance):
                     choices.append(proposed)
@@ -133,7 +138,10 @@ def refine_ammunition(
     for role_id, loadout in solution["loadouts"].items():
         cache_key = (role_id, tuple(sorted(loadout["equipment"].items())))
         search.performance_cache[cache_key] = loadout["performance"]
-        search.option_cache[cache_key] = loadout.get("combat_option")
+        search.option_cache[cache_key] = {
+            **(loadout.get("combat_option") or {}),
+            "__prayer_ids": loadout.get("selected_prayer_ids", []),
+        }
 
     def key(row: dict[str, Any]) -> tuple[Any, ...]:
         existing = solution_key(row)

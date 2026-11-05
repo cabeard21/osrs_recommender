@@ -1,10 +1,41 @@
-import type { CombatOption, CombatPerformance, Role } from "../api/contracts";
+import type {
+  CombatOption,
+  CombatPerformance,
+  PrayerDefinition,
+  Role,
+} from "../api/contracts";
+import { prayerDisplayName, prayerEffectText } from "./prayerFormat";
+
+function PrayerSummary({
+  ids,
+  catalog,
+}: {
+  ids: readonly string[];
+  catalog: readonly PrayerDefinition[];
+}) {
+  const effects = ids
+    .map((id) => catalog.find((p) => p.id === id))
+    .filter((p): p is PrayerDefinition => p !== undefined)
+    .map(prayerEffectText)
+    .filter(Boolean);
+  return (
+    <p aria-label="Active combat prayers">
+      Prayers:{" "}
+      {ids.length
+        ? ids.map((id) => prayerDisplayName(id, catalog)).join(", ")
+        : "None"}
+      {effects.length > 0 && <small>{effects.join(" · ")}</small>}
+    </p>
+  );
+}
 
 export function CombatOptionSummary({
   option,
   role,
   weapon,
   performance,
+  prayerIds,
+  prayerCatalog = [],
 }: {
   option?: CombatOption;
   role: Pick<
@@ -13,6 +44,8 @@ export function CombatOptionSummary({
   >;
   weapon: string;
   performance?: CombatPerformance;
+  prayerIds?: string[];
+  prayerCatalog?: readonly PrayerDefinition[];
 }) {
   if (!option && role.combatOptions) {
     return (
@@ -36,6 +69,7 @@ export function CombatOptionSummary({
         {weapon} · {attack} · {stance}
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
+      {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
       {performance?.hitsplats && performance.hitsplats.length > 1 && (
         <p aria-label="Hitsplat details">
           {performance.hitsplats

@@ -13,6 +13,7 @@ import { purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
+import { contextPrayers } from "./PrayerFields";
 import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import {
   JointInventory,
@@ -114,6 +115,8 @@ export function LiveMultiResultWorkspace() {
           <p>Utility (unscored)</p>
         ) : (
           <CombatOptionSummary
+            prayerIds={loadout.selected_prayer_ids}
+            prayerCatalog={contextPrayers(state.context)}
             performance={loadout.performance}
             option={loadout.combat_option}
             role={role}

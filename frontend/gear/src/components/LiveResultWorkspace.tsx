@@ -15,6 +15,7 @@ import { PurchaseRows, purchaseSummary } from "./PurchaseRows";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
+import { contextPrayers } from "./PrayerFields";
 import { ResultVerdict } from "./ResultVerdict";
 import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
@@ -213,6 +214,10 @@ export function LiveResultWorkspace() {
               differenceLabel="Changed"
             />
             <CombatOptionSummary
+              prayerIds={
+                selected?.loadouts[loadout.roleId]?.selected_prayer_ids
+              }
+              prayerCatalog={contextPrayers(state.context)}
               performance={selected?.loadouts[loadout.roleId]?.performance}
               option={loadout.combatOption}
               role={request.roles[0]}

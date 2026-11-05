@@ -51,6 +51,7 @@ def test_context_no_account_and_private_boundary(client):
     assert response.status_code == 200
     data = ContextResponse.model_validate(response.json())
     assert data.account is None
+    assert data.capabilities["prayers"]
     assert data.current_equipment.status == "unknown"
     assert all(s.status == "unknown" for s in data.current_equipment.slots.values())
     assert client.post("/api/sync", json={}).status_code == 401

@@ -27,6 +27,8 @@ from tracker.content.schema import ItemSlot
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
+from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
+from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.running_frontier import running_cost_assumptions
 from tracker.gear.support import SupportPolicy, support_context
 
@@ -47,6 +49,7 @@ class FixedCombatOption(DTO):
 
 class EquipmentEvaluationRequest(DTO):
     selected_potion_ids: tuple[str, ...] | None = None
+    selected_prayer_ids: dict[str, tuple[str, ...]] = Field(default_factory=dict)
     scenario: BrowserOptimizationRequest
     baseline_loadouts: dict[str, dict[ItemSlot, ItemId]]
     proposed_loadouts: dict[str, dict[ItemSlot, ItemId]]
@@ -80,6 +83,21 @@ class EquipmentEvaluationRequest(DTO):
                 "Exact evaluation supports one ordinary-attack role without transitions"
             )
         expected = {self.scenario.roles[0].id}
+        if set(self.selected_prayer_ids) - expected:
+            raise ValueError("Selected prayers must reference the submitted role")
+        from tracker.gear.prayers import PrayerPolicy
+
+        for role in self.scenario.roles:
+            ids = self.selected_prayer_ids.get(role.id)
+            if role.prayers.mode == "optimize" and ids is None:
+                raise ValueError("Fixed evaluation requires the selected fixed prayer setup")
+            if ids is not None:
+                PrayerPolicy(mode="fixed", selected_ids=ids)
+                if role.prayers.mode == "optimize":
+                    if not set(ids) <= set(role.prayers.allowed_ids):
+                        raise ValueError("Selected prayers must belong to the scenario allowlist")
+                elif set(ids) != set(role.prayers.selected_ids):
+                    raise ValueError("Selected prayers must match the scenario setup")
         if set(self.baseline_loadouts) != expected or set(self.proposed_loadouts) != expected:
             raise ValueError("Both fixed configurations must contain exactly the submitted role")
         if (
@@ -96,6 +114,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(DTO):
+    selected_prayer_ids: list[str] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
     status: Literal["valid", "invalid", "unsupported"]
     equipment: dict[ItemSlot, int]
@@ -151,6 +170,25 @@ def calculate_evaluation(
         raise ValueError("evaluation_cancelled")
     now = datetime.now(UTC)
     scenario = body.scenario
+    if body.selected_prayer_ids:
+        from tracker.gear.prayers import PrayerPolicy
+
+        scenario = scenario.model_copy(
+            update={
+                "roles": tuple(
+                    role.model_copy(
+                        update={
+                            "prayers": PrayerPolicy(
+                                mode="fixed", selected_ids=body.selected_prayer_ids[role.id]
+                            )
+                        }
+                    )
+                    if role.id in body.selected_prayer_ids
+                    else role
+                    for role in scenario.roles
+                )
+            }
+        )
     if body.selected_potion_ids is not None:
         from tracker.gear.potions import PotionPolicy
 
@@ -203,6 +241,9 @@ def calculate_evaluation(
     from tracker.gear.potions import potion_summary
 
     assumptions = {
+        "prayer_model_version": PRAYER_MODEL_VERSION,
+        "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
+        "prayers": {role.id: role.prayers.model_dump(mode="json") for role in scenario.roles},
         **(
             {
                 "potions": scenario.potions.model_dump(mode="json"),

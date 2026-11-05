@@ -142,6 +142,7 @@ class RunningCost(DTO):
 
 
 class Loadout(DTO):
+    selected_prayer_ids: list[str] = Field(default_factory=list)
     equipment: dict[str, int]
     performance: CombatPerformance
     combat_option: dict[str, Any] | None = None
@@ -430,6 +431,28 @@ def calculate(
             }
         )
     reasons = list(projection.warnings)
+    from tracker.gear.prayers import PrayerPolicy
+
+    selected_loadouts = (result.get("selected_solution") or {}).get("loadouts", {})
+    baseline_body = baseline_body.model_copy(
+        update={
+            "roles": tuple(
+                role.model_copy(
+                    update={
+                        "prayers": PrayerPolicy(
+                            mode="fixed",
+                            selected_ids=tuple(
+                                selected_loadouts.get(role.id, {}).get("selected_prayer_ids", ())
+                            ),
+                        )
+                    }
+                )
+                if role.prayers.mode == "optimize"
+                else role
+                for role in baseline_body.roles
+            )
+        }
+    )
     if projection.status != "observed" or any(
         s.status not in ("observed", "empty") for s in projection.slots.values()
     ):
@@ -464,7 +487,7 @@ def calculate(
         calculated = evaluate_equipment(
             projection.equipment,
             gear.supported_catalog(body.support_policy).items,
-            body.roles[0],
+            baseline_body.roles[0],
             boosted_levels(
                 {k: v.level for k, v in projected.skills.items()},
                 baseline_body.potions.selected_ids,

@@ -73,6 +73,7 @@ export interface TargetSelection {
   catalog_revision: string;
 }
 export interface Role {
+  prayers?: PrayerPolicy;
   targetSelection?: TargetSelection;
   id: string;
   name: string;
@@ -115,6 +116,36 @@ export interface PotionPolicy {
   mode: "disabled" | "optimize" | "fixed";
   allowed_ids: string[];
   selected_ids: string[];
+}
+export interface PrayerPolicy {
+  mode: "disabled" | "optimize" | "fixed";
+  allowed_ids: string[];
+  selected_ids: string[];
+}
+export interface PrayerModifiers {
+  attack: number;
+  strength: number;
+  ranged_accuracy: number;
+  ranged_strength: number;
+  magic_accuracy: number;
+  defence: number;
+  magic_defence: number;
+  magic_damage: number;
+}
+export interface PrayerDefinition {
+  id: string;
+  name: string;
+  group?: string;
+  modifiers?: PrayerModifiers;
+  availability?: "satisfied" | "unsatisfied" | "unknown";
+  reasons?: string[];
+  conflicts?: string[];
+  level?: number;
+  defence_level?: number;
+  attack_level?: number;
+  strength_level?: number;
+  access_availability?: "satisfied" | "unsatisfied" | "unknown";
+  access_reasons?: string[];
 }
 export interface PotionSummary {
   base_levels?: Record<string, number>;
@@ -213,6 +244,7 @@ export interface Metrics {
   seconds?: number;
 }
 export interface Loadout {
+  selectedPrayerIds?: string[];
   roleId: string;
   name: string;
   equipment: Equipment;
@@ -299,6 +331,7 @@ export interface JointSolutionDTO {
     {
       equipment: Record<string, number>;
       performance: CombatPerformance;
+      selected_prayer_ids?: string[];
       combat_option?: CombatOption;
       running_cost?: RunningCost;
       discipline?: Style;

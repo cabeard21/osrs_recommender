@@ -30,6 +30,9 @@ from tracker.gear.models import EquipmentDefinition
 from tracker.gear.npcs import npc_catalog
 from tracker.gear.optimizer import SLOTS
 from tracker.gear.potions import catalog as potion_catalog
+from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
+from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
+from tracker.gear.prayers import catalog as prayer_catalog
 from tracker.gear.service import GearService
 from tracker.gear.support import SupportPolicy
 from tracker.ui.staleness import scan_note
@@ -430,6 +433,9 @@ def context(request: Request) -> ContextResponse:
             for i in sorted({i for s in projection.slots.values() for i in s.candidate_item_ids})
         ],
         capabilities={
+            "prayers": prayer_catalog(snapshot),
+            "prayer_model_version": PRAYER_MODEL_VERSION,
+            "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
             "objectives": [
                 {
                     "id": "weighted_dps",

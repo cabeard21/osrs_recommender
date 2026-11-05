@@ -171,6 +171,7 @@ describe("live refinement transport", () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       scenario: accepted.live!.scenario,
       selected_potion_ids: [],
+      selected_prayer_ids: { "role-1": [] },
       baseline_loadouts: { "role-1": { weapon: 4151 } },
       proposed_loadouts: { "role-1": {} },
     });
@@ -180,6 +181,23 @@ describe("live refinement transport", () => {
       live: { deltas: { dps: 0 } },
     });
     expect(accepted).toEqual(before);
+  });
+  it("keeps the selected solution prayers fixed for item comparisons", async () => {
+    const accepted = result();
+    accepted.solutions[0].loadouts[0].selectedPrayerIds = ["ultimate_strength"];
+    const fetcher = vi.fn(
+      async () => new Response(JSON.stringify(evaluation())),
+    ) as unknown as typeof fetch;
+    await new HttpGearClient("/ui-api/gear", fetcher).evaluate(
+      accepted,
+      "best-found",
+      "role-1",
+      emptyEquipment(),
+    );
+    const [, init] = vi.mocked(fetcher).mock.calls[0];
+    expect(JSON.parse(String(init?.body)).selected_prayer_ids).toEqual({
+      "role-1": ["ultimate_strength"],
+    });
   });
   it("preserves invalid reasons and null metrics instead of fabricating a trial", async () => {
     const reply = evaluation();
