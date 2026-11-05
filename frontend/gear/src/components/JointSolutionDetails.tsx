@@ -1,6 +1,7 @@
 import type { JointSolutionDTO, JointTransitionDTO } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { PurchaseRows } from "./PurchaseRows";
+import { UntradeablesToObtain } from "./UntradeablesToObtain";
 
 export function JointInventory({
   solution,
@@ -167,6 +168,10 @@ export function JointPurchases({
         acquisition estimates are not guaranteed market prices.
       </p>
       <PurchaseRows purchases={solution.purchases} itemName={itemName} />
+      <UntradeablesToObtain
+        ids={solution.unowned_untradeable_item_ids}
+        itemName={itemName}
+      />
       <PurchaseListCopy
         key={identity}
         purchases={solution.purchases}

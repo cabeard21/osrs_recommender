@@ -182,6 +182,7 @@ class EquipmentTransition(DTO):
 
 
 class Solution(DTO):
+    unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
     score: float
     secondary_priority: SecondaryPriority

@@ -362,6 +362,24 @@ budget; `future` additionally permits explicit hypothetical assumptions. Skill/q
 keys and concrete acquired IDs are validated. Overrides never write observations.
 Requirements remain enforced in every mode. Unknown prices cannot fund purchases.
 
+The optional strict boolean `include_untradeables` defaults to false. In `usable`
+and `future` modes it also permits unowned untradeable equipment whose wear
+requirements are satisfied under the request's normal account/assumption rules.
+It has no effect in `owned` mode. Supported-effect policy, exclusions, locks,
+physical compatibility, and all other constraints still apply. Unknown acquisition
+types remain unavailable. This toggle changes search eligibility, not account
+observations, and does not claim that obtaining an item is quick or free.
+
+Selected unowned untradeables are hypothetical upgrades to obtain, separately
+reported as `unowned_untradeable_item_ids` on complete solutions and fixed
+evaluations. They contribute no GE purchase rows or purchase GP, including when
+ownership is unknown. Already-owned untradeables need no acquisition entry.
+The UI labels these items separately from **What to buy**. The flag participates
+in scenario and assumptions fingerprints; historical responses without these
+fields retain the default false/empty semantics. Tradeable purchases continue to
+require usable prices and obey the additional GP budget. Older saved results remain
+readable but require a rerun before fixed comparisons under the new provenance.
+
 Optional `excluded_item_ids` contains up to 500 concrete physical IDs. The default
 is empty. Unknown IDs and overlap with any global or role lock are rejected with
 structured field errors. Exclusions apply to candidate preparation, every search
@@ -732,6 +750,19 @@ POSTs, then poll `GET /optimizations/progress?progress_id=<uuid>`. The response
 contains the matching attempt's progress or null; previous attempts are never
 substituted. Progress reports phase, completed/total profiles and elapsed seconds.
 Result search diagnostics include potion preparation, branch and merge timings.
+`search.timings_seconds.total` measures the enclosing optimizer run: Auto reports
+branch and merge wall time, and potion optimization also reports preparation.
+Parallel branch wall time includes overlap; it is not the sum of worker times.
+The winning profile's phases are no longer presented as the entire run's phases.
+Every concrete potion profile retains its discipline, selected potion IDs and
+complete search diagnostics under `search.potion_selection.profiles`.
+
+Both frontier passes report `timings_seconds`. Secondary frontier phases cover
+pool preparation, metric and diverse equipment lanes, assignments, combat
+variants, ammunition cleanup, finalist refinement and publication. Running-cost
+timings include preparation and final publication around its exploration;
+`running_cost_frontier.exploration.timings_seconds` retains the nested phases.
+These timers are observational, outside scenario identity and search budgets.
 Polling is observational and does not alter the request's search effort or
 cancel an active job.
 
@@ -740,3 +771,7 @@ updates across identical action-cap archives. Elemental attack scoring collapses
 equivalent tier/stance/weakness outcomes while retaining the original spell tie
 winner. Full spell choices remain available to resource-cost frontier searches.
 These optimizations preserve the configured search limits.
+Equipment-bonus metric lanes reuse DPS option winners because their secondary
+value is constant across attacks and prayers for fixed equipment and discipline.
+Their equipment beams still rank the selected bonus first. Accuracy, player
+defence-roll and running-cost metric lanes retain independent option winners.

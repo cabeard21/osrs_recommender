@@ -31,6 +31,7 @@ export const newRole = (index: number) => ({
   locks: {},
 });
 export const newDraft = (): Draft => ({
+  includeUntradeables: false,
   supportPolicy: "community_best_effort",
   secondaryPriority: "default",
   optimizationMode: "fast",
@@ -412,6 +413,7 @@ export function normalize(
       },
       budget_gp: integer(parseGp(draft.budget), "Budget", 0, 2147483647),
       mode: draft.mode,
+      include_untradeables: draft.includeUntradeables ?? false,
       max_swaps: integer(draft.maxActions, "Equipment actions", 0, 12),
       reserved_supply_slots: integer(draft.supplies, "Supply slots", 0, 28),
       transitions: edges,
@@ -567,6 +569,8 @@ function resultIsStale(
 ): boolean {
   if (!context) return true;
   return (
+    (!!result.live &&
+      result.live.scenario.include_untradeables === undefined) ||
     result.snapshotId !== context.snapshotId ||
     (!!context.live &&
       (result.catalogVersion !== context.live.catalog_version ||
@@ -1036,12 +1040,15 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
   // Parsed JSON belongs to the caller, so defaults are filled in place.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const draft = value as any;
+  if (draft.includeUntradeables === undefined)
+    draft.includeUntradeables = false;
   if (draft.supportPolicy === undefined)
     draft.supportPolicy = "community_best_effort";
   if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
   if (draft.secondaryPriority === undefined)
     draft.secondaryPriority = "default";
   const isValid = !(
+    typeof draft.includeUntradeables !== "boolean" ||
     !secondaryPriorities.some(
       ([priority]) => priority === draft.secondaryPriority,
     ) ||

@@ -78,6 +78,9 @@ def test_complete_search_matches_full_sort_archive_oracle(monkeypatch, role_coun
     from tracker.gear import frontier
     from tracker.gear.optimizer import RoleConfig
 
+    # Compare all diagnostics as well as archives with an observational clock
+    # fixed independently of the archive implementation's running time.
+    monkeypatch.setattr(frontier, "perf_counter", lambda: 0.0)
     items = [
         weapon(1, "slash"),
         weapon(2, "crush"),

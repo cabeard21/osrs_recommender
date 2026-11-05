@@ -1,4 +1,5 @@
 import { createProgressId, pollOptimizationProgress } from "./progress";
+import { validateUntradeables } from "./untradeables";
 import { validateRunningCost } from "./runningCosts";
 import {
   object,
@@ -79,6 +80,8 @@ export function parseOptimization(
   }
   const normalizedServerScenario = {
     ...object(envelope.scenario),
+    include_untradeables:
+      object(envelope.scenario).include_untradeables ?? false,
     max_dps_loss_pct: object(envelope.scenario).max_dps_loss_pct ?? 10,
     optimization_mode: object(envelope.scenario).optimization_mode ?? "fast",
     secondary_priority:
@@ -356,6 +359,13 @@ export function parseOptimization(
         throw new Error("Invalid purchase fact");
       return row.item_id as number;
     });
+    validateUntradeables(
+      selected.unowned_untradeable_item_ids,
+      Object.values(equipment).filter((id): id is number => id !== null),
+      purchases,
+      scenario.request.include_untradeables === true &&
+        scenario.request.mode !== "owned",
+    );
     solutions.push({
       id: "best-found",
       actionLimit: scenario.request.max_swaps,
@@ -655,6 +665,7 @@ export function optimizationRequest(scenario: Scenario) {
       : {}),
     support_policy: r.support_policy ?? "verified_only",
     mode: r.mode,
+    include_untradeables: r.include_untradeables ?? false,
     optimization_mode: r.optimization_mode ?? "fast",
     potions: r.potions ?? {
       mode: "disabled",
@@ -694,6 +705,7 @@ function parseFixedEvaluation(
   value: unknown,
   expected: Equipment,
   items: Item[],
+  includeUntradeables: boolean,
 ): FixedEvaluation {
   const row = requireFields(value, { status: "string" });
   if (
@@ -756,6 +768,12 @@ function parseFixedEvaluation(
     throw new Error("Invalid evaluation assumed acquisitions");
   if (row.status === "valid" && row.purchase_cost_gp === null)
     throw new Error("Valid evaluation requires acquisition total");
+  validateUntradeables(
+    row.unowned_untradeable_item_ids,
+    Object.values(equipment).filter((id): id is number => id !== null),
+    [...purchased],
+    includeUntradeables,
+  );
   return structuredClone(value) as FixedEvaluation;
 }
 export function parseEvaluation(
@@ -770,6 +788,11 @@ export function parseEvaluation(
     ?.loadouts.find((l) => l.roleId === roleId)?.equipment;
   if (result.source !== "live" || !result.live || !baselineEquipment)
     throw new Error("Live evaluation requires an accepted live configuration");
+  if (result.live.scenario.include_untradeables === undefined)
+    throw new GearApiError(
+      "Saved result uses an older acquisition policy; reoptimize before evaluating",
+      "stale_context",
+    );
   const envelope = requireFields(value, {
     api_version: "string",
     evaluated_at: "string",
@@ -828,8 +851,16 @@ export function parseEvaluation(
       envelope.baseline,
       baselineEquipment,
       items,
+      result.scenario.request.include_untradeables === true &&
+        result.scenario.request.mode !== "owned",
     ),
-    proposed = parseFixedEvaluation(envelope.proposed, equipment, items);
+    proposed = parseFixedEvaluation(
+      envelope.proposed,
+      equipment,
+      items,
+      result.scenario.request.include_untradeables === true &&
+        result.scenario.request.mode !== "owned",
+    );
   const valid = baseline.status === "valid" && proposed.status === "valid";
   if (valid) {
     const deltas = requireFields(envelope.deltas, {

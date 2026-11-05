@@ -55,6 +55,36 @@ const response = () => ({
     },
   },
 });
+it("defaults legacy response acquisition policy off and rejects unsubmitted untradeable access", () => {
+  const scenario = normalize(newDraft(), context.account.snapshot_id);
+  const body = response();
+  const { include_untradeables: _omitted, ...legacyScenario } = body.scenario;
+  expect(
+    parseOptimization({ ...body, scenario: legacyScenario }, scenario)
+      .solutions,
+  ).toHaveLength(1);
+  expect(() =>
+    parseOptimization(
+      { ...body, scenario: { ...body.scenario, include_untradeables: true } },
+      scenario,
+    ),
+  ).toThrow(/scenario/);
+  expect(() =>
+    parseOptimization(
+      {
+        ...body,
+        result: {
+          ...body.result,
+          selected_solution: {
+            ...body.result.selected_solution,
+            unowned_untradeable_item_ids: [4151],
+          },
+        },
+      },
+      scenario,
+    ),
+  ).toThrow(/untradeable acquisition/);
+});
 it("validates single-role secondary priority provenance and measurements", () => {
   const scenario = normalize(
     { ...newDraft(), secondaryPriority: "accuracy" },

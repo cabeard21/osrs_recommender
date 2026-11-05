@@ -3,6 +3,7 @@ import { EQUIPMENT_ACCESS_LABELS } from "../components/resultFormat";
 import { parseGp } from "./scenario";
 
 export interface SubmittedSummary {
+  include_untradeables?: boolean;
   budget_gp: number;
   mode: Draft["mode"];
   optimization_mode?: string;
@@ -16,6 +17,13 @@ export function describeDraftChanges(
   submitted: SubmittedSummary,
 ): string[] {
   const changes: string[] = [];
+  if (
+    (draft.includeUntradeables ?? false) !==
+    (submitted.include_untradeables ?? false)
+  )
+    changes.push(
+      `Unowned untradeables: ${submitted.include_untradeables ? "considered" : "excluded"} → ${draft.includeUntradeables ? "considered" : "excluded"}`,
+    );
   const budget = Number(parseGp(draft.budget));
   if (Number.isFinite(budget) && budget !== submitted.budget_gp)
     changes.push(

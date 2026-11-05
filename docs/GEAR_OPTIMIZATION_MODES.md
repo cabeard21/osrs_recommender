@@ -20,6 +20,39 @@ Full-catalog prayer searches also group options by the current scoring objective
 
 A frozen-account replay reconstructed from the Blood Moon draft (Fast, community equipment, zero acquisition budget, Slash defence roll, fifteen basic prayers allowed, and optimized Divine super combat) completed in 66.1 seconds with two desktop workers. The preceding replay took 140.5 seconds; the earlier path exceeded 180 seconds. Selected equipment, performance, swap curves, complete frontier points/IDs, and search-node diagnostics matched the 140.5-second baseline exactly. This larger replay demonstrates why the small synthetic benchmark alone is insufficient to assess interactive latency; the full defence frontier still takes substantial time.
 
+## Frontier profiling
+
+Auto and potion optimization report enclosing wall time in
+`search.timings_seconds`, with child timings retained per discipline and under
+`search.potion_selection.profiles`. Secondary and running-cost frontiers report
+separate phase timings, including equipment lanes, combat variants and finalist
+refinement. Running-cost diagnostics also account for preparation and publication
+outside the shared frontier explorer.
+
+Equipment-bonus priorities reuse option winners between DPS and metric equipment
+lanes. The bonus is constant across attacks and prayers for fixed equipment and
+discipline, so option ordering is identical. Equipment exploration and all budgets
+remain unchanged. Accuracy, player defence rolls and running-cost metric lanes
+retain independent option caches.
+
+The offline helper requires either a complete frozen snapshot or an explicit
+substitute fixture. For example:
+
+```powershell
+.venv\Scripts\python.exe -m tools.profile_gear_frontiers --dump temp.txt --fixture melee_1m --discipline ranged --potion divine_ranging --output .tmp/frontier-profile --cprofile
+```
+
+One local serial fixture comparison used the supplied Prince Itzla Arkan draft's
+filters, Balanced defence priority and Divine ranging setup, with the existing
+119-item frozen account/catalog. It is not a replay of the original live account.
+Unprofiled time fell from 34.45 to 31.66 seconds (8.1% in this single comparison).
+The separate call profiles recorded 950,136 to 849,240 lightweight combat
+evaluations and 126,481 to 118,746 full evaluations. Selected/unrestricted
+solutions, curves, all complete frontier points/IDs and search-work counts matched
+exactly. These measurements establish avoided evaluation work, not a latency
+guarantee for the live full-catalog request. Private replay outputs stay in the
+ignored `.tmp/` directory.
+
 ## Deployment decision
 
 **Development integration only; production Thorough remains disabled by leaving production unchanged.** No production `/gear` replacement, Docker packaging change, deployment or Milestone 6 cutover is authorized or performed. A user-accepted latency/resource envelope is still required before deployment. Benchmark observations alone do not constitute that acceptance.

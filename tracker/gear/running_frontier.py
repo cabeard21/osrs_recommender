@@ -6,6 +6,7 @@ import json
 from collections.abc import Mapping
 from hashlib import sha256
 from math import isfinite
+from time import perf_counter
 from typing import Any
 
 
@@ -164,6 +165,8 @@ def explore_running_costs(
     from tracker.gear.optimizer import _Search
     from tracker.gear.priorities import secondary_value
 
+    started = perf_counter()
+
     class CostSearch(_Search):
         def secondary(self, loadouts: Any) -> float:
             costs = []
@@ -240,9 +243,11 @@ def explore_running_costs(
             "secondary_value": -gp if gp is not None else -1e100,
         }
 
+    prepared_at = perf_counter()
     groups, diagnostics, _, _ = explore(
         search, [objective(r) for r in winners], objective(unrestricted), thorough
     )
+    explored_at = perf_counter()
 
     def restore(row: dict[str, Any]) -> dict[str, Any]:
         roles = [r for r in original.request.roles if r.style != "special"]
@@ -265,7 +270,19 @@ def explore_running_costs(
     for limit, rows in archives.items():
         candidates = [*rows, winners[limit] if limit is not None else unrestricted]
         baselines[limit] = max((r for r in candidates if r), key=lambda r: r["score"], default=None)
-    diagnostics = {**diagnostics, **running_cost_policy(original.request, thorough)}
-    return publish_groups(
+    groups = publish_groups(
         archives, baselines, original.request.max_dps_loss_pct, original.complete_frontiers
-    ), diagnostics
+    )
+    published_at = perf_counter()
+    diagnostics = {
+        **diagnostics,
+        **running_cost_policy(original.request, thorough),
+        "exploration": {"timings_seconds": diagnostics["timings_seconds"]},
+        "timings_seconds": {
+            "preparation": prepared_at - started,
+            "exploration": explored_at - prepared_at,
+            "publication": published_at - explored_at,
+            "total": published_at - started,
+        },
+    }
+    return groups, diagnostics

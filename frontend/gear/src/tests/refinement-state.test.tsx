@@ -10,6 +10,7 @@ import {
   optimizationRequest,
   parseContext,
   parseOptimization,
+  parseEvaluation,
 } from "../api/httpClient";
 import { GearProvider, useGear } from "../state/GearProvider";
 import { initialState, newDraft, normalize, reducer } from "../state/scenario";
@@ -64,6 +65,34 @@ function result() {
     scenario,
   );
 }
+it("restores legacy untradeable-policy results as readable but outdated", () => {
+  const saved = result();
+  delete saved.live!.scenario.include_untradeables;
+  const state = reducer(
+    { ...initialState(), context: parseContext(context) },
+    {
+      type: "restore-results",
+      results: {
+        single: {
+          result: saved,
+          solutionId: saved.solutions[0].id,
+          outdated: false,
+        },
+      },
+    },
+  );
+  expect(state.single.result).toBe(saved);
+  expect(state.single.outdated).toBe(true);
+  expect(() =>
+    parseEvaluation(
+      evaluation(),
+      saved,
+      saved.solutions[0].id,
+      "role-1",
+      saved.solutions[0].loadouts[0].equipment,
+    ),
+  ).toThrow(/older acquisition policy/);
+});
 function evaluation(proposed: Record<string, number> = {}) {
   const fixed = {
     status: "valid",

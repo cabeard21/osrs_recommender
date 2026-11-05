@@ -161,6 +161,7 @@ export interface PotionDefinition {
   name: string;
 }
 export interface Draft {
+  includeUntradeables?: boolean;
   potions?: PotionPolicy;
   targetInputs?: Record<string, string>;
   targetSelection?: TargetSelection;
@@ -188,6 +189,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    include_untradeables?: boolean;
     potions?: PotionPolicy;
     support_policy?: SupportPolicy;
     secondary_priority?: SecondaryPriority;
@@ -321,6 +323,7 @@ export interface RunningCostFrontierGroup {
   }[];
 }
 export interface JointSolutionDTO {
+  unowned_untradeable_item_ids?: number[];
   potions?: PotionSummary;
   running_cost?: RunningCost;
   secondary_priority?: SecondaryPriority;
@@ -492,6 +495,7 @@ interface TrialIdentity {
   equipment: Equipment;
 }
 export interface FixedEvaluation {
+  unowned_untradeable_item_ids?: number[];
   status: "valid" | "invalid" | "unsupported";
   equipment: Record<string, number>;
   performance: CombatPerformance | null;

@@ -2,6 +2,7 @@ import { EquipmentBonuses } from "./EquipmentBonuses";
 import type { Trial } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { PurchaseRows } from "./PurchaseRows";
+import { UntradeablesToObtain } from "./UntradeablesToObtain";
 
 type LiveTrial = Extract<Trial, { source: "live" }>;
 const number = (value: number, digits = 2) => value.toFixed(digits);
@@ -147,6 +148,10 @@ export function TrialComparison({
           : `${gp(proposed.purchase_cost_gp)} additional purchases`}
       </p>
       <PurchaseRows purchases={proposed.purchases} itemName={itemName} />
+      <UntradeablesToObtain
+        ids={proposed.unowned_untradeable_item_ids}
+        itemName={itemName}
+      />
       {proposed.assumed_item_ids.length > 0 && (
         <p className="notice">
           Hypothetically acquired IDs: {proposed.assumed_item_ids.join(", ")}.

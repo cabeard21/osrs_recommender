@@ -123,8 +123,9 @@ export function ConfigurationPanel() {
         </p>
         {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
           <p className="notice">
-            Budget is 0, so gear must already be owned. Ammo and darts are
-            exempt.
+            {draft.includeUntradeables
+              ? "Budget is 0, so tradeable gear must already be owned. Eligible untradeables are considered as hypothetical upgrades. Ammo and darts are exempt."
+              : "Budget is 0, so gear must already be owned. Ammo and darts are exempt."}
           </p>
         )}
       </div>
@@ -226,6 +227,27 @@ export function ConfigurationPanel() {
           <option value="future">Hypothetical access</option>
         </select>
       </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={draft.includeUntradeables ?? false}
+          disabled={draft.mode === "owned"}
+          onChange={(event) =>
+            change({ includeUntradeables: event.target.checked })
+          }
+        />{" "}
+        Consider unowned untradeables
+      </label>
+      <p>
+        Include eligible untradeables as hypothetical upgrades. Obtain these
+        separately; they do not use the GP budget. Skill and quest wear
+        requirements still apply.
+      </p>
+      {draft.mode === "owned" && (
+        <p>
+          Observed owned only excludes unowned gear regardless of this setting.
+        </p>
+      )}
       <p className="green">✓ Item requirements are enforced</p>
       <label>
         Optimization mode

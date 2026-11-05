@@ -12,6 +12,7 @@ import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { PurchaseRows, purchaseSummary } from "./PurchaseRows";
+import { UntradeablesToObtain } from "./UntradeablesToObtain";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
@@ -265,6 +266,10 @@ export function LiveResultWorkspace() {
             </p>
             <PurchaseRows
               purchases={selected?.purchases ?? []}
+              itemName={itemName}
+            />
+            <UntradeablesToObtain
+              ids={selected?.unowned_untradeable_item_ids}
               itemName={itemName}
             />
             <PurchaseListCopy
