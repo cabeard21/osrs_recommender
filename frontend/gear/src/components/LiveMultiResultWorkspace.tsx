@@ -114,6 +114,7 @@ export function LiveMultiResultWorkspace() {
           <p>Utility (unscored)</p>
         ) : (
           <CombatOptionSummary
+            prayerIds={loadout.selected_prayer_ids}
             performance={loadout.performance}
             option={loadout.combat_option}
             role={role}

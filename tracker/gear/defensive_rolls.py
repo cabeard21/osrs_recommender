@@ -1,7 +1,7 @@
 """Ordinary player defence rolls at the current boosted-stat snapshot.
 
 Reference: OSRS Wiki calculator src/lib/NPCVsPlayerCalc.ts,
-getPlayerDefenceRoll (reviewed 2026-11-04). No prayers or special effects.
+getPlayerDefenceRoll (reviewed 2026-11-04). Reviewed active stat prayers; no special effects.
 """
 
 from __future__ import annotations
@@ -9,8 +9,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from tracker.gear.models import EquipmentBonuses, PlayerDefenceRolls
+from tracker.gear.prayers import NO_PRAYERS, PrayerEffects
 
-MODEL_VERSION = "player-defence-roll-v1"
+MODEL_VERSION = "player-defence-roll-v2"
 STYLES = ("stab", "slash", "crush", "ranged", "magic")
 
 
@@ -25,11 +26,16 @@ def required_defensive_skills(priority: str) -> frozenset[str]:
 
 
 def player_defence_rolls(
-    levels: Mapping[str, int], bonuses: EquipmentBonuses, stance: str
+    levels: Mapping[str, int],
+    bonuses: EquipmentBonuses,
+    stance: str,
+    prayers: PrayerEffects = NO_PRAYERS,
 ) -> PlayerDefenceRolls:
     """Floor weighted Magic and Defence separately before adding stance and eight."""
     defence = levels.get("defence", 0)
     magic = levels.get("magic", 0)
+    defence = defence * prayers.defence // 100
+    magic = magic * prayers.magic_defence // 100
     stance_bonus = 3 if stance in {"defensive", "longrange"} else int(stance == "controlled")
     physical = defence + stance_bonus + 8 if defence > 0 else None
     magical = (

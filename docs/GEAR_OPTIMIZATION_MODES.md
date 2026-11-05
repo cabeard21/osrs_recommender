@@ -1,5 +1,19 @@
 # Fast and Thorough gear optimization
 
+## Combat prayers
+
+Each ordinary combat role has an independent `prayers` policy: `disabled` (the default), `fixed` with `selected_ids`, or `optimize` with `allowed_ids`. An empty allowlist permits no prayers. Fixed selections must be legal combinations and satisfy account requirements; optimization considers only available legal combinations. Auto resolves prayers within each discipline, and joint loadouts may select different prayers for each role.
+
+Prayers modify ordinary attack accuracy, damage and player defence rolls. Equipment bonuses remain equipment-only, including the Prayer bonus metric. Potions apply their fresh-dose boosts before prayer effective-level calculations. Prayer effects do not grant skill levels for equipment, spell or prayer requirements.
+
+Availability uses account skills, quests and observed scroll/training unlocks. Missing unlock observations remain unknown and cannot be selected. Future mode retains skill/quest assumptions but does not assume prayer unlocks. Refresh the RuneLite companion plugin and sync to collect newly supported unlocks.
+
+Every result loadout records `selected_prayer_ids`. Fixed item comparisons submit the selected setup per role so baseline and proposed equipment use the same prayers. Saved scenarios without prayer settings run with prayers disabled.
+
+Stat prayers are assumed continuously active. Protection, drain, restoration supplies, flicking, activation actions and survival are not simulated. Prayer switches do not count as equipment actions or consume inventory slots. Prayer model and catalog versions are recorded in result assumptions; bounded gear search remains `best_found`.
+
+A local synthetic three-weapon regression fixture measured disabled/enabled prayer runs at 8/6 ms for Single, 35/70 ms for Auto with potion optimization, and 6/9 ms for joint roles. Search node counts stayed at 28, 88 and 220 respectively. These small-fixture measurements verify composition without multiplying gear searches; they do not establish full-catalog latency or deployment readiness.
+
 ## Deployment decision
 
 **Development integration only; production Thorough remains disabled by leaving production unchanged.** No production `/gear` replacement, Docker packaging change, deployment or Milestone 6 cutover is authorized or performed. A user-accepted latency/resource envelope is still required before deployment. Benchmark observations alone do not constitute that acceptance.
@@ -26,7 +40,7 @@ Ranged comparisons include reviewed ammunition consumption and automatic recover
 manual ground collection is excluded. Ordinary nondegrading melee has no attack
 resource cost. Missing prices and unreviewed charge/consumption mechanics are
 unavailable, never free. Cost recipes do not enable unsupported combat mechanics.
-Potions, prayer supplies, loot and combat downtime are excluded.
+Prayer supplies, loot and combat downtime are excluded. Combat potions use the explicitly selected fresh-dose policy.
 
 The additive `running_cost` summaries and `running_cost_frontiers` use a separate
 bounded work policy. Selecting a cost point selects its equipment and combat

@@ -10,6 +10,7 @@ import type {
 import { CombatOptionsControls } from "./CombatOptionsControls";
 import { ItemSearch } from "./ItemSearch";
 import { RoleTargetEditor } from "./RoleTargetEditor";
+import { PrayerFields, prayerCatalog } from "./PrayerFields";
 
 const STANCES: Record<Style, string[]> = {
   melee: ["accurate", "aggressive", "controlled", "defensive"],
@@ -344,6 +345,11 @@ export function RoleFields({
               onChange={onChange}
             />
           )}
+          <PrayerFields
+            policy={role.prayers}
+            catalog={prayerCatalog(context, draft)}
+            onChange={(prayers) => onChange({ prayers })}
+          />
         </>
       )}
       {isMulti && (

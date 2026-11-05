@@ -1,6 +1,6 @@
 """Ordinary auto-attack model; unsupported mechanics fail closed.
 
-No prayers, special attacks or set effects are approximated.
+Reviewed active stat prayers are supported; special attacks and set effects are not approximated.
 Accurate zero-damage rolls become one; target magic defence uses Magic level.
 """
 
@@ -19,6 +19,7 @@ from tracker.gear.models import (
     EquipmentDefinition,
     HitsplatPerformance,
 )
+from tracker.gear.prayers import NO_PRAYERS, PrayerEffects, effects
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
@@ -200,7 +201,17 @@ def evaluate_prepared_loadout(
         return CombatPerformance(
             supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
         )
-    return _calculate(weapon, style, levels, target, stance, spell, bonuses, powered_attack)
+    return _calculate(
+        weapon,
+        style,
+        levels,
+        target,
+        stance,
+        spell,
+        bonuses,
+        powered_attack,
+        effects(getattr(role, "active_prayer_ids", ())),
+    )
 
 
 def _armoured_mean(maximum: int, armour: int) -> float:
@@ -225,6 +236,7 @@ def _calculate(
     spell: str,
     bonuses: EquipmentBonuses,
     powered_attack: str | None,
+    prayers: PrayerEffects = NO_PRAYERS,
 ) -> CombatPerformance:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
@@ -244,8 +256,10 @@ def _calculate(
                 for name, (level, damage) in ELEMENTAL_SPELLS.items()
                 if name.endswith("_" + tier) and level <= levels["magic"]
             )
-        max_hit = floor(base * (100 + bonuses.magic_damage) / 100)
-        attack = (levels["magic"] + 9 + (2 if stance == "accurate" else 0)) * (bonuses.magic + 64)
+        max_hit = floor(base * (100 + bonuses.magic_damage + prayers.magic_damage) / 100)
+        attack = (
+            levels["magic"] * prayers.magic_accuracy // 100 + 9 + (2 if stance == "accurate" else 0)
+        ) * (bonuses.magic + 64)
         element = (
             spell.split("_")[0] if powered_attack is None and spell in ELEMENTAL_SPELLS else None
         )
@@ -290,10 +304,20 @@ def _calculate(
         )
         if is_ranged and stance == "accurate":
             strength_stance = 3
-        effective_strength = levels["ranged" if is_ranged else "strength"] + 8 + strength_stance
+        effective_strength = (
+            levels["ranged" if is_ranged else "strength"]
+            * (prayers.ranged_strength if is_ranged else prayers.strength)
+            // 100
+            + 8
+            + strength_stance
+        )
         strength_bonus = bonuses.ranged_strength if is_ranged else bonuses.melee_strength
         max_hit = floor(0.5 + effective_strength * (strength_bonus + 64) / 640)
-        attack = (levels[skill] + 8 + attack_stance) * (getattr(bonuses, style) + 64)
+        attack = (
+            levels[skill] * (prayers.ranged_accuracy if is_ranged else prayers.attack) // 100
+            + 8
+            + attack_stance
+        ) * (getattr(bonuses, style) + 64)
         defence = (target.defence_level + 9) * (getattr(target.bonuses, style) + 64)
         if is_ranged:
             # Ordinary bows use standard defence; ordinary crossbows heavy,
@@ -346,10 +370,11 @@ def _calculate(
         dps=expected / interval,
         attack_roll=attack,
         defence_roll=defence,
-        player_defence_rolls=player_defence_rolls(levels, bonuses, stance),
+        player_defence_rolls=player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
         limitations=(
-            "Fresh combat levels only; no prayers, boost decay, combat downtime "
+            "Fresh combat levels and sustained active stat prayers only; "
+            "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
         )
         + (

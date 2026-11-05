@@ -6,6 +6,7 @@ import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
 import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import org.junit.Test;
 
 import java.util.Map;
@@ -26,6 +27,47 @@ import static org.mockito.Mockito.when;
  */
 public class CollectorMappingTest
 {
+	@Test
+	public void prayerUnlockCollectionUsesPermanentFlags()
+	{
+		final Client client = mock(Client.class);
+		when(client.getIntStack()).thenReturn(new int[]{0});
+		when(client.getVarbitValue(VarbitID.KR_KNIGHTWAVES_STATE)).thenReturn(8);
+		when(client.getVarbitValue(VarbitID.PRAYER_DEADEYE_UNLOCKED)).thenReturn(1);
+		when(client.getVarbitValue(VarbitID.PRAYER_MYSTIC_VIGOUR_UNLOCKED)).thenReturn(0);
+		when(client.getVarbitValue(VarbitID.PRAYER_ZEAL_UNLOCKED)).thenReturn(1);
+		final Map<String, String> states = new java.util.HashMap<>();
+		for (AccountSnapshot.Unlock unlock : UnlockCollector.collect(client))
+		{
+			states.put(unlock.toJson().get("key").getAsString(),
+				unlock.toJson().get("state").getAsString());
+		}
+		assertEquals("unlocked", states.get("knight_waves"));
+		assertEquals("unlocked", states.get("deadeye"));
+		assertEquals("locked", states.get("mystic_vigour"));
+		assertEquals("unlocked", states.get("zeal"));
+	}
+
+	@Test
+	public void knightWavesRequiresAllEightWaves()
+	{
+		for (int progress : new int[]{-1, 0, 1, 7, 8})
+		{
+			final Client client = mock(Client.class);
+			when(client.getVarbitValue(VarbitID.KR_KNIGHTWAVES_STATE)).thenReturn(progress);
+			assertEquals(progress < 0 ? "unknown" : progress > 7 ? "unlocked" : "locked",
+				UnlockCollector.knightWaves(client).toJson().get("state").getAsString());
+		}
+	}
+
+	@Test
+	public void unexpectedPrayerFlagStaysUnknown()
+	{
+		assertEquals("unknown", UnlockCollector.prayerUnlock("zeal", -1).toJson()
+			.get("state").getAsString());
+		assertEquals("unknown", UnlockCollector.prayerUnlock("zeal", 2).toJson()
+			.get("state").getAsString());
+	}
 	/** The contract's `content_key`: lowercase, digits, underscores, no leading underscore. */
 	private static final Pattern CONTENT_KEY = Pattern.compile("^[a-z0-9][a-z0-9_]*$");
 

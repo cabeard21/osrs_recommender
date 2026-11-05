@@ -367,6 +367,8 @@ export function parseOptimization(
           metrics: performanceMetrics(loadout.performance as CombatPerformance),
           performance: loadout.performance as CombatPerformance,
           combatOption: loadout.combat_option as CombatOption | undefined,
+          selectedPrayerIds: loadout.selected_prayer_ids as
+            string[] | undefined,
           discipline: loadout.discipline as
             import("./contracts").Style | undefined,
         },
@@ -602,6 +604,11 @@ export function optimizationRequest(scenario: Scenario) {
       stance: role.stance,
       spell: role.spell,
       ...(role.combatOptions ? { combat_options: role.combatOptions } : {}),
+      prayers: role.prayers ?? {
+        mode: "disabled",
+        selected_ids: [],
+        allowed_ids: [],
+      },
       weight: role.weight,
       locks: Object.fromEntries(
         Object.entries(role.locks).map(([slot, id]) => [
@@ -1219,6 +1226,16 @@ export class HttpGearClient implements GearClient {
         selected_potion_ids:
           result.solutions.find((s) => s.id === solution)?.live?.potions
             ?.selected_ids ?? [],
+        selected_prayer_ids: {
+          [role]:
+            result.solutions.find((s) => s.id === solution)?.live?.loadouts[
+              role
+            ]?.selected_prayer_ids ??
+            result.solutions
+              .find((s) => s.id === solution)
+              ?.loadouts.find((l) => l.roleId === role)?.selectedPrayerIds ??
+            [],
+        },
         baseline_loadouts: { [role]: concreteEquipment(baseline) },
         proposed_loadouts: { [role]: concreteEquipment(proposal) },
         ...(combatOption

@@ -93,6 +93,7 @@ def _trial(
                 "stance": selected.stance,
                 "spell": selected.spell or role.spell,
                 "powered_attack": selected.powered_attack,
+                "active_prayer_ids": tuple(loadout.get("selected_prayer_ids", ())),
             }
         )
         if role.combat_options is not None and not any(
@@ -113,7 +114,10 @@ def _trial(
         return None
     key = (role.id, tuple(sorted(equipment.items())))
     search.performance_cache[key] = performance
-    search.option_cache[key] = option
+    search.option_cache[key] = {
+        **(option or {}),
+        "__prayer_ids": loadout.get("selected_prayer_ids", []),
+    }
     assignment = {rid: row["equipment"] for rid, row in best["loadouts"].items()}
     assignment = {**assignment, role.id: equipment}
     # Use the search's objective: CostSearch uses negative GP/damage here.
@@ -147,7 +151,10 @@ def refine_finalist(
         for rid, row in best["loadouts"].items():
             key = (rid, tuple(sorted(row["equipment"].items())))
             search.performance_cache[key] = row["performance"]
-            search.option_cache[key] = row["combat_option"]
+            search.option_cache[key] = {
+                **(row["combat_option"] or {}),
+                "__prayer_ids": row.get("selected_prayer_ids", []),
+            }
         changed = False
         for role, equipment in _trials(search, best):
             identity = (

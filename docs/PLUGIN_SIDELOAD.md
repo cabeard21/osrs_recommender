@@ -3,6 +3,29 @@
 Side-loading from a local build is **the only supported distribution path for v1** (SDD §13, D5).
 Plugin Hub submission is explicitly out of scope and must not touch the critical path.
 
+## Prayer unlock observations
+
+Gear prayer eligibility uses permanent account unlock observations, never active prayer flags.
+RuneLite remains pinned to 1.13.4. Its [generated VarbitID constants](https://github.com/runelite/runelite/blob/runelite-parent-1.13.4/runelite-api/src/main/java/net/runelite/api/gameval/VarbitID.java)
+provide the following mappings:
+
+| Snapshot key | Varbit constant | ID | Unlocked state |
+|---|---|---|---|
+| `knight_waves` | `KR_KNIGHTWAVES_STATE` | 3909 | Greater than 7 |
+| `deadeye` | `PRAYER_DEADEYE_UNLOCKED` | 16097 | 1 |
+| `mystic_vigour` | `PRAYER_MYSTIC_VIGOUR_UNLOCKED` | 16098 | 1 |
+| `zeal` | `PRAYER_ZEAL_UNLOCKED` | 16578 | 1 |
+
+Knight Waves completion follows the client [script10172](https://github.com/runelite/cs2-scripts/blob/d022d6f70b76e3890cab1287a7f45e905c2848d8/scripts/%5Bproc%2Cscript10172%5D.cs2)
+threshold. Negative training progress and nonbinary scroll flags are reported as unknown.
+The existing Rigour and Augury observations remain unchanged. Quest completion does not substitute
+for the training observation. Older plugins omit these new keys, which Gear treats as unknown.
+No active prayer selections or combat telemetry are added to the sync payload.
+
+For formula review, Zeal's client [script10194](https://github.com/runelite/cs2-scripts/blob/d022d6f70b76e3890cab1287a7f45e905c2848d8/scripts/%5Bproc%2Cscript10194%5D.cs2)
+also checks Knight Waves; [script10193](https://github.com/runelite/cs2-scripts/blob/d022d6f70b76e3890cab1287a7f45e905c2848d8/scripts/%5Bproc%2Cscript10193%5D.cs2)
+checks 75 Attack, 75 Strength, and 70 Defence. The backend owns prayer use requirements.
+
 ## Prerequisites
 
 | Need | Notes |

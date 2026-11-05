@@ -82,6 +82,10 @@ public final class UnlockCollector
 
 		unlocks.add(unlock("rigour", client.getVarbitValue(VarbitID.PRAYER_RIGOUR_UNLOCKED)));
 		unlocks.add(unlock("augury", client.getVarbitValue(VarbitID.PRAYER_AUGURY_UNLOCKED)));
+		unlocks.add(prayerUnlock("deadeye", client.getVarbitValue(VarbitID.PRAYER_DEADEYE_UNLOCKED)));
+		unlocks.add(prayerUnlock("mystic_vigour", client.getVarbitValue(VarbitID.PRAYER_MYSTIC_VIGOUR_UNLOCKED)));
+		unlocks.add(prayerUnlock("zeal", client.getVarbitValue(VarbitID.PRAYER_ZEAL_UNLOCKED)));
+		unlocks.add(knightWaves(client));
 		unlocks.add(daeroTraining(client));
 
 		unlocks.addAll(questGranted(client));
@@ -99,6 +103,21 @@ public final class UnlockCollector
 		final String state = progress == 10 ? UNLOCKED
 			: progress >= 0 && progress <= 9 ? LOCKED : "unknown";
 		return new AccountSnapshot.Unlock("daero_training_complete", state);
+	}
+
+	/** Permanent training progress, independent of the currently active prayer. */
+	static AccountSnapshot.Unlock knightWaves(Client client)
+	{
+		final int progress = client.getVarbitValue(VarbitID.KR_KNIGHTWAVES_STATE);
+		return new AccountSnapshot.Unlock("knight_waves",
+			progress < 0 ? "unknown" : progress > 7 ? UNLOCKED : LOCKED);
+	}
+
+	/** Only the reviewed binary unlock states are interpreted. */
+	static AccountSnapshot.Unlock prayerUnlock(String key, int value)
+	{
+		return new AccountSnapshot.Unlock(key,
+			value == 1 ? UNLOCKED : value == 0 ? LOCKED : "unknown");
 	}
 
 	/** The spellbook and Ancients rows, read off quest completion rather than the active book. */

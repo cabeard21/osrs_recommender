@@ -43,6 +43,18 @@ from tracker.gear.models import (
     TargetSelection,
 )
 from tracker.gear.potions import PotionPolicy, boosted_levels, potion_summary
+from tracker.gear.prayers import (
+    CATALOG_REVISION as PRAYER_CATALOG_REVISION,
+)
+from tracker.gear.prayers import (
+    MODEL_VERSION as PRAYER_MODEL_VERSION,
+)
+from tracker.gear.prayers import (
+    PrayerPolicy,
+)
+from tracker.gear.prayers import (
+    setups as prayer_setups,
+)
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
@@ -88,6 +100,8 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    prayers: PrayerPolicy = PrayerPolicy()
+    active_prayer_ids: tuple[str, ...] = Field(default=(), exclude=True)
     id: str = Field(min_length=1, max_length=40, pattern=r"^[a-zA-Z0-9_-]+$")
     style: Literal["stab", "slash", "crush", "ranged", "magic", "special"]
     stance: Literal["accurate", "aggressive", "controlled", "defensive", "rapid", "longrange"] = (
@@ -107,6 +121,8 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.active_prayer_ids:
+            raise ValueError("active_prayer_ids is resolved internally, not a request field")
         if self.allowed_disciplines is not None:
             if len(set(self.allowed_disciplines)) != len(self.allowed_disciplines):
                 raise ValueError("allowed_disciplines must be unique")
@@ -368,7 +384,35 @@ class _Search:
                         }
                     )
                     configured.append((selected, option))
-            self.configured_option_cache[key] = tuple(configured)
+            elif role.prayers.mode != "disabled":
+                problem = (
+                    ancient_spell_problem(
+                        weapon, self.snapshot, role.spell, role.stance, self.levels
+                    )
+                    if role.style == "magic" and role.powered_attack is None
+                    else None
+                )
+                if problem is None:
+                    configured.append(
+                        (
+                            role,
+                            CombatOption(
+                                attack_type=role.style,
+                                stance=role.stance,
+                                spell=role.spell if role.style == "magic" else None,
+                                powered_attack=role.powered_attack,
+                            ),
+                        )
+                    )
+            self.configured_option_cache[key] = tuple(
+                (selected.model_copy(update={"active_prayer_ids": ids}), option)
+                for selected, option in configured
+                for ids in prayer_setups(
+                    role.prayers,
+                    self.snapshot,
+                    {key: value.level for key, value in self.snapshot.skills.items()},
+                )
+            )
         return self.configured_option_cache[key]
 
     def scoring_options(
@@ -394,7 +438,13 @@ class _Search:
                     element, tier = option.spell.split("_")
                     element = "air" if element == "wind" else element
                     matched = element == target.weakness_element and target.weakness_percent > 0
-                    identity = ("elemental", option.stance, tier, matched)
+                    identity = (
+                        "elemental",
+                        option.stance,
+                        tier,
+                        matched,
+                        configured.active_prayer_ids,
+                    )
                 previous = representatives.get(identity)
                 if previous is None or (option.spell or "") > (previous[1].spell or ""):
                     representatives[identity] = (configured, option)
@@ -427,7 +477,7 @@ class _Search:
                         "Special role is unscored; no damage or utility benefit assumed."
                     ],
                 }
-            elif role.combat_options is not None:
+            elif role.combat_options is not None or role.prayers.mode != "disabled":
                 weapon = self.items.get(equipment.get("weapon", -1))
                 evaluated = []
                 options = self.scoring_options(role, weapon)
@@ -440,9 +490,9 @@ class _Search:
                         else evaluate_prepared_loadout(prepared, configured, self.levels)
                     ).model_dump(mode="json")
                     if performance["supported"]:
-                        evaluated.append((performance, option))
+                        evaluated.append((performance, option, configured.active_prayer_ids))
                 if evaluated:
-                    result, selected = max(
+                    result, selected, selected_prayers = max(
                         evaluated,
                         key=lambda row: (
                             *(
@@ -456,11 +506,17 @@ class _Search:
                             row[1].attack_type,
                             row[1].stance,
                             row[1].spell or "",
+                            -len(row[2]),
+                            tuple(reversed(row[2])),
                         ),
                     )
                     self.option_cache[key] = selected.model_dump(
                         mode="json", include={"attack_type", "stance", "spell", "powered_attack"}
                     )
+                    self.option_cache[key] = {
+                        **(self.option_cache[key] or {}),
+                        "__prayer_ids": list(selected_prayers),
+                    }
                 else:
                     result = {
                         "supported": False,
@@ -503,7 +559,13 @@ class _Search:
         self, equipment: Mapping[str, int], role: RoleConfig
     ) -> dict[str, Any] | None:
         self.performance(equipment, role)
-        return self.option_cache.get((role.id, tuple(sorted(equipment.items()))))
+        option = self.option_cache.get((role.id, tuple(sorted(equipment.items()))))
+        return {k: v for k, v in option.items() if k != "__prayer_ids"} if option else None
+
+    def selected_prayers(self, equipment: Mapping[str, int], role: RoleConfig) -> list[str]:
+        self.performance(equipment, role)
+        option = self.option_cache.get((role.id, tuple(sorted(equipment.items())))) or {}
+        return list(option.get("__prayer_ids", ()))
 
     def secondary(self, loadouts: Mapping[str, Mapping[str, int]]) -> float:
         """Normalize active time across scored roles; utility roles contribute nothing."""
@@ -813,6 +875,7 @@ class _Search:
                     ),
                     "performance": self.performance(loadouts[r.id], r),
                     "combat_option": self.combat_option(loadouts[r.id], r),
+                    "selected_prayer_ids": self.selected_prayers(loadouts[r.id], r),
                 }
                 for r in self.request.roles
             },
@@ -1192,6 +1255,9 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     assumptions = {
+        "prayer_model_version": PRAYER_MODEL_VERSION,
+        "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
+        "prayers": {role.id: role.prayers.model_dump(mode="json") for role in request.roles},
         **support_context(catalog, request.support_policy),
         "skills": dict(request.skill_overrides),
         "quests": dict(request.quest_overrides),

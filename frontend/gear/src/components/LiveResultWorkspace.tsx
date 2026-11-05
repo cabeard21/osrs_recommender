@@ -213,6 +213,9 @@ export function LiveResultWorkspace() {
               differenceLabel="Changed"
             />
             <CombatOptionSummary
+              prayerIds={
+                selected?.loadouts[loadout.roleId]?.selected_prayer_ids
+              }
               performance={selected?.loadouts[loadout.roleId]?.performance}
               option={loadout.combatOption}
               role={request.roles[0]}

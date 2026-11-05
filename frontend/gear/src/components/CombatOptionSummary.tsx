@@ -5,6 +5,7 @@ export function CombatOptionSummary({
   role,
   weapon,
   performance,
+  prayerIds,
 }: {
   option?: CombatOption;
   role: Pick<
@@ -13,6 +14,7 @@ export function CombatOptionSummary({
   >;
   weapon: string;
   performance?: CombatPerformance;
+  prayerIds?: string[];
 }) {
   if (!option && role.combatOptions) {
     return (
@@ -36,6 +38,14 @@ export function CombatOptionSummary({
         {weapon} · {attack} · {stance}
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
+      {prayerIds && (
+        <p aria-label="Active combat prayers">
+          Prayers:{" "}
+          {prayerIds.length
+            ? prayerIds.map((id) => id.replaceAll("_", " ")).join(", ")
+            : "Off"}
+        </p>
+      )}
       {performance?.hitsplats && performance.hitsplats.length > 1 && (
         <p aria-label="Hitsplat details">
           {performance.hitsplats

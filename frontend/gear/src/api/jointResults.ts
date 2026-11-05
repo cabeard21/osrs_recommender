@@ -108,6 +108,7 @@ export function parseJointSolution(
           ? performanceMetrics(performance)
           : null,
       performance,
+      selectedPrayerIds: loadout.selected_prayer_ids as string[] | undefined,
       discipline: loadout.discipline as import("./contracts").Style | undefined,
       combatOption: loadout.combat_option as
         import("./contracts").CombatOption | undefined,

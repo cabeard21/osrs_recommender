@@ -260,7 +260,10 @@ def explore(
         if identity in seen:
             return
         seen.add(identity)
-        if any(r.combat_options is not None for r in search.request.roles):
+        if any(
+            r.combat_options is not None or r.prayers.mode != "disabled"
+            for r in search.request.roles
+        ):
             option_candidates.append(solution)
             if len(option_candidates) > 256:
                 option_candidates[:] = diverse(option_candidates, _solution_key, 128)
@@ -486,7 +489,7 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
     states = [seed]
     for role in search.request.roles:
         allowed = role.combat_options
-        if allowed is None or role.style == "special":
+        if (allowed is None and role.prayers.mode == "disabled") or role.style == "special":
             continue
         expanded = list(states)
         for state in states:
@@ -507,12 +510,19 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
                 for rid, loadout in state["loadouts"].items():
                     key = (rid, tuple(sorted(loadout["equipment"].items())))
                     variant.performance_cache[key] = loadout["performance"]
-                    variant.option_cache[key] = loadout["combat_option"]
+                    variant.option_cache[key] = {
+                        **(loadout["combat_option"] or {}),
+                        "__prayer_ids": loadout.get("selected_prayer_ids", []),
+                    }
                 key = (role.id, tuple(sorted(equipment.items())))
                 variant.performance_cache[key] = performance
                 variant.option_cache[key] = option.model_dump(
                     mode="json", include={"attack_type", "stance", "spell", "powered_attack"}
                 )
+                variant.option_cache[key] = {
+                    **variant.option_cache[key],
+                    "__prayer_ids": list(configured.active_prayer_ids),
+                }
                 assignment = {rid: row["equipment"] for rid, row in state["loadouts"].items()}
                 solution = variant.solution(assignment, None)
                 if solution is not None:
