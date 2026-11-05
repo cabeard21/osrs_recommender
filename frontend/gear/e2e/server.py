@@ -62,7 +62,15 @@ if __name__ == "__main__":
             with factory() as session:
                 player = session.query(Player).first()
                 player.last_sync_at = now
-                for skill in ("attack", "strength", "defence", "ranged", "magic", "hitpoints", "prayer"):
+                for skill in (
+                    "attack",
+                    "strength",
+                    "defence",
+                    "ranged",
+                    "magic",
+                    "hitpoints",
+                    "prayer",
+                ):
                     session.add(
                         SkillSnapshot(
                             player_id=player.id,
