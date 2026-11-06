@@ -1,4 +1,5 @@
 import { validateRunningCost } from "./runningCosts";
+import { purchaseItemIds } from "./preparedPurchases";
 import { validateUntradeables } from "./untradeables";
 import { slots } from "./contracts";
 import { validateSecondaryPriority } from "./secondaryPriorities";
@@ -66,6 +67,11 @@ export function parseJointSolution(
   const loadouts = roles.map((role) => {
     const loadout = object(byRole[role.id]),
       equipment = equipmentMap(loadout.equipment);
+    if (
+      loadout.preparations !== undefined &&
+      !Array.isArray(loadout.preparations)
+    )
+      throw new Error("Invalid purchase preparation list");
     validateRunningCost(loadout.running_cost);
     if (
       role.autoDiscipline &&
@@ -131,13 +137,19 @@ export function parseJointSolution(
   )
     throw new Error("Invalid required equipment union");
   const purchaseIds = new Set<number>();
+  const allowedPurchases = purchaseItemIds(
+    required,
+    roles.flatMap((role) => object(byRole[role.id]).preparations ?? []),
+    items,
+  );
   for (const purchase of row.purchases) {
     const p = requireFields(purchase, {
       item_id: "number",
       conditional: "boolean",
     });
     if (
-      !required.includes(Number(p.item_id)) ||
+      !Number.isSafeInteger(p.item_id) ||
+      !allowedPurchases.has(Number(p.item_id)) ||
       purchaseIds.has(Number(p.item_id)) ||
       (p.cost_gp !== null && !integer(p.cost_gp))
     )

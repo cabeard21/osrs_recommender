@@ -215,6 +215,7 @@ export function LiveResultWorkspace() {
               differenceLabel="Changed"
             />
             <CombatOptionSummary
+              preparations={selected?.loadouts[loadout.roleId]?.preparations}
               prayerIds={
                 selected?.loadouts[loadout.roleId]?.selected_prayer_ids
               }

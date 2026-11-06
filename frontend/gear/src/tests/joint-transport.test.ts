@@ -203,6 +203,64 @@ it("retains authoritative equipment actions and counts separately from gear inve
   expect(parsed.purchases).toEqual([4151]);
   expect(parsed.shared).toEqual([]);
 });
+
+it("accepts one market purchase for a prepared staff shared by both roles", () => {
+  const { scenario, reply } = example();
+  const raw = structuredClone(
+    reply.result.selected_solution,
+  ) as JointSolutionDTO;
+  const preparation = {
+    source_item_id: null,
+    usable_item_id: 28585,
+    market_item_id: 28583,
+    charging_required: true,
+    charges: "unknown" as const,
+    activation_reserve: [],
+    message: "Charging required",
+  };
+  for (const loadout of Object.values(raw.loadouts)) {
+    loadout.equipment = { weapon: 28585 };
+    loadout.preparations = [preparation];
+  }
+  raw.carried_item_ids = [28585];
+  raw.purchases = [{ item_id: 28583, cost_gp: 92542, conditional: true }];
+  raw.purchase_cost_gp = 92542;
+  const original = context.items.map(parseItem).find((i) => i.id === 4151)!;
+  const items = [
+    {
+      ...original,
+      id: 28585,
+      name: "Warped sceptre",
+      facts: {
+        ...original.facts!,
+        item_id: 28585,
+        numeric_item_id: 28585,
+        preparation,
+      },
+    },
+  ];
+  const parsed = parseJointSolution(raw, scenario, items, "curve-1", 1);
+  expect(parsed.purchases).toEqual([28583]);
+  expect(parsed.shared).toEqual([28585]);
+  expect(parsed.cost).toBe(92542);
+  raw.purchases.push(raw.purchases[0]);
+  expect(() => parseJointSolution(raw, scenario, items, "curve-1", 1)).toThrow(
+    /purchase union/,
+  );
+  raw.purchases = [{ item_id: 123, cost_gp: 1, conditional: false }];
+  expect(() => parseJointSolution(raw, scenario, items, "curve-1", 1)).toThrow(
+    /purchase union/,
+  );
+  raw.purchases = [{ item_id: 28585, cost_gp: 92542, conditional: true }];
+  expect(() => parseJointSolution(raw, scenario, items, "curve-1", 1)).toThrow(
+    /purchase union/,
+  );
+  raw.purchases = [{ item_id: 28583, cost_gp: 92542, conditional: true }];
+  Object.assign(raw.loadouts["role-1"], { preparations: preparation });
+  expect(() => parseJointSolution(raw, scenario, items, "curve-1", 1)).toThrow(
+    /preparation/,
+  );
+});
 const invalidSolutions: [string, (raw: JointSolutionDTO) => void][] = [
   [
     "negative occupancy",

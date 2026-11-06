@@ -43,6 +43,20 @@ class EquipmentDefinition(GearModel):
     # Reviewed autocast spell IDs only. An empty tuple makes compatibility unknown.
     spell_compatibility: tuple[str, ...] = ()
     powered_attack: str | None = None
+    powered_attack_model: (
+        Literal[
+            "warped",
+            "bone",
+            "seas",
+            "swamp",
+            "sanguinesti",
+            "shadow",
+            "ayak",
+            "thammaron",
+            "accursed",
+        ]
+        | None
+    ) = None
     powered_attack_base_max_hit: int | None = Field(default=None, ge=1)
     powered_attack_stances: tuple[str, ...] = ()
     two_handed: bool = False
@@ -72,6 +86,7 @@ class TargetSelection(GearModel):
 
 
 class CombatTarget(GearModel):
+    traits: tuple[str, ...] = ()
     name: str = "Generic target (Defence 1, zero bonuses)"
     defence_level: int = Field(default=1, ge=0, le=10000)
     magic_level: int = Field(default=1, ge=0, le=10000)

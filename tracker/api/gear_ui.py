@@ -30,6 +30,8 @@ from tracker.gear.models import EquipmentDefinition
 from tracker.gear.npcs import npc_catalog
 from tracker.gear.optimizer import SLOTS
 from tracker.gear.potions import catalog as potion_catalog
+from tracker.gear.powered import review as powered_review
+from tracker.gear.powered import supports_powered
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.prayers import catalog as prayer_catalog
@@ -180,6 +182,21 @@ class Price(DTO):
     low_trade_at: datetime | None
 
 
+class ActivationResource(DTO):
+    item_id: int
+    quantity: int
+
+
+class Preparation(DTO):
+    source_item_id: int | None
+    usable_item_id: int
+    market_item_id: int | None
+    charging_required: bool
+    charges: Literal["unknown"]
+    activation_reserve: list[ActivationResource]
+    message: str
+
+
 class ItemResponse(DTO):
     item_id: int
     numeric_item_id: int
@@ -187,6 +204,8 @@ class ItemResponse(DTO):
     slot: ItemSlot
     equipment: EquipmentDefinition
     ownership: Ownership
+    planning_ownership: Ownership | None = None
+    preparation: Preparation | None = None
     wear: Wear
     acquisition: Literal["tradeable", "untradeable", "unknown"]
     acquisition_descriptions: list[str]
@@ -319,9 +338,7 @@ def combat_option_capabilities(
 
         levels = boosted_levels(levels, ("magic",))
     powered_longrange = any(
-        weapon.powered_attack
-        and weapon.powered_attack_base_max_hit
-        and "longrange" in weapon.powered_attack_stances
+        supports_powered(weapon) and "longrange" in weapon.powered_attack_stances
         for weapon in gear.equipment_catalog().items.values()
     )
     attack_types: list[dict[str, Any]] = []
@@ -382,21 +399,19 @@ def combat_option_capabilities(
             }
         )
     for weapon in gear.equipment_catalog().items.values():
-        if (
-            not weapon.powered_attack
-            or not weapon.powered_attack_base_max_hit
-            or not weapon.powered_attack_stances
-        ):
+        if not supports_powered(weapon):
             continue
         options = enumerate_combat_options(weapon, account, discipline="magic", levels=levels)
         powered_option = next(
             (row for row in options if row.powered_attack == weapon.powered_attack), None
         )
         if powered_option is not None:
+            powered = powered_review(weapon.id)
             spells.append(
                 {
                     "id": f"powered:{weapon.id}",
-                    "level": 1,
+                    "name": weapon.name,
+                    "level": powered.level if powered else 1,
                     "available": powered_option.available,
                     "reason": powered_option.reason,
                 }
@@ -455,7 +470,7 @@ def context(request: Request) -> ContextResponse:
             "configurations": ["melee", "ranged", "magic"],
         },
         catalog_version=gear.equipment_catalog().revision,
-        model_version="normal-attacks-v1",
+        model_version="normal-attacks-v2-powered",
         price_revision=hashlib.sha256(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),

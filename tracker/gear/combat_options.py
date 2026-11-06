@@ -19,6 +19,8 @@ from tracker.domain.types import Tri
 from tracker.gear.combat import ANCIENT_SPELLS, IBAN_STAVES, SPELLS
 from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.powered import review as powered_review
+from tracker.gear.powered import supports_powered
 
 MELEE_TYPES = frozenset({"stab", "slash", "crush"})
 RANGED_TYPES = frozenset({"light", "standard", "heavy"})
@@ -219,14 +221,13 @@ def enumerate_combat_options(
             )
             for stance in sorted(stances)
         )
-    if (
-        weapon is not None
-        and weapon.powered_attack
-        and weapon.powered_attack_base_max_hit
-        and weapon.powered_attack_stances
-    ):
+    if weapon is not None and supports_powered(weapon):
+        powered = powered_review(weapon.id)
         status, reasons = _account_status(
-            (_skill_status(snapshot, "magic", 1), "Magic level is unknown"),
+            (
+                _skill_status(snapshot, "magic", powered.level if powered else 1),
+                "Required Magic level is not confirmed",
+            ),
         )
         options.extend(
             CombatOption(

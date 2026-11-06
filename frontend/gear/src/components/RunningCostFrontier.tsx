@@ -22,6 +22,16 @@ function CostDetails({ cost }: { cost?: RunningCost }) {
           {cost.reasons.join(" ") || "Consumption or prices unavailable."}
         </p>
       )}
+      {cost.charging_assumption && <p>{cost.charging_assumption}</p>}
+      {cost.charging_alternatives?.map((alternative, index) => (
+        <p key={index}>
+          Charging alternative:{" "}
+          {alternative.resources
+            .map((r) => `${r.required_quantity}  -  ${r.name}`)
+            .join(" + ")}{" "}
+          - {number(alternative.gp_per_attack)} GP/attack
+        </p>
+      ))}
       {cost.resources.map((r, index) => (
         <p key={`${r.item_id}-${index}`}>
           {r.name}:{" "}
@@ -178,7 +188,9 @@ export function RunningCostFrontier({
                       {Object.entries(p.solution.loadouts).map(([role, l]) => (
                         <div key={role}>
                           {(
-                            l.combat_option?.powered_attack ??
+                            (l.combat_option?.powered_attack
+                              ? "Built-in spell"
+                              : null) ??
                             l.combat_option?.spell ??
                             l.discipline ??
                             "Attack"

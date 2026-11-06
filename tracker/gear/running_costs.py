@@ -16,9 +16,16 @@ from typing import Any
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.ammo import cape_recovery_rate
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.powered import STAFFS, review
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v2"
+COST_MODEL_VERSION = "ordinary-resource-cost-v3"
+_RESOURCE_NAMES = {
+    995: "Coins",
+    12934: "Zulrah's scales",
+    21820: "Revenant ether",
+    31111: "Demon tear",
+}
 _RUNES = {
     556: "Air rune",
     555: "Water rune",
@@ -129,11 +136,15 @@ _THROWN = frozenset(
 def resource_item_ids() -> frozenset[int]:
     """Extra market scope; normal supported ammunition is already equipment-scoped."""
     from tracker.gear.potions import resource_item_ids as potion_item_ids
+    from tracker.gear.powered import MARKET_FORMS
 
     return (
         potion_item_ids()
+        | MARKET_FORMS
         | frozenset(_RUNES)
-        | frozenset(i for recipe in _CHARGES.values() for i, _ in recipe if i != 995)
+        | frozenset(
+            i for staff in STAFFS for recipe in staff.recipes for i, _ in recipe if i != 995
+        )
     )
 
 
@@ -201,16 +212,20 @@ def evaluate_running_cost(
     style = combat_option.get("attack_type")
     resources: list[dict[str, Any]] = []
     reasons: list[str] = []
+    alternatives: list[dict[str, Any]] = []
     if combat_option.get("powered_attack"):
         weapon = equipment.get("weapon")
-        charge_recipe = _CHARGES.get(weapon.id) if weapon else None
-        if charge_recipe is None:
-            reasons = ["Powered attack charge consumption has not been reviewed."]
-        else:
-            resources = [
+        staff = review(weapon.id) if weapon else None
+        recipes = (
+            staff.recipes
+            if staff
+            else ((_CHARGES[weapon.id],) if weapon and weapon.id in _CHARGES else ())
+        )
+        for charge_recipe in recipes:
+            rows = [
                 _resource(
                     i,
-                    _RUNES.get(i, "Coins" if i == 995 else "Zulrah's scales"),
+                    _RUNES.get(i, _RESOURCE_NAMES.get(i, str(i))),
                     quantity,
                     0,
                     None,
@@ -219,6 +234,22 @@ def evaluate_running_cost(
                 )
                 for i, quantity in charge_recipe
             ]
+            known = all(r["unit_price_gp"] is not None for r in rows)
+            alternatives.append(
+                {
+                    "resources": rows,
+                    "gp_per_attack": sum(r["consumed_quantity"] * r["unit_price_gp"] for r in rows)
+                    if known
+                    else None,
+                }
+            )
+        priced = [a for a in alternatives if a["gp_per_attack"] is not None]
+        if priced:
+            resources = min(priced, key=lambda a: a["gp_per_attack"])["resources"]
+        elif alternatives:
+            resources = alternatives[0]["resources"]
+        else:
+            reasons = ["Powered attack charge consumption has not been reviewed."]
     elif style == "magic":
         recipe = SPELL_RECIPES.get(combat_option.get("spell") or "")
         if recipe is None:
@@ -238,6 +269,13 @@ def evaluate_running_cost(
                 )
                 for item_id, quantity in recipe.items()
             ]
+            # Charged autocasting sceptres consume ether as well as spell runes.
+            # Their uncharged (a) forms can autocast without the ether effect.
+            if weapon and weapon.id in {27788, 27679}:
+                resources = [
+                    *resources,
+                    _resource(21820, "Revenant ether", 1, 0, None, price_records, now),
+                ]
     elif style in {"ranged", "light", "standard", "heavy"}:
         resources, reasons = _ranged_resources(equipment, price_records, now)
     elif style not in {"stab", "slash", "crush"}:
@@ -261,5 +299,9 @@ def evaluate_running_cost(
         "gp_per_hour": per_second * 3600 if per_second is not None else None,
         "gp_per_damage": per_second / dps if per_second is not None and dps and dps > 0 else None,
         "resources": resources,
+        "charging_alternatives": alternatives,
+        "charging_assumption": "Cheapest priced charging recipe; actual charges unknown."
+        if alternatives
+        else None,
         "reasons": reasons,
     }

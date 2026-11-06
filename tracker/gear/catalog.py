@@ -15,6 +15,8 @@ from tracker.content.loader import Content
 from tracker.content.requirements import AllOf, SkillLeaf
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.powered import REVISION as POWERED_REVISION
+from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
 
@@ -27,10 +29,16 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 2
 # https://oldschool.runescape.wiki/w/Autocast
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
 # https://oldschool.runescape.wiki/w/Ancient_staff
-REVIEWED_STANDARD_STAVES = frozenset({1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675})
+REVIEWED_STANDARD_STAVES = frozenset(
+    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 27785, 27788, 27676, 27679}
+)
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
-REVIEWED_ANCIENT_STAVES = frozenset({4675})
+REVIEWED_ANCIENT_STAVES = frozenset({4675, 27785, 27788, 27676, 27679})
+REVIEWED_AUTOCAST_SCEPTRES = {27785: 60, 27788: 60, 27676: 70, 27679: 70}
+REVIEWED_POWERED_TRADEABLE = frozenset(
+    {28585, 11905, 11908, 12900, 22481, 22552, 27662, 31115, 27277, 22290, 22294}
+)
 
 
 def _reviewed_spells(item_id: int) -> tuple[str, ...]:
@@ -118,6 +126,40 @@ def load_catalog(
                     else {}
                 ),
             }
+        powered = powered_review(row["id"])
+        powered_charged = powered is not None and (
+            row["id"] != powered.uncharged_id or powered.charged_id == powered.uncharged_id
+        )
+        if powered_charged and powered is not None:
+            row = {
+                **row,
+                "powered_attack": powered.model,
+                "powered_attack_model": powered.model,
+                "powered_attack_stances": ("accurate", "longrange"),
+                "attack_styles": ("magic",),
+                "attack_profiles": (("magic", "accurate"), ("magic", "longrange")),
+                "attack_speed": powered.speed,
+                "unsupported_effects": [
+                    effect
+                    for effect in row["unsupported_effects"]
+                    if effect != "Offensive effects have not been validated."
+                ],
+            }
+        elif row["id"] == 22516:
+            row = {
+                **row,
+                "unsupported_effects": ["Dawnbringer requires its raid encounter context."],
+            }
+        autocast_level = REVIEWED_AUTOCAST_SCEPTRES.get(row["id"])
+        if autocast_level is not None:
+            row = {
+                **row,
+                "unsupported_effects": [
+                    e
+                    for e in row["unsupported_effects"]
+                    if e != "Offensive effects have not been validated."
+                ],
+            }
         entries = overlays.get(row["id"], [])
         primary = _reviewed_equivalent(row, by_id)
         if primary is not None:
@@ -151,6 +193,11 @@ def load_catalog(
                     *reviewed_requirements,
                 )
             )
+        if powered is not None:
+            # Equipment access is a wear gate; crafting/drop requirements are not.
+            requirement = SkillLeaf(skill="magic", level=powered.level)
+        if autocast_level is not None:
+            requirement = SkillLeaf(skill="magic", level=autocast_level)
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -159,10 +206,14 @@ def load_catalog(
                     _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
-                "requirements_complete": bool(entries or review)
+                "requirements_complete": bool(entries or review or powered or autocast_level)
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    True
+                    row["id"] in REVIEWED_POWERED_TRADEABLE
+                    if powered is not None
+                    else row["id"] in {27785, 27676}
+                    if autocast_level is not None
+                    else True
                     if acquisition == {"tradeable"}
                     else False
                     if acquisition == {"untradeable"}
@@ -193,6 +244,9 @@ def load_catalog(
             + source_payload
             + community_payload
             + reviewed_spells
+            + POWERED_REVISION
+            + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
+            + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
             + json.dumps(DUAL_PROFILES).encode()
         ).hexdigest()
@@ -200,6 +254,9 @@ def load_catalog(
         else sha256(
             payload
             + reviewed_spells
+            + POWERED_REVISION
+            + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
+            + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
             + json.dumps(DUAL_PROFILES).encode()
         ).hexdigest()

@@ -304,13 +304,16 @@ class GearService:
             evaluated_at,
             support_assumptions=getattr(catalog, "community_assumptions", {}).get(item.id, ()),
         )
-        authored = [entry for entry in self.content.items.values() if entry.item_id == item_id]
-        record = records.get(item_id)
+        market_id = (fact.get("preparation") or {}).get("market_item_id", item_id)
+        authored = [entry for entry in self.content.items.values() if entry.item_id == market_id]
+        record = records.get(market_id)
         quote = resolve_price(authored[0] if authored else None, record, now=evaluated_at)
         price = {
             **fact["price"],
-            "confidence": quote.confidence.name.lower() if item.tradeable else None,
-            "policy": quote.policy.value if item.tradeable else None,
+            "confidence": quote.confidence.name.lower()
+            if fact["acquisition"] == "tradeable"
+            else None,
+            "policy": quote.policy.value if fact["acquisition"] == "tradeable" else None,
             "source": record.source if record else None,
             "provider": getattr(record, "provider", None),
             "fetched_at": record.fetched_at.isoformat() if record else None,

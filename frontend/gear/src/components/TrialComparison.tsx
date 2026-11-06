@@ -141,6 +141,11 @@ export function TrialComparison({
           </p>
         )),
       )}
+      {proposed.preparations?.map((p) => (
+        <p className="notice" key={p.usable_item_id}>
+          {p.message}
+        </p>
+      ))}
       <h4>Trial acquisition requirements</h4>
       <p>
         {proposed.purchase_cost_gp === null

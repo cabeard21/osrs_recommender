@@ -50,6 +50,7 @@ from tracker.gear.models import (
     TargetSelection,
 )
 from tracker.gear.potions import PotionPolicy, boosted_levels, potion_summary
+from tracker.gear.powered import review as powered_review
 from tracker.gear.prayers import (
     CATALOG_REVISION as PRAYER_CATALOG_REVISION,
 )
@@ -235,6 +236,57 @@ class OptimizationRequest(BaseModel):
         for field in ("locks", "skill_overrides", "quest_overrides"):
             object.__setattr__(self, field, MappingProxyType(dict(getattr(self, field))))
         return self
+
+    def prepared_weapon_locks(self) -> OptimizationRequest:
+        """A locked uncharged edition requests its disclosed usable preparation.
+
+        Normalize only explicitly selected attacks for that locked edition. Empty
+        or unrelated allowlists stay unchanged, and both physical exclusions win.
+        """
+        execution = self.model_copy()
+        conversions: dict[int, int] = {}
+
+        def prepared(locks: Mapping[ItemSlot, int | None]) -> dict[ItemSlot, int | None]:
+            source = locks.get("weapon")
+            staff = powered_review(source) if source is not None else None
+            if staff is None or source != staff.uncharged_id or source == staff.charged_id:
+                return dict(locks)
+            if staff.charged_id in self.excluded_item_ids:
+                raise ValueError("prepared weapon lock conflicts with excluded_item_ids")
+            conversions[source] = staff.charged_id
+            return {**locks, "weapon": staff.charged_id}
+
+        global_locks = prepared(self.locks)
+        roles = []
+        for role in self.roles:
+            source = role.locks.get("weapon", self.locks.get("weapon"))
+            locks = prepared(role.locks)
+            options = role.combat_options
+            staff = powered_review(source) if source is not None else None
+            if options is not None and staff is not None and source == staff.uncharged_id:
+                spells = tuple(
+                    dict.fromkeys(
+                        f"powered:{staff.charged_id}" if s == f"powered:{source}" else s
+                        for s in options.spells
+                    )
+                )
+                options = options.model_copy(update={"spells": spells})
+            roles.append(
+                role.model_copy(
+                    update={
+                        "locks": MappingProxyType(locks),
+                        "combat_options": options,
+                    }
+                )
+            )
+        object.__setattr__(execution, "locks", MappingProxyType(global_locks))
+        object.__setattr__(execution, "roles", tuple(roles))
+        object.__setattr__(
+            execution,
+            "assumed_item_ids",
+            tuple(dict.fromkeys(conversions.get(i, i) for i in self.assumed_item_ids)),
+        )
+        return execution
 
     @field_serializer("locks", "skill_overrides", "quest_overrides")
     def serialize_mappings(self, value: Mapping[str, Any]) -> dict[str, Any]:
@@ -817,7 +869,19 @@ class _Search:
                 ordered.extend(i for i in row if i is not None and i not in ordered)
             keep = max(CANDIDATES_PER_SLOT - 1, len(locked & set(candidates)))
             self.truncated |= len(ordered) > keep
-            pools[slot] = [None, *ordered[:keep]]
+            retained = ordered[:keep]
+            if slot == "weapon":
+                # Preserve weapon families whose complete-gear synergy is invisible
+                # to weapon-only scaffolds, without changing the DPS objective.
+                families: dict[str, int] = {}
+                for i in ordered:
+                    model = self.items[i].powered_attack_model
+                    if model and any(
+                        self.configured_options(r, self.items[i]) for r in self.request.roles
+                    ):
+                        families.setdefault(model, i)
+                retained = list(dict.fromkeys([*retained, *families.values()]))
+            pools[slot] = [None, *retained]
         return pools
 
     def baselines(self, role: RoleConfig) -> list[dict[str, int]]:
@@ -1058,6 +1122,11 @@ class _Search:
             "loadouts": {
                 r.id: {
                     "equipment": loadouts[r.id],
+                    "preparations": [
+                        self.facts[i]["preparation"]
+                        for i in sorted(loadouts[r.id].values())
+                        if self.facts[i].get("preparation")
+                    ],
                     "discipline": (
                         None
                         if r.style == "special"
@@ -1189,6 +1258,7 @@ def prepare_optimization(
     price_records: Mapping[int, PriceRecord],
     now: datetime,
 ) -> PreparedOptimization:
+    request = request.prepared_weapon_locks()
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
@@ -1237,6 +1307,7 @@ def optimize(
         if isinstance(request, OptimizationRequest)
         else OptimizationRequest.model_validate(request)
     )
+    request = request.prepared_weapon_locks()
     if request.potions.mode == "optimize":
         from tracker.gear.potion_search import optimize_potions
 
@@ -1507,6 +1578,14 @@ def optimize(
             for loadout in solution["loadouts"].values()
             for i in loadout["equipment"].values()
         }
+    # Purchase identities can differ from the usable equipment after charging.
+    referenced |= {
+        market_id
+        for i in tuple(referenced)
+        if i in facts
+        for market_id in [(facts[i].get("preparation") or {}).get("market_item_id")]
+        if market_id is not None
+    }
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
     return {
         "snapshot_id": snapshot.fingerprint,
@@ -1514,7 +1593,7 @@ def optimize(
         "secondary_priority": request.secondary_priority,
         "evaluated_at": now.isoformat(),
         "catalog_version": getattr(catalog, "revision", "unknown"),
-        "model_version": "normal-attacks-v1",
+        "model_version": "normal-attacks-v2-powered",
         "assumptions": assumptions,
         "assumptions_fingerprint": hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()

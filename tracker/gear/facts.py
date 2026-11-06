@@ -12,6 +12,10 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
+from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
+
+# New purchases use ordinary editions; owned editions keep exact preparation routes.
+_POWERED_MARKET_FORMS = MARKET_FORMS
 
 GENERIC_UNREVIEWED = "Offensive effects have not been validated."
 
@@ -119,8 +123,50 @@ def equipment_fact(
     )
     if not item.requirements_complete and not support_assumptions:
         wear_status = "unknown"
-    authored = next((entry for entry in content.items.values() if entry.item_id == item.id), None)
-    price = resolve_price(authored, prices.get(item.id), now=now) if item.tradeable else None
+    ownership = observed_ownership(snapshot, item.id)
+    planning_ownership = ownership
+    preparation = None
+    staff = review(item.id)
+    market_id = item.id if item.tradeable else None
+    if staff is not None and (item.id != staff.uncharged_id or item.id == staff.charged_id):
+        observed_sources = [
+            (i, observed_ownership(snapshot, i)) for i, record in REVIEWS.items() if record == staff
+        ]
+        source_id, source = next(
+            ((i, fact) for i, fact in observed_sources if fact["status"] == "owned"),
+            (staff.uncharged_id, ownership),
+        )
+        prepare_owned = ownership["status"] != "owned" and source["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {
+                **source,
+                "meaning": "Owned equivalent weapon form; actual charges unknown",
+            }
+        market_id = staff.uncharged_id if staff.uncharged_id in _POWERED_MARKET_FORMS else None
+        charging_required = (
+            source_id == staff.uncharged_id if prepare_owned else ownership["status"] != "owned"
+        )
+        preparation = {
+            "source_item_id": source_id
+            if prepare_owned
+            else item.id
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": item.id,
+            "market_item_id": market_id,
+            "charging_required": charging_required,
+            "charges": "unknown",
+            "activation_reserve": [{"item_id": 21820, "quantity": staff.reserve}]
+            if staff.reserve
+            else [],
+            "message": "Charging required; actual charge availability is unknown."
+            if charging_required
+            else "Actual charge availability is unknown.",
+        }
+    authored = next((entry for entry in content.items.values() if entry.item_id == market_id), None)
+    price = (
+        resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None
+    )
     return {
         "item_id": item.id,
         "name": item.name,
@@ -139,7 +185,9 @@ def equipment_fact(
         else "generic_unreviewed"
         if item.unsupported_effects
         else "reviewed_ordinary",
-        "ownership": observed_ownership(snapshot, item.id),
+        "ownership": ownership,
+        "planning_ownership": planning_ownership,
+        "preparation": preparation,
         "wear": {
             "status": wear_status,
             "known_status": known_status,
@@ -150,7 +198,7 @@ def equipment_fact(
             else [],
         },
         "acquisition": "tradeable"
-        if item.tradeable
+        if market_id is not None
         else "untradeable"
         if item.tradeable is False
         else "unknown",
@@ -160,5 +208,8 @@ def equipment_fact(
             "selected_trade_at": price.trade_at.isoformat() if price and price.trade_at else None,
             "selection_reason": price.selection_reason if price else "not a GE purchase",
         },
-        "limitations": list(item.unsupported_effects),
+        "limitations": [
+            *item.unsupported_effects,
+            *([preparation["message"]] if preparation else []),
+        ],
     }

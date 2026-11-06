@@ -56,6 +56,7 @@ export interface CombatOption {
   powered_attack: string | null;
 }
 export interface CombatOptionAvailability {
+  name?: string | null;
   id: string;
   category?: Style;
   available: boolean;
@@ -105,6 +106,7 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  traits?: string[];
   flat_armour?: number;
   name: string;
   defence_level: number;
@@ -293,7 +295,21 @@ export interface JointTransitionDTO {
   changed_slots: number;
   max_gear_inventory_slots: number;
 }
+export interface Preparation {
+  source_item_id: number | null;
+  usable_item_id: number;
+  market_item_id: number | null;
+  charging_required: boolean;
+  charges: "unknown";
+  activation_reserve: { item_id: number; quantity: number }[];
+  message: string;
+}
 export interface RunningCost {
+  charging_assumption?: string | null;
+  charging_alternatives?: {
+    resources: RunningCost["resources"];
+    gp_per_attack: number | null;
+  }[];
   status: "known" | "unavailable";
   gp_per_attack: number | null;
   gp_per_hour: number | null;
@@ -332,6 +348,7 @@ export interface JointSolutionDTO {
   loadouts: Record<
     string,
     {
+      preparations?: Preparation[];
       equipment: Record<string, number>;
       performance: CombatPerformance;
       selected_prayer_ids?: string[];
@@ -495,6 +512,7 @@ interface TrialIdentity {
   equipment: Equipment;
 }
 export interface FixedEvaluation {
+  preparations?: Preparation[];
   unowned_untradeable_item_ids?: number[];
   status: "valid" | "invalid" | "unsupported";
   equipment: Record<string, number>;
@@ -620,6 +638,7 @@ export interface PhysicalItem {
   };
   acquisition: string;
   acquisition_descriptions: string[];
+  preparation?: Preparation | null;
   price: {
     amount_gp: number | null;
     layer: string;
