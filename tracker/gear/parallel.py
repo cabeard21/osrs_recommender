@@ -23,10 +23,12 @@ from tracker.gear.auto import branch_requests
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
+from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
 
 logger = logging.getLogger(__name__)
 _CONTEXT: tuple[Content, EquipmentCatalog, str, Any] | None = None
 _PREPARATION: tuple[str, Any] | None = None
+_PROGRESS: tuple[WorkerSlots, int] | None = None
 _UNAVAILABLE = "optimizer_worker_unavailable: desktop workers unavailable; retry the calculation"
 
 
@@ -56,20 +58,30 @@ class _CancellationFlag:
         return self.is_set()
 
 
-def _initialize(payload: dict[str, Any], identity: str, stopped: Any, ready: Any) -> None:
-    global _CONTEXT, _PREPARATION
+def _initialize(
+    payload: dict[str, Any],
+    identity: str,
+    stopped: Any,
+    ready: Any,
+    slots: WorkerSlots | None = None,
+) -> None:
+    global _CONTEXT, _PREPARATION, _PROGRESS
     content, catalog = decode_context(payload, identity)
     _CONTEXT = content, catalog, identity, stopped
     _PREPARATION = None
     # Ensure startup has initialized every child, not just one quick warmup task.
-    ready.wait(timeout=30)
+    # The barrier index is unique per child, so it doubles as this child's slot.
+    index = ready.wait(timeout=30)
+    _PROGRESS = (slots, index) if slots is not None else None
 
 
 def _warm() -> int:
     return os.getpid()
 
 
-def _execute_branch(payload: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
+def _execute_branch(
+    payload: dict[str, Any], options: dict[str, Any], lane: int | None = None
+) -> dict[str, Any]:
     from tracker.gear.optimizer import optimize, prepare_optimization
 
     global _PREPARATION
@@ -97,6 +109,11 @@ def _execute_branch(payload: dict[str, Any], options: dict[str, Any]) -> dict[st
                 prepare_optimization(snapshot, request, catalog, content, prices, now),
             )
         prepared = _PREPARATION[1]
+    progress = (
+        SlotWriter(_PROGRESS[0], _PROGRESS[1], lane)
+        if lane is not None and _PROGRESS is not None and isinstance(_PROGRESS[1], int)
+        else None
+    )
     return optimize(
         snapshot,
         request,
@@ -107,6 +124,7 @@ def _execute_branch(payload: dict[str, Any], options: dict[str, Any]) -> dict[st
         cancelled=stopped.is_set,
         _complete_frontiers=True,
         _prepared=prepared,
+        progress=progress,
         **options,
     )
 
@@ -128,6 +146,7 @@ class AutoProcessPool:
         self._payload: dict[str, Any] | None = None
         self._identity: str | None = None
         self._stopped: Any = None
+        self._slots: WorkerSlots | None = None
         self._unsafe_children: tuple[Any, ...] = ()
         self._unsafe_manager: Any = None
 
@@ -142,11 +161,13 @@ class AutoProcessPool:
                 self._identity,
                 self._stopped,
                 self._context.Barrier(self.workers),
+                self._slots,
             ),
         )
 
     def _build(self) -> None:
         self._stopped = _CancellationFlag(self._context)
+        self._slots = WorkerSlots(self._context, self.workers)
         try:
             self._executor = self._new_executor()
             futures = [self._executor.submit(_warm) for _ in range(self.workers)]
@@ -269,8 +290,18 @@ class AutoProcessPool:
         futures: list[Future[dict[str, Any]]] = []
         try:
             assert self._executor is not None
-            for job in jobs:
-                futures.append(self._executor.submit(_execute_branch, job, options))
+            if self._slots is not None:
+                self._slots.clear()
+            lanes: dict[Future[dict[str, Any]], int] = {}
+            for lane, job in enumerate(jobs):
+                future = self._executor.submit(_execute_branch, job, options, lane)
+                futures.append(future)
+                lanes[future] = lane
+            reader = (
+                SlotReader(self._slots, progress)
+                if progress is not None and self._slots is not None
+                else None
+            )
             pending = set(futures)
             started = monotonic()
             while pending:
@@ -279,10 +310,16 @@ class AutoProcessPool:
                 completed, pending = wait(pending, timeout=0.025, return_when=FIRST_COMPLETED)
                 for future in completed:
                     future.result()
-                if completed and progress is not None:
+                if reader is not None:
+                    reader.poll()
+                if progress is None:
+                    continue
+                for future in sorted(completed, key=lanes.__getitem__):
                     progress(
                         {
                             "phase": "potion_search",
+                            "lane": lanes[future],
+                            "lane_status": "complete",
                             "completed_profiles": len(futures) - len(pending),
                             "total_profiles": len(futures),
                             "elapsed_seconds": monotonic() - started,
@@ -365,6 +402,8 @@ class AutoProcessPool:
         content: Content,
         price_records: Mapping[int, PriceRecord],
         now: datetime,
+        *,
+        progress: Any = None,
         **options: Any,
     ) -> list[tuple[str, dict[str, Any]]]:
         cancelled = options.pop("cancelled", None)
@@ -376,7 +415,15 @@ class AutoProcessPool:
             raise ValueError("optimizer_busy: another desktop worker job is running")
         try:
             return self._run(
-                snapshot, request, catalog, content, price_records, now, options, cancelled
+                snapshot,
+                request,
+                catalog,
+                content,
+                price_records,
+                now,
+                options,
+                cancelled,
+                progress,
             )
         finally:
             if self._stopped is not None and not self._closed:
@@ -393,6 +440,7 @@ class AutoProcessPool:
         now: datetime,
         options: dict[str, Any],
         cancelled: Any,
+        progress: Any = None,
     ) -> list[tuple[str, dict[str, Any]]]:
         if self._closed:
             raise ValueError(_UNAVAILABLE)
@@ -413,7 +461,7 @@ class AutoProcessPool:
             job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
         ]
         selected = {**options, "_running_frontier": "magic" in request.roles[0].allowed_disciplines}
-        results = self._dispatch(jobs, selected, cancelled)
+        results = self._dispatch(jobs, selected, cancelled, progress)
         return [
             (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)
         ]

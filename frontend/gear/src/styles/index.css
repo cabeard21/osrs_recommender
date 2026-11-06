@@ -1162,13 +1162,115 @@ html {
   gap: 8px;
 }
 .run-status {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #b8c3d3;
+  max-width: 520px;
+}
+.run-status-line {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 6px;
-  font-size: 13px;
-  color: #b8c3d3;
+}
+.run-status-time {
+  margin-left: auto;
+  color: #8f9bb0;
+}
+.run-eta {
+  color: #f0bf5c;
+}
+.run-progress,
+.run-lane-bar {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(184, 195, 211, 0.14);
+}
+.run-progress {
+  height: 6px;
+}
+.run-progress > span,
+.run-lane-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #f0bf5c;
+  transition: width 0.4s ease-out;
+}
+.run-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.run-stages li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.run-stages li[data-status="pending"] {
+  color: #6f7a8d;
+}
+.run-stages li[data-status="complete"] svg {
+  color: #7fcf8e;
+}
+.run-lanes {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.run-lanes li {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(60px, 2fr) 48px;
+  align-items: center;
+  gap: 8px;
+}
+.run-lane-group {
+  display: grid;
+  gap: 4px;
+}
+.run-lane-counts {
+  margin: 0;
+  font-size: 12px;
+  color: #8f9bb0;
+}
+.run-lane-label {
+  display: grid;
+  min-width: 0;
+}
+.run-lane-label,
+.run-lane-stage {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.run-lane-stage {
+  font-size: 11px;
+  color: #8f9bb0;
+}
+.run-lane-bar {
+  height: 4px;
+}
+.run-lanes li[data-status="complete"] .run-lane-bar > span {
+  background: #7fcf8e;
+}
+.run-lanes li > .numeric {
+  text-align: right;
+}
+@media (prefers-reduced-motion: reduce) {
+  .run-progress > span,
+  .run-lane-bar > span {
+    transition: none;
+  }
 }
 .spinner {
   flex: none;

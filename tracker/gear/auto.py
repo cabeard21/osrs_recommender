@@ -35,13 +35,18 @@ def optimize_auto(
     **options: Any,
 ) -> dict[str, Any]:
     from tracker.gear.optimizer import optimize
+    from tracker.gear.progress import for_lane, lane_label
 
     started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
+    progress = options.pop("progress", None)
     branches = []
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
+    if progress is not None:
+        labels = [lane_label(discipline) for discipline, _ in branch_requests(request)]
+        progress({"phase": "preparation", "plan": {"lanes": labels}})
     if branch_runner is not None:
         from tracker.gear.evaluation import validate_request_context
         from tracker.gear.support import project_catalog
@@ -50,7 +55,14 @@ def optimize_auto(
             request, snapshot, project_catalog(catalog, request.support_policy).items, content
         )
         completed = branch_runner(
-            snapshot, request, catalog, content, price_records, now, **options
+            snapshot,
+            request,
+            catalog,
+            content,
+            price_records,
+            now,
+            **options,
+            **({"progress": progress} if progress is not None else {}),
         )
         by_discipline = dict(completed)
         expected = [discipline for discipline, _ in branch_requests(request)]
@@ -58,7 +70,7 @@ def optimize_auto(
             raise ValueError("optimizer_worker_unavailable: incomplete discipline results")
         branches = [(discipline, by_discipline[discipline]) for discipline in expected]
     else:
-        for discipline, concrete in branch_requests(request):
+        for lane, (discipline, concrete) in enumerate(branch_requests(request)):
             if cancelled and cancelled():
                 raise ValueError("optimization_cancelled")
             result = optimize(
@@ -70,6 +82,7 @@ def optimize_auto(
                 now,
                 _complete_frontiers=True,
                 _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
+                progress=for_lane(progress, lane),
                 **options,
             )
             branches.append((discipline, result))
@@ -77,6 +90,8 @@ def optimize_auto(
         raise ValueError("optimization_cancelled")
 
     branches_at = perf_counter()
+    if progress is not None:
+        progress({"phase": "merge"})
     result = merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
     finished = perf_counter()
     return {

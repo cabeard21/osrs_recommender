@@ -4,7 +4,6 @@ import {
   Box,
   History,
   LayoutDashboard,
-  Loader2,
   Settings,
   SlidersHorizontal,
   Swords,
@@ -17,7 +16,8 @@ import { ResultWorkspace } from "./components/ResultWorkspace";
 import { ItemInspector } from "./components/ItemInspector";
 import { Dialog } from "./components/Dialog";
 import { Timestamp } from "./components/Timestamp";
-import type { FixtureFailure, OptimizationProgress } from "./api/contracts";
+import { RunStatus } from "./components/RunStatus";
+import type { FixtureFailure } from "./api/contracts";
 
 const STACKED_LAYOUT_QUERY = "(max-width: 900px)";
 
@@ -538,33 +538,6 @@ export default function App() {
           <p role="status">{copyStatus}</p>
         </Dialog>
       )}
-    </div>
-  );
-}
-
-function RunStatus({
-  message,
-  progress,
-}: {
-  message: string;
-  progress?: OptimizationProgress;
-}) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return (
-    <div className="run-status">
-      <Loader2 className="spinner" size={16} aria-hidden="true" />
-      <span role="status" aria-label="Optimization progress">
-        {progress
-          ? `${progress.phase.replaceAll("_", " ")}${progress.total > 0 ? ` · ${progress.completed}/${progress.total} profiles complete` : ""}`
-          : message}
-      </span>
-      <span className="numeric">
-        {Math.max(elapsedSeconds, Math.floor(progress?.elapsed_seconds ?? 0))}s
-      </span>
     </div>
   );
 }

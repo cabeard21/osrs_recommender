@@ -1,4 +1,17 @@
-import type { OptimizationProgress } from "./contracts";
+import type {
+  OptimizationProgress,
+  ProgressLane,
+  ProgressLaneCounts,
+  ProgressStage,
+} from "./contracts";
+
+/** Fast enough for a smooth bar; the endpoint is a cheap in-memory read. */
+export const PROGRESS_POLL_MS = 400;
+const MAX_TEXT = 100;
+const MAX_STAGES = 12;
+const MAX_LANES = 12;
+const STAGE_STATUSES = new Set(["complete", "active", "pending"]);
+const LANE_STATUSES = new Set(["complete", "running", "pending"]);
 
 /** randomUUID requires a secure context; getRandomValues also works on HTTP. */
 export function createProgressId(): string | null {
@@ -12,6 +25,117 @@ export function createProgressId(): string | null {
     return value.toString(16).padStart(2, "0");
   }).join("");
   return `${uuid.slice(0, 8)}-${uuid.slice(8, 12)}-${uuid.slice(12, 16)}-${uuid.slice(16, 20)}-${uuid.slice(20)}`;
+}
+
+function text(value: unknown): value is string {
+  return typeof value === "string" && value.length <= MAX_TEXT;
+}
+
+function unit(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 1
+  );
+}
+
+function rows<T>(
+  value: unknown,
+  limit: number,
+  parse: (row: Record<string, unknown>) => T | null,
+): T[] | undefined {
+  if (!Array.isArray(value) || value.length > limit) return undefined;
+  const parsed = value.map((row) =>
+    row && typeof row === "object"
+      ? parse(row as Record<string, unknown>)
+      : null,
+  );
+  return parsed.every((row) => row !== null) ? (parsed as T[]) : undefined;
+}
+
+function stage(row: Record<string, unknown>): ProgressStage | null {
+  return text(row.id) &&
+    text(row.label) &&
+    typeof row.status === "string" &&
+    STAGE_STATUSES.has(row.status) &&
+    unit(row.fraction)
+    ? {
+        id: row.id,
+        label: row.label,
+        status: row.status as ProgressStage["status"],
+        fraction: row.fraction,
+      }
+    : null;
+}
+
+function lane(row: Record<string, unknown>): ProgressLane | null {
+  return text(row.label) &&
+    typeof row.status === "string" &&
+    LANE_STATUSES.has(row.status) &&
+    (row.stage === null || text(row.stage)) &&
+    unit(row.fraction)
+    ? {
+        label: row.label,
+        status: row.status as ProgressLane["status"],
+        stage: row.stage as string | null,
+        ...(text(row.stage_label) ? { stage_label: row.stage_label } : {}),
+        fraction: row.fraction,
+      }
+    : null;
+}
+
+function count(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
+}
+
+function laneCounts(value: unknown): ProgressLaneCounts | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  return count(row.complete) && count(row.running) && count(row.pending)
+    ? { complete: row.complete, running: row.running, pending: row.pending }
+    : undefined;
+}
+
+/** Untrusted server telemetry: required fields must be valid; invalid extras are dropped. */
+export function parseProgress(raw: unknown): OptimizationProgress | null {
+  if (!raw || typeof raw !== "object") return null;
+  const body = raw as Record<string, unknown>;
+  const completed = body.completed ?? body.completed_profiles;
+  const total = body.total ?? body.total_profiles;
+  if (
+    !text(body.phase) ||
+    !Number.isInteger(completed) ||
+    (completed as number) < 0 ||
+    !Number.isInteger(total) ||
+    (total as number) < (completed as number) ||
+    typeof body.elapsed_seconds !== "number" ||
+    !Number.isFinite(body.elapsed_seconds) ||
+    body.elapsed_seconds < 0
+  )
+    return null;
+  const progress: OptimizationProgress = {
+    phase: body.phase,
+    completed: completed as number,
+    total: total as number,
+    elapsed_seconds: body.elapsed_seconds,
+  };
+  if (text(body.label)) progress.label = body.label;
+  if (unit(body.fraction)) progress.fraction = body.fraction;
+  if (
+    body.eta_seconds === null ||
+    (typeof body.eta_seconds === "number" &&
+      Number.isFinite(body.eta_seconds) &&
+      body.eta_seconds >= 0)
+  )
+    progress.eta_seconds = body.eta_seconds;
+  const stages = rows(body.stages, MAX_STAGES, stage);
+  if (stages) progress.stages = stages;
+  const lanes = rows(body.lanes, MAX_LANES, lane);
+  if (lanes) progress.lanes = lanes;
+  const counts = laneCounts(body.lane_counts);
+  if (counts) progress.lane_counts = counts;
+  return progress;
 }
 
 /** Best-effort status polling never delays or fails the optimization itself. */
@@ -44,33 +168,15 @@ export function pollOptimizationProgress(
       );
       if (response.ok) {
         const body = await response.json();
-        const raw = body.progress;
-        const progress = raw && {
-          ...raw,
-          completed: raw.completed ?? raw.completed_profiles,
-          total: raw.total ?? raw.total_profiles,
-        };
-        if (
-          active &&
-          body.progress_id === id &&
-          progress &&
-          typeof progress.phase === "string" &&
-          progress.phase.length <= 100 &&
-          Number.isInteger(progress.completed) &&
-          progress.completed >= 0 &&
-          Number.isInteger(progress.total) &&
-          progress.total >= progress.completed &&
-          Number.isFinite(progress.elapsed_seconds) &&
-          progress.elapsed_seconds >= 0
-        )
-          update(progress);
+        const progress = parseProgress(body.progress);
+        if (active && body.progress_id === id && progress) update(progress);
       }
     } catch {
       // Optional telemetry can be absent or temporarily unavailable.
     } finally {
-      if (active) timer = setTimeout(() => void poll(), 1000);
+      if (active) timer = setTimeout(() => void poll(), PROGRESS_POLL_MS);
     }
   }
-  if (active) timer = setTimeout(() => void poll(), 1000);
+  if (active) timer = setTimeout(() => void poll(), PROGRESS_POLL_MS);
   return stop;
 }

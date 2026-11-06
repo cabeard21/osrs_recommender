@@ -242,7 +242,7 @@ def optimize_potions(
     requests = [fixed for _, fixed in jobs]
     total = len(requests)
 
-    def report(phase: str, completed: int) -> None:
+    def report(phase: str, completed: int, **extra: Any) -> None:
         if progress:
             progress(
                 {
@@ -250,10 +250,14 @@ def optimize_potions(
                     "completed_profiles": completed,
                     "total_profiles": total,
                     "elapsed_seconds": perf_counter() - started,
+                    **extra,
                 }
             )
 
-    report("preparation", 0)
+    from tracker.gear.progress import for_lane, lane_label
+
+    labels = [lane_label(d, fixed.potions.selected_ids) for d, fixed in jobs]
+    report("preparation", 0, plan={"lanes": labels})
     if branch_runner is None:
         prepared = prepared or prepare_optimization(
             snapshot, request, catalog, content, prices, now
@@ -286,7 +290,7 @@ def optimize_potions(
             cancelled = options.get("cancelled")
             if cancelled and cancelled():
                 raise ValueError("optimization_cancelled")
-            report("profile_started", i)
+            report("profile_started", i, lane=i)
             branches.append(
                 optimize(
                     snapshot,
@@ -296,11 +300,11 @@ def optimize_potions(
                     prices,
                     now,
                     _prepared=prepared,
-                    progress=progress,
+                    progress=for_lane(progress, i),
                     **branch_options,
                 )
             )
-            report("profile_completed", i + 1)
+            report("profile_completed", i + 1, lane=i, lane_status="complete")
     branches_at = perf_counter()
     report("merge", total)
     if auto:

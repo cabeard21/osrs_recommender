@@ -213,6 +213,9 @@ def refine_completed(
                 break
             seen.add(identity)
             diagnostic["assignment_attempts"] += 1
+            reporter = getattr(search, "reporter", None)
+            if reporter is not None:
+                reporter.fraction(diagnostic["assignment_attempts"] / max(1, limit))
             diagnostic["two_slot_assignments" if pair else "single_slot_assignments"] += 1
             candidate = search.solution(assignment, None)
             _cancel(search)

@@ -565,11 +565,39 @@ export type Trial = TrialIdentity &
       }
   );
 export type FixtureFailure = "none" | "busy" | "no-solution" | "error";
+export interface ProgressStage {
+  id: string;
+  label: string;
+  status: "complete" | "active" | "pending";
+  fraction: number;
+}
+export interface ProgressLane {
+  label: string;
+  status: "complete" | "running" | "pending";
+  stage: string | null;
+  stage_label?: string | null;
+  fraction: number;
+}
+export interface ProgressLaneCounts {
+  complete: number;
+  running: number;
+  pending: number;
+}
 export interface OptimizationProgress {
   phase: string;
   completed: number;
   total: number;
   elapsed_seconds: number;
+  /** Human stage label; absent from older servers. */
+  label?: string;
+  /** Overall 0–1 completion that never decreases during one attempt. */
+  fraction?: number;
+  /** Estimated seconds remaining, or null while no estimate is credible. */
+  eta_seconds?: number | null;
+  stages?: ProgressStage[];
+  /** Independent searches (Auto disciplines × potion profiles): all when few, else running. */
+  lanes?: ProgressLane[];
+  lane_counts?: ProgressLaneCounts;
 }
 export interface GearClient {
   getContext(): Promise<GearContext>;
