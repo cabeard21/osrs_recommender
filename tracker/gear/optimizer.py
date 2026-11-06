@@ -66,6 +66,7 @@ from tracker.gear.prayers import (
     setups as prayer_setups,
 )
 from tracker.gear.priorities import SecondaryPriority, secondary_value
+from tracker.gear.progress import NULL_REPORTER, StageReporter
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
@@ -274,7 +275,11 @@ class _Search:
         facts: Mapping[int, dict[str, Any]],
         cancelled: Callable[[], bool] | None,
         prepared_eligible: Mapping[int, EquipmentDefinition] | None = None,
+        *,
+        reporter: StageReporter = NULL_REPORTER,
     ) -> None:
+        # Telemetry only; shared by frontier copies so their work is reported too.
+        self.reporter = reporter
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
         self.levels = {k: v.level for k, v in snapshot.skills.items()}
         if request.potions.mode == "fixed":
@@ -768,7 +773,8 @@ class _Search:
         locked |= {v for v in self.request.locks.values() if v is not None}
         pools: dict[str, list[int | None]] = {}
         baselines = {r.id: self.baselines(r) for r in self.request.roles}
-        for slot in SLOTS:
+        for index, slot in enumerate(SLOTS):
+            self.reporter.slots(index / len(SLOTS))
             candidates = [i for i, item in self.eligible.items() if item.slot == slot]
             # Compare actual model DPS against legal weapon/ammunition scaffolds;
             # never invent weighted bonus desirability scores.
@@ -845,7 +851,8 @@ class _Search:
         """
         roles = self.request.roles
         beam: list[dict[str, dict[str, int]]] = [{r.id: {} for r in roles}]
-        for slot in SLOTS:
+        for index, slot in enumerate(SLOTS):
+            self.reporter.slots(index / len(SLOTS))
             candidates = [i for i in self.pools[slot] if i is not None]
             common = sorted(
                 candidates,
@@ -965,7 +972,8 @@ class _Search:
                     return []
                 locks[slot] = item_id
         states: list[dict[str, int]] = [{}]
-        for slot in SLOTS:
+        for index, slot in enumerate(SLOTS):
+            self.reporter.slots(index / len(SLOTS))
             choices = [locks[slot]] if slot in locks else self.pools[slot]
             expanded: list[dict[str, int]] = []
             for state, item_id in product(states, choices):
@@ -1273,21 +1281,30 @@ def optimize(
             _complete_frontiers=_complete_frontiers,
             progress=progress,
         )
+    reporter = StageReporter(progress) if progress else NULL_REPORTER
+    reporter.stage("preparation", elapsed_seconds=0.0)
     prepared = _prepared or prepare_optimization(
         snapshot, request, catalog, content, price_records, now
     )
     catalog, projected, facts = prepared.catalog, prepared.snapshot, prepared.facts
     prepared_at = perf_counter()
-    if progress:
-        progress({"phase": "candidate_ranking", "elapsed_seconds": prepared_at - started})
-    search = _Search(projected, request, catalog.items, facts, cancelled, prepared.eligible)
+    reporter.stage("candidate_ranking", elapsed_seconds=prepared_at - started)
+    search = _Search(
+        projected, request, catalog.items, facts, cancelled, prepared.eligible, reporter=reporter
+    )
     candidates_at = perf_counter()
-    if progress:
-        progress({"phase": "gear_search", "elapsed_seconds": candidates_at - started})
+    reporter.stage("gear_search", elapsed_seconds=candidates_at - started)
     search.running_prices = price_records
     search.running_at = now
     search.complete_frontiers = _complete_frontiers
-    individual = {role.id: search.loadouts((role,)) for role in request.roles}
+    swap_limits = [*range(request.max_swaps + 1), None] if len(request.roles) > 1 else []
+    # Equal progress segments: per-role beams, Multi's common/joint/tuple beams, scoring.
+    search_units = len(request.roles) + (1 + 2 * len(swap_limits) if swap_limits else 0) + 1
+    individual = {}
+    for unit, role in enumerate(request.roles):
+        reporter.segment(unit, search_units)
+        individual[role.id] = search.loadouts((role,))
+    unit = len(request.roles)
     for role in request.roles:
         if role.style != "special" or role.parent_role is None:
             continue
@@ -1305,6 +1322,9 @@ def optimize(
     # role beams. More complex disconnected graphs are explored by the joint beam.
     # Single has no transitions: its individual beam already contains every
     # shared seed, and all feasible finalists apply to every action cap.
+    if swap_limits:
+        reporter.segment(unit, search_units)
+        unit += 1
     common = (
         individual[request.roles[0].id]
         if len(request.roles) == 1
@@ -1313,10 +1333,11 @@ def optimize(
     tuples: list[dict[str, dict[str, int]]] = [
         {role.id: equipment for role in request.roles} for equipment in common
     ]
-    swap_limits = [*range(request.max_swaps + 1), None] if len(request.roles) > 1 else []
     # Joint per-slot search comes first so independent tuple expansion cannot
     # consume the deterministic node budget before shared gear is explored.
     for swap_limit in swap_limits:
+        reporter.segment(unit, search_units)
+        unit += 1
         tuples.extend(search.joint_loadouts(swap_limit))
 
     def partial_rank(c: dict[str, dict[str, int]]) -> tuple[Any, ...]:
@@ -1336,8 +1357,11 @@ def optimize(
     # Search each constraint separately. A high-scoring unrestricted beam must not
     # evict all feasible low-action tuples before the action limit is considered.
     for swap_limit in swap_limits:
+        reporter.segment(unit, search_units)
+        unit += 1
         beam: list[dict[str, dict[str, int]]] = [{}]
-        for role in request.roles:
+        for role_index, role in enumerate(request.roles):
+            reporter.fraction(role_index / len(request.roles))
             expanded = []
             for partial, equipment in product(beam, individual[role.id]):
                 if not search.tick():
@@ -1358,7 +1382,9 @@ def optimize(
     unrestricted = None
     winners: list[dict[str, Any] | None] = [None] * (request.max_swaps + 1)
     unique_tuples = {json.dumps(e, sort_keys=True): e for e in tuples}
-    for loadouts in unique_tuples.values():
+    reporter.segment(search_units - 1, search_units)
+    for scored, loadouts in enumerate(unique_tuples.values()):
+        reporter.fraction(scored / len(unique_tuples))
         if cancelled and cancelled():
             raise ValueError("optimization_cancelled")
         solution = search.solution(loadouts, None)
@@ -1371,8 +1397,8 @@ def optimize(
             if previous is None or _solution_key(solution) < _solution_key(previous):
                 winners[limit] = solution
     searched_at = perf_counter()
-    if progress:
-        progress({"phase": "refinement", "elapsed_seconds": searched_at - started})
+    reporter.stage("refinement", elapsed_seconds=searched_at - started)
+    refinement_units = 2 + int(targeted_head_refinement) + int(local_refinement)
     # Irrelevant-slot beam ties can evict the ranged role's ammunition from a
     # melee/magic beam. Revalidate equivalent sharing on the small finalist set,
     # then offer lower-action variants to every compatible curve point.
@@ -1389,8 +1415,13 @@ def optimize(
             refined[identity] = refine_ammunition(search, shared, _solution_key, refinement)
         return refined[identity]
 
-    winners = [refine(solution) for solution in winners]
+    refined_winners = []
+    for index, solution in enumerate(winners):
+        reporter.fraction(index / (len(winners) + 1))
+        refined_winners.append(refine(solution))
+    winners = refined_winners
     unrestricted = refine(unrestricted)
+    unit = 1
     for solution in refined.values():
         if unrestricted is None or _solution_key(solution) < _solution_key(unrestricted):
             unrestricted = solution
@@ -1400,14 +1431,19 @@ def optimize(
                 winners[limit] = solution
     targeted_diagnostics = None
     if targeted_head_refinement:
+        reporter.segment(unit, refinement_units)
+        unit += 1
         winners, unrestricted, targeted_diagnostics = refine_omitted_heads(
             search, winners, unrestricted, _solution_key
         )
     local_diagnostics = None
     if local_refinement:
+        reporter.segment(unit, refinement_units)
+        unit += 1
         winners, unrestricted, local_diagnostics = refine_completed(
             search, winners, unrestricted, _solution_key
         )
+    reporter.segment(unit, refinement_units)
     # Local refinement may introduce new assignments after the initial cleanup.
     winners = [
         refine_ammunition(search, row, _solution_key, refinement) if row else None
@@ -1417,12 +1453,15 @@ def optimize(
         unrestricted = refine_ammunition(search, unrestricted, _solution_key, refinement)
     secondary_frontiers: list[dict[str, Any]] = []
     refined_at = perf_counter()
-    if progress:
-        progress({"phase": "frontiers", "elapsed_seconds": refined_at - started})
+    reporter.stage("frontiers", elapsed_seconds=refined_at - started)
+    run_secondary = request.secondary_priority != "default"
+    run_running = _running_frontier or any(r.style == "magic" for r in request.roles)
+    frontier_units = int(run_secondary) + int(run_running)
     frontier_diagnostics = None
-    if request.secondary_priority != "default":
+    if run_secondary:
         from tracker.gear.frontier import explore
 
+        reporter.segment(0, frontier_units)
         secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
             search, winners, unrestricted, local_refinement
         )
@@ -1434,11 +1473,13 @@ def optimize(
 
     running_frontiers: list[dict[str, Any]] = []
     running_diagnostics = None
-    if _running_frontier or any(r.style == "magic" for r in request.roles):
+    if run_running:
+        reporter.segment(frontier_units - 1, frontier_units)
         running_frontiers, running_diagnostics = explore_running_costs(
             search, winners, unrestricted, local_refinement
         )
     frontiers_at = perf_counter()
+    reporter.finish()
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {

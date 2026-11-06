@@ -10,7 +10,6 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
-from time import monotonic
 from typing import TYPE_CHECKING, Any, cast
 
 from tracker.accounts.requirements import evaluate_requirement
@@ -23,6 +22,7 @@ from tracker.gear.catalog import EquipmentCatalog, load_catalog
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
+from tracker.gear.progress_tracker import RunProgress, TimingModel
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
@@ -38,6 +38,30 @@ _LIMITATIONS = (
     "Exact replaced items and combat stat or DPS deltas are unavailable from current "
     "observations and catalog.",
 )
+
+
+def _has_frontiers(request: OptimizationRequest) -> bool:
+    """Whether any lane runs the secondary or running-cost frontier stage."""
+    return (
+        request.secondary_priority != "default"
+        or any(role.style == "magic" for role in request.roles)
+        or "magic" in (request.roles[0].allowed_disciplines or ())
+    )
+
+
+def _timing_key(request: OptimizationRequest, thorough: bool, parallel: bool) -> tuple[Any, ...]:
+    """Request shape whose per-lane stage durations are comparable between runs."""
+    return (
+        thorough,
+        parallel,
+        request.mode,
+        request.secondary_priority,
+        request.potions.mode,
+        tuple(role.style for role in request.roles),
+        tuple(request.roles[0].allowed_disciplines or ()),
+        request.max_swaps,
+        request.budget_gp > 0,
+    )
 
 
 class GearService:
@@ -57,17 +81,15 @@ class GearService:
         self._equipment: EquipmentCatalog | None = None
         self._optimization_lock = Lock()
         self.auto_pool = auto_pool
-        self._progress_record: tuple[str, dict[str, Any], float] | None = None
+        self._progress_record: tuple[str, RunProgress] | None = None
+        self._timings = TimingModel()
 
     def optimization_progress(self, identity: str) -> dict[str, Any] | None:
         """Read the latest request-local progress without exposing another request."""
         record = self._progress_record
         if record is None or record[0] != identity:
             return None
-        progress = dict(record[1])
-        if progress.get("phase") not in {"complete", "failed"}:
-            return {**progress, "elapsed_seconds": monotonic() - record[2]}
-        return progress
+        return record[1].snapshot()
 
     def equipment_catalog(self) -> EquipmentCatalog:
         """Load bundled metadata once; no network, database session or refresh."""
@@ -100,40 +122,32 @@ class GearService:
 
         if not self._optimization_lock.acquire(blocking=False):
             raise ValueError("optimizer_busy: another equipment search is running")
+        tracker: RunProgress | None = None
         try:
-            started = monotonic()
-            if progress_identity is not None:
-                self._progress_record = None
-
-            def publish(event: dict[str, Any]) -> None:
-                if progress_identity is not None:
-                    previous = self.optimization_progress(progress_identity) or {}
-                    merged = {**previous, **event}
-                    self._progress_record = (
-                        progress_identity,
-                        {
-                            **merged,
-                            "elapsed_seconds": monotonic() - started,
-                            "completed": merged.get("completed_profiles", 0),
-                            "total": merged.get("total_profiles", 0),
-                            "scenario_fingerprint": progress_fingerprint,
-                        },
-                        started,
-                    )
-
-            publish({"phase": "preparation"})
             runner: Callable[..., dict[str, Any]] = optimize
             execution: dict[str, Any] = {}
             pool = self.auto_pool
+            parallel = False
             if request.potions.mode == "optimize":
-                execution["progress"] = publish
                 if pool is not None:
                     execution["potion_branch_runner"] = pool.run_potions
+                    parallel = True
             elif pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
                 from tracker.gear.auto import optimize_auto
 
                 runner = optimize_auto
                 execution["branch_runner"] = pool.run
+                parallel = True
+            if progress_identity is not None:
+                tracker = RunProgress(
+                    has_frontiers=_has_frontiers(request),
+                    parallelism=getattr(pool, "workers", 1) if parallel else 1,
+                    timing_key=_timing_key(request, local_refinement, parallel),
+                    model=self._timings,
+                    fingerprint=progress_fingerprint,
+                )
+                self._progress_record = (progress_identity, tracker)
+                execution["progress"] = tracker.handle
             result = runner(
                 snapshot,
                 request,
@@ -145,18 +159,12 @@ class GearService:
                 **({"local_refinement": True} if local_refinement else {}),
                 **execution,
             )
-            previous = self.optimization_progress(progress_identity) if progress_identity else None
-            publish(
-                {
-                    **(previous or {}),
-                    "phase": "complete",
-                    "completed_profiles": (previous or {}).get("total_profiles", 0),
-                }
-            )
+            if tracker is not None:
+                tracker.finish(succeeded=True)
             return result
         except BaseException:
-            previous = self.optimization_progress(progress_identity) if progress_identity else None
-            publish({**(previous or {}), "phase": "failed"})
+            if tracker is not None:
+                tracker.finish(succeeded=False)
             raise
         finally:
             self._optimization_lock.release()

@@ -42,7 +42,8 @@ combat filters and returns the selected option with each loadout; no new tool is
 `GearService.optimize` exposes a Python-only `local_refinement=False` keyword used
 by the browser adapter. Busy rejection, worker-thread execution, cooperative
 cancellation and pre/post snapshot checks retain their existing behavior. No queue,
-job persistence, background storage or progress-percentage contract is added.
+job persistence or background storage is added. Progress telemetry is described
+under the optimization progress endpoint below.
 
 See [optimization mode acceptance](GEAR_OPTIMIZATION_MODES.md) for deployment limits.
 
@@ -748,7 +749,34 @@ configured. This does not move optimization onto the Pi.
 Clients may attach a fresh UUID `progress_id` query parameter to optimization
 POSTs, then poll `GET /optimizations/progress?progress_id=<uuid>`. The response
 contains the matching attempt's progress or null; previous attempts are never
-substituted. Progress reports phase, completed/total profiles and elapsed seconds.
+substituted. Progress is reported for every run type (Single, Multi, Auto and potion
+search) and contains:
+
+- `phase` / `label`: the current stage id and its human label.
+- `fraction`: overall 0–1 completion. It never decreases within one attempt and only
+  reaches 1 when the run finishes.
+- `stages`: the ordered stage plan (`preparation`, `candidate_ranking`, `gear_search`,
+  `refinement`, `frontiers` when a frontier runs, `merge` when several searches run),
+  each with `status` (`complete` | `active` | `pending`) and `fraction`.
+- `lanes` and `lane_counts` (only when there are several independent searches, e.g.
+  Auto disciplines × potion profiles): rows with `label`, `status` (`complete` |
+  `running` | `pending`), `stage`, `stage_label` and `fraction`. Every row is sent for
+  up to 12 searches; above that only running rows are sent. `lane_counts` always
+  gives `{complete, running, pending}`. Browsers show these rows instead of the stage
+  checklist, because parallel searches are in different stages at once.
+- `completed` / `total`: finished and total independent searches (`total` is 0 for a
+  single search). `eta_seconds`: estimated seconds left, or null while not credible.
+- `elapsed_seconds` and `scenario_fingerprint`.
+
+In-stage fractions come from deterministic search counters: equipment slots, beam
+segments, finalists scored, refinement assignments and frontier node budgets. Spawned
+desktop workers publish them through lock-free shared-memory slots. Stage durations
+come first from searches already finished in the same run, then from per-shape
+history learned in memory (reset on restart), then from defaults. They weight the
+stages and smooth progress between counter updates. The ETA is the remaining search
+work divided across the worker pool. Progress is
+telemetry only and never changes search order, budgets or results. Browsers poll every
+400 ms.
 Result search diagnostics include potion preparation, branch and merge timings.
 `search.timings_seconds.total` measures the enclosing optimizer run: Auto reports
 branch and merge wall time, and potion optimization also reports preparation.

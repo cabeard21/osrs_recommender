@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from tracker.content.schema import ItemSlot
 from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
+from tracker.gear.progress import NODE_REPORT_MASK, NULL_REPORTER
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -211,12 +212,18 @@ def explore(
         "work_budget_exhausted": False,
     }
 
+    # Metric-lane work already charged to the shared budget, for progress only.
+    charged = [0]
+    reporter = getattr(original, "reporter", NULL_REPORTER)
+
     def tick() -> bool:
         if search.cancelled and search.cancelled():
             raise ValueError("optimization_cancelled")
         if search.nodes >= phase_limit:
             return False
         search.nodes += 1
+        if not search.nodes & NODE_REPORT_MASK:
+            reporter.fraction((charged[0] + search.nodes) / budget)
         return True
 
     search.tick = tick
@@ -316,6 +323,8 @@ def explore(
         if metric.nodes >= metric_limit:
             return False
         metric.nodes += 1
+        if not metric.nodes & NODE_REPORT_MASK:
+            reporter.fraction(metric.nodes / budget)
         return True
 
     metric.tick = metric_tick
@@ -343,6 +352,7 @@ def explore(
     # Charge actual metric work to the shared total; unused reserved work is
     # available to the diverse lane.
     phase_limit = budget - 25000 - metric.nodes
+    charged[0] = metric.nodes
     individual = {role.id: search.loadouts((role,)) for role in roles}
     # Shared and joint searches preserve constrained joint solutions.
     common = individual[roles[0].id] if len(roles) == 1 else search.loadouts(roles)

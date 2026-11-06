@@ -1,5 +1,125 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createProgressId, pollOptimizationProgress } from "../api/progress";
+import {
+  createProgressId,
+  parseProgress,
+  pollOptimizationProgress,
+  PROGRESS_POLL_MS,
+} from "../api/progress";
+
+const base = {
+  phase: "gear_search",
+  completed: 0,
+  total: 0,
+  elapsed_seconds: 1,
+};
+
+it("keeps valid stage, lane, fraction and ETA telemetry", () => {
+  expect(
+    parseProgress({
+      ...base,
+      label: "Searching gear combinations",
+      fraction: 0.42,
+      eta_seconds: 12.5,
+      stages: [
+        {
+          id: "gear_search",
+          label: "Searching",
+          status: "active",
+          fraction: 0.4,
+        },
+      ],
+      lanes: [
+        {
+          label: "Melee",
+          status: "running",
+          stage: "gear_search",
+          fraction: 0.5,
+        },
+        { label: "Magic", status: "pending", stage: null, fraction: 0 },
+      ],
+    }),
+  ).toEqual({
+    ...base,
+    label: "Searching gear combinations",
+    fraction: 0.42,
+    eta_seconds: 12.5,
+    stages: [
+      {
+        id: "gear_search",
+        label: "Searching",
+        status: "active",
+        fraction: 0.4,
+      },
+    ],
+    lanes: [
+      {
+        label: "Melee",
+        status: "running",
+        stage: "gear_search",
+        fraction: 0.5,
+      },
+      { label: "Magic", status: "pending", stage: null, fraction: 0 },
+    ],
+  });
+});
+
+it("drops malformed optional telemetry but rejects malformed required fields", () => {
+  expect(
+    parseProgress({
+      ...base,
+      fraction: 2,
+      eta_seconds: -1,
+      label: "x".repeat(101),
+      stages: [{ id: "a", label: "A", status: "bogus", fraction: 0 }],
+      lanes: "nope",
+    }),
+  ).toEqual(base);
+  expect(
+    parseProgress({
+      ...base,
+      lane_counts: { complete: 1, running: 2, pending: 3 },
+      lanes: [
+        {
+          label: "Melee",
+          status: "running",
+          stage: "frontiers",
+          stage_label: "Exploring trade-offs",
+          fraction: 0.5,
+        },
+      ],
+    }),
+  ).toEqual({
+    ...base,
+    lane_counts: { complete: 1, running: 2, pending: 3 },
+    lanes: [
+      {
+        label: "Melee",
+        status: "running",
+        stage: "frontiers",
+        stage_label: "Exploring trade-offs",
+        fraction: 0.5,
+      },
+    ],
+  });
+  expect(
+    parseProgress({ ...base, lane_counts: { complete: -1, running: 0 } }),
+  ).toEqual(base);
+  expect(parseProgress({ ...base, eta_seconds: null })).toEqual({
+    ...base,
+    eta_seconds: null,
+  });
+  expect(parseProgress({ ...base, completed: 3, total: 2 })).toBeNull();
+  expect(parseProgress({ ...base, elapsed_seconds: Number.NaN })).toBeNull();
+  expect(parseProgress(null)).toBeNull();
+  expect(
+    parseProgress({
+      phase: "x",
+      completed_profiles: 1,
+      total_profiles: 2,
+      elapsed_seconds: 0,
+    }),
+  ).toEqual({ phase: "x", completed: 1, total: 2, elapsed_seconds: 0 });
+});
 
 it("creates distinct valid UUIDs without randomUUID", () => {
   const original = crypto.randomUUID;
@@ -75,9 +195,9 @@ it("ignores stale jobs, emits current progress, and stops on disposal", async ()
     transport,
     update,
   );
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(PROGRESS_POLL_MS);
   expect(update).not.toHaveBeenCalled();
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(PROGRESS_POLL_MS);
   expect(update).toHaveBeenCalledWith({
     phase: "searching",
     completed: 2,
@@ -107,7 +227,7 @@ it("suppresses late progress from an aborted request", async () => {
     transport,
     update,
   );
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(PROGRESS_POLL_MS);
   controller.abort();
   resolve({
     ok: true,
@@ -142,7 +262,7 @@ it("does not wait on a pending progress GET when the optimization fails", async 
     vi.fn(),
   );
   const rejected = expect(promise).rejects.toThrow("failed");
-  await vi.advanceTimersByTimeAsync(1000);
+  await vi.advanceTimersByTimeAsync(PROGRESS_POLL_MS);
   expect(transport).toHaveBeenCalledTimes(2);
   rejectPost(new Error("failed"));
   await rejected;
