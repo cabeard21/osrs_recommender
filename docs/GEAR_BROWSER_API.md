@@ -775,3 +775,39 @@ Equipment-bonus metric lanes reuse DPS option winners because their secondary
 value is constant across attacks and prayers for fixed equipment and discipline.
 Their equipment beams still rank the selected bonus first. Accuracy, player
 defence-roll and running-cost metric lanes retain independent option winners.
+
+## Powered staff planning
+
+Reviewed powered staves use their built-in attacks independently of the selected
+spellbook. Combat-option allowlists retain the `powered:<physical-id>` convention;
+an explicit empty allowlist still disables every attack. Damage uses the effective
+visible Magic level, including selected boosts, with no boost decay or endurance
+simulation. Equipment requirements continue to use account eligibility.
+
+Support covers ordinary PvM damage for Warped sceptre, Bone staff, both trident
+families, Sanguinesti staff, Eye of Ayak, Tumeken's shadow, and the powered forms of
+Thammaron's and Accursed sceptres. Reviewed enhanced and cosmetic editions retain
+their exact physical identities. Dawnbringer remains unavailable because its raid
+context is outside this model. Wilderness bonuses, raid multipliers, special
+attacks, healing value, and poison/venom damage over time are not simulated.
+Sanguinesti's offensive damage proc is included. Bone staff requires a confirmed
+rat trait from the target catalog; a target name is not evidence of that trait.
+
+Observed ownership remains factual. A separate planning projection may use an
+owned uncharged edition after charging, and results disclose that preparation.
+This does not establish that charges or charging resources are actually present.
+An uncharged weapon lock is resolved through its reviewed same-edition preparation
+route during optimization. The submitted scenario remains unchanged in the API
+response; selected equipment identifies the charged usable form. A matching
+explicit powered-attack selection follows that lock, while empty attack filters
+and exclusions remain authoritative. For Warped sceptre, `28583` is the uncharged
+market form and `28585` is the charged usable form.
+Purchase metadata includes the market form even when only the charged form is
+carried. Browser validation permits that difference only when the loadout's
+preparation matches the selected item's preparation facts.
+Purchases use the reviewed market form of the same edition; charging never grants
+an enhancement or ornament. Recurring charge costs use the frozen market snapshot
+and remain separate from the weapon purchase budget. Missing resource prices are
+unavailable, rather than zero. Alternative charging recipes use the cheapest fully
+priced reviewed recipe and disclose the selected resources. Mandatory activation
+reserves are preparation requirements, not assumed encounter consumption.

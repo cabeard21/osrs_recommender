@@ -173,7 +173,7 @@ export function CombatOptionsControls({
                           });
                         }}
                       />
-                      {option.id.replaceAll("_", " ")}
+                      {option.name ?? option.id.replaceAll("_", " ")}
                       {option.reason && !option.available
                         ? ` · ${option.reason}`
                         : ""}

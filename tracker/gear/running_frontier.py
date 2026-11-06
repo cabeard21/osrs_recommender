@@ -68,6 +68,8 @@ def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str
         "gp_per_hour": spend * 3600 / weight if spend is not None else None,
         "gp_per_damage": spend / damage if spend is not None and damage > 0 else None,
         "resources": [],
+        "charging_alternatives": [],
+        "charging_assumption": None,
         "reasons": (
             []
             if known and damage > 0

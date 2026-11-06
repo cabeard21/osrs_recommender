@@ -2,6 +2,7 @@ import type {
   CombatOption,
   CombatPerformance,
   PrayerDefinition,
+  Preparation,
   Role,
 } from "../api/contracts";
 import { prayerDisplayName, prayerEffectText } from "./prayerFormat";
@@ -34,6 +35,7 @@ export function CombatOptionSummary({
   role,
   weapon,
   performance,
+  preparations = [],
   prayerIds,
   prayerCatalog = [],
 }: {
@@ -44,6 +46,7 @@ export function CombatOptionSummary({
   >;
   weapon: string;
   performance?: CombatPerformance;
+  preparations?: readonly Preparation[];
   prayerIds?: string[];
   prayerCatalog?: readonly PrayerDefinition[];
 }) {
@@ -59,7 +62,7 @@ export function CombatOptionSummary({
     (role.style === "melee" ? role.attackType : role.style);
   const stance = option?.stance ?? role.stance;
   const spell =
-    option?.powered_attack ??
+    (option?.powered_attack ? "Built-in spell" : null) ??
     option?.spell ??
     (role.style === "magic" ? role.spell : null);
   const weakness = performance?.elemental_weakness;
@@ -69,6 +72,11 @@ export function CombatOptionSummary({
         {weapon} · {attack} · {stance}
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
+      {preparations.map((p) => (
+        <p className="notice" key={p.usable_item_id}>
+          {p.message}
+        </p>
+      ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
       {performance?.hitsplats && performance.hitsplats.length > 1 && (
         <p aria-label="Hitsplat details">

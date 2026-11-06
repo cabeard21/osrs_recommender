@@ -19,6 +19,7 @@ from tracker.gear.models import (
     EquipmentDefinition,
     HitsplatPerformance,
 )
+from tracker.gear.powered import base_hit, supports_powered
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects, effects
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 
@@ -154,8 +155,10 @@ def _evaluate_prepared(
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
-    if powered_attack is not None and levels.get("_base_magic", levels.get("magic")) != levels.get(
-        "magic"
+    if (
+        powered_attack is not None
+        and not (weapon and weapon.powered_attack_model)
+        and levels.get("_base_magic", levels.get("magic")) != levels.get("magic")
     ):
         problems.append("Potion-boosted powered-attack damage has not been reviewed.")
     problems.extend(effect for item in equipment for effect in item.unsupported_effects)
@@ -199,10 +202,17 @@ def _evaluate_prepared(
         and (
             weapon is None
             or weapon.powered_attack != powered_attack
-            or weapon.powered_attack_base_max_hit is None
+            or not supports_powered(weapon)
         )
     ):
         problems.append("Powered attack is not supported by this weapon.")
+    if (
+        powered_attack is not None
+        and weapon
+        and weapon.powered_attack_model == "bone"
+        and "rat" not in target.traits
+    ):
+        problems.append("Bone staff requires a confirmed rat target.")
     if (
         style == "magic"
         and powered_attack is None
@@ -296,9 +306,14 @@ def _calculate(
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
             # the same ordinary magic model as standard spells.
-            if weapon is None or weapon.powered_attack_base_max_hit is None:
+            if weapon is None or not supports_powered(weapon):
                 raise ValueError("Powered attack requires reviewed weapon damage metadata")
-            base = weapon.powered_attack_base_max_hit
+            base = (
+                base_hit(weapon.powered_attack_model, levels["magic"])
+                if weapon.powered_attack_model
+                else weapon.powered_attack_base_max_hit
+            )
+            assert base is not None
         elif spell == "iban_blast" or spell in ANCIENT_SPELLS:
             base = SPELLS[spell][1]
         else:
@@ -308,10 +323,17 @@ def _calculate(
                 for name, (level, damage) in ELEMENTAL_SPELLS.items()
                 if name.endswith("_" + tier) and level <= levels["magic"]
             )
-        max_hit = floor(base * (100 + bonuses.magic_damage + prayers.magic_damage) / 100)
+        shadow = (
+            powered_attack is not None
+            and weapon is not None
+            and weapon.powered_attack_model == "shadow"
+        )
+        damage_bonus = min(100, bonuses.magic_damage * 3) if shadow else bonuses.magic_damage
+        magic_bonus = bonuses.magic * 3 if shadow else bonuses.magic
+        max_hit = floor(base * (100 + damage_bonus + prayers.magic_damage) / 100)
         attack = (
             levels["magic"] * prayers.magic_accuracy // 100 + 9 + (2 if stance == "accurate" else 0)
-        ) * (bonuses.magic + 64)
+        ) * (magic_bonus + 64)
         element = (
             spell.split("_")[0] if powered_attack is None and spell in ELEMENTAL_SPELLS else None
         )
@@ -388,9 +410,16 @@ def _calculate(
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
     max_hit = max(0, max_hit)
+    sang_proc = (
+        powered_attack is not None
+        and weapon is not None
+        and weapon.powered_attack_model == "sanguinesti"
+    )
     pattern = weapon.attack_pattern if weapon and style != "magic" else "single"
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
-    if target.damage_cap is not None and any(max(1, m) > target.damage_cap for m in maxima):
+    if target.damage_cap is not None and any(
+        max(1, m) + (8 if sang_proc else 0) > target.damage_cap for m in maxima
+    ):
         if score_only:
             return CombatScore(False, None, None, bonuses)
         return CombatPerformance(
@@ -410,6 +439,8 @@ def _calculate(
     expected = sum(
         p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True)
     )
+    if sang_proc:
+        expected += accuracy * 0.2 * 8
     interval = speed * 0.6
     if score_only:
         return CombatScore(
@@ -420,7 +451,9 @@ def _calculate(
             raw_player_defence_rolls(levels, bonuses, stance, prayers) if include_defence else None,
         )
     hitsplats = tuple(
-        HitsplatPerformance(accuracy=p, max_hit=max(0, max(1, m) - armour))
+        HitsplatPerformance(
+            accuracy=p, max_hit=max(0, max(1, m) - armour) + (8 if sang_proc else 0)
+        )
         for m, p in zip(maxima, probabilities, strict=True)
     )
     return CombatPerformance(
@@ -439,6 +472,19 @@ def _calculate(
             "Fresh combat levels and sustained active stat prayers only; "
             "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
+        )
+        + (
+            (
+                "Ordinary generic PvM only; healing, venom, special attacks and location "
+                "bonuses are not modeled. Charge availability is unknown.",
+            )
+            if powered_attack is not None
+            else ()
+        )
+        + (
+            ("Generic PvM only; sceptre Wilderness bonuses and special attacks are not modeled.",)
+            if weapon is not None and weapon.id in {27785, 27788, 27676, 27679}
+            else ()
         )
         + (
             (

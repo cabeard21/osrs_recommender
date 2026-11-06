@@ -221,6 +221,50 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-powered")
+        def seed_powered():
+            seed_running_cost()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in (28583, 28585)},
+                revision="browser-powered-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=28583,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
+        @app.post("/test/seed-powered-purchase")
+        def seed_powered_purchase():
+            seed_powered()
+            now = datetime.now(UTC)
+            with factory() as session:
+                session.execute(delete(ObservedItem).where(ObservedItem.item_id == 28583))
+                session.merge(
+                    ItemPrice(
+                        item_id=28583,
+                        high_price_gp=1000,
+                        low_price_gp=900,
+                        high_trade_at=now,
+                        low_trade_at=now,
+                        fetched_at=now,
+                        provider="deterministic-browser-fixture",
+                        source=PriceSourceLayer.CACHED,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         _mount_ui(app, app.state.settings)
         uvicorn.run(
             app,

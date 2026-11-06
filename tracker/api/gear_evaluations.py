@@ -22,7 +22,7 @@ from tracker.api.gear_optimizations import (
     scenario_fingerprint,
     validate_scenario,
 )
-from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, no_cache, resources
+from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, Preparation, no_cache, resources
 from tracker.content.schema import ItemSlot
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
@@ -114,6 +114,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(DTO):
+    preparations: list[Preparation] = Field(default_factory=list)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     selected_prayer_ids: list[str] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
@@ -239,6 +240,9 @@ def calculate_evaluation(
     referenced = set(body.baseline_loadouts[role_id].values()) | set(
         body.proposed_loadouts[role_id].values()
     )
+    referenced.update(
+        p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
+    )
     from tracker.gear.potions import potion_summary
 
     assumptions = {
@@ -272,7 +276,7 @@ def calculate_evaluation(
         scenario_fingerprint=scenario_fingerprint(body.scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
-        model_version="normal-attacks-v1",
+        model_version="normal-attacks-v2-powered",
         assumptions_fingerprint=hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()
         ).hexdigest(),

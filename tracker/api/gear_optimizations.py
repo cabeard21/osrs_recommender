@@ -15,7 +15,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import Field, model_validator
 
 from tracker.api.gear_scenario_validation import validate_browser_scenario
-from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, no_cache, project_equipment, resources
+from tracker.api.gear_ui import (
+    DTO,
+    GearRoute,
+    ItemResponse,
+    Preparation,
+    no_cache,
+    project_equipment,
+    resources,
+)
 from tracker.content.schema import ItemSlot
 from tracker.gear.combat import SPELLS
 from tracker.gear.evaluation import equipment_problems, evaluate_equipment
@@ -130,7 +138,14 @@ class RunningResource(DTO):
     price_trade_at: str | None = None
 
 
+class ChargingAlternative(DTO):
+    resources: list[RunningResource]
+    gp_per_attack: float | None
+
+
 class RunningCost(DTO):
+    charging_alternatives: list[ChargingAlternative] = Field(default_factory=list)
+    charging_assumption: str | None = None
     status: Literal["known", "unavailable"]
     model_version: str | None = None
     gp_per_attack: float | None
@@ -142,6 +157,7 @@ class RunningCost(DTO):
 
 
 class Loadout(DTO):
+    preparations: list[Preparation] = Field(default_factory=list)
     selected_prayer_ids: list[str] = Field(default_factory=list)
     equipment: dict[str, int]
     performance: CombatPerformance
@@ -505,6 +521,14 @@ def calculate(
             if group.get("baseline_solution") is not None:
                 solutions.append(group["baseline_solution"])
             referenced.update(i for solution in solutions for i in solution["carried_item_ids"])
+    from tracker.gear.powered import review as powered_review
+
+    referenced.update(
+        staff.uncharged_id
+        for i in tuple(referenced)
+        if (staff := powered_review(i)) is not None
+        and staff.uncharged_id in gear.equipment_catalog().items
+    )
     return OptimizationResponse(
         evaluated_at=now,
         optimization_mode=body.optimization_mode,

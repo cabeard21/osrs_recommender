@@ -35,6 +35,28 @@ def test_catalog_search_and_mapping():
     assert catalog.search(str(entry["npc_id"]))["items"]
 
 
+def test_catalog_rat_traits_are_preserved_and_cannot_be_overridden():
+    catalog = npc_catalog()
+    entry = next(
+        value
+        for value in catalog.entries.values()
+        if "rat" in (value.get("source_record", {}).get("attributes") or ())
+        and value["support_status"] == "supported"
+    )
+    assert "rat" in entry["target"]["traits"]
+    role = RoleConfig(
+        id="rat",
+        style="magic",
+        target=entry["target"],
+        target_selection={"key": entry["key"], "catalog_revision": catalog.revision},
+    )
+    assert "rat" in resolve_target(role).target.traits
+    with pytest.raises(ValueError, match="mechanic"):
+        resolve_target(
+            role.model_copy(update={"target": role.target.model_copy(update={"traits": ()})})
+        )
+
+
 def test_selection_blocks_stale_and_restrictions():
     catalog = npc_catalog()
     entry = catalog.detail(catalog.search("Dagannoth Rex")["items"][0]["key"])

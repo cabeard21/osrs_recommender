@@ -97,13 +97,19 @@ def validate_request_context(
                 raise ValueError(f"locked item {item_id} is excluded")
 
 
+def planning_owned(fact: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Planning preparation never alters the concrete account observation."""
+    value: Mapping[str, Any] = fact.get("planning_ownership", fact["ownership"])
+    return value
+
+
 def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[str, ...]:
     """The optimizer's unchanged access policy, with concrete exclusions applied first."""
     if item_id in request.excluded_item_ids:
         return (f"Physical item {item_id} is excluded.",)
     if fact["wear"]["status"] != "satisfied":
         return (f"Physical item {item_id}: equipment requirements are {fact['wear']['status']}.",)
-    if fact["ownership"]["status"] == "owned":
+    if planning_owned(fact)["status"] == "owned":
         return ()
     if request.mode == "owned":
         return (f"Physical item {item_id} is not observed owned.",)
@@ -127,39 +133,38 @@ def unowned_untradeables(
     return sorted(
         i
         for i in ids
-        if facts[i]["ownership"]["status"] != "owned" and facts[i]["acquisition"] == "untradeable"
+        if planning_owned(facts[i])["status"] != "owned"
+        and facts[i]["acquisition"] == "untradeable"
     )
 
 
 def purchase_cost(ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any) -> int:
     """Count distinct gear purchases, excluding consumable ammunition and darts."""
-    untradeables = set(unowned_untradeables(ids, facts, request))
-    return sum(
-        facts[i]["price"]["amount_gp"] or 0
-        for i in ids
-        if facts[i]["ownership"]["status"] != "owned"
-        and i not in request.assumed_item_ids
-        and i not in untradeables
-        and not facts[i].get("budget_exempt", False)
-    )
+    return sum(p["cost_gp"] or 0 for p in purchases(ids, facts, request))
 
 
 def purchases(
     ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any
 ) -> list[dict[str, Any]]:
     untradeables = set(unowned_untradeables(ids, facts, request))
-    return [
-        {
-            "item_id": i,
-            "cost_gp": facts[i]["price"]["amount_gp"],
-            "conditional": facts[i]["ownership"]["status"] == "unknown",
+    result = {}
+    for i in sorted(ids):
+        fact = facts[i]
+        if (
+            planning_owned(fact)["status"] == "owned"
+            or i in request.assumed_item_ids
+            or i in untradeables
+            or fact.get("budget_exempt", False)
+        ):
+            continue
+        preparation = fact.get("preparation") or {}
+        market_id = preparation.get("market_item_id") or i
+        result[market_id] = {
+            "item_id": market_id,
+            "cost_gp": fact["price"]["amount_gp"],
+            "conditional": planning_owned(fact)["status"] == "unknown",
         }
-        for i in sorted(ids)
-        if facts[i]["ownership"]["status"] != "owned"
-        and i not in request.assumed_item_ids
-        and i not in untradeables
-        and not facts[i].get("budget_exempt", False)
-    ]
+    return [result[i] for i in sorted(result)]
 
 
 def loadout_problems(
@@ -223,6 +228,9 @@ def evaluate_configuration(
     return {
         "status": status,
         "equipment": dict(equipment),
+        "preparations": [
+            facts[i]["preparation"] for i in sorted(ids) if facts[i].get("preparation")
+        ],
         "performance": performance.model_dump(mode="json") if performance else None,
         "reasons": reasons,
         "purchase_cost_gp": cost,
@@ -246,6 +254,7 @@ def evaluate_configurations(
     proposed_combat_option: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Both sides share exactly one account projection, price set and calculation time."""
+    request = request.prepared_weapon_locks()
     if request.potions.mode == "optimize":
         raise ValueError("Fixed evaluation requires an explicit fixed potion setup")
     if (

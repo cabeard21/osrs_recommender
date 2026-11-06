@@ -1,6 +1,7 @@
 import { createProgressId, pollOptimizationProgress } from "./progress";
 import { validateUntradeables } from "./untradeables";
 import { validateRunningCost } from "./runningCosts";
+import { purchaseItemIds } from "./preparedPurchases";
 import {
   object,
   requireFields,
@@ -345,6 +346,12 @@ export function parseOptimization(
           scenario.request.excluded_item_ids.includes(id))
       )
         throw new Error("Missing physical result item metadata");
+    const allowedPurchases = purchaseItemIds(
+      Object.values(equipment).filter((id): id is number => id !== null),
+      loadout.preparations,
+      items,
+    );
+    const purchased = new Set<number>();
     const purchases = selected.purchases.map((p) => {
       const row = requireFields(p, {
         item_id: "number",
@@ -353,10 +360,13 @@ export function parseOptimization(
       if (
         !Number.isSafeInteger(row.item_id) ||
         Number(row.item_id) <= 0 ||
+        !allowedPurchases.has(Number(row.item_id)) ||
+        purchased.has(Number(row.item_id)) ||
         (row.cost_gp !== null &&
           (!Number.isSafeInteger(row.cost_gp) || Number(row.cost_gp) < 0))
       )
         throw new Error("Invalid purchase fact");
+      purchased.add(Number(row.item_id));
       return row.item_id as number;
     });
     validateUntradeables(
@@ -742,6 +752,11 @@ function parseFixedEvaluation(
       Number(row.purchase_cost_gp) < 0)
   )
     throw new Error("Invalid evaluation acquisition total");
+  const allowedPurchases = purchaseItemIds(
+    Object.values(equipment).filter((id): id is number => id !== null),
+    row.preparations,
+    items,
+  );
   const purchased = new Set<number>();
   for (const entry of row.purchases) {
     const purchase = requireFields(entry, {
@@ -750,7 +765,7 @@ function parseFixedEvaluation(
     });
     if (
       !Number.isSafeInteger(purchase.item_id) ||
-      !Object.values(equipment).includes(Number(purchase.item_id)) ||
+      !allowedPurchases.has(Number(purchase.item_id)) ||
       purchased.has(Number(purchase.item_id)) ||
       (purchase.cost_gp !== null &&
         (!Number.isSafeInteger(purchase.cost_gp) ||
