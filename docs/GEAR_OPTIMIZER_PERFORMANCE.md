@@ -1,5 +1,9 @@
 # Gear performance and equipment presentation — 2026-10-19
 
+The [desktop performance analysis and work tracker](GEAR_OPTIMIZER_DESKTOP_PERFORMANCE_PLAN.md)
+records the November 8, 2026 architectural assessment, profiling evidence, and
+proposed follow-up experiments. The entries below retain historical measurements.
+
 ## November 2, 2026: repeated search and frontier work
 
 Single-role optimization now reuses its individual equipment beam for common
