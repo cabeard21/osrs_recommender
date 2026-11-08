@@ -210,6 +210,7 @@ def equipment_fact(
         },
         "limitations": [
             *item.unsupported_effects,
+            *item.omitted_set_effects,
             *([preparation["message"]] if preparation else []),
         ],
     }

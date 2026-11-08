@@ -40,6 +40,19 @@ test("shows the actual weakness bonuses computed by Python", () => {
   );
 });
 
+test("discloses omitted bonuses for supported base-stat performance", () => {
+  const omission = "Obsidian set bonus is omitted; ordinary base stats only.";
+  render(
+    <CombatOptionSummary
+      role={role}
+      weapon="Obsidian staff"
+      performance={{ ...performance, limitations: [omission] }}
+    />,
+  );
+  expect(screen.getByText("Combat model limitations")).toBeInTheDocument();
+  expect(screen.getByText(omission)).toBeInTheDocument();
+});
+
 test("explains why a target weakness did not apply", () => {
   render(
     <CombatOptionSummary

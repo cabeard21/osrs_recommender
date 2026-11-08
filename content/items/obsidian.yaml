@@ -1,0 +1,155 @@
+# Exact physical-ID base-stat review, 2026-11-08.
+# Set and Berserker necklace bonuses are omitted; see tracker/gear/obsidian.py.
+# Shop access and ornament creation are acquisition, not wear gates.
+# No ownership or price aliases between physical forms.
+
+# https://oldschool.runescape.wiki/w/Obsidian_helmet
+- id: obsidian_21298_reviewed
+  name: Obsidian helmet
+  item_id: 21298
+  slot: head
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Obsidian_platebody
+- id: obsidian_21301_reviewed
+  name: Obsidian platebody
+  item_id: 21301
+  slot: body
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Obsidian_platelegs
+- id: obsidian_21304_reviewed
+  name: Obsidian platelegs
+  item_id: 21304
+  slot: legs
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Toktz-ket-xil
+- id: obsidian_6524_reviewed
+  name: Toktz-ket-xil
+  item_id: 6524
+  slot: shield
+  requires:
+    skill:
+      defence: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Obsidian_cape
+- id: obsidian_6568_reviewed
+  name: Obsidian cape
+  item_id: 6568
+  slot: cape
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Obsidian_cape_(r)
+- id: obsidian_20050_reviewed
+  name: Obsidian cape (r)
+  item_id: 20050
+  slot: cape
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Toktz-xil-ak
+- id: obsidian_6523_reviewed
+  name: Toktz-xil-ak
+  item_id: 6523
+  slot: weapon
+  requires:
+    skill:
+      attack: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Toktz-xil-ek
+- id: obsidian_6525_reviewed
+  name: Toktz-xil-ek
+  item_id: 6525
+  slot: weapon
+  requires:
+    skill:
+      attack: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Tzhaar-ket-em
+- id: obsidian_6527_reviewed
+  name: Tzhaar-ket-em
+  item_id: 6527
+  slot: weapon
+  requires:
+    skill:
+      attack: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Tzhaar-ket-om
+- id: obsidian_6528_reviewed
+  name: Tzhaar-ket-om
+  item_id: 6528
+  slot: weapon
+  requires:
+    skill:
+      strength: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Tzhaar-ket-om_(t)
+- id: obsidian_23235_reviewed
+  name: Tzhaar-ket-om (t)
+  item_id: 23235
+  slot: weapon
+  requires:
+    skill:
+      strength: 60
+  acquisition: untradeable
+
+# https://oldschool.runescape.wiki/w/Toktz-mej-tal
+- id: obsidian_6526_reviewed
+  name: Toktz-mej-tal
+  item_id: 6526
+  slot: weapon
+  requires:
+    all_of:
+    - skill:
+        attack: 60
+    - skill:
+        magic: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Toktz-xil-ul
+- id: obsidian_6522_reviewed
+  name: Toktz-xil-ul
+  item_id: 6522
+  slot: weapon
+  requires:
+    skill:
+      ranged: 60
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30

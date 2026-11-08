@@ -15,6 +15,8 @@ from tracker.content.loader import Content
 from tracker.content.requirements import AllOf, SkillLeaf
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
+from tracker.gear.obsidian import apply_review as obsidian_review
 from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
@@ -30,7 +32,7 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 2
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
 # https://oldschool.runescape.wiki/w/Ancient_staff
 REVIEWED_STANDARD_STAVES = frozenset(
-    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 27785, 27788, 27676, 27679}
+    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 6526, 27785, 27788, 27676, 27679}
 )
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
@@ -110,6 +112,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
+        row = obsidian_review(row)
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -245,6 +248,7 @@ def load_catalog(
             + community_payload
             + reviewed_spells
             + POWERED_REVISION
+            + OBSIDIAN_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -255,6 +259,7 @@ def load_catalog(
             payload
             + reviewed_spells
             + POWERED_REVISION
+            + OBSIDIAN_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

@@ -98,6 +98,14 @@ export function CombatOptionSummary({
             : ` · ${weakness.reason ?? "Weakness not applied."}`}
         </p>
       )}
+      {performance && performance.limitations.length > 0 && (
+        <details>
+          <summary>Combat model limitations</summary>
+          {performance.limitations.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+        </details>
+      )}
     </>
   );
 }

@@ -256,9 +256,15 @@ def _evaluate_prepared(
         if score_only:
             return CombatScore(False, None, None, bonuses)
         return CombatPerformance(
-            supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
+            supported=False,
+            limitations=tuple(
+                dict.fromkeys(
+                    [*problems, *(effect for i in equipment for effect in i.omitted_set_effects)]
+                )
+            ),
+            bonuses=bonuses,
         )
-    return _calculate(
+    result = _calculate(
         weapon,
         style,
         levels,
@@ -271,6 +277,13 @@ def _evaluate_prepared(
         score_only=score_only,
         include_defence=include_defence,
     )
+    if not score_only and isinstance(result, CombatPerformance):
+        omissions = tuple(dict.fromkeys(e for i in equipment for e in i.omitted_set_effects))
+        if omissions:
+            return result.model_copy(
+                update={"limitations": tuple(dict.fromkeys((*result.limitations, *omissions)))}
+            )
+    return result
 
 
 def _armoured_mean(maximum: int, armour: int) -> float:

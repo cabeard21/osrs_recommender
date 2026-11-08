@@ -66,6 +66,8 @@ class EquipmentDefinition(GearModel):
     requires: Requirement | None = None
     requirements_complete: bool = False
     unsupported_effects: tuple[str, ...] = ()
+    # Reviewed base stats remain usable while these bonuses are explicitly omitted.
+    omitted_set_effects: tuple[str, ...] = ()
     tradeable: bool | None = None
     content_ids: tuple[str, ...] = ()
 
