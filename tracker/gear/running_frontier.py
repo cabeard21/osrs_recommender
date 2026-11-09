@@ -7,7 +7,10 @@ from collections.abc import Mapping
 from hashlib import sha256
 from math import isfinite
 from time import perf_counter
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from tracker.gear.compact_costs import NumericCost, PreparedCost
 
 
 def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
@@ -78,9 +81,72 @@ def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str
     }
 
 
-def add_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, Any]:
+def _report_prepared_costs(
+    solution: dict[str, Any],
+    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost], ...],
+    weights: tuple[tuple[str, float], ...],
+) -> dict[str, Any]:
+    """Expand frozen resource records without retaining the producing search."""
+    reports = {rid: prepared.report(numeric) for rid, prepared, numeric in prepared_costs}
+    loadouts = {
+        rid: {**loadout, "running_cost": reports[rid]}
+        for rid, loadout in solution["loadouts"].items()
+    }
+    costs = [
+        (weight, reports[rid], loadouts[rid]["performance"].get("dps") or 0)
+        for rid, weight in weights
+    ]
+    return {**solution, "loadouts": loadouts, "running_cost": aggregate_cost(costs)}
+
+
+def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, Any]:
+    from tracker.gear.compact_costs import aggregate_numeric_cost, evaluator
+    from tracker.gear.variant_reporting import CompactVariant
+
+    engine = evaluator(search.running_prices, search.running_at)
+    loadouts = {}
+    costs = {}
+    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost], ...] = ()
+    for rid, loadout in solution["loadouts"].items():
+        prepared = engine.prepare(
+            {slot: search.items[i] for slot, i in loadout["equipment"].items()},
+            loadout["combat_option"] or {},
+        )
+        performance = loadout["performance"]
+        numeric = prepared.score(performance.get("attack_interval"), performance.get("dps"))
+        prepared_costs += ((rid, prepared, numeric),)
+        costs[rid] = numeric
+        loadouts[rid] = {
+            **loadout,
+            "running_cost": {
+                field: getattr(numeric, field) for field in numeric.__dataclass_fields__
+            },
+        }
+    weights = tuple((r.id, r.weight) for r in search.request.roles if r.style != "special")
+    aggregate = aggregate_numeric_cost(
+        [
+            (weight, costs[rid], loadouts[rid]["performance"].get("dps") or 0)
+            for rid, weight in weights
+        ]
+    )
+    values = {
+        **solution,
+        "loadouts": loadouts,
+        "running_cost": {
+            field: getattr(aggregate, field) for field in aggregate.__dataclass_fields__
+        },
+    }
+    return CompactVariant(values, lambda: _report_prepared_costs(solution, prepared_costs, weights))
+
+
+def add_solution_costs(
+    solution: dict[str, Any], search: Any, *, _defer: bool = True
+) -> dict[str, Any]:
+    from tracker.gear.compact_costs import active
     from tracker.gear.running_costs import evaluate_running_cost
 
+    if _defer and active() and getattr(search, "compact_cost_ranking", False):
+        return _numeric_solution_costs(solution, search)
     loadouts = {}
     for rid, loadout in solution["loadouts"].items():
         option = loadout["combat_option"] or {}
@@ -101,6 +167,8 @@ def add_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, Any]:
 
 
 def cost_pareto(rows: Any) -> list[dict[str, Any]]:
+    from tracker.gear.variant_reporting import loadout_tie
+
     ordered = sorted(
         (r for r in rows if r["running_cost"]["gp_per_damage"] is not None),
         key=lambda r: (
@@ -110,7 +178,7 @@ def cost_pareto(rows: Any) -> list[dict[str, Any]]:
             (r.get("potions") or {}).get("cost_per_application_gp") is None,
             (r.get("potions") or {}).get("cost_per_application_gp") or 0,
             len((r.get("potions") or {}).get("selected_ids", ())),
-            json.dumps(r["loadouts"], sort_keys=True),
+            loadout_tie(r),
         ),
     )
     result = []
@@ -126,12 +194,15 @@ def cost_pareto(rows: Any) -> list[dict[str, Any]]:
 def publish_groups(
     archives: Any, baselines: Any, cap: float, complete: bool = False
 ) -> list[dict[str, Any]]:
+    from tracker.gear.variant_reporting import materialize
+
     groups = []
     for limit, rows in archives.items():
         baseline = baselines.get(limit)
+        baseline = materialize(baseline) if baseline is not None else None
         dps = baseline["score"] if baseline else None
         visible = [
-            r
+            materialize(r)
             for r in cost_pareto(rows)
             if complete or not dps or 100 * (dps - r["score"]) / dps <= cap
         ]
@@ -163,6 +234,7 @@ def publish_groups(
 def explore_running_costs(
     original: Any, winners: Any, unrestricted: Any, thorough: bool
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    from tracker.gear.compact_costs import CostEvaluator, active, aggregate_numeric_cost, evaluator
     from tracker.gear.frontier import explore
     from tracker.gear.optimizer import _Search
     from tracker.gear.priorities import secondary_value
@@ -170,7 +242,42 @@ def explore_running_costs(
     started = perf_counter()
 
     class CostSearch(_Search):
+        compact_cost_ranking = True
+        cost_evaluator: CostEvaluator
+
+        def variant_secondary(self, loadouts: Mapping[str, Mapping[str, Any]]) -> float:
+            costs = []
+            for role in self.request.roles:
+                if role.style == "special" or role.id not in loadouts:
+                    continue
+                loadout = loadouts[role.id]
+                performance = loadout["performance"]
+                if not performance.get("supported"):
+                    return -1e100
+                prepared = self.cost_evaluator.prepare(
+                    {s: self.items[i] for s, i in loadout["equipment"].items()},
+                    loadout["combat_option"] or {},
+                )
+                dps = performance.get("dps") or 0
+                numeric = prepared.score(performance.get("attack_interval"), dps)
+                costs.append((role.weight, numeric, dps))
+            cost = aggregate_numeric_cost(costs).gp_per_damage
+            return -cost if cost is not None else -1e100
+
         def secondary(self, loadouts: Any) -> float:
+            if active():
+                projected = {}
+                for role in self.request.roles:
+                    if role.style == "special" or role.id not in loadouts:
+                        continue
+                    equipment = loadouts[role.id]
+                    performance, option = self.compact_combat(equipment, role)
+                    projected[role.id] = {
+                        "equipment": equipment,
+                        "performance": performance,
+                        "combat_option": option,
+                    }
+                return self.variant_secondary(projected)
             costs = []
             from tracker.gear.running_costs import evaluate_running_cost
 
@@ -194,12 +301,17 @@ def explore_running_costs(
 
         def solution(self, loadouts: Any, limit: int | None) -> dict[str, Any] | None:
             result = super().solution(loadouts, limit)
+            if active():
+                # super() already used this objective; preserve its deferred cost report.
+                return result
             return {**result, "secondary_value": self.secondary(loadouts)} if result else None
 
     search = CostSearch.__new__(CostSearch)
     search.__dict__ = dict(original.__dict__)
     search.performance_cache = dict(original.performance_cache)
     search.option_cache = dict(original.option_cache)
+    search.compact_cache = {}
+    search.cost_evaluator = evaluator(search.running_prices, search.running_at)
     search.request = original.request.model_copy(update={"secondary_priority": "accuracy"})
     search.complete_frontiers = True
     search.secondary_marginals = {}

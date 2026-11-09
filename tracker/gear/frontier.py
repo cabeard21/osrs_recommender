@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any
 from tracker.content.schema import ItemSlot
 from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
 from tracker.gear.progress import NODE_REPORT_MASK, NULL_REPORTER
+from tracker.gear.variant_reporting import active as lazy_variants_active
+from tracker.gear.variant_reporting import candidate_identity, compact_variant, materialize
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -91,6 +93,16 @@ def _identity(loadouts: dict[str, Any]) -> str:
     return json.dumps(loadouts, sort_keys=True, separators=(",", ":"))
 
 
+def _candidate_identity(loadouts: dict[str, Any]) -> str | tuple[Any, ...]:
+    from tracker.gear.compact_costs import active as compact_costs_active
+
+    return (
+        candidate_identity(loadouts)
+        if lazy_variants_active() or compact_costs_active()
+        else _identity(loadouts)
+    )
+
+
 def _shared_assignments(
     search: Any, archives: Iterable[list[Solution]]
 ) -> Iterator[dict[str, Any]]:
@@ -98,7 +110,7 @@ def _shared_assignments(
     from tracker.gear.optimizer import SLOTS, _solution_key
 
     seeds = {
-        _identity(row["loadouts"]): row
+        _candidate_identity(row["loadouts"]): row
         for archive in archives
         for row in diverse(archive, _solution_key, 8)
     }
@@ -197,6 +209,7 @@ def explore(
     started = perf_counter()
     # This isolated search overrides its tick method for a separate work budget.
     search: Any = copy(original)
+    search.compact_cache = {}
     search.frontier_search = True
     search.nodes = 0
     budget = 1_500_000 if thorough else 500_000
@@ -266,7 +279,7 @@ def explore(
         nonlocal archives, ranked_archives
         if solution is None:
             return
-        identity = _identity(solution["loadouts"])
+        identity = _candidate_identity(solution["loadouts"])
         if identity in seen:
             return
         seen.add(identity)
@@ -307,6 +320,7 @@ def explore(
     # Accuracy, defence rolls and CostSearch's accuracy projection still need
     # independent winners, including their recorded options and prayers.
     metric: Any = copy(search)
+    metric.compact_cache = {}
     metric.metric_first = True
     if search.request.secondary_priority not in EQUIPMENT_BONUS_PRIORITIES:
         metric.performance_cache = {}
@@ -377,7 +391,7 @@ def explore(
         identities = set()
         for archive in archives.values():
             for row in diverse(archive, _solution_key, 8):
-                identity = _identity(row["loadouts"])
+                identity = _candidate_identity(row["loadouts"])
                 if identity not in identities:
                     identities.add(identity)
                     seeds.append(row)
@@ -415,7 +429,7 @@ def explore(
         accept(solution)
     phase_limit = budget - metric.nodes
     option_seeds = {
-        _identity(row["loadouts"]): row
+        _candidate_identity(row["loadouts"]): row
         for archive in [option_candidates, *archives.values()]
         for row in archive
     }
@@ -431,12 +445,14 @@ def explore(
     cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
     # A newly dominating metric point must not discard a diverse seed before
     # its local refinement: that seed may improve beyond the new point.
+    retained = [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
     cleaned = {
         _identity(row["loadouts"]): row
-        for row in [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
+        for candidate in retained
+        for row in [materialize(candidate)]
     }
     cleaned = {
-        identity: refine_ammunition(search, row, _solution_key, cleanup)
+        identity: materialize(refine_ammunition(search, row, _solution_key, cleanup))
         for identity, row in cleaned.items()
     }
     ammunition_at = perf_counter()
@@ -450,7 +466,9 @@ def explore(
     refined = {}
     for identity, row in cleaned.items():
         candidate, work = refine_finalist(search, row)
-        refined[identity] = candidate
+        # Refinement can return a freshly scored candidate whose resource report
+        # is deferred, even though the input seed was already materialized.
+        refined[identity] = materialize(candidate)
         finalists["evaluated_assignments"] += work["evaluated_assignments"]
         finalists["improved_finalists"] += int(work["improvements"] > 0)
         finalists["exhausted_finalists"] += int(work["work_budget_exhausted"])
@@ -520,7 +538,7 @@ def explore(
 
 def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> Iterator[Solution]:
     """Enumerate legal option changes with isolated cache overrides and exact validation."""
-    from tracker.gear.optimizer import _solution_key
+    from tracker.gear.optimizer import _Search, _solution_key
 
     states = [seed]
     for role in search.request.roles:
@@ -534,10 +552,19 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
             for configured, option in search.configured_options(role, weapon):
                 if not tick():
                     return
+                if lazy_variants_active() and (
+                    type(search) is _Search or hasattr(search, "variant_secondary")
+                ):
+                    solution = compact_variant(search, state, role, configured, option)
+                    if solution is not None:
+                        expanded.append(solution)
+                        yield solution
+                    continue
                 performance = search.evaluate(equipment, configured).model_dump(mode="json")
                 if not performance["supported"]:
                     continue
                 variant = copy(search)
+                variant.compact_cache = {}
                 # Only the selected roles differ. Keep writes local while using
                 # the shared immutable cached evaluations for other lookups.
                 variant.performance_cache = ChainMap({}, search.performance_cache)

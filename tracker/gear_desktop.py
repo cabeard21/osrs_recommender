@@ -14,6 +14,7 @@ from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from tracker.config.settings import _YamlSettingsSource
+from tracker.gear.execution_profile import ExecutionProfile
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class DesktopSettings(BaseSettings):
     port: int = Field(default=8502, gt=0, lt=65536)
     content_dir: Path = Path("content")
     optimization_workers: int = Field(default=3, ge=1, le=3)
+    optimization_profile: ExecutionProfile = "combined"
     pi_url: str
     player_id: int = Field(gt=0)
     read_token: SecretStr
@@ -88,12 +90,27 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     from tracker.ui.gear_preview import mount_gear_preview
 
     content = load_content(settings.content_dir)
-    gear = GearService(content, equipment_root=settings.content_dir / "equipment")
+    gear = GearService(
+        content,
+        equipment_root=settings.content_dir / "equipment",
+        optimization_profile=settings.optimization_profile,
+        fixed_reporting=settings.optimization_profile == "combined",
+        factored_evaluation=settings.optimization_profile == "combined",
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         pool = None
         try:
+            logger.info("Desktop Gear optimization profile: %s", settings.optimization_profile)
+            logger.info(
+                "Desktop Gear fixed-option reporting: %s",
+                "enabled" if gear.fixed_reporting else "disabled",
+            )
+            logger.info(
+                "Desktop Gear factored evaluation: %s",
+                "enabled" if gear.factored_evaluation else "disabled",
+            )
             if settings.optimization_workers > 1:
                 try:
                     pool = _process_pool(settings.optimization_workers)
@@ -152,6 +169,7 @@ def load_desktop_settings() -> DesktopSettings:
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     settings = load_desktop_settings()
     uvicorn.run(create_app(settings), host=settings.bind_address, port=settings.port)
 

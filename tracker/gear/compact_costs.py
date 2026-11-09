@@ -1,0 +1,332 @@
+"""Prepared immutable resource costs; descriptions are expanded only for reports."""
+
+from __future__ import annotations
+
+from collections import OrderedDict
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import datetime
+from math import isfinite
+from typing import Any, Literal
+
+from tracker.estimation.prices import PriceRecord, ResolvedPrice, resolve_price
+from tracker.gear.ammo import cape_recovery_rate
+from tracker.gear.models import EquipmentDefinition
+from tracker.gear.powered import review
+from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
+from tracker.gear.running_costs import (
+    _CHARGES,
+    _RESOURCE_NAMES,
+    _RUNES,
+    _THROWN,
+    COST_MODEL_VERSION,
+    SPELL_RECIPES,
+    STAFF_RUNES,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class Resource:
+    item_id: int
+    name: str
+    quantity: float
+    supplied: float
+    supplier: str | None
+    quote: ResolvedPrice | None
+
+    @property
+    def consumed(self) -> float:
+        return self.quantity - self.supplied
+
+    @property
+    def unit_price(self) -> int | None:
+        return 1 if self.item_id == 995 else self.quote.gp if self.quote else 0
+
+    def report(self) -> dict[str, Any]:
+        quote = self.quote
+        return {
+            "item_id": self.item_id,
+            "name": self.name,
+            "required_quantity": self.quantity,
+            "consumed_quantity": self.consumed,
+            "supplied_quantity": self.supplied,
+            "supplied_by": self.supplier,
+            "unit_price_gp": self.unit_price,
+            "price_layer": "fixed"
+            if self.item_id == 995
+            else quote.layer.value
+            if quote
+            else "free",
+            "price_confidence": str(quote.confidence) if quote else None,
+            "price_trade_at": quote.trade_at.isoformat() if quote and quote.trade_at else None,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class NumericCost:
+    status: Literal["known", "unavailable"]
+    gp_per_attack: float | None
+    gp_per_second: float | None
+    gp_per_hour: float | None
+    gp_per_damage: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class ChargeAlternative:
+    resources: tuple[Resource, ...]
+    gp_per_attack: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCost:
+    resources: tuple[Resource, ...]
+    alternatives: tuple[ChargeAlternative, ...]
+    limitations: tuple[str, ...]
+    missing_prices: tuple[str, ...]
+    gp_per_attack: float | None
+
+    def score(self, interval: float | None, dps: float | None) -> NumericCost:
+        cost = self.gp_per_attack
+        rate = cost / interval if cost is not None and interval and interval > 0 else None
+        return NumericCost(
+            "unavailable" if self.limitations or self.missing_prices else "known",
+            cost,
+            rate,
+            rate * 3600 if rate is not None else None,
+            rate / dps if rate is not None and dps and dps > 0 else None,
+        )
+
+    def report(self, numeric: NumericCost) -> dict[str, Any]:
+        return {
+            "model_version": COST_MODEL_VERSION,
+            "status": numeric.status,
+            "gp_per_attack": numeric.gp_per_attack,
+            "gp_per_second": numeric.gp_per_second,
+            "gp_per_hour": numeric.gp_per_hour,
+            "gp_per_damage": numeric.gp_per_damage,
+            "resources": [r.report() for r in self.resources],
+            "charging_alternatives": [
+                {"resources": [r.report() for r in a.resources], "gp_per_attack": a.gp_per_attack}
+                for a in self.alternatives
+            ],
+            "charging_assumption": "Cheapest priced charging recipe; actual charges unknown."
+            if self.alternatives
+            else None,
+            "reasons": [
+                *self.limitations,
+                *(f"No price available for {n}." for n in self.missing_prices),
+            ],
+        }
+
+
+def _resource_sum(resources: tuple[Resource, ...]) -> float | None:
+    if any(r.unit_price is None for r in resources):
+        return None
+    return sum(r.consumed * r.unit_price for r in resources if r.unit_price is not None)
+
+
+class CostEvaluator:
+    """Bounded recipe reuse over one frozen price/time context, independent of DPS."""
+
+    def __init__(
+        self, prices: Mapping[int, PriceRecord], now: datetime, *, capacity: int = 4096
+    ) -> None:
+        if capacity < 0:
+            raise ValueError("capacity must be nonnegative")
+        self.prices = dict(prices)
+        self.now = now
+        self.capacity = capacity
+        self._recipes: OrderedDict[tuple[Any, ...], PreparedCost] = OrderedDict()
+        self._quotes: dict[int, ResolvedPrice] = {}
+
+    def resource(
+        self,
+        item_id: int,
+        name: str,
+        quantity: float,
+        supplied: float = 0,
+        supplier: str | None = None,
+    ) -> Resource:
+        quote = None
+        if quantity - supplied and item_id != 995:
+            if item_id not in self._quotes:
+                self._quotes[item_id] = resolve_price(None, self.prices.get(item_id), now=self.now)
+            quote = self._quotes[item_id]
+        return Resource(item_id, name, quantity, supplied, supplier, quote)
+
+    def prepare(
+        self, equipment: Mapping[str, EquipmentDefinition], option: Mapping[str, Any]
+    ) -> PreparedCost:
+        weapon, ammo, cape = (equipment.get(s) for s in ("weapon", "ammunition", "cape"))
+        body = equipment.get("body")
+        interference = bool(body and body.bonuses.ranged < 0)
+        torag = any(i.id in TORAG_USABLE_IDS for i in equipment.values())
+        key = (
+            (weapon.id, weapon.name, weapon.ammo_for) if weapon else None,
+            (ammo.id, ammo.name, ammo.ammo_type) if ammo else None,
+            (cape.id, cape.name) if cape else None,
+            interference,
+            torag,
+            option.get("attack_type"),
+            option.get("spell"),
+            bool(option.get("powered_attack")),
+        )
+        if key in self._recipes:
+            self._recipes.move_to_end(key)
+            return self._recipes[key]
+        result = self._prepare(equipment, option, interference, torag)
+        if self.capacity:
+            self._recipes[key] = result
+            if len(self._recipes) > self.capacity:
+                self._recipes.popitem(last=False)
+        return result
+
+    def _prepare(
+        self,
+        equipment: Mapping[str, EquipmentDefinition],
+        option: Mapping[str, Any],
+        interference: bool,
+        torag: bool,
+    ) -> PreparedCost:
+        weapon = equipment.get("weapon")
+        style = option.get("attack_type")
+        resources: tuple[Resource, ...] = ()
+        limitations: tuple[str, ...] = ()
+        alternatives: tuple[ChargeAlternative, ...] = ()
+        if option.get("powered_attack"):
+            staff = review(weapon.id) if weapon else None
+            recipes = (
+                staff.recipes
+                if staff
+                else ((_CHARGES[weapon.id],) if weapon and weapon.id in _CHARGES else ())
+            )
+            alternatives = tuple(self._alternative(recipe) for recipe in recipes)
+            priced = tuple(a for a in alternatives if a.gp_per_attack is not None)
+            if priced:
+                resources = min(priced, key=lambda a: a.gp_per_attack or 0).resources
+            elif alternatives:
+                resources = alternatives[0].resources
+            else:
+                limitations = ("Powered attack charge consumption has not been reviewed.",)
+        elif style == "magic":
+            recipe = SPELL_RECIPES.get(option.get("spell") or "")
+            if recipe is None:
+                limitations = ("Spell rune consumption has not been reviewed.",)
+            else:
+                supplied = STAFF_RUNES.get(weapon.id, frozenset()) if weapon else frozenset()
+                resources = tuple(
+                    self.resource(
+                        i,
+                        _RUNES[i],
+                        q,
+                        q if i in supplied else 0,
+                        weapon.name if weapon and i in supplied else None,
+                    )
+                    for i, q in recipe.items()
+                )
+                if weapon and weapon.id in {27788, 27679}:
+                    resources += (self.resource(21820, "Revenant ether", 1),)
+        elif style in {"ranged", "light", "standard", "heavy"}:
+            resources, limitations = self._ranged(equipment, interference)
+        elif style not in {"stab", "slash", "crush"}:
+            limitations = ("Attack resource consumption has not been reviewed.",)
+        if torag:
+            limitations += ("Torag's hammers degradation and repair costs have not been reviewed.",)
+        missing = tuple(r.name for r in resources if r.consumed and r.unit_price is None)
+        cost = None if limitations or missing else _resource_sum(resources)
+        return PreparedCost(resources, alternatives, limitations, missing, cost)
+
+    def _alternative(self, recipe: tuple[tuple[int, int], ...]) -> ChargeAlternative:
+        resources = tuple(
+            self.resource(i, _RUNES.get(i, _RESOURCE_NAMES.get(i, str(i))), q) for i, q in recipe
+        )
+        return ChargeAlternative(resources, _resource_sum(resources))
+
+    def _ranged(
+        self, equipment: Mapping[str, EquipmentDefinition], interference: bool
+    ) -> tuple[tuple[Resource, ...], tuple[str, ...]]:
+        weapon = equipment.get("weapon")
+        ammo = equipment.get("ammunition") if weapon and weapon.ammo_for else weapon
+        if (
+            not weapon
+            or not ammo
+            or (not weapon.ammo_for and weapon.id not in _THROWN)
+            or (
+                weapon.ammo_for
+                and (not ammo.ammo_type or not ammo.ammo_type.startswith(("arrow:", "bolt:")))
+            )
+        ):
+            return (), ("Ranged ammunition consumption has not been reviewed.",)
+        cape = equipment.get("cape")
+        recovery, notes = cape_recovery_rate(cape.id if cape else None)
+        if recovery is None:
+            return (), tuple(notes)
+        if interference:
+            recovery = 0
+        return (
+            self.resource(
+                ammo.id, ammo.name, 1, recovery, cape.name if cape and recovery else None
+            ),
+        ), ()
+
+
+def aggregate_numeric_cost(roles: Sequence[tuple[float, NumericCost, float]]) -> NumericCost:
+    """Retain the rich aggregator's operation order, including hour round trips."""
+    active_roles = [(w, c, d) for w, c, d in roles if w > 0]
+    known = bool(active_roles) and all(
+        c.status == "known"
+        and c.gp_per_hour is not None
+        and isfinite(c.gp_per_hour)
+        and c.gp_per_hour >= 0
+        for _, c, _ in active_roles
+    )
+    weight = sum(w for w, _, _ in active_roles)
+    spend = (
+        sum(w * c.gp_per_hour / 3600 for w, c, _ in active_roles if c.gp_per_hour is not None)
+        if known
+        else None
+    )
+    damage = sum(w * d for w, _, d in active_roles)
+    return NumericCost(
+        "known" if known and damage > 0 else "unavailable",
+        active_roles[0][1].gp_per_attack if len(active_roles) == 1 else None,
+        spend / weight if spend is not None else None,
+        spend * 3600 / weight if spend is not None else None,
+        spend / damage if spend is not None and damage > 0 else None,
+    )
+
+
+@dataclass
+class _CostScope:
+    evaluators: dict[tuple[int, datetime], CostEvaluator] = field(default_factory=dict)
+    # Keep the source objects alive so an identity cannot be recycled in this scope.
+    sources: list[Mapping[int, PriceRecord]] = field(default_factory=list)
+
+
+_ACTIVE: ContextVar[_CostScope | None] = ContextVar("compact_running_costs", default=None)
+
+
+def active() -> bool:
+    return _ACTIVE.get() is not None
+
+
+@contextmanager
+def compact_running_costs() -> Iterator[None]:
+    token = _ACTIVE.set(_CostScope())
+    try:
+        yield
+    finally:
+        _ACTIVE.reset(token)
+
+
+def evaluator(prices: Mapping[int, PriceRecord], now: datetime) -> CostEvaluator:
+    scope = _ACTIVE.get()
+    if scope is None:
+        return CostEvaluator(prices, now)
+    key = (id(prices), now)
+    if key not in scope.evaluators:
+        scope.evaluators[key] = CostEvaluator(prices, now)
+        scope.sources.append(prices)
+    return scope.evaluators[key]

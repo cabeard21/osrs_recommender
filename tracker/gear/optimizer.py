@@ -16,7 +16,7 @@ from functools import lru_cache
 from itertools import product
 from time import perf_counter
 from types import MappingProxyType
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, NamedTuple
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
 
@@ -42,6 +42,8 @@ from tracker.gear.evaluation import (
     validate_request_context,
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
+from tracker.gear.fixed_reporting import active as fixed_reporting_active
+from tracker.gear.lazy_reporting import active as lazy_reporting_active
 from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import (
     CombatPerformance,
@@ -315,6 +317,12 @@ def required_transitions(request: OptimizationRequest) -> tuple[tuple[str, str],
     return tuple(dict.fromkeys((a, b) for a, b in edges if a != b))
 
 
+class _Winner(NamedTuple):
+    score: CombatScore
+    option: CombatOption
+    role: RoleConfig
+
+
 class _Search:
     running_prices: Mapping[int, PriceRecord]
     running_at: datetime
@@ -333,12 +341,19 @@ class _Search:
         # Telemetry only; shared by frontier copies so their work is reported too.
         self.reporter = reporter
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
-        self.levels = {k: v.level for k, v in snapshot.skills.items()}
+        from tracker.gear.execution_profile import factored_evaluation_active
+
+        self.factored_evaluation = factored_evaluation_active()
+        self.compact_multi = len(request.roles) > 1 and self.factored_evaluation
+        self.levels: Mapping[str, int] = {k: v.level for k, v in snapshot.skills.items()}
         if request.potions.mode == "fixed":
             base_magic = self.levels.get("magic", 0)
             self.levels = boosted_levels(self.levels, request.potions.selected_ids)
             if self.levels.get("magic", 0) != base_magic:
                 self.levels = {**self.levels, "_base_magic": base_magic}
+        from tracker.gear.prepared_combat import freeze_levels
+
+        self.levels = freeze_levels(self.levels)
         self.cancelled = cancelled
         self.nodes = 0
         self.truncated = False
@@ -350,6 +365,7 @@ class _Search:
         self.option_cache: MutableMapping[
             tuple[str, tuple[tuple[str, int], ...]], dict[str, Any] | None
         ] = {}
+        self.compact_cache: dict[tuple[Any, ...], _Winner | CombatScore | None] = {}
         self.scorer = EquipmentScorer(items)
         self.configured_option_cache: dict[
             tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
@@ -700,6 +716,229 @@ class _Search:
             grades.setdefault(memo[key], []).append((configured, option))
         return tuple(tuple(grades[value]) for value in sorted(grades, reverse=True))
 
+    def lazy_eligible(self, role: RoleConfig) -> bool:
+        return (
+            lazy_reporting_active()
+            and type(self) is _Search
+            and (len(self.request.roles) == 1 or self.compact_multi)
+            and role.style != "special"
+            and (role.combat_options is not None or role.prayers.mode != "disabled")
+        )
+
+    def configured_winner(
+        self,
+        equipment: Mapping[str, int],
+        role: RoleConfig,
+        prepared: PreparedEquipment | CombatPerformance | None = None,
+        *,
+        cache_result: bool = False,
+    ) -> _Winner | None:
+        key = (
+            role.id,
+            tuple(sorted(equipment.items())),
+            getattr(self, "metric_first", False),
+            self.request.secondary_priority,
+        )
+        cache = self.lazy_eligible(role) or cache_result
+        if cache and key in self.compact_cache:
+            cached = self.compact_cache[key]
+            assert cached is None or isinstance(cached, _Winner)
+            return cached
+        weapon = self.items.get(equipment.get("weapon", -1))
+        options = self.scoring_options(role, weapon)
+        if prepared is None and options:
+            prepared = self.prepare(equipment)
+        include_defence = getattr(self, "metric_first", False) and (
+            self.request.secondary_priority.endswith("_defence_roll")
+        )
+        evaluated = []
+        if isinstance(prepared, PreparedEquipment):
+            for batch in self.scoring_batches(prepared, options):
+                for configured, option in batch:
+                    score = evaluate_prepared_score(
+                        prepared, configured, self.levels, include_defence=include_defence
+                    )
+                    if score.supported:
+                        evaluated.append(_Winner(score, option, configured))
+                if evaluated:
+                    break
+        winner = (
+            max(
+                evaluated,
+                key=lambda row: self.option_rank(row.score, row.option, row.role.active_prayer_ids),
+            )
+            if evaluated
+            else None
+        )
+        if cache:
+            self.compact_cache[key] = winner
+        return winner
+
+    def fixed_eligible(self, role: RoleConfig) -> bool:
+        return (
+            fixed_reporting_active()
+            and type(self) is _Search
+            and (len(self.request.roles) == 1 or self.compact_multi)
+            and role.style != "special"
+            and role.combat_options is None
+            and role.prayers.mode == "disabled"
+        )
+
+    def fixed_performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
+        key = ("fixed", role.id, tuple(sorted(equipment.items())))
+        cached = self.compact_cache.get(key)
+        if cached is None:
+            prepared = self.prepare(equipment)
+            if not isinstance(prepared, PreparedEquipment):
+                return self.performance(equipment, role)
+            cached = evaluate_prepared_score(
+                prepared,
+                role,
+                self.levels,
+                include_defence=self.request.secondary_priority.endswith("_defence_roll"),
+            )
+            if role.style == "magic" and role.powered_attack is None:
+                problem = ancient_spell_problem(
+                    self.items.get(equipment.get("weapon", -1)),
+                    self.snapshot,
+                    role.spell,
+                    role.stance,
+                    self.levels,
+                )
+                if problem:
+                    cached = cached._replace(supported=False, dps=None)
+            self.compact_cache[key] = cached
+        assert isinstance(cached, CombatScore)
+        return {
+            "supported": cached.supported,
+            "dps": cached.dps,
+            "accuracy": cached.accuracy,
+            "bonuses": cached.bonuses.__dict__,
+            "player_defence_rolls": cached.player_defence_rolls,
+        }
+
+    def search_performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
+        key = (role.id, tuple(sorted(equipment.items())))
+        if key in self.performance_cache:
+            return self.performance(equipment, role)
+        if getattr(self, "compact_cost_ranking", False) and role.style != "special":
+            from tracker.gear.compact_costs import active as compact_costs_active
+
+            if compact_costs_active():
+                return self.compact_combat(equipment, role)[0]
+        if self.fixed_eligible(role):
+            if self.cancelled and self.cancelled():
+                raise ValueError("optimization_cancelled")
+            return self.fixed_performance(equipment, role)
+        if not self.lazy_eligible(role):
+            return self.performance(equipment, role)
+        if self.cancelled and self.cancelled():
+            raise ValueError("optimization_cancelled")
+        winner = self.configured_winner(equipment, role)
+        if winner is None:
+            return {"supported": False, "dps": None}
+        score = winner.score
+        rolls = score.player_defence_rolls
+        if rolls is None and self.request.secondary_priority.endswith("_defence_roll"):
+            rolls = raw_player_defence_rolls(
+                self.levels,
+                score.bonuses,
+                winner.role.stance,
+                prayer_effects(winner.role.active_prayer_ids),
+            )
+        return {
+            "supported": score.supported,
+            "dps": score.dps,
+            "accuracy": score.accuracy,
+            "bonuses": score.bonuses.__dict__,
+            "player_defence_rolls": rolls,
+        }
+
+    def compact_combat(
+        self, equipment: Mapping[str, int], role: RoleConfig
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        """Numeric ranking with the same option winner and exact seeded overrides."""
+        from tracker.gear.combat import numeric_attack_interval
+
+        key = (role.id, tuple(sorted(equipment.items())))
+        if key in self.performance_cache or role.style == "special":
+            return self.performance(equipment, role), self.combat_option(equipment, role)
+        if self.cancelled and self.cancelled():
+            raise ValueError("optimization_cancelled")
+        weapon = self.items.get(equipment.get("weapon", -1))
+        selected = role
+        if role.combat_options is not None or role.prayers.mode != "disabled":
+            winner = self.configured_winner(equipment, role, cache_result=True)
+            if winner is None:
+                return {"supported": False, "dps": None}, None
+            score, option, selected = winner
+            public_option = option.model_dump(
+                mode="json", include={"attack_type", "stance", "spell", "powered_attack"}
+            )
+        else:
+            score_key = ("numeric-fixed", *key)
+            cached = self.compact_cache.get(score_key)
+            if cached is None:
+                prepared = self.prepare(equipment)
+                if not isinstance(prepared, PreparedEquipment):
+                    return self.performance(equipment, role), self.combat_option(equipment, role)
+                cached = evaluate_prepared_score(prepared, role, self.levels)
+                if role.style == "magic" and role.powered_attack is None and ancient_spell_problem(
+                    weapon, self.snapshot, role.spell, role.stance, self.levels
+                ):
+                    cached = cached._replace(supported=False, dps=None)
+                self.compact_cache[score_key] = cached
+            assert isinstance(cached, CombatScore)
+            score = cached
+            public_option = {
+                "attack_type": role.style, "stance": role.stance,
+                "spell": role.spell if role.style == "magic" else None,
+                "powered_attack": None,
+            }
+        rolls = score.player_defence_rolls
+        if rolls is None and self.request.secondary_priority.endswith("_defence_roll"):
+            rolls = raw_player_defence_rolls(
+                self.levels, score.bonuses, selected.stance,
+                prayer_effects(selected.active_prayer_ids),
+            )
+        return {
+            "supported": score.supported, "dps": score.dps, "accuracy": score.accuracy,
+            "bonuses": score.bonuses.__dict__, "player_defence_rolls": rolls,
+            "attack_interval": (
+                numeric_attack_interval(weapon, selected) if score.supported else None
+            ),
+        }, public_option
+
+    def search_secondary(
+        self, equipment: Mapping[str, int], roles: tuple[RoleConfig, ...]
+    ) -> float:
+        if not all(self.lazy_eligible(role) or self.fixed_eligible(role) for role in roles):
+            return self.secondary({role.id: equipment for role in roles})
+        if self.request.secondary_priority == "default":
+            return 0.0
+        weight = sum(role.weight for role in roles)
+        return sum(
+            secondary_value(
+                self.request.secondary_priority, self.search_performance(equipment, role)
+            )
+            * role.weight
+            for role in roles
+        ) / (weight or 1)
+
+    def partial_secondary(self, loadouts: Mapping[str, Mapping[str, int]]) -> float:
+        """Rank Multi prefixes numerically, retaining role weights and option winners."""
+        if self.request.secondary_priority == "default":
+            return 0.0
+        roles = [r for r in self.request.roles if r.style != "special" and r.id in loadouts]
+        weight = sum(r.weight for r in roles)
+        return sum(
+            secondary_value(
+                self.request.secondary_priority, self.search_performance(loadouts[r.id], r)
+            )
+            * r.weight
+            for r in roles
+        ) / (weight or 1)
+
     def performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
         key = (role.id, tuple(sorted(equipment.items())))
         if key not in self.performance_cache:
@@ -714,35 +953,12 @@ class _Search:
                     ],
                 }
             elif role.combat_options is not None or role.prayers.mode != "disabled":
-                weapon = self.items.get(equipment.get("weapon", -1))
-                evaluated = []
-                options = self.scoring_options(role, weapon)
+                options = self.scoring_options(role, self.items.get(equipment.get("weapon", -1)))
                 prepared = self.prepare(equipment) if options else None
-                include_defence = getattr(self, "metric_first", False) and (
-                    self.request.secondary_priority.endswith("_defence_roll")
-                )
-                batches = (
-                    self.scoring_batches(prepared, options)
-                    if isinstance(prepared, PreparedEquipment)
-                    else ()
-                )
-                for batch in batches:
-                    assert isinstance(prepared, PreparedEquipment)
-                    for configured, option in batch:
-                        performance = evaluate_prepared_score(
-                            prepared, configured, self.levels, include_defence=include_defence
-                        )
-                        if performance.supported:
-                            evaluated.append(
-                                (performance, option, configured.active_prayer_ids, configured)
-                            )
-                    if evaluated:
-                        break
-                if evaluated:
-                    _, selected, selected_prayers, selected_role = max(
-                        evaluated,
-                        key=lambda row: self.option_rank(row[0], row[1], row[2]),
-                    )
+                winner = self.configured_winner(equipment, role, prepared)
+                if winner is not None:
+                    selected, selected_role = winner.option, winner.role
+                    selected_prayers = selected_role.active_prayer_ids
                     assert isinstance(prepared, PreparedEquipment)
                     result = evaluate_prepared_loadout(
                         prepared, selected_role, self.levels
@@ -821,6 +1037,9 @@ class _Search:
         return not (weapon and weapon.two_handed and "shield" in equipment)
 
     def candidate_pools(self) -> dict[str, list[int | None]]:
+        numeric = self.factored_evaluation and type(self) is _Search
+        performance_for = self.search_performance if numeric else self.performance
+        secondary_for = self.partial_secondary if numeric else self.secondary
         locked = {v for r in self.request.roles for v in r.locks.values() if v is not None}
         locked |= {v for v in self.request.locks.values() if v is not None}
         pools: dict[str, list[int | None]] = {}
@@ -839,11 +1058,11 @@ class _Search:
                     for base in baselines[role.id]:
                         equipment = {**base, slot: i}
                         if self.compatible(equipment):
-                            performance = self.performance(equipment, role)
+                            performance = performance_for(equipment, role)
                             if performance["supported"]:
                                 scores.append(performance.get("dps") or 0)
                                 secondary_scores.append(
-                                    (scores[-1], self.secondary({role.id: equipment}))
+                                    (scores[-1], secondary_for({role.id: equipment}))
                                 )
                     value = max(scores, default=-1)
                     self.marginals[role.id, i] = value
@@ -892,6 +1111,11 @@ class _Search:
 
     def baselines(self, role: RoleConfig) -> list[dict[str, int]]:
         """Legal ordinary-attack scaffolds for model-based candidate selection."""
+        performance = (
+            self.search_performance
+            if self.factored_evaluation and type(self) is _Search
+            else self.performance
+        )
         bases: list[dict[str, int]] = [{}]
         for item_id, item in self.eligible.items():
             if item.slot != "weapon":
@@ -905,7 +1129,7 @@ class _Search:
                 )
             else:
                 bases.append(base)
-        return [b for b in bases if self.performance(b, role)["supported"]]
+        return [b for b in bases if performance(b, role)["supported"]]
 
     def joint_loadouts(self, limit: int | None) -> list[dict[str, dict[str, int]]]:
         """Assign each slot jointly, retaining shared choices before role beams lose them.
@@ -914,6 +1138,9 @@ class _Search:
         the only scoring objective. Width/branch caps keep the search bounded.
         """
         roles = self.request.roles
+        numeric = self.compact_multi and type(self) is _Search
+        performance = self.search_performance if numeric else self.performance
+        secondary = self.partial_secondary if numeric else self.secondary
         beam: list[dict[str, dict[str, int]]] = [{r.id: {} for r in roles}]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
@@ -997,7 +1224,7 @@ class _Search:
                     ):
                         continue
                     if slot not in ("weapon", "shield") and any(
-                        not self.performance(candidate[r.id], r)["supported"] for r in roles
+                        not performance(candidate[r.id], r)["supported"] for r in roles
                     ):
                         continue
                     expanded.append(candidate)
@@ -1013,7 +1240,7 @@ class _Search:
                 union = {i for e in c.values() for i in e.values()}
                 return (
                     -score,
-                    -self.secondary(c),
+                    -secondary(c),
                     len(union),
                     self.cost(union),
                     self.untradeable_acquisitions(union),
@@ -1029,6 +1256,11 @@ class _Search:
 
     def loadouts(self, roles: tuple[RoleConfig, ...]) -> list[dict[str, int]]:
         """Assign common equipment when several roles are passed (zero-action seed)."""
+        performance = (
+            self.search_performance
+            if self.factored_evaluation and type(self) is _Search
+            else self.performance
+        )
         locks = dict[str, int | None](self.request.locks.items())
         for role in roles:
             for slot, item_id in role.locks.items():
@@ -1056,13 +1288,15 @@ class _Search:
                     continue
                 # Weapon/ammo legality can be checked once both slots have been assigned.
                 if slot not in ("weapon", "shield") and any(
-                    not self.performance(candidate, r)["supported"] for r in roles
+                    not self.search_performance(candidate, r)["supported"] for r in roles
                 ):
                     continue
                 expanded.append(candidate)
 
             def rank(e: dict[str, int]) -> tuple[Any, ...]:
-                score = sum((self.performance(e, r).get("dps") or 0) * r.weight for r in roles)
+                score = sum(
+                    (self.search_performance(e, r).get("dps") or 0) * r.weight for r in roles
+                )
                 # Exact partial-DPS ties can hide a later max-hit breakpoint.
                 # Preserve melee strength before arbitrary item IDs; complete DPS
                 # remains the first key and the final solution's only damage score.
@@ -1073,7 +1307,7 @@ class _Search:
                 )
                 return (
                     -score,
-                    -self.secondary({r.id: e for r in roles}),
+                    -self.search_secondary(e, roles),
                     self.cost(set(e.values())),
                     -strength,
                     self.untradeable_acquisitions(set(e.values())),
@@ -1083,7 +1317,7 @@ class _Search:
             states = self.retain(expanded, rank, BEAM_WIDTH)
             if not states:
                 return []
-        return [s for s in states if all(self.performance(s, r)["supported"] for r in roles)]
+        return [s for s in states if all(performance(s, r)["supported"] for r in roles)]
 
     def solution(
         self, loadouts: Mapping[str, dict[str, int]], limit: int | None
@@ -1180,6 +1414,8 @@ class _Search:
 
 
 def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    from tracker.gear.variant_reporting import loadout_tie
+
     return (
         -solution["score"],
         -(solution.get("secondary_value") or 0),
@@ -1190,7 +1426,7 @@ def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         (solution.get("potions") or {}).get("cost_per_application_gp") is None,
         (solution.get("potions") or {}).get("cost_per_application_gp") or 0,
         len((solution.get("potions") or {}).get("selected_ids", ())),
-        json.dumps(solution["loadouts"], sort_keys=True),
+        loadout_tie(solution),
     )
 
 
@@ -1307,8 +1543,23 @@ def optimize(
     _prepared: PreparedOptimization | None = None,
     progress: Callable[[dict[str, Any]], None] | None = None,
     potion_branch_runner: Callable[..., list[dict[str, Any]]] | None = None,
+    _execution_profile: str = "baseline",
+    _fixed_reporting: bool = False,
+    _factored_evaluation: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
+    from tracker.gear.execution_profile import execution_context, validate_profile
+
+    profile = validate_profile(_execution_profile)
+    if not isinstance(_fixed_reporting, bool):
+        raise ValueError("Invalid fixed reporting option")
+    if not isinstance(_factored_evaluation, bool):
+        raise ValueError("Invalid factored evaluation option")
+    execution: dict[str, Any] = {"_execution_profile": profile} if profile != "baseline" else {}
+    if _fixed_reporting:
+        execution["_fixed_reporting"] = True
+    if _factored_evaluation:
+        execution["_factored_evaluation"] = True
     started = perf_counter()
     request = (
         request
@@ -1334,6 +1585,7 @@ def optimize(
             _prepared=_prepared,
             progress=progress,
             branch_runner=potion_branch_runner,
+            **execution,
         )
     if request.roles[0].allowed_disciplines is not None:
         from tracker.gear.auto import optimize_auto
@@ -1351,7 +1603,29 @@ def optimize(
             _prepared=_prepared,
             _complete_frontiers=_complete_frontiers,
             progress=progress,
+            **execution,
         )
+    if profile != "baseline":
+        with execution_context(
+            profile, request, fixed_reporting=_fixed_reporting,
+            factored_evaluation=_factored_evaluation,
+        ):
+            return optimize(
+                snapshot,
+                request,
+                catalog,
+                content,
+                price_records,
+                now,
+                cancelled,
+                targeted_head_refinement=targeted_head_refinement,
+                local_refinement=local_refinement,
+                _complete_frontiers=_complete_frontiers,
+                _running_frontier=_running_frontier,
+                _prepared=_prepared,
+                progress=progress,
+                potion_branch_runner=potion_branch_runner,
+            )
     reporter = StageReporter(progress) if progress else NULL_REPORTER
     reporter.stage("preparation", elapsed_seconds=0.0)
     prepared = _prepared or prepare_optimization(
@@ -1411,15 +1685,18 @@ def optimize(
         unit += 1
         tuples.extend(search.joint_loadouts(swap_limit))
 
+    partial_performance = search.search_performance if search.compact_multi else search.performance
+    partial_secondary = search.partial_secondary if search.compact_multi else search.secondary
+
     def partial_rank(c: dict[str, dict[str, int]]) -> tuple[Any, ...]:
         score = sum(
-            (search.performance(c[r.id], r).get("dps") or 0) * r.weight
+            (partial_performance(c[r.id], r).get("dps") or 0) * r.weight
             for r in request.roles
             if r.id in c
         )
         return (
             -score,
-            -search.secondary(c),
+            -partial_secondary(c),
             len({i for e in c.values() for i in e.values()}),
             *search.acquisition_tie({i for e in c.values() for i in e.values()}),
             json.dumps(c, sort_keys=True),

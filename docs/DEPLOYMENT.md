@@ -92,6 +92,33 @@ reports serial fallback. A failed running worker returns a retryable optimizer e
 the current request is not silently recomputed or partially published. Cancellation
 drains outstanding work before the service accepts another calculation.
 
+Desktop execution profiles are server-owned. `optimization_profile` accepts
+`baseline`, `lazy`, or `combined`; desktop mode defaults to `combined` after the
+full original-P1 parity, timing, memory and desktop acceptance matrix passed.
+`lazy` avoids rich reports for eligible partial Single states. `combined` also
+prepares immutable attack/target/prayer constants for melee, ranged and magic,
+reuses ranged numerical calculations, and defers configured/fixed Single and Multi
+reports, frontier combat variants and running-cost descriptions until needed.
+Numeric ranking preserves exact attack/prayer choices, full result ties and IDs.
+Startup logs identify fixed-option reporting and factored evaluation separately.
+Baseline and lazy leave these combined extensions disabled. Unsupported paths
+retain their existing behavior. Execution options are passed explicitly to spawned
+workers; each concrete branch starts with fresh optimization contexts. Automated
+live desktop acceptance verified combined, baseline rollback and combined re-enable.
+
+To select a profile, set the private YAML field or use an environment override:
+
+```powershell
+$env:TRACKER_DESKTOP_OPTIMIZATION_PROFILE = "combined"
+.\run-gear-desktop.bat
+```
+
+Rollback uses `TRACKER_DESKTOP_OPTIMIZATION_PROFILE=baseline` followed by the normal
+desktop restart. Startup logs identify the configured profile. Invalid values fail
+configuration validation. Worker startup fallback preserves the configured profile;
+failed optimization requests are not silently retried under baseline. Generic
+services, direct optimizer calls, and Pi execution continue to default to baseline.
+
 For access from another Tailscale device, run `tailscale ip -4` on the development
 PC and set `bind_address` in `config.gear-desktop.yaml` to that address. Restart the
 desktop launcher, then open `http://PC_TAILSCALE_IP:8502/gear` from your phone or

@@ -86,6 +86,10 @@ def _role_options(
 
 
 def _no_worse(original: dict[str, Any], proposed: dict[str, Any]) -> bool:
+    from tracker.gear.variant_reporting import materialize
+
+    # Equivalence includes exact resource provenance, not only numeric cost.
+    original, proposed = materialize(original), materialize(proposed)
     return (
         original.get("running_cost") == proposed.get("running_cost")
         and all(

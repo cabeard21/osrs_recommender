@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from math import floor
+from time import perf_counter
 from typing import Any, NamedTuple
 
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
@@ -21,6 +22,12 @@ from tracker.gear.models import (
 )
 from tracker.gear.powered import base_hit, supports_powered
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects, effects
+from tracker.gear.prepared_combat import PreparedAttack
+from tracker.gear.prepared_combat import current as prepared_combat_context
+from tracker.gear.ranged_numerics import active as ranged_experiment_active
+from tracker.gear.ranged_numerics import evaluate as evaluate_ranged
+from tracker.gear.ranged_numerics import observer as ranged_observer
+from tracker.gear.ranged_score_finalization import active as score_finalization_active
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
@@ -258,6 +265,13 @@ def _evaluate_prepared(
         return CombatPerformance(
             supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
         )
+    cached_ranged = style == "ranged" and powered_attack is None and ranged_experiment_active()
+    # Cached ranged scores consume Outgoing directly. Preparing a second attack
+    # record adds no numerical work reuse; full reports still reuse defence data.
+    preparation = None if cached_ranged and score_only else prepared_combat_context()
+    constants = (
+        preparation.prepare_role(weapon, role, levels, target) if preparation is not None else None
+    )
     return _calculate(
         weapon,
         style,
@@ -267,9 +281,13 @@ def _evaluate_prepared(
         spell,
         bonuses,
         powered_attack,
-        effects(getattr(role, "active_prayer_ids", ())),
+        constants.prayers
+        if constants is not None
+        else effects(getattr(role, "active_prayer_ids", ())),
         score_only=score_only,
         include_defence=include_defence,
+        _constants=constants,
+        _cached_ranged=cached_ranged,
     )
 
 
@@ -286,6 +304,16 @@ def _armoured_mean(maximum: int, armour: int) -> float:
     return (max(0, 1 - armour) + positive_sum) / (maximum + 1)
 
 
+def numeric_attack_interval(weapon: EquipmentDefinition | None, role: Any) -> float:
+    """Attack interval for an already supported attack, without a rich report."""
+    speed = weapon.attack_speed if weapon else 4
+    if role.style == "magic" and getattr(role, "powered_attack", None) is None:
+        speed = 5
+    elif role.style == "ranged" and role.stance == "rapid":
+        speed = max(1, speed - 1)
+    return speed * 0.6
+
+
 def _calculate(
     weapon: EquipmentDefinition | None,
     style: str,
@@ -299,10 +327,87 @@ def _calculate(
     *,
     score_only: bool = False,
     include_defence: bool = False,
+    _constants: PreparedAttack | None = None,
+    _cached_ranged: bool | None = None,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
-    if style == "magic":
+    outgoing = None
+    constants = _constants
+    cached_ranged = (
+        style == "ranged" and powered_attack is None and ranged_experiment_active()
+        if _cached_ranged is None
+        else _cached_ranged
+    )
+    preparation = prepared_combat_context() if constants is None and not cached_ranged else None
+    if cached_ranged:
+        observer = ranged_observer()
+        key_started = perf_counter() if observer is not None else 0.0
+        kind = (
+            "heavy"
+            if weapon and weapon.ammo_for and weapon.ammo_for[0].startswith("bolt:")
+            else "standard"
+            if weapon and weapon.ammo_for
+            else "light"
+        )
+        subtype = getattr(target, "ranged_" + kind)
+        ranged_key = (
+            weapon.id if weapon else None,
+            levels["ranged"],
+            prayers.ranged_strength,
+            prayers.ranged_accuracy,
+            stance,
+            bonuses.ranged_strength,
+            bonuses.ranged,
+            speed,
+            weapon.attack_pattern if weapon else "single",
+            target.defence_level,
+            target.bonuses.ranged if subtype is None else subtype,
+            target.flat_armour,
+            target.damage_cap,
+        )
+        if observer is not None:
+            observer.key_seconds += perf_counter() - key_started
+        outgoing = evaluate_ranged(ranged_key)
+        if score_only and score_finalization_active():
+            if outgoing.capped:
+                return CombatScore(False, None, None, bonuses)
+            return CombatScore(
+                True,
+                outgoing.expected / (outgoing.speed * 0.6),
+                outgoing.accuracy,
+                bonuses,
+                raw_player_defence_rolls(levels, bonuses, stance, prayers)
+                if include_defence
+                else None,
+            )
+        max_hit, attack, defence, speed = outgoing[:4]
+    elif constants is not None or preparation is not None:
+        if constants is None:
+            assert preparation is not None
+            constants = preparation.prepare(
+                weapon, style, levels, target, stance, spell, powered_attack, prayers
+            )
+        max_hit, attack, roll_bonus = constants.rolls(bonuses)
+        defence, speed = constants.defence_roll, constants.speed
+        if style == "magic" and not score_only:
+            weakness = ElementalWeakness(
+                element=target.weakness_element,
+                percent=target.weakness_percent,
+                applied=constants.weakness_applied,
+                reason=None
+                if constants.weakness_applied
+                else (
+                    "Target has no active elemental weakness."
+                    if target.weakness_element is None or target.weakness_percent == 0
+                    else "Powered attacks do not receive elemental weakness bonuses."
+                    if powered_attack is not None
+                    else "Selected spell does not match the target's element."
+                ),
+                max_hit_bonus=constants.weakness_hit,
+                attack_roll_bonus=roll_bonus,
+            )
+    elif style == "magic":
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
             # the same ordinary magic model as standard spells.
@@ -410,12 +515,38 @@ def _calculate(
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
     max_hit = max(0, max_hit)
+    if constants is not None and score_only and constants.pattern == "single":
+        if (
+            constants.damage_cap is not None
+            and max(1, max_hit) + (8 if constants.sanguinesti else 0) > constants.damage_cap
+        ):
+            return CombatScore(False, None, None, bonuses)
+        accuracy = accuracy_probability(attack, defence)
+        # Preserve the one-term sum's initial zero and the proc's operation order.
+        expected = 0 + accuracy * _armoured_mean(max_hit, constants.armour)
+        if constants.sanguinesti:
+            expected += accuracy * 0.2 * 8
+        return CombatScore(
+            True,
+            expected / (speed * 0.6),
+            accuracy,
+            bonuses,
+            constants.player_defence.rolls(bonuses) if include_defence else None,
+        )
     sang_proc = (
-        powered_attack is not None
-        and weapon is not None
-        and weapon.powered_attack_model == "sanguinesti"
+        constants.sanguinesti
+        if constants is not None
+        else (
+            powered_attack is not None
+            and weapon is not None
+            and weapon.powered_attack_model == "sanguinesti"
+        )
     )
-    pattern = weapon.attack_pattern if weapon and style != "magic" else "single"
+    pattern = (
+        constants.pattern
+        if constants is not None
+        else (weapon.attack_pattern if weapon and style != "magic" else "single")
+    )
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
     if target.damage_cap is not None and any(
         max(1, m) + (8 if sang_proc else 0) > target.damage_cap for m in maxima
@@ -429,15 +560,21 @@ def _calculate(
                 "Damage above the target cap requires an unsupported reroll distribution.",
             ),
         )
-    accuracy = accuracy_probability(attack, defence)
+    accuracy = outgoing.accuracy if outgoing else accuracy_probability(attack, defence)
     probabilities = (
         (accuracy,)
         if pattern == "single"
         else (accuracy, accuracy**2 if pattern == "conditional_double" else accuracy)
     )
-    armour = target.flat_armour if style != "magic" else 0
-    expected = sum(
-        p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True)
+    armour = (
+        constants.armour
+        if constants is not None
+        else (target.flat_armour if style != "magic" else 0)
+    )
+    expected = (
+        outgoing.expected
+        if outgoing
+        else sum(p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True))
     )
     if sang_proc:
         expected += accuracy * 0.2 * 8
@@ -448,7 +585,13 @@ def _calculate(
             expected / interval,
             accuracy,
             bonuses,
-            raw_player_defence_rolls(levels, bonuses, stance, prayers) if include_defence else None,
+            (
+                constants.player_defence.rolls(bonuses)
+                if constants is not None
+                else raw_player_defence_rolls(levels, bonuses, stance, prayers)
+            )
+            if include_defence
+            else None,
         )
     hitsplats = tuple(
         HitsplatPerformance(
@@ -466,7 +609,9 @@ def _calculate(
         dps=expected / interval,
         attack_roll=attack,
         defence_roll=defence,
-        player_defence_rolls=player_defence_rolls(levels, bonuses, stance, prayers),
+        player_defence_rolls=constants.player_defence.report(bonuses)
+        if constants is not None
+        else player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
         limitations=(
             "Fresh combat levels and sustained active stat prayers only; "

@@ -66,6 +66,32 @@ def test_desktop_defaults_to_three_workers():
     assert settings().optimization_workers == 3
 
 
+def test_desktop_entrypoint_prints_profile_at_startup():
+    import subprocess
+    import sys
+
+    script = """
+from fastapi.testclient import TestClient
+import tracker.gear_desktop as desktop
+
+desktop.load_desktop_settings = lambda: desktop.DesktopSettings(
+    pi_url="http://127.0.0.1:8502", player_id=1,
+    read_token="startup-test-secret", optimization_workers=1,
+    optimization_profile="combined",
+)
+def run(app, **kwargs):
+    with TestClient(app):
+        pass
+desktop.uvicorn.run = run
+desktop.main()
+"""
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "Desktop Gear optimization profile: combined" in result.stderr
+    assert "Desktop Gear fixed-option reporting: enabled" in result.stderr
+    assert "startup-test-secret" not in result.stdout + result.stderr
+
+
 @pytest.mark.parametrize("workers", [0, 4, -1, True, False, 1.5, "2.5"])
 def test_desktop_rejects_invalid_worker_counts(workers):
     with pytest.raises(ValidationError):

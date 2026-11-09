@@ -283,7 +283,7 @@ class AutoProcessPool:
     def _dispatch(
         self,
         jobs: list[dict[str, Any]],
-        options: dict[str, bool],
+        options: dict[str, Any],
         cancelled: Any,
         progress: Any = None,
     ) -> list[dict[str, Any]]:
@@ -372,9 +372,12 @@ class AutoProcessPool:
                 "targeted_head_refinement",
                 "_complete_frontiers",
                 "_running_frontier",
+                "_fixed_reporting",
+                "_factored_evaluation",
             }
-            if any(k not in allowed or not isinstance(v, bool) for k, v in options.items()):
-                raise ValueError("Invalid desktop worker options")
+            from tracker.gear.execution_profile import validate_worker_options
+
+            validate_worker_options(options, allowed)
             if not branches or any(branch.potions.mode != "fixed" for branch in branches):
                 raise ValueError("Desktop potion workers require fixed potion branches")
             if self._executor is None:
@@ -446,10 +449,15 @@ class AutoProcessPool:
             raise ValueError(_UNAVAILABLE)
         if context_payload(content, catalog)[1] != self._identity:
             raise ValueError("optimizer_worker_context_mismatch")
-        if any(key not in ("local_refinement", "targeted_head_refinement") for key in options):
-            raise ValueError("Unsupported desktop worker options")
-        if any(not isinstance(value, bool) for value in options.values()):
-            raise ValueError("Invalid desktop worker options")
+        from tracker.gear.execution_profile import validate_worker_options
+
+        validate_worker_options(
+            options,
+            {
+                "local_refinement", "targeted_head_refinement", "_fixed_reporting",
+                "_factored_evaluation",
+            },
+        )
         if len(request.roles) != 1 or request.roles[0].allowed_disciplines is None:
             raise ValueError("Desktop workers require Single Auto")
         if self._executor is None:

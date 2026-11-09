@@ -19,6 +19,7 @@ from tracker.content.schema import Item
 from tracker.domain.types import Container, Tri
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.catalog import EquipmentCatalog, load_catalog
+from tracker.gear.execution_profile import ExecutionProfile, validate_profile
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
@@ -49,9 +50,19 @@ def _has_frontiers(request: OptimizationRequest) -> bool:
     )
 
 
-def _timing_key(request: OptimizationRequest, thorough: bool, parallel: bool) -> tuple[Any, ...]:
+def _timing_key(
+    request: OptimizationRequest,
+    thorough: bool,
+    parallel: bool,
+    profile: ExecutionProfile = "baseline",
+    fixed_reporting: bool = False,
+    factored_evaluation: bool = False,
+) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
     return (
+        profile,
+        fixed_reporting,
+        factored_evaluation,
         thorough,
         parallel,
         request.mode,
@@ -73,7 +84,17 @@ class GearService:
         *,
         equipment_root: Path | None = None,
         auto_pool: AutoProcessPool | None = None,
+        optimization_profile: ExecutionProfile = "baseline",
+        fixed_reporting: bool = False,
+        factored_evaluation: bool = False,
     ) -> None:
+        self.optimization_profile = validate_profile(optimization_profile)
+        if not isinstance(fixed_reporting, bool):
+            raise ValueError("Invalid fixed reporting option")
+        self.fixed_reporting = fixed_reporting and self.optimization_profile == "combined"
+        if not isinstance(factored_evaluation, bool):
+            raise ValueError("Invalid factored evaluation option")
+        self.factored_evaluation = factored_evaluation and self.optimization_profile == "combined"
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
@@ -126,6 +147,12 @@ class GearService:
         try:
             runner: Callable[..., dict[str, Any]] = optimize
             execution: dict[str, Any] = {}
+            if self.optimization_profile != "baseline":
+                execution["_execution_profile"] = self.optimization_profile
+            if self.fixed_reporting:
+                execution["_fixed_reporting"] = True
+            if self.factored_evaluation:
+                execution["_factored_evaluation"] = True
             pool = self.auto_pool
             parallel = False
             if request.potions.mode == "optimize":
@@ -142,7 +169,14 @@ class GearService:
                 tracker = RunProgress(
                     has_frontiers=_has_frontiers(request),
                     parallelism=getattr(pool, "workers", 1) if parallel else 1,
-                    timing_key=_timing_key(request, local_refinement, parallel),
+                    timing_key=_timing_key(
+                        request,
+                        local_refinement,
+                        parallel,
+                        self.optimization_profile,
+                        self.fixed_reporting,
+                        self.factored_evaluation,
+                    ),
                     model=self._timings,
                     fingerprint=progress_fingerprint,
                 )
