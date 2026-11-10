@@ -19,6 +19,7 @@ from tracker.content.schema import Item
 from tracker.domain.types import Container, Tri
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.catalog import EquipmentCatalog, load_catalog
+from tracker.gear.discipline_assignments import has_magic
 from tracker.gear.execution_profile import ExecutionProfile, validate_profile
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
@@ -43,11 +44,7 @@ _LIMITATIONS = (
 
 def _has_frontiers(request: OptimizationRequest) -> bool:
     """Whether any lane runs the secondary or running-cost frontier stage."""
-    return (
-        request.secondary_priority != "default"
-        or any(role.style == "magic" for role in request.roles)
-        or "magic" in (request.roles[0].allowed_disciplines or ())
-    )
+    return request.secondary_priority != "default" or has_magic(request)
 
 
 def _timing_key(
@@ -69,7 +66,7 @@ def _timing_key(
         request.secondary_priority,
         request.potions.mode,
         tuple(role.style for role in request.roles),
-        tuple(request.roles[0].allowed_disciplines or ()),
+        tuple(tuple(role.allowed_disciplines or ()) for role in request.roles),
         request.max_swaps,
         request.budget_gp > 0,
     )
@@ -159,7 +156,9 @@ class GearService:
                 if pool is not None:
                     execution["potion_branch_runner"] = pool.run_potions
                     parallel = True
-            elif pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
+            elif pool is not None and any(
+                len(role.allowed_disciplines or ()) > 1 for role in request.roles
+            ):
                 from tracker.gear.auto import optimize_auto
 
                 runner = optimize_auto

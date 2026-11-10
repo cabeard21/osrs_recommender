@@ -133,8 +133,15 @@ def for_lane(emit: Emit | None, lane: int) -> Emit | None:
 
 
 def lane_label(discipline: str | None, potion_ids: Sequence[str] | None = None) -> str:
-    """Human label for an Auto discipline and/or a frozen potion profile."""
-    parts = [discipline.capitalize()] if discipline else []
+    """Human label for a discipline assignment and/or a frozen potion profile."""
+    if discipline and "=" in discipline:
+        label = " / ".join(
+            f"{role}: {style.capitalize()}"
+            for role, style in (entry.split("=", 1) for entry in discipline.split("/"))
+        )
+    else:
+        label = discipline.capitalize() if discipline else ""
+    parts = [label] if label else []
     if potion_ids is not None:
         names = [key.replace("_", " ").capitalize() for key in potion_ids]
         parts.append(", ".join(names) if names else "No potions")

@@ -203,7 +203,11 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
     if selection.catalog_revision != catalog.revision:
         raise ValueError("NPC catalog revision changed; refresh and reselect the target.")
     entry = catalog.detail(selection.key)
-    if entry["npc_id"] in {2042, 2043, 2044} and role.style in {"stab", "slash", "crush"}:
+    if (
+        role.allowed_disciplines is None
+        and entry["npc_id"] in {2042, 2043, 2044}
+        and role.style in {"stab", "slash", "crush"}
+    ):
         raise ValueError("Zulrah is immune to melee damage; choose a ranged or magic role.")
     if entry["support_status"] != "supported":
         raise ValueError(
@@ -215,6 +219,16 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         if getattr(effective, field) != getattr(canonical, field):
             raise ValueError("NPC mechanic restrictions cannot be overridden.")
     return role.model_copy(update={"target": effective})
+
+
+def discipline_problem(role: RoleConfig) -> str | None:
+    """Concrete target immunity; Auto placeholders are resolved before search."""
+    if role.target_selection is None or role.style not in {"stab", "slash", "crush"}:
+        return None
+    entry = npc_catalog().detail(role.target_selection.key)
+    if entry["npc_id"] in {2042, 2043, 2044}:
+        return "Zulrah is immune to melee damage; choose a ranged or magic role."
+    return None
 
 
 def resolve_request(request: OptimizationRequest | Mapping[str, Any]) -> OptimizationRequest:

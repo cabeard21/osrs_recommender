@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime
+from math import prod
 from threading import Event
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -67,16 +68,34 @@ class Baseline(DTO):
     reasons: list[str]
 
 
-class WorkBudgetPolicy(DTO):
+class BaseWorkBudgetPolicy(DTO):
     policy: Literal["baseline-v1", "local-refinement-v1"]
     complete_assignment_limit: Literal[0, 10000]
     targeted_head_refinement: Literal[False] = False
+
+
+class WorkBudgetPolicy(BaseWorkBudgetPolicy):
     budget_scope: Literal["per_discipline"] = "per_discipline"
     discipline_count: int = Field(default=1, ge=1, le=3)
 
 
-def work_budget_policy(body: BrowserOptimizationRequest) -> WorkBudgetPolicy:
+class AssignmentWorkBudgetPolicy(BaseWorkBudgetPolicy):
+    budget_scope: Literal["per_discipline_assignment"] = "per_discipline_assignment"
+    discipline_assignment_count: int = Field(ge=1, le=81)
+
+
+def work_budget_policy(
+    body: BrowserOptimizationRequest,
+) -> WorkBudgetPolicy | AssignmentWorkBudgetPolicy:
     thorough = body.optimization_mode == "thorough"
+    if len(body.roles) > 1 and any(role.allowed_disciplines is not None for role in body.roles):
+        return AssignmentWorkBudgetPolicy(
+            policy="local-refinement-v1" if thorough else "baseline-v1",
+            complete_assignment_limit=10000 if thorough else 0,
+            discipline_assignment_count=prod(
+                len(role.allowed_disciplines or ()) or 1 for role in body.roles
+            ),
+        )
     return WorkBudgetPolicy(
         policy="local-refinement-v1" if thorough else "baseline-v1",
         complete_assignment_limit=10000 if thorough else 0,
@@ -270,7 +289,7 @@ class OptimizationResult(DTO):
     support_provenance: str = ""
     optimization_mode: Literal["fast", "thorough"]
     secondary_priority: SecondaryPriority
-    work_budget_policy: WorkBudgetPolicy
+    work_budget_policy: WorkBudgetPolicy | AssignmentWorkBudgetPolicy
     snapshot_id: str
     evaluated_at: datetime
     catalog_version: str
@@ -300,7 +319,7 @@ class OptimizationResponse(DTO):
     evaluated_at: datetime
     optimization_mode: Literal["fast", "thorough"]
     secondary_priority: SecondaryPriority
-    work_budget_policy: WorkBudgetPolicy
+    work_budget_policy: WorkBudgetPolicy | AssignmentWorkBudgetPolicy
     frontier_policy: dict[str, Any] | None = None
     running_cost_policy: dict[str, Any] | None = None
     scenario: BrowserOptimizationRequest

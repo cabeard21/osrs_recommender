@@ -51,6 +51,7 @@ from tracker.gear.models import (
     EquipmentDefinition,
     TargetSelection,
 )
+from tracker.gear.npcs import discipline_problem
 from tracker.gear.potions import PotionPolicy, boosted_levels, potion_summary
 from tracker.gear.powered import review as powered_review
 from tracker.gear.prayers import (
@@ -177,8 +178,6 @@ class OptimizationRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_context(self) -> OptimizationRequest:
-        if any(r.allowed_disciplines is not None for r in self.roles) and len(self.roles) != 1:
-            raise ValueError("Auto discipline selection supports Single only")
         ids = {r.id for r in self.roles}
         if len(ids) != len(self.roles):
             raise ValueError("role IDs must be unique")
@@ -502,6 +501,8 @@ class _Search:
         self, role: RoleConfig, weapon: EquipmentDefinition | None
     ) -> tuple[tuple[RoleConfig, CombatOption], ...]:
         """Account, role filters and catalog stay fixed for this search."""
+        if discipline_problem(role):
+            return ()
         key = (role.id, weapon.id if weapon else None)
         if key not in self.configured_option_cache:
             allowed = role.combat_options
@@ -1587,7 +1588,7 @@ def optimize(
             branch_runner=potion_branch_runner,
             **execution,
         )
-    if request.roles[0].allowed_disciplines is not None:
+    if any(role.allowed_disciplines is not None for role in request.roles):
         from tracker.gear.auto import optimize_auto
 
         return optimize_auto(
@@ -1602,6 +1603,7 @@ def optimize(
             local_refinement=local_refinement,
             _prepared=_prepared,
             _complete_frontiers=_complete_frontiers,
+            _running_frontier=_running_frontier,
             progress=progress,
             **execution,
         )
@@ -1979,6 +1981,9 @@ def optimize(
         },
         "limitations": [
             "Best found within bounded candidates and beams; global optimum is not proven.",
+            *dict.fromkeys(
+                problem for role in request.roles if (problem := discipline_problem(role))
+            ),
             *(
                 [
                     "No legal combat configuration satisfied the account and option filters "

@@ -379,7 +379,7 @@ it("configures a weighted hypothetical Multi scenario with independent combat st
   });
 });
 
-it("Auto is opt-in, preserves manual settings, and stays out of Multi", () => {
+it("Auto is opt-in, preserves manual settings, and follows the draft into Multi", () => {
   render(
     <GearProvider client={new FixtureGearClient("none", 0)}>
       <Harness />
@@ -403,12 +403,58 @@ it("Auto is opt-in, preserves manual settings, and stays out of Multi", () => {
   fireEvent.click(screen.getByRole("button", { name: "Auto" }));
   expect(screen.getByRole("checkbox", { name: "magic" })).not.toBeChecked();
   fireEvent.click(screen.getByRole("button", { name: "Enter Multi" }));
+  expect(screen.getAllByRole("button", { name: "Auto" })).toHaveLength(2);
+  const roles = JSON.parse(screen.getByTestId("draft").textContent!).roles;
+  expect(roles[0].autoDiscipline).toBe(true);
+  expect(roles[0].allowedDisciplines).toEqual(["melee", "ranged"]);
+  expect(roles[1].autoDiscipline).not.toBe(true);
+});
+
+it("sets independent Auto allowlists and reports the joint combination count", () => {
+  setup();
+  const first = within(screen.getByRole("group", { name: "Configuration 1" }));
+  const second = within(screen.getByRole("group", { name: "Configuration 2" }));
+  fireEvent.click(first.getByRole("button", { name: "Auto" }));
+  fireEvent.click(first.getByRole("checkbox", { name: "magic" }));
+  fireEvent.click(second.getByRole("button", { name: "Auto" }));
   expect(
-    screen.queryByRole("button", { name: "Auto" }),
+    screen.getByLabelText("Joint discipline search effort"),
+  ).toHaveTextContent("6 discipline combinations");
+  expect(
+    screen.getByLabelText("Joint discipline search effort"),
+  ).toHaveTextContent("Potion optimization adds searches");
+  const roles = JSON.parse(screen.getByTestId("draft").textContent!).roles;
+  expect(roles[0].allowedDisciplines).toEqual(["melee", "ranged"]);
+  expect(roles[1].allowedDisciplines).toEqual(["melee", "ranged", "magic"]);
+});
+
+it("clears Auto when converting a configuration to unscored utility", () => {
+  setup();
+  const second = within(screen.getByRole("group", { name: "Configuration 2" }));
+  fireEvent.click(
+    second.getByRole("checkbox", {
+      name: "Optimize attack type, stance and spell with equipment",
+    }),
+  );
+  fireEvent.click(second.getByRole("button", { name: "Auto" }));
+  fireEvent.click(
+    second.getByRole("checkbox", { name: "Unscored utility configuration" }),
+  );
+  const role = JSON.parse(screen.getByTestId("draft").textContent!).roles[1];
+  expect(role).toMatchObject({
+    utility: true,
+    autoDiscipline: false,
+    combatOptionOptimization: false,
+    parentRole: "role-1",
+  });
+  expect(role.allowedDisciplines).toBeUndefined();
+  expect(
+    second.queryByRole("button", { name: "Auto" }),
   ).not.toBeInTheDocument();
+  const first = within(screen.getByRole("group", { name: "Configuration 1" }));
+  fireEvent.click(first.getByRole("button", { name: "Auto" }));
   expect(
-    JSON.parse(screen.getByTestId("draft").textContent!).roles.every(
-      (role: { autoDiscipline?: boolean }) => !role.autoDiscipline,
-    ),
+    JSON.parse(screen.getByTestId("draft").textContent!).roles[0]
+      .autoDiscipline,
   ).toBe(true);
 });

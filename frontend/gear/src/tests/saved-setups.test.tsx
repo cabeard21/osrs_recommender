@@ -82,6 +82,27 @@ it("a fresh Multi-style draft has two configurations", () => {
   expect(defaultDraft("single")).toEqual(newDraft());
 });
 
+it("roundtrips independent Multi Auto allowlists without changing manual defaults", () => {
+  const draft = defaultDraft("multi");
+  const autoDraft = {
+    ...draft,
+    roles: draft.roles.map((role, index) =>
+      index === 1
+        ? {
+            ...role,
+            autoDiscipline: true,
+            allowedDisciplines: ["ranged", "magic"] as ("ranged" | "magic")[],
+          }
+        : role,
+    ),
+  };
+  saveSetup("Auto targets", "multi", autoDraft);
+  expect(readSavedSetups()[0].draft.roles).toEqual(autoDraft.roles);
+  expect(
+    defaultDraft("multi").roles.every((role) => !role.autoDiscipline),
+  ).toBe(true);
+});
+
 it("saves, resets, undoes and loads a setup", () => {
   setup();
   expect(screen.getByRole("button", { name: "Reset all" })).toBeDisabled();

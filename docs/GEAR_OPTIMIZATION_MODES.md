@@ -102,13 +102,15 @@ See [the browser API contract](GEAR_BROWSER_API.md) for exact transport fields a
 
 ### Automatic discipline selection
 
-Single mode offers opt-in **Auto** beside the three manual disciplines. Existing
+Single and Multi modes offer opt-in **Auto** beside the three manual disciplines. Existing
 and new drafts keep their manual defaults. Auto initially considers melee, ranged,
 and magic; users can exclude disciplines but must leave at least one selected.
 Attack-type, stance, and spell optimization stays enabled in Auto, with eligibility
 and explicit option exclusions taken from the existing account capabilities.
 Manual settings are retained when switching back. Single and Multi drafts remain
-separate, and Multi continues to require explicit disciplines.
+separate. Each scored Multi configuration has its own Auto setting and allowlist;
+fixed and Auto configurations can be mixed, and repeated disciplines are allowed.
+Utility configurations cannot use Auto, but their ordinary parent can.
 
 Each allowed discipline receives a complete existing Fast or Thorough search over
 the same frozen inputs. This preserves manual search effort per discipline and can
@@ -117,7 +119,33 @@ discipline and compare each permitted discipline's best-found DPS and purchase c
 including reasons when a branch finds no feasible setup. Cancellation discards the
 whole operation rather than presenting an incomplete comparison as a winner.
 The server-owned work policy reports `budget_scope: "per_discipline"` and the
-effective `discipline_count`; Thorough's 2,000-assignment limit applies per branch.
+effective `discipline_count`; Thorough's 10,000-assignment limit applies per branch.
+
+Multi Auto runs every permitted discipline combination through the complete joint
+optimizer. Two unrestricted Auto configurations require nine joint searches, and
+four require 81, before relevant potion profiles are added. The configuration panel
+shows this combination count. Search effort is preserved for every compatible
+combination; shared budget, equipment, inventory, and swap constraints determine
+the joint winner. The work policy reports
+`budget_scope: "per_discipline_assignment"` and `discipline_assignment_count`.
+The existing worker pool bounds concurrency; cancellation discards the whole run.
+
+Multi keeps one combined result workspace. Each selected swap-cap or frontier
+point supplies the displayed disciplines, attack options, equipment, and purchases.
+Complete objective archives are combined before loss filtering and sampling, so a
+combination that loses on DPS can still contribute a tradeoff. Single retains its
+discipline tabs and comparisons; Multi does not add a combination browser.
+Exact fixed-loadout manual evaluations remain limited to Single.
+
+A local Windows/Python 3.12.10 synthetic check used the frozen three-weapon
+`tests.gear.test_auto_disciplines.context("magic")` fixture, Fast serial execution,
+one maximum swap, and disabled potions. After one warmup, three runs gave median
+times of 0.059 s, 0.163 s, and 7.37 s for 3, 9, and 81 discipline assignments.
+Separate `tracemalloc` runs peaked at 0.31, 0.47, and 3.24 MiB of traced Python
+allocations. Separate Windows process-tree sampling observed 41.9, 42.0, and
+44.9 MiB working sets; sampling can miss short peaks. The 3- and 9-assignment
+cases used two roles, and the 81-assignment case used four. These small-fixture
+measurements check scaling and do not establish full-catalog latency or memory use.
 
 The existing DPS-first ordering selects the winner. Secondary frontiers combine
 discipline candidates before applying the shared DPS-loss threshold; curve and

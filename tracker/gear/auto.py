@@ -1,26 +1,15 @@
-"""Single-role cross-discipline orchestration over fixed, authoritative searches."""
+"""Cross-discipline orchestration over fixed, authoritative joint searches."""
 
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Mapping
 from hashlib import sha256
 from time import perf_counter
 from typing import Any
 
-
-def branch_requests(request: Any) -> Iterator[tuple[str, Any]]:
-    role = request.roles[0]
-    for discipline in ("melee", "ranged", "magic"):
-        if discipline in (role.allowed_disciplines or ()):
-            concrete = role.model_copy(
-                update={
-                    "allowed_disciplines": None,
-                    "style": "slash" if discipline == "melee" else discipline,
-                    "stance": "rapid" if discipline == "ranged" else "accurate",
-                }
-            )
-            yield discipline, request.model_copy(update={"roles": (concrete,)})
+from tracker.gear.discipline_assignments import branch_requests as branch_requests
+from tracker.gear.discipline_assignments import has_magic, merge_assignment_results
 
 
 def optimize_auto(
@@ -34,12 +23,13 @@ def optimize_auto(
     branch_runner: Callable[..., list[tuple[str, dict[str, Any]]]] | None = None,
     **options: Any,
 ) -> dict[str, Any]:
-    from tracker.gear.optimizer import optimize
+    from tracker.gear.optimizer import optimize, prepare_optimization
     from tracker.gear.progress import for_lane, lane_label
 
     started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
     progress = options.pop("progress", None)
+    running_frontier = options.pop("_running_frontier", False) or has_magic(request)
     branches = []
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
@@ -70,6 +60,9 @@ def optimize_auto(
             raise ValueError("optimizer_worker_unavailable: incomplete discipline results")
         branches = [(discipline, by_discipline[discipline]) for discipline in expected]
     else:
+        options["_prepared"] = options.get("_prepared") or prepare_optimization(
+            snapshot, request, catalog, content, price_records, now
+        )
         for lane, (discipline, concrete) in enumerate(branch_requests(request)):
             if cancelled and cancelled():
                 raise ValueError("optimization_cancelled")
@@ -81,7 +74,7 @@ def optimize_auto(
                 price_records,
                 now,
                 _complete_frontiers=True,
-                _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
+                _running_frontier=running_frontier,
                 progress=for_lane(progress, lane),
                 **options,
             )
@@ -111,6 +104,8 @@ def merge_auto_results(
     request: Any, branches: list[tuple[str, dict[str, Any]]], *, complete_frontiers: bool = False
 ) -> dict[str, Any]:
     """Combine complete concrete-discipline archives using the requested global cap."""
+    if len(request.roles) > 1:
+        return merge_assignment_results(request, branches, complete_frontiers=complete_frontiers)
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _solution_key
 
@@ -303,6 +298,7 @@ def resolve_auto_role(
     """Resolve a fixed loadout against the same legal filters as equipment search."""
     from tracker.gear.combat_options import eligible_combat_options
     from tracker.gear.evaluation import evaluate_equipment
+    from tracker.gear.npcs import discipline_problem
 
     weapon = items.get(equipment.get("weapon", -1))
     candidates = []
@@ -337,6 +333,8 @@ def resolve_auto_role(
                     "combat_options": None,
                 }
             )
+            if discipline_problem(configured):
+                continue
             performance = evaluate_equipment(equipment, items, configured, levels)
             if performance.supported:
                 candidates.append(

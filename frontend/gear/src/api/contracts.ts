@@ -37,8 +37,9 @@ export type SecondaryPriority =
   | "magic_damage_bonus"
   | "accuracy";
 export interface WorkBudgetPolicy {
-  budget_scope?: "per_discipline";
+  budget_scope?: "per_discipline" | "per_discipline_assignment";
   discipline_count?: number;
+  discipline_assignment_count?: number;
   policy: "baseline-v1" | "local-refinement-v1";
   complete_assignment_limit: 0 | 10000;
   targeted_head_refinement: false;
@@ -595,7 +596,7 @@ export interface OptimizationProgress {
   /** Estimated seconds remaining, or null while no estimate is credible. */
   eta_seconds?: number | null;
   stages?: ProgressStage[];
-  /** Independent searches (Auto disciplines × potion profiles): all when few, else running. */
+  /** Independent discipline assignments × potion profiles: all when few, else running. */
   lanes?: ProgressLane[];
   lane_counts?: ProgressLaneCounts;
 }

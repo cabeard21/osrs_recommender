@@ -137,9 +137,11 @@ export function ConfigurationPanel() {
       // Template names such as "Magic" already say the style.
       role.utility
         ? "Utility"
-        : role.name.toLowerCase() === role.style
-          ? null
-          : role.style,
+        : role.autoDiscipline
+          ? "Auto"
+          : role.name.toLowerCase() === role.style
+            ? null
+            : role.style,
       role.combatTarget?.name,
       role.utility ? null : `weight ${role.weight}`,
     ]
@@ -147,6 +149,17 @@ export function ConfigurationPanel() {
       .join(" · ");
   const hasSeveralScoredRoles =
     !isSingle && draft.roles.filter((role) => !role.utility).length > 1;
+  const hasAutoRoles = draft.roles.some(
+    (role) => !role.utility && role.autoDiscipline,
+  );
+  const disciplineCombinations = draft.roles.reduce(
+    (count, role) =>
+      count *
+      (!role.utility && role.autoDiscipline
+        ? (role.allowedDisciplines?.length ?? 3)
+        : 1),
+    1,
+  );
   const roleFields = (role: Role, index: number) => (
     <RoleFields
       key={role.id}
@@ -199,6 +212,15 @@ export function ConfigurationPanel() {
       )}
       {!isSingle && (
         <>
+          {hasAutoRoles && (
+            <p aria-label="Joint discipline search effort">
+              {disciplineCombinations} discipline combination
+              {disciplineCombinations === 1 ? "" : "s"} will be compared at full
+              joint search effort. Potion optimization adds searches for each
+              relevant potion setup. More combinations can take substantially
+              longer.
+            </p>
+          )}
           <button
             disabled={draft.roles.length >= 4}
             onClick={() =>

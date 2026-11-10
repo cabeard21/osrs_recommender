@@ -16,6 +16,7 @@ import { validateSecondaryPriority } from "./secondaryPriorities";
 import {
   validateOptimizationPolicy,
   validateRefinementDiagnostics,
+  validateAssignmentDiagnostics,
 } from "./optimizationModes";
 export { performanceMetrics } from "./runtime";
 import { emptyEquipment, slots } from "./contracts";
@@ -143,13 +144,25 @@ export function parseOptimization(
     typeof result.support_provenance !== "string"
   )
     throw new Error("Invalid equipment support provenance");
+  const jointAuto =
+    scenario.request.roles.length > 1 &&
+    scenario.request.roles.some((role) => role.autoDiscipline);
+  const assignmentCount = jointAuto
+    ? scenario.request.roles.reduce(
+        (count, role) =>
+          count *
+          (role.autoDiscipline ? (role.allowedDisciplines?.length ?? 3) : 1),
+        1,
+      )
+    : undefined;
   validateOptimizationPolicy(
     envelope,
     result,
     scenario.request.optimization_mode ?? "fast",
-    scenario.request.roles[0]?.autoDiscipline
+    !jointAuto && scenario.request.roles[0]?.autoDiscipline
       ? (scenario.request.roles[0].allowedDisciplines?.length ?? 3)
       : 1,
+    assignmentCount,
   );
   const priority = scenario.request.secondary_priority ?? "default";
   validateSecondaryPriority(envelope, priority);
@@ -180,7 +193,9 @@ export function parseOptimization(
       throw new Error("Frontier work policy does not match submitted scenario");
   }
   object(result.search);
-  if (scenario.request.roles[0]?.autoDiscipline) {
+  if (jointAuto) {
+    validateAssignmentDiagnostics(result.search, scenario);
+  } else if (scenario.request.roles[0]?.autoDiscipline) {
     const allowed = scenario.request.roles[0].allowedDisciplines ?? [
       "melee",
       "ranged",
@@ -487,13 +502,14 @@ export function parseOptimization(
     ReturnType<typeof parseAlternatives>
   >();
   if (result.discipline_results !== undefined) {
-    const allowed = scenario.request.roles[0]?.autoDiscipline
-      ? (scenario.request.roles[0].allowedDisciplines ?? [
-          "melee",
-          "ranged",
-          "magic",
-        ])
-      : [];
+    const allowed =
+      !jointAuto && scenario.request.roles[0]?.autoDiscipline
+        ? (scenario.request.roles[0].allowedDisciplines ?? [
+            "melee",
+            "ranged",
+            "magic",
+          ])
+        : [];
     if (
       !Array.isArray(result.discipline_results) ||
       result.discipline_results.length !== allowed.length
@@ -602,8 +618,8 @@ export function optimizationRequest(scenario: Scenario) {
     throw new Error(
       "Live optimization supports one through four configurations.",
     );
-  if (r.roles.some((role) => role.autoDiscipline) && r.roles.length !== 1)
-    throw new Error("Auto supports Single only.");
+  if (r.roles.some((role) => role.autoDiscipline && role.utility))
+    throw new Error("Auto requires a scored combat configuration.");
   return {
     roles: r.roles.map((role) => ({
       id: role.id,

@@ -1,4 +1,4 @@
-"""Desktop-owned spawned workers for independent Single Auto alternatives."""
+"""Desktop-owned spawned workers for independent concrete search alternatives."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from tracker.content.loader import Content
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.auto import branch_requests
 from tracker.gear.catalog import EquipmentCatalog
+from tracker.gear.discipline_assignments import has_auto, has_magic
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
@@ -90,10 +91,8 @@ def _execute_branch(
         raise ValueError(_UNAVAILABLE)
     content, catalog, identity, stopped = _CONTEXT
     snapshot, request, prices, now = decode_job(payload, identity)
-    if request.potions.mode != "fixed" and (
-        len(request.roles) != 1 or request.roles[0].allowed_disciplines is not None
-    ):
-        raise ValueError("Worker requires a concrete Single discipline")
+    if request.potions.mode != "fixed" and has_auto(request):
+        raise ValueError("Worker requires concrete disciplines")
     prepared = None
     if request.potions.mode == "fixed":
         # Decode/validate every job before consulting the single-entry cache. The
@@ -454,12 +453,14 @@ class AutoProcessPool:
         validate_worker_options(
             options,
             {
-                "local_refinement", "targeted_head_refinement", "_fixed_reporting",
+                "local_refinement",
+                "targeted_head_refinement",
+                "_fixed_reporting",
                 "_factored_evaluation",
             },
         )
-        if len(request.roles) != 1 or request.roles[0].allowed_disciplines is None:
-            raise ValueError("Desktop workers require Single Auto")
+        if not has_auto(request):
+            raise ValueError("Desktop workers require Auto")
         if self._executor is None:
             self._build()  # A broken pool is recreated only for a fresh request.
         self._stopped.clear()
@@ -468,7 +469,7 @@ class AutoProcessPool:
         jobs = [
             job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
         ]
-        selected = {**options, "_running_frontier": "magic" in request.roles[0].allowed_disciplines}
+        selected = {**options, "_running_frontier": has_magic(request)}
         results = self._dispatch(jobs, selected, cancelled, progress)
         return [
             (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)

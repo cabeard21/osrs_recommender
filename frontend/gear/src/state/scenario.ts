@@ -139,8 +139,8 @@ export function normalize(
     throw new Error("Choose Fast or Thorough optimization.");
   for (const role of draft.roles) {
     if (!role.autoDiscipline) continue;
-    if (draft.roles.length !== 1 || role.utility)
-      throw new Error("Automatic discipline selection supports Single only.");
+    if (role.utility)
+      throw new Error("Auto requires an ordinary combat configuration.");
     const disciplines = role.allowedDisciplines ?? ["melee", "ranged", "magic"];
     if (
       !disciplines.length ||
@@ -696,11 +696,6 @@ export function reducer(state: State, action: Action): State {
       draft.roles.push(newRole(2));
       draft.roles = draft.roles.map((role) => ({
         ...role,
-        autoDiscipline: false,
-        allowedDisciplines: undefined,
-        combatOptionOptimization: role.autoDiscipline
-          ? role.manualCombatOptionOptimization
-          : role.combatOptionOptimization,
         combatTarget: structuredClone(
           role.combatTarget ??
             draft.combatTarget ?? {
