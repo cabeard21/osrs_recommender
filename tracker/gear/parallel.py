@@ -373,6 +373,7 @@ class AutoProcessPool:
                 "_running_frontier",
                 "_fixed_reporting",
                 "_factored_evaluation",
+                "_compact_states",
             }
             from tracker.gear.execution_profile import validate_worker_options
 
@@ -457,6 +458,7 @@ class AutoProcessPool:
                 "targeted_head_refinement",
                 "_fixed_reporting",
                 "_factored_evaluation",
+                "_compact_states",
             },
         )
         if not has_auto(request):

@@ -169,6 +169,337 @@ a reusable version is a tracked follow-up below.
 
 ## Proposed work
 
+### Current increment: full P3 (2026-11-10)
+
+The authorized next increment refreshes profiling against the P1-enabled revision
+including Multi Auto, then implements all P3 equipment and solution representations.
+Broader P2 sharing and P4-P6 remain separate. Full P3 implementation, qualification
+and desktop adoption are complete. The final revision-9 acceptance and adoption
+record below supersedes the intermediate statuses in this development history.
+
+The reference is `combined` with P1 enabled and compact states disabled. The
+candidate differs only by a private compact-state execution switch. Fixed slot
+records must retain equipment insertion order separately for exact fractional
+magic sums. Solution interning remains bounded within a concrete execution leaf;
+independent objective winners, physical identities, search order and budgets stay
+unchanged. Complete normalized result parity is mandatory.
+
+Preselected timing configurations are fixed melee Single (one worker), fixed magic
+Single (one), configured ranged Single (one), fixed-style Multi (one), configured
+Auto (three), and Multi Auto (three). Fixed-style Multi is the primary intended
+improvement. Memory qualification covers magic, Multi and Multi Auto separately.
+Apply the staged validation standard below, including its predeclared extension
+from three to five timing pairs when variability is inconclusive. Historical P1
+acceptance policy and evidence retain their original meaning.
+
+Initial P3 diagnostic profiling of the P1 reference found roughly 1.08 million
+purchase-cost calls in the configured Multi case, with 14.05 seconds cumulative
+instrumented time (including 12.57 seconds in purchase-report construction).
+The full profile recorded 171.9 million calls and 79.3 seconds instrumented time.
+These are hotspot observations, not uninstrumented runtime or adoption evidence.
+The profiles live under `.tmp/p3/reference-profile`; implementation files were
+being edited during development, so final qualification requires a fresh frozen
+source cohort. Numeric acquisition facts must preserve market-alias deduplication
+and the existing sorted-physical-ID overwrite rule, as well as ownership,
+assumptions, untradeables, exemptions and unknown-price behavior.
+
+The first isolated fixed-Multi service screen retained complete result parity but
+regressed from 22.975 to 31.180 seconds; it is not accepted. Matched diagnostic
+profiles identified repeated assignment construction as the principal offset to
+numeric acquisition savings. Subsequent work batches joint state construction.
+A full-catalog constructor probe observed 190,059 reusable equipment constructions
+out of 329,977 with 1,024 entries, versus 200,869 with 8,192 entries. The equipment
+pool therefore uses 1,024 entries; at this stage complete-solution interning
+retained its 8,192 bound (revised after memory qualification below). Assignment
+constructor reuse was only 16.9% even at 8,192 entries, so that
+additional pool is not introduced. These counts motivate implementation choices;
+they do not prove a runtime or memory gain. Screen and probe evidence is retained
+under `.tmp/p3-screen`.
+
+The fourth isolated screen, after delayed assignment allocation and inventory
+fast paths, measured 22.611 seconds reference and 22.591 seconds candidate with
+identical complete result digests. This is effectively equal performance, not a
+qualified gain. These diagnostic screens explicitly fixed combat options and
+disabled prayers. The declared `multi` acceptance case fixes the role disciplines
+but retains configured combat options; the screens are substitute workloads and
+cannot establish that acceptance case's performance. The stable candidate passed
+816 focused tests with 94% combined
+coverage across the new state, solution, acquisition and acceptance-tool modules;
+the production modules individually covered 99%, 98% and 100%. An additional
+24 boundary tests covered workers, HTTP, cancellation/recovery, rollback and
+automated Chrome. Ruff and focused mypy passed. Independent review found no
+remaining correctness or original-P3 implementation-scope blockers.
+
+Acceptance revision 1 under `.tmp/p3/acceptance-v1` passed all 21 full parity
+configurations (42 complete outputs), then failed the first timing configuration.
+Fixed melee used the predeclared extension to five pairs: median 6.925103 seconds
+reference versus 7.290294 seconds candidate, a 5.27% regression with unresolved
+tolerance uncertainty. All 12 warm-up/timed outputs matched exactly. Remaining
+timing configurations and memory qualification were not run. This revision is
+unqualified; its source snapshot and all observations remain unchanged.
+
+Further revisions may reuse that explicitly identified frozen reference-output
+cohort as a correctness oracle, with verified raw-output, source, normalizer and
+per-case input hashes. Every one of the 21 candidate cases must still execute
+again and match its complete reference output. Timing and memory cannot reuse
+old measurements: both modes must run afresh, and their outputs must also match
+the oracle. A changed input, case definition or normalization contract requires
+new reviewed reference evidence. This preserves full parity coverage while
+avoiding repeated execution of the unchanged reference implementation.
+
+The desktop default remains unchanged until all gates pass. Earlier screens and
+historical P1 results are not retroactively qualified by this evidence.
+
+Revision 2 adds incremental Single equipment metadata, restricts optional equipment
+interning to Multi (the measured Single hit rate was below 1%), and reuses bounded,
+context-specific materialized role reports. All compact representations remain
+enabled for Single. Four declared timing configurations passed the 5% tolerance:
+fixed melee +1.26%, fixed magic +2.20%, configured ranged +2.68%, and configured
+Multi +2.95%. Each retained three pairs and exact reference-output parity, with
+no extensions. None demonstrated an improvement. Work paused before Auto/Multi
+Auto timing, the full revision-2 candidate matrix and memory qualification to
+address the unmet primary Multi improvement goal. This is not adoption evidence;
+the complete checkpoint remains under `.tmp/p3/acceptance-v2`.
+
+Revision 3 compacts transition BFS queue records while retaining FIFO expansion,
+lexical action order and exact capacity/automatic-removal behavior, and defers
+partial-assignment JSON until numeric rank keys tie. Its 850 focused tests passed
+with 96% combined coverage, including 3,042 exhaustive transition comparisons.
+Primary Multi timing used the declared five-pair extension: median 31.612474
+seconds reference versus 31.439064 seconds candidate (0.55% faster). The median
+difference (0.173410 seconds) was below reference MAD (0.208916), and paired median
+gain (0.232726) was below paired-gain MAD (0.268232). Regression tolerance passed,
+but improvement remains unqualified. No other revision-3 qualification cases ran;
+all observations remain under `.tmp/p3/acceptance-v3`.
+
+Revision 4 factors unchanged equipment out of transition queue states and caches
+canonical transition problems behind the existing 8,192-entry full-key cache.
+The measured outer-miss stream contained 5,685 problems: an inner cache of 1,024
+entries required 2,204 BFS executions, compared with 2,172 at 8,192 entries. The
+smaller inner bound retains approximately 99% of the avoided BFS work. Both
+caches clear together and remain scoped to the frozen catalog/search context.
+The focused lane passed 863 tests with 96% combined coverage; transition and
+ranking modules have 100% coverage, with 4,386 exact transition comparisons.
+
+Revision-4 primary Multi timing passed with three pairs: median 31.571304 seconds
+reference versus 30.988209 seconds candidate (1.85% faster). The median difference
+of 0.583096 seconds exceeded reference MAD of 0.256162, and paired median gain of
+0.566313 exceeded paired-gain MAD of 0.239379. All eight warm-up/timed outputs
+matched the frozen reference. Revision 4 subsequently failed the Multi memory
+gate: three fresh processes per mode produced median sampled process-tree working
+sets of 444.03 MiB reference and 545.98 MiB candidate (+22.96%, exceeding 5%).
+All six outputs matched the frozen reference, with no sampling failures; 6–7
+samples per observation make these coarse sampled peaks. Remaining qualification
+was stopped. Revision 4 is not adopted; retained candidate reports are under
+investigation. Evidence is retained under `.tmp/p3/acceptance-v4`.
+
+The subsequent exact-Multi retention diagnostic found three live search owners
+at leaf teardown, with 2,466 cached solution records and 2,083 unresolved report
+factories. These factories retained their search owners, whose deduplicated
+numerical caches occupied approximately 96.77 MB. The solution lookup trace had
+identical 338 hits at bounds of 256, 1,024 and 8,192 entries. Revision 5 therefore
+targets weak solution interning with a 256-key bound: active archive/beam records
+remain reusable, while rejected records no longer keep whole searches alive.
+The instrumented run preserved exact output parity; its timing and memory are
+diagnostic only. Evidence is under `.tmp/p3-v5/solution-retention/`; fresh resource
+qualification is required after the fix.
+
+Revision 5 implements this weak interning and passed 869 focused tests. Its
+solution module has 98% coverage, including prompt release without cyclic GC,
+live archive/cap reuse, stale weak-reference callbacks, bounded negative results,
+and rank/report lifetime. Independent review, Ruff and focused mypy passed.
+Fresh Multi memory nevertheless failed: median 444.410 MiB reference versus
+535.211 MiB candidate (+20.43%), with three fresh processes per mode, exact
+output parity, no sampling failures and 6–7 samples per observation. No revision-5
+timing was run. Evidence remains under `.tmp/p3/acceptance-v5`; matching-phase
+retention analysis is required before another qualification attempt.
+
+The matching-phase comparison isolated a larger lifetime issue: the final
+role-product `expanded` list retained 65,536 candidates through later frontier
+work, despite only the selected beam being needed. At refinement entry the
+candidate had 66,399 live assignment records but only seven compact solutions;
+its numerical cache matched the reference at approximately 69.4 MiB. The compact
+assignment metadata made this unnecessary retention substantially more expensive.
+Revision 6 releases the temporary expansion list after beam selection in both
+execution paths, preserving candidate order, search budgets and surviving rows.
+Instrumented phase evidence is under `.tmp/p3-v5/phase-memory/` and does not count
+as resource acceptance.
+
+Revision 6 passed the fresh Multi memory gate: median 430.535 MiB reference and
+431.238 MiB candidate (+0.163%), with three processes per mode, exact output
+parity and no sampling failures. Samples numbered 6–7 per observation. Both modes
+include the temporary-list cleanup; this is not a comparison against the older,
+more memory-intensive reference. Primary Multi timing also passed: median
+32.126934 seconds reference versus 31.186635 candidate (2.93% faster), with a
+0.940299-second difference exceeding reference MAD 0.266919 and paired-gain
+median 0.940299 exceeding paired-gain MAD 0.309053. Three pairs were sufficient;
+all eight outputs matched the reference. Remaining gates are pending under
+`.tmp/p3/acceptance-v6`.
+
+Revision 6 subsequently passed fixed-melee timing (6.744811 to 6.581517 seconds)
+and fixed-magic timing (12.369887 to 12.774577 seconds, +3.27%), but failed configured
+ranged after the declared five-pair extension: 10.228951 to 10.749181 seconds
+(+5.086%). Paired-gain MAD was 0.205781 seconds, leaving tolerance uncertainty
+unresolved. All 12 ranged outputs matched exactly. Qualification stopped before
+the remaining cases; revision 6 is not adopted. The next diagnostic targets the
+Single configured-ranged path rather than repeating the same source measurements.
+
+The matched configured-ranged profiles retained exact output parity and identified
+mapping-view creation and inherited lookup overhead in compact equipment
+validation. Revision 7 provides direct fixed-slot `get`/membership operations
+and iterates the cached ordered pairs during validation. Keyword arguments,
+defaults, unknown/unhashable keys and validation message order are preserved.
+Seventy-eight focused tests, Ruff and mypy passed. Profile timings are diagnostic
+only; revision 7 requires fresh qualification, starting with configured ranged.
+That gate passed with three pairs: median 10.455350 seconds reference versus
+10.645507 candidate (+1.82%), with clear tolerance and all eight outputs matching.
+Remaining revision-7 gates are pending under `.tmp/p3/acceptance-v7`.
+Fresh Multi memory passed at 430.836 MiB reference versus 435.875 MiB candidate
+(+1.17%), with three processes per mode, exact parity and no sampling failures.
+Primary Multi timing passed with three pairs: 32.044030 to 31.073571 seconds
+(3.03% faster). The 0.970459-second median difference exceeded reference MAD
+0.284115; paired median gain 0.816075 exceeded paired-gain MAD 0.129732.
+Fixed melee also passed its regression gate (6.827423 to 6.647664 seconds; no
+convincing gain claimed), but fixed magic failed clearly after three pairs:
+12.116171 to 13.008782 seconds (+7.37%). Tolerance was not inconclusive, so no
+extension applied. All eight magic outputs matched exactly. Revision 7 is not
+adopted; remaining qualification stopped, and the next profile targets fixed magic.
+
+Matched fixed-magic profiles found 156,846 slot updates and 1,305,640 compact
+equipment equality calls from frontier diversity selection. Revision 8 specializes
+append-only slot updates, removes unnecessary storage from mapping views, and
+uses exact cached equality keys for homogeneous compact-state diversity selection.
+Mixed/custom rows retain the prior equality path; representatives, band order,
+limits and rank-call counts remain unchanged. An optional fixed-score cache reuse
+was rejected during review because canonical cache keys can conceal different
+first-seen fractional-sum orders. Independent numerical cache behavior is retained.
+These are diagnostic findings, not qualified speedups; fresh acceptance is required.
+Revision 8 passed 916 focused tests and independent review. Its first acceptance
+gate, fixed magic, passed with three pairs: 12.603365 seconds reference versus
+12.266688 candidate. Regression tolerance is clear; the apparent speedup is not
+convincing relative to variability and is not claimed. All eight outputs matched.
+Remaining gates are pending under `.tmp/p3/acceptance-v8`.
+Configured ranged passed its declared five-pair extension at 10.356346 seconds
+reference versus 10.612452 candidate (+2.47%). Fresh Multi memory passed at
+431.711 versus 432.496 MiB (+0.18%), with six distinct processes, no sampling
+failures and 6–7 samples per observation. Multi timing passed with three pairs:
+32.168248 to 30.761677 seconds (4.37% faster), exceeding both the reference-MAD
+and paired-gain-MAD thresholds. Every recorded output matched the frozen oracle.
+Fixed melee also passed at 6.776694 versus 6.412262 seconds. Configured Auto with
+three workers remained unqualified after the allowed five-pair extension:
+26.216433 versus 27.374648 seconds (+4.42%). Although the median is within 5%,
+paired-gain MAD of 0.641270 seconds leaves tolerance uncertainty unresolved.
+All 12 Auto outputs matched exactly. Qualification stopped before remaining
+memory, full parity and Multi Auto checks; revision 8 is not adopted. The next
+diagnostic examines concrete Auto worker leaves rather than parent wait time.
+
+The exact Auto magic-leaf profile located redundant compact wrapping at the full
+variant-report boundary: `_report_variant` seeded complete performance reports,
+created another compact solution, then immediately expanded it for a lexical tie.
+Revision 9 uses the existing report-only bypass on that copied search. Outer
+compact search and variant scoring remain enabled, and the original validation
+and full-report path supplies the requested payload. Ninety-three focused tests
+passed, including boundary parity across styles, joint roles, defence objectives
+and cancellation. Profiles and exact leaf outputs remain under
+`.tmp/p3/auto-v8-diagnosis`; new qualification starts with worker Auto.
+Revision-9 configured Auto with three workers passed three pairs: 26.818943
+seconds reference versus 25.485668 candidate (4.97% faster), with clear regression
+tolerance and convincing gain. All eight outputs matched exactly. Remaining
+qualification is pending under `.tmp/p3/acceptance-v9`.
+The remaining short timing controls also passed: fixed magic 12.305247 to
+12.156499 seconds, configured ranged 10.352461 to 10.255747, and fixed melee
+6.826825 to 6.406330. Primary Multi passed at 32.107796 to 30.617329 seconds
+(4.64% faster), exceeding both variability thresholds. Fresh Multi memory passed
+at 429.465 versus 431.395 MiB (+0.45%). All outputs matched exactly. Fixed-magic
+memory, the complete current-candidate parity matrix and Multi Auto resource
+checks remain pending.
+
+Fixed-magic memory subsequently passed: 348,905,472 bytes reference median versus
+333,647,872 candidate (-4.37%), with six fresh processes, exact parity and zero
+sampling failures. There were 4–5 samples per process; these remain coarse sampled
+peaks. All 17 original P1 parity configurations also passed on revision 9. The
+four additional Multi Auto correctness cases and Multi Auto resource gates are
+still pending; no desktop activation has occurred.
+
+All four additional Multi Auto cases subsequently passed, completing all 21
+revision-9 candidate parity configurations against the sealed reference cohort.
+Each raw output was revalidated. This includes full serial/three-worker Multi
+Auto, mixed configured options and an Auto role with a fixed-options partner.
+Multi Auto memory and timing remain the final resource gates before selection
+and desktop activation.
+
+Multi Auto memory passed with six fresh process trees: median 2,040,049,664 bytes
+reference versus 2,086,154,240 candidate (+2.26%, within 5%). Every output matched
+the golden result, with zero sampling failures and 3,722–3,803 samples per run.
+All 21 correctness configurations and all three memory cases now pass. Multi
+Auto timing remains the final resource gate before selection and desktop adoption.
+
+### P3 accepted resource and correctness cohort (revision 9)
+
+The final Multi Auto timing gate passed with three pairs: 251.481723 seconds
+reference versus 248.404350 candidate (1.22% faster), with convincing gain and
+clear regression tolerance. The selector returned `adopt: true`, `reasons: []`.
+All six timing cases used three alternating pairs after one warm-up per mode;
+no revision-9 extension was required. Every measured output matched the sealed
+reference, as did all 21 current-candidate parity configurations.
+
+| Case | Workers | Reference median (s) | P3 median (s) | Change |
+| --- | ---: | ---: | ---: | ---: |
+| Fixed melee | 1 | 6.827 | 6.406 | -6.16% |
+| Fixed magic | 1 | 12.305 | 12.156 | -1.21% |
+| Configured ranged | 1 | 10.352 | 10.256 | -0.93% |
+| Configured Auto | 3 | 26.819 | 25.486 | -4.97% |
+| Multi | 1 | 32.108 | 30.617 | -4.64% |
+| Multi Auto | 3 | 251.482 | 248.404 | -1.22% |
+
+Every case passes the regression gate. The small apparent fixed-magic and
+configured-ranged gains are not claimed as convincing speedups. Both intended
+Multi workloads pass the separate variability-aware gain requirement.
+
+| Memory case | Workers | Reference median (MiB) | P3 median (MiB) | Change |
+| --- | ---: | ---: | ---: | ---: |
+| Fixed magic | 1 | 332.74 | 318.19 | -4.37% |
+| Multi | 1 | 429.46 | 431.39 | +0.45% |
+| Multi Auto | 3 | 1,945.54 | 1,989.51 | +2.26% |
+
+All 18 fresh-process observations passed exact output validation with no sampling
+failures. These are sampled process-tree working sets, including shared pages
+in each process, not exact allocation high-water marks. Single/Multi sampling was
+coarse (4–7 observations per run); Multi Auto produced 3,722–3,803 observations.
+Raw evidence, source snapshots and the selector result are retained under
+`.tmp/p3/acceptance-v9/`; revisions 1–8 retain their original rejected status.
+Independent audit passed: 62 measured current/snapshot source files and 144 sealed
+reference files verified, with independently recomputed normalized digests for
+21 candidate outputs, 21 golden outputs, 48 warm-up/timing outputs and 18 memory
+outputs. Input/cohort identities, observation order, serial/worker equality and
+18 distinct memory PIDs were verified. All gates recomputed successfully and
+source hashes remained unchanged through the audit.
+
+Final focused verification passed 923 tests. New production modules have 99–100%
+coverage; the reference-cohort tool has 100% and acceptance driver 89% (96%
+combined). Ruff passed every changed/new Python file and mypy passed 19 production
+and tooling files. Two additional ammunition-sharing assertions were reproduced
+against HEAD during development (consumable-exempt purchase cost and the existing
+empty utility combat-option shape); these pre-existing failures are outside P3
+and were not changed. This is focused local validation, not a full-suite or hosted
+CI claim.
+
+Desktop `combined` now enables P3 and logs compact-state activation. `baseline`
+and `lazy` leave P3 off; startup worker fallback preserves the selected profile.
+Generic service/direct/Pi defaults retain their existing behavior. The accepted
+numerical modules are unchanged; desktop factory activation/logging is the only
+production change after the accepted source snapshot.
+
+Forty-two desktop/factory/HTTP tests and two automated Chrome browser tests passed,
+covering profile activation, startup fallback, baseline rollback, cancellation,
+recovery and result publication. P3 HTTP/browser fixtures use the actual factory
+flag; an explicit P1-only fixture remains for comparison. Ruff, focused mypy and
+the final whitespace check passed. This is automated local browser evidence.
+
+Full original P3 is complete with no implementation scope deferred. No existing
+desktop process was restarted, private configuration edited, commit/push made,
+or hosted CI/deployment claimed. A normal desktop restart loads the adopted code.
+
 ### P1: Factored numerical evaluation and lazy reporting
 
 Create immutable internal records for equipment totals, legal attack contexts,
@@ -278,10 +609,93 @@ from the time required to complete the initial search.
 
 ## Acceptance and tracking
 
+**Current standard (adopted 2026-11-10):** use the staged validation workflow below
+for subsequent performance work. It replaces the stricter repeated timing/memory
+qualification used during P1. Historical P1 gates, measurements and rejected
+revisions remain unchanged as evidence of the decisions made at that time.
+
 Two distinct acceptance standards apply. Refactors that preserve search policy
 must retain full result parity, excluding observational timing. New search policies
 must demonstrate correctness and frontier quality; exact historical IDs need not
 be the only acceptance measure if a better feasible result replaces an old point.
+
+### Staged validation without reducing result quality
+
+The reduced validation cost comes from fewer repeated measurements and practical
+resource tolerances. It does not authorize smaller beams, reduced work budgets,
+missing frontier points, weaker eligibility checks or less accurate arithmetic.
+Completion still covers the full implementation scope of the selected phase.
+
+1. **During development:** run focused differential tests, reduced fixtures and
+   affected integration tests after relevant changes. Keep exact checks for combat
+   arithmetic, rounding, ties/IDs, legal attacks, prayers/potions, ownership,
+   acquisition costs, unknown resource state, inventory and transitions. Preserve
+   independent objective winners and existing search budgets for P2/P3 refactors.
+   Retain bounded-cache, invalidation, memory-lifetime and context-cleanup tests.
+2. **At a stable candidate:** run one complete frozen-scenario parity matrix,
+   including Single, Multi, Auto, Multi Auto, configured/fixed options, potions,
+   secondary objectives, running-cost frontiers and refinement where supported.
+   Compare complete normalized results, not only the selected winner: all archives,
+   curves, costs, actions, options and IDs must match for parity-preserving work.
+   Exclude only declared observational fields. A correctness failure blocks adoption.
+3. **Performance qualification:** choose 4-6 representative timing configurations
+   before measuring, covering the intended benefit, a likely regression/control
+   case and relevant serial/worker paths. Use frozen inputs, one warm-up per mode
+   and three paired runs with alternating reference/candidate order. Do not run
+   profiling, memory sampling or competing heavy tests during timing. Require a
+   convincing improvement in an intended workload as well as acceptable regressions
+   in the selected controls; do not claim a gain from an isolated fastest run.
+4. **Memory qualification:** measure relevant high-memory and changed-lifetime
+   cases separately from timing, with three fresh processes per mode/case and
+   descendant processes included. Report sampled peak process-tree memory, sample
+   density and its limitations. Keep explicit resource ceilings where deployment
+   constraints require them, even if the percentage tolerance would pass.
+5. **Execution and UI checks:** reuse still-applicable worker parity, cancellation,
+   recovery, rollback and browser evidence. Rerun affected checks when dispatch,
+   context lifetime, serialization, activation, API or UI boundaries change. Record
+   why reused evidence remains applicable; do not rerun the entire browser/worker
+   suite after every isolated numerical adjustment.
+
+Runtime and memory each allow a **5% regression**: candidate median must be at
+most `1.05 * reference median` for the corresponding case and measurement type.
+Runtime uses measured paired-run wall times; memory uses the three fresh-process
+sampled peaks. MAD remains a variability diagnostic, not an additional allowance
+on top of the 5% tolerance. These gates deliberately accept small resource
+regressions; they do not relax output correctness or search quality.
+
+Predeclare the intended improvement case and the interpretation of variability.
+By default, call a timing gain convincing only when both the difference of medians
+and the median paired gain are positive and exceed their respective reference-time
+and paired-gain MADs. This is a practical repeatability heuristic, not a formal
+statistical guarantee. If variability leaves the gain or tolerance decision
+inconclusive, use a predeclared single extension from three to five total timing
+pairs. Retain every initial observation and complete all added pairs; never retry
+until a favorable result appears. Larger or reproducible regressions require
+investigation. An unresolved gate remains unqualified; record uncertainty honestly.
+
+Freeze and identify the implementation and inputs used for final evidence. Repeat
+the complete parity matrix after subsequent numerical/search changes before
+adoption, but use focused checks during intermediate fixes. Repeat only affected
+performance configurations after a fix, broadening when shared hot paths change.
+Documentation-only changes do not invalidate numerical measurements; activation
+or wiring-only changes need their affected integration checks. Record source/input
+hashes, retained evidence, coverage decisions and any bounded extension so that
+results from different revisions are not silently combined.
+
+For P4 and any other new search policy, exhaustive reduced-case oracles and
+comparison against every baseline tradeoff remain mandatory. Each old tradeoff
+must be matched or improved under the same feasibility constraints, including
+offensive and defensive extremes. Exact old IDs alone are not the acceptance
+criterion for an intentionally changed search policy. Native evaluation in P5
+still requires numerical differential checks; scheduling and P6 publication/reuse
+changes retain their execution and invalidation correctness requirements.
+
+Existing P1 acceptance tools encode the historical stricter gates. They are not
+silently reinterpreted by this documentation change: subsequent implementation
+work must explicitly select or adapt tooling for this standard and test the new
+gate logic. No historical failed result is retroactively accepted.
+
+### Phase tracking
 
 | Work item | Completion evidence | Status |
 | --- | --- | --- |
@@ -289,7 +703,7 @@ be the only acceptance measure if a better feasible result replaces an old point
 | Reusable dependency probe | Tracked portable fixture and counting harness; equivalence checks; bounded-cache hit/miss, key-cost, and memory measurements | Delivered; private full-catalog inputs remain ignored |
 | P1 factored evaluator | Differential scalar/full-model tests; complete archive parity; measured runtime and memory | Complete: all original P1 scope adopted in desktop combined; final matrix and live browser/rollback passed |
 | P2 shared evaluation | Lane winner isolation; context invalidation tests; stable logical work budgets; observed reuse | Partial: bounded ranged numerical sharing; broader evaluator sharing pending |
-| P3 compact states | Exact acquisition, transition, inventory, tie-order and fractional-sum parity; allocation/serialization reduction | Pending |
+| P3 compact states | Exact acquisition, transition, inventory, tie-order and fractional-sum parity; allocation/serialization reduction | Complete and adopted in desktop combined; v9 passed all 21 parity, six timing and three memory cases, independent audit and desktop/HTTP/browser checks |
 | P4 Single solver prototype | Small exhaustive oracles; state-count curves; feasibility and comparison against every existing tradeoff and both extremes | Pending |
 | P5 native batch prototype | Python differential oracle; deterministic arithmetic/ties; end-to-end and batch measurements | Pending |
 | P5 desktop scheduler | CPU/memory scaling, serial/parallel parity, startup/tail latency, cancellation and failure isolation | Pending |

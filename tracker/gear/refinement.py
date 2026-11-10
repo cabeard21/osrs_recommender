@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from collections import ChainMap
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import copy
 from itertools import product
 from typing import TYPE_CHECKING, Any
 
 from tracker.gear.combat_options import CombatOption
+from tracker.gear.compact_states import AssignmentState, EquipmentState
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -44,20 +45,31 @@ def _equivalent(original: dict[str, Any], proposed: dict[str, Any]) -> bool:
 
 def _role_options(
     search: _Search, solution: dict[str, Any], ammunition: list[int | None]
-) -> list[list[dict[str, int]]]:
+) -> list[list[Mapping[str, int]]]:
     options = []
     for role in search.request.roles:
         loadout = solution["loadouts"][role.id]
-        equipment = loadout["equipment"]
+        equipment = (
+            EquipmentState.from_mapping(loadout["equipment"])
+            if getattr(search, "compact_states", False)
+            else loadout["equipment"]
+        )
         choices = [equipment]
         # Utility benefit is intentionally unscored; do not reinterpret its gear.
         if role.style != "special" and "ammunition" not in {**search.request.locks, **role.locks}:
             for item_id in ammunition:
                 if item_id == equipment.get("ammunition"):
                     continue
-                proposed = {s: i for s, i in equipment.items() if s != "ammunition"}
-                if item_id is not None:
-                    proposed["ammunition"] = item_id
+                proposed: Mapping[str, int]
+                if isinstance(equipment, EquipmentState):
+                    proposed = equipment.without_slot("ammunition")
+                    if item_id is not None:
+                        proposed = proposed.with_slot("ammunition", item_id)
+                else:
+                    proposed = {
+                        **{s: i for s, i in equipment.items() if s != "ammunition"},
+                        **({"ammunition": item_id} if item_id is not None else {}),
+                    }
                 option = loadout.get("combat_option")
                 if option is not None:
                     selected = CombatOption(**option)
@@ -121,6 +133,9 @@ def refine_ammunition(
     Core role performance stays exact, including zero-weight roles. Among otherwise
     tied ammunition assignments, prefer fewer required items before physical IDs.
     """
+    from tracker.gear.variant_reporting import materialize
+
+    solution = materialize(solution)
     ammunition = [
         None,
         *sorted(
@@ -156,7 +171,11 @@ def refine_ammunition(
     for assignments in product(*_role_options(search, solution, ammunition)):
         if search.cancelled and search.cancelled():
             raise ValueError("optimization_cancelled")
-        proposed = {r.id: e for r, e in zip(search.request.roles, assignments, strict=True)}
+        proposed: Mapping[str, Mapping[str, int]] = {
+            r.id: e for r, e in zip(search.request.roles, assignments, strict=True)
+        }
+        if getattr(search, "compact_states", False):
+            proposed = AssignmentState.from_mapping(proposed)
         if proposed == original:
             continue
         diagnostics["evaluated_assignments"] += 1
@@ -194,10 +213,21 @@ def refine_shared_slots(
             bonuses = search.eligible[item_id].bonuses.model_dump().values()
             if not any(value > 0 for value in bonuses):
                 continue
-            proposed = {
-                role.id: {**best["loadouts"][role.id]["equipment"], slot: item_id}
-                for role in search.request.roles
-            }
+            proposed: Mapping[str, Mapping[str, int]]
+            if getattr(search, "compact_states", False):
+                proposed = AssignmentState.from_mapping(
+                    {
+                        role.id: EquipmentState.from_mapping(
+                            best["loadouts"][role.id]["equipment"]
+                        ).with_slot(slot, item_id)
+                        for role in search.request.roles
+                    }
+                )
+            else:
+                proposed = {
+                    role.id: {**best["loadouts"][role.id]["equipment"], slot: item_id}
+                    for role in search.request.roles
+                }
             candidate = search.solution(proposed, solution["maximum_actions"])
             if candidate is not None and solution_key(candidate) < solution_key(best):
                 best = candidate
@@ -229,13 +259,22 @@ def refine_magic_staves(
                 raise ValueError("optimization_cancelled")
             if best["loadouts"][role.id]["equipment"].get("weapon") == item_id:
                 continue
-            proposed = {
-                candidate_role.id: {
-                    **best["loadouts"][candidate_role.id]["equipment"],
-                    **({"weapon": item_id} if candidate_role.id == role.id else {}),
+            proposed: Mapping[str, Mapping[str, int]]
+            if getattr(search, "compact_states", False):
+                proposed = AssignmentState.from_mapping(
+                    {
+                        candidate_role.id: best["loadouts"][candidate_role.id]["equipment"]
+                        for candidate_role in search.request.roles
+                    }
+                ).with_slot(role.id, "weapon", item_id)
+            else:
+                proposed = {
+                    candidate_role.id: {
+                        **best["loadouts"][candidate_role.id]["equipment"],
+                        **({"weapon": item_id} if candidate_role.id == role.id else {}),
+                    }
+                    for candidate_role in search.request.roles
                 }
-                for candidate_role in search.request.roles
-            }
             candidate = search.solution(proposed, solution["maximum_actions"])
             if candidate is not None and solution_key(candidate) < solution_key(best):
                 best = candidate

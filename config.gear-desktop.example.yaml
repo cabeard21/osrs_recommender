@@ -9,8 +9,9 @@ content_dir: content
 optimization_workers: 3
 # Server-owned profile: baseline, lazy, or combined. Roll back with
 # TRACKER_DESKTOP_OPTIMIZATION_PROFILE=baseline, then restart desktop Gear.
-# Combined enables full P1 prepared scoring and deferred reports/costs for Single
-# and Multi, qualified by desktop parity, timing, memory and live rollback checks.
+# Combined enables P1 prepared scoring/deferred reports and P3 compact equipment
+# and solution states for Single and Multi, qualified by exact parity, timing,
+# memory and desktop rollback checks.
 optimization_profile: combined
 
 # Use the Pi's private Tailscale address. No database file is mounted or copied.

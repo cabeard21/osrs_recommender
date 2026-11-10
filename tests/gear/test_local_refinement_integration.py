@@ -5,6 +5,7 @@ from dataclasses import replace
 
 import pytest
 
+from tools.benchmark_gear_desktop import without_observations
 from tools.gear_retention_oracle import _case, exhaustive, tiny_cases, validate_solution
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.optimizer import _solution_key, optimize
@@ -49,7 +50,7 @@ def test_complete_validation_and_independent_exhaustive_reference(case, monkeypa
     monkeypatch.setattr("tracker.gear.optimizer.CANDIDATES_PER_SLOT", 12)
     monkeypatch.setattr("tracker.gear.optimizer.BEAM_WIDTH", 128)
     baseline = run(case)
-    assert baseline == run(case, local_refinement=False)
+    assert without_observations(baseline) == without_observations(run(case, local_refinement=False))
     result = run(case, local_refinement=True)
     assert_legal_no_worse(case, baseline, result)
     diagnostic = result["search"]["local_refinement"]

@@ -99,8 +99,12 @@ full original-P1 parity, timing, memory and desktop acceptance matrix passed.
 prepares immutable attack/target/prayer constants for melee, ranged and magic,
 reuses ranged numerical calculations, and defers configured/fixed Single and Multi
 reports, frontier combat variants and running-cost descriptions until needed.
-Numeric ranking preserves exact attack/prayer choices, full result ties and IDs.
-Startup logs identify fixed-option reporting and factored evaluation separately.
+After P3 acceptance, `combined` also uses compact equipment and solution states,
+with bounded reuse inside each concrete search. Physical item identities, ordered
+fractional sums, acquisition costs, inventory and directional transitions are
+preserved. Numeric ranking preserves exact attack/prayer choices, full result ties
+and IDs. Startup logs identify fixed-option reporting, factored evaluation and
+compact states separately.
 Baseline and lazy leave these combined extensions disabled. Unsupported paths
 retain their existing behavior. Execution options are passed explicitly to spawned
 workers; each concrete branch starts with fresh optimization contexts. Automated

@@ -54,12 +54,14 @@ def _timing_key(
     profile: ExecutionProfile = "baseline",
     fixed_reporting: bool = False,
     factored_evaluation: bool = False,
+    compact_states: bool = False,
 ) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
     return (
         profile,
         fixed_reporting,
         factored_evaluation,
+        compact_states,
         thorough,
         parallel,
         request.mode,
@@ -84,6 +86,7 @@ class GearService:
         optimization_profile: ExecutionProfile = "baseline",
         fixed_reporting: bool = False,
         factored_evaluation: bool = False,
+        compact_states: bool = False,
     ) -> None:
         self.optimization_profile = validate_profile(optimization_profile)
         if not isinstance(fixed_reporting, bool):
@@ -92,6 +95,9 @@ class GearService:
         if not isinstance(factored_evaluation, bool):
             raise ValueError("Invalid factored evaluation option")
         self.factored_evaluation = factored_evaluation and self.optimization_profile == "combined"
+        if not isinstance(compact_states, bool):
+            raise ValueError("Invalid compact states option")
+        self.compact_states = compact_states and self.factored_evaluation
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
@@ -150,6 +156,8 @@ class GearService:
                 execution["_fixed_reporting"] = True
             if self.factored_evaluation:
                 execution["_factored_evaluation"] = True
+            if self.compact_states:
+                execution["_compact_states"] = True
             pool = self.auto_pool
             parallel = False
             if request.potions.mode == "optimize":
@@ -175,6 +183,7 @@ class GearService:
                         self.optimization_profile,
                         self.fixed_reporting,
                         self.factored_evaluation,
+                        self.compact_states,
                     ),
                     model=self._timings,
                     fingerprint=progress_fingerprint,

@@ -6,7 +6,13 @@ from contextvars import ContextVar
 from typing import Any, Literal, cast
 
 ExecutionProfile = Literal["baseline", "lazy", "combined"]
+_compact_states: ContextVar[bool] = ContextVar("compact_states", default=False)
 _factored_evaluation: ContextVar[bool] = ContextVar("factored_evaluation", default=False)
+
+
+def compact_states_active() -> bool:
+    """Whether this leaf uses P3 compact internal state representations."""
+    return _compact_states.get()
 
 
 def factored_evaluation_active() -> bool:
@@ -27,6 +33,7 @@ def execution_context(
     *,
     fixed_reporting: bool = False,
     factored_evaluation: bool = False,
+    compact_states: bool = False,
 ) -> Iterator[None]:
     """Create fresh per-leaf caches, never attached to worker preparation state."""
     validate_profile(profile)
@@ -34,10 +41,23 @@ def execution_context(
         raise ValueError("Invalid fixed reporting option")
     if not isinstance(factored_evaluation, bool):
         raise ValueError("Invalid factored evaluation option")
+    if not isinstance(compact_states, bool):
+        raise ValueError("Invalid compact states option")
     with ExitStack() as stack:
         roles = request.roles
         token = _factored_evaluation.set(profile == "combined" and factored_evaluation)
         stack.callback(_factored_evaluation.reset, token)
+        compact_token = _compact_states.set(
+            profile == "combined" and factored_evaluation and compact_states
+        )
+        stack.callback(_compact_states.reset, compact_token)
+        if compact_states_active():
+            from tracker.gear.compact_solutions import solution_scope
+            from tracker.gear.compact_states import equipment_pool
+
+            if len(roles) > 1:
+                stack.enter_context(equipment_pool())
+            stack.enter_context(solution_scope())
         if profile == "combined" and factored_evaluation:
             from tracker.gear.compact_costs import compact_running_costs
             from tracker.gear.prepared_combat import prepared_combat

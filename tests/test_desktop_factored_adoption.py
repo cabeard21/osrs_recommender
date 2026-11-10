@@ -1,4 +1,4 @@
-"""Desktop activates full P1 only with its qualified combined profile."""
+"""Desktop activates qualified P1 and P3 only with its combined profile."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,6 +20,7 @@ def settings(profile="combined", workers=1):
 def test_desktop_factored_follows_profile(profile):
     service = create_app(settings(profile)).state.gear_service
     assert service.factored_evaluation is (profile == "combined")
+    assert service.compact_states is (profile == "combined")
 
 
 def test_startup_fallback_keeps_factored_execution_and_logs_it(monkeypatch, caplog):
@@ -32,7 +33,9 @@ def test_startup_fallback_keeps_factored_execution_and_logs_it(monkeypatch, capl
     with TestClient(app):
         assert app.state.gear_execution == "serial_startup_fallback"
         assert app.state.gear_service.factored_evaluation
+        assert app.state.gear_service.compact_states
     assert "factored evaluation: enabled" in caplog.text
+    assert "compact states: enabled" in caplog.text
     assert "factored-test-token" not in caplog.text
 
 
@@ -46,5 +49,6 @@ def test_environment_baseline_rollback_disables_all_factored_work(monkeypatch):
             optimization_workers=1,
         )
     ).state.gear_service
+    assert not service.compact_states
     assert not service.factored_evaluation
     assert not service.fixed_reporting

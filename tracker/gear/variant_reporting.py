@@ -177,6 +177,9 @@ def _report_variant(
     equipment = full["loadouts"][role.id]["equipment"]
     performance = search.evaluate(equipment, configured).model_dump(mode="json")
     variant = copy(search)
+    # This boundary already needs a complete report. Avoid wrapping the seeded
+    # full evaluations in another lazy solution only to expand it immediately.
+    variant._compact_solution_bypass = True
     variant.compact_cache = {}
     variant.performance_cache = ChainMap({}, search.performance_cache)
     variant.option_cache = ChainMap({}, search.option_cache)

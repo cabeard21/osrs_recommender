@@ -9,10 +9,12 @@ from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from hashlib import sha256
 from itertools import combinations, product
+from operator import attrgetter
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from tracker.content.schema import ItemSlot
+from tracker.gear.compact_states import AssignmentState, EquipmentState
 from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
 from tracker.gear.progress import NODE_REPORT_MASK, NULL_REPORTER
 from tracker.gear.variant_reporting import active as lazy_variants_active
@@ -65,6 +67,15 @@ def diverse[Row](
     ordered = sorted(((rank(row), row) for row in rows), key=lambda entry: entry[0])
     if len(ordered) <= limit:
         return [row for _, row in ordered]
+    # Exact homogeneous compact types have cached physical equality keys.
+    # Mixed inputs retain Mapping/list equality, including custom subclasses.
+    row_type = type(ordered[0][1])
+    identity = (
+        attrgetter("slots" if row_type is EquipmentState else "identity")
+        if row_type in (EquipmentState, AssignmentState)
+        and all(type(row) is row_type for _, row in ordered)
+        else None
+    )
     scores = [-key[0] for key, _ in ordered]
     low, high = min(scores), max(scores)
     bands: list[list[tuple[tuple[Any, ...], Row]]] = [[] for _ in range(8)]
@@ -74,16 +85,21 @@ def diverse[Row](
     for bucket in bands:
         bucket.sort(key=lambda entry: (entry[0][1], *entry[0]))
     selected = [ordered[0][1]]
+    seen = {identity(selected[0])} if identity is not None else set()
     extreme = min(ordered, key=lambda entry: (entry[0][1], *entry[0]))[1]
-    if extreme != selected[0]:
+    if (identity(extreme) not in seen) if identity is not None else extreme != selected[0]:
         selected.append(extreme)
+        if identity is not None:
+            seen.add(identity(extreme))
     queues = [deque(band) for band in bands]
     while len(selected) < limit and any(queues):
         for queue in queues:
             if queue:
                 _, row = queue.popleft()
-                if row not in selected:
+                if (identity(row) not in seen) if identity is not None else row not in selected:
                     selected.append(row)
+                    if identity is not None:
+                        seen.add(identity(row))
                     if len(selected) == limit:
                         break
     return selected
@@ -107,7 +123,7 @@ def _shared_assignments(
     search: Any, archives: Iterable[list[Solution]]
 ) -> Iterator[dict[str, Any]]:
     """Round-robin shared slot alternatives without spending extra switch actions."""
-    from tracker.gear.optimizer import SLOTS, _solution_key
+    from tracker.gear.optimizer import SLOTS, _assignment_state, _solution_key
 
     seeds = {
         _candidate_identity(row["loadouts"]): row
@@ -130,13 +146,23 @@ def _shared_assignments(
         except StopIteration:
             continue
         schedules.append((seed, slot, candidates))
-        assignment = {
-            role: {
-                **{s: i for s, i in row["equipment"].items() if s != slot},
-                **({slot: item} if item is not None else {}),
+        assignment = _assignment_state(
+            {role: row["equipment"] for role, row in seed["loadouts"].items()}
+        )
+        if getattr(search, "compact_states", False):
+            for role in assignment:
+                equipment = assignment[role].without_slot(slot)
+                if item is not None:
+                    equipment = equipment.with_slot(slot, item)
+                assignment = assignment.with_role(role, equipment)
+        else:
+            assignment = {
+                role: {
+                    **{s: i for s, i in row["equipment"].items() if s != slot},
+                    **({slot: item} if item is not None else {}),
+                }
+                for role, row in seed["loadouts"].items()
             }
-            for role, row in seed["loadouts"].items()
-        }
         if any(assignment[r] != seed["loadouts"][r]["equipment"] for r in assignment):
             yield assignment
 
@@ -204,7 +230,7 @@ def explore(
     thorough: bool,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[Solution | None], Solution | None]:
     """Preserve the DPS lane and independently explore secondary-diverse beams."""
-    from tracker.gear.optimizer import SLOTS, _solution_key
+    from tracker.gear.optimizer import SLOTS, _assignment_state, _solution_key
 
     started = perf_counter()
     # This isolated search overrides its tick method for a separate work budget.
@@ -395,11 +421,11 @@ def explore(
                 if identity not in identities:
                     identities.add(identity)
                     seeds.append(row)
-        schedules: deque[
-            tuple[dict[str, Any], str, tuple[ItemSlot, ...], Iterator[tuple[Any, ...]]]
-        ] = deque()
+        schedules: deque[tuple[Any, str, tuple[ItemSlot, ...], Iterator[tuple[Any, ...]]]] = deque()
         for seed in seeds:
-            assignment = {r: dict(row["equipment"]) for r, row in seed["loadouts"].items()}
+            assignment = _assignment_state(
+                {r: row["equipment"] for r, row in seed["loadouts"].items()}
+            )
             for role in roles:
                 locked = set(search.request.locks) | set(role.locks)
                 slots = [s for s in SLOTS if s not in locked]
@@ -416,10 +442,27 @@ def explore(
             schedules.append((assignment, role, group, iterator))
             if search.cancelled and search.cancelled():
                 raise ValueError("optimization_cancelled")
-            replacement = {s: i for s, i in assignment[role].items() if s not in group}
-            replacement.update({s: i for s, i in zip(group, values, strict=True) if i is not None})
+            if getattr(search, "compact_states", False):
+                replacement = assignment[role]
+                for slot in group:
+                    replacement = replacement.without_slot(slot)
+                for slot, item in zip(group, values, strict=True):
+                    if item is not None:
+                        replacement = replacement.with_slot(slot, item)
+            else:
+                replacement = {s: i for s, i in assignment[role].items() if s not in group}
+                replacement.update(
+                    {s: i for s, i in zip(group, values, strict=True) if i is not None}
+                )
             diagnostics["assignment_attempts"] += 1
-            accept(search.solution({**assignment, role: replacement}, None))
+            accept(
+                search.solution(
+                    assignment.with_role(role, replacement)
+                    if getattr(search, "compact_states", False)
+                    else {**assignment, role: replacement},
+                    None,
+                )
+            )
     assignments_at = perf_counter()
     # Reserve work for option tradeoffs even if equipment beam expansion exhausts its share.
     # Keep the existing shared/refinement seed schedule intact before adding

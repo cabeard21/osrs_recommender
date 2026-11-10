@@ -322,6 +322,36 @@ class _Winner(NamedTuple):
     role: RoleConfig
 
 
+def _equipment_identity(equipment: Mapping[str, int]) -> tuple[tuple[str, int], ...]:
+    from tracker.gear.compact_states import EquipmentState
+
+    return (
+        equipment.identity
+        if isinstance(equipment, EquipmentState)
+        else tuple(sorted(equipment.items()))
+    )
+
+
+def _equipment_ids(equipment: Mapping[str, int]) -> Any:
+    from tracker.gear.compact_states import EquipmentState
+
+    return equipment.ordered_ids if isinstance(equipment, EquipmentState) else equipment.values()
+
+
+def _equipment_state(equipment: Any) -> Any:
+    from tracker.gear.compact_states import EquipmentState
+    from tracker.gear.execution_profile import compact_states_active
+
+    return EquipmentState.from_mapping(equipment) if compact_states_active() else equipment
+
+
+def _assignment_state(loadouts: Any) -> Any:
+    from tracker.gear.compact_states import AssignmentState
+    from tracker.gear.execution_profile import compact_states_active
+
+    return AssignmentState.from_mapping(loadouts) if compact_states_active() else loadouts
+
+
 class _Search:
     running_prices: Mapping[int, PriceRecord]
     running_at: datetime
@@ -343,6 +373,28 @@ class _Search:
         from tracker.gear.execution_profile import factored_evaluation_active
 
         self.factored_evaluation = factored_evaluation_active()
+        from tracker.gear.execution_profile import compact_states_active
+
+        self.compact_states = compact_states_active()
+
+        if self.compact_states:
+
+            @lru_cache(maxsize=8192)
+            def assignment_json(identity: tuple[Any, ...]) -> str:
+                return json.dumps(
+                    {role: dict(equipment) for role, equipment in identity}, sort_keys=True
+                )
+
+            from tracker.gear.compact_acquisition import AcquisitionFacts
+
+            acquisition_facts = AcquisitionFacts.from_facts(facts, request)
+
+            @lru_cache(maxsize=8192)
+            def acquisition(ids: frozenset[int]) -> tuple[int, int]:
+                return acquisition_facts.totals(ids)
+
+            self._assignment_json = assignment_json
+            self._acquisition = acquisition
         self.compact_multi = len(request.roles) > 1 and self.factored_evaluation
         self.levels: Mapping[str, int] = {k: v.level for k, v in snapshot.skills.items()}
         if request.potions.mode == "fixed":
@@ -375,6 +427,21 @@ class _Search:
         self.prayer_setup_cache: dict[str, tuple[tuple[str, ...], ...]] = {}
         self.prayer_option_cache: dict[tuple[str, str], tuple[tuple[str, ...], ...]] = {}
 
+        if self.compact_states:
+            from tracker.gear.compact_transitions import (
+                SLOT_SET,
+                TransitionProblem,
+                prepare_transition,
+                solve_transition,
+            )
+
+            @lru_cache(maxsize=1024)
+            def reduced_transition(problem: TransitionProblem) -> dict[str, Any] | None:
+                return solve_transition(problem, items)
+
+            self._transition_reduced = reduced_transition
+
+        compact_transitions = self.compact_states
         # Catalog definitions are fixed for this search; bound retained plans per
         # request and include inventory context as well as directional equipment.
         @lru_cache(maxsize=8192)
@@ -384,10 +451,36 @@ class _Search:
             carried: frozenset[int],
             capacity: int,
         ) -> dict[str, Any] | None:
+            if compact_transitions:
+                source_mapping, destination_mapping = dict(source), dict(destination)
+                if (
+                    source_mapping.keys() <= SLOT_SET
+                    and destination_mapping.keys() <= SLOT_SET
+                    and all(type(item) is int for item in source_mapping.values())
+                    and all(type(item) is int for item in destination_mapping.values())
+                    and all(type(item) is int for item in carried)
+                ):
+                    return reduced_transition(
+                        prepare_transition(
+                            source_mapping, destination_mapping, carried=carried, capacity=capacity
+                        )
+                    )
             return plan_transition(
                 dict(source), dict(destination), items, carried=carried, capacity=capacity
             )
 
+        if compact_transitions:
+            from weakref import ref
+
+            outer_reference = ref(transition)
+
+            def clear_transitions() -> None:
+                outer = outer_reference()
+                if outer is not None:
+                    type(outer).cache_clear(outer)
+                reduced_transition.cache_clear()
+
+            transition.cache_clear = clear_transitions  # type: ignore[method-assign]
         self._transition = transition
         eligible = (
             prepared_eligible
@@ -404,6 +497,18 @@ class _Search:
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
         self.pools = self.candidate_pools()
+
+    def assignment_tie(self, loadouts: Any) -> Any:
+        if self.compact_states:
+            from tracker.gear.compact_ranking import AssignmentTie
+
+            return AssignmentTie(_assignment_state(loadouts))
+        return json.dumps(loadouts, sort_keys=True)
+
+    def assignment_json(self, loadouts: Any) -> str:
+        if self.compact_states:
+            return self._assignment_json(_assignment_state(loadouts).identity)
+        return json.dumps(loadouts, sort_keys=True)
 
     def retain[Row](
         self, rows: list[Row], rank: Callable[[Row], tuple[Any, ...]], limit: int
@@ -434,12 +539,20 @@ class _Search:
     def allowed(self, item_id: int) -> bool:
         return not item_problems(item_id, self.facts[item_id], self.request)
 
-    def cost(self, ids: set[int]) -> int:
-        return purchase_cost(ids, self.facts, self.request)
+    def cost(self, ids: set[int] | frozenset[int]) -> int:
+        if self.compact_states:
+            return self._acquisition(frozenset(ids))[0]
+        return purchase_cost(ids if isinstance(ids, set) else set(ids), self.facts, self.request)
 
-    def untradeable_acquisitions(self, ids: set[int]) -> int:
+    def untradeable_acquisitions(self, ids: set[int] | frozenset[int]) -> int:
         """Break otherwise equal choices by acquisitions, without pricing effort."""
-        return len(unowned_untradeables(ids, self.facts, self.request))
+        if self.compact_states:
+            return self._acquisition(frozenset(ids))[1]
+        return len(
+            unowned_untradeables(
+                ids if isinstance(ids, set) else set(ids), self.facts, self.request
+            )
+        )
 
     def acquisition_tie(self, ids: set[int]) -> tuple[int, int]:
         """Preserve historical candidate ordering when the option is disabled."""
@@ -736,7 +849,7 @@ class _Search:
     ) -> _Winner | None:
         key = (
             role.id,
-            tuple(sorted(equipment.items())),
+            _equipment_identity(equipment),
             getattr(self, "metric_first", False),
             self.request.secondary_priority,
         )
@@ -786,7 +899,7 @@ class _Search:
         )
 
     def fixed_performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
-        key = ("fixed", role.id, tuple(sorted(equipment.items())))
+        key = ("fixed", role.id, _equipment_identity(equipment))
         cached = self.compact_cache.get(key)
         if cached is None:
             prepared = self.prepare(equipment)
@@ -819,7 +932,7 @@ class _Search:
         }
 
     def search_performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
-        key = (role.id, tuple(sorted(equipment.items())))
+        key = (role.id, _equipment_identity(equipment))
         if key in self.performance_cache:
             return self.performance(equipment, role)
         if getattr(self, "compact_cost_ranking", False) and role.style != "special":
@@ -861,7 +974,7 @@ class _Search:
         """Numeric ranking with the same option winner and exact seeded overrides."""
         from tracker.gear.combat import numeric_attack_interval
 
-        key = (role.id, tuple(sorted(equipment.items())))
+        key = (role.id, _equipment_identity(equipment))
         if key in self.performance_cache or role.style == "special":
             return self.performance(equipment, role), self.combat_option(equipment, role)
         if self.cancelled and self.cancelled():
@@ -884,27 +997,37 @@ class _Search:
                 if not isinstance(prepared, PreparedEquipment):
                     return self.performance(equipment, role), self.combat_option(equipment, role)
                 cached = evaluate_prepared_score(prepared, role, self.levels)
-                if role.style == "magic" and role.powered_attack is None and ancient_spell_problem(
-                    weapon, self.snapshot, role.spell, role.stance, self.levels
+                if (
+                    role.style == "magic"
+                    and role.powered_attack is None
+                    and ancient_spell_problem(
+                        weapon, self.snapshot, role.spell, role.stance, self.levels
+                    )
                 ):
                     cached = cached._replace(supported=False, dps=None)
                 self.compact_cache[score_key] = cached
             assert isinstance(cached, CombatScore)
             score = cached
             public_option = {
-                "attack_type": role.style, "stance": role.stance,
+                "attack_type": role.style,
+                "stance": role.stance,
                 "spell": role.spell if role.style == "magic" else None,
                 "powered_attack": None,
             }
         rolls = score.player_defence_rolls
         if rolls is None and self.request.secondary_priority.endswith("_defence_roll"):
             rolls = raw_player_defence_rolls(
-                self.levels, score.bonuses, selected.stance,
+                self.levels,
+                score.bonuses,
+                selected.stance,
                 prayer_effects(selected.active_prayer_ids),
             )
         return {
-            "supported": score.supported, "dps": score.dps, "accuracy": score.accuracy,
-            "bonuses": score.bonuses.__dict__, "player_defence_rolls": rolls,
+            "supported": score.supported,
+            "dps": score.dps,
+            "accuracy": score.accuracy,
+            "bonuses": score.bonuses.__dict__,
+            "player_defence_rolls": rolls,
             "attack_interval": (
                 numeric_attack_interval(weapon, selected) if score.supported else None
             ),
@@ -941,7 +1064,7 @@ class _Search:
         ) / (weight or 1)
 
     def performance(self, equipment: Mapping[str, int], role: RoleConfig) -> dict[str, Any]:
-        key = (role.id, tuple(sorted(equipment.items())))
+        key = (role.id, _equipment_identity(equipment))
         if key not in self.performance_cache:
             if self.cancelled and self.cancelled():
                 raise ValueError("optimization_cancelled")
@@ -1013,12 +1136,12 @@ class _Search:
         self, equipment: Mapping[str, int], role: RoleConfig
     ) -> dict[str, Any] | None:
         self.performance(equipment, role)
-        option = self.option_cache.get((role.id, tuple(sorted(equipment.items()))))
+        option = self.option_cache.get((role.id, _equipment_identity(equipment)))
         return {k: v for k, v in option.items() if k != "__prayer_ids"} if option else None
 
     def selected_prayers(self, equipment: Mapping[str, int], role: RoleConfig) -> list[str]:
         self.performance(equipment, role)
-        option = self.option_cache.get((role.id, tuple(sorted(equipment.items())))) or {}
+        option = self.option_cache.get((role.id, _equipment_identity(equipment))) or {}
         return list(option.get("__prayer_ids", ()))
 
     def secondary(self, loadouts: Mapping[str, Mapping[str, int]]) -> float:
@@ -1139,10 +1262,12 @@ class _Search:
         the only scoring objective. Width/branch caps keep the search bounded.
         """
         roles = self.request.roles
+        role_indices = {role.id: index for index, role in enumerate(roles)}
+        indexed_edges = tuple((role_indices[a], role_indices[b]) for a, b in self.edges)
         numeric = self.compact_multi and type(self) is _Search
         performance = self.search_performance if numeric else self.performance
         secondary = self.partial_secondary if numeric else self.secondary
-        beam: list[dict[str, dict[str, int]]] = [{r.id: {} for r in roles}]
+        beam = [_assignment_state({r.id: {} for r in roles})]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             candidates = [i for i in self.pools[slot] if i is not None]
@@ -1202,11 +1327,53 @@ class _Search:
                 for assigned in product(*choices):
                     if not self.tick():
                         break
+                    candidate: Any
+                    if self.compact_states:
+                        from tracker.gear.compact_states import AssignmentState
+
+                        equipment_rows = tuple(
+                            equipment.with_slot(slot, item) if item is not None else equipment
+                            for (_, equipment), item in zip(state.roles, assigned, strict=True)
+                        )
+                        carried_ids = frozenset().union(*(e.physical_ids for e in equipment_rows))
+                        if any(i not in self.eligible for i in carried_ids):
+                            continue
+                        if any(not self.compatible(e) for e in equipment_rows):
+                            continue
+                        if self.cost(carried_ids) > self.request.budget_gp:
+                            continue
+                        if any(
+                            len(carried_ids - e.physical_ids)
+                            > 28 - self.request.reserved_supply_slots
+                            for e in equipment_rows
+                        ):
+                            continue
+                        if limit is not None and any(
+                            _action_lower_bound(equipment_rows[a], equipment_rows[b], self.items)
+                            > limit
+                            for a, b in indexed_edges
+                        ):
+                            continue
+                        if slot not in ("weapon", "shield") and any(
+                            not performance(e, r)["supported"]
+                            for r, e in zip(roles, equipment_rows, strict=True)
+                        ):
+                            continue
+                        expanded.append(
+                            AssignmentState.from_roles(
+                                tuple((r.id, e) for r, e in zip(roles, equipment_rows, strict=True))
+                            )
+                        )
+                        continue
                     candidate = {
                         r.id: {**state[r.id], **({slot: i} if i is not None else {})}
                         for r, i in zip(roles, assigned, strict=True)
                     }
-                    carried = {i for equipment in candidate.values() for i in equipment.values()}
+                    carried = (
+                        candidate.carried
+                        if self.compact_states
+                        else {i for equipment in candidate.values() for i in equipment.values()}
+                    )
                     if any(i not in self.eligible for i in carried):
                         continue
                     if any(not self.compatible(e) for e in candidate.values()):
@@ -1230,22 +1397,26 @@ class _Search:
                         continue
                     expanded.append(candidate)
 
-            def rank(c: dict[str, dict[str, int]]) -> tuple[Any, ...]:
+            def rank(c: Any) -> tuple[Any, ...]:
                 # Model-derived branch ordering; full joint solutions below are
                 # always compared using their complete calculated encounter score.
                 score = sum(
                     self.marginals.get((r.id, i), 0) * r.weight
                     for r in roles
-                    for i in c[r.id].values()
+                    for i in _equipment_ids(c[r.id])
                 )
-                union = {i for e in c.values() for i in e.values()}
+                union = (
+                    c.carried
+                    if self.compact_states
+                    else {i for e in c.values() for i in e.values()}
+                )
                 return (
                     -score,
                     -secondary(c),
                     len(union),
                     self.cost(union),
                     self.untradeable_acquisitions(union),
-                    json.dumps(c, sort_keys=True),
+                    self.assignment_tie(c),
                 )
 
             beam = self.retain(
@@ -1268,7 +1439,7 @@ class _Search:
                 if slot in locks and locks[slot] != item_id:
                     return []
                 locks[slot] = item_id
-        states: list[dict[str, int]] = [{}]
+        states = [_equipment_state({})]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             choices = [locks[slot]] if slot in locks else self.pools[slot]
@@ -1280,13 +1451,30 @@ class _Search:
                     item_id not in self.eligible or self.items[item_id].slot != slot
                 ):
                     continue
-                addition: dict[str, int] = {slot: item_id} if item_id is not None else {}
-                candidate = {**state, **addition}
-                if (
-                    not self.compatible(candidate)
-                    or self.cost(set(candidate.values())) > self.request.budget_gp
-                ):
-                    continue
+                if self.compact_states:
+                    weapon_id = (
+                        item_id if slot == "weapon" and item_id is not None else state.slots[0]
+                    )
+                    weapon = self.items.get(weapon_id) if weapon_id is not None else None
+                    shield = (
+                        (item_id is not None) if slot == "shield" else state.slots[1] is not None
+                    )
+                    if weapon and weapon.two_handed and shield:
+                        continue
+                    physical_ids = (
+                        state.physical_ids if item_id is None else state.physical_ids | {item_id}
+                    )
+                    if self.cost(physical_ids) > self.request.budget_gp:
+                        continue
+                    candidate = state.with_slot(slot, item_id) if item_id is not None else state
+                else:
+                    addition: dict[str, int] = {slot: item_id} if item_id is not None else {}
+                    candidate = {**state, **addition}
+                    if (
+                        not self.compatible(candidate)
+                        or self.cost(set(candidate.values())) > self.request.budget_gp
+                    ):
+                        continue
                 # Weapon/ammo legality can be checked once both slots have been assigned.
                 if slot not in ("weapon", "shield") and any(
                     not self.search_performance(candidate, r)["supported"] for r in roles
@@ -1294,7 +1482,8 @@ class _Search:
                     continue
                 expanded.append(candidate)
 
-            def rank(e: dict[str, int]) -> tuple[Any, ...]:
+            def rank(e: Any) -> tuple[Any, ...]:
+                physical_ids = e.physical_ids if self.compact_states else set(e.values())
                 score = sum(
                     (self.search_performance(e, r).get("dps") or 0) * r.weight for r in roles
                 )
@@ -1302,17 +1491,17 @@ class _Search:
                 # Preserve melee strength before arbitrary item IDs; complete DPS
                 # remains the first key and the final solution's only damage score.
                 strength = (
-                    sum(self.items[i].bonuses.melee_strength for i in e.values())
+                    sum(self.items[i].bonuses.melee_strength for i in _equipment_ids(e))
                     if all(r.style in {"stab", "slash", "crush"} for r in roles)
                     else 0
                 )
                 return (
                     -score,
                     -self.search_secondary(e, roles),
-                    self.cost(set(e.values())),
+                    self.cost(physical_ids),
                     -strength,
-                    self.untradeable_acquisitions(set(e.values())),
-                    tuple(sorted(e.items())),
+                    self.untradeable_acquisitions(physical_ids),
+                    _equipment_identity(e),
                 )
 
             states = self.retain(expanded, rank, BEAM_WIDTH)
@@ -1321,8 +1510,12 @@ class _Search:
         return [s for s in states if all(performance(s, r)["supported"] for r in roles)]
 
     def solution(
-        self, loadouts: Mapping[str, dict[str, int]], limit: int | None
+        self, loadouts: Mapping[str, Mapping[str, int]], limit: int | None
     ) -> dict[str, Any] | None:
+        if self.compact_states and not getattr(self, "_compact_solution_bypass", False):
+            from tracker.gear.compact_solutions import compact_solution
+
+            return compact_solution(self, loadouts, limit)
         if any(not self.performance(loadouts[r.id], r)["supported"] for r in self.request.roles):
             return None
         for role in self.request.roles:
@@ -1364,7 +1557,7 @@ class _Search:
             else None,
             "loadouts": {
                 r.id: {
-                    "equipment": loadouts[r.id],
+                    "equipment": dict(loadouts[r.id]),
                     "preparations": [
                         self.facts[i]["preparation"]
                         for i in sorted(loadouts[r.id].values())
@@ -1415,6 +1608,9 @@ class _Search:
 
 
 def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    cached: tuple[Any, ...] | None = getattr(solution, "_compact_rank", None)
+    if cached is not None:
+        return cached
     from tracker.gear.variant_reporting import loadout_tie
 
     return (
@@ -1436,6 +1632,25 @@ def _action_lower_bound(
     destination: Mapping[str, int],
     items: Mapping[int, EquipmentDefinition],
 ) -> int:
+    from tracker.gear.compact_states import EquipmentState
+
+    if isinstance(source, EquipmentState) and isinstance(destination, EquipmentState):
+        old, new = source.slots, destination.slots
+        actions = sum(a != b for a, b in zip(old, new, strict=True))
+        # Existing SLOTS keeps weapon/shield first. Automatic hand removals
+        # consume no separate action, exactly as in the mapping lower bound.
+        weapon = items.get(new[0]) if new[0] is not None else None
+        if new[0] is not None and new[0] != old[0] and weapon and weapon.two_handed:
+            actions -= int(old[1] is not None and new[1] is None)
+        previous_weapon = items.get(old[0]) if old[0] is not None else None
+        if (
+            new[1] is not None
+            and new[1] != old[1]
+            and previous_weapon
+            and previous_weapon.two_handed
+        ):
+            actions -= int(old[0] is not None and new[0] is None)
+        return actions
     equips = {s for s, i in destination.items() if source.get(s) != i}
     removed = {s for s in source if s not in destination}
     weapon = items.get(destination.get("weapon", -1))
@@ -1547,6 +1762,7 @@ def optimize(
     _execution_profile: str = "baseline",
     _fixed_reporting: bool = False,
     _factored_evaluation: bool = False,
+    _compact_states: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     from tracker.gear.execution_profile import execution_context, validate_profile
@@ -1556,11 +1772,15 @@ def optimize(
         raise ValueError("Invalid fixed reporting option")
     if not isinstance(_factored_evaluation, bool):
         raise ValueError("Invalid factored evaluation option")
+    if not isinstance(_compact_states, bool):
+        raise ValueError("Invalid compact states option")
     execution: dict[str, Any] = {"_execution_profile": profile} if profile != "baseline" else {}
     if _fixed_reporting:
         execution["_fixed_reporting"] = True
     if _factored_evaluation:
         execution["_factored_evaluation"] = True
+    if _compact_states:
+        execution["_compact_states"] = True
     started = perf_counter()
     request = (
         request
@@ -1609,8 +1829,11 @@ def optimize(
         )
     if profile != "baseline":
         with execution_context(
-            profile, request, fixed_reporting=_fixed_reporting,
+            profile,
+            request,
+            fixed_reporting=_fixed_reporting,
             factored_evaluation=_factored_evaluation,
+            compact_states=_compact_states,
         ):
             return optimize(
                 snapshot,
@@ -1647,7 +1870,7 @@ def optimize(
     swap_limits = [*range(request.max_swaps + 1), None] if len(request.roles) > 1 else []
     # Equal progress segments: per-role beams, Multi's common/joint/tuple beams, scoring.
     search_units = len(request.roles) + (1 + 2 * len(swap_limits) if swap_limits else 0) + 1
-    individual = {}
+    individual: dict[str, list[Any]] = {}
     for unit, role in enumerate(request.roles):
         reporter.segment(unit, search_units)
         individual[role.id] = search.loadouts((role,))
@@ -1664,7 +1887,7 @@ def optimize(
             if weapon and weapon.two_handed and "shield" not in locks:
                 seeded.pop("shield", None)
             if search.compatible(seeded):
-                individual[role.id].append(seeded)
+                individual[role.id].append(_equipment_state(seeded))
     # Direct common-equipment search avoids losing the zero-swap setup in independent
     # role beams. More complex disconnected graphs are explored by the joint beam.
     # Single has no transitions: its individual beam already contains every
@@ -1678,7 +1901,7 @@ def optimize(
         else search.loadouts(request.roles)
     )
     tuples: list[dict[str, dict[str, int]]] = [
-        {role.id: equipment for role in request.roles} for equipment in common
+        _assignment_state({role.id: equipment for role in request.roles}) for equipment in common
     ]
     # Joint per-slot search comes first so independent tuple expansion cannot
     # consume the deterministic node budget before shared gear is explored.
@@ -1690,18 +1913,21 @@ def optimize(
     partial_performance = search.search_performance if search.compact_multi else search.performance
     partial_secondary = search.partial_secondary if search.compact_multi else search.secondary
 
-    def partial_rank(c: dict[str, dict[str, int]]) -> tuple[Any, ...]:
+    def partial_rank(c: Any) -> tuple[Any, ...]:
         score = sum(
             (partial_performance(c[r.id], r).get("dps") or 0) * r.weight
             for r in request.roles
             if r.id in c
         )
+        carried = (
+            c.carried if search.compact_states else {i for e in c.values() for i in e.values()}
+        )
         return (
             -score,
             -partial_secondary(c),
-            len({i for e in c.values() for i in e.values()}),
-            *search.acquisition_tie({i for e in c.values() for i in e.values()}),
-            json.dumps(c, sort_keys=True),
+            len(carried),
+            *search.acquisition_tie(carried),
+            search.assignment_tie(c),
         )
 
     # Search each constraint separately. A high-scoring unrestricted beam must not
@@ -1709,29 +1935,49 @@ def optimize(
     for swap_limit in swap_limits:
         reporter.segment(unit, search_units)
         unit += 1
-        beam: list[dict[str, dict[str, int]]] = [{}]
+        beam = [_assignment_state({})]
         for role_index, role in enumerate(request.roles):
             reporter.fraction(role_index / len(request.roles))
             expanded = []
             for partial, equipment in product(beam, individual[role.id]):
                 if not search.tick():
                     break
-                candidate = {**partial, role.id: equipment}
-                carried = {i for e in candidate.values() for i in e.values()}
-                if search.cost(carried) > request.budget_gp:
-                    continue
-                if swap_limit is not None and any(
-                    _action_lower_bound(candidate[a], candidate[b], catalog.items) > swap_limit
-                    for a, b in search.edges
-                    if a in candidate and b in candidate
-                ):
-                    continue
+                if search.compact_states:
+                    carried = partial.carried | equipment.physical_ids
+                    if search.cost(carried) > request.budget_gp:
+                        continue
+                    if swap_limit is not None and any(
+                        _action_lower_bound(
+                            equipment if a == role.id else partial[a],
+                            equipment if b == role.id else partial[b],
+                            catalog.items,
+                        )
+                        > swap_limit
+                        for a, b in search.edges
+                        if (a == role.id or a in partial) and (b == role.id or b in partial)
+                    ):
+                        continue
+                    candidate = partial.with_role(role.id, equipment)
+                else:
+                    candidate = {**partial, role.id: equipment}
+                    carried = {i for e in candidate.values() for i in e.values()}
+                    if search.cost(carried) > request.budget_gp:
+                        continue
+                    if swap_limit is not None and any(
+                        _action_lower_bound(candidate[a], candidate[b], catalog.items) > swap_limit
+                        for a, b in search.edges
+                        if a in candidate and b in candidate
+                    ):
+                        continue
                 expanded.append(candidate)
             beam = sorted(expanded, key=partial_rank)[:BEAM_WIDTH]
+            # Only the selected beam survives this expansion. In particular the
+            # last product's rejected states must not stay live through frontiers.
+            del expanded
         tuples.extend(beam)
     unrestricted = None
     winners: list[dict[str, Any] | None] = [None] * (request.max_swaps + 1)
-    unique_tuples = {json.dumps(e, sort_keys=True): e for e in tuples}
+    unique_tuples = {search.assignment_json(e): e for e in tuples}
     reporter.segment(search_units - 1, search_units)
     for scored, loadouts in enumerate(unique_tuples.values()):
         reporter.fraction(scored / len(unique_tuples))
@@ -1758,11 +2004,16 @@ def optimize(
     def refine(solution: dict[str, Any] | None) -> dict[str, Any] | None:
         if solution is None:
             return None
+        from tracker.gear.variant_reporting import materialize
+
+        solution = materialize(solution)
         identity = json.dumps(solution["loadouts"], sort_keys=True)
         if identity not in refined:
-            equipped = refine_magic_staves(search, solution, _solution_key)
-            shared = refine_shared_slots(search, equipped, _solution_key)
-            refined[identity] = refine_ammunition(search, shared, _solution_key, refinement)
+            equipped = materialize(refine_magic_staves(search, solution, _solution_key))
+            shared = materialize(refine_shared_slots(search, equipped, _solution_key))
+            refined[identity] = materialize(
+                refine_ammunition(search, shared, _solution_key, refinement)
+            )
         return refined[identity]
 
     refined_winners = []
@@ -1794,13 +2045,19 @@ def optimize(
             search, winners, unrestricted, _solution_key
         )
     reporter.segment(unit, refinement_units)
+    from tracker.gear.variant_reporting import materialize
+
     # Local refinement may introduce new assignments after the initial cleanup.
     winners = [
-        refine_ammunition(search, row, _solution_key, refinement) if row else None
+        materialize(refine_ammunition(search, materialize(row), _solution_key, refinement))
+        if row
+        else None
         for row in winners
     ]
     if unrestricted is not None:
-        unrestricted = refine_ammunition(search, unrestricted, _solution_key, refinement)
+        unrestricted = materialize(
+            refine_ammunition(search, materialize(unrestricted), _solution_key, refinement)
+        )
     secondary_frontiers: list[dict[str, Any]] = []
     refined_at = perf_counter()
     reporter.stage("frontiers", elapsed_seconds=refined_at - started)
@@ -1830,6 +2087,8 @@ def optimize(
         )
     frontiers_at = perf_counter()
     reporter.finish()
+    winners = [materialize(row) if row is not None else None for row in winners]
+    unrestricted = materialize(unrestricted) if unrestricted is not None else None
     baseline = unrestricted["score"] if unrestricted else 0
     curve: list[dict[str, Any]] = [
         {

@@ -73,8 +73,9 @@ def _serve(app):
             assert not thread.is_alive(), "Isolated desktop server did not stop"
 
 
-@pytest.fixture
-def desktop_factory(monkeypatch):
+@pytest.fixture(params=[False, True], ids=["p1", "p3"])
+def desktop_factory(monkeypatch, request):
+    compact_states = request.param
     snapshot, request, catalog, content, _, now = scenario("ranged", PrayerPolicy())
     request = request.model_copy(
         update={
@@ -107,6 +108,10 @@ def desktop_factory(monkeypatch):
                 optimization_profile=profile,
             )
         )
+        # P3 exercises actual factory activation; P1 remains an explicit off-reference.
+        assert app.state.gear_service.compact_states is (profile == "combined")
+        if not compact_states:
+            app.state.gear_service.compact_states = False
         app.state.gear_service._equipment = EquipmentCatalog(catalog.items, "http-fixture")
         app.state.gear_data_source = FrozenSource(snapshot)
         body = {**request.model_dump(mode="json"), "expected_snapshot_id": snapshot.fingerprint}
@@ -136,11 +141,15 @@ def test_http_factored_fixed_result_progress_and_baseline_rollback(desktop_facto
     original = _Search.tick
 
     def observed_tick(search):
+        from tracker.gear.execution_profile import compact_states_active
+
+        assert compact_states_active() == expected_compact
         observations.append(_active_contexts())
         return original(search)
 
     monkeypatch.setattr(_Search, "tick", observed_tick)
     app, body = desktop_factory()
+    expected_compact = app.state.gear_service.compact_states
     with _serve(app) as (client, _):
         assert client.get("/healthz").json() == {"status": "ok"}
         context = client.get("/ui-api/gear/context")
@@ -152,6 +161,7 @@ def test_http_factored_fixed_result_progress_and_baseline_rollback(desktop_facto
 
     observations.clear()
     rollback, same_body = desktop_factory("baseline")
+    expected_compact = False
     with _serve(rollback) as (client, _):
         baseline = _run(client, same_body)
         assert observations and not any(any(flags) for flags in observations)
@@ -167,6 +177,9 @@ def test_tcp_disconnect_cancels_factored_search_and_next_request_recovers(
     pause = True
 
     def wait_for_disconnect(search):
+        from tracker.gear.execution_profile import compact_states_active
+
+        assert compact_states_active() == app.state.gear_service.compact_states
         if pause and not entered.is_set():
             assert all(_active_contexts())
             entered.set()

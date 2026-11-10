@@ -8,6 +8,7 @@ from functools import lru_cache
 from types import MappingProxyType
 from typing import NamedTuple
 
+from tracker.gear.compact_states import EquipmentState
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 
 _INTEGER_FIELDS = tuple(field for field in EquipmentBonuses.model_fields if field != "magic_damage")
@@ -109,6 +110,8 @@ class EquipmentScorer:
         self._prepare = prepare
 
     def prepare(self, equipment: Mapping[str, int]) -> PreparedEquipment:
+        if isinstance(equipment, EquipmentState):
+            return self._prepare(equipment.ordered_ids)
         return self._prepare(tuple(equipment.values()))
 
     def cache_info(self) -> ScoringCacheInfo:

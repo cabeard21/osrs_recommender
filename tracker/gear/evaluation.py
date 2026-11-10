@@ -10,6 +10,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.combat import evaluate_loadout
+from tracker.gear.compact_states import EquipmentState
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
@@ -19,7 +20,10 @@ def equipment_problems(
     equipment: Mapping[str, int], items: Mapping[int, EquipmentDefinition]
 ) -> tuple[str, ...]:
     problems = []
-    for slot, item_id in equipment.items():
+    pairs = (
+        equipment.ordered_identity if isinstance(equipment, EquipmentState) else equipment.items()
+    )
+    for slot, item_id in pairs:
         item = items.get(item_id)
         if item is None:
             problems.append(f"Unknown physical item ID: {item_id}.")

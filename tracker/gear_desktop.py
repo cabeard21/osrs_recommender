@@ -96,6 +96,7 @@ def create_app(settings: DesktopSettings) -> FastAPI:
         optimization_profile=settings.optimization_profile,
         fixed_reporting=settings.optimization_profile == "combined",
         factored_evaluation=settings.optimization_profile == "combined",
+        compact_states=settings.optimization_profile == "combined",
     )
 
     @asynccontextmanager
@@ -110,6 +111,10 @@ def create_app(settings: DesktopSettings) -> FastAPI:
             logger.info(
                 "Desktop Gear factored evaluation: %s",
                 "enabled" if gear.factored_evaluation else "disabled",
+            )
+            logger.info(
+                "Desktop Gear compact states: %s",
+                "enabled" if gear.compact_states else "disabled",
             )
             if settings.optimization_workers > 1:
                 try:

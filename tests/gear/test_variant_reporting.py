@@ -75,6 +75,61 @@ def test_variant_waits_until_exact_tie_or_publication(monkeypatch):
         variants.close()
 
 
+@pytest.mark.parametrize("style", ["slash", "ranged", "magic"])
+@pytest.mark.parametrize("priority", ["balanced_defence", "ranged_defence_roll"])
+def test_compact_variant_report_boundary_avoids_nested_solution(monkeypatch, style, priority):
+    import tracker.gear.compact_solutions as solutions
+    from tracker.gear.execution_profile import execution_context
+    from tracker.gear.variant_reporting import CompactVariant
+
+    args = inputs(style, priority, joint=True)
+    weapon = {"slash": 1, "ranged": 2, "magic": 3}[style]
+    assignment = {"a": {"weapon": weapon}, "b": {"weapon": weapon}}
+    reference = search(args)
+    reference.running_prices, reference.running_at = args[4:]
+    expected_seed = reference.solution(assignment, None)
+    expected = list(_combat_variants(reference, expected_seed, lambda: True))
+    with execution_context("combined", args[1], factored_evaluation=True, compact_states=True):
+        instance = search(args)
+        instance.running_prices, instance.running_at = args[4:]
+        seed = instance.solution(assignment, None)
+        assert isinstance(seed, solutions.CompactSolution)
+        materialize(seed)
+
+        def unexpected(*args, **kwargs):
+            pytest.fail("Explicit rich report boundary constructed a nested compact solution")
+
+        monkeypatch.setattr(solutions, "compact_solution", unexpected)
+        with lazy_variants():
+            rows = list(_combat_variants(instance, seed, lambda: True))
+        assert rows and all(isinstance(row, CompactVariant) for row in rows)
+        for row, full in zip(rows, expected, strict=True):
+            # The exact tie is also an explicit rich-report boundary.
+            assert _solution_key(row)[-1] == json.dumps(full["loadouts"], sort_keys=True)
+            assert materialize(row) == full
+        assert instance.compact_states
+        assert not getattr(instance, "_compact_solution_bypass", False)
+
+
+def test_compact_variant_report_boundary_honors_cancellation():
+    from tracker.gear.execution_profile import execution_context
+
+    args = inputs()
+    with execution_context("combined", args[1], factored_evaluation=True, compact_states=True):
+        instance = search(args)
+        seed = instance.solution({"a": {"weapon": 2}}, None)
+        materialize(seed)
+        with lazy_variants():
+            variants = _combat_variants(instance, seed, lambda: True)
+            row = next(variants)
+            variants.close()
+        instance.cancelled = lambda: True
+        with pytest.raises(ValueError, match="optimization_cancelled"):
+            materialize(row)
+        instance.cancelled = None
+        assert materialize(row)["loadouts"]
+
+
 def test_full_variants_preserve_order_and_reduce_reporting(monkeypatch):
     args = inputs()
     role = (
