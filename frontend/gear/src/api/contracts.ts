@@ -106,6 +106,8 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  hitpoints?: number | null;
+  current_hitpoints?: number | null;
   traits?: string[];
   flat_armour?: number;
   name: string;
@@ -418,7 +420,19 @@ export interface PlayerDefenceRolls {
   magic: number | null;
   limitations: string[];
 }
+export interface BoltPerformance {
+  family: string;
+  proc_chance: number;
+  activation_probability: number;
+  expected_damage_per_attack: number;
+  total_max_hit: number;
+  normal_max_hit: number;
+  target_hitpoints: number | null;
+  diary_boosted: boolean;
+  expected_damage_delta: number;
+}
 export interface CombatPerformance {
+  bolt_effect?: BoltPerformance | null;
   player_defence_rolls?: PlayerDefenceRolls | null;
   hitsplats?: { accuracy: number; max_hit: number }[];
   elemental_weakness?: {

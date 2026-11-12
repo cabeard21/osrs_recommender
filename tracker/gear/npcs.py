@@ -45,7 +45,7 @@ class NpcCatalog:
             payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-traits-v4"
+            + b"ordinary-npc-traits-v5-bolt-hp"
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)
@@ -107,6 +107,7 @@ class NpcCatalog:
             weakness = row.get("weakness") or {}
             try:
                 target = CombatTarget(
+                    hitpoints=skills.get("hp"),
                     traits=tuple(sorted(set(row.get("attributes", ())) & ORDINARY_ATTRIBUTES)),
                     name=row["name"] + (f" ({variant})" if variant else ""),
                     defence_level=skills["def"],
@@ -211,6 +212,13 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         )
     canonical = CombatTarget.model_validate(entry["target"])
     effective = role.target or canonical
+    # Older saved targets have no HP metadata; the selected NPC owns base HP.
+    effective = CombatTarget.model_validate(
+        {
+            **effective.model_dump(),
+            "hitpoints": canonical.hitpoints,
+        }
+    )
     for field in ("damage_cap", "flat_armour", "unsupported_mechanics", "traits"):
         if getattr(effective, field) != getattr(canonical, field):
             raise ValueError("NPC mechanic restrictions cannot be overridden.")

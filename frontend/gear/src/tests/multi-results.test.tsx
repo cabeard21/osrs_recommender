@@ -568,7 +568,9 @@ it("renders unsupported role reasons and the previous accepted context without s
   });
   rerender(<LiveMultiResultWorkspace />);
   expect(screen.getByText("Combat performance unavailable")).toBeVisible();
-  expect(screen.getByText("Unsupported equipment effect")).toBeVisible();
+  expect(
+    screen.getByText("Unsupported equipment effect", { selector: "p.notice" }),
+  ).toBeVisible();
   expect(screen.getByText(/Hypothetical submitted result/)).toBeVisible();
   expect(screen.getByText(/Previous accepted scenario:/)).toHaveTextContent(
     "old-joint",

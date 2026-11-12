@@ -13,6 +13,10 @@ from typing import Any
 
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf, SkillLeaf
+from tracker.gear.bolts_catalog import REQUIREMENTS as BOLT_REQUIREMENTS
+from tracker.gear.bolts_catalog import REVISION as BOLT_REVISION
+from tracker.gear.bolts_catalog import TRADEABLE as BOLT_TRADEABLE
+from tracker.gear.bolts_catalog import apply_review as bolt_review
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
@@ -112,7 +116,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
-        row = obsidian_review(row)
+        row = obsidian_review(bolt_review(row))
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -201,6 +205,8 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=powered.level)
         if autocast_level is not None:
             requirement = SkillLeaf(skill="magic", level=autocast_level)
+        if row["id"] in BOLT_REQUIREMENTS:
+            requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -209,10 +215,14 @@ def load_catalog(
                     _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
-                "requirements_complete": bool(entries or review or powered or autocast_level)
+                "requirements_complete": bool(
+                    entries or review or powered or autocast_level or row["id"] in BOLT_REQUIREMENTS
+                )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in REVIEWED_POWERED_TRADEABLE
+                    row["id"] in BOLT_TRADEABLE
+                    if row["id"] in BOLT_REQUIREMENTS
+                    else row["id"] in REVIEWED_POWERED_TRADEABLE
                     if powered is not None
                     else row["id"] in {27785, 27676}
                     if autocast_level is not None
@@ -249,6 +259,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + BOLT_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -260,6 +271,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + BOLT_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

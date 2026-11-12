@@ -40,7 +40,7 @@ def calculate_comparison(
     body: AmmoComparisonRequest,
     stopped: Event,
 ) -> dict[str, Any]:
-    if body.combat_option.attack_type != "standard":
+    if body.combat_option.attack_type not in {"light", "standard", "heavy"}:
         raise ValueError("Arrow comparison requires a ranged combat option")
     role = body.scenario.roles[0].id
     fixed = EquipmentEvaluationRequest(

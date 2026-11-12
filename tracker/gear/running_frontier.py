@@ -208,13 +208,20 @@ def explore_running_costs(
         if role.style == "special":
             continue
         bases = original.baselines(role)
+        # The initial sample can contain only low-tier crossbows. Preserve each
+        # reviewed proc/weapon context, including Zaryte's distinct passive.
+        sampled_bases = list(bases[:8])
+        for base in bases:
+            ammo = search.items.get(base.get("ammunition", -1))
+            if ammo and ammo.bolt_effect and base not in sampled_bases:
+                sampled_bases.append(base)
         for i in search.eligible:
             slot = search.items[i].slot
             if slot not in {"weapon", "ammunition", "cape"}:
                 continue
             values = [
                 search.secondary({role.id: {**b, slot: i}})
-                for b in bases[:8]
+                for b in sampled_bases
                 if search.compatible({**b, slot: i})
             ]
             search.secondary_marginals[role.id, i] = max(values, default=-1e100)

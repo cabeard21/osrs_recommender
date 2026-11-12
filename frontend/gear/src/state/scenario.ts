@@ -7,6 +7,7 @@ import type {
   Trial,
   Equipment,
   Workspace,
+  CombatTarget,
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import {
@@ -117,6 +118,32 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
     }),
   );
 }
+function normalizeHitpoints(
+  target: CombatTarget | undefined,
+  inputs: Record<string, string> = {},
+): CombatTarget | undefined {
+  if (!target) return target;
+  const result = { ...target };
+  for (const key of ["hitpoints", "current_hitpoints"] as const) {
+    const raw = inputs[key];
+    if (raw !== undefined) result[key] = raw.trim() ? Number(raw) : null;
+    const value = result[key];
+    if (
+      value != null &&
+      (!Number.isSafeInteger(value) || value < 1 || value > 1000000)
+    )
+      throw new Error(
+        `Target ${key} requires a positive whole number up to 1000000.`,
+      );
+  }
+  if (
+    result.hitpoints != null &&
+    result.current_hitpoints != null &&
+    result.current_hitpoints > result.hitpoints
+  )
+    throw new Error("Target current_hitpoints cannot exceed base hitpoints.");
+  return result;
+}
 export function normalize(
   draft: Draft,
   snapshotId: string,
@@ -151,6 +178,10 @@ export function normalize(
     if (role.combatOptionOptimization === false)
       throw new Error("Auto requires combat option optimization.");
   }
+  const globalTarget = normalizeHitpoints(
+    draft.combatTarget,
+    draft.targetInputs,
+  );
   const globalArmour = draft.combatTarget?.flat_armour ?? 0;
   if (
     (draft.targetInputs?.flat_armour !== undefined &&
@@ -203,7 +234,12 @@ export function normalize(
       delete role.combatOptions;
     }
     if (role.combatTarget) {
+      role.combatTarget = normalizeHitpoints(
+        role.combatTarget,
+        role.targetInputs,
+      )!;
       for (const [key, value] of Object.entries(role.targetInputs ?? {})) {
+        if (key === "hitpoints" || key === "current_hitpoints") continue;
         const optional = [
           "ranged_light",
           "ranged_standard",
@@ -408,7 +444,7 @@ export function normalize(
         selection: draft.targetSelection,
         defence: integer(draft.defence, "Target defence", 0, 10000),
         ...(draft.combatTarget
-          ? { definition: structuredClone(draft.combatTarget) }
+          ? { definition: structuredClone(globalTarget!) }
           : {}),
       },
       budget_gp: integer(parseGp(draft.budget), "Budget", 0, 2147483647),

@@ -88,6 +88,26 @@ export function CombatOptionSummary({
             .join("; ")}
         </p>
       )}
+      {performance?.bolt_effect && (
+        <>
+          <p aria-label="Enchanted bolt effect">
+            {performance.bolt_effect.family} bolt effect ·{" "}
+            {(performance.bolt_effect.proc_chance * 100).toFixed(1)}% proc
+            chance
+            {` · ${(performance.bolt_effect.activation_probability * 100).toFixed(1)}% activation per shot`}
+            {performance.bolt_effect.target_hitpoints != null
+              ? ` · DPS at ${performance.bolt_effect.target_hitpoints} HP`
+              : ""}
+            {` · total max ${performance.bolt_effect.total_max_hit}`}
+            {` · expected damage ${performance.bolt_effect.expected_damage_per_attack.toFixed(2)} per shot (${performance.bolt_effect.expected_damage_delta >= 0 ? "+" : ""}${performance.bolt_effect.expected_damage_delta.toFixed(2)} from effect)`}
+            {` · ${performance.bolt_effect.diary_boosted ? "Kandarin Hard boost applied" : "Base proc rate"}`}
+          </p>
+          <p>
+            Ordinary hit: max {performance.max_hit} ·{" "}
+            {((performance.accuracy ?? 0) * 100).toFixed(1)}% accuracy
+          </p>
+        </>
+      )}
       {weakness && (
         <p aria-label="Elemental weakness effect">
           {weakness.element

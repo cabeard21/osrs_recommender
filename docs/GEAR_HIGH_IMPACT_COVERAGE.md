@@ -378,3 +378,35 @@ is not scored by the ordinary-attack model. Other physical forms remain separate
 Catalog and community provenance checksums are updated together so this review
 does not invalidate existing community classifications. Focused regressions live
 in `tests/gear/test_anti_dragon_shield.py`.
+
+## Enchanted bolt direct-damage review (2026-11-12)
+
+The ordinary attack model now includes expected opal, pearl, ruby, diamond,
+dragonstone and onyx proc damage, for twelve exact normal/dragon bolt forms.
+Compatibility is an exact physical-ID whitelist, reviewed against
+[Wiki calculator Equipment.ts](https://github.com/weirdgloop/osrs-dps-calc/blob/880ab3f324ebea2644681d835448ab9d45c04f5c/src/lib/Equipment.ts).
+Crossbow, Phoenix, Bronze, Blurite and Dorgeshuun support opal; Iron, Steel
+and Mithril additionally support pearl; Adamant adds ruby/diamond; Rune adds
+dragonstone/onyx. Dragon, Armadyl and Zaryte accept all twelve forms.
+Dorgeshuun retains bone bolts and cannot fire pearl bolts.
+
+Proc formulas follow the independently implemented expectations described by
+[bolts.ts](https://github.com/weirdgloop/osrs-dps-calc/blob/880ab3f324ebea2644681d835448ab9d45c04f5c/src/lib/dists/bolts.ts).
+Zaryte passive modifiers, successful-hit gating, immunity traits, rounding and
+signed flat armour are included. Unsupported target damage-cap rerolls remain
+blocked. Accuracy and ordinary max hit retain their existing meaning; optional
+bolt reporting supplies activation probability, total expected damage, total
+maximum and the expected damage difference, which can be negative for ruby.
+
+Target current HP defaults to the selected NPC base HP. Saved target definitions
+inherit newly available base HP; explicit current HP survives. Custom targets need
+base or current HP for ruby. This is static DPS at that HP, with sufficient player
+HP assumed. Declining HP, ruby self-damage endurance, healing, poison, utility
+procs, specials and Dragon hunter crossbow bonuses are not simulated.
+Confirmed synced Kandarin Hard completion enables the activation boost; unknown
+completion uses base rates and is disclosed. Ammunition remains exempt from gear
+purchase budgets and retains replacement/Ava costs with proc-adjusted GP/damage.
+
+Catalog and NPC revisions and the combat model version invalidate older results.
+No account database migration is required. Proc IDs are protected from ammunition
+pool truncation; running-cost scaffolds cover reviewed crossbow/bolt pairings.

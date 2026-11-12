@@ -160,6 +160,33 @@ def test_non_arrow_weapon_and_unknown_id(client, session_factory):
     assert client.post("/ui-api/gear/ammo-comparisons", json=body).status_code == 422
 
 
+@pytest.mark.parametrize(
+    ("attack_type", "loadout"),
+    [
+        ("heavy", {"weapon": 9185, "ammunition": 9242}),
+        ("light", {"weapon": 11230}),
+    ],
+)
+def test_non_arrow_ranged_types_explain_bow_only_support(
+    client, session_factory, attack_type, loadout
+):
+    body = ammo_body(client, session_factory)
+    body["scenario"].update(
+        mode="future",
+        support_policy="community_best_effort",
+        assumed_item_ids=list(loadout.values()),
+        skill_overrides={"ranged": 90},
+    )
+    body["loadout"] = loadout
+    body["combat_option"]["attack_type"] = attack_type
+    response = client.post("/ui-api/gear/ammo-comparisons", json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()["points"] == []
+    assert response.json()["limitations"] == [
+        "Arrow comparison requires a supported bow using ordinary arrows."
+    ]
+
+
 @pytest.mark.parametrize("body_id", [10378, 11828, 1117, 7370])
 def test_compatible_body_keeps_arrow_running_cost(client, session_factory, body_id):
     body = ammo_body(client, session_factory)

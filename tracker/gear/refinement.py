@@ -23,6 +23,7 @@ _PERFORMANCE = (
     "defence_roll",
     "limitations",
     "player_defence_rolls",
+    "bolt_effect",
 )
 _PROTECTED_BONUSES = (
     "defence_stab",
