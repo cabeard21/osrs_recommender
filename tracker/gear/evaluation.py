@@ -8,11 +8,23 @@ from typing import Any
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
+from tracker.domain.types import UnlockState
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.combat import evaluate_loadout
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
+
+
+def resolve_bolt_context(role: Any, snapshot: AccountSnapshot) -> Any:
+    """Resolve diary benefits from authoritative observations, never client flags."""
+    state = snapshot.unlocks.get("diary_kandarin_hard")
+    return role.model_copy(
+        update={
+            "bolt_diary_boost": state is UnlockState.UNLOCKED,
+            "bolt_diary_known": state in {UnlockState.UNLOCKED, UnlockState.LOCKED},
+        }
+    )
 
 
 def equipment_problems(
@@ -267,7 +279,7 @@ def evaluate_configurations(
         raise ValueError("Exact evaluation supports one ordinary-attack role without transitions")
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
-    role = request.roles[0]
+    role = resolve_bolt_context(request.roles[0], snapshot)
     if role.prayers.mode == "optimize":
         raise ValueError("Fixed evaluation requires an explicit fixed prayer setup")
     if role.prayers.mode == "fixed":

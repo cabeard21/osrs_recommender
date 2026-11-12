@@ -10,8 +10,10 @@ from collections.abc import Mapping, Sequence
 from math import floor
 from typing import Any, NamedTuple
 
+from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.models import (
+    BoltPerformance,
     CombatPerformance,
     CombatTarget,
     ElementalWeakness,
@@ -155,6 +157,13 @@ def _evaluate_prepared(
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
+    bolt_family = (
+        prepared.ammunition.bolt_effect
+        if style == "ranged" and prepared.ammunition and weapon and weapon.ammo_for
+        else None
+    )
+    if bolt_family == "ruby" and target.current_hitpoints is None and target.hitpoints is None:
+        problems.append("Ruby bolts require target current or base hitpoints.")
     if (
         powered_attack is not None
         and not (weapon and weapon.powered_attack_model)
@@ -276,6 +285,9 @@ def _evaluate_prepared(
         effects(getattr(role, "active_prayer_ids", ())),
         score_only=score_only,
         include_defence=include_defence,
+        bolt_family=bolt_family,
+        bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
+        bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
     )
     if not score_only and isinstance(result, CombatPerformance):
         omissions = tuple(dict.fromkeys(e for i in equipment for e in i.omitted_set_effects))
@@ -312,6 +324,9 @@ def _calculate(
     *,
     score_only: bool = False,
     include_defence: bool = False,
+    bolt_family: str | None = None,
+    bolt_diary: bool = False,
+    bolt_diary_known: bool = False,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
@@ -454,6 +469,51 @@ def _calculate(
     )
     if sang_proc:
         expected += accuracy * 0.2 * 8
+    bolt_report = None
+    if bolt_family:
+        ordinary_expected = expected
+        hp = target.current_hitpoints if target.current_hitpoints is not None else target.hitpoints
+        expected, total_max, activation = expected_bolt_damage(
+            bolt_family,
+            levels["ranged"],
+            max_hit,
+            accuracy,
+            hp,
+            bolt_diary,
+            bool(weapon and weapon.id == 26374),
+            target.traits,
+            target.flat_armour,
+        )
+        if target.damage_cap is not None and total_max > target.damage_cap:
+            if score_only:
+                return CombatScore(False, None, None, bonuses)
+            return CombatPerformance(
+                supported=False,
+                bonuses=bonuses,
+                limitations=(
+                    "Bolt damage above the target cap requires an unsupported reroll distribution.",
+                ),
+            )
+        if not score_only:
+            bolt_report = BoltPerformance(
+                family=bolt_family,
+                proc_chance={
+                    "opal": 0.05,
+                    "pearl": 0.06,
+                    "ruby": 0.06,
+                    "diamond": 0.1,
+                    "dragonstone": 0.06,
+                    "onyx": 0.11,
+                }[bolt_family]
+                * (1.1 if bolt_diary else 1),
+                activation_probability=activation,
+                expected_damage_per_attack=expected,
+                expected_damage_delta=expected - ordinary_expected,
+                total_max_hit=total_max,
+                normal_max_hit=max(0, max(1, max_hit) - target.flat_armour),
+                target_hitpoints=hp,
+                diary_boosted=bolt_diary,
+            )
     interval = speed * 0.6
     if score_only:
         return CombatScore(
@@ -471,6 +531,7 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        bolt_effect=bolt_report,
         elemental_weakness=weakness,
         accuracy=accuracy,
         hitsplats=hitsplats,
@@ -485,6 +546,19 @@ def _calculate(
             "Fresh combat levels and sustained active stat prayers only; "
             "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
+        )
+        + (
+            (
+                    "Static target HP and sufficient player HP assumed; ruby self-damage "
+                    "endurance, healing and crossbow specials are not simulated.",
+            )
+            if bolt_family
+            else ()
+        )
+        + (
+            ("Kandarin Hard Diary completion is unknown; base bolt proc rates used.",)
+            if bolt_family and not bolt_diary_known
+            else ()
         )
         + (
             (

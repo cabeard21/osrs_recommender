@@ -1,3 +1,4 @@
+import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import { NpcTargetPicker } from "./NpcTargetPicker";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
 
@@ -54,6 +55,12 @@ export function RoleTargetEditor({
         selection={role.targetSelection}
         inputs={role.targetInputs}
         target={target}
+        onChange={onChange}
+      />
+      <TargetHitpointsFields
+        target={target}
+        inputs={role.targetInputs}
+        fixedBase={!!role.targetSelection}
         onChange={onChange}
       />
       {onApplyToAll && (

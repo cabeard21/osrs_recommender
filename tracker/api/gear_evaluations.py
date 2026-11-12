@@ -243,9 +243,16 @@ def calculate_evaluation(
     referenced.update(
         p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
     )
+    from tracker.gear.evaluation import resolve_bolt_context
     from tracker.gear.potions import potion_summary
 
+    bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
     assumptions = {
+        "bolt_model_version": "enchanted-bolts-v1",
+        "bolt_diary": {
+            "boosted": bolt_context.bolt_diary_boost,
+            "known": bolt_context.bolt_diary_known,
+        },
         "include_untradeables": scenario.include_untradeables,
         "prayer_model_version": PRAYER_MODEL_VERSION,
         "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
@@ -276,7 +283,7 @@ def calculate_evaluation(
         scenario_fingerprint=scenario_fingerprint(body.scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
-        model_version="normal-attacks-v2-powered",
+        model_version="normal-attacks-v3-bolts",
         assumptions_fingerprint=hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()
         ).hexdigest(),

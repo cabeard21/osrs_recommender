@@ -38,6 +38,7 @@ from tracker.gear.evaluation import (
     loadout_problems,
     purchase_cost,
     purchases,
+    resolve_bolt_context,
     unowned_untradeables,
     validate_request_context,
 )
@@ -112,6 +113,8 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    bolt_diary_boost: bool = Field(default=False, exclude=True)
+    bolt_diary_known: bool = Field(default=False, exclude=True)
     prayers: PrayerPolicy = PrayerPolicy()
     active_prayer_ids: tuple[str, ...] = Field(default=(), exclude=True)
     id: str = Field(min_length=1, max_length=40, pattern=r"^[a-zA-Z0-9_-]+$")
@@ -133,6 +136,8 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.bolt_diary_boost or self.bolt_diary_known:
+            raise ValueError("Bolt diary context is resolved internally, not a request field")
         if self.active_prayer_ids:
             raise ValueError("active_prayer_ids is resolved internally, not a request field")
         if self.allowed_disciplines is not None:
@@ -332,6 +337,9 @@ class _Search:
     ) -> None:
         # Telemetry only; shared by frontier copies so their work is reported too.
         self.reporter = reporter
+        request = request.model_copy(
+            update={"roles": tuple(resolve_bolt_context(role, snapshot) for role in request.roles)}
+        )
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
         self.levels = {k: v.level for k, v in snapshot.skills.items()}
         if request.potions.mode == "fixed":
@@ -876,6 +884,12 @@ class _Search:
             keep = max(CANDIDATES_PER_SLOT - 1, len(locked & set(candidates)))
             self.truncated |= len(ordered) > keep
             retained = ordered[:keep]
+            if slot == "ammunition":
+                # Equal-strength dragon bolts have distinct target-dependent procs.
+                # Preserve every reviewed effect/form without dropping ordinary candidates.
+                retained = list(
+                    dict.fromkeys([*retained, *(i for i in ordered if self.items[i].bolt_effect)])
+                )
             if slot == "weapon":
                 # Preserve weapon families whose complete-gear synergy is invisible
                 # to weapon-only scaffolds, without changing the DPS objective.
@@ -1363,6 +1377,7 @@ def optimize(
     search = _Search(
         projected, request, catalog.items, facts, cancelled, prepared.eligible, reporter=reporter
     )
+    request = search.request
     candidates_at = perf_counter()
     reporter.stage("gear_search", elapsed_seconds=candidates_at - started)
     search.running_prices = price_records
@@ -1562,6 +1577,11 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     assumptions = {
+        "bolt_model_version": "enchanted-bolts-v1",
+        "bolt_diary": {
+            "boosted": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_boost,
+            "known": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_known,
+        },
         "prayer_model_version": PRAYER_MODEL_VERSION,
         "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
         "prayers": {role.id: role.prayers.model_dump(mode="json") for role in request.roles},
@@ -1634,7 +1654,7 @@ def optimize(
         "secondary_priority": request.secondary_priority,
         "evaluated_at": now.isoformat(),
         "catalog_version": getattr(catalog, "revision", "unknown"),
-        "model_version": "normal-attacks-v2-powered",
+        "model_version": "normal-attacks-v3-bolts",
         "assumptions": assumptions,
         "assumptions_fingerprint": hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from tracker.content.requirements import Requirement
 from tracker.content.schema import ItemSlot
@@ -32,6 +32,7 @@ class EquipmentBonuses(GearModel):
 
 
 class EquipmentDefinition(GearModel):
+    bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
     id: int = Field(gt=0)
     name: str
     slot: ItemSlot
@@ -88,6 +89,19 @@ class TargetSelection(GearModel):
 
 
 class CombatTarget(GearModel):
+    hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
+    current_hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
+
+    @model_validator(mode="after")
+    def validate_hitpoints(self) -> CombatTarget:
+        if (
+            self.hitpoints is not None
+            and self.current_hitpoints is not None
+            and self.current_hitpoints > self.hitpoints
+        ):
+            raise ValueError("Current hitpoints cannot exceed base hitpoints.")
+        return self
+
     traits: tuple[str, ...] = ()
     name: str = "Generic target (Defence 1, zero bonuses)"
     defence_level: int = Field(default=1, ge=0, le=10000)
@@ -126,7 +140,20 @@ class PlayerDefenceRolls(GearModel):
     limitations: tuple[str, ...] = ()
 
 
+class BoltPerformance(GearModel):
+    family: str
+    proc_chance: float
+    activation_probability: float
+    expected_damage_per_attack: float
+    expected_damage_delta: float
+    total_max_hit: int
+    normal_max_hit: int
+    target_hitpoints: int | None = None
+    diary_boosted: bool
+
+
 class CombatPerformance(GearModel):
+    bolt_effect: BoltPerformance | None = None
     player_defence_rolls: PlayerDefenceRolls | None = None
     elemental_weakness: ElementalWeakness | None = None
     supported: bool

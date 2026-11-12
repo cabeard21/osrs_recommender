@@ -470,7 +470,7 @@ def context(request: Request) -> ContextResponse:
             "configurations": ["melee", "ranged", "magic"],
         },
         catalog_version=gear.equipment_catalog().revision,
-        model_version="normal-attacks-v2-powered",
+        model_version="normal-attacks-v3-bolts",
         price_revision=hashlib.sha256(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),
