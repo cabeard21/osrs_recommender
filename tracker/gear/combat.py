@@ -549,8 +549,8 @@ def _calculate(
         )
         + (
             (
-                    "Static target HP and sufficient player HP assumed; ruby self-damage "
-                    "endurance, healing and crossbow specials are not simulated.",
+                "Static target HP and sufficient player HP assumed; ruby self-damage "
+                "endurance, healing and crossbow specials are not simulated.",
             )
             if bolt_family
             else ()
