@@ -24,6 +24,8 @@ from tracker.api.gear_optimizations import (
 )
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, Preparation, no_cache, resources
 from tracker.content.schema import ItemSlot
+from tracker.gear.combat import MODEL_VERSION
+from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
@@ -248,6 +250,7 @@ def calculate_evaluation(
 
     bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
     assumptions = {
+        "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "bolt_model_version": "enchanted-bolts-v1",
         "bolt_diary": {
             "boosted": bolt_context.bolt_diary_boost,
@@ -283,7 +286,7 @@ def calculate_evaluation(
         scenario_fingerprint=scenario_fingerprint(body.scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
-        model_version="normal-attacks-v3-bolts",
+        model_version=MODEL_VERSION,
         assumptions_fingerprint=hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()
         ).hexdigest(),

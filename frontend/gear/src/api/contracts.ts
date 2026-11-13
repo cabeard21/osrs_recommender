@@ -432,6 +432,11 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  elemental_amulet_bonus?: {
+    item_id: number;
+    element: "air" | "water" | "earth" | "fire";
+    base_max_hit_bonus: number;
+  } | null;
   bolt_effect?: BoltPerformance | null;
   player_defence_rolls?: PlayerDefenceRolls | null;
   hitsplats?: { accuracy: number; max_hit: number }[];
@@ -654,6 +659,10 @@ export interface PhysicalItem {
   name: string;
   slot: Slot;
   equipment: {
+    elemental_spell_bonus?: {
+      elements: ("air" | "water" | "earth" | "fire")[];
+      base_max_hit_bonus: number;
+    } | null;
     bonuses: Record<string, number>;
     requires: unknown;
     two_handed: boolean;

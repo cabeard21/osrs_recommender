@@ -4,6 +4,26 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Elemental amulets
+
+The five reviewed tradeable amulets (34407 air, 34413 water, 34419 earth,
+34425 fire, and 34428 combined) require 59 Magic and retain their physical
++10 Magic attack and 0% magic damage bonuses. Item `equipment` includes nullable
+`elemental_spell_bonus` metadata with `elements` and `base_max_hit_bonus`.
+Air applies to wind spells; the combined amulet covers all four elements.
+
+Combat results include nullable `elemental_amulet_bonus` with `item_id`, `element`,
+and `base_max_hit_bonus`. A matching Standard elemental spell receives +2 after
+tier scaling and before damage/prayer percentages and the separately rounded
+elemental weakness contribution. This is a base-hit increment, not a promise of
+exactly two additional final damage. Mismatched spells, Ancient Magicks, Iban
+Blast, and powered attacks receive no increment. Older responses may omit these
+fields. The combat model version is `normal-attacks-v4-elemental-amulets`.
+
+Ownership and GE purchase planning use each physical ID independently. Crafting,
+combining components, and additional equipment or special-target mechanics are
+outside this support. Source mechanics: [Elemental amulet](https://oldschool.runescape.wiki/w/Elemental_amulet).
+
 ## Fast and Thorough search modes
 
 `POST /ui-api/gear/optimizations` accepts optional `optimization_mode`, strictly

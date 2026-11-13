@@ -12,10 +12,12 @@ from typing import Any, NamedTuple
 
 from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
+from tracker.gear.elemental_amulets import applied_spell_bonus
 from tracker.gear.models import (
     BoltPerformance,
     CombatPerformance,
     CombatTarget,
+    ElementalAmuletBonus,
     ElementalWeakness,
     EquipmentBonuses,
     EquipmentDefinition,
@@ -73,6 +75,8 @@ ANCIENT_SPELLS = {
 }
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
+
+MODEL_VERSION = "normal-attacks-v4-elemental-amulets"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -285,6 +289,7 @@ def _evaluate_prepared(
         effects(getattr(role, "active_prayer_ids", ())),
         score_only=score_only,
         include_defence=include_defence,
+        amulet=next((item for item in equipment if item.slot == "neck"), None),
         bolt_family=bolt_family,
         bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
@@ -324,12 +329,14 @@ def _calculate(
     *,
     score_only: bool = False,
     include_defence: bool = False,
+    amulet: EquipmentDefinition | None = None,
     bolt_family: str | None = None,
     bolt_diary: bool = False,
     bolt_diary_known: bool = False,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
+    amulet_report = None
     if style == "magic":
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
@@ -350,6 +357,14 @@ def _calculate(
                 damage
                 for name, (level, damage) in ELEMENTAL_SPELLS.items()
                 if name.endswith("_" + tier) and level <= levels["magic"]
+            )
+        amulet_bonus = applied_spell_bonus(amulet, spell, powered_attack)
+        base += amulet_bonus
+        if amulet_bonus and amulet is not None and not score_only:
+            amulet_report = ElementalAmuletBonus(
+                item_id=amulet.id,
+                element=spell.split("_")[0].replace("wind", "air"),
+                base_max_hit_bonus=amulet_bonus,
             )
         shadow = (
             powered_attack is not None
@@ -533,6 +548,7 @@ def _calculate(
         supported=True,
         bolt_effect=bolt_report,
         elemental_weakness=weakness,
+        elemental_amulet_bonus=amulet_report,
         accuracy=accuracy,
         hitsplats=hitsplats,
         max_hit=sum(h.max_hit for h in hitsplats),
