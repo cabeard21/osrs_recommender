@@ -10,6 +10,7 @@ from collections.abc import Mapping, Sequence
 from math import floor
 from typing import Any, Literal, NamedTuple
 
+from tracker.gear import hopper
 from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.elemental_amulets import applied_spell_bonus
@@ -22,6 +23,7 @@ from tracker.gear.models import (
     EquipmentBonuses,
     EquipmentDefinition,
     HitsplatPerformance,
+    HopperPerformance,
     TomeBonus,
 )
 from tracker.gear.powered import base_hit, supports_powered
@@ -79,7 +81,7 @@ ANCIENT_SPELLS = {
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
 
-MODEL_VERSION = "normal-attacks-v5-elemental-tomes"
+MODEL_VERSION = "normal-attacks-v6-elemental-tomes-aquanite-hopper"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -295,6 +297,12 @@ def _evaluate_prepared(
         amulet=next((item for item in equipment if item.slot == "neck"), None),
         tome=next((item for item in equipment if item.slot == "shield"), None),
         fire_tome_pages=getattr(role, "fire_tome_pages", "burnt"),
+        hopper_active=(
+            style == "ranged"
+            and hopper.active(
+                weapon, next((i for i in equipment if i.slot == "shield"), None), ammo
+            )
+        ),
         bolt_family=bolt_family,
         bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
@@ -337,6 +345,7 @@ def _calculate(
     amulet: EquipmentDefinition | None = None,
     tome: EquipmentDefinition | None = None,
     fire_tome_pages: Literal["burnt", "searing"] = "burnt",
+    hopper_active: bool = False,
     bolt_family: str | None = None,
     bolt_diary: bool = False,
     bolt_diary_known: bool = False,
@@ -515,6 +524,7 @@ def _calculate(
     if sang_proc:
         expected += accuracy * 0.2 * 8
     bolt_report = None
+    activation = 0.0
     if bolt_family:
         ordinary_expected = expected
         hp = target.current_hitpoints if target.current_hitpoints is not None else target.hitpoints
@@ -559,6 +569,32 @@ def _calculate(
                 target_hitpoints=hp,
                 diary_boosted=bolt_diary,
             )
+    hopper_report = None
+    if hopper_active:
+        secondary_accuracy = accuracy_probability(attack * 2 // 3, defence)
+        secondary, secondary_max, _ = hopper.expected_secondary_damage(
+            bolt_family,
+            levels["ranged"],
+            max_hit,
+            secondary_accuracy,
+            target.current_hitpoints if target.current_hitpoints is not None else target.hitpoints,
+            bolt_diary,
+            bool(weapon and weapon.id == 26374),
+            target.traits,
+            armour,
+            activation,
+        )
+        delta = hopper.PROC_CHANCE * secondary
+        expected += delta
+        if not score_only:
+            hopper_report = HopperPerformance(
+                proc_chance=hopper.PROC_CHANCE,
+                secondary_accuracy=secondary_accuracy,
+                secondary_max_hit=secondary_max,
+                expected_damage_delta=delta,
+                expected_ammunition_per_attack=1 + hopper.PROC_CHANCE,
+                assumptions=hopper.ASSUMPTIONS,
+            )
     interval = speed * 0.6
     if score_only:
         return CombatScore(
@@ -576,6 +612,7 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        aquanite_hopper=hopper_report,
         bolt_effect=bolt_report,
         elemental_weakness=weakness,
         elemental_amulet_bonus=amulet_report,
@@ -589,7 +626,8 @@ def _calculate(
         defence_roll=defence,
         player_defence_rolls=player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
-        limitations=(
+        limitations=(hopper.ASSUMPTIONS if hopper_active else ())
+        + (
             "Fresh combat levels and sustained active stat prayers only; "
             "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
