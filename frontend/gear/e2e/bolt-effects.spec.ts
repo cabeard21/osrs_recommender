@@ -4,43 +4,9 @@ import { npcEntryLabel } from "../src/components/npcEntries";
 test("NPC current HP survives reload and reaches optimization; result explains bolt and hopper effects", async ({
   page,
 }) => {
-  await page.request.post("/test/seed-optimization");
-  // Server-side tests cover bolt arithmetic; this injects explanation metadata
-  // into a real response to exercise the browser presentation and transport.
-  await page.route("**/ui-api/gear/optimizations*", async (route) => {
-    const response = await route.fetch();
-    const body = await response.json();
-    if (response.status() === 200 && body.result?.selected_solution) {
-      for (const loadout of Object.values(
-        body.result.selected_solution.loadouts,
-      ) as { performance: Record<string, unknown> }[]) {
-        loadout.performance.bolt_effect = {
-          family: "ruby",
-          proc_chance: 0.06,
-          activation_probability: 0.06,
-          expected_damage_per_attack: 1,
-          total_max_hit: 1,
-          normal_max_hit: 1,
-          target_hitpoints: 1,
-          diary_boosted: false,
-          expected_damage_delta: -1,
-        };
-        loadout.performance.aquanite_hopper = {
-          proc_chance: 0.11,
-          secondary_accuracy: 0.6,
-          secondary_max_hit: 6,
-          expected_damage_delta: 0.3,
-          expected_ammunition_per_attack: 1.11,
-          approximate: true,
-          assumptions: [
-            "Secondary ruby damage and extra-bolt consumption are approximate.",
-          ],
-        };
-      }
-    }
-    await route.fulfill({ response, json: body });
-  });
+  expect((await page.request.post("/test/seed-bolt-hopper")).ok()).toBe(true);
   await page.goto("/gear-next/");
+  await page.getByRole("button", { name: "ranged", exact: true }).click();
   const catalog = await (
     await page.request.get("/ui-api/gear/targets?q=Chicken")
   ).json();
@@ -68,9 +34,14 @@ test("NPC current HP survives reload and reaches optimization; result explains b
     .click();
   const result = await pending;
   expect(result.status(), await result.text()).toBe(200);
-  expect((await result.json()).scenario.roles[0].target.current_hitpoints).toBe(
-    1,
-  );
+  const body = await result.json();
+  expect(body.scenario.roles[0].target.current_hitpoints).toBe(1);
+  const loadout = body.result.selected_solution.loadouts["role-1"];
+  expect(loadout.equipment.weapon).toBe(9185);
+  expect(loadout.equipment.ammunition).toBe(9242);
+  expect(loadout.equipment.shield).toBe(32879);
+  expect(loadout.performance.bolt_effect.family).toBe("ruby");
+  expect(loadout.performance.aquanite_hopper.approximate).toBe(true);
   await expect(page.getByLabel("Enchanted bolt effect").first()).toContainText(
     "DPS at 1 HP",
   );
@@ -86,8 +57,19 @@ test("NPC current HP survives reload and reaches optimization; result explains b
   await expect(
     page
       .getByText(
-        "Secondary ruby damage and extra-bolt consumption are approximate.",
+        "Aquanite hopper secondary ruby damage uses the same static target HP as the primary shot.",
       )
       .first(),
   ).toBeVisible();
+  const native = await (
+    await page.request.get("/test/native-diagnostics")
+  ).json();
+  expect(native.enabled).toBe(process.env.GEAR_E2E_NATIVE === "1");
+  if (native.enabled) {
+    expect(native.native_requests).toBeGreaterThan(0);
+    expect(native.fallback_requests).toBe(0);
+    expect(
+      native.events.some((event: { event: string }) => event.event === "stage"),
+    ).toBe(true);
+  }
 });

@@ -2439,3 +2439,105 @@ Live events, screenshots and logs are retained under `.tmp/native-adoption/`.
 This completes broad adoption and the authorized local activation. No further
 performance qualification was performed or required. No commit, push or Pi
 deployment was performed.
+
+## Native equipment effects (2026-11-13)
+
+Native scoring and equipment-beam ranking now include reviewed elemental
+amulets, charged tomes, all six enchanted-bolt families, and the Aquanite hopper.
+Packing retains equipment-sensitive magic choices and freezes immutable effect
+metadata. Compiled helpers preserve the Python calculation order, signed floor
+division, bolt activation probabilities, searing minimum hits, and hopper
+secondary-shot suppression. Rich reports and the hopper approximation remain
+owned by the existing Python model. No public schemas, model versions, search
+budgets, beam retention, or Pareto policies change.
+
+Running costs select an option/shield-supply recipe prepared by CostEvaluator,
+deduplicated by the actual supplied rune ID. This preserves Ancient/Iban rune
+provision, overlapping staff supply, and missing-price behavior independently of
+tome damage matching. Hopper consumption preserves the exact operation order
+`(quantity - quantity * recovery) * unit_price`, with quantity 1.11 when active.
+
+The equipment_spell_effect and equipment_ranged_effect blanket fallbacks are
+removed. Independent numeric and unreviewed_body_recovery guards remain. In
+particular, a community_best_effort catalog containing an unreviewed body and
+Ava-capable cape can still force the entire ranged branch to Python. Native
+support for the four effects does not establish support for unknown body
+recovery. Oversized custom amulet/rune metadata also retains a safety fallback.
+
+Correctness acceptance uses tools.accept_native_adoption --effects and checks
+actual native stages for each affected discipline in DPS, secondary metric and
+diverse, and running-cost metric and diverse lanes. The seven deterministic
+cases use unchanged reviewed catalog definitions with explicitly synthetic
+skills/ownership and fallback prices. Complete archives and serial/six-worker
+service results are compared exactly using existing observational exclusions.
+The comparator now also excludes nested Auto local-refinement durations;
+logical work counts and all result identities remain compared.
+All seven effect archive reports and fourteen effect service reports passed:
+21 independently validated reports and 49 raw outputs, with zero native
+fallbacks and positive stage evidence for each required discipline/objective.
+The established regression cohort also passed all eighteen complete-archive
+cases and five six-worker service cases, including serial/six-worker native
+parity and full nine-assignment Multi Auto. Final independent validation checked
+44 accepted reports and 100 raw outputs across `effects`, `regression-verified`
+and `regression-remaining`; `accepted-summary.json` records the complete case set.
+
+Private source/build/input-bound evidence lives under
+`.tmp/native-effects-final-v1/`. A fresh authoritative snapshot and all 5,435
+catalog items are frozen under `.tmp/native-effects-inputs/`; its account
+fingerprint differs from temp.txt. The scenario reproduction therefore uses
+the same submitted request rebound to a new snapshot. The established strict
+native regression cohort uses the default verified_only policy and a fixed
+ranged base request; community-mode fallback observations are kept separately.
+The same-request/new-snapshot service reproduction matched Python exactly and
+recorded eight native contexts (melee and magic), plus two ranged
+unreviewed_body_recovery fallbacks. Its strict zero-fallback adoption report was
+therefore rejected as expected; `scenario/service/fallback-observation.json`
+records this distinction rather than claiming complete native execution.
+
+Validation includes 763 existing Python mechanics tests, the 778-test traced
+native lane at 93% package coverage (99% scoring, 93% stages, 89% effect helpers),
+Fast/Thorough complete-result cases, release-build worker cancellation/reuse,
+48 desktop/frontier API checks, and two browser flows in both Python and native
+modes. Browser checks use real tome/amulet and Ruby/hopper calculations and
+assert native stage execution with zero fallbacks. Two unchanged API contract
+assertions still expect running-cost-frontier-v2 while HEAD publishes
+running-cost-frontier-v3-tomes; they are unrelated baseline failures.
+
+Both compiled modules were rebuilt as release binaries after coverage testing.
+Focused Ruff, formatting, mypy and frontend production-build checks pass.
+Acceptance is correctness only: no latency/memory benchmark or performance gate
+was added. The existing live desktop was not restarted or reconfigured.
+
+## Candidate-level native Ava recovery follow-up (2026-11-13)
+
+The `unreviewed_body_recovery` branch fallback described above is now removed.
+Native cost tables classify bodies as absent/non-body, compatible, interfering,
+or unreviewed. The cost kernel preserves the Python recovery decision order:
+unknown cape upgrades remain unavailable; zero recovery does not consult the
+body; positive recovery becomes zero for interfering bodies or unavailable for
+unreviewed bodies. This unavailable value affects only the running-cost rank,
+never equipment eligibility or the DPS score. No armour classification is guessed.
+Crossbows, thrown weapons and hopper consumption share the same rules.
+
+Regression tests cover all cape/body combinations and preserve an unreviewed
+body as the DPS winner with unavailable cost, while reviewed alternatives remain
+on the numeric cost frontier. Fast/Thorough complete results and Auto agree
+exactly with Python, with native cost-stage evidence and zero fallbacks.
+A 287-test focused native lane and 39 recovery/integration checks passed.
+The combined traced lane has 87% native-package coverage, 94% stages coverage
+and 100% cost-context coverage. Both native browser flows pass on rebuilt
+release binaries. Focused Ruff, formatting and mypy checks pass; review found
+no blocking issue.
+
+The submitted temp2.txt scenario is replayed against its matching frozen account
+and catalog. Its exact historical price revision is unavailable: the replay uses
+the separately frozen prices and is labeled accordingly. Correctness compares
+Python and native against that identical frozen input, without a speedup gate.
+Private evidence is under `.tmp/native-recovery-acceptance-v1/` and the inputs
+under `.tmp/native-recovery-inputs/`. No live desktop restart or configuration
+change is part of this fix.
+Final independently validated service acceptance passed exact Python/native
+parity and native serial/six-worker parity. Both native observations recorded
+twelve contexts covering melee, ranged and magic, zero fallbacks, and actual
+ranged DPS/secondary/running-cost stage execution. This removes the fallback
+observed in temp2.txt without assigning guessed costs to unknown recovery.

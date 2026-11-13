@@ -42,6 +42,8 @@ test("prepares an owned tome and preserves the Searing setting", async ({
     "role-1"
   ];
   expect(loadout.equipment.shield).toBe(20714);
+  expect(loadout.equipment.neck).toBe(34425);
+  expect(loadout.performance.elemental_amulet_bonus.base_max_hit_bonus).toBe(2);
   expect(loadout.performance.tome_bonus.fire_pages).toBe("searing");
   await expect(page.getByLabel("Elemental tome effect").first()).toContainText(
     "searing",
@@ -51,4 +53,18 @@ test("prepares an owned tome and preserves the Searing setting", async ({
       .getByText(/page availability, consumption, and costs are excluded/i)
       .first(),
   ).toBeVisible();
+  await expect(
+    page.getByLabel("Elemental amulet effect").first(),
+  ).toBeVisible();
+  const native = await (
+    await page.request.get("/test/native-diagnostics")
+  ).json();
+  expect(native.enabled).toBe(process.env.GEAR_E2E_NATIVE === "1");
+  if (native.enabled) {
+    expect(native.native_requests).toBeGreaterThan(0);
+    expect(native.fallback_requests).toBe(0);
+    expect(
+      native.events.some((event: { event: string }) => event.event === "stage"),
+    ).toBe(true);
+  }
 });

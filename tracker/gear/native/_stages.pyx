@@ -95,7 +95,9 @@ cdef class StageContext:
     cdef object data
     cdef long long[::1] markets, costs
     cdef int[::1] untradeable, edges, melee, scored
-    cdef int[::1] option_kind, ranged_kind, ammo_valid, interference, torag
+    cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
+    cdef int[::1] supply_class
+    cdef int supply_count
     cdef double[::1] option_cost, unit_prices, recovery
     cdef bint cost_objective
     cdef double[::1] weights, marginals
@@ -121,9 +123,11 @@ cdef class StageContext:
         if self.cost_objective:
             self.option_kind = self.data.cost_data.option_kind
             self.option_cost = self.data.cost_data.option_cost
+            self.supply_class = self.data.cost_data.supply_class
+            self.supply_count = self.data.cost_data.supply_count
             self.ranged_kind = self.data.cost_data.ranged_kind
             self.ammo_valid = self.data.cost_data.ammo_valid
-            self.interference = self.data.cost_data.interference
+            self.body_recovery = self.data.cost_data.body_recovery
             self.torag = self.data.cost_data.torag
             self.unit_prices = self.data.cost_data.unit_prices
             self.recovery = self.data.cost_data.recovery
@@ -198,15 +202,15 @@ cdef class StageContext:
 
     cdef double attack_cost(self, const int* slots, Score* score) noexcept:
         cdef int option = score.option_index
-        cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], slot, source
-        cdef double rate
+        cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
+        cdef double rate, quantity = 1.0
         if not score.supported or option < 0:
             return -1
         for slot in range(11):
             if self.torag[slots[slot]]:
                 return -1
         if not self.option_kind[option]:
-            return self.option_cost[option]
+            return self.option_cost[option * self.supply_count + self.supply_class[shield]]
         if self.ranged_kind[weapon] == 1:
             if not ammo or not self.ammo_valid[ammo]:
                 return -1
@@ -218,11 +222,18 @@ cdef class StageContext:
         rate = self.recovery[cape]
         if rate < 0:
             return -1
-        if self.interference[slots[6]]:
-            rate = 0
+        if rate > 0:
+            if self.body_recovery[slots[6]] == 2:
+                rate = 0
+            elif self.body_recovery[slots[6]] == 3:
+                # This affects only the cost objective. DPS remains supported.
+                return -1
         if self.unit_prices[source] < 0:
             return -1
-        return (1 - rate) * self.unit_prices[source]
+        if self.ranged_kind[weapon] == 1 and self.scoring.reviewed_crossbow[weapon] and self.scoring.hopper_shield[shield] and ammo:
+            # evaluate() already checked physical ammunition compatibility.
+            quantity = 1.11
+        return (quantity - quantity * rate) * self.unit_prices[source]
 
     cdef bint evaluate(self, Candidate* row, int* roles, int nroles, int slot,
                        int cap, bint metric) except -1:

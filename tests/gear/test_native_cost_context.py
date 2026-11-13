@@ -89,7 +89,7 @@ def test_native_cost_table_records_thrown_repair_and_interference_flags():
     assert packed.torag[2] == 1
 
 
-def test_native_interference_uses_reviewed_body_identity():
+def test_native_body_recovery_uses_reviewed_body_identity():
     from tracker.gear.models import EquipmentBonuses
 
     items = {
@@ -103,4 +103,4 @@ def test_native_interference_uses_reviewed_body_identity():
     }
     search = SimpleNamespace(items=items, running_prices={}, running_at=datetime.now(UTC))
     scoring = SimpleNamespace(dense_ids=(0, 1127, 2503), option_weapons=(), option_records=())
-    assert list(pack_costs(search, scoring).interference) == [0, 1, 0]
+    assert list(pack_costs(search, scoring).body_recovery) == [0, 2, 1]

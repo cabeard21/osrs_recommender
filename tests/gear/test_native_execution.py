@@ -141,6 +141,7 @@ def test_native_stage_chunk_accounting_and_cancellation(monkeypatch):
     monkeypatch.setitem(sys.modules, "tracker.gear.native._stages", module)
     search = SimpleNamespace(
         native_context=object(),
+        request=SimpleNamespace(roles=()),
         nodes=1000,
         native_limit=2200,
         cancelled=None,
@@ -165,7 +166,13 @@ def test_native_stage_must_make_progress(monkeypatch):
     stage = SimpleNamespace(done=False, advance=lambda _: 0)
     module = SimpleNamespace(StageContext=lambda *_: SimpleNamespace(begin=lambda **kw: stage))
     monkeypatch.setitem(sys.modules, "tracker.gear.native._stages", module)
-    search = SimpleNamespace(native_context=object(), nodes=0, native_limit=10, cancelled=None)
+    search = SimpleNamespace(
+        native_context=object(),
+        request=SimpleNamespace(roles=()),
+        nodes=0,
+        native_limit=10,
+        cancelled=None,
+    )
     with pytest.raises(RuntimeError, match="no progress"):
         expand(search, "loadout", [{}], [1], roles=(), limit=1)
 
@@ -187,7 +194,13 @@ def test_expansion_does_not_reuse_stages_from_an_unreset_copy(monkeypatch):
     monkeypatch.setitem(
         sys.modules, "tracker.gear.native._stages", SimpleNamespace(StageContext=context)
     )
-    search = SimpleNamespace(native_context=object(), nodes=0, native_limit=10, cancelled=None)
+    search = SimpleNamespace(
+        native_context=object(),
+        request=SimpleNamespace(roles=()),
+        nodes=0,
+        native_limit=10,
+        cancelled=None,
+    )
     expand(search, "loadout", [{}], [], limit=1)
     clone = copy(search)
     expand(clone, "loadout", [{}], [], limit=1)

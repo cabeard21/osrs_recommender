@@ -19,6 +19,7 @@ from typing import Any
 from tools.accept_compact_states import PARITY, derive_case
 from tools.accept_gear_desktop_profiles import _write
 from tools.benchmark_gear_desktop import load_frozen_case, result_digest
+from tools.native_effect_cases import EFFECT_CASES, derive_effect_case
 from tools.p5_experiment import (
     RunSpec,
     build_environment,
@@ -109,6 +110,36 @@ def _specifications(phase: str, workers: int) -> tuple[tuple[str, RunSpec], ...]
     return (*specs, ("candidate_serial", RunSpec(1, True))) if workers == 6 else specs
 
 
+def required_native_executed(diagnostics: dict[str, Any], metadata: dict[str, Any]) -> bool:
+    """Effect cohorts must execute stages and every affected discipline."""
+    if not native_target_executed(diagnostics):
+        return False
+    if not metadata.get("effect_case"):
+        return True
+    events = diagnostics.get("events", [])
+    stages = {
+        (
+            style,
+            "cost" if row.get("cost") else "secondary" if row.get("frontier") else "dps",
+            bool(row.get("metric")),
+        )
+        for row in events
+        if row.get("event") == "stage" and row.get("attempts", 0) > 0
+        for style in row.get("roles", ())
+    }
+    return all(
+        (style, lane, metric) in stages
+        for style in metadata.get("required_effect_styles", ())
+        for lane, metric in (
+            ("dps", False),
+            ("secondary", False),
+            ("secondary", True),
+            ("cost", False),
+            ("cost", True),
+        )
+    )
+
+
 def compare(
     case: Any,
     meta: dict[str, Any],
@@ -158,7 +189,7 @@ def compare(
         _write(output / "report.json", report)
         if verify_binding(output) != binding:
             raise ValueError("Evidence binding changed during request")
-        if spec.native and not native_target_executed(diagnostics):
+        if spec.native and not required_native_executed(diagnostics, meta):
             raise ValueError(f"Required native execution did not occur: {label}")
         if report["observations"][0]["result_digest"] != result_digest(result):
             raise ValueError(f"Exact result parity failed: {label}")
@@ -192,7 +223,7 @@ def validate_report(output: Path) -> dict[str, Any]:
         digest = result_digest(json.loads(path.read_text()))
         if digest != row["result_digest"] or (expected is not None and digest != expected):
             raise ValueError("Exact result parity failed")
-        if spec.native and not native_target_executed(row["native"]):
+        if spec.native and not required_native_executed(row["native"], report["provenance"]):
             raise ValueError("Required native execution did not occur")
         expected = digest
     if report.get("accepted") is not True:
@@ -206,8 +237,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--output", type=Path, default=Path(".tmp/native-adoption"))
     parser.add_argument("--phase", choices=("archives", "service"), default="archives")
     selection = parser.add_mutually_exclusive_group()
-    selection.add_argument("--case", choices=tuple(dict(ARCHIVE_CASES)))
+    selection.add_argument("--case", choices=(*dict(ARCHIVE_CASES), *EFFECT_CASES))
     selection.add_argument("--all", action="store_true")
+    selection.add_argument(
+        "--effects", action="store_true", help="Run reviewed equipment-effect mechanism cases"
+    )
     parser.add_argument("--workers", type=int, choices=(1, 6))
     parser.add_argument("--validate", action="store_true")
     args = parser.parse_args(argv)
@@ -223,20 +257,32 @@ def main(argv: list[str] | None = None) -> None:
             validate_report(path)
         print(json.dumps({"accepted": True, "reports": len(paths)}))
         return
-    if not (args.case or args.all):
-        parser.error("Choose --case or --all")
-    declared = ARCHIVE_CASES if args.phase == "archives" else SERVICE_CASES
+    if not (args.case or args.all or args.effects):
+        parser.error("Choose --case, --all or --effects")
+    effects = args.effects or args.case in EFFECT_CASES
+    declared = (
+        tuple(
+            (name, n)
+            for name in EFFECT_CASES
+            for n in ((1,) if args.phase == "archives" else (1, 6))
+        )
+        if effects
+        else ARCHIVE_CASES
+        if args.phase == "archives"
+        else SERVICE_CASES
+    )
     selected = tuple(
         (name, n)
         for name, n in declared
-        if (args.all or name == args.case) and (args.workers is None or n == args.workers)
+        if (args.all or args.effects or name == args.case)
+        and (args.workers is None or n == args.workers)
     )
     if not selected:
         parser.error("No declared cases match this phase and worker count")
     bind(args.output, args.frozen)
     base, provenance = load_frozen_case(args.frozen)
     for name, workers in selected:
-        case, meta = derive_case(base, provenance, name)
+        case, meta = (derive_effect_case if effects else derive_case)(base, provenance, name)
         directory = args.output / args.phase / f"{name}-{workers}"
         report = compare(case, meta, directory, phase=args.phase, workers=workers)
         print(
