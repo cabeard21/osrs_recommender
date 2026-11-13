@@ -46,6 +46,7 @@ from tracker.gear.evaluation import (
     validate_request_context,
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
+from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
 from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import (
     CombatPerformance,
@@ -1593,6 +1594,7 @@ def optimize(
     assumptions = {
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "bolt_model_version": "enchanted-bolts-v1",
+        "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,
         "bolt_diary": {
             "boosted": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_boost,
             "known": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_known,

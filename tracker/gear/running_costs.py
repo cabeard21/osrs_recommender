@@ -15,12 +15,14 @@ from typing import Any
 
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.ammo import recovery_rate
+from tracker.gear.hopper import PROC_CHANCE
+from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import STAFFS, review
 from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v4"
+COST_MODEL_VERSION = "ordinary-resource-cost-v5-hopper"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -173,9 +175,16 @@ def _ranged_resources(
     recovery, notes = recovery_rate(cape.id if cape else None, body.id if body else None)
     if recovery is None:
         return [], notes
+    quantity = 1 + PROC_CHANCE if hopper_active(weapon, equipment.get("shield"), ammo) else 1
     return [
         _resource(
-            ammo.id, ammo.name, 1, recovery, cape.name if cape and recovery else None, records, now
+            ammo.id,
+            ammo.name,
+            quantity,
+            quantity * recovery,
+            cape.name if cape and recovery else None,
+            records,
+            now,
         )
     ], []
 

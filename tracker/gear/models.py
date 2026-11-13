@@ -164,7 +164,18 @@ class BoltPerformance(GearModel):
     diary_boosted: bool
 
 
+class HopperPerformance(GearModel):
+    proc_chance: float
+    secondary_accuracy: float
+    secondary_max_hit: int
+    expected_damage_delta: float
+    expected_ammunition_per_attack: float
+    approximate: bool = True
+    assumptions: tuple[str, ...]
+
+
 class CombatPerformance(GearModel):
+    aquanite_hopper: HopperPerformance | None = None
     elemental_amulet_bonus: ElementalAmuletBonus | None = None
     bolt_effect: BoltPerformance | None = None
     player_defence_rolls: PlayerDefenceRolls | None = None

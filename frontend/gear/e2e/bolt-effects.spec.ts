@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { npcEntryLabel } from "../src/components/npcEntries";
 
-test("NPC current HP survives reload and reaches optimization; result explains bolt effect", async ({
+test("NPC current HP survives reload and reaches optimization; result explains bolt and hopper effects", async ({
   page,
 }) => {
   await page.request.post("/test/seed-optimization");
@@ -24,6 +24,17 @@ test("NPC current HP survives reload and reaches optimization; result explains b
           target_hitpoints: 1,
           diary_boosted: false,
           expected_damage_delta: -1,
+        };
+        loadout.performance.aquanite_hopper = {
+          proc_chance: 0.11,
+          secondary_accuracy: 0.6,
+          secondary_max_hit: 6,
+          expected_damage_delta: 0.3,
+          expected_ammunition_per_attack: 1.11,
+          approximate: true,
+          assumptions: [
+            "Secondary ruby damage and extra-bolt consumption are approximate.",
+          ],
         };
       }
     }
@@ -63,4 +74,20 @@ test("NPC current HP survives reload and reaches optimization; result explains b
   await expect(page.getByLabel("Enchanted bolt effect").first()).toContainText(
     "DPS at 1 HP",
   );
+  await expect(page.getByLabel("Enchanted bolt effect").first()).toContainText(
+    "Primary shot: ruby bolt effect",
+  );
+  await expect(page.getByLabel("Aquanite hopper effect").first()).toContainText(
+    "Approximate Aquanite hopper effect",
+  );
+  await expect(page.getByLabel("Aquanite hopper effect").first()).toContainText(
+    "1.11 expected bolts per attack",
+  );
+  await expect(
+    page
+      .getByText(
+        "Secondary ruby damage and extra-bolt consumption are approximate.",
+      )
+      .first(),
+  ).toBeVisible();
 });

@@ -66,6 +66,7 @@ export function CombatOptionSummary({
     option?.spell ??
     (role.style === "magic" ? role.spell : null);
   const weakness = performance?.elemental_weakness;
+  const hopper = performance?.aquanite_hopper;
   return (
     <>
       <p aria-label="Selected combat configuration">
@@ -91,6 +92,7 @@ export function CombatOptionSummary({
       {performance?.bolt_effect && (
         <>
           <p aria-label="Enchanted bolt effect">
+            {hopper ? "Primary shot: " : ""}
             {performance.bolt_effect.family} bolt effect ·{" "}
             {(performance.bolt_effect.proc_chance * 100).toFixed(1)}% proc
             chance
@@ -106,6 +108,24 @@ export function CombatOptionSummary({
             Ordinary hit: max {performance.max_hit} ·{" "}
             {((performance.accuracy ?? 0) * 100).toFixed(1)}% accuracy
           </p>
+        </>
+      )}
+      {hopper && (
+        <>
+          <p aria-label="Aquanite hopper effect">
+            {hopper.approximate ? "Approximate " : ""}Aquanite hopper effect
+            {` · ${(hopper.proc_chance * 100).toFixed(1)}% extra-shot chance`}
+            {` · On activation: secondary max ${hopper.secondary_max_hit}, ${(hopper.secondary_accuracy * 100).toFixed(1)}% accuracy`}
+            {` · +${hopper.expected_damage_delta.toFixed(2)} expected damage per attack`}
+            {performance?.attack_interval != null &&
+            performance.attack_interval > 0
+              ? ` · +${(hopper.expected_damage_delta / performance.attack_interval).toFixed(3)} estimated DPS`
+              : ""}
+            {` · ${hopper.expected_ammunition_per_attack.toFixed(2)} expected bolts per attack`}
+          </p>
+          {hopper.assumptions.map((assumption) => (
+            <p key={assumption}>{assumption}</p>
+          ))}
         </>
       )}
       {weakness && (
