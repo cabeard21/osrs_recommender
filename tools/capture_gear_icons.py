@@ -14,6 +14,7 @@ from pathlib import Path
 import httpx
 
 from tracker.content.loader import load_content
+from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
 from tracker.gear.catalog import load_catalog
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -52,6 +53,8 @@ def capture(root: Path, ids: list[int], *, dry_run: bool = False) -> int:
         if ids
         else {i.id for i in catalog.items.values() if i.content_ids}
         | catalog.community_items.keys()
+        | BOLTS.keys()
+        | CROSSBOWS.keys()
     )
     missing = [item_id for item_id in selected if not (folder / f"{item_id}.png").exists()]
     print(f"{len(selected)} selected; {len(missing)} missing sprites")
@@ -91,7 +94,10 @@ def main() -> int:
         "item_ids",
         nargs="*",
         type=int,
-        help="Default: all authored physical forms and community-supported equipment",
+        help=(
+            "Default: all authored physical forms, community-supported equipment, "
+            "and reviewed enchanted bolts/crossbows"
+        ),
     )
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument(

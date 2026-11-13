@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from tools.capture_gear_icons import MIRROR, capture, download
+from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
 
 
 @pytest.fixture
@@ -28,7 +29,12 @@ def mock_client(monkeypatch, handler):
     )
 
 
-def test_default_capture_includes_community_equipment(icon_root, monkeypatch):
+@pytest.mark.parametrize(
+    "missing_ids", [{30895}, set(BOLTS), set(CROSSBOWS)], ids=["community", "bolts", "crossbows"]
+)
+def test_default_capture_includes_community_and_reviewed_bolt_equipment(
+    icon_root, monkeypatch, missing_ids
+):
     from tracker.content.loader import load_content
     from tracker.gear.catalog import load_catalog
 
@@ -36,9 +42,10 @@ def test_default_capture_includes_community_equipment(icon_root, monkeypatch):
     catalog = load_catalog(load_content(root / "content"), root / "content/equipment")
     assert 30895 in catalog.community_items
     assert not catalog.items[30895].content_ids
-    selected = {item.id for item in catalog.items.values() if item.content_ids}
-    selected.update(catalog.community_items)
-    for item_id in selected - {30895}:
+    assert not catalog.items[9242].content_ids
+    assert 9242 not in catalog.community_items
+    # A populated cache must still fetch any newly supported physical form.
+    for item_id in catalog.items.keys() - missing_ids:
         (folder / f"{item_id}.png").write_bytes(b"existing artwork")
     payload = Path("tracker/ui/assets/items/7462.png").read_bytes()
     calls = []
@@ -49,8 +56,17 @@ def test_default_capture_includes_community_equipment(icon_root, monkeypatch):
 
     mock_client(monkeypatch, respond)
     assert capture(root, []) == 0
-    assert calls == ["https://static.runelite.net/cache/item/icon/30895.png"]
-    assert (folder / "30895.png").read_bytes() == payload
+    assert calls == [
+        f"https://static.runelite.net/cache/item/icon/{item_id}.png"
+        for item_id in sorted(missing_ids)
+    ]
+    source = json.loads((folder / "source.json").read_text())
+    for item_id in missing_ids:
+        assert (folder / f"{item_id}.png").read_bytes() == payload
+        assert (
+            source["additional_captures"][str(item_id)]["sha256"]
+            == hashlib.sha256(payload).hexdigest()
+        )
 
 
 def test_capture_skips_existing_and_records_exact_bytes(icon_root, monkeypatch):
