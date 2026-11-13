@@ -4500,6 +4500,26 @@
       "source": "https://static.runelite.net/cache/item/icon/21950.png",
       "retrieved_on": "2026-11-13",
       "sha256": "b773173ebf569932b72d10b541ed2368c72a353dfdb33acbca6e55f2883b461a"
+    },
+    "20714": {
+      "source": "https://static.runelite.net/cache/item/icon/20714.png",
+      "retrieved_on": "2026-11-13",
+      "sha256": "74cf2fda66e2ce72acffe887397612f11bdd5649217e1d0c98bed6d5190f7d86"
+    },
+    "25574": {
+      "source": "https://static.runelite.net/cache/item/icon/25574.png",
+      "retrieved_on": "2026-11-13",
+      "sha256": "092d269634c11e9c3caf606cae79f9b0095b20d6132fea657bbda01664a728d0"
+    },
+    "30064": {
+      "source": "https://static.runelite.net/cache/item/icon/30064.png",
+      "retrieved_on": "2026-11-13",
+      "sha256": "de62501cfbefadc0a83f29f3a941acdb94bd45b22ad0350e44626dae77b485c2"
+    },
+    "30066": {
+      "source": "https://static.runelite.net/cache/item/icon/30066.png",
+      "retrieved_on": "2026-11-13",
+      "sha256": "06a662af108556e951454259d75b8a5f123350d7741de7a35ee2ebc2ba566277"
     }
   }
 }
