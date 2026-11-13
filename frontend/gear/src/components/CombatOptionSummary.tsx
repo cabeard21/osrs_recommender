@@ -118,6 +118,13 @@ export function CombatOptionSummary({
             : ` · ${weakness.reason ?? "Weakness not applied."}`}
         </p>
       )}
+      {performance?.elemental_amulet_bonus && (
+        <p aria-label="Elemental amulet effect">
+          Elemental amulet effect: +
+          {performance.elemental_amulet_bonus.base_max_hit_bonus} base max hit
+          before damage and weakness bonuses
+        </p>
+      )}
       {performance && performance.limitations.length > 0 && (
         <details>
           <summary>Combat model limitations</summary>

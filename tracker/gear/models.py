@@ -31,7 +31,19 @@ class EquipmentBonuses(GearModel):
     prayer: int = 0
 
 
+class ElementalSpellBonus(GearModel):
+    elements: tuple[Literal["air", "water", "earth", "fire"], ...]
+    base_max_hit_bonus: int = Field(default=2, ge=0)
+
+
+class ElementalAmuletBonus(GearModel):
+    item_id: int
+    element: Literal["air", "water", "earth", "fire"]
+    base_max_hit_bonus: int
+
+
 class EquipmentDefinition(GearModel):
+    elemental_spell_bonus: ElementalSpellBonus | None = None
     bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
     id: int = Field(gt=0)
     name: str
@@ -153,6 +165,7 @@ class BoltPerformance(GearModel):
 
 
 class CombatPerformance(GearModel):
+    elemental_amulet_bonus: ElementalAmuletBonus | None = None
     bolt_effect: BoltPerformance | None = None
     player_defence_rolls: PlayerDefenceRolls | None = None
     elemental_weakness: ElementalWeakness | None = None

@@ -18,6 +18,9 @@ from tracker.gear.bolts_catalog import REVISION as BOLT_REVISION
 from tracker.gear.bolts_catalog import TRADEABLE as BOLT_TRADEABLE
 from tracker.gear.bolts_catalog import apply_review as bolt_review
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
+from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
+from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
+from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
 from tracker.gear.obsidian import apply_review as obsidian_review
@@ -116,7 +119,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
-        row = obsidian_review(bolt_review(row))
+        row = elemental_amulet_review(obsidian_review(bolt_review(row)))
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -205,6 +208,8 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=powered.level)
         if autocast_level is not None:
             requirement = SkillLeaf(skill="magic", level=autocast_level)
+        if row["id"] in ELEMENTAL_AMULETS:
+            requirement = SkillLeaf(skill="magic", level=59)
         if row["id"] in BOLT_REQUIREMENTS:
             requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
         acquisition = {item.acquisition for item in entries}
@@ -216,11 +221,18 @@ def load_catalog(
                 ),
                 "requires": requirement,
                 "requirements_complete": bool(
-                    entries or review or powered or autocast_level or row["id"] in BOLT_REQUIREMENTS
+                    entries
+                    or review
+                    or powered
+                    or autocast_level
+                    or row["id"] in BOLT_REQUIREMENTS
+                    or row["id"] in ELEMENTAL_AMULETS
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in BOLT_TRADEABLE
+                    True
+                    if row["id"] in ELEMENTAL_AMULETS
+                    else row["id"] in BOLT_TRADEABLE
                     if row["id"] in BOLT_REQUIREMENTS
                     else row["id"] in REVIEWED_POWERED_TRADEABLE
                     if powered is not None
@@ -259,6 +271,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
@@ -271,6 +284,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()

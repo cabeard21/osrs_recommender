@@ -26,12 +26,15 @@ from tracker.content.schema import ItemSlot
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.combat import (
     ELEMENTAL_SPELLS,
+    MODEL_VERSION,
     CombatScore,
     evaluate_prepared_loadout,
     evaluate_prepared_score,
 )
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
 from tracker.gear.defensive_rolls import raw_player_defence_rolls
+from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
+from tracker.gear.elemental_amulets import applied_spell_bonus
 from tracker.gear.evaluation import (
     equipment_problems,
     item_problems,
@@ -364,7 +367,7 @@ class _Search:
             tuple[str, int | None], tuple[tuple[RoleConfig, CombatOption], ...]
         ] = {}
         self.scoring_option_cache: dict[
-            tuple[str, int | None, bool, str], tuple[tuple[RoleConfig, CombatOption], ...]
+            tuple[Any, ...], tuple[tuple[RoleConfig, CombatOption], ...]
         ] = {}
         self.prayer_setup_cache: dict[str, tuple[tuple[str, ...], ...]] = {}
         self.prayer_option_cache: dict[tuple[str, str], tuple[tuple[str, ...], ...]] = {}
@@ -577,12 +580,16 @@ class _Search:
         return (*offensive, *defensive)
 
     def scoring_options(
-        self, role: RoleConfig, weapon: EquipmentDefinition | None
+        self,
+        role: RoleConfig,
+        weapon: EquipmentDefinition | None,
+        neck: EquipmentDefinition | None = None,
     ) -> tuple[tuple[RoleConfig, CombatOption], ...]:
         """Score rank-equivalent attacks once, retaining the existing tie winner.
 
         The ordinary model scales every element in a tier to the same base hit.
-        Weakness matches remain separate. Full configured options remain available
+        Weakness matches and amulet base-hit increments remain separate.
+        Full configured options remain available
         to the resource-cost and combat-option frontier searches.
         """
         key = (
@@ -590,6 +597,9 @@ class _Search:
             weapon.id if weapon else None,
             getattr(self, "metric_first", False),
             self.request.secondary_priority,
+            (neck.elemental_spell_bonus.elements, neck.elemental_spell_bonus.base_max_hit_bonus)
+            if neck is not None and neck.elemental_spell_bonus is not None
+            else None,
         )
         if key not in self.scoring_option_cache:
             target = role.target or CombatTarget()
@@ -617,6 +627,7 @@ class _Search:
                         option.stance,
                         tier,
                         matched,
+                        applied_spell_bonus(neck, option.spell),
                         prayer_key,
                     )
                 previous = representatives.get(identity)
@@ -725,7 +736,9 @@ class _Search:
             elif role.combat_options is not None or role.prayers.mode != "disabled":
                 weapon = self.items.get(equipment.get("weapon", -1))
                 evaluated = []
-                options = self.scoring_options(role, weapon)
+                options = self.scoring_options(
+                    role, weapon, self.items.get(equipment.get("neck", -1))
+                )
                 prepared = self.prepare(equipment) if options else None
                 include_defence = getattr(self, "metric_first", False) and (
                     self.request.secondary_priority.endswith("_defence_roll")
@@ -1578,6 +1591,7 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     assumptions = {
+        "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "bolt_model_version": "enchanted-bolts-v1",
         "bolt_diary": {
             "boosted": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_boost,
@@ -1655,7 +1669,7 @@ def optimize(
         "secondary_priority": request.secondary_priority,
         "evaluated_at": now.isoformat(),
         "catalog_version": getattr(catalog, "revision", "unknown"),
-        "model_version": "normal-attacks-v3-bolts",
+        "model_version": MODEL_VERSION,
         "assumptions": assumptions,
         "assumptions_fingerprint": hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()

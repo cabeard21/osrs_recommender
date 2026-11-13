@@ -1,0 +1,61 @@
+# Exact physical forms. Runecraft and Slayer are acquisition, not wear gates.
+
+# https://oldschool.runescape.wiki/w/Amulet_of_air
+- id: elemental_amulet_34407_reviewed
+  name: Amulet of air
+  item_id: 34407
+  slot: neck
+  requires:
+    skill:
+      magic: 59
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Amulet_of_water
+- id: elemental_amulet_34413_reviewed
+  name: Amulet of water
+  item_id: 34413
+  slot: neck
+  requires:
+    skill:
+      magic: 59
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Amulet_of_earth
+- id: elemental_amulet_34419_reviewed
+  name: Amulet of earth
+  item_id: 34419
+  slot: neck
+  requires:
+    skill:
+      magic: 59
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Amulet_of_fire
+- id: elemental_amulet_34425_reviewed
+  name: Amulet of fire
+  item_id: 34425
+  slot: neck
+  requires:
+    skill:
+      magic: 59
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30
+
+# https://oldschool.runescape.wiki/w/Elemental_amulet
+- id: elemental_amulet_34428_reviewed
+  name: Elemental amulet
+  item_id: 34428
+  slot: neck
+  requires:
+    skill:
+      magic: 59
+  acquisition: tradeable
+  price_mode: live
+  price_staleness_days: 30

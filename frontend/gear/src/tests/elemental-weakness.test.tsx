@@ -27,6 +27,26 @@ const performance: CombatPerformance = {
   },
 };
 
+test("explains the amulet base bonus separately from weakness", () => {
+  render(
+    <CombatOptionSummary
+      role={role}
+      weapon="Mystic staff"
+      performance={{
+        ...performance,
+        elemental_amulet_bonus: {
+          item_id: 34419,
+          element: "earth",
+          base_max_hit_bonus: 2,
+        },
+      }}
+    />,
+  );
+  expect(screen.getByLabelText("Elemental amulet effect")).toHaveTextContent(
+    "+2 base max hit before damage and weakness bonuses",
+  );
+});
+
 test("shows the actual weakness bonuses computed by Python", () => {
   render(
     <CombatOptionSummary
