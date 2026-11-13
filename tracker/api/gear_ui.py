@@ -23,7 +23,7 @@ from tracker.accounts.snapshot import AccountSnapshot
 from tracker.api.deps import get_session_factory
 from tracker.content.schema import ItemSlot
 from tracker.domain.types import Container
-from tracker.gear.combat import SPELLS
+from tracker.gear.combat import MODEL_VERSION, SPELLS
 from tracker.gear.combat_options import enumerate_combat_options
 from tracker.gear.encounters import encounter_presets
 from tracker.gear.models import EquipmentDefinition
@@ -470,7 +470,7 @@ def context(request: Request) -> ContextResponse:
             "configurations": ["melee", "ranged", "magic"],
         },
         catalog_version=gear.equipment_catalog().revision,
-        model_version="normal-attacks-v2-powered",
+        model_version=MODEL_VERSION,
         price_revision=hashlib.sha256(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),

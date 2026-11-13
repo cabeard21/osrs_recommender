@@ -63,10 +63,14 @@ The existing complete validator and final ordering govern every accepted replace
 
 ## Running attack costs
 
-Scenarios containing Magic also calculate a separate best-found frontier comparing
-DPS with running GP per damage, alongside the selected secondary priority. Mixed
-Multi scenarios include all active roles; Auto compares the allowed disciplines.
-Equipment purchase costs remain separate and the equipment budget is unchanged.
+Scenarios containing ranged or Magic automatically calculate a separate best-found
+frontier comparing DPS with running GP per damage, alongside the selected secondary
+priority. Mixed Multi scenarios include all active roles. Single Auto runs cost
+exploration in every allowed branch when ranged or Magic is allowed, then merges
+complete archives before global dominance, DPS-loss filtering and display sampling.
+Equipment purchases remain separate; reviewed expendable thrown weapons, like
+arrows, bolts and darts, do not spend the equipment-purchase budget. Ownership,
+requirements, locks, exclusions and the selected support policy still apply.
 
 Standard spell recipes subtract runes supplied by the equipped staff before
 pricing remaining runes from the frozen cached price snapshot. Result details
@@ -75,18 +79,31 @@ Costs apply to attack attempts, including misses. GP/hour assumes continuous
 attacks; GP/damage divides running GP/second by expected DPS. Multi uses the ratio
 of weighted consumption and damage rates, rather than averaging efficiency ratios.
 
-Ranged comparisons include reviewed ammunition consumption and automatic recovery;
-manual ground collection is excluded. Ordinary nondegrading melee has no attack
+Ranged comparisons cover every weapon admitted by the selected combat support
+policy, with reviewed compatible ammunition consumption and automatic recovery.
+Recovery uses exact cape and body IDs, including reviewed metallic exceptions;
+unreviewed body interference and upgrade-dependent capes remain unavailable.
+Manual ground collection is excluded. Ordinary nondegrading melee has no attack
 resource cost. Missing prices and unreviewed charge/consumption mechanics are
 unavailable, never free. Cost recipes do not enable unsupported combat mechanics.
 Prayer supplies, loot and combat downtime are excluded. Combat potions use the explicitly selected fresh-dose policy.
 
 The additive `running_cost` summaries and `running_cost_frontiers` use a separate
 bounded work policy. Selecting a cost point selects its equipment and combat
-options. The existing DPS-loss limit applies, with at most 64 displayed points per
-group and endpoints retained. An unknown-cost DPS baseline remains visible without
+options, ammunition and cape. The shared graph replaces the fixed-bow arrow panel;
+selecting a curve or frontier point selects the corresponding action-cap group,
+including unrestricted results. The existing DPS-loss limit applies, with at most
+64 displayed points per group and endpoints retained. An unknown-cost DPS baseline remains visible without
 participating in numerical cost dominance. Refresh market prices before comparing
 costs; cached observations retain their provenance labels.
+
+The resource model is `ordinary-resource-cost-v4`; the search policy is
+`running-cost-frontier-v2`, identifying `ranged-or-magic-v1` activation and
+`reviewed-expendable-ranged-v1` consumable budgeting. Existing Fast/Thorough
+frontier work limits remain 500,000/1,500,000 expansions. Automatic activation adds a search stage to fixed
+ranged and ranged-only Auto requests; Auto already including Magic may already
+have paid for that stage. Cost coverage does not enable blocked weapons or alter
+existing combat approximations and omitted effects under community support.
 
 ## Contract and identity
 

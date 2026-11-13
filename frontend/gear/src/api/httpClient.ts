@@ -82,6 +82,7 @@ export function parseOptimization(
   }
   const normalizedServerScenario = {
     ...object(envelope.scenario),
+    fire_tome_pages: object(envelope.scenario).fire_tome_pages ?? "burnt",
     include_untradeables:
       object(envelope.scenario).include_untradeables ?? false,
     max_dps_loss_pct: object(envelope.scenario).max_dps_loss_pct ?? 10,
@@ -689,6 +690,7 @@ export function optimizationRequest(scenario: Scenario) {
               : {}),
         }
       : {}),
+    fire_tome_pages: r.fire_tome_pages ?? "burnt",
     support_policy: r.support_policy ?? "verified_only",
     mode: r.mode,
     include_untradeables: r.include_untradeables ?? false,

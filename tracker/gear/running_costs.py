@@ -14,12 +14,17 @@ from types import MappingProxyType
 from typing import Any
 
 from tracker.estimation.prices import PriceRecord, resolve_price
-from tracker.gear.ammo import cape_recovery_rate
+from tracker.gear.ammo import recovery_rate
+from tracker.gear.hopper import PROC_CHANCE
+from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import STAFFS, review
+from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v3"
+COST_MODEL_VERSION = "ordinary-resource-cost-v6-tomes-hopper"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -113,24 +118,6 @@ _CHARGES = MappingProxyType(
         28583: ((557, 5), (562, 2)),
     }
 )
-# Ordinary darts, knives, thrownaxes and javelins. Exotic ranged resources need review.
-_THROWN = frozenset(
-    {
-        *range(806, 812),
-        *range(863, 870),
-        *range(800, 806),
-        *range(825, 831),
-        11230,
-        11233,
-        22804,
-        22806,
-        22808,
-        22810,
-        22812,
-        22814,
-        22816,
-    }
-)
 
 
 def resource_item_ids() -> frozenset[int]:
@@ -141,6 +128,7 @@ def resource_item_ids() -> frozenset[int]:
     return (
         potion_item_ids()
         | MARKET_FORMS
+        | TOME_MARKET_FORMS
         | frozenset(_RUNES)
         | frozenset(
             i for staff in STAFFS for recipe in staff.recipes for i, _ in recipe if i != 995
@@ -180,23 +168,26 @@ def _ranged_resources(
 ) -> tuple[list[dict[str, Any]], list[str]]:
     weapon = equipment.get("weapon")
     ammo = equipment.get("ammunition") if weapon and weapon.ammo_for else weapon
-    if not weapon or not ammo or (not weapon.ammo_for and weapon.id not in _THROWN):
+    if not weapon or not ammo or (not weapon.ammo_for and weapon.id not in THROWN_IDS):
         return [], ["Ranged ammunition consumption has not been reviewed."]
     if weapon.ammo_for and (
         not ammo.ammo_type or not ammo.ammo_type.startswith(("arrow:", "bolt:"))
     ):
         return [], ["Ranged ammunition consumption has not been reviewed."]
     cape, body = equipment.get("cape"), equipment.get("body")
-    recovery, notes = cape_recovery_rate(cape.id if cape else None)
+    recovery, notes = recovery_rate(cape.id if cape else None, body.id if body else None)
     if recovery is None:
         return [], notes
-    # Negative-Ranged metal body armour interferes with Ava's device. Applying
-    # this restriction conservatively also avoids crediting unknown interference.
-    if body and body.bonuses.ranged < 0:
-        recovery = 0
+    quantity = 1 + PROC_CHANCE if hopper_active(weapon, equipment.get("shield"), ammo) else 1
     return [
         _resource(
-            ammo.id, ammo.name, 1, recovery, cape.name if cape and recovery else None, records, now
+            ammo.id,
+            ammo.name,
+            quantity,
+            quantity * recovery,
+            cape.name if cape and recovery else None,
+            records,
+            now,
         )
     ], []
 
@@ -264,13 +255,19 @@ def evaluate_running_cost(
         else:
             weapon = equipment.get("weapon")
             supplied = STAFF_RUNES.get(weapon.id, frozenset()) if weapon else frozenset()
+            shield = equipment.get("shield")
+            tome_rune = shield.tome_effect.rune_id if shield and shield.tome_effect else None
             resources = [
                 _resource(
                     item_id,
                     _RUNES[item_id],
                     quantity,
-                    quantity if item_id in supplied else 0,
-                    weapon.name if weapon and item_id in supplied else None,
+                    quantity if item_id in supplied or item_id == tome_rune else 0,
+                    weapon.name
+                    if weapon and item_id in supplied
+                    else shield.name
+                    if shield and item_id == tome_rune
+                    else None,
                     price_records,
                     now,
                 )
@@ -298,6 +295,11 @@ def evaluate_running_cost(
     cost = None if reasons else sum(r["consumed_quantity"] * r["unit_price_gp"] for r in resources)
     interval, dps = performance.get("attack_interval"), performance.get("dps")
     per_second = cost / interval if cost is not None and interval and interval > 0 else None
+    assumptions = (
+        ["Cheapest priced charging recipe; actual charges unknown."] if alternatives else []
+    )
+    if any(item.tome_effect for item in equipment.values()):
+        assumptions = [*assumptions, TOME_ASSUMPTION]
     return {
         "model_version": COST_MODEL_VERSION,
         "status": "unavailable" if reasons else "known",
@@ -307,8 +309,6 @@ def evaluate_running_cost(
         "gp_per_damage": per_second / dps if per_second is not None and dps and dps > 0 else None,
         "resources": resources,
         "charging_alternatives": alternatives,
-        "charging_assumption": "Cheapest priced charging recipe; actual charges unknown."
-        if alternatives
-        else None,
+        "charging_assumption": " ".join(assumptions) or None,
         "reasons": reasons,
     }

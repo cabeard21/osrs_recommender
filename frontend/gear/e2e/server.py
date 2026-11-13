@@ -221,6 +221,53 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-elemental-amulet")
+        def seed_elemental_amulet():
+            seed_running_cost()
+            item_ids = (1381, 1727, 34428)
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in item_ids},
+                revision="browser-acceptance-elemental-amulet-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                for item_id in (1727, 34428):
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
+        @app.post("/test/seed-tome")
+        def seed_tome():
+            seed_running_cost()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in (1381, 20714, 20716)},
+                revision="browser-tome-v1",
+            )
+            with factory() as session:
+                player = session.query(Player).first()
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=20716,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=datetime.now(UTC),
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-powered")
         def seed_powered():
             seed_running_cost()

@@ -591,6 +591,13 @@ function LiveItemInspector() {
             title={multi ? "Item bonuses only" : "Item bonuses"}
           />
         )}
+        {facts?.equipment.elemental_spell_bonus && (
+          <p aria-label="Elemental amulet bonus">
+            +{facts.equipment.elemental_spell_bonus.base_max_hit_bonus} base max
+            hit for {facts.equipment.elemental_spell_bonus.elements.join(", ")}{" "}
+            spells before damage and weakness bonuses. Air includes wind spells.
+          </p>
+        )}
         {multi && (
           <p className="notice">
             Item differences only. Lock a candidate and rerun to evaluate the

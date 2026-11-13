@@ -66,6 +66,7 @@ export function CombatOptionSummary({
     option?.spell ??
     (role.style === "magic" ? role.spell : null);
   const weakness = performance?.elemental_weakness;
+  const hopper = performance?.aquanite_hopper;
   return (
     <>
       <p aria-label="Selected combat configuration">
@@ -88,6 +89,45 @@ export function CombatOptionSummary({
             .join("; ")}
         </p>
       )}
+      {performance?.bolt_effect && (
+        <>
+          <p aria-label="Enchanted bolt effect">
+            {hopper ? "Primary shot: " : ""}
+            {performance.bolt_effect.family} bolt effect ·{" "}
+            {(performance.bolt_effect.proc_chance * 100).toFixed(1)}% proc
+            chance
+            {` · ${(performance.bolt_effect.activation_probability * 100).toFixed(1)}% activation per shot`}
+            {performance.bolt_effect.target_hitpoints != null
+              ? ` · DPS at ${performance.bolt_effect.target_hitpoints} HP`
+              : ""}
+            {` · total max ${performance.bolt_effect.total_max_hit}`}
+            {` · expected damage ${performance.bolt_effect.expected_damage_per_attack.toFixed(2)} per shot (${performance.bolt_effect.expected_damage_delta >= 0 ? "+" : ""}${performance.bolt_effect.expected_damage_delta.toFixed(2)} from effect)`}
+            {` · ${performance.bolt_effect.diary_boosted ? "Kandarin Hard boost applied" : "Base proc rate"}`}
+          </p>
+          <p>
+            Ordinary hit: max {performance.max_hit} ·{" "}
+            {((performance.accuracy ?? 0) * 100).toFixed(1)}% accuracy
+          </p>
+        </>
+      )}
+      {hopper && (
+        <>
+          <p aria-label="Aquanite hopper effect">
+            {hopper.approximate ? "Approximate " : ""}Aquanite hopper effect
+            {` · ${(hopper.proc_chance * 100).toFixed(1)}% extra-shot chance`}
+            {` · On activation: secondary max ${hopper.secondary_max_hit}, ${(hopper.secondary_accuracy * 100).toFixed(1)}% accuracy`}
+            {` · +${hopper.expected_damage_delta.toFixed(2)} expected damage per attack`}
+            {performance?.attack_interval != null &&
+            performance.attack_interval > 0
+              ? ` · +${(hopper.expected_damage_delta / performance.attack_interval).toFixed(3)} estimated DPS`
+              : ""}
+            {` · ${hopper.expected_ammunition_per_attack.toFixed(2)} expected bolts per attack`}
+          </p>
+          {hopper.assumptions.map((assumption) => (
+            <p key={assumption}>{assumption}</p>
+          ))}
+        </>
+      )}
       {weakness && (
         <p aria-label="Elemental weakness effect">
           {weakness.element
@@ -97,6 +137,32 @@ export function CombatOptionSummary({
             ? ` applied · +${weakness.max_hit_bonus} max hit · +${weakness.attack_roll_bonus} attack roll`
             : ` · ${weakness.reason ?? "Weakness not applied."}`}
         </p>
+      )}
+      {performance?.tome_bonus && (
+        <p aria-label="Elemental tome effect">
+          {performance.tome_bonus.element[0].toUpperCase() +
+            performance.tome_bonus.element.slice(1)}{" "}
+          tome: +{performance.tome_bonus.damage_percent}% damage
+          {performance.tome_bonus.accuracy_percent > 0 &&
+            `; +${performance.tome_bonus.accuracy_percent}% attack roll`}
+          {performance.tome_bonus.fire_pages &&
+            `; ${performance.tome_bonus.fire_pages} pages; successful minimum hit ${performance.tome_bonus.minimum_hit}`}
+        </p>
+      )}
+      {performance?.elemental_amulet_bonus && (
+        <p aria-label="Elemental amulet effect">
+          Elemental amulet effect: +
+          {performance.elemental_amulet_bonus.base_max_hit_bonus} base max hit
+          before damage and weakness bonuses
+        </p>
+      )}
+      {performance && performance.limitations.length > 0 && (
+        <details>
+          <summary>Combat model limitations</summary>
+          {performance.limitations.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+        </details>
       )}
     </>
   );

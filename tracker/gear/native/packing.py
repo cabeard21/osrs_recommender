@@ -8,6 +8,8 @@ from math import isfinite
 from types import MappingProxyType
 from typing import Any
 
+from tracker.gear.ammo import CAPE_RECOVERY
+from tracker.gear.ammo_armour import COMPATIBLE_BODIES, INTERFERING_BODIES
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem
 from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.models import CombatTarget, EquipmentBonuses
@@ -54,6 +56,22 @@ def support_reason(search: Any) -> str | None:
         return "discipline"
     if any(getattr(role, "allowed_disciplines", None) for role in search.request.roles):
         return "unresolved_discipline"
+    styles = {role.style for role in search.request.roles}
+    # These effects depend on equipped neck/shield/ammunition, which the native
+    # attack records do not encode. Fall back before packing or expanding states.
+    candidates = [search.items[item_id] for item_id in search.eligible]
+    if "magic" in styles and any(
+        item.elemental_spell_bonus or item.tome_effect for item in candidates
+    ):
+        return "equipment_spell_effect"
+    if "ranged" in styles:
+        if any(item.bolt_effect or item.id == 32879 for item in candidates):
+            return "equipment_ranged_effect"
+        if any(item.id in CAPE_RECOVERY for item in candidates) and any(
+            item.slot == "body" and item.id not in COMPATIBLE_BODIES | INTERFERING_BODIES
+            for item in candidates
+        ):
+            return "unreviewed_body_recovery"
     needed = {
         key
         for role in search.request.roles

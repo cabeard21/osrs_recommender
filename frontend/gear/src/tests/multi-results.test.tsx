@@ -231,7 +231,7 @@ it("changes the curve selection only through visualization actions", async () =>
 
 it("keeps both tradeoff panels on the selected action limit when crossing frontiers", async () => {
   const user = userEvent.setup();
-  const { current, result, rerender } = setup();
+  const { current, result, rerender } = setup({ roles: 2 });
   Object.assign(result.scenario.request, {
     max_swaps: 8,
     secondary_priority: "prayer_bonus",
@@ -637,7 +637,9 @@ it("renders unsupported role reasons and the previous accepted context without s
   });
   rerender(<LiveMultiResultWorkspace />);
   expect(screen.getByText("Combat performance unavailable")).toBeVisible();
-  expect(screen.getByText("Unsupported equipment effect")).toBeVisible();
+  expect(
+    screen.getByText("Unsupported equipment effect", { selector: "p.notice" }),
+  ).toBeVisible();
   expect(screen.getByText(/Hypothetical submitted result/)).toBeVisible();
   expect(screen.getByText(/Previous accepted scenario:/)).toHaveTextContent(
     "old-joint",

@@ -10,7 +10,11 @@ from tests.api.test_gear_optimizations import NOW, scenario
 
 def stable(value):
     if isinstance(value, dict):
-        return {key: stable(row) for key, row in value.items() if key != "duration_seconds"}
+        return {
+            key: stable(row)
+            for key, row in value.items()
+            if key not in {"duration_seconds", "timings_seconds"}
+        }
     if isinstance(value, list):
         return [stable(row) for row in value]
     return value

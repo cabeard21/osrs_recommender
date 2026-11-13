@@ -1,3 +1,4 @@
+import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import type { ReactNode } from "react";
 import type { CombatTarget, Draft } from "../api/contracts";
 import type { DraftFieldErrors } from "../state/scenario";
@@ -58,6 +59,19 @@ export function TargetFields({
           Search above for a real target.
         </p>
       )}
+      <TargetHitpointsFields
+        target={
+          draft.combatTarget ?? {
+            name: draft.target,
+            defence_level: Number(draft.defence),
+            magic_level: 1,
+            bonuses: {},
+          }
+        }
+        inputs={draft.targetInputs}
+        fixedBase={!!draft.targetSelection}
+        onChange={change}
+      />
       {!draft.targetSelection && (
         <CustomTargetWrapper isCollapsible={liveMode}>
           {liveMode && (

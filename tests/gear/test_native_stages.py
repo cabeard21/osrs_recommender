@@ -241,7 +241,7 @@ def test_native_ranged_recovery_and_unavailable_cost_ranking(interference, repai
             EquipmentDefinition(id=10498, name="Known recovery", slot="cape"),
             EquipmentDefinition(id=9756, name="Unknown recovery", slot="cape"),
             EquipmentDefinition(
-                id=50, name="Interfering body", slot="body", bonuses=EquipmentBonuses(ranged=-10)
+                id=1127, name="Rune platebody", slot="body", bonuses=EquipmentBonuses(ranged=-10)
             ),
             EquipmentDefinition(id=4747, name="Repair limitation", slot="head"),
         ]
@@ -265,7 +265,7 @@ def test_native_ranged_recovery_and_unavailable_cost_ranking(interference, repai
         base = {
             "weapon": 2,
             "ammunition": 3,
-            **({"body": 50} if interference else {}),
+            **({"body": 1127} if interference else {}),
             **({"head": 4747} if repair else {}),
         }
         scorer = ScoringContext(search)

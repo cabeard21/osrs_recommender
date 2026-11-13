@@ -9,7 +9,8 @@ from time import perf_counter
 from typing import Any
 
 from tracker.gear.discipline_assignments import branch_requests as branch_requests
-from tracker.gear.discipline_assignments import has_magic, merge_assignment_results
+from tracker.gear.discipline_assignments import merge_assignment_results
+from tracker.gear.running_frontier import needs_running_cost_frontier
 
 
 def optimize_auto(
@@ -29,7 +30,9 @@ def optimize_auto(
     started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
     progress = options.pop("progress", None)
-    running_frontier = options.pop("_running_frontier", False) or has_magic(request)
+    running_frontier = options.pop("_running_frontier", False) or needs_running_cost_frontier(
+        request
+    )
     branches = []
     cancelled = options.get("cancelled")
     if cancelled and cancelled():

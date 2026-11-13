@@ -7,6 +7,7 @@ import type {
   Trial,
   Equipment,
   Workspace,
+  CombatTarget,
 } from "../api/contracts";
 import { secondaryPriorities } from "../api/secondaryPriorities";
 import {
@@ -31,6 +32,7 @@ export const newRole = (index: number) => ({
   locks: {},
 });
 export const newDraft = (): Draft => ({
+  fireTomePages: "burnt",
   includeUntradeables: false,
   supportPolicy: "community_best_effort",
   secondaryPriority: "default",
@@ -117,12 +119,40 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
     }),
   );
 }
+function normalizeHitpoints(
+  target: CombatTarget | undefined,
+  inputs: Record<string, string> = {},
+): CombatTarget | undefined {
+  if (!target) return target;
+  const result = { ...target };
+  for (const key of ["hitpoints", "current_hitpoints"] as const) {
+    const raw = inputs[key];
+    if (raw !== undefined) result[key] = raw.trim() ? Number(raw) : null;
+    const value = result[key];
+    if (
+      value != null &&
+      (!Number.isSafeInteger(value) || value < 1 || value > 1000000)
+    )
+      throw new Error(
+        `Target ${key} requires a positive whole number up to 1000000.`,
+      );
+  }
+  if (
+    result.hitpoints != null &&
+    result.current_hitpoints != null &&
+    result.current_hitpoints > result.hitpoints
+  )
+    throw new Error("Target current_hitpoints cannot exceed base hitpoints.");
+  return result;
+}
 export function normalize(
   draft: Draft,
   snapshotId: string,
   live = false,
   context: GearContext | null = null,
 ): Scenario {
+  if (!["burnt", "searing"].includes(draft.fireTomePages ?? "burnt"))
+    throw new Error("Choose valid Tome of Fire pages.");
   if (
     !["verified_only", "community_best_effort"].includes(
       draft.supportPolicy ?? "community_best_effort",
@@ -151,6 +181,10 @@ export function normalize(
     if (role.combatOptionOptimization === false)
       throw new Error("Auto requires combat option optimization.");
   }
+  const globalTarget = normalizeHitpoints(
+    draft.combatTarget,
+    draft.targetInputs,
+  );
   const globalArmour = draft.combatTarget?.flat_armour ?? 0;
   if (
     (draft.targetInputs?.flat_armour !== undefined &&
@@ -203,7 +237,12 @@ export function normalize(
       delete role.combatOptions;
     }
     if (role.combatTarget) {
+      role.combatTarget = normalizeHitpoints(
+        role.combatTarget,
+        role.targetInputs,
+      )!;
       for (const [key, value] of Object.entries(role.targetInputs ?? {})) {
+        if (key === "hitpoints" || key === "current_hitpoints") continue;
         const optional = [
           "ranged_light",
           "ranged_standard",
@@ -393,6 +432,7 @@ export function normalize(
   return {
     objective: "weighted_dps",
     request: {
+      fire_tome_pages: draft.fireTomePages ?? "burnt",
       support_policy: draft.supportPolicy ?? "community_best_effort",
       potions: draft.potions ?? {
         mode: "disabled",
@@ -408,7 +448,7 @@ export function normalize(
         selection: draft.targetSelection,
         defence: integer(draft.defence, "Target defence", 0, 10000),
         ...(draft.combatTarget
-          ? { definition: structuredClone(draft.combatTarget) }
+          ? { definition: structuredClone(globalTarget!) }
           : {}),
       },
       budget_gp: integer(parseGp(draft.budget), "Budget", 0, 2147483647),
@@ -767,6 +807,18 @@ export function reducer(state: State, action: Action): State {
       if (current.generation !== action.generation || !current.pending)
         return state;
       if (
+        (current.submitted?.request.fire_tome_pages ?? "burnt") !==
+        (action.result.scenario.request.fire_tome_pages ?? "burnt")
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "Tome of Fire pages changed; rerun the selected page mode.",
+          },
+        };
+      if (
         (current.submitted?.request.support_policy ?? "verified_only") !==
         (action.result.scenario.request.support_policy ?? "verified_only")
       )
@@ -998,30 +1050,31 @@ export function readDrafts(
         "null",
     );
     if (![1, 2, version].includes(data?.version)) return null;
-    if (!upgradeStoredDraft(data.single) || !upgradeStoredDraft(data.multi))
-      return null;
+    const single = upgradeStoredDraft(data.single);
+    const multi = upgradeStoredDraft(data.multi);
+    if (!single || !multi) return null;
     if (data.version === 1) {
-      data.multi.roles = data.multi.roles.map(
-        (role: import("../api/contracts").Role) =>
-          role.combatTarget
-            ? role
-            : {
-                ...role,
-                combatTarget: structuredClone(
-                  data.multi.combatTarget ?? {
-                    name: data.multi.target,
-                    defence_level: Number(data.multi.defence) || 1,
-                    magic_level: 1,
-                    bonuses: {},
-                  },
-                ),
-                targetInputs: data.multi.combatTarget
-                  ? {}
-                  : { defence_level: data.multi.defence },
-              },
+      const roles = multi.roles.map((role: import("../api/contracts").Role) =>
+        role.combatTarget
+          ? role
+          : {
+              ...role,
+              combatTarget: structuredClone(
+                multi.combatTarget ?? {
+                  name: multi.target,
+                  defence_level: Number(multi.defence) || 1,
+                  magic_level: 1,
+                  bonuses: {},
+                },
+              ),
+              targetInputs: multi.combatTarget
+                ? {}
+                : { defence_level: multi.defence },
+            },
       );
+      return { ...data, single, multi: { ...multi, roles } };
     }
-    return data;
+    return { ...data, single, multi };
   } catch {
     return null;
   }
@@ -1032,9 +1085,10 @@ export function readDrafts(
  */
 export function upgradeStoredDraft(value: unknown): Draft | null {
   if (!value || typeof value !== "object") return null;
-  // Parsed JSON belongs to the caller, so defaults are filled in place.
+  // Preserve the caller's top-level draft while applying stored-setting defaults.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const draft = value as any;
+  const draft = { ...(value as any) };
+  if (draft.fireTomePages === undefined) draft.fireTomePages = "burnt";
   if (draft.includeUntradeables === undefined)
     draft.includeUntradeables = false;
   if (draft.supportPolicy === undefined)
@@ -1043,6 +1097,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
   if (draft.secondaryPriority === undefined)
     draft.secondaryPriority = "default";
   const isValid = !(
+    !["burnt", "searing"].includes(draft.fireTomePages) ||
     typeof draft.includeUntradeables !== "boolean" ||
     !secondaryPriorities.some(
       ([priority]) => priority === draft.secondaryPriority,

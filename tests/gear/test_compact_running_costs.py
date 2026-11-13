@@ -150,6 +150,80 @@ def test_powered_recipes_alternatives_and_unknowns(staff, missing):
     )
 
 
+@pytest.mark.parametrize("rune,element", [(554, "fire"), (555, "water"), (557, "earth")])
+@pytest.mark.parametrize("staff", [1381, 11998])
+def test_tome_rune_supply_and_assumptions_match_baseline(rune, element, staff):
+    shield = item(20714, "shield", tome_effect={"element": element, "rune_id": rune})
+    assert_parity(
+        {"weapon": item(staff), "shield": shield},
+        {"attack_type": "magic", "spell": f"{element}_strike"},
+        prices(**{"556": 5, "554": 7, "555": 11, "557": 13, "558": 3}),
+    )
+
+
+@pytest.mark.parametrize(
+    "option", [{"attack_type": "slash"}, {"attack_type": "magic", "powered_attack": "fixture"}]
+)
+def test_tome_assumption_remains_present_for_other_attack_modes(option):
+    assert_parity(
+        {
+            "weapon": item(11907),
+            "shield": item(20714, "shield", tome_effect={"element": "fire", "rune_id": 554}),
+        },
+        option,
+        prices(**{"554": 7, "562": 3, "560": 13}),
+    )
+
+
+@pytest.mark.parametrize("cape", [None, 22109])
+@pytest.mark.parametrize("shield", [None, 32879])
+@pytest.mark.parametrize("body", [None, 1115, 2503, 99999])
+def test_hopper_and_body_recovery_match_baseline(cape, shield, body):
+    gear = {
+        "weapon": item(9185, ammo_for=("bolt:9144",)),
+        "ammunition": item(9144, "ammunition", ammo_type="bolt:9144"),
+    }
+    for slot, item_id in (("cape", cape), ("shield", shield), ("body", body)):
+        if item_id is not None:
+            gear = {**gear, slot: item(item_id, slot)}
+    assert_parity(gear, {"attack_type": "heavy"}, prices(**{"9144": 10}))
+
+
+@pytest.mark.parametrize("style", ["magic", "ranged"])
+def test_recipe_cache_tracks_shield_and_exact_body_context(style):
+    records = prices(**{"556": 5, "554": 7, "558": 3, "9144": 10})
+    option = {"attack_type": style, "spell": "fire_strike"}
+    base = (
+        {"weapon": item(1381)}
+        if style == "magic"
+        else {
+            "weapon": item(9185, ammo_for=("bolt:9144",)),
+            "ammunition": item(9144, "ammunition", ammo_type="bolt:9144"),
+            "cape": item(22109, "cape"),
+        }
+    )
+    shields = (
+        [
+            item(20714, "shield", tome_effect={"element": "fire", "rune_id": 554}),
+            item(20714, "shield"),
+        ]
+        if style == "magic"
+        else [item(32879, "shield"), item(1, "shield")]
+    )
+    contexts = [
+        base,
+        *({**base, "shield": shield} for shield in shields),
+        *({**base, "body": item(body, "body")} for body in (2503, 1115, 99999)),
+    ]
+    performance = {"attack_interval": 2.4, "dps": 3.14159}
+    engine = CostEvaluator(records, NOW)
+    for gear in contexts:
+        reference = evaluate_running_cost(gear, option, performance, records, NOW)
+        prepared = engine.prepare(gear, option)
+        actual = prepared.report(prepared.score(performance["attack_interval"], performance["dps"]))
+        assert json.dumps(actual, sort_keys=True) == json.dumps(reference, sort_keys=True)
+
+
 @pytest.mark.parametrize("cape", [None, 10499, 22109, 9756, 28947, 6570])
 @pytest.mark.parametrize("body_bonus", [0, -1])
 @pytest.mark.parametrize(

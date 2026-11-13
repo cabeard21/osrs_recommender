@@ -13,37 +13,21 @@ from tracker.content.loader import Content
 from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
+from tracker.gear.ranged_resources import CONSUMABLE_WEAPON_IDS
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import review as tome_review
 
 # New purchases use ordinary editions; owned editions keep exact preparation routes.
 _POWERED_MARKET_FORMS = MARKET_FORMS
 
 GENERIC_UNREVIEWED = "Offensive effects have not been validated."
 
-# Concrete dart forms, including poisoned variants; stackability alone also
-# matches reusable weapons such as blowpipes in the source catalog.
-DART_IDS = frozenset(
-    {
-        *range(806, 818),
-        3093,
-        3094,
-        *range(5628, 5642),
-        11230,
-        11231,
-        11233,
-        11234,
-        25849,
-        25851,
-        25855,
-        25857,
-    }
-)
-
 
 def budget_exempt(item: Any) -> bool:
     """Consumable ammo is a running expense, separate from gear purchases."""
     # The source catalog incorrectly labels Peaceful blessing as a bolt.
     return (item.slot == "ammunition" and bool(item.ammo_type) and item.id != 20226) or (
-        item.slot == "weapon" and item.id in DART_IDS
+        item.slot == "weapon" and item.id in CONSUMABLE_WEAPON_IDS
     )
 
 
@@ -163,6 +147,26 @@ def equipment_fact(
             if charging_required
             else "Actual charge availability is unknown.",
         }
+    tome = tome_review(item.id)
+    if tome is not None and item.id == tome.charged_id:
+        empty = observed_ownership(snapshot, tome.uncharged_id)
+        prepare_owned = ownership["status"] != "owned" and empty["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {**empty, "meaning": "Owned empty tome; charged use assumed"}
+        market_id = tome.uncharged_id
+        preparation = {
+            "source_item_id": tome.uncharged_id
+            if prepare_owned
+            else item.id
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": item.id,
+            "market_item_id": market_id,
+            "charging_required": ownership["status"] != "owned",
+            "charges": "unknown",
+            "activation_reserve": [],
+            "message": TOME_ASSUMPTION,
+        }
     authored = next((entry for entry in content.items.values() if entry.item_id == market_id), None)
     price = (
         resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None
@@ -210,6 +214,7 @@ def equipment_fact(
         },
         "limitations": [
             *item.unsupported_effects,
+            *item.omitted_set_effects,
             *([preparation["message"]] if preparation else []),
         ],
     }

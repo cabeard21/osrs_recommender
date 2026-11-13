@@ -9,16 +9,23 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from math import floor
 from time import perf_counter
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 
+from tracker.gear import hopper
+from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
+from tracker.gear.elemental_amulets import applied_spell_bonus
 from tracker.gear.models import (
+    BoltPerformance,
     CombatPerformance,
     CombatTarget,
+    ElementalAmuletBonus,
     ElementalWeakness,
     EquipmentBonuses,
     EquipmentDefinition,
     HitsplatPerformance,
+    HopperPerformance,
+    TomeBonus,
 )
 from tracker.gear.powered import base_hit, supports_powered
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects, effects
@@ -29,6 +36,8 @@ from tracker.gear.ranged_numerics import evaluate as evaluate_ranged
 from tracker.gear.ranged_numerics import observer as ranged_observer
 from tracker.gear.ranged_score_finalization import active as score_finalization_active
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import applied_tome
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
 # only when that tier's spell is unlocked. Spell choice is an explicit assumption.
@@ -78,6 +87,8 @@ ANCIENT_SPELLS = {
 }
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
+
+MODEL_VERSION = "normal-attacks-v6-elemental-tomes-aquanite-hopper"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -162,6 +173,13 @@ def _evaluate_prepared(
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
+    bolt_family = (
+        prepared.ammunition.bolt_effect
+        if style == "ranged" and prepared.ammunition and weapon and weapon.ammo_for
+        else None
+    )
+    if bolt_family == "ruby" and target.current_hitpoints is None and target.hitpoints is None:
+        problems.append("Ruby bolts require target current or base hitpoints.")
     if (
         powered_attack is not None
         and not (weapon and weapon.powered_attack_model)
@@ -263,7 +281,13 @@ def _evaluate_prepared(
         if score_only:
             return CombatScore(False, None, None, bonuses)
         return CombatPerformance(
-            supported=False, limitations=tuple(dict.fromkeys(problems)), bonuses=bonuses
+            supported=False,
+            limitations=tuple(
+                dict.fromkeys(
+                    [*problems, *(effect for i in equipment for effect in i.omitted_set_effects)]
+                )
+            ),
+            bonuses=bonuses,
         )
     cached_ranged = style == "ranged" and powered_attack is None and ranged_experiment_active()
     # Cached ranged scores consume Outgoing directly. Preparing a second attack
@@ -272,7 +296,7 @@ def _evaluate_prepared(
     constants = (
         preparation.prepare_role(weapon, role, levels, target) if preparation is not None else None
     )
-    return _calculate(
+    result = _calculate(
         weapon,
         style,
         levels,
@@ -288,7 +312,26 @@ def _evaluate_prepared(
         include_defence=include_defence,
         _constants=constants,
         _cached_ranged=cached_ranged,
+        amulet=next((item for item in equipment if item.slot == "neck"), None),
+        tome=next((item for item in equipment if item.slot == "shield"), None),
+        fire_tome_pages=getattr(role, "fire_tome_pages", "burnt"),
+        hopper_active=(
+            style == "ranged"
+            and hopper.active(
+                weapon, next((i for i in equipment if i.slot == "shield"), None), ammo
+            )
+        ),
+        bolt_family=bolt_family,
+        bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
+        bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
     )
+    if not score_only and isinstance(result, CombatPerformance):
+        omissions = tuple(dict.fromkeys(e for i in equipment for e in i.omitted_set_effects))
+        if omissions:
+            return result.model_copy(
+                update={"limitations": tuple(dict.fromkeys((*result.limitations, *omissions)))}
+            )
+    return result
 
 
 def _armoured_mean(maximum: int, armour: int) -> float:
@@ -329,17 +372,37 @@ def _calculate(
     include_defence: bool = False,
     _constants: PreparedAttack | None = None,
     _cached_ranged: bool | None = None,
+    amulet: EquipmentDefinition | None = None,
+    tome: EquipmentDefinition | None = None,
+    fire_tome_pages: Literal["burnt", "searing"] = "burnt",
+    hopper_active: bool = False,
+    bolt_family: str | None = None,
+    bolt_diary: bool = False,
+    bolt_diary_known: bool = False,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
+    amulet_report = None
+    tome_report = None
+    minimum_hit = 0
     outgoing = None
-    constants = _constants
+    # Equipment-dependent spell effects are absent from the prepared attack key.
+    # Keep their reviewed calculation until those dependencies are factored too.
+    spell_effect = style == "magic" and (
+        applied_spell_bonus(amulet, spell, powered_attack)
+        or applied_tome(tome, spell, powered_attack)
+    )
+    constants = None if spell_effect else _constants
     cached_ranged = (
         style == "ranged" and powered_attack is None and ranged_experiment_active()
         if _cached_ranged is None
         else _cached_ranged
     )
-    preparation = prepared_combat_context() if constants is None and not cached_ranged else None
+    preparation = (
+        prepared_combat_context()
+        if constants is None and not cached_ranged and not spell_effect
+        else None
+    )
     if cached_ranged:
         observer = ranged_observer()
         key_started = perf_counter() if observer is not None else 0.0
@@ -369,7 +432,7 @@ def _calculate(
         if observer is not None:
             observer.key_seconds += perf_counter() - key_started
         outgoing = evaluate_ranged(ranged_key)
-        if score_only and score_finalization_active():
+        if score_only and score_finalization_active() and not (bolt_family or hopper_active):
             if outgoing.capped:
                 return CombatScore(False, None, None, bonuses)
             return CombatScore(
@@ -428,6 +491,14 @@ def _calculate(
                 for name, (level, damage) in ELEMENTAL_SPELLS.items()
                 if name.endswith("_" + tier) and level <= levels["magic"]
             )
+        amulet_bonus = applied_spell_bonus(amulet, spell, powered_attack)
+        base += amulet_bonus
+        if amulet_bonus and amulet is not None and not score_only:
+            amulet_report = ElementalAmuletBonus(
+                item_id=amulet.id,
+                element=spell.split("_")[0].replace("wind", "air"),
+                base_max_hit_bonus=amulet_bonus,
+            )
         shadow = (
             powered_attack is not None
             and weapon is not None
@@ -468,11 +539,30 @@ def _calculate(
                 max_hit_bonus=hit_bonus,
                 attack_roll_bonus=roll_bonus,
             )
+        tome_effect = applied_tome(tome, spell, powered_attack)
+        if tome_effect and tome_effect.element == "water":
+            attack = attack * 120 // 100
         if applied:
             # Weakness adds a separately truncated fraction of the unmodified
             # spell damage and base accuracy roll; it does not multiply gear%.
             max_hit += hit_bonus
             attack += roll_bonus
+        if tome_effect:
+            minimum_hit = (
+                max_hit // 10
+                if tome_effect.element == "fire" and fire_tome_pages == "searing"
+                else 0
+            )
+            max_hit = max_hit * 110 // 100
+            if not score_only and tome is not None:
+                tome_report = TomeBonus(
+                    item_id=tome.id,
+                    element=tome_effect.element,
+                    damage_percent=10,
+                    accuracy_percent=20 if tome_effect.element == "water" else 0,
+                    fire_pages=fire_tome_pages if tome_effect.element == "fire" else None,
+                    minimum_hit=max(1, minimum_hit),
+                )
         defence = (target.magic_level + 9) * (target.bonuses.magic + 64)
         speed = weapon.attack_speed if powered_attack is not None and weapon else 5
     else:
@@ -515,7 +605,12 @@ def _calculate(
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
     max_hit = max(0, max_hit)
-    if constants is not None and score_only and constants.pattern == "single":
+    if (
+        constants is not None
+        and score_only
+        and constants.pattern == "single"
+        and not (bolt_family or hopper_active)
+    ):
         if (
             constants.damage_cap is not None
             and max(1, max_hit) + (8 if constants.sanguinesti else 0) > constants.damage_cap
@@ -576,8 +671,82 @@ def _calculate(
         if outgoing
         else sum(p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True))
     )
+    if minimum_hit > 0:
+        expected = accuracy * (minimum_hit + max_hit) / 2
     if sang_proc:
         expected += accuracy * 0.2 * 8
+    bolt_report = None
+    activation = 0.0
+    if bolt_family:
+        ordinary_expected = expected
+        hp = target.current_hitpoints if target.current_hitpoints is not None else target.hitpoints
+        expected, total_max, activation = expected_bolt_damage(
+            bolt_family,
+            levels["ranged"],
+            max_hit,
+            accuracy,
+            hp,
+            bolt_diary,
+            bool(weapon and weapon.id == 26374),
+            target.traits,
+            target.flat_armour,
+        )
+        if target.damage_cap is not None and total_max > target.damage_cap:
+            if score_only:
+                return CombatScore(False, None, None, bonuses)
+            return CombatPerformance(
+                supported=False,
+                bonuses=bonuses,
+                limitations=(
+                    "Bolt damage above the target cap requires an unsupported reroll distribution.",
+                ),
+            )
+        if not score_only:
+            bolt_report = BoltPerformance(
+                family=bolt_family,
+                proc_chance={
+                    "opal": 0.05,
+                    "pearl": 0.06,
+                    "ruby": 0.06,
+                    "diamond": 0.1,
+                    "dragonstone": 0.06,
+                    "onyx": 0.11,
+                }[bolt_family]
+                * (1.1 if bolt_diary else 1),
+                activation_probability=activation,
+                expected_damage_per_attack=expected,
+                expected_damage_delta=expected - ordinary_expected,
+                total_max_hit=total_max,
+                normal_max_hit=max(0, max(1, max_hit) - target.flat_armour),
+                target_hitpoints=hp,
+                diary_boosted=bolt_diary,
+            )
+    hopper_report = None
+    if hopper_active:
+        secondary_accuracy = accuracy_probability(attack * 2 // 3, defence)
+        secondary, secondary_max, _ = hopper.expected_secondary_damage(
+            bolt_family,
+            levels["ranged"],
+            max_hit,
+            secondary_accuracy,
+            target.current_hitpoints if target.current_hitpoints is not None else target.hitpoints,
+            bolt_diary,
+            bool(weapon and weapon.id == 26374),
+            target.traits,
+            armour,
+            activation,
+        )
+        delta = hopper.PROC_CHANCE * secondary
+        expected += delta
+        if not score_only:
+            hopper_report = HopperPerformance(
+                proc_chance=hopper.PROC_CHANCE,
+                secondary_accuracy=secondary_accuracy,
+                secondary_max_hit=secondary_max,
+                expected_damage_delta=delta,
+                expected_ammunition_per_attack=1 + hopper.PROC_CHANCE,
+                assumptions=hopper.ASSUMPTIONS,
+            )
     interval = speed * 0.6
     if score_only:
         return CombatScore(
@@ -601,7 +770,11 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        aquanite_hopper=hopper_report,
+        bolt_effect=bolt_report,
         elemental_weakness=weakness,
+        elemental_amulet_bonus=amulet_report,
+        tome_bonus=tome_report,
         accuracy=accuracy,
         hitsplats=hitsplats,
         max_hit=sum(h.max_hit for h in hitsplats),
@@ -613,10 +786,25 @@ def _calculate(
         if constants is not None
         else player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
-        limitations=(
+        limitations=(hopper.ASSUMPTIONS if hopper_active else ())
+        + (
             "Fresh combat levels and sustained active stat prayers only; "
             "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
+        )
+        + ((TOME_ASSUMPTION,) if tome is not None and tome.tome_effect else ())
+        + (
+            (
+                "Static target HP and sufficient player HP assumed; ruby self-damage "
+                "endurance, healing and crossbow specials are not simulated.",
+            )
+            if bolt_family
+            else ()
+        )
+        + (
+            ("Kandarin Hard Diary completion is unknown; base bolt proc rates used.",)
+            if bolt_family and not bolt_diary_known
+            else ()
         )
         + (
             (

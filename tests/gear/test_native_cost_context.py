@@ -87,3 +87,20 @@ def test_native_cost_table_records_thrown_repair_and_interference_flags():
     packed = pack_costs(search, scoring)
     assert packed.ranged_kind[1] == 2
     assert packed.torag[2] == 1
+
+
+def test_native_interference_uses_reviewed_body_identity():
+    from tracker.gear.models import EquipmentBonuses
+
+    items = {
+        1127: EquipmentDefinition(id=1127, name="Rune platebody", slot="body"),
+        2503: EquipmentDefinition(
+            id=2503,
+            name="Black dragonhide",
+            slot="body",
+            bonuses=EquipmentBonuses(ranged=-1),
+        ),
+    }
+    search = SimpleNamespace(items=items, running_prices={}, running_at=datetime.now(UTC))
+    scoring = SimpleNamespace(dense_ids=(0, 1127, 2503), option_weapons=(), option_records=())
+    assert list(pack_costs(search, scoring).interference) == [0, 1, 0]

@@ -13,6 +13,80 @@ from tracker.gear.ranged_score_finalization import ranged_score_finalization
 from tracker.gear.scoring import prepare_equipment
 
 
+@pytest.mark.parametrize(
+    "item_ids,spell,pages",
+    [
+        ((34425,), "fire_surge", "burnt"),
+        ((20714,), "fire_surge", "searing"),
+        ((34425, 20714), "fire_surge", "searing"),
+        ((25574,), "water_surge", "burnt"),
+    ],
+)
+def test_prepared_spell_effects_retain_reference_reports_and_scores(
+    make_content, item_ids, spell, pages
+):
+    from tracker.gear.catalog import load_catalog
+
+    catalog = load_catalog(make_content())
+    equipment = prepare_equipment([catalog.items[i] for i in item_ids])
+    role = SimpleNamespace(
+        style="magic",
+        stance="accurate",
+        spell=spell,
+        fire_tome_pages=pages,
+        target=CombatTarget(weakness_element=spell.split("_")[0], weakness_percent=50),
+    )
+    levels = {"magic": 99, "defence": 80}
+    expected = combat.evaluate_prepared_loadout(equipment, role, levels)
+    score = combat.evaluate_prepared_score(equipment, role, levels, include_defence=True)
+    assert expected.supported
+    assert expected.dps == score.dps
+    with prepared_combat(), ranged_score_finalization():
+        assert combat.evaluate_prepared_loadout(equipment, role, levels) == expected
+        assert (
+            combat.evaluate_prepared_score(equipment, role, levels, include_defence=True) == score
+        )
+
+
+@pytest.mark.parametrize("family", [None, "opal", "ruby", "diamond", "onyx"])
+@pytest.mark.parametrize("hopper", [False, True])
+@pytest.mark.parametrize("cap", [None, 30])
+def test_prepared_ranged_effects_retain_reference_reports_and_scores(family, hopper, cap):
+    weapon = EquipmentDefinition(
+        id=9185,
+        name="Crossbow",
+        slot="weapon",
+        attack_styles=("ranged",),
+        ammo_for=("bolt:fixture",),
+    )
+    ammo = EquipmentDefinition(
+        id=3,
+        name="Bolt",
+        slot="ammunition",
+        ammo_type="bolt:fixture",
+        bolt_effect=family,
+        bonuses=EquipmentBonuses(ranged_strength=100),
+    )
+    shield = EquipmentDefinition(id=32879, name="Hopper", slot="shield")
+    equipment = prepare_equipment([weapon, ammo, *([shield] if hopper else [])])
+    role = SimpleNamespace(
+        style="ranged",
+        stance="rapid",
+        bolt_diary_boost=True,
+        bolt_diary_known=True,
+        target=CombatTarget(hitpoints=500, damage_cap=cap),
+    )
+    levels = {"ranged": 99, "magic": 80, "defence": 80}
+    expected = combat.evaluate_prepared_loadout(equipment, role, levels)
+    score = combat.evaluate_prepared_score(equipment, role, levels, include_defence=True)
+    assert expected.dps == score.dps
+    with prepared_combat(), ranged_experiment(), ranged_score_finalization():
+        assert combat.evaluate_prepared_loadout(equipment, role, levels) == expected
+        assert (
+            combat.evaluate_prepared_score(equipment, role, levels, include_defence=True) == score
+        )
+
+
 def case(style="slash", stance="accurate", spell="fire_wave", pattern="single"):
     weapon = EquipmentDefinition(
         id=1,

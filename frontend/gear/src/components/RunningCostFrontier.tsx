@@ -156,7 +156,7 @@ export function RunningCostFrontier({
             <thead>
               <tr>
                 <th>Choose</th>
-                <th>Attack / staff</th>
+                <th>Attack / equipment</th>
                 <th>DPS</th>
                 <th>DPS loss</th>
                 <th>GP/damage</th>
@@ -199,6 +199,35 @@ export function RunningCostFrontier({
                           {l.equipment.weapon
                             ? itemName(l.equipment.weapon)
                             : "Unarmed"}
+                          {l.equipment.ammunition && (
+                            <div>
+                              Ammunition: {itemName(l.equipment.ammunition)}
+                            </div>
+                          )}
+                          <div>
+                            Cape:{" "}
+                            {l.equipment.cape
+                              ? itemName(l.equipment.cape)
+                              : "No cape"}
+                          </div>
+                          {l.running_cost?.resources
+                            .filter(
+                              (resource) =>
+                                resource.item_id ===
+                                (l.equipment.ammunition ?? l.equipment.weapon),
+                            )
+                            .map((resource) => (
+                              <div key={resource.item_id}>
+                                Recovery:{" "}
+                                {number(
+                                  resource.required_quantity > 0
+                                    ? (100 * resource.supplied_quantity) /
+                                        resource.required_quantity
+                                    : 0,
+                                )}
+                                %
+                              </div>
+                            ))}
                         </div>
                       ))}
                     </td>

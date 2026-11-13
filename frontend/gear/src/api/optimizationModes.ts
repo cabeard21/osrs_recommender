@@ -61,6 +61,8 @@ export function matchesOptimizationPolicy(
   b: OptimizationReply,
 ) {
   return (
+    (a.scenario.request.fire_tome_pages ?? "burnt") ===
+      (b.scenario.request.fire_tome_pages ?? "burnt") &&
     (a.scenario.request.support_policy ?? "verified_only") ===
       (b.scenario.request.support_policy ?? "verified_only") &&
     (a.scenario.request.optimization_mode ?? "fast") ===

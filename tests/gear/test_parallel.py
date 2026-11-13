@@ -544,3 +544,63 @@ def test_surviving_manager_poison_pool_and_close_can_retry_join(monkeypatch):
     manager.alive = False
     pool.close()
     assert pool._unsafe_manager is None
+
+
+def test_ranged_only_auto_cost_frontier_matches_serial_worker():
+    from types import SimpleNamespace
+
+    from tests.gear.test_auto_disciplines import OPTIONS
+    from tests.gear.test_optimizer import weapon
+    from tracker.accounts.snapshot import ObservedItemFact
+    from tracker.domain.types import Container
+    from tracker.gear.optimizer import RoleConfig
+
+    snapshot, request, _, content, _, now = inputs()
+    items = [
+        weapon(806, "ranged", 1, attack_profiles=(("ranged", "rapid"),)),
+        weapon(811, "ranged", 40, attack_profiles=(("ranged", "rapid"),)),
+    ]
+    snapshot = replace(
+        snapshot,
+        observed_items={
+            (i.id, Container.BANK): ObservedItemFact(i.id, Container.BANK, 1, "test", now)
+            for i in items
+        },
+    )
+    catalog = EquipmentCatalog({i.id: i for i in items})
+    prices = {
+        i: SimpleNamespace(
+            item_id=i,
+            high_price_gp=gp,
+            low_price_gp=gp,
+            high_trade_at=now,
+            low_trade_at=now,
+            fetched_at=now,
+            source="live",
+        )
+        for i, gp in [(806, 1), (811, 100)]
+    }
+    request = request.model_copy(
+        update={
+            "roles": (
+                RoleConfig(
+                    id="a", style="ranged", allowed_disciplines=("ranged",), combat_options=OPTIONS
+                ),
+            ),
+            "max_dps_loss_pct": 100,
+        }
+    )
+    pool = AutoProcessPool(1)
+    try:
+        pool.start(content, catalog)
+        rows = pool.run(snapshot, request, catalog, content, prices, now)
+        concrete = next(branch_requests(request))[1]
+        expected = optimize(
+            snapshot, concrete, catalog, content, prices, now, _complete_frontiers=True
+        )
+        assert without_timings(rows[0][1]) == without_timings(expected)
+        auto = optimize(snapshot, request, catalog, content, prices, now)
+        assert len(auto["running_cost_frontiers"][0]["points"]) == 2
+        assert len(rows[0][1]["running_cost_frontiers"][0]["points"]) == 2
+    finally:
+        pool.close()

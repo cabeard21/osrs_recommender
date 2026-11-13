@@ -4,6 +4,64 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Offhand tomes
+
+Fire (charged 20714, empty 20716), Water (25574/25576), and Earth
+(30064/30066) are reviewed shield items requiring 50 Magic, with +8 Magic
+attack and +8 Magic defence. Charged forms carry `tome_effect` metadata.
+Empty forms provide stats only in exact comparisons. Optimization can prepare
+an owned or purchased empty tome into its charged form without changing observed
+ownership; purchases use the empty market ID and preparation is disclosed.
+
+The scenario field `fire_tome_pages` accepts `burnt` (default) or `searing`.
+It applies to all configurations and both sides of a fixed comparison; old
+scenarios default to burnt. No automatic page-mode optimization is performed.
+Charged tomes multiply matching Standard elemental spell maximum damage by
+11/10, rounding down after equipment, prayer, amulet and weakness damage.
+Water additionally multiplies the base attack roll by 6/5 before adding the
+separately rounded weakness contribution. Nonmatching spells, Iban, Ancient
+spells and powered attacks receive no tome damage or accuracy effect.
+
+Searing Fire spells roll from `floor(pre-tome maximum / 10)` through the
+tome-boosted maximum. Accurate zero rolls still become one. The nullable
+`tome_bonus` report includes the item, element, damage/accuracy percentages,
+Fire page mode and the successful-hit minimum (at least one).
+The minimum excludes the tome's own 10% damage boost.
+
+Rune supply is independent of damage eligibility: charged Fire supplies Iban
+and Smoke spells; charged Water supplies Ice spells. Staff provision takes
+precedence when both supply the same rune. Tome provision never discounts
+ingredients used to charge powered weapons. Page availability, quantities,
+consumption and costs are deliberately excluded and disclosed in results.
+PvP, utility/curse effects, and standalone Sunfire rune selection are outside
+this model. Missing prices for other consumed runes remain unavailable.
+
+Calculation reference: the [pinned Wiki DPS calculator](https://github.com/weirdgloop/osrs-dps-calc/blob/74958b18f6559cf1bf58f7ac74e7a442a7ac8e2f/src/lib/PlayerVsNPCCalc.ts)
+uses 20% Water accuracy and applies tome damage after weakness. Some Wiki item
+prose instead describes 10% Water accuracy; this implementation deliberately
+uses the pinned calculation reference. The [Fire item description](https://oldschool.runescape.wiki/w/Tome_of_Fire)
+establishes the pre-tome Searing minimum.
+
+## Elemental amulets
+
+The five reviewed tradeable amulets (34407 air, 34413 water, 34419 earth,
+34425 fire, and 34428 combined) require 59 Magic and retain their physical
++10 Magic attack and 0% magic damage bonuses. Item `equipment` includes nullable
+`elemental_spell_bonus` metadata with `elements` and `base_max_hit_bonus`.
+Air applies to wind spells; the combined amulet covers all four elements.
+
+Combat results include nullable `elemental_amulet_bonus` with `item_id`, `element`,
+and `base_max_hit_bonus`. A matching Standard elemental spell receives +2 after
+tier scaling and before damage/prayer percentages and the separately rounded
+elemental weakness contribution. This is a base-hit increment, not a promise of
+exactly two additional final damage. Mismatched spells, Ancient Magicks, Iban
+Blast, and powered attacks receive no increment. Older responses may omit these
+fields. The combat model version is `normal-attacks-v4-elemental-amulets`.
+
+Ownership and GE purchase planning use each physical ID independently. Crafting,
+combining components, and additional equipment or special-target mechanics are
+outside this support. Source mechanics: [Elemental amulet](https://oldschool.runescape.wiki/w/Elemental_amulet).
+
 ## Fast and Thorough search modes
 
 `POST /ui-api/gear/optimizations` accepts optional `optimization_mode`, strictly
@@ -696,7 +754,36 @@ Single Auto results open on **Auto overall**. Tabs for each searched discipline 
 
 The additive `result.discipline_results` list retains each searched discipline's status, reasons, selected solution, secondary frontiers, search diagnostics, limitations, and contextual alternatives. Existing overall fields retain their meaning. Switching tabs does not run another search or change the overall Auto winner.
 
-## Arrow running cost
+## Ranged and Magic running-cost trade-offs
+
+`POST /ui-api/gear/optimizations` automatically returns `running_cost_frontiers`
+for ranged or Magic scenarios, using the existing complete-solution DTOs. No new
+request flag is required. Fixed Single, Single Auto, potion branches and mixed
+fixed-discipline Multi share the same cost search and recovery model. The
+frontier compares expected DPS with GP/damage; GP/hour and per-resource consumption
+remain available for inspection. Selecting a point selects the complete equipment
+and combat options, including weapon, ammunition and cape.
+
+All supported ranged weapons participate under the selected support policy.
+Reviewed expendable thrown weapons are recurring ammunition costs and are exempt
+from the equipment budget, just like arrows, bolts and darts. Reusable equipment
+still spends that budget. The cost model is `ordinary-resource-cost-v4` and the
+effective policy is `running-cost-frontier-v2`, with
+`activation: ranged-or-magic-v1` and
+`consumable_budget_policy: reviewed-expendable-ranged-v1`. Optimization and exact
+evaluation share these assumptions in their fingerprints. Historical results
+require a new optimization for comparison with the revised policy.
+
+Unknown costs do not become free or numerically dominate known costs. An
+unknown-cost highest-DPS baseline remains visible with the reason. Body interference
+uses the same reviewed physical-ID rules in every evaluation path. Continuous
+ordinary attacks and no ground pickup remain the assumptions; combat support,
+charge availability and community approximations are not expanded by cost recipes.
+
+### Legacy fixed-bow arrow endpoint
+
+The browser now uses the shared cost frontier instead of the Compare arrows
+panel. The existing endpoint below remains available for compatible callers.
 
 `POST /ui-api/gear/ammo-comparisons` accepts `scenario`, a fixed `loadout`
 (slot to physical item ID), and a resolved `combat_option` (`attack_type:
@@ -710,7 +797,8 @@ The response preserves evaluation identity fields, `cost_model_version`,
 `cape_id`, `cape_name`, `dps`, `attack_interval`, `recovery_rate`,
 `arrows_lost_per_hour`, `gp_per_hour`, `gp_per_damage`, `price`, `current`,
 `frontier`, and string `reasons`. Null costs indicate unknown recovery or price;
-invalid equipment has null performance. All combinations remain inspectable.
+invalid or unsupported setups are excluded with reasons. Results obey the scenario
+DPS-loss limit measured against the highest valid fixed-bow comparison.
 
 Rates assume continuous ordinary attacks and no ground pickup. Owned arrows
 still incur replacement cost. Ava recovery is reviewed by exact cape ID and

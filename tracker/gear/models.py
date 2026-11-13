@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from tracker.content.requirements import Requirement
 from tracker.content.schema import ItemSlot
@@ -31,7 +31,35 @@ class EquipmentBonuses(GearModel):
     prayer: int = 0
 
 
+class ElementalSpellBonus(GearModel):
+    elements: tuple[Literal["air", "water", "earth", "fire"], ...]
+    base_max_hit_bonus: int = Field(default=2, ge=0)
+
+
+class ElementalAmuletBonus(GearModel):
+    item_id: int
+    element: Literal["air", "water", "earth", "fire"]
+    base_max_hit_bonus: int
+
+
+class TomeEffect(GearModel):
+    element: Literal["fire", "water", "earth"]
+    rune_id: int = Field(gt=0)
+
+
+class TomeBonus(GearModel):
+    item_id: int
+    element: Literal["fire", "water", "earth"]
+    damage_percent: int
+    accuracy_percent: int
+    fire_pages: Literal["burnt", "searing"] | None = None
+    minimum_hit: int = Field(ge=0)
+
+
 class EquipmentDefinition(GearModel):
+    tome_effect: TomeEffect | None = None
+    elemental_spell_bonus: ElementalSpellBonus | None = None
+    bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
     id: int = Field(gt=0)
     name: str
     slot: ItemSlot
@@ -66,6 +94,8 @@ class EquipmentDefinition(GearModel):
     requires: Requirement | None = None
     requirements_complete: bool = False
     unsupported_effects: tuple[str, ...] = ()
+    # Reviewed base stats remain usable while these bonuses are explicitly omitted.
+    omitted_set_effects: tuple[str, ...] = ()
     tradeable: bool | None = None
     content_ids: tuple[str, ...] = ()
 
@@ -86,6 +116,19 @@ class TargetSelection(GearModel):
 
 
 class CombatTarget(GearModel):
+    hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
+    current_hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
+
+    @model_validator(mode="after")
+    def validate_hitpoints(self) -> CombatTarget:
+        if (
+            self.hitpoints is not None
+            and self.current_hitpoints is not None
+            and self.current_hitpoints > self.hitpoints
+        ):
+            raise ValueError("Current hitpoints cannot exceed base hitpoints.")
+        return self
+
     traits: tuple[str, ...] = ()
     name: str = "Generic target (Defence 1, zero bonuses)"
     defence_level: int = Field(default=1, ge=0, le=10000)
@@ -124,7 +167,33 @@ class PlayerDefenceRolls(GearModel):
     limitations: tuple[str, ...] = ()
 
 
+class BoltPerformance(GearModel):
+    family: str
+    proc_chance: float
+    activation_probability: float
+    expected_damage_per_attack: float
+    expected_damage_delta: float
+    total_max_hit: int
+    normal_max_hit: int
+    target_hitpoints: int | None = None
+    diary_boosted: bool
+
+
+class HopperPerformance(GearModel):
+    proc_chance: float
+    secondary_accuracy: float
+    secondary_max_hit: int
+    expected_damage_delta: float
+    expected_ammunition_per_attack: float
+    approximate: bool = True
+    assumptions: tuple[str, ...]
+
+
 class CombatPerformance(GearModel):
+    tome_bonus: TomeBonus | None = None
+    aquanite_hopper: HopperPerformance | None = None
+    elemental_amulet_bonus: ElementalAmuletBonus | None = None
+    bolt_effect: BoltPerformance | None = None
     player_defence_rolls: PlayerDefenceRolls | None = None
     elemental_weakness: ElementalWeakness | None = None
     supported: bool

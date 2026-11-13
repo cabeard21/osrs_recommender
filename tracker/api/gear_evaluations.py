@@ -24,13 +24,17 @@ from tracker.api.gear_optimizations import (
 )
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, Preparation, no_cache, resources
 from tracker.content.schema import ItemSlot
+from tracker.gear.combat import MODEL_VERSION
+from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.facts import hypothetical_snapshot
+from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.running_frontier import running_cost_assumptions
 from tracker.gear.support import SupportPolicy, support_context
+from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -243,9 +247,20 @@ def calculate_evaluation(
     referenced.update(
         p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
     )
+    from tracker.gear.evaluation import resolve_bolt_context
     from tracker.gear.potions import potion_summary
 
+    bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
     assumptions = {
+        "tome_model_version": TOME_MODEL_VERSION,
+        "fire_tome_pages": scenario.fire_tome_pages,
+        "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
+        "bolt_model_version": "enchanted-bolts-v1",
+        "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,
+        "bolt_diary": {
+            "boosted": bolt_context.bolt_diary_boost,
+            "known": bolt_context.bolt_diary_known,
+        },
         "include_untradeables": scenario.include_untradeables,
         "prayer_model_version": PRAYER_MODEL_VERSION,
         "prayer_catalog_revision": PRAYER_CATALOG_REVISION,
@@ -276,7 +291,7 @@ def calculate_evaluation(
         scenario_fingerprint=scenario_fingerprint(body.scenario),
         snapshot_id=snapshot.fingerprint,
         catalog_version=catalog.revision,
-        model_version="normal-attacks-v2-powered",
+        model_version=MODEL_VERSION,
         assumptions_fingerprint=hashlib.sha256(
             json.dumps(assumptions, sort_keys=True).encode()
         ).hexdigest(),

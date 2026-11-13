@@ -13,12 +13,27 @@ from typing import Any
 
 from tracker.content.loader import Content
 from tracker.content.requirements import AllOf, SkillLeaf
+from tracker.gear.bolts_catalog import REQUIREMENTS as BOLT_REQUIREMENTS
+from tracker.gear.bolts_catalog import REVISION as BOLT_REVISION
+from tracker.gear.bolts_catalog import TRADEABLE as BOLT_TRADEABLE
+from tracker.gear.bolts_catalog import apply_review as bolt_review
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
+from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
+from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
+from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
+from tracker.gear.hopper import REVISION as HOPPER_REVISION
+from tracker.gear.hopper_catalog import apply_review as hopper_review
 from tracker.gear.models import EquipmentDefinition
+from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
+from tracker.gear.obsidian import apply_review as obsidian_review
 from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
+from tracker.gear.tomes import FORMS as TOME_FORMS
+from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
+from tracker.gear.tomes import REVISION as TOME_REVISION
+from tracker.gear.tomes import apply_review as tome_review
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -30,7 +45,7 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 2
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
 # https://oldschool.runescape.wiki/w/Ancient_staff
 REVIEWED_STANDARD_STAVES = frozenset(
-    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 27785, 27788, 27676, 27679}
+    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 6526, 27785, 27788, 27676, 27679}
 )
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
@@ -110,6 +125,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
+        row = tome_review(hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row)))))
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -198,6 +214,14 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=powered.level)
         if autocast_level is not None:
             requirement = SkillLeaf(skill="magic", level=autocast_level)
+        if row["id"] == 32879:
+            requirement = SkillLeaf(skill="ranged", level=60)
+        if row["id"] in ELEMENTAL_AMULETS:
+            requirement = SkillLeaf(skill="magic", level=59)
+        if row["id"] in BOLT_REQUIREMENTS:
+            requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
+        if row["id"] in TOME_FORMS:
+            requirement = SkillLeaf(skill="magic", level=50)
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -206,10 +230,25 @@ def load_catalog(
                     _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
                 "requires": requirement,
-                "requirements_complete": bool(entries or review or powered or autocast_level)
+                "requirements_complete": bool(
+                    entries
+                    or review
+                    or powered
+                    or autocast_level
+                    or row["id"] in BOLT_REQUIREMENTS
+                    or row["id"] in ELEMENTAL_AMULETS
+                    or row["id"] in TOME_FORMS
+                    or row["id"] == 32879
+                )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in REVIEWED_POWERED_TRADEABLE
+                    row["id"] in TOME_MARKET_FORMS
+                    if row["id"] in TOME_FORMS
+                    else True
+                    if row["id"] in ELEMENTAL_AMULETS or row["id"] == 32879
+                    else row["id"] in BOLT_TRADEABLE
+                    if row["id"] in BOLT_REQUIREMENTS
+                    else row["id"] in REVIEWED_POWERED_TRADEABLE
                     if powered is not None
                     else row["id"] in {27785, 27676}
                     if autocast_level is not None
@@ -245,6 +284,11 @@ def load_catalog(
             + community_payload
             + reviewed_spells
             + POWERED_REVISION
+            + OBSIDIAN_REVISION
+            + TOME_REVISION
+            + ELEMENTAL_AMULET_REVISION
+            + BOLT_REVISION
+            + HOPPER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -255,6 +299,11 @@ def load_catalog(
             payload
             + reviewed_spells
             + POWERED_REVISION
+            + OBSIDIAN_REVISION
+            + TOME_REVISION
+            + ELEMENTAL_AMULET_REVISION
+            + BOLT_REVISION
+            + HOPPER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

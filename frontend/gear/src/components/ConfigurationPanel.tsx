@@ -118,14 +118,14 @@ export function ConfigurationPanel() {
         </div>
         <p>
           {liveMode
-            ? "Additional gear purchases only. Ammo and darts ignore this budget. Items you own are reused; prices are cached estimates."
+            ? "Additional gear purchases only. Consumable ammunition ignore this budget. Items you own are reused; prices are cached estimates."
             : "Fixture quotes only. Shared purchases counted once in the demo summary."}
         </p>
         {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
           <p className="notice">
             {draft.includeUntradeables
-              ? "Budget is 0, so tradeable gear must already be owned. Eligible untradeables are considered as hypothetical upgrades. Ammo and darts are exempt."
-              : "Budget is 0, so gear must already be owned. Ammo and darts are exempt."}
+              ? "Budget is 0, so tradeable gear must already be owned. Eligible untradeables are considered as hypothetical upgrades. Consumable ammunition are exempt."
+              : "Budget is 0, so gear must already be owned. Consumable ammunition are exempt."}
           </p>
         )}
       </div>
@@ -325,6 +325,19 @@ export function ConfigurationPanel() {
         />
         <LockConstraints draft={draft} change={change} itemLabel={itemLabel} />
       </details>
+      <label>
+        Tome of Fire pages
+        <select
+          value={draft.fireTomePages ?? "burnt"}
+          onChange={(e) =>
+            change({ fireTomePages: e.target.value as Draft["fireTomePages"] })
+          }
+        >
+          <option value="burnt">Burnt</option>
+          <option value="searing">Searing</option>
+        </select>
+      </label>
+      <p>Tome page availability, consumption, and costs are excluded.</p>
       <PotionFields
         policy={draft.potions}
         catalog={state.context?.live?.potion_catalog ?? []}

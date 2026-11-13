@@ -7,9 +7,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from tracker.gear.ammo import cape_recovery_rate
+from tracker.gear.ammo_armour import INTERFERING_BODIES
 from tracker.gear.compact_costs import CostEvaluator
+from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
-from tracker.gear.running_costs import _THROWN
 
 
 @dataclass(frozen=True)
@@ -38,7 +39,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
     interference, torag = array("i", [0]), array("i", [0])
     for item_id in scoring.dense_ids[1:]:
         item = search.items[item_id]
-        ranged_kind.append(1 if item.ammo_for else 2 if item_id in _THROWN else 0)
+        ranged_kind.append(1 if item.ammo_for else 2 if item_id in THROWN_IDS else 0)
         ammo_valid.append(
             int(bool(item.ammo_type and item.ammo_type.startswith(("arrow:", "bolt:"))))
         )
@@ -46,7 +47,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         unit_prices.append(quote if quote is not None else -1)
         rate, _ = cape_recovery_rate(item_id)
         recovery.append(rate if rate is not None else -1)
-        interference.append(int(item.slot == "body" and item.bonuses.ranged < 0))
+        interference.append(int(item.slot == "body" and item_id in INTERFERING_BODIES))
         torag.append(int(item_id in TORAG_USABLE_IDS))
     return CostData(
         option_kind,

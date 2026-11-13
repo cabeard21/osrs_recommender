@@ -13,13 +13,35 @@ if TYPE_CHECKING:
     from tracker.gear.compact_costs import NumericCost, PreparedCost
 
 
+def needs_running_cost_frontier(request: Any) -> bool:
+    """Resource objectives apply to ranged/Magic and every branch of their Auto run."""
+    return any(
+        (
+            bool({"ranged", "magic"}.intersection(role.allowed_disciplines))
+            if role.allowed_disciplines is not None
+            else role.style in {"ranged", "magic"}
+        )
+        for role in request.roles
+        if role.style != "special"
+    )
+
+
+def cost_scaffolds(original: Any, role: Any) -> list[dict[str, int]]:
+    """Keep every legal weapon/ammunition context before cost candidate pruning."""
+    bases = original.baselines(role)
+    unique = {tuple(sorted(base.items())): base for base in bases}
+    return [unique[key] for key in sorted(unique)]
+
+
 def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
-        "policy": "running-cost-frontier-v1",
+        "policy": "running-cost-frontier-v3-tomes",
         "cost_model_version": COST_MODEL_VERSION,
+        "consumable_budget_policy": "reviewed-expendable-ranged-v1",
+        "activation": "ranged-or-magic-v1",
         "expansion_limit": 1_500_000 if thorough else 500_000,
         "complete_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,
@@ -31,6 +53,7 @@ def running_cost_assumptions(
 ) -> dict[str, Any]:
     """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
     return {
+        "fire_tome_pages": request.fire_tome_pages,
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
             str(i): {
@@ -72,7 +95,12 @@ def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str
         "gp_per_damage": spend / damage if spend is not None and damage > 0 else None,
         "resources": [],
         "charging_alternatives": [],
-        "charging_assumption": None,
+        "charging_assumption": " ".join(
+            dict.fromkeys(
+                c["charging_assumption"] for _, c, _ in active if c.get("charging_assumption")
+            )
+        )
+        or None,
         "reasons": (
             []
             if known and damage > 0
@@ -323,19 +351,20 @@ def explore_running_costs(
     for role in search.request.roles:
         if role.style == "special":
             continue
-        bases = original.baselines(role)
+        sampled_bases = cost_scaffolds(original, role)
         for i in search.eligible:
             slot = search.items[i].slot
-            if slot not in {"weapon", "ammunition", "cape"}:
+            if slot not in {"weapon", "ammunition", "cape", "shield"}:
                 continue
             values = [
                 search.secondary({role.id: {**b, slot: i}})
-                for b in bases[:8]
-                if search.compatible({**b, slot: i})
+                for b in sampled_bases
+                if (slot in {"cape", "shield"} or b.get(slot) == i)
+                and search.compatible({**b, slot: i})
             ]
             search.secondary_marginals[role.id, i] = max(values, default=-1e100)
     search.pools = dict(original.pools)
-    for slot in ("weapon", "ammunition", "cape"):
+    for slot in ("weapon", "ammunition", "cape", "shield"):
         leaders = sorted(
             (i for i in search.eligible if search.items[i].slot == slot),
             key=lambda i: (
@@ -349,7 +378,10 @@ def explore_running_costs(
                 i,
             ),
         )
-        search.pools[slot] = list(dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7]]))
+        tomes = [i for i in search.eligible if slot == "shield" and search.items[i].tome_effect]
+        search.pools[slot] = list(
+            dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7], *tomes])
+        )
 
     def objective(row: dict[str, Any] | None) -> dict[str, Any] | None:
         if row is None:

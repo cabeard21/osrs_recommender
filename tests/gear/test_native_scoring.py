@@ -58,6 +58,42 @@ def test_support_accepts_magic_and_fractional_magic_metric():
 
 
 @pytest.mark.parametrize(
+    "style,item,reason",
+    [
+        (
+            "magic",
+            {"slot": "neck", "elemental_spell_bonus": {"elements": ("fire",)}},
+            "equipment_spell_effect",
+        ),
+        (
+            "magic",
+            {"slot": "shield", "tome_effect": {"element": "fire", "rune_id": 554}},
+            "equipment_spell_effect",
+        ),
+        ("ranged", {"slot": "ammunition", "bolt_effect": "diamond"}, "equipment_ranged_effect"),
+        ("ranged", {"id": 32879, "slot": "shield"}, "equipment_ranged_effect"),
+    ],
+)
+def test_new_equipment_effects_fall_back_before_native_scoring(style, item, reason):
+    search = context(style)
+    effect = EquipmentDefinition(**{"id": 3, "name": "Effect", **item})
+    search.items = {**search.items, effect.id: effect}
+    search.eligible = search.items
+    assert support_reason(search) == reason
+
+
+def test_unreviewed_body_recovery_falls_back_before_native_cost_ranking():
+    search = context("ranged")
+    search.items = {
+        **search.items,
+        22109: EquipmentDefinition(id=22109, name="Assembler", slot="cape"),
+        999999: EquipmentDefinition(id=999999, name="Unknown body", slot="body"),
+    }
+    search.eligible = search.items
+    assert support_reason(search) == "unreviewed_body_recovery"
+
+
+@pytest.mark.parametrize(
     "priority",
     [
         "magic_damage_bonus",

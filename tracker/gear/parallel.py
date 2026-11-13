@@ -21,10 +21,11 @@ from tracker.content.loader import Content
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.auto import branch_requests
 from tracker.gear.catalog import EquipmentCatalog
-from tracker.gear.discipline_assignments import has_auto, has_magic
+from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
+from tracker.gear.running_frontier import needs_running_cost_frontier
 
 logger = logging.getLogger(__name__)
 _CONTEXT: tuple[Content, EquipmentCatalog, str, Any] | None = None
@@ -506,7 +507,7 @@ class AutoProcessPool:
         jobs = [
             job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
         ]
-        selected = {**options, "_running_frontier": has_magic(request)}
+        selected = {**options, "_running_frontier": needs_running_cost_frontier(request)}
         results = self._dispatch(jobs, selected, cancelled, progress)
         return [
             (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)

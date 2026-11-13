@@ -107,6 +107,8 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  hitpoints?: number | null;
+  current_hitpoints?: number | null;
   traits?: string[];
   flat_armour?: number;
   name: string;
@@ -163,7 +165,9 @@ export interface PotionDefinition {
   id: string;
   name: string;
 }
+export type FireTomePages = "burnt" | "searing";
 export interface Draft {
+  fireTomePages?: FireTomePages;
   includeUntradeables?: boolean;
   potions?: PotionPolicy;
   targetInputs?: Record<string, string>;
@@ -192,6 +196,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    fire_tome_pages?: FireTomePages;
     include_untradeables?: boolean;
     potions?: PotionPolicy;
     support_policy?: SupportPolicy;
@@ -419,7 +424,41 @@ export interface PlayerDefenceRolls {
   magic: number | null;
   limitations: string[];
 }
+export interface BoltPerformance {
+  family: string;
+  proc_chance: number;
+  activation_probability: number;
+  expected_damage_per_attack: number;
+  total_max_hit: number;
+  normal_max_hit: number;
+  target_hitpoints: number | null;
+  diary_boosted: boolean;
+  expected_damage_delta: number;
+}
 export interface CombatPerformance {
+  tome_bonus?: {
+    item_id: number;
+    element: "fire" | "water" | "earth";
+    damage_percent: number;
+    accuracy_percent: number;
+    fire_pages: FireTomePages | null;
+    minimum_hit: number;
+  } | null;
+  aquanite_hopper?: {
+    proc_chance: number;
+    secondary_accuracy: number;
+    secondary_max_hit: number;
+    expected_damage_delta: number;
+    expected_ammunition_per_attack: number;
+    approximate: boolean;
+    assumptions: string[];
+  } | null;
+  elemental_amulet_bonus?: {
+    item_id: number;
+    element: "air" | "water" | "earth" | "fire";
+    base_max_hit_bonus: number;
+  } | null;
+  bolt_effect?: BoltPerformance | null;
   player_defence_rolls?: PlayerDefenceRolls | null;
   hitsplats?: { accuracy: number; max_hit: number }[];
   elemental_weakness?: {
@@ -641,6 +680,14 @@ export interface PhysicalItem {
   name: string;
   slot: Slot;
   equipment: {
+    tome_effect?: {
+      element: "fire" | "water" | "earth";
+      rune_id: number;
+    } | null;
+    elemental_spell_bonus?: {
+      elements: ("air" | "water" | "earth" | "fire")[];
+      base_max_hit_bonus: number;
+    } | null;
     bonuses: Record<string, number>;
     requires: unknown;
     two_handed: boolean;

@@ -520,10 +520,12 @@ def calculate(
         else:
             reasons.extend(reason["message"] for reason in evaluated["reasons"])
     elif not reasons:
+        from tracker.gear.evaluation import resolve_tome_context
+
         calculated = evaluate_equipment(
             projection.equipment,
             gear.supported_catalog(body.support_policy).items,
-            baseline_body.roles[0],
+            resolve_tome_context(baseline_body.roles[0], baseline_body.fire_tome_pages),
             boosted_levels(
                 {k: v.level for k, v in projected.skills.items()},
                 baseline_body.potions.selected_ids,
@@ -547,6 +549,14 @@ def calculate(
         for i in tuple(referenced)
         if (staff := powered_review(i)) is not None
         and staff.uncharged_id in gear.equipment_catalog().items
+    )
+    from tracker.gear.tomes import review as tome_review
+
+    referenced.update(
+        tome.uncharged_id
+        for i in tuple(referenced)
+        if (tome := tome_review(i)) is not None
+        and tome.uncharged_id in gear.equipment_catalog().items
     )
     return OptimizationResponse(
         evaluated_at=now,

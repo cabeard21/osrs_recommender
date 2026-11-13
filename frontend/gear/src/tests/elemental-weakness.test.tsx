@@ -27,6 +27,26 @@ const performance: CombatPerformance = {
   },
 };
 
+test("explains the amulet base bonus separately from weakness", () => {
+  render(
+    <CombatOptionSummary
+      role={role}
+      weapon="Mystic staff"
+      performance={{
+        ...performance,
+        elemental_amulet_bonus: {
+          item_id: 34419,
+          element: "earth",
+          base_max_hit_bonus: 2,
+        },
+      }}
+    />,
+  );
+  expect(screen.getByLabelText("Elemental amulet effect")).toHaveTextContent(
+    "+2 base max hit before damage and weakness bonuses",
+  );
+});
+
 test("shows the actual weakness bonuses computed by Python", () => {
   render(
     <CombatOptionSummary
@@ -38,6 +58,19 @@ test("shows the actual weakness bonuses computed by Python", () => {
   expect(screen.getByText(/Earth weakness 35% applied/)).toHaveTextContent(
     "+7 max hit",
   );
+});
+
+test("discloses omitted bonuses for supported base-stat performance", () => {
+  const omission = "Obsidian set bonus is omitted; ordinary base stats only.";
+  render(
+    <CombatOptionSummary
+      role={role}
+      weapon="Obsidian staff"
+      performance={{ ...performance, limitations: [omission] }}
+    />,
+  );
+  expect(screen.getByText("Combat model limitations")).toBeInTheDocument();
+  expect(screen.getByText(omission)).toBeInTheDocument();
 });
 
 test("explains why a target weakness did not apply", () => {

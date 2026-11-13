@@ -20,12 +20,12 @@ from tracker.content.schema import Item
 from tracker.domain.types import Container, Tri
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.catalog import EquipmentCatalog, load_catalog
-from tracker.gear.discipline_assignments import has_magic
 from tracker.gear.execution_profile import ExecutionProfile, validate_profile
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.progress_tracker import RunProgress, TimingModel
+from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ _LIMITATIONS = (
 
 def _has_frontiers(request: OptimizationRequest) -> bool:
     """Whether any lane runs the secondary or running-cost frontier stage."""
-    return request.secondary_priority != "default" or has_magic(request)
+    return request.secondary_priority != "default" or needs_running_cost_frontier(request)
 
 
 def _timing_key(

@@ -116,3 +116,37 @@ def test_dedup_preserves_spell_filters_and_account_access(monkeypatch, spells, u
     else:
         assert actual == expected[0]
         assert search.combat_option(equipment, role) == expected[1]
+
+
+@pytest.mark.parametrize("weakness", [None, "air", "fire", "water", "earth"])
+@pytest.mark.parametrize("cap", [None, 1, 16])
+def test_amulet_spell_dedup_matches_exhaustive_across_necklaces(monkeypatch, weakness, cap):
+    from tracker.gear.models import ElementalSpellBonus
+
+    target = CombatTarget(weakness_element=weakness, weakness_percent=50, damage_cap=cap)
+    search, role = search_for(monkeypatch, target=target)
+    necklaces = {
+        3 + index: EquipmentDefinition(
+            id=3 + index,
+            name="Amulet",
+            slot="neck",
+            bonuses=EquipmentBonuses(magic=10),
+            elemental_spell_bonus=ElementalSpellBonus(elements=elements, base_max_hit_bonus=2),
+        )
+        for index, elements in enumerate(
+            (("air",), ("water",), ("earth",), ("fire",), ("air", "water", "earth", "fire"))
+        )
+    }
+    search.items = {**search.items, **necklaces}
+    from tracker.gear.scoring import EquipmentScorer
+
+    search.scorer = EquipmentScorer(search.items)
+    for neck in (None, *necklaces, None):
+        equipment = {"weapon": 1, "body": 2, **({"neck": neck} if neck else {})}
+        expected = reference(search, role, equipment)
+        actual = search.performance(equipment, role)
+        if expected is None:
+            assert not actual["supported"]
+        else:
+            assert actual == expected[0]
+            assert search.combat_option(equipment, role) == expected[1]

@@ -140,3 +140,158 @@ def test_cost_cap_and_existing_secondary_are_independent():
         p["solution"]["secondary_priority"] == "prayer_bonus"
         for p in result["running_cost_frontiers"][0]["points"]
     )
+
+
+def test_running_cost_activation_covers_ranged_magic_auto_and_multi():
+    from tracker.gear.optimizer import OptimizationRequest, RoleConfig
+    from tracker.gear.running_frontier import needs_running_cost_frontier
+
+    for style in ("ranged", "magic"):
+        assert needs_running_cost_frontier(
+            OptimizationRequest(roles=(RoleConfig(id="a", style=style),))
+        )
+    assert not needs_running_cost_frontier(
+        OptimizationRequest(roles=(RoleConfig(id="a", style="slash"),))
+    )
+    assert needs_running_cost_frontier(
+        OptimizationRequest(
+            roles=(RoleConfig(id="a", style="slash"), RoleConfig(id="b", style="ranged"))
+        )
+    )
+    from types import SimpleNamespace
+
+    assert needs_running_cost_frontier(
+        SimpleNamespace(
+            roles=(SimpleNamespace(style="slash", allowed_disciplines=("melee", "ranged")),)
+        )
+    )
+
+    assert not needs_running_cost_frontier(
+        SimpleNamespace(roles=(SimpleNamespace(style="magic", allowed_disciplines=("melee",)),))
+    )
+
+
+def test_cost_scaffolds_keep_every_context_after_first_eight():
+    from types import SimpleNamespace
+
+    from tracker.gear.running_frontier import cost_scaffolds
+
+    bases = [{"weapon": i, "ammunition": 100 + i} for i in range(12)]
+    original = SimpleNamespace(baselines=lambda role: [*bases, bases[0]])
+    assert cost_scaffolds(original, object()) == bases
+
+
+def test_real_ranged_frontier_is_automatic_and_retains_cheaper_ammunition():
+    from types import SimpleNamespace
+
+    from tests.gear.test_optimizer import NOW, weapon
+    from tracker.accounts.snapshot import AccountSnapshot, ObservedItemFact
+    from tracker.content.loader import Content
+    from tracker.domain.types import Container, SkillState, Source
+    from tracker.gear.optimizer import OptimizationRequest, RoleConfig, optimize
+
+    items = [weapon(806, "ranged", 1), weapon(811, "ranged", 40)]
+    snapshot = AccountSnapshot(
+        1,
+        "test",
+        skills={"ranged": SkillState(70, None, Source.MANUAL, NOW)},
+        observed_items={
+            (i.id, Container.BANK): ObservedItemFact(i.id, Container.BANK, 1, "test", NOW)
+            for i in items
+        },
+    )
+    prices = {
+        i: SimpleNamespace(
+            high_price_gp=gp,
+            low_price_gp=gp,
+            high_trade_at=NOW,
+            low_trade_at=NOW,
+            fetched_at=NOW,
+            source="live",
+        )
+        for i, gp in [(806, 1), (811, 100)]
+    }
+    result = optimize(
+        snapshot,
+        OptimizationRequest(
+            roles=(RoleConfig(id="ranged", style="ranged"),),
+            mode="owned",
+            max_swaps=0,
+            max_dps_loss_pct=100,
+        ),
+        SimpleNamespace(items={i.id: i for i in items}),
+        Content(),
+        prices,
+        NOW,
+    )
+    group = result["running_cost_frontiers"][0]
+    assert {
+        p["solution"]["loadouts"]["ranged"]["equipment"]["weapon"] for p in group["points"]
+    } == {806, 811}
+    assert result["selected_solution"]["loadouts"]["ranged"]["equipment"]["weapon"] == 811
+
+
+def test_cost_search_retains_cheap_compatible_context_beyond_first_eight():
+    from types import SimpleNamespace
+
+    from tests.gear.test_optimizer import NOW, weapon
+    from tracker.accounts.snapshot import AccountSnapshot, ObservedItemFact
+    from tracker.content.loader import Content
+    from tracker.domain.types import Container, SkillState, Source
+    from tracker.gear.models import EquipmentDefinition
+    from tracker.gear.optimizer import OptimizationRequest, RoleConfig, optimize
+
+    items = []
+    prices = {}
+    for index in range(12):
+        ammo_id = 882 + index
+        ammo_type = f"arrow:{ammo_id}"
+        items.extend(
+            (
+                weapon(10000 + index, "ranged", 60 - index * 3, ammo_for=(ammo_type,)),
+                EquipmentDefinition(
+                    id=ammo_id,
+                    name=f"Ammo {index}",
+                    slot="ammunition",
+                    ammo_type=ammo_type,
+                    requirements_complete=True,
+                ),
+            )
+        )
+        gp = 1 if index == 11 else 1000
+        prices[ammo_id] = SimpleNamespace(
+            high_price_gp=gp,
+            low_price_gp=gp,
+            high_trade_at=NOW,
+            low_trade_at=NOW,
+            fetched_at=NOW,
+            source="live",
+        )
+    snapshot = AccountSnapshot(
+        1,
+        "test",
+        skills={"ranged": SkillState(70, None, Source.MANUAL, NOW)},
+        observed_items={
+            (i.id, Container.BANK): ObservedItemFact(i.id, Container.BANK, 1, "test", NOW)
+            for i in items
+        },
+    )
+    result = optimize(
+        snapshot,
+        OptimizationRequest(
+            roles=(RoleConfig(id="r", style="ranged"),),
+            mode="owned",
+            max_swaps=0,
+            max_dps_loss_pct=100,
+        ),
+        SimpleNamespace(items={i.id: i for i in items}),
+        Content(),
+        prices,
+        NOW,
+    )
+    group = result["running_cost_frontiers"][0]
+    cheapest = min(group["points"], key=lambda p: p["solution"]["running_cost"]["gp_per_damage"])
+    assert cheapest["solution"]["loadouts"]["r"]["equipment"] == {
+        "weapon": 10011,
+        "ammunition": 893,
+    }

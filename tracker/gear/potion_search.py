@@ -7,8 +7,9 @@ import json
 from time import perf_counter
 from typing import Any
 
-from tracker.gear.discipline_assignments import has_auto, has_magic
+from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_skills
+from tracker.gear.running_frontier import needs_running_cost_frontier
 
 
 def merge_results(
@@ -269,7 +270,8 @@ def optimize_potions(
     branch_options = {
         **options,
         "_complete_frontiers": True,
-        "_running_frontier": options.get("_running_frontier", False) or has_magic(request),
+        "_running_frontier": options.get("_running_frontier", False)
+        or needs_running_cost_frontier(request),
     }
     if branch_runner is not None:
         branches = branch_runner(

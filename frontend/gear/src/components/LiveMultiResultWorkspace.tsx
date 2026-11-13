@@ -323,10 +323,11 @@ export function LiveMultiResultWorkspace() {
       {(raw.running_cost_frontiers?.length ||
         roles.some((role) =>
           role.autoDiscipline
-            ? (
-                role.allowedDisciplines ?? ["melee", "ranged", "magic"]
-              ).includes("magic")
-            : role.style === "magic",
+            ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"]).some(
+                (discipline) =>
+                  discipline === "magic" || discipline === "ranged",
+              )
+            : role.style === "magic" || role.style === "ranged",
         )) && (
         <RunningCostFrontier
           group={runningCostGroup}

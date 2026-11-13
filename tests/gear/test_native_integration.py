@@ -80,12 +80,25 @@ def test_spawned_workers_preserve_native_results_and_merge_evidence():
     from tests.gear.test_parallel import inputs as worker_inputs
     from tracker.gear.auto import branch_requests
     from tracker.gear.parallel import AutoProcessPool
+    from tracker.gear.running_frontier import needs_running_cost_frontier
 
     snapshot, request, catalog, content, prices, now = worker_inputs()
     role = request.roles[0].model_copy(update={"allowed_disciplines": ("melee", "ranged")})
     request = request.model_copy(update={"roles": (role,)})
     expected = [
-        (name, optimize(snapshot, branch, catalog, content, prices, now, **FLAGS))
+        (
+            name,
+            optimize(
+                snapshot,
+                branch,
+                catalog,
+                content,
+                prices,
+                now,
+                **FLAGS,
+                _running_frontier=needs_running_cost_frontier(request),
+            ),
+        )
         for name, branch in branch_requests(request)
     ]
     pool = AutoProcessPool(2)
@@ -108,7 +121,8 @@ def test_spawned_workers_preserve_native_results_and_merge_evidence():
     assert [(name, result_digest(row)) for name, row in actual] == [
         (name, result_digest(row)) for name, row in expected
     ]
-    assert evidence.snapshot()["native_requests"] == 2
+    # Resource-frontier lanes may create additional native contexts per branch.
+    assert evidence.snapshot()["native_requests"] >= len(expected)
     assert evidence.snapshot()["fallback_requests"] == 0
 
 

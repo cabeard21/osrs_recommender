@@ -378,3 +378,86 @@ is not scored by the ordinary-attack model. Other physical forms remain separate
 Catalog and community provenance checksums are updated together so this review
 does not invalidate existing community classifications. Focused regressions live
 in `tests/gear/test_anti_dragon_shield.py`.
+
+## Enchanted bolt direct-damage review (2026-11-12)
+
+The ordinary attack model now includes expected opal, pearl, ruby, diamond,
+dragonstone and onyx proc damage, for twelve exact normal/dragon bolt forms.
+Compatibility is an exact physical-ID whitelist, reviewed against
+[Wiki calculator Equipment.ts](https://github.com/weirdgloop/osrs-dps-calc/blob/880ab3f324ebea2644681d835448ab9d45c04f5c/src/lib/Equipment.ts).
+Crossbow, Phoenix, Bronze, Blurite and Dorgeshuun support opal; Iron, Steel
+and Mithril additionally support pearl; Adamant adds ruby/diamond; Rune adds
+dragonstone/onyx. Dragon, Armadyl and Zaryte accept all twelve forms.
+Dorgeshuun retains bone bolts and cannot fire pearl bolts.
+
+Proc formulas follow the independently implemented expectations described by
+[bolts.ts](https://github.com/weirdgloop/osrs-dps-calc/blob/880ab3f324ebea2644681d835448ab9d45c04f5c/src/lib/dists/bolts.ts).
+Zaryte passive modifiers, successful-hit gating, immunity traits, rounding and
+signed flat armour are included. Unsupported target damage-cap rerolls remain
+blocked. Accuracy and ordinary max hit retain their existing meaning; optional
+bolt reporting supplies activation probability, total expected damage, total
+maximum and the expected damage difference, which can be negative for ruby.
+
+Target current HP defaults to the selected NPC base HP. Saved target definitions
+inherit newly available base HP; explicit current HP survives. Custom targets need
+base or current HP for ruby. This is static DPS at that HP, with sufficient player
+HP assumed. Declining HP, ruby self-damage endurance, healing, poison, utility
+procs, specials and Dragon hunter crossbow bonuses are not simulated.
+Confirmed synced Kandarin Hard completion enables the activation boost; unknown
+completion uses base rates and is disclosed. Ammunition remains exempt from gear
+purchase budgets and retains replacement/Ava costs with proc-adjusted GP/damage.
+
+Catalog and NPC revisions and the combat model version invalidate older results.
+No account database migration is required. Proc IDs are protected from ammunition
+pool truncation; running-cost scaffolds cover reviewed crossbow/bolt pairings.
+
+## Aquanite hopper estimated passive (2026-11-13)
+
+The exact physical Aquanite hopper `32879` is a tradeable shield requiring
+60 Ranged to equip. Its ordinary bonuses are retained, and its passive is
+enabled for the already-reviewed crossbow IDs and compatible ammunition only.
+This does not add Hunters' crossbows or Dragon hunter crossbow support.
+
+The [documented passive](https://oldschool.runescape.wiki/w/Aquanite_hopper)
+gives an 11% chance of a secondary shot. The model rolls that chance independently
+of primary accuracy, with no attack-interval change or recursive secondary shots.
+Secondary accuracy uses `floor(primary attack roll * 2/3)` against the same
+defence. Its enchanted-bolt chance is one third of the configured chance, including
+any confirmed Kandarin Hard boost. An actual primary bolt activation disables
+only the secondary bolt effect; it does not cancel the ordinary secondary shot.
+Existing bolt-family accuracy gates, immunities and Zaryte modifiers still apply.
+
+**Approximate mechanics:** exact rounding, secondary ruby damage and additional
+ammunition consumption were not independently established. The model therefore
+uses the explicitly approved assumptions below, also included in result details:
+
+- Secondary damage is `floor(damage / 3)` after bolt effects and minimum-hit
+  adjustments, before signed flat armour. Damage is not raised to one afterward.
+- The same damage reduction applies to ruby procs. Both shots use the existing
+  frozen chosen/current target HP; declining HP and ruby self-damage endurance
+  are not simulated.
+- Each secondary shot consumes another bolt and uses ordinary Ava recovery:
+  1.11 expected projectiles per attack. Required and recovered quantities are
+  both scaled, and owned ammunition still uses replacement prices.
+
+The optional `aquanite_hopper` report labels the estimate and exposes conditional
+secondary accuracy/max hit, expected damage added per ordinary attack, expected
+ammunition use and assumptions. Existing accuracy/max-hit and enchanted-bolt
+reports retain primary-shot meanings. The shared combat calculation drives both
+search scores and displayed DPS; running costs use the same activation rules.
+Existing target damage-cap and unsupported-mechanic protections remain in place.
+Model/catalog/cost revisions invalidate older results. No database migration or
+new scenario control is required.
+
+Focused validation covers arithmetic against independently enumerated outcomes,
+catalog wear gates, optimizer shield selection, purchase budgets, Ava costs,
+API evaluation parity and spawned-worker parity. The math/review modules reached
+100% statement coverage. Frontend tests, the production build and a desktop
+browser presentation test passed; that browser test injects report metadata and
+does not validate game mechanics.
+
+A local 29-item ranged fixture (13 crossbows, 12 enchanted bolt forms and four
+offhands) completed in median 0.439 seconds with the passive disabled and 0.358
+seconds enabled over three runs each. This is a bounded desktop smoke comparison,
+not a full-catalog benchmark or evidence of a speedup. The fixture selected the
+hopper with the passive enabled and an alternative offhand when disabled.
