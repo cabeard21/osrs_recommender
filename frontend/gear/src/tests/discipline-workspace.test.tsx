@@ -44,6 +44,7 @@ function setup(
     outdated?: boolean;
     purchases?: boolean;
     owned?: boolean;
+    frontierCap?: number | null;
   } = {},
 ) {
   const dispatch = vi.fn();
@@ -105,6 +106,18 @@ function setup(
       scenario: {},
       result: {
         selected_solution: melee,
+        curve: [{ swap_limit: 0, solution: melee }],
+        running_cost_frontiers: [
+          {
+            swap_limit:
+              options.frontierCap === undefined
+                ? request.max_swaps
+                : options.frontierCap,
+            baseline_dps: 100,
+            sampled: false,
+            points: [],
+          },
+        ],
         secondary_frontiers: [],
         search: {},
         discipline_comparison: [
@@ -137,9 +150,23 @@ function setup(
             selected_solution: ranged,
             search: {},
             limitations: [],
+            running_cost_frontiers: [
+              {
+                swap_limit:
+                  options.frontierCap === undefined
+                    ? request.max_swaps
+                    : options.frontierCap,
+                baseline_dps: 50,
+                sampled: false,
+                points: [],
+              },
+            ],
             secondary_frontiers: [
               {
-                swap_limit: request.max_swaps,
+                swap_limit:
+                  options.frontierCap === undefined
+                    ? request.max_swaps
+                    : options.frontierCap,
                 baseline_dps: 50,
                 sampled: false,
                 points: [
@@ -294,4 +321,22 @@ it("withholds comparison when price provenance differs", async () => {
     }),
   );
   expect(screen.getByText(/Performance comparison unavailable/)).toBeVisible();
+});
+
+it("shows automatic ranged cost analysis at the selected frontier cap without the old arrow panel", () => {
+  setup("discipline-ranged-frontier-8-a", { frontierCap: 0 });
+  expect(
+    screen.getByRole("heading", { name: "DPS and running cost" }),
+  ).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Compare arrows" })).toBeNull();
+});
+
+it.each([
+  ["curve-0", 0],
+  ["unrestricted", null],
+] as const)("follows selected %s cost group", (id, cap) => {
+  setup(id, { frontierCap: cap });
+  expect(
+    screen.getByRole("heading", { name: "DPS and running cost" }),
+  ).toBeVisible();
 });

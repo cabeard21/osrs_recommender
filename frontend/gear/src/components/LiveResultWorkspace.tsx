@@ -1,5 +1,4 @@
 import { DisciplineTabs } from "./DisciplineTabs";
-import { AmmoComparison } from "./AmmoComparison";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
@@ -83,7 +82,6 @@ export function LiveResultWorkspace() {
       : result?.live?.result.selected_solution);
   const loadout = solution?.loadouts[0];
   const previous = current.previous;
-  const ammoLoadout = Object.values(selected?.loadouts ?? {})[0];
   const select = (slot: keyof ReturnType<typeof emptyEquipment>) =>
     dispatch({
       type: "ui",
@@ -109,6 +107,26 @@ export function LiveResultWorkspace() {
         )
       : [];
   const request = result.scenario.request;
+  const secondaryGroups =
+    branch?.secondary_frontiers ??
+    result.live?.result.secondary_frontiers ??
+    [];
+  const costGroups =
+    branch?.running_cost_frontiers ??
+    result.live?.result.running_cost_frontiers ??
+    [];
+  const selectedGroup = [...secondaryGroups, ...costGroups].find((group) =>
+    group.points.some((point) => point.id === current.solutionId),
+  );
+  const curvePoint = result.live?.result.curve?.find(
+    (point) => `curve-${point.swap_limit}` === current.solutionId,
+  );
+  const selectedSwapLimit =
+    current.solutionId === "unrestricted"
+      ? null
+      : selectedGroup
+        ? selectedGroup.swap_limit
+        : (curvePoint?.swap_limit ?? request.max_swaps);
   const isComparableToPrevious = !!previous && comparable(previous, result);
   // The previous run only offers its overall best, so tabs and tradeoff points have no peer.
   const previousDps =
@@ -333,20 +351,21 @@ export function LiveResultWorkspace() {
           </section>
         )}
         {(branch
-          ? branch.discipline === "magic"
+          ? !!branch.running_cost_frontiers?.length
           : request.roles.some(
               (role) =>
                 role.style === "magic" ||
+                role.style === "ranged" ||
                 (role.autoDiscipline &&
                   (
                     role.allowedDisciplines ?? ["melee", "ranged", "magic"]
-                  ).includes("magic")),
+                  ).some((style) => style === "ranged" || style === "magic")),
             )) && (
           <RunningCostFrontier
             group={(
               branch?.running_cost_frontiers ??
               result.live?.result.running_cost_frontiers
-            )?.find((g) => g.swap_limit === request.max_swaps)}
+            )?.find((g) => g.swap_limit === selectedSwapLimit)}
             selectedId={current.solutionId}
             selected={selected}
             itemName={itemName}
@@ -360,7 +379,7 @@ export function LiveResultWorkspace() {
           group={(
             branch?.secondary_frontiers ??
             result.live?.result.secondary_frontiers
-          )?.find((g) => g.swap_limit === request.max_swaps)}
+          )?.find((g) => g.swap_limit === selectedSwapLimit)}
           selectedId={current.solutionId}
           priority={request.secondary_priority ?? "default"}
           legacyCapped={(request.max_dps_loss_pct ?? 10) < 100}
@@ -368,27 +387,6 @@ export function LiveResultWorkspace() {
             dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
           }
         />
-        {result.live &&
-          ammoLoadout &&
-          (ammoLoadout.discipline === "ranged" ||
-            ammoLoadout.combat_option?.attack_type === "ranged" ||
-            request.roles[0].style === "ranged") && (
-            <AmmoComparison
-              scenario={result.live.scenario}
-              loadout={ammoLoadout.equipment}
-              combatOption={ammoLoadout.combat_option}
-              identity={{
-                snapshot_id: result.snapshotId,
-                catalog_version: result.catalogVersion,
-                price_revision: result.priceRevision,
-                model_version: result.modelVersion,
-                assumptions_fingerprint:
-                  result.live.result.assumptions_fingerprint,
-                scenario_fingerprint: result.live.scenario_fingerprint,
-              }}
-              outdated={current.outdated}
-            />
-          )}
         <section className="panel result-context">
           <span className="eyebrow gold">This result used</span>
           <strong>{request.target.name}</strong>

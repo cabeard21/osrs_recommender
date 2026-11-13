@@ -4,6 +4,75 @@ The [desktop performance analysis and work tracker](GEAR_OPTIMIZER_DESKTOP_PERFO
 records the November 8, 2026 architectural assessment, profiling evidence, and
 proposed follow-up experiments. The entries below retain historical measurements.
 
+## November 12, 2026: automatic ranged resource-cost frontiers
+
+Ranged now runs the same separate DPS-versus-GP/damage exploration as Magic,
+including full weapon, ammunition, cape and permitted combat-option changes.
+This adds real search work to fixed-ranged and ranged-only Auto requests. Auto
+already permitting Magic previously ran cost exploration in its ranged branch,
+so enabling the shared graph alone is not a new search stage in that case.
+
+The implementation keeps the existing 500,000 Fast / 1,500,000 Thorough frontier
+expansion limits. Cost preparation now covers compatible supported weapon and
+ammunition contexts rather than only the first eight baseline scaffolds. This
+can increase preparation work even in requests that already ran cost exploration.
+The expanded consumable budget policy and reviewed body-interference rules can
+intentionally change feasible or numerically comparable setups; timings therefore
+measure the complete behavior change rather than promising byte-identical output.
+
+The comparison below uses archived baseline commit
+`0fd073d5cae87e111cb5adbbeed0c80e0ca1d54e` and the changed local sources on Windows.
+It uses an explicit 20-item subset of the bundled frozen
+`gear_search_quality_account.json` fixture, retaining its account facts, clock and
+cached prices. Each request uses a two-action cap and 100% allowed DPS loss.
+Measurements are serial direct-optimizer calls, with one warmup followed by three
+measured runs and median wall time. This is a small substitute fixture, not the
+operator account, full catalog, HTTP, worker-pool or live deployment acceptance.
+The two revisions were measured sequentially after development test jobs finished.
+No latency threshold or search-budget reduction is inferred from these observations.
+
+| Frozen case | Fast before | Fast after | Change | Thorough before | Thorough after | Change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fixed ranged, DPS only | 0.1166 s | 0.3289 s | +182.0% | 0.1360 s | 0.4646 s | +241.5% |
+| Fixed ranged, balanced defence | 0.2503 s | 0.4567 s | +82.4% | 0.2995 s | 0.6350 s | +112.0% |
+| Fixed ranged, prayer bonus | 0.2325 s | 0.4576 s | +96.8% | 0.2729 s | 0.5989 s | +119.4% |
+| Auto, ranged only | 0.1366 s | 0.5429 s | +297.3% | 0.1559 s | 0.6477 s | +315.4% |
+| Auto, ranged and Magic | 1.0901 s | 0.9244 s | -15.2% | 1.0940 s | 1.0954 s | +0.1% |
+| Ranged, optimized ranging potion | 0.2469 s | 0.7138 s | +189.1% | 0.2981 s | 1.0041 s | +236.8% |
+| Mixed Multi, ranged and melee | 2.1733 s | 2.6551 s | +22.2% | 2.2046 s | 3.4043 s | +54.4% |
+
+After-change cost-stage details below are median **sums across executed branches**
+for each serial request. P/E/U means preparation, exploration and publication in
+seconds. These are stage measurements, not a second end-to-end benchmark.
+
+| Frozen case | Fast cost total | Fast P/E/U | Thorough cost total | Thorough P/E/U | Cost branches |
+| --- | ---: | --- | ---: | --- | ---: |
+| Fixed ranged, DPS only | 0.2109 s | 0.0005 / 0.2099 / 0.0006 | 0.3240 s | 0.0005 / 0.3229 / 0.0005 | 1 |
+| Fixed ranged, balanced defence | 0.2218 s | 0.0005 / 0.2207 / 0.0006 | 0.3227 s | 0.0005 / 0.3216 / 0.0006 | 1 |
+| Fixed ranged, prayer bonus | 0.2117 s | 0.0005 / 0.2106 / 0.0006 | 0.3085 s | 0.0006 / 0.3073 / 0.0006 | 1 |
+| Auto, ranged only | 0.3887 s | 0.0005 / 0.3872 / 0.0009 | 0.4831 s | 0.0005 / 0.4817 / 0.0009 | 1 |
+| Auto, ranged and Magic | 0.6767 s | 0.0006 / 0.6752 / 0.0009 | 0.7880 s | 0.0007 / 0.7864 / 0.0009 | 2 |
+| Ranged, optimized ranging potion | 0.4705 s | 0.0010 / 0.4683 / 0.0011 | 0.7138 s | 0.0010 / 0.7117 / 0.0011 | 2 |
+| Mixed Multi, ranged and melee | 0.4605 s | 0.0007 / 0.4592 / 0.0007 | 1.1878 s | 0.0006 / 1.1865 / 0.0007 | 1 |
+
+No measured cost branch exhausted its expansion budget.
+The potion case executes no-potion and ranging-potion profiles. Auto allows only
+the disciplines named in the table. All measured requests returned a feasible
+selected setup; selected DPS remained unchanged in these restricted fixture cases.
+
+The filtered physical IDs are `841, 857, 861, 882, 888, 892, 1059, 1061, 1127, 1129, 1135, 1323, 1333, 1381, 1387, 1704, 1725, 1727, 10499, 21326`.
+Fixture SHA-256: `402bbed7834ffe0f4e069f253f24d999f691b41ec7846879a9aa10db7460a46d`.
+Raw per-run timings/search diagnostics and the request-defining harness are retained locally
+under ignored `.tmp/ranged-cost-benchmark/` (`before-clean.json`, `after-clean.json`,
+`run.py`); the baseline source archive is retained there too. The earlier
+`before.json` is an exploratory contended run and is not used in these tables.
+
+For this small fixture, adding ranged cost exploration materially increases
+DPS-only latency while preserving the existing work budgets. The already-costed
+ranged/Magic Auto case changes little or improves because cost-scaffold candidate
+scoring now avoids unrelated weapon/ammunition contexts. These observations do not
+establish a speedup on larger catalogs or predict current-account latency.
+
 ## November 2, 2026: repeated search and frontier work
 
 Single-role optimization now reuses its individual equipment beam for common

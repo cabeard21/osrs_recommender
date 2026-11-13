@@ -23,6 +23,7 @@ from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.progress_tracker import RunProgress, TimingModel
+from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
@@ -42,11 +43,7 @@ _LIMITATIONS = (
 
 def _has_frontiers(request: OptimizationRequest) -> bool:
     """Whether any lane runs the secondary or running-cost frontier stage."""
-    return (
-        request.secondary_priority != "default"
-        or any(role.style == "magic" for role in request.roles)
-        or "magic" in (request.roles[0].allowed_disciplines or ())
-    )
+    return request.secondary_priority != "default" or needs_running_cost_frontier(request)
 
 
 def _timing_key(request: OptimizationRequest, thorough: bool, parallel: bool) -> tuple[Any, ...]:

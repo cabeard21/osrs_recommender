@@ -10,13 +10,35 @@ from time import perf_counter
 from typing import Any
 
 
+def needs_running_cost_frontier(request: Any) -> bool:
+    """Resource objectives apply to ranged/Magic and every branch of their Auto run."""
+    return any(
+        (
+            bool({"ranged", "magic"}.intersection(role.allowed_disciplines))
+            if role.allowed_disciplines is not None
+            else role.style in {"ranged", "magic"}
+        )
+        for role in request.roles
+        if role.style != "special"
+    )
+
+
+def cost_scaffolds(original: Any, role: Any) -> list[dict[str, int]]:
+    """Keep every legal weapon/ammunition context before cost candidate pruning."""
+    bases = original.baselines(role)
+    unique = {tuple(sorted(base.items())): base for base in bases}
+    return [unique[key] for key in sorted(unique)]
+
+
 def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
-        "policy": "running-cost-frontier-v1",
+        "policy": "running-cost-frontier-v2",
         "cost_model_version": COST_MODEL_VERSION,
+        "consumable_budget_policy": "reviewed-expendable-ranged-v1",
+        "activation": "ranged-or-magic-v1",
         "expansion_limit": 1_500_000 if thorough else 500_000,
         "complete_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,
@@ -207,14 +229,7 @@ def explore_running_costs(
     for role in search.request.roles:
         if role.style == "special":
             continue
-        bases = original.baselines(role)
-        # The initial sample can contain only low-tier crossbows. Preserve each
-        # reviewed proc/weapon context, including Zaryte's distinct passive.
-        sampled_bases = list(bases[:8])
-        for base in bases:
-            ammo = search.items.get(base.get("ammunition", -1))
-            if ammo and ammo.bolt_effect and base not in sampled_bases:
-                sampled_bases.append(base)
+        sampled_bases = cost_scaffolds(original, role)
         for i in search.eligible:
             slot = search.items[i].slot
             if slot not in {"weapon", "ammunition", "cape"}:
@@ -222,7 +237,7 @@ def explore_running_costs(
             values = [
                 search.secondary({role.id: {**b, slot: i}})
                 for b in sampled_bases
-                if search.compatible({**b, slot: i})
+                if (slot == "cape" or b.get(slot) == i) and search.compatible({**b, slot: i})
             ]
             search.secondary_marginals[role.id, i] = max(values, default=-1e100)
     search.pools = dict(original.pools)

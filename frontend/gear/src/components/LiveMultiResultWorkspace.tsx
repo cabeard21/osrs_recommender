@@ -313,7 +313,9 @@ export function LiveMultiResultWorkspace() {
           {curvePanel}
         </>
       )}
-      {roles.some((role) => role.style === "magic") && (
+      {roles.some(
+        (role) => role.style === "magic" || role.style === "ranged",
+      ) && (
         <RunningCostFrontier
           group={runningCostGroup}
           selectedId={current.solutionId}
