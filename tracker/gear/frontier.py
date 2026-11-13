@@ -25,6 +25,11 @@ if TYPE_CHECKING:
 
 Solution = dict[str, Any]
 RankedArchive = tuple[tuple[tuple[Any, ...], Solution], ...]
+# Progress shares within one objective pass, independent of its search budgets.
+# Finalist refinement has a separate allowance and can outlast beam expansion.
+_EXPLORATION_SHARE = 0.65
+_AMMUNITION_END = 0.75
+_REFINEMENT_END = 0.98
 
 
 def pareto(rows: Iterable[Solution]) -> list[Solution]:
@@ -266,11 +271,13 @@ def explore(
             return False
         search.nodes += 1
         if not search.nodes & NODE_REPORT_MASK:
-            reporter.fraction((charged[0] + search.nodes) / budget)
+            reporter.fraction(_EXPLORATION_SHARE * (charged[0] + search.nodes) / budget)
         return True
 
     search.tick = tick
-    search.native_report = lambda: reporter.fraction((charged[0] + search.nodes) / budget)
+    search.native_report = lambda: reporter.fraction(
+        _EXPLORATION_SHARE * (charged[0] + search.nodes) / budget
+    )
     # Marginals cover all eligible items, including those omitted by DPS pools.
     pools = {}
     for slot in SLOTS:
@@ -371,11 +378,11 @@ def explore(
             return False
         metric.nodes += 1
         if not metric.nodes & NODE_REPORT_MASK:
-            reporter.fraction(metric.nodes / budget)
+            reporter.fraction(_EXPLORATION_SHARE * metric.nodes / budget)
         return True
 
     metric.tick = metric_tick
-    metric.native_report = lambda: reporter.fraction(metric.nodes / budget)
+    metric.native_report = lambda: reporter.fraction(_EXPLORATION_SHARE * metric.nodes / budget)
     metric.pools = _metric_pools(metric, original)
     metric_solutions = []
     for equipment in metric.loadouts(roles):
@@ -499,6 +506,7 @@ def explore(
     from tracker.gear.refinement import refine_ammunition
 
     cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
+    reporter.fraction(_EXPLORATION_SHARE)
     # A newly dominating metric point must not discard a diverse seed before
     # its local refinement: that seed may improve beyond the new point.
     retained = [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
@@ -507,10 +515,14 @@ def explore(
         for candidate in retained
         for row in [materialize(candidate)]
     }
-    cleaned = {
-        identity: materialize(refine_ammunition(search, row, _solution_key, cleanup))
-        for identity, row in cleaned.items()
-    }
+    normalized = {}
+    for index, (identity, row) in enumerate(cleaned.items()):
+        normalized[identity] = materialize(refine_ammunition(search, row, _solution_key, cleanup))
+        reporter.fraction(
+            _EXPLORATION_SHARE + (_AMMUNITION_END - _EXPLORATION_SHARE) * (index + 1) / len(cleaned)
+        )
+    cleaned = normalized
+    reporter.fraction(_AMMUNITION_END)
     ammunition_at = perf_counter()
     finalists = {
         "assignment_limit_per_finalist": ASSIGNMENT_LIMIT,
@@ -520,15 +532,26 @@ def explore(
         "finalists": len(cleaned),
     }
     refined = {}
-    for identity, row in cleaned.items():
-        candidate, work = refine_finalist(search, row)
+    for index, (identity, row) in enumerate(cleaned.items()):
+
+        def report_refinement(fraction: float, index: int = index) -> None:
+            reporter.fraction(
+                _AMMUNITION_END
+                + (_REFINEMENT_END - _AMMUNITION_END) * (index + fraction) / len(cleaned)
+            )
+
+        candidate, work = refine_finalist(
+            search, row, progress=report_refinement if reporter.active else None
+        )
         # Refinement can return a freshly scored candidate whose resource report
         # is deferred, even though the input seed was already materialized.
         refined[identity] = materialize(candidate)
         finalists["evaluated_assignments"] += work["evaluated_assignments"]
         finalists["improved_finalists"] += int(work["improvements"] > 0)
         finalists["exhausted_finalists"] += int(work["work_budget_exhausted"])
+        report_refinement(1.0)
     cleaned = refined
+    reporter.fraction(_REFINEMENT_END)
     finalists_at = perf_counter()
     archives = {
         limit: pareto(
@@ -589,6 +612,7 @@ def explore(
         "publication": published_at - finalists_at,
         "total": published_at - started,
     }
+    reporter.fraction(1.0)
     return groups, diagnostics, updated, unlimited
 
 

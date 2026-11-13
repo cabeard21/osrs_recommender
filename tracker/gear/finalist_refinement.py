@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import ChainMap, deque
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
@@ -141,7 +141,11 @@ def _trial(
 
 
 def refine_finalist(
-    search: _Search, solution: Solution, *, limit: int = ASSIGNMENT_LIMIT
+    search: _Search,
+    solution: Solution,
+    *,
+    limit: int = ASSIGNMENT_LIMIT,
+    progress: Callable[[float], None] | None = None,
 ) -> tuple[Solution, dict[str, Any]]:
     """Restart exact single-slot improvement until a plateau or this finalist's cap.
 
@@ -182,15 +186,24 @@ def refine_finalist(
             if identity in seen:
                 continue
             if diagnostics["evaluated_assignments"] >= limit:
+                if progress is not None:
+                    progress(1.0)
                 return best, {**diagnostics, "work_budget_exhausted": True}
             seen.add(identity)
             diagnostics["evaluated_assignments"] += 1
             candidate = _trial(search, best, role, equipment)
             _cancel(search)
+            if progress is not None and (
+                diagnostics["evaluated_assignments"] == 1
+                or not diagnostics["evaluated_assignments"] & 31
+            ):
+                progress(diagnostics["evaluated_assignments"] / max(1, limit))
             if candidate is not None and _dominates(candidate, best):
                 best = candidate
                 diagnostics["improvements"] += 1
                 changed = True
                 break
         if not changed:
+            if progress is not None:
+                progress(1.0)
             return best, diagnostics

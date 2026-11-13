@@ -76,15 +76,20 @@ class _Lane:
     complete: bool = False
     # True once the search itself reported a stage, so durations are measured.
     observed: bool = False
+    counted: bool = False
     durations: dict[str, float] = field(default_factory=dict)
 
-    def advance(self, stage: int, fraction: float, now: float, stages: Sequence[str]) -> None:
+    def advance(
+        self, stage: int, fraction: float, now: float, stages: Sequence[str], *, counted: bool
+    ) -> None:
         if self.complete or stage < self.stage:
             return
         self.observed = True
         if stage > self.stage:
             self._close(stage, now, stages)
             self.stage, self.reported, self.stage_started = stage, 0.0, now
+            self.counted = False
+        self.counted = self.counted or counted
         self.reported = max(self.reported, min(1.0, fraction))
 
     def finish(self, now: float, stages: Sequence[str]) -> None:
@@ -181,8 +186,9 @@ class RunProgress:
             self._setup_ended = self._setup_ended or now
             total = event.get("stage_total") or 0
             done = event.get("stage_done") or 0
-            fraction = done / total if isinstance(total, int) and total > 0 else 0.0
-            lane.advance(self._stages.index(phase), fraction, now, self._stages)
+            counted = isinstance(total, int) and total > 0
+            fraction = done / total if counted else 0.0
+            lane.advance(self._stages.index(phase), fraction, now, self._stages, counted=counted)
         if event.get("lane_status") == "complete":
             self._setup_ended = self._setup_ended or now
             lane.finish(now, self._stages)
@@ -301,7 +307,9 @@ class RunProgress:
         )
 
     def _stage_fraction(self, lane: _Lane, weights: _Weights, now: float) -> float:
-        """Reported counters are a floor; known durations smooth stages between reports."""
+        """Prefer measured work; interpolate only when a stage has no counters."""
+        if lane.counted:
+            return lane.reported
         expected = weights.stage_seconds.get(self._stages[lane.stage], 0.0)
         if expected <= 0:
             return lane.reported
