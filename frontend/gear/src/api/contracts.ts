@@ -432,6 +432,15 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  aquanite_hopper?: {
+    proc_chance: number;
+    secondary_accuracy: number;
+    secondary_max_hit: number;
+    expected_damage_delta: number;
+    expected_ammunition_per_attack: number;
+    approximate: boolean;
+    assumptions: string[];
+  } | null;
   elemental_amulet_bonus?: {
     item_id: number;
     element: "air" | "water" | "earth" | "fire";

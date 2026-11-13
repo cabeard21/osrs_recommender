@@ -27,6 +27,7 @@ from tracker.content.schema import ItemSlot
 from tracker.gear.combat import MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.facts import hypothetical_snapshot
+from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
@@ -252,6 +253,7 @@ def calculate_evaluation(
     assumptions = {
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "bolt_model_version": "enchanted-bolts-v1",
+        "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,
         "bolt_diary": {
             "boosted": bolt_context.bolt_diary_boost,
             "known": bolt_context.bolt_diary_known,

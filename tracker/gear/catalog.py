@@ -21,6 +21,8 @@ from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
 from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
 from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
+from tracker.gear.hopper import REVISION as HOPPER_REVISION
+from tracker.gear.hopper_catalog import apply_review as hopper_review
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
 from tracker.gear.obsidian import apply_review as obsidian_review
@@ -119,7 +121,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
-        row = elemental_amulet_review(obsidian_review(bolt_review(row)))
+        row = hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row))))
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -208,6 +210,8 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=powered.level)
         if autocast_level is not None:
             requirement = SkillLeaf(skill="magic", level=autocast_level)
+        if row["id"] == 32879:
+            requirement = SkillLeaf(skill="ranged", level=60)
         if row["id"] in ELEMENTAL_AMULETS:
             requirement = SkillLeaf(skill="magic", level=59)
         if row["id"] in BOLT_REQUIREMENTS:
@@ -227,11 +231,12 @@ def load_catalog(
                     or autocast_level
                     or row["id"] in BOLT_REQUIREMENTS
                     or row["id"] in ELEMENTAL_AMULETS
+                    or row["id"] == 32879
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
                     True
-                    if row["id"] in ELEMENTAL_AMULETS
+                    if row["id"] in ELEMENTAL_AMULETS or row["id"] == 32879
                     else row["id"] in BOLT_TRADEABLE
                     if row["id"] in BOLT_REQUIREMENTS
                     else row["id"] in REVIEWED_POWERED_TRADEABLE
@@ -273,6 +278,7 @@ def load_catalog(
             + OBSIDIAN_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
+            + HOPPER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -286,6 +292,7 @@ def load_catalog(
             + OBSIDIAN_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
+            + HOPPER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
