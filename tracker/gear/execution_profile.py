@@ -34,6 +34,7 @@ def execution_context(
     fixed_reporting: bool = False,
     factored_evaluation: bool = False,
     compact_states: bool = False,
+    native_search: bool = False,
 ) -> Iterator[None]:
     """Create fresh per-leaf caches, never attached to worker preparation state."""
     validate_profile(profile)
@@ -43,7 +44,12 @@ def execution_context(
         raise ValueError("Invalid factored evaluation option")
     if not isinstance(compact_states, bool):
         raise ValueError("Invalid compact states option")
+    if not isinstance(native_search, bool):
+        raise ValueError("Invalid native search option")
     with ExitStack() as stack:
+        from tracker.gear.native import execution
+
+        stack.enter_context(execution(native_search))
         roles = request.roles
         token = _factored_evaluation.set(profile == "combined" and factored_evaluation)
         stack.callback(_factored_evaluation.reset, token)

@@ -1,5 +1,9 @@
 __pycache__/
 *.py[cod]
+# Optional desktop native experiment; source .pyx/.pxd files remain tracked.
+/tracker/gear/native/*.pyd
+/tracker/gear/native/*.so
+/tracker/gear/native/*.cpp
 *.db
 # SQLite's write-ahead log and shared-memory sidecars. `*.db` does not cover them —
 # the suffix comes after the extension — so they were tracked, and a file the engine
@@ -53,3 +57,6 @@ frontend/gear/playwright-report/
 frontend/gear/coverage/
 tracker/ui/gear_static/
 *.tsbuildinfo
+
+# Local native release identity, generated with the extension binaries.
+/tracker/gear/native/_build.json

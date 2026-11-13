@@ -353,6 +353,7 @@ def _assignment_state(loadouts: Any) -> Any:
 
 
 class _Search:
+    native_cost_objective: bool = False
     running_prices: Mapping[int, PriceRecord]
     running_at: datetime
 
@@ -442,6 +443,7 @@ class _Search:
             self._transition_reduced = reduced_transition
 
         compact_transitions = self.compact_states
+
         # Catalog definitions are fixed for this search; bound retained plans per
         # request and include inventory context as well as directional equipment.
         @lru_cache(maxsize=8192)
@@ -496,6 +498,10 @@ class _Search:
         }
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
+        from tracker.gear.native import create_context
+
+        self.native_context = create_context(self)
+        self.native_limit = MAX_EXPANSIONS
         self.pools = self.candidate_pools()
 
     def assignment_tie(self, loadouts: Any) -> Any:
@@ -858,6 +864,13 @@ class _Search:
             cached = self.compact_cache[key]
             assert cached is None or isinstance(cached, _Winner)
             return cached
+        if self.native_context is not None:
+            from tracker.gear.native.adapter import winner as native_winner
+
+            winner = native_winner(self, equipment, role, prepared)
+            if cache:
+                self.compact_cache[key] = winner
+            return winner
         weapon = self.items.get(equipment.get("weapon", -1))
         options = self.scoring_options(role, weapon)
         if prepared is None and options:
@@ -1322,6 +1335,22 @@ class _Search:
                     )
                 )
                 choices.append(options)
+            if self.native_context is not None:
+                from tracker.gear.native.adapter import expand
+
+                beam = expand(
+                    self,
+                    "joint",
+                    beam,
+                    choices,
+                    slot=slot,
+                    roles=roles,
+                    cap=limit,
+                    limit=32 if getattr(self, "frontier_search", False) else 16,
+                )
+                if not beam:
+                    break
+                continue
             expanded = []
             for state in beam:
                 for assigned in product(*choices):
@@ -1443,6 +1472,21 @@ class _Search:
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             choices = [locks[slot]] if slot in locks else self.pools[slot]
+            if self.native_context is not None:
+                from tracker.gear.native.adapter import expand
+
+                states = expand(
+                    self,
+                    "loadout",
+                    states,
+                    choices,
+                    slot=slot,
+                    roles=roles,
+                    limit=BEAM_WIDTH,
+                )
+                if not states:
+                    return []
+                continue
             expanded: list[dict[str, int]] = []
             for state, item_id in product(states, choices):
                 if not self.tick():
@@ -1763,6 +1807,7 @@ def optimize(
     _fixed_reporting: bool = False,
     _factored_evaluation: bool = False,
     _compact_states: bool = False,
+    _native_search: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     from tracker.gear.execution_profile import execution_context, validate_profile
@@ -1774,6 +1819,13 @@ def optimize(
         raise ValueError("Invalid factored evaluation option")
     if not isinstance(_compact_states, bool):
         raise ValueError("Invalid compact states option")
+    if not isinstance(_native_search, bool):
+        raise ValueError("Invalid native search option")
+    if _native_search and profile == "baseline":
+        from tracker.gear.native import record
+
+        record("fallback", reason="requires_combined_compact_execution")
+        _native_search = False
     execution: dict[str, Any] = {"_execution_profile": profile} if profile != "baseline" else {}
     if _fixed_reporting:
         execution["_fixed_reporting"] = True
@@ -1781,6 +1833,8 @@ def optimize(
         execution["_factored_evaluation"] = True
     if _compact_states:
         execution["_compact_states"] = True
+    if _native_search:
+        execution["_native_search"] = True
     started = perf_counter()
     request = (
         request
@@ -1834,6 +1888,7 @@ def optimize(
             fixed_reporting=_fixed_reporting,
             factored_evaluation=_factored_evaluation,
             compact_states=_compact_states,
+            native_search=_native_search,
         ):
             return optimize(
                 snapshot,
@@ -1938,6 +1993,22 @@ def optimize(
         beam = [_assignment_state({})]
         for role_index, role in enumerate(request.roles):
             reporter.fraction(role_index / len(request.roles))
+            if search.native_context is not None:
+                from tracker.gear.native.adapter import expand
+
+                beam = expand(
+                    search,
+                    "tuple",
+                    beam,
+                    individual[role.id],
+                    roles=request.roles,
+                    cap=swap_limit,
+                    limit=BEAM_WIDTH,
+                    tuple_role=role.id,
+                )
+                if not beam:
+                    break
+                continue
             expanded = []
             for partial, equipment in product(beam, individual[role.id]):
                 if not search.tick():

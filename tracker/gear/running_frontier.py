@@ -313,6 +313,10 @@ def explore_running_costs(
     search.compact_cache = {}
     search.cost_evaluator = evaluator(search.running_prices, search.running_at)
     search.request = original.request.model_copy(update={"secondary_priority": "accuracy"})
+    search.native_cost_objective = True
+    from tracker.gear.native import reset_context
+
+    reset_context(search, scoring=True)
     search.complete_frontiers = True
     search.secondary_marginals = {}
     # Cost leaders are evaluated against legal ordinary scaffolds, before pool pruning.

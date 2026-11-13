@@ -41,6 +41,7 @@ def test_pool_startup_fallback_preserves_fixed_reporting(monkeypatch):
         player_id=1,
         read_token="test-token",
         optimization_workers=3,
+        optimization_engine="python",
         optimization_profile="combined",
     )
     app = create_app(settings)

@@ -7,6 +7,7 @@ does not choose a setup, infer current equipment slots, or validate joint loadou
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
@@ -55,6 +56,7 @@ def _timing_key(
     fixed_reporting: bool = False,
     factored_evaluation: bool = False,
     compact_states: bool = False,
+    native_search: bool = False,
 ) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
     return (
@@ -62,6 +64,7 @@ def _timing_key(
         fixed_reporting,
         factored_evaluation,
         compact_states,
+        native_search,
         thorough,
         parallel,
         request.mode,
@@ -87,6 +90,7 @@ class GearService:
         fixed_reporting: bool = False,
         factored_evaluation: bool = False,
         compact_states: bool = False,
+        native_search: bool = False,
     ) -> None:
         self.optimization_profile = validate_profile(optimization_profile)
         if not isinstance(fixed_reporting, bool):
@@ -98,6 +102,14 @@ class GearService:
         if not isinstance(compact_states, bool):
             raise ValueError("Invalid compact states option")
         self.compact_states = compact_states and self.factored_evaluation
+        if not isinstance(native_search, bool):
+            raise ValueError("Invalid native search option")
+        self.native_search = native_search
+        self.native_diagnostics: dict[str, Any] = {
+            "native_requests": 0,
+            "fallback_requests": 0,
+            "events": [],
+        }
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
@@ -158,6 +170,8 @@ class GearService:
                 execution["_factored_evaluation"] = True
             if self.compact_states:
                 execution["_compact_states"] = True
+            if self.native_search:
+                execution["_native_search"] = True
             pool = self.auto_pool
             parallel = False
             if request.potions.mode == "optimize":
@@ -184,23 +198,33 @@ class GearService:
                         self.fixed_reporting,
                         self.factored_evaluation,
                         self.compact_states,
+                        self.native_search,
                     ),
                     model=self._timings,
                     fingerprint=progress_fingerprint,
                 )
                 self._progress_record = (progress_identity, tracker)
                 execution["progress"] = tracker.handle
-            result = runner(
-                snapshot,
-                request,
-                self.equipment_catalog(),
-                self.content,
-                dict(price_records or {}),
-                now or datetime.now(UTC),
-                cancelled=cancelled,
-                **({"local_refinement": True} if local_refinement else {}),
-                **execution,
-            )
+            from tracker.gear.native import capture, merge
+
+            with capture() if self.native_search else nullcontext(None) as native_evidence:
+                try:
+                    result = runner(
+                        snapshot,
+                        request,
+                        self.equipment_catalog(),
+                        self.content,
+                        dict(price_records or {}),
+                        now or datetime.now(UTC),
+                        cancelled=cancelled,
+                        **({"local_refinement": True} if local_refinement else {}),
+                        **execution,
+                    )
+                finally:
+                    if native_evidence is not None:
+                        self.native_diagnostics = native_evidence.snapshot()
+            if self.native_search:
+                merge(self.native_diagnostics)
             if tracker is not None:
                 tracker.finish(succeeded=True)
             return result

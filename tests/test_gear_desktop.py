@@ -6,6 +6,7 @@ from tracker.gear_desktop import DesktopSettings, create_app
 
 
 def settings(**kwargs):
+    kwargs.setdefault("optimization_engine", "python")
     return DesktopSettings(
         pi_url="http://100.117.157.57:8502", player_id=1, read_token="test-read-token", **kwargs
     )
@@ -62,8 +63,11 @@ def test_desktop_yaml_and_env(tmp_path, monkeypatch):
     assert config.optimization_workers == 2
 
 
-def test_desktop_defaults_to_three_workers():
-    assert settings().optimization_workers == 3
+def test_desktop_defaults_to_six_workers_and_native():
+    config = settings(optimization_engine="native")
+    assert config.optimization_workers == 6
+    assert config.optimization_engine == "native"
+    assert DesktopSettings.model_fields["optimization_engine"].default == "native"
 
 
 def test_desktop_entrypoint_prints_profile_at_startup():
@@ -77,7 +81,7 @@ import tracker.gear_desktop as desktop
 desktop.load_desktop_settings = lambda: desktop.DesktopSettings(
     pi_url="http://127.0.0.1:8502", player_id=1,
     read_token="startup-test-secret", optimization_workers=1,
-    optimization_profile="combined",
+    optimization_profile="combined", optimization_engine="python",
 )
 def run(app, **kwargs):
     with TestClient(app):
@@ -92,10 +96,15 @@ desktop.main()
     assert "startup-test-secret" not in result.stdout + result.stderr
 
 
-@pytest.mark.parametrize("workers", [0, 4, -1, True, False, 1.5, "2.5"])
+@pytest.mark.parametrize("workers", [0, 7, -1, True, False, 1.5, "2.5"])
 def test_desktop_rejects_invalid_worker_counts(workers):
     with pytest.raises(ValidationError):
         settings(optimization_workers=workers)
+
+
+@pytest.mark.parametrize("workers", range(1, 7))
+def test_desktop_accepts_supported_worker_counts(workers):
+    assert settings(optimization_workers=workers).optimization_workers == workers
 
 
 class FakePool:
@@ -113,12 +122,19 @@ class FakePool:
         self.events.append(("close",))
 
 
-def test_desktop_owns_warm_pool_lifecycle(monkeypatch):
+@pytest.mark.parametrize("workers", [3, 6])
+def test_desktop_owns_warm_pool_lifecycle(monkeypatch, workers):
     import tracker.gear_desktop as desktop
 
-    pool = FakePool(3)
-    monkeypatch.setattr(desktop, "_process_pool", lambda workers: pool, raising=False)
-    app = create_app(settings())
+    pool = FakePool(workers)
+    counts = []
+
+    def create_pool(count):
+        counts.append(count)
+        return pool
+
+    monkeypatch.setattr(desktop, "_process_pool", create_pool, raising=False)
+    app = create_app(settings(optimization_workers=workers))
     gear = app.state.gear_service
     assert not pool.events
     with TestClient(app) as client:
@@ -127,6 +143,7 @@ def test_desktop_owns_warm_pool_lifecycle(monkeypatch):
         assert gear.auto_pool is pool
         assert pool.events == [("start", gear.content, gear.equipment_catalog())]
     assert pool.events[-1] == ("close",)
+    assert counts == [workers]
     assert gear.auto_pool is None
 
 
@@ -187,3 +204,80 @@ def test_desktop_detaches_pool_if_shutdown_fails(monkeypatch):
     with pytest.raises(RuntimeError, match="close failed"), TestClient(app):
         assert app.state.gear_service.auto_pool is pool
     assert app.state.gear_service.auto_pool is None
+
+
+def test_native_service_configuration_and_startup(monkeypatch, caplog):
+    import tracker.gear_desktop as desktop
+
+    checked = []
+    monkeypatch.setattr(desktop, "require_native", lambda: checked.append(True))
+    caplog.set_level("INFO", logger="tracker.gear_desktop")
+    app = create_app(settings(optimization_workers=1, optimization_engine="native"))
+    assert app.state.gear_service.native_search
+    with TestClient(app):
+        assert checked == [True]
+        assert app.state.gear_engine == "native"
+    assert "optimization engine: native" in caplog.text
+
+
+def test_native_missing_binary_fails_startup(monkeypatch):
+    import tracker.gear_desktop as desktop
+    from tracker.gear.native.readiness import NativeReadinessError
+
+    def missing():
+        raise NativeReadinessError("test unavailable")
+
+    monkeypatch.setattr(desktop, "require_native", missing)
+    app = create_app(settings(optimization_workers=1, optimization_engine="native"))
+    with pytest.raises(NativeReadinessError), TestClient(app):
+        pass
+
+
+@pytest.mark.parametrize("profile", ["baseline", "lazy"])
+def test_rollback_profile_disables_native_without_loading_binary(monkeypatch, profile):
+    import tracker.gear_desktop as desktop
+
+    def unexpected():
+        raise AssertionError("Python rollback must not load native")
+
+    monkeypatch.setattr(desktop, "require_native", unexpected)
+    app = create_app(
+        settings(optimization_workers=1, optimization_engine="native", optimization_profile=profile)
+    )
+    with TestClient(app):
+        assert app.state.gear_engine == "python"
+        assert not app.state.gear_service.native_search
+
+
+def test_native_pool_startup_requires_native_and_propagates_failure(monkeypatch):
+    import tracker.gear_desktop as desktop
+
+    pool = FakePool(6, fail=True)
+    calls = []
+
+    def start(content, catalog, *, native_required=False):
+        calls.append(native_required)
+        raise RuntimeError("pool unavailable")
+
+    pool.start = start
+    monkeypatch.setattr(desktop, "require_native", lambda: None)
+    monkeypatch.setattr(desktop, "_process_pool", lambda workers: pool)
+    app = create_app(settings(optimization_engine="native"))
+    with pytest.raises(RuntimeError, match="pool unavailable"), TestClient(app):
+        pass
+    assert calls == [True]
+    assert pool.events == [("close",)]
+
+
+def test_desktop_engine_yaml_environment_and_validation(tmp_path, monkeypatch):
+    path = tmp_path / "desktop.yaml"
+    path.write_text(
+        "pi_url: http://pi.local:8502\nplayer_id: 2\nread_token: yaml-token\n"
+        "optimization_engine: native\noptimization_workers: 6\n"
+    )
+    monkeypatch.setenv("TRACKER_CONFIG_FILE", str(path))
+    assert DesktopSettings().optimization_engine == "native"
+    monkeypatch.setenv("TRACKER_DESKTOP_OPTIMIZATION_ENGINE", "python")
+    assert DesktopSettings().optimization_engine == "python"
+    with pytest.raises(ValidationError):
+        settings(optimization_engine="auto")

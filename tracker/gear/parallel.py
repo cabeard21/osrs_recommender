@@ -65,8 +65,13 @@ def _initialize(
     stopped: Any,
     ready: Any,
     slots: WorkerSlots | None = None,
+    native_required: bool = False,
 ) -> None:
     global _CONTEXT, _PREPARATION, _PROGRESS
+    if native_required:
+        from tracker.gear.native.readiness import require_native
+
+        require_native()
     content, catalog = decode_context(payload, identity)
     _CONTEXT = content, catalog, identity, stopped
     _PREPARATION = None
@@ -113,19 +118,27 @@ def _execute_branch(
         if lane is not None and _PROGRESS is not None and isinstance(_PROGRESS[1], int)
         else None
     )
-    return optimize(
-        snapshot,
-        request,
-        catalog,
-        content,
-        prices,
-        now,
-        cancelled=stopped.is_set,
-        _complete_frontiers=True,
-        _prepared=prepared,
-        progress=progress,
-        **options,
-    )
+    from contextlib import nullcontext
+
+    from tracker.gear.native import capture
+
+    with capture() if options.get("_native_search") else nullcontext(None) as evidence:
+        result = optimize(
+            snapshot,
+            request,
+            catalog,
+            content,
+            prices,
+            now,
+            cancelled=stopped.is_set,
+            _complete_frontiers=True,
+            _prepared=prepared,
+            progress=progress,
+            **options,
+        )
+    if evidence is None:
+        return result
+    return {"_native_payload": result, "_native_evidence": evidence.snapshot()}
 
 
 class AutoProcessPool:
@@ -135,8 +148,8 @@ class AutoProcessPool:
     REAP_SECONDS = 1.0
 
     def __init__(self, workers: int) -> None:
-        if isinstance(workers, bool) or workers not in (1, 2, 3):
-            raise ValueError("Gear worker count must be between one and three")
+        if type(workers) is not int or not 1 <= workers <= 6:
+            raise ValueError("Gear worker count must be an integer from one through six")
         self.workers = workers
         self._context = multiprocessing.get_context("spawn")
         self._run_lock = Lock()
@@ -148,6 +161,7 @@ class AutoProcessPool:
         self._slots: WorkerSlots | None = None
         self._unsafe_children: tuple[Any, ...] = ()
         self._unsafe_manager: Any = None
+        self._native_required = False
 
     def _new_executor(self) -> ProcessPoolExecutor:
         assert self._payload is not None and self._identity is not None
@@ -161,6 +175,7 @@ class AutoProcessPool:
                 self._stopped,
                 self._context.Barrier(self.workers),
                 self._slots,
+                self._native_required,
             ),
         )
 
@@ -177,13 +192,24 @@ class AutoProcessPool:
             self._dispose()
             raise ValueError(_UNAVAILABLE) from error
 
-    def start(self, content: Content, catalog: EquipmentCatalog) -> None:
+    def start(
+        self, content: Content, catalog: EquipmentCatalog, *, native_required: bool = False
+    ) -> None:
+        if type(native_required) is not bool:
+            raise ValueError("native_required must be a boolean")
+        if native_required:
+            from tracker.gear.native.readiness import require_native
+
+            require_native()
         payload, identity = context_payload(content, catalog)
         with self._run_lock:
             if self._closed:
                 raise ValueError(_UNAVAILABLE)
             if self._identity is not None and self._identity != identity:
                 raise ValueError("optimizer_worker_context_mismatch")
+            if self._executor is not None and self._native_required != native_required:
+                raise ValueError("optimizer_worker_native_context_mismatch")
+            self._native_required = native_required
             self._payload, self._identity = payload, identity
             if self._executor is None:
                 self._build()
@@ -326,7 +352,14 @@ class AutoProcessPool:
                     )
             if self._closed or (cancelled is not None and cancelled()):
                 raise ValueError("optimization_cancelled")
-            return [future.result() for future in futures]
+            results = [future.result() for future in futures]
+            if options.get("_native_search"):
+                from tracker.gear.native import merge
+
+                for row in results:
+                    merge(row["_native_evidence"])
+                return [row["_native_payload"] for row in results]
+            return results
         except BaseException as error:
             broken = self._abort(futures) or isinstance(error, BrokenProcessPool)
             if broken:
@@ -374,6 +407,7 @@ class AutoProcessPool:
                 "_fixed_reporting",
                 "_factored_evaluation",
                 "_compact_states",
+                "_native_search",
             }
             from tracker.gear.execution_profile import validate_worker_options
 
@@ -459,6 +493,7 @@ class AutoProcessPool:
                 "_fixed_reporting",
                 "_factored_evaluation",
                 "_compact_states",
+                "_native_search",
             },
         )
         if not has_auto(request):

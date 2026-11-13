@@ -175,6 +175,7 @@ def test_startup_worker_fallback_keeps_profile(monkeypatch):
         player_id=1,
         read_token="test-token",
         optimization_profile="combined",
+        optimization_engine="python",
     )
     app = create_app(config)
     with TestClient(app):

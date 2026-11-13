@@ -13,6 +13,7 @@ def settings(profile="combined", workers=1):
         read_token="factored-test-token",
         optimization_workers=workers,
         optimization_profile=profile,
+        optimization_engine="python",
     )
 
 

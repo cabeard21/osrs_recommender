@@ -2,7 +2,9 @@
 
 **Analysis date:** 2026-11-08  
 **Assessed revision:** `3fad336`  
-**Status:** Original P1 complete and enabled in the desktop `combined` profile. Prepared melee/ranged/magic constants, lazy configured/fixed Single and Multi scoring, lazy frontier combat variants, compact running-cost ranking, and ranged score finalization are implemented. Full parity, timing, memory, worker, cancellation/recovery and automated live desktop/rollback acceptance passed on 2026-11-09. The bounded closeout proposal is superseded; no original P1 scope is deferred. See [final acceptance](#final-p1-acceptance-revision-2026-11-09). P2-P6 remain separate future work.
+**Strategy revision:** 2026-11-12, reviewed against `a7685b6`
+
+**Status:** Original P1 and P3 remain enabled in desktop `combined`. The P5 prototype and six-worker scaling decisions are complete historical evidence. Broad native coverage is now implemented, with native execution and six workers as desktop defaults; final correctness acceptance and local activation have passed. See [current authorization](#broad-native-adoption-current-authorization). There are no further performance requirements. P2 sharing, the P4 solver and P6 interaction work remain separate.
 **Scope:** Desktop optimization, including Single, Multi, Auto disciplines,
 potion selection, secondary frontiers, and running-cost frontiers.
 
@@ -14,22 +16,412 @@ Pi execution is outside this plan. Existing performance history is recorded in
 [GEAR_OPTIMIZER_REDESIGN_PLAN.md](GEAR_OPTIMIZER_REDESIGN_PLAN.md) concerns the
 Gear interface redesign and is a separate assessment.
 
-## Recommendation
+## Broad native adoption (current authorization)
 
-Separate search policy, numerical evaluation, and public result construction.
-Use compact immutable equipment states and independently reusable calculations
-for damage, defensive rolls, and resource consumption. Let objective-specific
-searches share those calculations while retaining their own option winners,
-beam retention, and work budgets.
+The user has authorized completion of native coverage across the existing desktop
+optimizer modes, followed by local activation with six workers. This supersedes
+the earlier first-delivery stopping point and all performance gates for further
+adoption work. There are no further speedup targets, regression thresholds, timing
+campaigns, memory baselines, or available-RAM benchmark preflights. Earlier results
+remain historical evidence; they are not qualification of the expanded binaries.
 
-Then prototype a specialized Single-mode numerical solver and a batched native
-execution core. Compact representations provide a foundation for both better
-search algorithms and effective use of desktop cores.
+Delivery includes Magic and fractional bonuses, every secondary/defence-roll
+objective, structurally unscored special roles, exact running-cost ranking,
+Single/Multi/Auto/Multi Auto, potion/prayer choices, Fast/Thorough, frontiers and
+refinements. Search budgets, ordered arithmetic, physical identities and complete
+Pareto results remain unchanged. Native stage state is isolated by search lane.
 
-At the original assessed revision, no end-to-end speedup from these proposals
-had been measured. Later sections record measured improvements and adoption.
-The original analysis below is historical. The repeated-signature counts below are not
-a validated cache design or an application speedup prediction.
+Desktop defaults become `optimization_engine: native`, `optimization_workers: 6`
+and `optimization_profile: combined`. Missing, incompatible or stale release
+binaries stop native startup with build instructions. Explicit Python selection
+and baseline/lazy profiles provide rollback; numeric safety guards remain.
+Generic services and Pi execution retain their existing defaults.
+
+Completion requires focused differential correctness and worker lifecycle tests,
+frozen complete-result/archive parity, actual native execution evidence, release
+provisioning, documentation, and local activation/rollback/re-enable. It does not
+include new combat mechanics, commits, publication or Pi deployment. Current work
+is in progress; activation and final correctness evidence are recorded below when
+complete.
+
+## Historical recommendation
+
+Prioritize a compiled search core that processes complete batches of candidate
+expansion, legality and constraint checks, numerical scoring, and deterministic
+ranking/retention. Keep Python responsible for input contracts, provenance and
+final reports. P1/P3 provide a foundation; completing broader P2 sharing or the P4
+solver is not a prerequisite for this experiment.
+
+Stop treating isolated small Python optimizations as the main workstream. First
+screen the cheaper worker-scaling opportunity for branch-heavy Multi Auto. Then
+test one representative compiled search stage and require at least **2x measured
+end-to-end speedup on its predeclared target request** before expanding the native
+migration. Preserve complete results and existing search quality throughout.
+
+The 2x threshold is an investment gate, not a predicted or guaranteed speedup.
+Measure early and stop approaches that cannot justify further implementation.
+Historical measurements and acceptance decisions retain their original meaning;
+the new gate does not retroactively reject P1/P3.
+
+## Revised investment approach (2026-11-12)
+
+### Evidence and intended change
+
+P3's accepted medians were 32.108 -> 30.617 seconds for Multi (4.64% faster) and
+251.482 -> 248.404 seconds for Multi Auto (1.22% faster). Earlier P1 gains were
+larger on some cases, but these recent returns do not justify an open-ended series
+of small optimizations. These are historical frozen-cohort measurements, not a
+new benchmark of the current desktop process.
+
+At the reviewed revision, `optimizer.py::_Search.loadouts()` and
+`_Search.joint_loadouts()` still expand, validate, score and rank candidates through
+Python loops and objects. Secondary and running-cost searches repeat this work.
+P3's compact Python states do not yet constitute native batch execution. Move
+enough of that repeated work across the compiled boundary to affect the whole
+request; compiling only a damage formula or calling native code per candidate is
+an insufficient starting scope.
+
+For illustration, accelerating 10% of a request by 10x yields only 1.10x overall;
+accelerating 80% by 10x yields 3.57x. These follow
+`speedup = 1 / ((1 - fraction) + fraction / local_speedup)` and are not optimizer
+forecasts. Fresh profiling must establish the fraction actually covered by the
+prototype. Historical cumulative profile times overlap and cannot be added to
+estimate that fraction; parent-process waiting is not a worker hot-path profile.
+
+### First experiment: desktop worker scaling
+
+The desktop settings and process pool currently cap workers at three. Multi Auto
+enumerates the Cartesian product of allowed disciplines: three unrestricted Auto
+roles generate 27 assignments, before relevant potion branches. Each assignment
+retains a full concrete search. This provides independent work that may benefit
+from additional workers, without removing branches or reducing their effort.
+
+- Freeze a slow, representative full-catalog Multi Auto request and the current
+  combined implementation. Establish available CPU capacity and a process-tree
+  memory ceiling before choosing a small, bounded set of worker counts above three.
+- Compare against three workers with identical inputs, search policy and complete
+  outputs. Measure paired elapsed times and fresh-process memory separately; check
+  cancellation, recovery and deterministic merging for the changed dispatch path.
+- Keep a higher count only with a convincing elapsed-time benefit within the
+  predeclared resource ceiling. Additional processes may require more memory than
+  the default 5% tolerance; declare that experiment-specific ceiling before runs,
+  retain the measured increase, and never relax it after seeing results.
+- Record the keep/reject decision and stop this screen. It does not require a
+  global scheduler rewrite, and it cannot establish a speedup for a single branch.
+  Its result is separate from the native prototype's 2x gate.
+
+### Main experiment: compiled search execution
+
+Choose one slow full-catalog fixed-discipline Multi request as the initial target,
+including its secondary and running-cost frontiers where applicable. Freeze its
+input, implementation, worker count, output fingerprint and timing baseline before
+coding. Also retain a corresponding Multi Auto case and a Single control so the
+scope of any benefit is visible.
+
+The prototype boundary covers **expansion -> legality/constraints -> scores ->
+ranking/retention** using typed records and arrays in sufficiently large batches.
+Include ownership and union purchase costs, inventory, transition bounds, attack
+and prayer options, and every objective used by the chosen stage. Avoid Python
+callbacks per candidate. Cython is a reasonable initial prototype route; Rust or
+C++ are alternatives if the measured boundary or build requirements warrant them.
+Static native operations are the mechanism, not merely compiling object-heavy
+Python code; see [Cython's typing guidance](https://docs.cython.org/en/latest/src/quickstart/cythonize.html).
+
+1. **Bound the feasibility scope before starting.** Record the selected stage,
+   supported contexts, target request and stop/go checks. The user selected no
+   engineering timebox; pursue the decision as quickly as possible, with no
+   automatic expansion beyond this first prototype delivery.
+   Profile current worker execution where relevant. Use recorded real batches for
+   an initial throughput screen, including conversion and allocation costs, and
+   run focused differential checks from the first implementation.
+2. **Integrate one complete request.** Include unchanged search stages, conversion,
+   final reporting and normal service overhead in elapsed time. Compare with the
+   current combined profile at the same worker count; measure cold build/startup
+   costs separately and disclose them. Replay throughput or a projected speedup
+   alone cannot pass the investment gate.
+3. **Gate further investment.** Require complete normalized result parity and
+   candidate median elapsed time at most **0.50x reference** on the predeclared
+   target, with a convincing repeatable gain under the paired-run policy below.
+   Check the Single control and relevant memory limits. If the bounded prototype
+   fails, record the evidence and stop widening it; an inconclusive result remains
+   unqualified. Do not substitute a faster-looking workload or continue polishing
+   percentage-level gains without a new investment decision.
+4. **Expand only after the gate passes.** Cover the remaining disciplines and
+   search stages, then run the full acceptance matrix once the implementation is
+   stable. Before that expansion, predeclare its intended Multi Auto end-to-end
+   target and required gain. Measure native and worker-scaling effects separately
+   before measuring their combination; do not extrapolate the pilot's multiplier
+   to every request.
+
+Preserve candidate pools, branch enumeration, traversal order, logical work
+budgets, independent objective winners/beams, arithmetic order and integer floors,
+deterministic ties/IDs, complete archives, physical item identities, and unknown
+cost/charge semantics. Existing searches remain bounded best-found searches.
+Native integer widths and floating-point optimizations must preserve the Python
+reference behavior; focused differential checks cover these boundaries.
+
+### Other work and decision boundaries
+
+Broader P2 sharing is pursued only when observed reuse materially supports the
+compiled stage; it is not another mandatory serial phase. P4 dominance pruning,
+dynamic programming and completion bounds remain a separate, less predictable
+algorithm experiment. Multi's item sharing and directional transitions prevent
+merging states by combat totals alone. Replacing discipline enumeration or
+independent beams requires explicit search-policy and quality acceptance.
+
+P6 can improve time to useful results and repeat interactions, but those benefits
+are reported separately from initial-search completion time. Smaller beams,
+omitted frontier passes, reduced branch effort and dropped tradeoffs do not satisfy
+the compiled prototype's performance gate.
+
+The architecture and exploratory measurements below retain their original
+assessed-revision context. Repeated-signature counts are not a validated cache
+design or an application speedup prediction.
+
+## P5 first delivery: implementation and decision record (2026-11-12)
+
+The user selected **stop at the measured prototype decision**, with **no engineering
+timebox**. Broader native migration and live desktop adoption are outside this
+delivery. Defaults remain three workers and Python execution.
+
+The worker experiment admits integer counts 1-6. Its predeclared screen is three
+versus four and six workers on the existing full-catalog `multi_auto` derivation,
+with a 4 GiB process-tree working-set ceiling and 6 GiB available-memory preflight.
+The primary native target is the existing `multi` derivation: configured ranged
+and melee, optimized prayers, balanced defence, eight swap limits, Fast mode and
+disabled potion optimization. The frozen source has 5,435 catalog items and input
+SHA-256 `0b5fb446ce0fb556e45753aa589ab1a1e00aac422b495f397045605c54a76960`.
+
+`tools/p5_experiment.py` supplies separate screen, parity, timing, memory and
+validation phases. It binds source/input/build fingerprints, checks complete
+normalized outputs and native execution sidecars, and keeps historical acceptance
+policies unchanged. Focused tool verification passed 86 tests; the 85-test coverage
+run measured 99%, followed by a passing serial-preflight regression test.
+Worker validation passed 73 focused tests, including real four/six-process parity
+and six-worker cancellation/recovery. These checks are not performance acceptance.
+
+**Measurement correction:** reference and candidate pools must never coexist.
+Each qualified timing observation gets its own pool/service lifetime and an
+untimed request warmup; pool startup and shutdown are outside request latency.
+All warmup outputs are retained and parity-checked. This replaces the initial
+one-warmup-per-mode proposal because retaining both pools would measure nine
+resident workers in a three-versus-six comparison. Memory runs use the same
+warmup-plus-request lifetime in fresh processes, including service/pool startup
+after frozen-input preparation, and stop
+sampling before worker teardown. Screen pairs have no request warmup and cannot
+qualify a speedup. Only a promising screen proceeds to repeated qualification.
+
+### Worker screen observations
+
+Worker-only sources are frozen separately under `.tmp/p5/worker-source`, based on
+`a7685b6` plus the worker validation change and new experiment driver. Native
+development cannot alter those imported sources. No builds, profiling or heavy
+tests run alongside timing.
+
+| Screen | Reference seconds | Candidate seconds | Complete result parity | Decision |
+| --- | ---: | ---: | --- | --- |
+| Three versus four workers | 233.897 | 236.911 | Exact | No promising gain; do not spend a repeated qualification cycle on this candidate |
+| Three versus six workers | 270.586 | 198.148 | Exact | Promising screen; subsequent repeated timing and memory qualification passed |
+
+This is one screening pair, not a repeated latency estimate or proof of a general
+regression. Raw outputs and validated bindings are under
+`.tmp/p5/workers/screen-4` and `.tmp/p5/workers/screen-6`. The reference changed
+between screen sessions, so do not combine their absolute times. Six-worker
+memory qualification subsequently passed; no higher worker count or native
+execution has been adopted. The first fresh six-worker memory observation passed at
+4,063,313,920 bytes (3.784 GiB), including warmup and a second request. It is
+retained as candidate observation one for the memory qualification; per-sample
+values are also retained under `.tmp/p5/workers/memory-screen-6`. The remaining
+memory observations precede repeated timing so that crossing the predeclared
+ceiling can stop further worker investment early.
+Candidate one used an extra wrapper to retain all 5,775 sampler values, whose
+maximum matches the standard report. Its original process identity, manifest,
+result parity and complete sampler report are preserved. That log adds small
+list/serialization allocations and can slightly affect sampling cadence; it is
+not claimed to be instrumentation-identical to the later standard observations.
+The retained wrapper `.tmp/p5/worker_memory_screen.py` has SHA-256
+`ef997423f5aa9a4eedf2de7e4c05ddaa9da65a2dbc5f4bac4b7c71818413234e`.
+All three six-worker candidate memory observations subsequently passed, with
+sampled peaks of 3.7843, 3.7732 and 3.7715 GiB over 368.7, 369.0 and 365.9 seconds.
+They contained 5,775, 5,799 and 5,753 samples respectively. Three-worker baselines
+peaked at 2.1561, 2.1483 and 2.1776 GiB over 535.0, 546.8 and 550.6 seconds, with
+8,367, 8,638 and 8,675 samples. All six observations completed with zero sampler
+failures and exact result/warmup parity. The validated memory medians are
+**2,315,096,064 -> 4,051,488,768 bytes** (2.1561 -> 3.7732 GiB), a **75.00% increase**.
+This passes the predeclared worker-specific 4 GiB absolute ceiling; the native
+prototype's default 5% memory tolerance is not applied to this worker experiment.
+
+Repeated timing initially stopped at the unchanged 6 GiB available-RAM preflight
+(5.12 GiB available). At the user's explicit request to run it, available RAM was
+8.41 GiB and the completed memory source/input/build binding revalidated. The
+memory runs were reused. Three alternating timing pairs then passed:
+
+| Pair | Three workers seconds | Six workers seconds |
+| --- | ---: | ---: |
+| 1 | 242.681 | 185.580 |
+| 2 (six first) | 257.770 | 197.041 |
+| 3 | 255.484 | 188.183 |
+| Median | **255.484** | **188.183** |
+
+Median elapsed time fell **26.34%**, a **1.3576x** speedup. Reference MAD was
+2.285 seconds; paired-gain median/MAD were 60.729/3.628 seconds. The predeclared
+gain gate was convincing and conclusive, so no five-pair extension was needed.
+All 12 measured/warmup outputs matched exactly, digest
+`db9e5a224bc04c65b93aac0aa30d8648c1e5933a217de319b046812eac27f2e5`.
+The raw-artifact validator independently recomputed the timing decision and
+revalidated completed memory evidence under the frozen worker source. Timing
+artifacts are in `.tmp/p5/workers/timing-6`; memory artifacts remain in
+`.tmp/p5/workers/memory-screen-6`.
+
+**Worker decision: keep six as a qualified opt-in for this frozen two-role,
+nine-assignment Multi Auto workload within the declared resource budget.** It
+trades 75% more sampled memory for lower latency. Default workers remain three;
+this delivery does not activate six globally or establish the same gain for
+other requests. Worker and native gains were measured separately.
+
+To replay timing from `.tmp/p5/worker-source`, use a new evidence directory while
+preserving source/input/build bindings:
+
+```powershell
+..\..\..\.venv\Scripts\python.exe -m tools.p5_experiment timing --frozen ..\..\desktop-controlled\inputs.json --output ..\workers\timing-6-replay --case multi_auto --reference-workers 3 --candidate-workers 6 --extend
+```
+
+### Native implementation and primary timing gate
+
+The optional Cython engine packs ordinary melee/ranged contexts and runs loadout,
+joint-slot and tuple-beam expansion, constraints, scoring, configured option/prayer
+selection and deterministic retention in native batches. Python retains request
+preparation, transition plans and result publication. The private `_native_search`
+flag is off by default; diagnostics remain outside the public response.
+
+The Windows release build uses Cython 3.3.1 and MSVC with `/O2 /fp:strict` and
+C++17. `python -m tools.build_gear_native` is the explicit build command; the
+`native-build` extra is optional. Normal installation does not require a compiler.
+Compiler identity, source hashes, binary hashes and coverage/release mode are
+recorded in `.tmp/native-build/last-build.json` and bound into experiment evidence.
+The recorded release build took about 8.05 seconds to regenerate, compile and
+link both modules in the already provisioned environment. This excludes dependency
+installation and is not a controlled clean-build benchmark.
+Three fresh-interpreter setup observations per mode separately measured process
+launch, benchmark imports, frozen input loading and one-worker service creation:
+median wall time was 2.457 seconds for Python and 2.483 seconds with explicit
+native extension imports. The native imports themselves took 5.6-6.0 ms. Evidence
+and the retained measurement script hash are in `.tmp/p5/native/cold-startup.json`.
+These are cold-process observations with normal OS file caching, not cold-disk or
+live desktop startup measurements. Context packing remains inside request timing;
+no search runs in this setup observation.
+
+Focused coverage verification passed 125 tests with 96% package coverage,
+including 97% in each compiled Cython module, plus a separate real spawned-worker
+parity/evidence check. Full-catalog normal service results and complete unsampled
+archives matched the Python reference exactly, digest
+`2f30394b4dbc20b00cdf35877ba39f72a5d5777f26e7554ac2c961f3ddf397dd`.
+Each primary run recorded one native request, no fallbacks, and 906,737 native
+attempts across 53 loadout, 306 joint and 20 tuple stages.
+
+After a 29.698 -> 9.407 second screening pair, three isolated warmed timing pairs
+passed the primary 2x gate:
+
+| Pair | Python combined seconds | Native seconds |
+| --- | ---: | ---: |
+| 1 | 31.279 | 9.055 |
+| 2 (reversed order) | 30.474 | 9.349 |
+| 3 | 30.523 | 9.279 |
+| Median | **30.523** | **9.279** |
+
+The measured speedup is **3.290x**, a 69.60% elapsed-time reduction on this frozen
+target. Reference MAD was 0.049 seconds; paired-gain median/MAD were 21.244/0.119
+seconds. All raw outputs and warmups matched exactly. No five-pair extension was
+needed. The evidence validator independently recomputed the timing decision and
+result fingerprints under `.tmp/p5/native/timing-multi`; this is local desktop
+evidence, not a universal multiplier or hosted CI result.
+
+The initial combined-profile feasibility trace is retained under
+`.tmp/p5-planning-profile/profile/multi-1/calls.prof`. Qualification used direct
+full-request screening and repeated timing, including packing and allocation,
+in place of a separate recorded-batch throughput benchmark. Native attempt/stage
+counts establish that the declared work executed; no isolated stage multiplier
+is claimed or extrapolated to end-to-end latency.
+
+Separate memory qualification also passed, using three fresh processes per mode
+with service startup, warmup and the measured request inside the sampling lifetime
+(after frozen-input preparation). Median
+sampled peak process-tree working set was **458,043,392 -> 226,910,208 bytes**
+(436.8 -> 216.4 MiB, ratio **0.4954**). All six observations completed without
+sampler failures, matched the full result/warmup digest, and remained below the
+4 GiB ceiling. Evidence is under `.tmp/p5/native/memory-multi`. These are sampled
+working-set peaks, not exact allocation peaks; this measurement runs separately
+from timing. Sampling is coarse: reference observations had 15/16/15 samples over
+61.53/61.15/60.47 seconds; native observations had eight samples each over
+18.27/18.09/18.05 seconds. Short-lived peaks can be missed. The 6 GiB
+available-memory preflight applies to multiprocess
+experiments, while this native comparison uses one worker in both modes.
+
+The Single controls passed three paired observations each with exact parity.
+Ranged and melee used native execution without fallback; Magic recorded one
+`unsupported_discipline` fallback and no native request in every observation:
+
+| Control | Python median seconds | Native median seconds | Speedup |
+| --- | ---: | ---: | ---: |
+| Configured ranged | 10.467 | 2.636 | 3.971x |
+| Fixed melee | 6.739 | 1.267 | 5.320x |
+| Fixed Magic (Python fallback) | 12.716 | 12.589 | No speedup claim |
+
+Their raw evidence is under `.tmp/p5/native/timing-configured-ranged` and
+`.tmp/p5/native/timing-fixed-melee`; Magic evidence is under
+`.tmp/p5/native/timing-fixed-magic`. Magic passed the predeclared 5% regression
+limit (ratio 0.9900); its small timing difference is not a convincing gain. All
+four timing reports and the separate memory report were independently revalidated
+from raw outputs, warmups and source/build/input bindings.
+
+Running-cost leaves, Magic,
+defence-roll objectives and other declared unsupported contexts fall back before
+candidate work. In particular, the existing Multi Auto case forces running-cost
+exploration and therefore does not inherit this primary speedup. Its execution
+and latency were measured separately at three workers: **232.177 -> 232.491
+seconds**, with exact normalized output digest
+`db9e5a224bc04c65b93aac0aa30d8648c1e5933a217de319b046812eac27f2e5`.
+All nine concrete branches recorded `running_cost_lane` fallback, with zero native
+requests. This is one diagnostic screen pair, not a repeated performance estimate
+or gain; raw outputs and validated evidence are under
+`.tmp/p5/native/screen-multi-auto`. Running-cost execution, plus the remaining
+combat contexts, is necessary before claiming a Multi Auto native benefit. Native
+exceptions are surfaced rather than silently restarting partial work in Python.
+
+### Prototype decision and remaining measurements
+
+**Go for further native investment on the demonstrated boundary:** the primary
+request passed the predeclared 2x gate with exact full-output/archive parity,
+lower sampled memory and passing Single controls. This completes the prototype's
+core investment decision. It does not qualify broad native adoption or a Multi
+Auto speedup. The first delivery stops at that decision; remaining native
+contexts and live desktop activation are not implemented here.
+
+Four workers are rejected after their unpromising screen. Six workers passed
+both repeated timing and fresh-process memory gates, qualifying as an opt-in for
+the measured Multi Auto workload. Default workers remain three. The selected
+first delivery now reaches both worker and native prototype decisions; broader
+migration and live adoption remain outside it. No benchmark processes remain
+running at this stopping point.
+
+Final Ruff, focused mypy and whitespace checks passed after source freeze. No
+builds or heavy tests overlapped timing. This is local Windows evidence; no
+commit, push, hosted CI, desktop restart or deployment is part of this delivery.
+
+Reproduce the native gate from the repository root with the optional build
+dependencies installed, preserving the retained evidence by using new output
+directories:
+
+```powershell
+.\.venv\Scripts\python.exe -m tools.build_gear_native
+.\.venv\Scripts\python.exe -m tools.p5_experiment timing --frozen .tmp/desktop-controlled/inputs.json --output .tmp/p5/replay-timing --case multi --native --require-native --extend
+.\.venv\Scripts\python.exe -m tools.p5_experiment memory --frozen .tmp/desktop-controlled/inputs.json --output .tmp/p5/replay-memory --case multi --native --require-native
+.\.venv\Scripts\python.exe -m tools.p5_experiment validate --frozen .tmp/desktop-controlled/inputs.json --output .tmp/p5/replay-timing/runs
+```
+
+Rebuilding changes the binary binding and requires a new evidence cohort. The
+private frozen inputs and raw outputs remain ignored; source, tests and this
+decision record are tracked project files.
 
 ## Current architecture and cost drivers
 
@@ -169,10 +561,10 @@ a reusable version is a tracked follow-up below.
 
 ## Proposed work
 
-### Current increment: full P3 (2026-11-10)
+### Completed increment: full P3 (2026-11-10)
 
-The authorized next increment refreshes profiling against the P1-enabled revision
-including Multi Auto, then implements all P3 equipment and solution representations.
+This increment refreshed profiling against the P1-enabled revision including
+Multi Auto, then implemented all P3 equipment and solution representations.
 Broader P2 sharing and P4-P6 remain separate. Full P3 implementation, qualification
 and desktop adoption are complete. The final revision-9 acceptance and adoption
 record below supersedes the intermediate statuses in this development history.
@@ -570,7 +962,11 @@ potentially better results even when its pruning is mathematically sound.
 
 ### P5: Native batches and desktop scheduling
 
-After compact data is established, prototype batches containing expansion,
+**Next priority under the [revised approach](#revised-investment-approach-2026-11-12):**
+run the bounded worker-scaling screen, then the compiled prototype and its 2x
+end-to-end investment gate. P1/P3 are complete; broader P2 and P4 are not prerequisites.
+
+Prototype batches containing expansion,
 compatibility, scoring, and ranking work. Avoid one native call per candidate.
 Keep Python responsible for input contracts, provenance, and public reporting.
 Preserve integer floors, floating-point order, support rules, and deterministic
@@ -583,7 +979,8 @@ see [Cython's explanation](https://docs.cython.org/en/latest/src/userguide/nogil
 
 The current desktop worker limit is three, and tasks generally contain complete
 discipline/potion branches. A fixed-discipline, fixed-potion request has limited
-parallelism through that mechanism. Investigate a global scheduler with CPU and
+parallelism through that mechanism. Screen worker-count scaling first. A broader
+global scheduler remains conditional follow-up, with CPU and
 memory limits, stable task IDs, deterministic merges, and dependency-aware stages.
 Respect dependencies such as running-cost exploration receiving secondary-updated
 winners. Avoid oversubscribing native threads and process workers together.
@@ -609,8 +1006,12 @@ from the time required to complete the initial search.
 
 ## Acceptance and tracking
 
-**Current standard (adopted 2026-11-10):** use the staged validation workflow below
-for subsequent performance work. It replaces the stricter repeated timing/memory
+**Current standard (revised 2026-11-12):** use the staged validation workflow below
+with the revised approach's early investment screens. The compiled prototype must
+pass its 2x end-to-end target gate before a broad native migration; a small convincing
+gain alone is insufficient. Worker scaling uses its predeclared absolute memory
+ceiling. All other changes retain the default resource tolerances below.
+The staged workflow adopted on 2026-11-10 replaces the stricter repeated timing/memory
 qualification used during P1. Historical P1 gates, measurements and rejected
 revisions remain unchanged as evidence of the decisions made at that time.
 
@@ -625,12 +1026,17 @@ The reduced validation cost comes from fewer repeated measurements and practical
 resource tolerances. It does not authorize smaller beams, reduced work budgets,
 missing frontier points, weaker eligibility checks or less accurate arithmetic.
 Completion still covers the full implementation scope of the selected phase.
+The initial compiled prototype is explicitly limited to its declared stage and
+contexts; passing it does not mark all of P5 complete. Run focused correctness and
+target performance screens before the broad matrix. Qualification and desktop
+adoption still require the complete relevant checks below.
 
 1. **During development:** run focused differential tests, reduced fixtures and
    affected integration tests after relevant changes. Keep exact checks for combat
    arithmetic, rounding, ties/IDs, legal attacks, prayers/potions, ownership,
    acquisition costs, unknown resource state, inventory and transitions. Preserve
-   independent objective winners and existing search budgets for P2/P3 refactors.
+   independent objective winners and existing search budgets for parity-preserving
+   P2/P3/P5 work.
    Retain bounded-cache, invalidation, memory-lifetime and context-cleanup tests.
 2. **At a stable candidate:** run one complete frozen-scenario parity matrix,
    including Single, Multi, Auto, Multi Auto, configured/fixed options, potions,
@@ -656,12 +1062,15 @@ Completion still covers the full implementation scope of the selected phase.
    why reused evidence remains applicable; do not rerun the entire browser/worker
    suite after every isolated numerical adjustment.
 
-Runtime and memory each allow a **5% regression**: candidate median must be at
+By default, runtime and memory each allow a **5% regression**: candidate median must be at
 most `1.05 * reference median` for the corresponding case and measurement type.
 Runtime uses measured paired-run wall times; memory uses the three fresh-process
 sampled peaks. MAD remains a variability diagnostic, not an additional allowance
 on top of the 5% tolerance. These gates deliberately accept small resource
 regressions; they do not relax output correctness or search quality.
+The worker-count experiment replaces only this relative memory gate with its
+predeclared absolute process-tree ceiling; it still reports the relative increase.
+The compiled target additionally must meet its 0.50x elapsed-time gate.
 
 Predeclare the intended improvement case and the interpretation of variability.
 By default, call a timing gain convincing only when both the difference of medians
@@ -702,17 +1111,19 @@ gate logic. No historical failed result is retroactively accepted.
 | Representative desktop benchmark suite | Frozen Single/Multi/Auto cases, option/potion variants, bonus and defence-roll metrics, repeated timings, peak memory, cancellation, complete result fingerprints | Delivered; combined adoption matrix qualified |
 | Reusable dependency probe | Tracked portable fixture and counting harness; equivalence checks; bounded-cache hit/miss, key-cost, and memory measurements | Delivered; private full-catalog inputs remain ignored |
 | P1 factored evaluator | Differential scalar/full-model tests; complete archive parity; measured runtime and memory | Complete: all original P1 scope adopted in desktop combined; final matrix and live browser/rollback passed |
-| P2 shared evaluation | Lane winner isolation; context invalidation tests; stable logical work budgets; observed reuse | Partial: bounded ranged numerical sharing; broader evaluator sharing pending |
+| P2 shared evaluation | Lane winner isolation; context invalidation tests; stable logical work budgets; observed reuse | Partial: bounded ranged numerical sharing; broader sharing conditional on measured value for the compiled stage |
 | P3 compact states | Exact acquisition, transition, inventory, tie-order and fractional-sum parity; allocation/serialization reduction | Complete and adopted in desktop combined; v9 passed all 21 parity, six timing and three memory cases, independent audit and desktop/HTTP/browser checks |
-| P4 Single solver prototype | Small exhaustive oracles; state-count curves; feasibility and comparison against every existing tradeoff and both extremes | Pending |
-| P5 native batch prototype | Python differential oracle; deterministic arithmetic/ties; end-to-end and batch measurements | Pending |
-| P5 desktop scheduler | CPU/memory scaling, serial/parallel parity, startup/tail latency, cancellation and failure isolation | Pending |
+| P4 Single solver prototype | Small exhaustive oracles; state-count curves; feasibility and comparison against every existing tradeoff and both extremes | Pending; separate algorithm experiment, not a prerequisite for P5 |
+| P5 worker-scaling screen | Same-input/output comparison above three workers; paired timing; predeclared memory ceiling; cancellation/recovery | Complete: four rejected; six qualified at 26.34% lower median elapsed time and 75% higher memory within 4 GiB; historical qualification complete; current desktop default is six |
+| P5 native batch prototype | Python differential oracle; complete target-result parity; at least 2x target-request speedup at the same worker count; memory and control checks | Implemented; primary timing 3.290x, exact parity, memory ratio 0.4954 and Single controls passed; superseded by broad adoption defaults |
+| P5 broader native migration | Existing mode coverage; exact stable acceptance matrix; desktop activation/rollback; no further performance requirements | Complete: all existing modes, 23 exact scenarios, native/six-worker live activation and rollback passed |
+| P5 desktop scheduler | CPU/memory scaling, serial/parallel parity, startup/tail latency, cancellation and failure isolation | Conditional follow-up; not required for worker-count screen |
 | P6 provisional results/archive reuse | Correct provisional labels and baselines; verified publication-only invalidation boundaries | Pending |
 
-Recommended sequence: establish benchmarks and P1/P3 representations, add P2
-sharing, then evaluate the P4 solver and P5 native experiments. Choose further
-investment using measured end-to-end results. P6 can proceed independently once
-its publication and cache boundaries are established.
+Current sequence: bounded worker-scaling screen -> compiled search feasibility ->
+complete target-request parity and 2x timing gate -> conditional broader migration
+and full qualification. This supersedes the original P2 -> P4/P5 sequence. Keep
+P2/P4 as conditional investigations and report P6 interaction gains separately.
 
 - [x] Inspect current architecture and existing optimizations.
 - [x] Collect exploratory phase/profile measurements and dependency counts.
@@ -722,6 +1133,18 @@ its publication and cache boundaries are established.
 - [x] Implement and differentially validate an opt-in ranged numerical experiment.
 - [x] Record completed experiments' revision, environment, scenario provenance,
   timings, memory, correctness/quality evidence, and keep/reject decision here.
+- [x] Freeze the new target/control requests, current combined source, resource
+  ceilings, worker-count candidates and prototype scope (no engineering timebox).
+- [x] Complete worker-scaling screens and memory comparison; reject four workers
+  and retain three by default.
+- [x] Complete repeated six-worker speed qualification under the unchanged RAM
+  preflight; qualify six as an opt-in for the measured workload and resource budget.
+- [x] Measure compiled execution on real full-catalog requests with focused
+  differential checks; direct end-to-end screening replaced isolated batch replay.
+- [x] Pass complete target-request parity and the 2x end-to-end investment gate,
+  or record why further native migration is stopped.
+- [x] Complete broad existing-mode native coverage, exact correctness acceptance,
+  and local native/six-worker activation and rollback, without further performance gates.
 
 For parity work, compare selected and unrestricted solutions, every action-cap
 curve, complete secondary/running-cost archives, attack/prayer/potion choices,
@@ -1965,3 +2388,54 @@ Raw timing, memory and worker evidence remains ignored under
 
 The memory command launches a fresh interpreter; repeat separately for both modes
 three times per required memory case when reproducing the full acceptance gate.
+
+## Broad native adoption implementation record (2026-11-13)
+
+Implemented native Magic and reviewed powered attacks, fractional Magic bonuses,
+all secondary/player-defence objectives, unscored special-role structure, and
+running-cost numerical ranking. Ordinary/metric/cost lanes isolate objective and
+stage state. Python retains preparation, final validation and publication; native
+candidate loops use compiled scoring/expansion without Python callbacks. Search
+budgets, ordered arithmetic, complete archives and physical identities are retained.
+The reviewed Ancient account/spellbook eligibility omission was fixed before source
+freeze; follow-up review found no remaining HIGH/CRITICAL issues.
+
+Desktop settings now default to `native`, `combined`, and six workers. Parent and
+workers require both release modules with matching source/binary/runtime manifests.
+Explicit Python or baseline/lazy rollback remains available. Setup provisions the
+release build and startup validates rather than compiles. Pi/generic defaults and
+optimizer HTTP schemas remain unchanged.
+
+Focused validation completed: 250 native tests with 92.17% native-package coverage
+(97% scoring Cython, 93% stages Cython); 45 integration tests including real six-worker
+native cancellation, reuse, crash and recovery; 127 desktop/worker/HTTP checks and
+two Chrome browser checks; 111 driver tests. Desktop/readiness coverage is 95% and
+the new correctness driver coverage is 92%. Focused Ruff, formatting, mypy and
+whitespace checks pass. Frontend production build passes. Instrumented kernels were
+replaced by a release build before final acceptance. An initial browser fixture
+lacked bundled Chromium; the two affected checks passed with installed Chrome.
+
+Final correctness-only acceptance PASSED under `.tmp/native-adoption/final-v1`:
+18 Python/native complete archive scenarios and five parallel service scenarios
+including native serial/six-worker parity. All 23 reports and 51 raw outputs were
+independently validated against frozen source/build/input bindings. Every native
+observation recorded actual native execution and zero fallback. Full nine-assignment
+Multi Auto recorded 18 ordinary/running-cost native contexts and matched digest
+`db9e5a224bc04c65b93aac0aa30d8648c1e5933a217de319b046812eac27f2e5`. There
+are no timing, memory, available-RAM, speedup or regression gates for this delivery.
+
+Live Python rollback has passed on an isolated private test port with authoritative
+Pi data: the UI published a successful result using Python and three workers, then
+server and pool shut down cleanly. Native activation PASSED after the complete frozen correctness cohort. The private
+configuration now explicitly selects native/combined/six workers, preserving the
+connection settings and credentials with a private backup. The live Single ranged
+request returned HTTP 200 with one native context and zero fallback. Two-role
+Multi Auto (all three disciplines per role, nine assignments) published Best joint
+configuration found and HTTP 200 with 18 native contexts and zero fallback. Both
+result screenshots were visually inspected; health and all six worker processes
+were verified. The desktop remains running at `http://100.80.244.14:8502/gear`.
+Live events, screenshots and logs are retained under `.tmp/native-adoption/`.
+
+This completes broad adoption and the authorized local activation. No further
+performance qualification was performed or required. No commit, push or Pi
+deployment was performed.

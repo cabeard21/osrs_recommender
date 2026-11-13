@@ -106,6 +106,7 @@ def desktop_factory(monkeypatch, request):
                 read_token="fixture-only",
                 optimization_workers=1,
                 optimization_profile=profile,
+                optimization_engine="python",
             )
         )
         # P3 exercises actual factory activation; P1 remains an explicit off-reference.

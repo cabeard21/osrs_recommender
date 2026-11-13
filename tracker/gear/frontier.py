@@ -235,11 +235,15 @@ def explore(
     started = perf_counter()
     # This isolated search overrides its tick method for a separate work budget.
     search: Any = copy(original)
+    from tracker.gear.native import reset_context
+
+    reset_context(search)
     search.compact_cache = {}
     search.frontier_search = True
     search.nodes = 0
     budget = 1_500_000 if thorough else 500_000
     phase_limit = budget - 25000
+    search.native_limit = phase_limit
     diagnostics: dict[str, Any] = {
         "policy": "tradeoff-frontier-v2",
         "expansion_limit": budget,
@@ -266,6 +270,7 @@ def explore(
         return True
 
     search.tick = tick
+    search.native_report = lambda: reporter.fraction((charged[0] + search.nodes) / budget)
     # Marginals cover all eligible items, including those omitted by DPS pools.
     pools = {}
     for slot in SLOTS:
@@ -346,6 +351,7 @@ def explore(
     # Accuracy, defence rolls and CostSearch's accuracy projection still need
     # independent winners, including their recorded options and prayers.
     metric: Any = copy(search)
+    reset_context(metric)
     metric.compact_cache = {}
     metric.metric_first = True
     if search.request.secondary_priority not in EQUIPMENT_BONUS_PRIORITIES:
@@ -356,6 +362,7 @@ def explore(
     # Multi must leave room for cap-specific assignments even when its shared
     # seed search exhausts the allowance.
     metric_limit = total_metric_limit // 2 if len(roles) > 1 else total_metric_limit
+    metric.native_limit = metric_limit
 
     def metric_tick() -> bool:
         if metric.cancelled and metric.cancelled():
@@ -368,6 +375,7 @@ def explore(
         return True
 
     metric.tick = metric_tick
+    metric.native_report = lambda: reporter.fraction(metric.nodes / budget)
     metric.pools = _metric_pools(metric, original)
     metric_solutions = []
     for equipment in metric.loadouts(roles):
@@ -380,9 +388,11 @@ def explore(
         per_cap = max(0, (total_metric_limit - shared_work) // len(limits))
         for index, limit in enumerate(limits):
             metric_limit = shared_work + per_cap * (index + 1)
+            metric.native_limit = metric_limit
             for assignment in metric.joint_loadouts(limit):
                 metric_solutions.append(metric.solution(assignment, limit))
     metric_limit = total_metric_limit
+    metric.native_limit = metric_limit
     diagnostics["metric_lane"] = {
         "expansion_limit": metric_limit,
         "explored_nodes": metric.nodes,
@@ -392,6 +402,7 @@ def explore(
     # Charge actual metric work to the shared total; unused reserved work is
     # available to the diverse lane.
     phase_limit = budget - 25000 - metric.nodes
+    search.native_limit = phase_limit
     charged[0] = metric.nodes
     individual = {role.id: search.loadouts((role,)) for role in roles}
     # Shared and joint searches preserve constrained joint solutions.
@@ -406,6 +417,7 @@ def explore(
         # Split the reserved 25,000 expansions between coordinated equipment
         # changes and combat options. Both Fast and Thorough keep their total cap.
         phase_limit = budget - 15000 - metric.nodes
+        search.native_limit = phase_limit
         for assignment in _shared_assignments(search, archives.values()):
             if diagnostics["shared_assignment_attempts"] >= 10000 or not tick():
                 break
@@ -471,6 +483,7 @@ def explore(
     for solution in metric_solutions:
         accept(solution)
     phase_limit = budget - metric.nodes
+    search.native_limit = phase_limit
     option_seeds = {
         _candidate_identity(row["loadouts"]): row
         for archive in [option_candidates, *archives.values()]
@@ -607,6 +620,9 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
                 if not performance["supported"]:
                     continue
                 variant = copy(search)
+                from tracker.gear.native import reset_context
+
+                reset_context(variant)
                 variant.compact_cache = {}
                 # Only the selected roles differ. Keep writes local while using
                 # the shared immutable cached evaluations for other lookups.
