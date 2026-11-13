@@ -30,6 +30,10 @@ from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
+from tracker.gear.tomes import FORMS as TOME_FORMS
+from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
+from tracker.gear.tomes import REVISION as TOME_REVISION
+from tracker.gear.tomes import apply_review as tome_review
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -121,7 +125,7 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
-        row = hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row))))
+        row = tome_review(hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row)))))
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -216,6 +220,8 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=59)
         if row["id"] in BOLT_REQUIREMENTS:
             requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
+        if row["id"] in TOME_FORMS:
+            requirement = SkillLeaf(skill="magic", level=50)
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -231,11 +237,14 @@ def load_catalog(
                     or autocast_level
                     or row["id"] in BOLT_REQUIREMENTS
                     or row["id"] in ELEMENTAL_AMULETS
+                    or row["id"] in TOME_FORMS
                     or row["id"] == 32879
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    True
+                    row["id"] in TOME_MARKET_FORMS
+                    if row["id"] in TOME_FORMS
+                    else True
                     if row["id"] in ELEMENTAL_AMULETS or row["id"] == 32879
                     else row["id"] in BOLT_TRADEABLE
                     if row["id"] in BOLT_REQUIREMENTS
@@ -276,6 +285,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + TOME_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION
@@ -290,6 +300,7 @@ def load_catalog(
             + reviewed_spells
             + POWERED_REVISION
             + OBSIDIAN_REVISION
+            + TOME_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION

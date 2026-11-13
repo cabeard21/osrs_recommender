@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from math import floor
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 from tracker.gear import hopper
 from tracker.gear.bolts import expected_bolt_damage
@@ -24,10 +24,13 @@ from tracker.gear.models import (
     EquipmentDefinition,
     HitsplatPerformance,
     HopperPerformance,
+    TomeBonus,
 )
 from tracker.gear.powered import base_hit, supports_powered
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects, effects
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import applied_tome
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
 # only when that tier's spell is unlocked. Spell choice is an explicit assumption.
@@ -78,7 +81,7 @@ ANCIENT_SPELLS = {
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
 
 
-MODEL_VERSION = "normal-attacks-v5-aquanite-hopper"
+MODEL_VERSION = "normal-attacks-v6-elemental-tomes-aquanite-hopper"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -292,6 +295,8 @@ def _evaluate_prepared(
         score_only=score_only,
         include_defence=include_defence,
         amulet=next((item for item in equipment if item.slot == "neck"), None),
+        tome=next((item for item in equipment if item.slot == "shield"), None),
+        fire_tome_pages=getattr(role, "fire_tome_pages", "burnt"),
         hopper_active=(
             style == "ranged"
             and hopper.active(
@@ -338,6 +343,8 @@ def _calculate(
     score_only: bool = False,
     include_defence: bool = False,
     amulet: EquipmentDefinition | None = None,
+    tome: EquipmentDefinition | None = None,
+    fire_tome_pages: Literal["burnt", "searing"] = "burnt",
     hopper_active: bool = False,
     bolt_family: str | None = None,
     bolt_diary: bool = False,
@@ -346,6 +353,8 @@ def _calculate(
     speed = weapon.attack_speed if weapon else 4
     weakness = None
     amulet_report = None
+    tome_report = None
+    minimum_hit = 0
     if style == "magic":
         if powered_attack is not None:
             # Powered attack metadata provides the base hit; all other rolls use
@@ -415,11 +424,30 @@ def _calculate(
                 max_hit_bonus=hit_bonus,
                 attack_roll_bonus=roll_bonus,
             )
+        tome_effect = applied_tome(tome, spell, powered_attack)
+        if tome_effect and tome_effect.element == "water":
+            attack = attack * 120 // 100
         if applied:
             # Weakness adds a separately truncated fraction of the unmodified
             # spell damage and base accuracy roll; it does not multiply gear%.
             max_hit += hit_bonus
             attack += roll_bonus
+        if tome_effect:
+            minimum_hit = (
+                max_hit // 10
+                if tome_effect.element == "fire" and fire_tome_pages == "searing"
+                else 0
+            )
+            max_hit = max_hit * 110 // 100
+            if not score_only and tome is not None:
+                tome_report = TomeBonus(
+                    item_id=tome.id,
+                    element=tome_effect.element,
+                    damage_percent=10,
+                    accuracy_percent=20 if tome_effect.element == "water" else 0,
+                    fire_pages=fire_tome_pages if tome_effect.element == "fire" else None,
+                    minimum_hit=max(1, minimum_hit),
+                )
         defence = (target.magic_level + 9) * (target.bonuses.magic + 64)
         speed = weapon.attack_speed if powered_attack is not None and weapon else 5
     else:
@@ -491,6 +519,8 @@ def _calculate(
     expected = sum(
         p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True)
     )
+    if minimum_hit > 0:
+        expected = accuracy * (minimum_hit + max_hit) / 2
     if sang_proc:
         expected += accuracy * 0.2 * 8
     bolt_report = None
@@ -586,6 +616,7 @@ def _calculate(
         bolt_effect=bolt_report,
         elemental_weakness=weakness,
         elemental_amulet_bonus=amulet_report,
+        tome_bonus=tome_report,
         accuracy=accuracy,
         hitsplats=hitsplats,
         max_hit=sum(h.max_hit for h in hitsplats),
@@ -601,6 +632,7 @@ def _calculate(
             "no boost decay, combat downtime "
             "or consumable endurance are modeled.",
         )
+        + ((TOME_ASSUMPTION,) if tome is not None and tome.tome_effect else ())
         + (
             (
                 "Static target HP and sufficient player HP assumed; ruby self-damage "

@@ -485,3 +485,17 @@ it("accepts strict backend provenance without community classification bytes", (
   });
   expect(() => parseOptimization(reply, scenario)).toThrow(/provenance/);
 });
+
+it("rejects an optimization response with a different Fire page mode", () => {
+  const scenario = normalize(
+    { ...newDraft(), fireTomePages: "searing" },
+    context.account.snapshot_id,
+  );
+  const reply = response();
+  reply.scenario = optimizationRequest(scenario);
+  expect(
+    parseOptimization(reply, scenario).scenario.request.fire_tome_pages,
+  ).toBe("searing");
+  Object.assign(reply.scenario, { fire_tome_pages: "burnt" });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/scenario.*match/);
+});

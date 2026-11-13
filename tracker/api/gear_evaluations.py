@@ -34,6 +34,7 @@ from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.running_frontier import running_cost_assumptions
 from tracker.gear.support import SupportPolicy, support_context
+from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -251,6 +252,8 @@ def calculate_evaluation(
 
     bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
     assumptions = {
+        "tome_model_version": TOME_MODEL_VERSION,
+        "fire_tome_pages": scenario.fire_tome_pages,
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "bolt_model_version": "enchanted-bolts-v1",
         "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,

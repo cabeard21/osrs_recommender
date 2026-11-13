@@ -4,6 +4,44 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Offhand tomes
+
+Fire (charged 20714, empty 20716), Water (25574/25576), and Earth
+(30064/30066) are reviewed shield items requiring 50 Magic, with +8 Magic
+attack and +8 Magic defence. Charged forms carry `tome_effect` metadata.
+Empty forms provide stats only in exact comparisons. Optimization can prepare
+an owned or purchased empty tome into its charged form without changing observed
+ownership; purchases use the empty market ID and preparation is disclosed.
+
+The scenario field `fire_tome_pages` accepts `burnt` (default) or `searing`.
+It applies to all configurations and both sides of a fixed comparison; old
+scenarios default to burnt. No automatic page-mode optimization is performed.
+Charged tomes multiply matching Standard elemental spell maximum damage by
+11/10, rounding down after equipment, prayer, amulet and weakness damage.
+Water additionally multiplies the base attack roll by 6/5 before adding the
+separately rounded weakness contribution. Nonmatching spells, Iban, Ancient
+spells and powered attacks receive no tome damage or accuracy effect.
+
+Searing Fire spells roll from `floor(pre-tome maximum / 10)` through the
+tome-boosted maximum. Accurate zero rolls still become one. The nullable
+`tome_bonus` report includes the item, element, damage/accuracy percentages,
+Fire page mode and the successful-hit minimum (at least one).
+The minimum excludes the tome's own 10% damage boost.
+
+Rune supply is independent of damage eligibility: charged Fire supplies Iban
+and Smoke spells; charged Water supplies Ice spells. Staff provision takes
+precedence when both supply the same rune. Tome provision never discounts
+ingredients used to charge powered weapons. Page availability, quantities,
+consumption and costs are deliberately excluded and disclosed in results.
+PvP, utility/curse effects, and standalone Sunfire rune selection are outside
+this model. Missing prices for other consumed runes remain unavailable.
+
+Calculation reference: the [pinned Wiki DPS calculator](https://github.com/weirdgloop/osrs-dps-calc/blob/74958b18f6559cf1bf58f7ac74e7a442a7ac8e2f/src/lib/PlayerVsNPCCalc.ts)
+uses 20% Water accuracy and applies tome damage after weakness. Some Wiki item
+prose instead describes 10% Water accuracy; this implementation deliberately
+uses the pinned calculation reference. The [Fire item description](https://oldschool.runescape.wiki/w/Tome_of_Fire)
+establishes the pre-tome Searing minimum.
+
 ## Elemental amulets
 
 The five reviewed tradeable amulets (34407 air, 34413 water, 34419 earth,

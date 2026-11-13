@@ -303,6 +303,19 @@ export function ConfigurationPanel() {
         />
         <LockConstraints draft={draft} change={change} itemLabel={itemLabel} />
       </details>
+      <label>
+        Tome of Fire pages
+        <select
+          value={draft.fireTomePages ?? "burnt"}
+          onChange={(e) =>
+            change({ fireTomePages: e.target.value as Draft["fireTomePages"] })
+          }
+        >
+          <option value="burnt">Burnt</option>
+          <option value="searing">Searing</option>
+        </select>
+      </label>
+      <p>Tome page availability, consumption, and costs are excluded.</p>
       <PotionFields
         policy={draft.potions}
         catalog={state.context?.live?.potion_catalog ?? []}

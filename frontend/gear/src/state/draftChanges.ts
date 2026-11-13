@@ -3,6 +3,7 @@ import { EQUIPMENT_ACCESS_LABELS } from "../components/resultFormat";
 import { parseGp } from "./scenario";
 
 export interface SubmittedSummary {
+  fire_tome_pages?: Draft["fireTomePages"];
   include_untradeables?: boolean;
   budget_gp: number;
   mode: Draft["mode"];
@@ -17,6 +18,12 @@ export function describeDraftChanges(
   submitted: SubmittedSummary,
 ): string[] {
   const changes: string[] = [];
+  if (
+    (draft.fireTomePages ?? "burnt") !== (submitted.fire_tome_pages ?? "burnt")
+  )
+    changes.push(
+      `Tome of Fire pages: ${submitted.fire_tome_pages ?? "burnt"} → ${draft.fireTomePages ?? "burnt"}`,
+    );
   if (
     (draft.includeUntradeables ?? false) !==
     (submitted.include_untradeables ?? false)

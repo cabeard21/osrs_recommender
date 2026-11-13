@@ -35,7 +35,7 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
-        "policy": "running-cost-frontier-v2",
+        "policy": "running-cost-frontier-v3-tomes",
         "cost_model_version": COST_MODEL_VERSION,
         "consumable_budget_policy": "reviewed-expendable-ranged-v1",
         "activation": "ranged-or-magic-v1",
@@ -50,6 +50,7 @@ def running_cost_assumptions(
 ) -> dict[str, Any]:
     """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
     return {
+        "fire_tome_pages": request.fire_tome_pages,
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
             str(i): {
@@ -91,7 +92,12 @@ def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str
         "gp_per_damage": spend / damage if spend is not None and damage > 0 else None,
         "resources": [],
         "charging_alternatives": [],
-        "charging_assumption": None,
+        "charging_assumption": " ".join(
+            dict.fromkeys(
+                c["charging_assumption"] for _, c, _ in active if c.get("charging_assumption")
+            )
+        )
+        or None,
         "reasons": (
             []
             if known and damage > 0
@@ -232,16 +238,17 @@ def explore_running_costs(
         sampled_bases = cost_scaffolds(original, role)
         for i in search.eligible:
             slot = search.items[i].slot
-            if slot not in {"weapon", "ammunition", "cape"}:
+            if slot not in {"weapon", "ammunition", "cape", "shield"}:
                 continue
             values = [
                 search.secondary({role.id: {**b, slot: i}})
                 for b in sampled_bases
-                if (slot == "cape" or b.get(slot) == i) and search.compatible({**b, slot: i})
+                if (slot in {"cape", "shield"} or b.get(slot) == i)
+                and search.compatible({**b, slot: i})
             ]
             search.secondary_marginals[role.id, i] = max(values, default=-1e100)
     search.pools = dict(original.pools)
-    for slot in ("weapon", "ammunition", "cape"):
+    for slot in ("weapon", "ammunition", "cape", "shield"):
         leaders = sorted(
             (i for i in search.eligible if search.items[i].slot == slot),
             key=lambda i: (
@@ -255,7 +262,10 @@ def explore_running_costs(
                 i,
             ),
         )
-        search.pools[slot] = list(dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7]]))
+        tomes = [i for i in search.eligible if slot == "shield" and search.items[i].tome_effect]
+        search.pools[slot] = list(
+            dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7], *tomes])
+        )
 
     def objective(row: dict[str, Any] | None) -> dict[str, Any] | None:
         if row is None:

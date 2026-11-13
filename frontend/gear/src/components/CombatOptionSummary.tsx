@@ -138,6 +138,17 @@ export function CombatOptionSummary({
             : ` · ${weakness.reason ?? "Weakness not applied."}`}
         </p>
       )}
+      {performance?.tome_bonus && (
+        <p aria-label="Elemental tome effect">
+          {performance.tome_bonus.element[0].toUpperCase() +
+            performance.tome_bonus.element.slice(1)}{" "}
+          tome: +{performance.tome_bonus.damage_percent}% damage
+          {performance.tome_bonus.accuracy_percent > 0 &&
+            `; +${performance.tome_bonus.accuracy_percent}% attack roll`}
+          {performance.tome_bonus.fire_pages &&
+            `; ${performance.tome_bonus.fire_pages} pages; successful minimum hit ${performance.tome_bonus.minimum_hit}`}
+        </p>
+      )}
       {performance?.elemental_amulet_bonus && (
         <p aria-label="Elemental amulet effect">
           Elemental amulet effect: +
