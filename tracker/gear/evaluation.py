@@ -109,6 +109,11 @@ def validate_request_context(
                 raise ValueError(f"locked item {item_id} is excluded")
 
 
+def resolve_tome_context(role: Any, fire_tome_pages: str) -> Any:
+    """Resolve the scenario-wide page choice at every scoring entry point."""
+    return role.model_copy(update={"fire_tome_pages": fire_tome_pages})
+
+
 def planning_owned(fact: Mapping[str, Any]) -> Mapping[str, Any]:
     """Planning preparation never alters the concrete account observation."""
     value: Mapping[str, Any] = fact.get("planning_ownership", fact["ownership"])
@@ -119,10 +124,18 @@ def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[
     """The optimizer's unchanged access policy, with concrete exclusions applied first."""
     if item_id in request.excluded_item_ids:
         return (f"Physical item {item_id} is excluded.",)
+    preparation = fact.get("preparation") or {}
+    if preparation.get("source_item_id") in request.excluded_item_ids:
+        return ("Preparation source is excluded.",)
     if fact["wear"]["status"] != "satisfied":
         return (f"Physical item {item_id}: equipment requirements are {fact['wear']['status']}.",)
     if planning_owned(fact)["status"] == "owned":
         return ()
+    if (
+        item_id not in request.assumed_item_ids
+        and preparation.get("market_item_id") in request.excluded_item_ids
+    ):
+        return ("Preparation market form is excluded.",)
     if request.mode == "owned":
         return (f"Physical item {item_id} is not observed owned.",)
     if item_id in request.assumed_item_ids:
@@ -279,7 +292,9 @@ def evaluate_configurations(
         raise ValueError("Exact evaluation supports one ordinary-attack role without transitions")
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
-    role = resolve_bolt_context(request.roles[0], snapshot)
+    role = resolve_tome_context(
+        resolve_bolt_context(request.roles[0], snapshot), request.fire_tome_pages
+    )
     if role.prayers.mode == "optimize":
         raise ValueError("Fixed evaluation requires an explicit fixed prayer setup")
     if role.prayers.mode == "fixed":

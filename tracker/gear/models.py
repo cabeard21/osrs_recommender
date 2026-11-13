@@ -42,7 +42,22 @@ class ElementalAmuletBonus(GearModel):
     base_max_hit_bonus: int
 
 
+class TomeEffect(GearModel):
+    element: Literal["fire", "water", "earth"]
+    rune_id: int = Field(gt=0)
+
+
+class TomeBonus(GearModel):
+    item_id: int
+    element: Literal["fire", "water", "earth"]
+    damage_percent: int
+    accuracy_percent: int
+    fire_pages: Literal["burnt", "searing"] | None = None
+    minimum_hit: int = Field(ge=0)
+
+
 class EquipmentDefinition(GearModel):
+    tome_effect: TomeEffect | None = None
     elemental_spell_bonus: ElementalSpellBonus | None = None
     bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
     id: int = Field(gt=0)
@@ -165,6 +180,7 @@ class BoltPerformance(GearModel):
 
 
 class CombatPerformance(GearModel):
+    tome_bonus: TomeBonus | None = None
     elemental_amulet_bonus: ElementalAmuletBonus | None = None
     bolt_effect: BoltPerformance | None = None
     player_defence_rolls: PlayerDefenceRolls | None = None

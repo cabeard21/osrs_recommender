@@ -19,8 +19,10 @@ from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import STAFFS, review
 from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v4"
+COST_MODEL_VERSION = "ordinary-resource-cost-v5-tomes"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -124,6 +126,7 @@ def resource_item_ids() -> frozenset[int]:
     return (
         potion_item_ids()
         | MARKET_FORMS
+        | TOME_MARKET_FORMS
         | frozenset(_RUNES)
         | frozenset(
             i for staff in STAFFS for recipe in staff.recipes for i, _ in recipe if i != 995
@@ -236,13 +239,19 @@ def evaluate_running_cost(
         else:
             weapon = equipment.get("weapon")
             supplied = STAFF_RUNES.get(weapon.id, frozenset()) if weapon else frozenset()
+            shield = equipment.get("shield")
+            tome_rune = shield.tome_effect.rune_id if shield and shield.tome_effect else None
             resources = [
                 _resource(
                     item_id,
                     _RUNES[item_id],
                     quantity,
-                    quantity if item_id in supplied else 0,
-                    weapon.name if weapon and item_id in supplied else None,
+                    quantity if item_id in supplied or item_id == tome_rune else 0,
+                    weapon.name
+                    if weapon and item_id in supplied
+                    else shield.name
+                    if shield and item_id == tome_rune
+                    else None,
                     price_records,
                     now,
                 )
@@ -270,6 +279,11 @@ def evaluate_running_cost(
     cost = None if reasons else sum(r["consumed_quantity"] * r["unit_price_gp"] for r in resources)
     interval, dps = performance.get("attack_interval"), performance.get("dps")
     per_second = cost / interval if cost is not None and interval and interval > 0 else None
+    assumptions = (
+        ["Cheapest priced charging recipe; actual charges unknown."] if alternatives else []
+    )
+    if any(item.tome_effect for item in equipment.values()):
+        assumptions = [*assumptions, TOME_ASSUMPTION]
     return {
         "model_version": COST_MODEL_VERSION,
         "status": "unavailable" if reasons else "known",
@@ -279,8 +293,6 @@ def evaluate_running_cost(
         "gp_per_damage": per_second / dps if per_second is not None and dps and dps > 0 else None,
         "resources": resources,
         "charging_alternatives": alternatives,
-        "charging_assumption": "Cheapest priced charging recipe; actual charges unknown."
-        if alternatives
-        else None,
+        "charging_assumption": " ".join(assumptions) or None,
         "reasons": reasons,
     }

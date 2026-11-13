@@ -14,6 +14,8 @@ from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
 from tracker.gear.ranged_resources import CONSUMABLE_WEAPON_IDS
+from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.tomes import review as tome_review
 
 # New purchases use ordinary editions; owned editions keep exact preparation routes.
 _POWERED_MARKET_FORMS = MARKET_FORMS
@@ -144,6 +146,26 @@ def equipment_fact(
             "message": "Charging required; actual charge availability is unknown."
             if charging_required
             else "Actual charge availability is unknown.",
+        }
+    tome = tome_review(item.id)
+    if tome is not None and item.id == tome.charged_id:
+        empty = observed_ownership(snapshot, tome.uncharged_id)
+        prepare_owned = ownership["status"] != "owned" and empty["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {**empty, "meaning": "Owned empty tome; charged use assumed"}
+        market_id = tome.uncharged_id
+        preparation = {
+            "source_item_id": tome.uncharged_id
+            if prepare_owned
+            else item.id
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": item.id,
+            "market_item_id": market_id,
+            "charging_required": ownership["status"] != "owned",
+            "charges": "unknown",
+            "activation_reserve": [],
+            "message": TOME_ASSUMPTION,
         }
     authored = next((entry for entry in content.items.values() if entry.item_id == market_id), None)
     price = (

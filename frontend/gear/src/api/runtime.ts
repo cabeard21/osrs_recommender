@@ -41,6 +41,21 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
   )
     throw new Error("Invalid combat performance metadata");
+  if (value.tome_bonus != null) {
+    const t = value.tome_bonus;
+    if (
+      !Number.isSafeInteger(t.item_id) ||
+      t.item_id <= 0 ||
+      !["fire", "water", "earth"].includes(t.element) ||
+      t.damage_percent !== 10 ||
+      ![0, 20].includes(t.accuracy_percent) ||
+      !Number.isSafeInteger(t.minimum_hit) ||
+      t.minimum_hit < 0 ||
+      t.minimum_hit > value.max_hit! ||
+      !(t.fire_pages === null || ["burnt", "searing"].includes(t.fire_pages))
+    )
+      throw new Error("Invalid tome effect metadata");
+  }
   return {
     dps: value.dps!,
     maxHit: value.max_hit!,

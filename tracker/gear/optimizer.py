@@ -42,6 +42,7 @@ from tracker.gear.evaluation import (
     purchase_cost,
     purchases,
     resolve_bolt_context,
+    resolve_tome_context,
     unowned_untradeables,
     validate_request_context,
 )
@@ -77,6 +78,9 @@ from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
+from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
+from tracker.gear.tomes import applied_tome
+from tracker.gear.tomes import review as tome_review
 from tracker.gear.transitions import inventory_slots, plan_transition
 
 SLOTS: tuple[ItemSlot, ...] = (
@@ -117,6 +121,7 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    fire_tome_pages: Literal["burnt", "searing"] = Field(default="burnt", exclude=True)
     bolt_diary_boost: bool = Field(default=False, exclude=True)
     bolt_diary_known: bool = Field(default=False, exclude=True)
     prayers: PrayerPolicy = PrayerPolicy()
@@ -140,6 +145,8 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.fire_tome_pages != "burnt":
+            raise ValueError("fire_tome_pages is scenario-wide, not a role request field")
         if self.bolt_diary_boost or self.bolt_diary_known:
             raise ValueError("Bolt diary context is resolved internally, not a request field")
         if self.active_prayer_ids:
@@ -162,6 +169,7 @@ class RoleConfig(BaseModel):
 class OptimizationRequest(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     potions: PotionPolicy = PotionPolicy()
+    fire_tome_pages: Literal["burnt", "searing"] = "burnt"
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
     mode: Literal["owned", "usable", "future"] = "usable"
     include_untradeables: bool = Field(default=False, strict=True)
@@ -257,14 +265,23 @@ class OptimizationRequest(BaseModel):
         conversions: dict[int, int] = {}
 
         def prepared(locks: Mapping[ItemSlot, int | None]) -> dict[ItemSlot, int | None]:
-            source = locks.get("weapon")
-            staff = powered_review(source) if source is not None else None
-            if staff is None or source != staff.uncharged_id or source == staff.charged_id:
-                return dict(locks)
-            if staff.charged_id in self.excluded_item_ids:
-                raise ValueError("prepared weapon lock conflicts with excluded_item_ids")
-            conversions[source] = staff.charged_id
-            return {**locks, "weapon": staff.charged_id}
+            result = dict(locks)
+            preparers: tuple[tuple[ItemSlot, Callable[[int], Any]], ...] = (
+                ("weapon", powered_review),
+                ("shield", tome_review),
+            )
+            for slot, review_form in preparers:
+                source = locks.get(slot)
+                if source is None:
+                    continue
+                form = review_form(source)
+                if form is None or source != form.uncharged_id or source == form.charged_id:
+                    continue
+                if source in self.excluded_item_ids or form.charged_id in self.excluded_item_ids:
+                    raise ValueError("prepared equipment lock conflicts with excluded_item_ids")
+                conversions[source] = form.charged_id
+                result[slot] = form.charged_id
+            return result
 
         global_locks = prepared(self.locks)
         roles = []
@@ -286,6 +303,7 @@ class OptimizationRequest(BaseModel):
                     update={
                         "locks": MappingProxyType(locks),
                         "combat_options": options,
+                        "fire_tome_pages": self.fire_tome_pages,
                     }
                 )
             )
@@ -294,7 +312,12 @@ class OptimizationRequest(BaseModel):
         object.__setattr__(
             execution,
             "assumed_item_ids",
-            tuple(dict.fromkeys(conversions.get(i, i) for i in self.assumed_item_ids)),
+            tuple(
+                dict.fromkeys(
+                    conversions.get(i, form.charged_id if (form := tome_review(i)) else i)
+                    for i in self.assumed_item_ids
+                )
+            ),
         )
         return execution
 
@@ -342,7 +365,14 @@ class _Search:
         # Telemetry only; shared by frontier copies so their work is reported too.
         self.reporter = reporter
         request = request.model_copy(
-            update={"roles": tuple(resolve_bolt_context(role, snapshot) for role in request.roles)}
+            update={
+                "roles": tuple(
+                    resolve_tome_context(
+                        resolve_bolt_context(role, snapshot), request.fire_tome_pages
+                    )
+                    for role in request.roles
+                )
+            }
         )
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
         self.levels = {k: v.level for k, v in snapshot.skills.items()}
@@ -584,6 +614,7 @@ class _Search:
         role: RoleConfig,
         weapon: EquipmentDefinition | None,
         neck: EquipmentDefinition | None = None,
+        shield: EquipmentDefinition | None = None,
     ) -> tuple[tuple[RoleConfig, CombatOption], ...]:
         """Score rank-equivalent attacks once, retaining the existing tie winner.
 
@@ -595,6 +626,8 @@ class _Search:
         key = (
             role.id,
             weapon.id if weapon else None,
+            shield.id if shield else None,
+            role.fire_tome_pages,
             getattr(self, "metric_first", False),
             self.request.secondary_priority,
             (neck.elemental_spell_bonus.elements, neck.elemental_spell_bonus.base_max_hit_bonus)
@@ -628,6 +661,7 @@ class _Search:
                         tier,
                         matched,
                         applied_spell_bonus(neck, option.spell),
+                        bool(applied_tome(shield, option.spell)),
                         prayer_key,
                     )
                 previous = representatives.get(identity)
@@ -737,7 +771,10 @@ class _Search:
                 weapon = self.items.get(equipment.get("weapon", -1))
                 evaluated = []
                 options = self.scoring_options(
-                    role, weapon, self.items.get(equipment.get("neck", -1))
+                    role,
+                    weapon,
+                    self.items.get(equipment.get("neck", -1)),
+                    self.items.get(equipment.get("shield", -1)),
                 )
                 prepared = self.prepare(equipment) if options else None
                 include_defence = getattr(self, "metric_first", False) and (
@@ -903,6 +940,10 @@ class _Search:
                 # Preserve every reviewed effect/form without dropping ordinary candidates.
                 retained = list(
                     dict.fromkeys([*retained, *(i for i in ordered if self.items[i].bolt_effect)])
+                )
+            if slot == "shield":
+                retained = list(
+                    dict.fromkeys([*retained, *(i for i in ordered if self.items[i].tome_effect)])
                 )
             if slot == "weapon":
                 # Preserve weapon families whose complete-gear synergy is invisible
@@ -1592,6 +1633,8 @@ def optimize(
     ]
     assumptions = {
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
+        "tome_model_version": TOME_MODEL_VERSION,
+        "fire_tome_pages": request.fire_tome_pages,
         "bolt_model_version": "enchanted-bolts-v1",
         "bolt_diary": {
             "boosted": resolve_bolt_context(request.roles[0], snapshot).bolt_diary_boost,

@@ -164,7 +164,9 @@ export interface PotionDefinition {
   id: string;
   name: string;
 }
+export type FireTomePages = "burnt" | "searing";
 export interface Draft {
+  fireTomePages?: FireTomePages;
   includeUntradeables?: boolean;
   potions?: PotionPolicy;
   targetInputs?: Record<string, string>;
@@ -193,6 +195,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    fire_tome_pages?: FireTomePages;
     include_untradeables?: boolean;
     potions?: PotionPolicy;
     support_policy?: SupportPolicy;
@@ -432,6 +435,14 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  tome_bonus?: {
+    item_id: number;
+    element: "fire" | "water" | "earth";
+    damage_percent: number;
+    accuracy_percent: number;
+    fire_pages: FireTomePages | null;
+    minimum_hit: number;
+  } | null;
   elemental_amulet_bonus?: {
     item_id: number;
     element: "air" | "water" | "earth" | "fire";
@@ -659,6 +670,10 @@ export interface PhysicalItem {
   name: string;
   slot: Slot;
   equipment: {
+    tome_effect?: {
+      element: "fire" | "water" | "earth";
+      rune_id: number;
+    } | null;
     elemental_spell_bonus?: {
       elements: ("air" | "water" | "earth" | "fire")[];
       base_max_hit_bonus: number;
