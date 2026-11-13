@@ -142,7 +142,10 @@ def test_ranged_automatic_recovery(cape, body_bonus, expected):
             id=882, name="Bronze arrow", slot="ammunition", ammo_type="arrow:882"
         ),
         "body": EquipmentDefinition(
-            id=1115, name="Iron platebody", slot="body", bonuses=EquipmentBonuses(ranged=body_bonus)
+            id=1115 if body_bonus < 0 else 2503,
+            name="Body",
+            slot="body",
+            bonuses=EquipmentBonuses(ranged=body_bonus),
         ),
     }
     if cape:
@@ -207,3 +210,59 @@ def test_real_eligible_ranged_options_have_costs(weapon_id, ammo_type, expected_
     )
     assert cost["status"] == "known"
     assert cost["gp_per_attack"] == 10
+
+
+@pytest.mark.parametrize("policy", ["verified_only", "community_best_effort"])
+def test_all_supported_ranged_consumption_is_reviewed(policy):
+    from tracker.content.loader import load_content
+    from tracker.gear.catalog import load_catalog
+    from tracker.gear.support import project_catalog
+
+    catalog = project_catalog(load_catalog(load_content()), policy)
+    supported = [i for i in catalog.items.values() if not i.unsupported_effects]
+    weapons = [i for i in supported if i.slot == "weapon" and "ranged" in i.attack_styles]
+    assert weapons
+    for weapon in weapons:
+        ammunition = (
+            [i for i in supported if i.slot == "ammunition" and i.ammo_type in weapon.ammo_for]
+            if weapon.ammo_for
+            else [None]
+        )
+        assert ammunition, weapon.name
+        for ammo in ammunition:
+            resource = ammo or weapon
+            result = evaluate_running_cost(
+                {"weapon": weapon, **({"ammunition": ammo} if ammo else {})},
+                {"attack_type": "ranged"},
+                {"dps": 2, "attack_interval": 2.4},
+                prices(**{str(resource.id): 10}),
+                NOW,
+            )
+            assert result["status"] == "known", (weapon.name, result["reasons"])
+            assert result["gp_per_attack"] == 10
+
+
+@pytest.mark.parametrize(
+    "body,expected", [(1115, 10), (1101, 10), (2503, 2.8), (11832, 2.8), (999999, None)]
+)
+def test_ranged_recovery_uses_physical_body_review(body, expected):
+    equipment = {
+        "weapon": EquipmentDefinition(id=841, name="Bow", slot="weapon", ammo_for=("arrow:882",)),
+        "ammunition": EquipmentDefinition(
+            id=882, name="Arrow", slot="ammunition", ammo_type="arrow:882"
+        ),
+        "cape": EquipmentDefinition(id=10499, name="Accumulator", slot="cape"),
+        "body": EquipmentDefinition(id=body, name="Body", slot="body"),
+    }
+    result = evaluate_running_cost(
+        equipment,
+        {"attack_type": "ranged"},
+        {"dps": 2, "attack_interval": 2.4},
+        prices(**{"882": 10}),
+        NOW,
+    )
+    assert (
+        result["gp_per_attack"] == pytest.approx(expected)
+        if expected is not None
+        else result["gp_per_attack"] is None
+    )

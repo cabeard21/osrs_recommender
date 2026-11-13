@@ -8,6 +8,8 @@ from hashlib import sha256
 from time import perf_counter
 from typing import Any
 
+from tracker.gear.running_frontier import needs_running_cost_frontier
+
 
 def branch_requests(request: Any) -> Iterator[tuple[str, Any]]:
     role = request.roles[0]
@@ -81,7 +83,7 @@ def optimize_auto(
                 price_records,
                 now,
                 _complete_frontiers=True,
-                _running_frontier="magic" in (request.roles[0].allowed_disciplines or ()),
+                _running_frontier=needs_running_cost_frontier(request),
                 progress=for_lane(progress, lane),
                 **options,
             )

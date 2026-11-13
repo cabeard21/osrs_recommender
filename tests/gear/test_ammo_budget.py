@@ -20,6 +20,10 @@ from tracker.integrations.prices.client import PriceDTO, PriceSource
         (9140, "ammunition", "bolt:9140"),
         (806, "weapon", None),
         (25849, "weapon", None),
+        (6522, "weapon", None),
+        (863, "weapon", None),
+        (20849, "weapon", None),
+        (29305, "weapon", None),
     ],
 )
 @pytest.mark.parametrize("priced", [False, True])

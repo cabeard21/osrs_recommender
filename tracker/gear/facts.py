@@ -13,37 +13,19 @@ from tracker.content.loader import Content
 from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
+from tracker.gear.ranged_resources import CONSUMABLE_WEAPON_IDS
 
 # New purchases use ordinary editions; owned editions keep exact preparation routes.
 _POWERED_MARKET_FORMS = MARKET_FORMS
 
 GENERIC_UNREVIEWED = "Offensive effects have not been validated."
 
-# Concrete dart forms, including poisoned variants; stackability alone also
-# matches reusable weapons such as blowpipes in the source catalog.
-DART_IDS = frozenset(
-    {
-        *range(806, 818),
-        3093,
-        3094,
-        *range(5628, 5642),
-        11230,
-        11231,
-        11233,
-        11234,
-        25849,
-        25851,
-        25855,
-        25857,
-    }
-)
-
 
 def budget_exempt(item: Any) -> bool:
     """Consumable ammo is a running expense, separate from gear purchases."""
     # The source catalog incorrectly labels Peaceful blessing as a bolt.
     return (item.slot == "ammunition" and bool(item.ammo_type) and item.id != 20226) or (
-        item.slot == "weapon" and item.id in DART_IDS
+        item.slot == "weapon" and item.id in CONSUMABLE_WEAPON_IDS
     )
 
 

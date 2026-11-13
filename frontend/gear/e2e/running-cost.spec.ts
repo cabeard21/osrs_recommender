@@ -8,7 +8,7 @@ test("mage cost comparison shows staff rune savings and selects its setup", asyn
   await page.getByRole("button", { name: "magic", exact: true }).click();
   const response = page.waitForResponse(
     (r) =>
-      r.url().endsWith("/ui-api/gear/optimizations") &&
+      new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
       r.request().method() === "POST",
   );
   await page
@@ -31,4 +31,33 @@ test("mage cost comparison shows staff rune savings and selects its setup", asyn
   await expect(
     page.getByRole("table", { name: "DPS and running cost comparisons" }),
   ).toBeVisible();
+});
+
+test("ranged cost frontier automatically selects a complete setup", async ({
+  page,
+}) => {
+  await page.request.post("/test/seed-ammo");
+  await page.goto("/gear-next/");
+  await page.getByRole("button", { name: "ranged", exact: true }).click();
+  const response = page.waitForResponse(
+    (r) =>
+      new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
+      r.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Run optimization", exact: true })
+    .click();
+  const reply = await response;
+  expect(reply.status(), await reply.text()).toBe(200);
+  await expect(
+    page.getByRole("heading", { name: "DPS and running cost" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Compare arrows" }),
+  ).toHaveCount(0);
+  const choose = page.getByRole("button", { name: /^Select cost tradeoff 1:/ });
+  await choose.click();
+  await expect(choose).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText(/Ammunition: /).first()).toBeVisible();
+  await expect(page.getByText(/Cape: /).first()).toBeVisible();
 });

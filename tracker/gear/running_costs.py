@@ -14,12 +14,13 @@ from types import MappingProxyType
 from typing import Any
 
 from tracker.estimation.prices import PriceRecord, resolve_price
-from tracker.gear.ammo import cape_recovery_rate
+from tracker.gear.ammo import recovery_rate
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import STAFFS, review
+from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v3"
+COST_MODEL_VERSION = "ordinary-resource-cost-v4"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -113,24 +114,6 @@ _CHARGES = MappingProxyType(
         28583: ((557, 5), (562, 2)),
     }
 )
-# Ordinary darts, knives, thrownaxes and javelins. Exotic ranged resources need review.
-_THROWN = frozenset(
-    {
-        *range(806, 812),
-        *range(863, 870),
-        *range(800, 806),
-        *range(825, 831),
-        11230,
-        11233,
-        22804,
-        22806,
-        22808,
-        22810,
-        22812,
-        22814,
-        22816,
-    }
-)
 
 
 def resource_item_ids() -> frozenset[int]:
@@ -180,20 +163,16 @@ def _ranged_resources(
 ) -> tuple[list[dict[str, Any]], list[str]]:
     weapon = equipment.get("weapon")
     ammo = equipment.get("ammunition") if weapon and weapon.ammo_for else weapon
-    if not weapon or not ammo or (not weapon.ammo_for and weapon.id not in _THROWN):
+    if not weapon or not ammo or (not weapon.ammo_for and weapon.id not in THROWN_IDS):
         return [], ["Ranged ammunition consumption has not been reviewed."]
     if weapon.ammo_for and (
         not ammo.ammo_type or not ammo.ammo_type.startswith(("arrow:", "bolt:"))
     ):
         return [], ["Ranged ammunition consumption has not been reviewed."]
     cape, body = equipment.get("cape"), equipment.get("body")
-    recovery, notes = cape_recovery_rate(cape.id if cape else None)
+    recovery, notes = recovery_rate(cape.id if cape else None, body.id if body else None)
     if recovery is None:
         return [], notes
-    # Negative-Ranged metal body armour interferes with Ava's device. Applying
-    # this restriction conservatively also avoids crediting unknown interference.
-    if body and body.bonuses.ranged < 0:
-        recovery = 0
     return [
         _resource(
             ammo.id, ammo.name, 1, recovery, cape.name if cape and recovery else None, records, now

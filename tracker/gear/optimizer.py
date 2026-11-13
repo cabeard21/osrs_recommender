@@ -70,6 +70,7 @@ from tracker.gear.prayers import (
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.progress import NULL_REPORTER, StageReporter
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
+from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
@@ -1541,7 +1542,7 @@ def optimize(
     refined_at = perf_counter()
     reporter.stage("frontiers", elapsed_seconds=refined_at - started)
     run_secondary = request.secondary_priority != "default"
-    run_running = _running_frontier or any(r.style == "magic" for r in request.roles)
+    run_running = _running_frontier or needs_running_cost_frontier(request)
     frontier_units = int(run_secondary) + int(run_running)
     frontier_diagnostics = None
     if run_secondary:

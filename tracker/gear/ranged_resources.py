@@ -1,0 +1,53 @@
+"""Reviewed physical expendable ranged resources, separate from combat support.
+
+Ava recovery: https://oldschool.runescape.wiki/w/Ava%27s_device
+Hunter spear: https://oldschool.runescape.wiki/w/Hunter%27s_spear
+Exact forms only: stackability also describes reusable ranged equipment.
+"""
+
+DART_IDS = frozenset(
+    {
+        *range(806, 818),
+        3093,
+        3094,
+        *range(5628, 5642),
+        11230,
+        11231,
+        11233,
+        11234,
+        25849,
+        25851,
+        25855,
+        25857,
+    }
+)
+
+
+THROWN_IDS = frozenset(
+    {
+        *range(806, 812),
+        *range(863, 870),
+        *range(800, 806),
+        *range(825, 831),
+        6522,
+        3093,
+        25849,
+        20849,
+        29305,
+        22636,
+        22634,
+        11230,
+        11233,
+        22804,
+        22806,
+        22808,
+        22810,
+        22812,
+        22814,
+        22816,
+    }
+)
+
+
+# Preserve historical dart budget exemptions, including poisoned variants.
+CONSUMABLE_WEAPON_IDS = DART_IDS | THROWN_IDS

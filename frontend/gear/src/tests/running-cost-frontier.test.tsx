@@ -174,3 +174,40 @@ it("does not fabricate costs for legacy responses", () => {
   );
   expect(container).toBeEmptyDOMElement();
 });
+it("shows ranged ammunition and cape in full setup cost rows", () => {
+  const ranged = {
+    ...solution,
+    loadouts: {
+      range: {
+        ...solution.loadouts.mage,
+        equipment: { weapon: 861, ammunition: 892, cape: 10499 },
+        discipline: "ranged",
+      },
+    },
+  } as unknown as JointSolutionDTO;
+  render(
+    <RunningCostFrontier
+      group={{
+        swap_limit: 0,
+        baseline_dps: 2,
+        sampled: false,
+        points: [
+          { id: "ranged-cost", solution: ranged, dps_loss: 0, dps_loss_pct: 0 },
+        ],
+      }}
+      selectedId="ranged-cost"
+      onSelect={() => {}}
+      itemName={(id) =>
+        (
+          ({
+            861: "Magic shortbow",
+            892: "Rune arrow",
+            10499: "Ava's accumulator",
+          }) as Record<number, string>
+        )[id] ?? String(id)
+      }
+    />,
+  );
+  expect(screen.getByText(/Ammunition: Rune arrow/)).toBeVisible();
+  expect(screen.getByText(/Cape: Ava's accumulator/)).toBeVisible();
+});
