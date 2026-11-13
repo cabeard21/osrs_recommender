@@ -80,6 +80,7 @@ from tracker.gear.progress import NULL_REPORTER, StageReporter
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
 from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
+from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
 from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
@@ -125,6 +126,7 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    on_slayer_task: bool = Field(default=False, strict=True)
     fire_tome_pages: Literal["burnt", "searing"] = Field(default="burnt", exclude=True)
     bolt_diary_boost: bool = Field(default=False, exclude=True)
     bolt_diary_known: bool = Field(default=False, exclude=True)
@@ -765,6 +767,7 @@ class _Search:
             weapon.id if weapon else None,
             shield.id if shield else None,
             role.fire_tome_pages,
+            role.on_slayer_task,
             getattr(self, "metric_first", False),
             self.request.secondary_priority,
             (neck.elemental_spell_bonus.elements, neck.elemental_spell_bonus.base_max_hit_bonus)
@@ -1297,6 +1300,22 @@ class _Search:
             keep = max(CANDIDATES_PER_SLOT - 1, len(locked & set(candidates)))
             self.truncated |= len(ordered) > keep
             retained = ordered[:keep]
+            if slot in {"head", "weapon"} and any(r.on_slayer_task for r in self.request.roles):
+                # Task effects can beat stronger raw stats in complete loadouts.
+                # Preserve physical choices: ownership, prices and locks differ.
+                retained = list(
+                    dict.fromkeys(
+                        [
+                            *retained,
+                            *(
+                                i
+                                for i in ordered
+                                if self.items[i].slayer_bonus
+                                or self.items[i].slayer_staff_enchanted
+                            ),
+                        ]
+                    )
+                )
             if slot == "ammunition":
                 # Equal-strength dragon bolts have distinct target-dependent procs.
                 # Preserve every reviewed effect/form without dropping ordinary candidates.
@@ -2248,6 +2267,8 @@ def optimize(
     ]
     assumptions = {
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
+        "slayer_model_version": SLAYER_MODEL_VERSION,
+        "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": request.fire_tome_pages,
         "bolt_model_version": "enchanted-bolts-v1",

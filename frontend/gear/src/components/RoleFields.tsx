@@ -18,6 +18,7 @@ const STANCES: Record<Style, string[]> = {
   magic: ["accurate", "defensive"],
 };
 const FIXTURE_SPELLS = [
+  "magic_dart",
   "iban_blast",
   "fire_strike",
   "wind_wave",
@@ -240,6 +241,20 @@ export function RoleFields({
       )}
       {!role.utility && (
         <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={role.onSlayerTask ?? false}
+              aria-describedby={`${role.id}-slayer-help`}
+              onChange={(event) =>
+                onChange({ onSlayerTask: event.target.checked })
+              }
+            />
+            On a Slayer task
+          </label>
+          <p id={`${role.id}-slayer-help`}>
+            This target counts toward my current Slayer task.
+          </p>
           <div
             className="segmented"
             role="group"

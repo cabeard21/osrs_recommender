@@ -17,6 +17,7 @@ from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 class CostData:
     option_kind: array[int]
     option_cost: array[float]
+    option_on_hit_cost: array[float]
     ranged_kind: array[int]
     ammo_valid: array[int]
     unit_prices: array[float]
@@ -46,8 +47,10 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
             if item.slot == "shield" and item.tome_effect
             else 0
         )
-    option_kind, option_cost = array("i"), array("d")
-    for (_, option), weapon_id in zip(scoring.option_records, scoring.option_weapons, strict=True):
+    option_kind, option_cost, option_on_hit_cost = array("i"), array("d"), array("d")
+    for (configured, option), weapon_id in zip(
+        scoring.option_records, scoring.option_weapons, strict=True
+    ):
         ranged = option.attack_type in {"ranged", "light", "standard", "heavy"}
         option_kind.append(int(ranged))
         weapon = search.items.get(weapon_id)
@@ -56,8 +59,13 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
                 **({"weapon": weapon} if weapon else {}),
                 **({"shield": suppliers[rune]} if rune else {}),
             }
-            recipe = evaluator.prepare(equipment, option.model_dump())
+            recipe = evaluator.prepare(
+                equipment,
+                option.model_dump(),
+                on_slayer_task=getattr(configured, "on_slayer_task", False),
+            )
             option_cost.append(recipe.gp_per_attack if recipe.gp_per_attack is not None else -1)
+            option_on_hit_cost.append(recipe.on_hit_cost if recipe.on_hit_cost is not None else -1)
     ranged_kind, ammo_valid = array("i", [0]), array("i", [0])
     unit_prices, recovery = array("d", [-1]), array("d", [0])
     body_recovery, torag = array("i", [0]), array("i", [0])
@@ -86,6 +94,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
     return CostData(
         option_kind,
         option_cost,
+        option_on_hit_cost,
         ranged_kind,
         ammo_valid,
         unit_prices,

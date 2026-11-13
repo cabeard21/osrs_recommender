@@ -30,6 +30,10 @@ from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
+from tracker.gear.slayer import FORMS as SLAYER_FORMS
+from tracker.gear.slayer import MAGIC_DART_STAVES
+from tracker.gear.slayer import REVISION as SLAYER_REVISION
+from tracker.gear.slayer import apply_review as slayer_review
 from tracker.gear.tomes import FORMS as TOME_FORMS
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 from tracker.gear.tomes import REVISION as TOME_REVISION
@@ -61,6 +65,11 @@ def _reviewed_spells(item_id: int) -> tuple[str, ...]:
         (tuple(ELEMENTAL_SPELLS) if item_id in REVIEWED_STANDARD_STAVES else ())
         + (tuple(ANCIENT_SPELLS) if item_id in REVIEWED_ANCIENT_STAVES else ())
         + (("iban_blast",) if item_id in IBAN_STAVES else ())
+        + (
+            ("magic_dart", *(s for s in ELEMENTAL_SPELLS if s.endswith(("_wave", "_surge"))))
+            if item_id in MAGIC_DART_STAVES
+            else ()
+        )
     )
 
 
@@ -125,7 +134,9 @@ def load_catalog(
         raise ValueError("Duplicate physical equipment ID")
     result = {}
     for row in rows:
-        row = tome_review(hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row)))))
+        row = slayer_review(
+            tome_review(hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row)))))
+        )
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -222,6 +233,14 @@ def load_catalog(
             requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
         if row["id"] in TOME_FORMS:
             requirement = SkillLeaf(skill="magic", level=50)
+        if row["id"] in SLAYER_FORMS:
+            if row["slot"] == "weapon":
+                gates = {"magic": 75 if row["id"] == 21255 else 50, "slayer": 55}
+            elif row["name"].startswith("Black mask"):
+                gates = {"defence": 10, "strength": 20, "combat": 40}
+            else:
+                gates = {"defence": 10}
+            requirement = requirement_from_levels(gates, set(content.skills) | set(gates))
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -232,6 +251,7 @@ def load_catalog(
                 "requires": requirement,
                 "requirements_complete": bool(
                     entries
+                    or row["id"] in SLAYER_FORMS
                     or review
                     or powered
                     or autocast_level
@@ -242,7 +262,9 @@ def load_catalog(
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in TOME_MARKET_FORMS
+                    (row["id"] == 4170 or row["name"] == "Black mask")
+                    if row["id"] in SLAYER_FORMS
+                    else row["id"] in TOME_MARKET_FORMS
                     if row["id"] in TOME_FORMS
                     else True
                     if row["id"] in ELEMENTAL_AMULETS or row["id"] == 32879
@@ -289,6 +311,7 @@ def load_catalog(
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION
+            + SLAYER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -304,6 +327,7 @@ def load_catalog(
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION
+            + SLAYER_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

@@ -54,6 +54,7 @@ def running_cost_assumptions(
     """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
     return {
         "fire_tome_pages": request.fire_tome_pages,
+        "slayer_tasks": {r.id: getattr(r, "on_slayer_task", False) for r in request.roles},
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
             str(i): {
@@ -111,11 +112,14 @@ def aggregate_cost(roles: list[tuple[float, dict[str, Any], float]]) -> dict[str
 
 def _report_prepared_costs(
     solution: dict[str, Any],
-    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost], ...],
+    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost, float | None], ...],
     weights: tuple[tuple[str, float], ...],
 ) -> dict[str, Any]:
     """Expand frozen resource records without retaining the producing search."""
-    reports = {rid: prepared.report(numeric) for rid, prepared, numeric in prepared_costs}
+    reports = {
+        rid: prepared.report(numeric, accuracy)
+        for rid, prepared, numeric, accuracy in prepared_costs
+    }
     loadouts = {
         rid: {**loadout, "running_cost": reports[rid]}
         for rid, loadout in solution["loadouts"].items()
@@ -134,15 +138,20 @@ def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, 
     engine = evaluator(search.running_prices, search.running_at)
     loadouts = {}
     costs = {}
-    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost], ...] = ()
+    prepared_costs: tuple[tuple[str, PreparedCost, NumericCost, float | None], ...] = ()
     for rid, loadout in solution["loadouts"].items():
         prepared = engine.prepare(
             {slot: search.items[i] for slot, i in loadout["equipment"].items()},
             loadout["combat_option"] or {},
+            on_slayer_task=next(
+                getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
+            ),
         )
         performance = loadout["performance"]
-        numeric = prepared.score(performance.get("attack_interval"), performance.get("dps"))
-        prepared_costs += ((rid, prepared, numeric),)
+        numeric = prepared.score(
+            performance.get("attack_interval"), performance.get("dps"), performance.get("accuracy")
+        )
+        prepared_costs += ((rid, prepared, numeric, performance.get("accuracy")),)
         costs[rid] = numeric
         loadouts[rid] = {
             **loadout,
@@ -184,6 +193,9 @@ def add_solution_costs(
             loadout["performance"],
             search.running_prices,
             search.running_at,
+            on_slayer_task=next(
+                getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
+            ),
         )
         loadouts[rid] = {**loadout, "running_cost": cost}
     costs = [
@@ -285,9 +297,12 @@ def explore_running_costs(
                 prepared = self.cost_evaluator.prepare(
                     {s: self.items[i] for s, i in loadout["equipment"].items()},
                     loadout["combat_option"] or {},
+                    on_slayer_task=getattr(role, "on_slayer_task", False),
                 )
                 dps = performance.get("dps") or 0
-                numeric = prepared.score(performance.get("attack_interval"), dps)
+                numeric = prepared.score(
+                    performance.get("attack_interval"), dps, performance.get("accuracy")
+                )
                 costs.append((role.weight, numeric, dps))
             cost = aggregate_numeric_cost(costs).gp_per_damage
             return -cost if cost is not None else -1e100
@@ -322,6 +337,7 @@ def explore_running_costs(
                     performance,
                     self.running_prices,
                     self.running_at,
+                    on_slayer_task=getattr(role, "on_slayer_task", False),
                 )
                 costs.append((role.weight, cost, performance.get("dps") or 0))
             cost = aggregate_cost(costs)["gp_per_damage"]
@@ -379,8 +395,11 @@ def explore_running_costs(
             ),
         )
         tomes = [i for i in search.eligible if slot == "shield" and search.items[i].tome_effect]
+        task_staves = [
+            i for i in search.eligible if slot == "weapon" and search.items[i].id in {4170, 21255}
+        ]
         search.pools[slot] = list(
-            dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7], *tomes])
+            dict.fromkeys([None, *original.pools[slot][:16], *leaders[:7], *tomes, *task_staves])
         )
 
     def objective(row: dict[str, Any] | None) -> dict[str, Any] | None:

@@ -126,6 +126,8 @@ def _prepare(key: AttackKey) -> PreparedAttack:
                 else key.powered_base
             )
             assert base is not None
+        elif key.spell == "magic_dart":
+            base = 10 + key.magic_level // 10
         elif key.spell == "iban_blast" or key.spell in ANCIENT_SPELLS:
             base = SPELLS[key.spell][1]
         else:

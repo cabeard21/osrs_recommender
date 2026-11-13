@@ -167,6 +167,28 @@ def equipment_fact(
             "activation_reserve": [],
             "message": TOME_ASSUMPTION,
         }
+    if item.id == 21255 and getattr(item, "slayer_staff_enchanted", False):
+        base = observed_ownership(snapshot, 4170)
+        prepare_owned = ownership["status"] != "owned" and base["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {**base, "meaning": "Owned Slayer's staff; enchanting required"}
+        market_id = 4170
+        preparation = {
+            "source_item_id": 4170
+            if prepare_owned
+            else item.id
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": item.id,
+            "market_item_id": market_id,
+            "charging_required": ownership["status"] != "owned",
+            "charges": "unknown",
+            "activation_reserve": [],
+            "message": "Enchanting requires one Slayer's enchantment for 2,500 charges; "
+            "enchantment consumption is a running expense. Actual charges unknown."
+            if ownership["status"] != "owned"
+            else "Actual enchantment charges unknown.",
+        }
     authored = next((entry for entry in content.items.values() if entry.item_id == market_id), None)
     price = (
         resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None

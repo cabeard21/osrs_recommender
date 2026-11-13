@@ -18,6 +18,22 @@ export function describeDraftChanges(
   submitted: SubmittedSummary,
 ): string[] {
   const changes: string[] = [];
+  for (const role of draft.roles) {
+    const previous = submitted.roles.find(
+      (value) =>
+        value !== null &&
+        typeof value === "object" &&
+        "id" in value &&
+        value.id === role.id,
+    ) as { onSlayerTask?: boolean } | undefined;
+    if (
+      previous &&
+      (previous.onSlayerTask ?? false) !== (role.onSlayerTask ?? false)
+    )
+      changes.push(
+        `${role.name} Slayer task: ${previous.onSlayerTask ? "on" : "off"} → ${role.onSlayerTask ? "on" : "off"}`,
+      );
+  }
   if (
     (draft.fireTomePages ?? "burnt") !== (submitted.fire_tome_pages ?? "burnt")
   )

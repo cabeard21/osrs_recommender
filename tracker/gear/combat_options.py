@@ -21,6 +21,7 @@ from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import review as powered_review
 from tracker.gear.powered import supports_powered
+from tracker.gear.slayer import MAGIC_DART_STAVES
 
 MELEE_TYPES = frozenset({"stab", "slash", "crush"})
 RANGED_TYPES = frozenset({"light", "standard", "heavy"})
@@ -169,6 +170,12 @@ def enumerate_combat_options(
             and (weapon is None or weapon.id not in IBAN_STAVES)
         ):
             continue
+        if (
+            spell == "magic_dart"
+            and not include_weapon_restricted
+            and (weapon is None or weapon.id not in MAGIC_DART_STAVES)
+        ):
+            continue
         if weapon is not None and spell not in weapon.spell_compatibility:
             continue
         extra_checks = (
@@ -207,6 +214,11 @@ def enumerate_combat_options(
             ),
             *(((book, "Standard spellbook unlock is not confirmed"),) if not ancient else ()),
             *extra_checks,
+            *(
+                ((_skill_status(snapshot, "slayer", 55), "Slayer level 55 required"),)
+                if spell == "magic_dart"
+                else ()
+            ),
         )
         stances = MAGIC_STANCES if weapon is not None else frozenset({"accurate"})
         options.extend(

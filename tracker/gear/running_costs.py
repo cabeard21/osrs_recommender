@@ -24,7 +24,7 @@ from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v6-tomes-hopper"
+COST_MODEL_VERSION = "ordinary-resource-cost-v7-slayer"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -54,6 +54,7 @@ _TIERS = {
 SPELL_RECIPES = MappingProxyType(
     {
         "iban_blast": MappingProxyType({554: 5, 560: 1}),
+        "magic_dart": MappingProxyType({560: 1, 558: 4}),
         # Exact per-cast Ancient combat recipes; splash/AoE outcomes do not
         # change rune consumption. https://oldschool.runescape.wiki/w/Ancient_Magicks
         **{
@@ -129,6 +130,7 @@ def resource_item_ids() -> frozenset[int]:
         potion_item_ids()
         | MARKET_FORMS
         | TOME_MARKET_FORMS
+        | frozenset({4170, 21257})
         | frozenset(_RUNES)
         | frozenset(
             i for staff in STAFFS for recipe in staff.recipes for i, _ in recipe if i != 995
@@ -198,14 +200,26 @@ def evaluate_running_cost(
     performance: Mapping[str, Any],
     price_records: Mapping[int, PriceRecord],
     now: datetime,
+    *,
+    on_slayer_task: bool = False,
 ) -> dict[str, Any]:
     """Value consumed resources at replacement prices, even when already owned."""
     from tracker.gear.compact_costs import active, evaluator
 
-    if active():
-        prepared = evaluator(price_records, now).prepare(equipment, combat_option)
+    enchanted_dart = (
+        on_slayer_task
+        and combat_option.get("spell") == "magic_dart"
+        and not combat_option.get("powered_attack")
+        and bool(getattr(equipment.get("weapon"), "slayer_staff_enchanted", False))
+    )
+    if active() or enchanted_dart:
+        prepared = evaluator(price_records, now).prepare(
+            equipment, combat_option, on_slayer_task=on_slayer_task
+        )
+        accuracy = performance.get("accuracy")
         return prepared.report(
-            prepared.score(performance.get("attack_interval"), performance.get("dps"))
+            prepared.score(performance.get("attack_interval"), performance.get("dps"), accuracy),
+            accuracy,
         )
     style = combat_option.get("attack_type")
     resources: list[dict[str, Any]] = []

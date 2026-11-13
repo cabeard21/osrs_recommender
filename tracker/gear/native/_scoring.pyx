@@ -62,6 +62,11 @@ cdef class ScoringContext:
         self.diary = packed["diary"]
         self.target_hp = packed["target_hp"]
         self.target_traits = packed["target_traits"]
+        self.slayer_bonus = packed["slayer_bonus"]
+        self.slayer_staff = packed["slayer_staff"]
+        self.on_slayer_task = packed["on_slayer_task"]
+        self.magic_dart = packed["magic_dart"]
+        self.magic_level = packed["magic_level"]
         self.priority = packed["priority"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
@@ -94,7 +99,7 @@ cdef class ScoringContext:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
-        cdef int element, family
+        cdef int element, family, task_bonus
         cdef BoltResult proc, extra
         cdef long long spell_base, minimum, weakness_roll
         cdef double secondary_accuracy
@@ -161,9 +166,13 @@ cdef class ScoringContext:
             if style == 4:
                 magic_bonus = min(100.0, bonuses[7] * 3) if self.options[base + 12] else bonuses[7]
                 spell_base = self.options[base + 10]
+                if self.magic_dart[index]:
+                    spell_base = 13 + self.magic_level[index] // 6 if self.on_slayer_task[index] and self.slayer_staff[weapon] else 10 + self.magic_level[index] // 10
                 if element and self.amulet_mask[slots[5]] & (1 << element):
                     spell_base += self.amulet_bonus[slots[5]]
                 maximum = <long long>floor(spell_base * (100 + magic_bonus + self.options[base + 11]) / 100.0)
+                if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
+                    maximum = floor_div(maximum * 23, 20)
                 maximum += floor_div(spell_base * self.options[base + 13], 100)
                 if self.options[base + 12]:
                     attack *= 3
@@ -172,6 +181,8 @@ cdef class ScoringContext:
             attack = self.options[base + 1] * (attack + 64)
             if style == 4:
                 weakness_roll = floor_div(attack * self.options[base + 13], 100)
+                if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
+                    attack = floor_div(attack * 23, 20)
                 if tome and element == 2:
                     attack = floor_div(attack * 120, 100)
                 attack += weakness_roll
@@ -179,6 +190,14 @@ cdef class ScoringContext:
                     if element == 4 and self.searing[index]:
                         minimum = floor_div(maximum, 10)
                     maximum = floor_div(maximum * 110, 100)
+            elif self.on_slayer_task[index]:
+                task_bonus = self.slayer_bonus[slots[3]]
+                if style < 3 and task_bonus:
+                    maximum = floor_div(maximum * 7, 6)
+                    attack = floor_div(attack * 7, 6)
+                elif ranged and task_bonus == 2:
+                    maximum = floor_div(maximum * 23, 20)
+                    attack = floor_div(attack * 23, 20)
             if maximum < 0:
                 maximum = 0
             defence = self.options[base + 3]

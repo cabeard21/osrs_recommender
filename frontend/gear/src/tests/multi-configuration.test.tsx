@@ -50,6 +50,21 @@ it("edits independent Multi targets and preserves repeated disciplines", () => {
   ]);
 });
 
+it("keeps each configuration's task assumption independent and hides it for utility", () => {
+  setup();
+  const first = screen.getByRole("group", { name: "Configuration 1" });
+  const second = screen.getByRole("group", { name: "Configuration 2" });
+  fireEvent.click(within(first).getByLabelText("On a Slayer task"));
+  expect(within(first).getByLabelText("On a Slayer task")).toBeChecked();
+  expect(within(second).getByLabelText("On a Slayer task")).not.toBeChecked();
+  fireEvent.click(
+    within(second).getByLabelText("Unscored utility configuration"),
+  );
+  expect(
+    within(second).queryByLabelText("On a Slayer task"),
+  ).not.toBeInTheDocument();
+});
+
 it("offers directed edges, repeated ordered phases, and optional looping", () => {
   setup();
   fireEvent.click(screen.getByText("Transitions & inventory"));

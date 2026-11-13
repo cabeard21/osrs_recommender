@@ -6,7 +6,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from math import isfinite
 from typing import Any, Literal
@@ -90,23 +90,48 @@ class PreparedCost:
     missing_prices: tuple[str, ...]
     gp_per_attack: float | None
     tome_assumption: bool = False
+    on_hit_resources: tuple[Resource, ...] = ()
+    on_hit_cost: float | None = 0
 
-    def score(self, interval: float | None, dps: float | None) -> NumericCost:
+    def score(
+        self, interval: float | None, dps: float | None, accuracy: float | None = None
+    ) -> NumericCost:
         cost = self.gp_per_attack
+        valid_accuracy = accuracy is not None and isfinite(accuracy) and 0 <= accuracy <= 1
+        if self.on_hit_resources:
+            cost = (
+                cost + accuracy * self.on_hit_cost
+                if cost is not None
+                and self.on_hit_cost is not None
+                and valid_accuracy
+                and accuracy is not None
+                else None
+            )
         rate = cost / interval if cost is not None and interval and interval > 0 else None
         return NumericCost(
-            "unavailable" if self.limitations or self.missing_prices else "known",
+            "unavailable" if self.limitations or self.missing_prices or cost is None else "known",
             cost,
             rate,
             rate * 3600 if rate is not None else None,
             rate / dps if rate is not None and dps and dps > 0 else None,
         )
 
-    def report(self, numeric: NumericCost) -> dict[str, Any]:
+    def report(self, numeric: NumericCost, accuracy: float | None = None) -> dict[str, Any]:
         assumptions = (
             ("Cheapest priced charging recipe; actual charges unknown.",)
             if self.alternatives
             else ()
+        )
+        if self.on_hit_resources:
+            assumptions = (
+                *assumptions,
+                "Slayer enchantment consumption is expected successful "
+                "on-task Magic Dart hits / 2,500; actual charges unknown.",
+            )
+        valid_accuracy = accuracy is not None and isfinite(accuracy) and 0 <= accuracy <= 1
+        conditional = tuple(
+            replace(r, quantity=r.quantity * (accuracy if valid_accuracy and accuracy else 0))
+            for r in self.on_hit_resources
         )
         if self.tome_assumption:
             assumptions = (*assumptions, TOME_ASSUMPTION)
@@ -117,7 +142,7 @@ class PreparedCost:
             "gp_per_second": numeric.gp_per_second,
             "gp_per_hour": numeric.gp_per_hour,
             "gp_per_damage": numeric.gp_per_damage,
-            "resources": [r.report() for r in self.resources],
+            "resources": [r.report() for r in (*self.resources, *conditional)],
             "charging_alternatives": [
                 {"resources": [r.report() for r in a.resources], "gp_per_attack": a.gp_per_attack}
                 for a in self.alternatives
@@ -126,6 +151,11 @@ class PreparedCost:
             "reasons": [
                 *self.limitations,
                 *(f"No price available for {n}." for n in self.missing_prices),
+                *(
+                    ("Accuracy is unavailable for expected enchantment consumption.",)
+                    if self.on_hit_resources and not valid_accuracy
+                    else ()
+                ),
             ],
         }
 
@@ -166,7 +196,11 @@ class CostEvaluator:
         return Resource(item_id, name, quantity, supplied, supplier, quote)
 
     def prepare(
-        self, equipment: Mapping[str, EquipmentDefinition], option: Mapping[str, Any]
+        self,
+        equipment: Mapping[str, EquipmentDefinition],
+        option: Mapping[str, Any],
+        *,
+        on_slayer_task: bool = False,
     ) -> PreparedCost:
         weapon, ammo, cape = (equipment.get(s) for s in ("weapon", "ammunition", "cape"))
         body, shield = equipment.get("body"), equipment.get("shield")
@@ -183,11 +217,13 @@ class CostEvaluator:
             option.get("attack_type"),
             option.get("spell"),
             bool(option.get("powered_attack")),
+            on_slayer_task,
+            bool(getattr(weapon, "slayer_staff_enchanted", False)),
         )
         if key in self._recipes:
             self._recipes.move_to_end(key)
             return self._recipes[key]
-        result = self._prepare(equipment, option, torag, tome_assumption)
+        result = self._prepare(equipment, option, torag, tome_assumption, on_slayer_task)
         if self.capacity:
             self._recipes[key] = result
             if len(self._recipes) > self.capacity:
@@ -200,6 +236,7 @@ class CostEvaluator:
         option: Mapping[str, Any],
         torag: bool,
         tome_assumption: bool,
+        on_slayer_task: bool,
     ) -> PreparedCost:
         weapon = equipment.get("weapon")
         style = option.get("attack_type")
@@ -251,9 +288,28 @@ class CostEvaluator:
             limitations = ("Attack resource consumption has not been reviewed.",)
         if torag:
             limitations += ("Torag's hammers degradation and repair costs have not been reviewed.",)
-        missing = tuple(r.name for r in resources if r.consumed and r.unit_price is None)
+        on_hit_resources = (
+            (self.resource(21257, "Slayer's enchantment", 1 / 2500),)
+            if on_slayer_task
+            and option.get("spell") == "magic_dart"
+            and not option.get("powered_attack")
+            and bool(getattr(weapon, "slayer_staff_enchanted", False))
+            else ()
+        )
+        missing = tuple(
+            r.name for r in (*resources, *on_hit_resources) if r.consumed and r.unit_price is None
+        )
         cost = None if limitations or missing else _resource_sum(resources)
-        return PreparedCost(resources, alternatives, limitations, missing, cost, tome_assumption)
+        return PreparedCost(
+            resources,
+            alternatives,
+            limitations,
+            missing,
+            cost,
+            tome_assumption,
+            on_hit_resources,
+            _resource_sum(on_hit_resources),
+        )
 
     def _alternative(self, recipe: tuple[tuple[int, int], ...]) -> ChargeAlternative:
         resources = tuple(
