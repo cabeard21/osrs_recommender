@@ -10,6 +10,7 @@ import pytest
 
 from tools.capture_gear_icons import MIRROR, capture, download
 from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
+from tracker.gear.tomes import FORMS as TOME_FORMS
 
 
 @pytest.fixture
@@ -30,9 +31,11 @@ def mock_client(monkeypatch, handler):
 
 
 @pytest.mark.parametrize(
-    "missing_ids", [{30895}, set(BOLTS), set(CROSSBOWS)], ids=["community", "bolts", "crossbows"]
+    "missing_ids",
+    [{30895}, set(BOLTS), set(CROSSBOWS), set(TOME_FORMS)],
+    ids=["community", "bolts", "crossbows", "tomes"],
 )
-def test_default_capture_includes_community_and_reviewed_bolt_equipment(
+def test_default_capture_includes_community_and_reviewed_equipment(
     icon_root, monkeypatch, missing_ids
 ):
     from tracker.content.loader import load_content
