@@ -2,6 +2,8 @@
 
 import multiprocessing
 
+import pytest
+
 from tests.gear.test_auto_disciplines import context
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.optimizer import RoleConfig, optimize
@@ -80,6 +82,92 @@ def test_progress_does_not_change_results():
     assert without_timings(optimize(*args, progress=lambda e: None)) == without_timings(
         optimize(*args)
     )
+
+
+def test_frontier_progress_reserves_work_for_cleanup_and_finalists(monkeypatch):
+    import tracker.gear.finalist_refinement as finalists
+    import tracker.gear.frontier as frontier
+    import tracker.gear.refinement as ammunition
+    from tests.gear.test_finalist_refinement import scenario
+
+    search, seed = scenario()
+    events, observed = [], []
+    reporter = StageReporter(events.append, interval=0)
+    reporter.stage("frontiers")
+    # Exercise the second outer segment, as used for running-cost trade-offs.
+    reporter.segment(1, 2)
+    search.reporter = reporter
+    monkeypatch.setattr(type(search), "loadouts", lambda *args: [])
+    monkeypatch.setattr(type(search), "joint_loadouts", lambda *args: [])
+    monkeypatch.setattr(frontier, "_shared_assignments", lambda *args: [])
+
+    def variants(local, row, tick):
+        # Exhaust the expansion allowance before the separately budgeted cleanup.
+        while tick():
+            pass
+        return []
+
+    def clean(local, row, *args):
+        observed.append(events[-1]["stage_done"])
+        return row
+
+    def refine(local, row, *, progress=None):
+        observed.append(events[-1]["stage_done"])
+        if progress:
+            progress(0.5)
+            observed.append(events[-1]["stage_done"])
+        return row, {"evaluated_assignments": 1, "improvements": 0, "work_budget_exhausted": False}
+
+    monkeypatch.setattr(frontier, "_combat_variants", variants)
+    monkeypatch.setattr(ammunition, "refine_ammunition", clean)
+    monkeypatch.setattr(finalists, "refine_finalist", refine)
+    frontier.explore(search, [seed] * 9, seed, False)
+    assert len(observed) == 3
+    assert 500 < observed[0] < observed[1] < observed[2] < 1000
+    assert observed[0] < 900  # Expansions cannot claim nearly all remaining work.
+    assert events[-1]["stage_done"] == 1000
+
+
+@pytest.mark.parametrize("limit", [0, 4, 2048])
+def test_finalist_progress_is_monotonic_and_preserves_results(limit):
+    from tests.gear.test_finalist_refinement import scenario
+    from tracker.gear.finalist_refinement import refine_finalist
+
+    search, seed = scenario()
+    fractions = []
+    expected = refine_finalist(search, seed, limit=limit)
+    actual = refine_finalist(search, seed, limit=limit, progress=fractions.append)
+    assert actual == expected
+    assert fractions == sorted(fractions)
+    assert fractions[-1] == 1
+
+
+def test_finalist_reports_work_within_a_long_refinement(monkeypatch):
+    import tracker.gear.finalist_refinement as finalists
+    from tests.gear.test_finalist_refinement import scenario
+
+    search, seed = scenario()
+    fractions = []
+    role = search.request.roles[0]
+    monkeypatch.setattr(finalists, "_trials", lambda *_: ((role, {"weapon": i}) for i in range(65)))
+    monkeypatch.setattr(finalists, "_trial", lambda *_: None)
+    _, work = finalists.refine_finalist(search, seed, limit=64, progress=fractions.append)
+    assert work["evaluated_assignments"] == 64
+    assert work["work_budget_exhausted"]
+    assert fractions == [1 / 64, 0.5, 1.0, 1.0]
+
+
+def test_progress_preserves_secondary_and_running_cost_frontiers():
+    from tests.gear.test_auto_disciplines import without_timings
+
+    snapshot, request, *rest = single(context("ranged"))
+    role = request.roles[0].model_copy(update={"style": "ranged"})
+    request = request.model_copy(update={"roles": (role,), "secondary_priority": "prayer_bonus"})
+    events = []
+    measured = optimize(snapshot, request, *rest, progress=events.append)
+    plain = optimize(snapshot, request, *rest)
+    assert measured["secondary_frontiers"] and measured["running_cost_frontiers"]
+    assert without_timings(measured) == without_timings(plain)
 
 
 # Worker slots ---------------------------------------------------------------------
@@ -231,6 +319,32 @@ def test_learned_timings_drive_weights_interpolation_and_eta():
     assert 0.2 < snapshot["fraction"] < 0.5
     assert snapshot["stages"][2]["fraction"] > 0
     assert 0 < snapshot["eta_seconds"] < 10
+
+
+def test_real_frontier_counters_take_precedence_over_shorter_learned_timings():
+    model, clock = TimingModel(), Clock()
+    model.record("shape", {"gear_search": 1.0, "frontiers": 1.0})
+    run = RunProgress(has_frontiers=True, timing_key="shape", model=model, clock=clock)
+    run.handle({"phase": "frontiers", "stage_done": 650, "stage_total": 1000})
+    before = run.snapshot()
+    clock.now = 100
+    run.handle({"phase": "frontiers"})  # A counterless update cannot erase real counters.
+    assert run.snapshot()["fraction"] == before["fraction"]
+    run.handle({"phase": "frontiers", "stage_done": 800, "stage_total": 1000})
+    after = run.snapshot()
+    assert after["fraction"] > before["fraction"]
+    assert after["stages"][-1]["fraction"] == 0.8
+    assert after["stages"][-1]["status"] == "active"
+
+
+def test_counterless_stage_interpolates_after_a_counted_stage():
+    model, clock = TimingModel(), Clock()
+    model.record("shape", {"gear_search": 1.0, "frontiers": 10.0})
+    run = RunProgress(has_frontiers=True, timing_key="shape", model=model, clock=clock)
+    run.handle({"phase": "gear_search", "stage_done": 500, "stage_total": 1000})
+    run.handle({"phase": "frontiers"})
+    clock.now = 5
+    assert run.snapshot()["stages"][-1]["fraction"] == 0.5
 
 
 def test_timing_model_blends_and_bounds_shapes():
