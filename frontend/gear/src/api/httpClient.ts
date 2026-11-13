@@ -1,3 +1,4 @@
+import { parsePotionTimeline } from "./potionTimelines";
 import { createProgressId, pollOptimizationProgress } from "./progress";
 import { validateUntradeables } from "./untradeables";
 import { validateRunningCost } from "./runningCosts";
@@ -41,6 +42,8 @@ import type {
   FixedEvaluation,
   Solution,
   SupportPolicy,
+  JointSolutionDTO,
+  PotionTimeline,
 } from "./contracts";
 
 const apiSlot = (slot: Slot) => (slot === "ammo" ? "ammunition" : slot);
@@ -1172,6 +1175,66 @@ export class HttpGearClient implements GearClient {
           : `Gear request failed (${response.status})`,
       );
     return response.json();
+  }
+  async potionTimeline(
+    result: OptimizationReply,
+    solution: JointSolutionDTO,
+    signal: AbortSignal,
+  ): Promise<PotionTimeline> {
+    if (result.source !== "live" || !result.live)
+      throw new Error(
+        "Potion timelines require an accepted live configuration",
+      );
+    const roles = result.scenario.request.roles.filter((role) => !role.utility);
+    const loadouts = Object.fromEntries(
+      roles.map((role) => {
+        const loadout = solution.loadouts[role.id];
+        const option =
+          loadout?.combat_option ?? loadout?.performance.combat_option;
+        if (!loadout || !option)
+          throw new Error(
+            "Selected combat option is unavailable; rerun optimization",
+          );
+        return [
+          role.id,
+          {
+            equipment: loadout.equipment,
+            combat_option: option,
+            selected_prayer_ids: loadout.selected_prayer_ids ?? [],
+          },
+        ];
+      }),
+    );
+    const response = await this.transport(`${this.base}/potion-timelines`, {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scenario: result.live.scenario,
+        selected_potion_ids: solution.potions?.selected_ids ?? [],
+        loadouts,
+        expected_catalog_version: result.catalogVersion,
+        expected_model_version: result.modelVersion,
+      }),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      const error = object(object(body).error);
+      throw new GearApiError(
+        typeof error.message === "string"
+          ? error.message
+          : `Potion timeline failed (${response.status})`,
+        String(error.code ?? "potion_timeline_failed"),
+      );
+    }
+    return parsePotionTimeline(
+      body,
+      result,
+      solution,
+      roles.map((role) => role.id),
+    );
   }
   async getContext() {
     return parseContext(await this.request("/context"));

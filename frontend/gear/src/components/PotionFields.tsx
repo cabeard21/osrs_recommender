@@ -89,10 +89,10 @@ export function PotionFields({ policy, catalog, onChange }: Props) {
             <summary>About potion optimization</summary>
             <p>
               Supplies are assumed available in every equipment mode. DPS uses
-              freshly boosted levels; no decay, duration benefit or supply
-              endurance is modeled. Potion cost is per application, separate
-              from gear budget and attack resources. Divine potions consume HP
-              when drunk.
+              freshly boosted levels; result graphs preview decay without
+              changing recommendations. Supply endurance is not modeled. Potion
+              cost is per application, separate from gear budget and attack
+              resources. Divine potions consume HP when drunk.
             </p>
           </details>
         </>

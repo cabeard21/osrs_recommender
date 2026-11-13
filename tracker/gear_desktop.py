@@ -86,6 +86,7 @@ class DesktopSettings(BaseSettings):
 def create_app(settings: DesktopSettings) -> FastAPI:
     from tracker.api.gear_evaluations import router as evaluations
     from tracker.api.gear_optimizations import router as optimizations
+    from tracker.api.gear_potion_timelines import router as potion_timelines
     from tracker.api.gear_ui import router as gear_ui
     from tracker.content.loader import load_content
     from tracker.gear.data_source import RemoteGearDataSource
@@ -173,6 +174,7 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     app.include_router(gear_ui)
     app.include_router(optimizations)
     app.include_router(evaluations)
+    app.include_router(potion_timelines)
     from tracker.api.gear_ammo import router as ammo_router
 
     app.include_router(ammo_router)

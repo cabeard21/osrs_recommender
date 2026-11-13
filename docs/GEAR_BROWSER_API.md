@@ -837,11 +837,45 @@ unknown. Potion application costs are separate from gear acquisition budgets and
 ammo/rune/charge GP/hour and GP/damage. A fixed comparison must retain the selected
 setup rather than silently optimizing potions again.
 
-DPS is a fresh-boost snapshot. Decay, duration advantages, drinking downtime,
+DPS recommendations are a fresh-boost snapshot. Decay, duration advantages, drinking downtime,
 healing costs, survival, and supply endurance are not modeled. Divine HP costs are
 disclosed. Boosted Defence is informational and does not alter equipment-bonus
 secondary objectives. Potions do not count as equipment swaps or automatically
 change reserved supply slots.
+
+### Potion decay preview
+
+`POST /ui-api/gear/potion-timelines` evaluates one selected configuration without
+searching again. Submit the original `scenario`, exact `selected_potion_ids`,
+`expected_catalog_version`, `expected_model_version`, and `loadouts` keyed by
+ordinary role ID. Each loadout contains physical `equipment`, a fixed
+`combat_option`, and `selected_prayer_ids`; special utility roles are excluded.
+Selected potions and prayers must match their fixed policies or optimize allowlists.
+
+The response includes snapshot/catalog/combat/decay model identity, a configuration
+fingerprint, the same-gear unboosted `baseline`, and chronological `samples`.
+Measurements contain `time_seconds`, skill `levels`, `dps`, `secondary_value`, and
+per-role values with availability `reasons`. Multi totals use unchanged normalized
+role weights; an unavailable positive-weight role makes the aggregate unavailable,
+without discarding valid individual-role measurements. Numeric default secondary
+metrics are null. A spell becoming uncastable yields null measurements, never a
+replacement spell or zero DPS.
+
+This is a one-application preview: all selected doses apply at time zero. Ordinary
+boosts lose one level at 60-second intervals until base; the assumed first drop is
+at 60 seconds, although the live timer may already be partway through its cycle.
+Divine-affected skills stay boosted until 300 seconds, then reset to base, including
+when an ordinary dose overlaps. Samples end one minute after the last change.
+Preserve, redosing, external stat changes, drinking downtime, and depletion are
+excluded. Recommendations and frontiers still use fresh boosts. The graph baseline
+holds gear and attacks fixed; it is distinct from the best no-potion loadout.
+Mechanics: [temporary boosts](https://oldschool.runescape.wiki/w/Temporary_skill_boost)
+and [divine potions](https://oldschool.runescape.wiki/w/Divine_super_combat_potion).
+
+The route uses the existing same-origin and no-store policy, worker cancellation,
+single calculation lock, and snapshot checks before and after evaluation. Stale
+snapshot/model/catalog input returns 409, invalid configurations 422, and an occupied
+calculation lock 503. It never changes account observations or refreshes prices.
 
 Potion optimization collapses equivalent boost vectors using only skills scored
 by the configured roles. Auto enumerates profiles separately for each
