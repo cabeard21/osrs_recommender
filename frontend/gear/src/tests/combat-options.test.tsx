@@ -223,7 +223,7 @@ test("Auto combines permitted capabilities and sends an explicit allowlist", () 
   expect(request.roles[0].combat_options?.spells).toEqual(["wind_strike"]);
 });
 
-test("Auto rejects empty disciplines, Multi, and disabled option optimization", () => {
+test("Auto permits Multi and rejects invalid combat settings", () => {
   const draft = newDraft();
   draft.roles[0] = {
     ...draft.roles[0],
@@ -233,7 +233,7 @@ test("Auto rejects empty disciplines, Multi, and disabled option optimization", 
   expect(() => normalize(draft, "snapshot")).toThrow(/discipline/i);
   draft.roles[0].allowedDisciplines = ["melee"];
   draft.roles.push({ ...newDraft().roles[0], id: "second" });
-  expect(() => normalize(draft, "snapshot")).toThrow(/Single/i);
+  expect(normalize(draft, "snapshot").request.roles).toHaveLength(2);
   draft.roles.pop();
   draft.roles[0].combatOptionOptimization = false;
   expect(() => normalize(draft, "snapshot")).toThrow(/combat.option/i);

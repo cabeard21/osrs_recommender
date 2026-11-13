@@ -110,8 +110,10 @@ def test_fixed_optimizer_path_is_explicit_and_default_unchanged(monkeypatch):
     assert calls
     assert without_observations(actual) == without_observations(expected)
 
+
 def test_context_rejects_nonboolean_fixed_flag():
-    with pytest.raises(ValueError, match="fixed reporting"), execution_context(
-        "combined", scenario()[1], fixed_reporting=1
+    with (
+        pytest.raises(ValueError, match="fixed reporting"),
+        execution_context("combined", scenario()[1], fixed_reporting=1),
     ):
         pass

@@ -104,13 +104,21 @@ def test_full_p1_multi_context_is_explicit_and_cleans_up():
     from tracker.gear.lazy_reporting import active as lazy_active
 
     request = scenario()[1]
-    request = request.model_copy(update={
-        "roles": (request.roles[0], request.roles[0].model_copy(update={"id": "second"})),
-    })
+    request = request.model_copy(
+        update={
+            "roles": (request.roles[0], request.roles[0].model_copy(update={"id": "second"})),
+        }
+    )
     with execution_context("combined", request, fixed_reporting=True):
         assert not lazy_active() and not fixed_active() and not factored_evaluation_active()
-    with pytest.raises(ValueError), execution_context(
-        "combined", request, fixed_reporting=True, factored_evaluation=True,
+    with (
+        pytest.raises(ValueError),
+        execution_context(
+            "combined",
+            request,
+            fixed_reporting=True,
+            factored_evaluation=True,
+        ),
     ):
         assert lazy_active() and fixed_active() and factored_evaluation_active()
         raise ValueError("optimization_cancelled")

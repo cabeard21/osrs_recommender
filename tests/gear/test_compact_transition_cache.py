@@ -103,4 +103,3 @@ def test_transition_caches_release_without_cyclic_gc():
         finally:
             if was_enabled:
                 gc.enable()
-
