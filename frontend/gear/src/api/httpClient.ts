@@ -82,6 +82,10 @@ export function parseOptimization(
   }
   const normalizedServerScenario = {
     ...object(envelope.scenario),
+    roles: (object(envelope.scenario).roles as unknown[]).map((role) => ({
+      ...object(role),
+      on_slayer_task: object(role).on_slayer_task ?? false,
+    })),
     fire_tome_pages: object(envelope.scenario).fire_tome_pages ?? "burnt",
     include_untradeables:
       object(envelope.scenario).include_untradeables ?? false,
@@ -624,6 +628,7 @@ export function optimizationRequest(scenario: Scenario) {
   return {
     roles: r.roles.map((role) => ({
       id: role.id,
+      on_slayer_task: role.onSlayerTask ?? false,
       ...(role.autoDiscipline
         ? {
             allowed_disciplines: role.allowedDisciplines ?? [

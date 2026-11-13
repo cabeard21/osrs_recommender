@@ -143,6 +143,29 @@ if __name__ == "__main__":
             )
             return {"status": "seeded"}
 
+        @app.post("/test/seed-slayer")
+        def seed_slayer():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in (1333, 8921)},
+                revision="browser-acceptance-slayer-v1",
+            )
+            with factory() as session:
+                player = session.query(Player).first()
+                player.combat_level = 100
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=8921,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=datetime.now(UTC),
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-joint")
         def seed_joint():
             seed_optimization()

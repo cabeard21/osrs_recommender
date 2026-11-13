@@ -38,6 +38,7 @@ export function CombatOptionSummary({
   preparations = [],
   prayerIds,
   prayerCatalog = [],
+  itemName,
 }: {
   option?: CombatOption;
   role: Pick<
@@ -49,6 +50,7 @@ export function CombatOptionSummary({
   preparations?: readonly Preparation[];
   prayerIds?: string[];
   prayerCatalog?: readonly PrayerDefinition[];
+  itemName?: (id: number) => string;
 }) {
   if (!option && role.combatOptions) {
     return (
@@ -79,6 +81,18 @@ export function CombatOptionSummary({
         </p>
       ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
+      {performance?.slayer_effects?.map((effect) => (
+        <p
+          aria-label="Slayer task effect"
+          key={`${effect.item_id}-${effect.kind}`}
+        >
+          Slayer task ·{" "}
+          {itemName?.(effect.item_id) ?? `item #${effect.item_id}`}:{" "}
+          {effect.kind === "magic_dart"
+            ? `Magic Dart base max hit ${effect.base_max_hit}`
+            : `+${Number(((effect.accuracy_numerator / effect.denominator - 1) * 100).toFixed(2))}% accuracy and damage`}
+        </p>
+      ))}
       {performance?.hitsplats && performance.hitsplats.length > 1 && (
         <p aria-label="Hitsplat details">
           {performance.hitsplats

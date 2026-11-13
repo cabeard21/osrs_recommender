@@ -57,6 +57,8 @@ class TomeBonus(GearModel):
 
 
 class EquipmentDefinition(GearModel):
+    slayer_bonus: Literal["melee", "all"] | None = None
+    slayer_staff_enchanted: bool = False
     tome_effect: TomeEffect | None = None
     elemental_spell_bonus: ElementalSpellBonus | None = None
     bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
@@ -189,7 +191,17 @@ class HopperPerformance(GearModel):
     assumptions: tuple[str, ...]
 
 
+class SlayerEffect(GearModel):
+    item_id: int
+    kind: Literal["mask", "magic_dart"]
+    accuracy_numerator: int = 1
+    damage_numerator: int = 1
+    denominator: int = 1
+    base_max_hit: int | None = None
+
+
 class CombatPerformance(GearModel):
+    slayer_effects: tuple[SlayerEffect, ...] = ()
     tome_bonus: TomeBonus | None = None
     aquanite_hopper: HopperPerformance | None = None
     elemental_amulet_bonus: ElementalAmuletBonus | None = None

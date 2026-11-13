@@ -357,6 +357,7 @@ def evaluate_configurations(
                 result["performance"],
                 price_records,
                 now,
+                on_slayer_task=configured.on_slayer_task,
             ),
         }
 

@@ -22,6 +22,7 @@ const EMPTY_GROUP_NOUNS = {
   spells: "spell",
 } as const;
 export const newRole = (index: number) => ({
+  onSlayerTask: false,
   id: `role-${index}`,
   name: `Configuration ${index}`,
   style: (index === 2 ? "ranged" : "melee") as "melee" | "ranged" | "magic",
@@ -168,6 +169,11 @@ export function normalize(
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
   for (const role of draft.roles) {
+    if (
+      role.onSlayerTask !== undefined &&
+      typeof role.onSlayerTask !== "boolean"
+    )
+      throw new Error("Choose a valid Slayer task setting.");
     if (!role.autoDiscipline) continue;
     if (role.utility)
       throw new Error("Auto requires an ordinary combat configuration.");
@@ -196,7 +202,11 @@ export function normalize(
       "Target flat armour requires a whole number between -10000 and 10000.",
     );
   const roles = draft.roles.map((r) => {
-    const role = { ...structuredClone(r), weight: Number(r.weight) };
+    const role = {
+      ...structuredClone(r),
+      onSlayerTask: r.onSlayerTask ?? false,
+      weight: Number(r.weight),
+    };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
       role.combatTarget = draft.combatTarget
         ? structuredClone(draft.combatTarget)
@@ -819,6 +829,28 @@ export function reducer(state: State, action: Action): State {
           },
         };
       if (
+        JSON.stringify(
+          current.submitted?.request.roles.map((role) => [
+            role.id,
+            role.onSlayerTask ?? false,
+          ]),
+        ) !==
+        JSON.stringify(
+          action.result.scenario.request.roles.map((role) => [
+            role.id,
+            role.onSlayerTask ?? false,
+          ]),
+        )
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "Slayer task settings changed; rerun optimization.",
+          },
+        };
+      if (
         (current.submitted?.request.support_policy ?? "verified_only") !==
         (action.result.scenario.request.support_policy ?? "verified_only")
       )
@@ -1122,6 +1154,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
     draft.roles.length > 4 ||
     !draft.roles.every(
       (r: {
+        onSlayerTask?: unknown;
         id: unknown;
         name: unknown;
         style: string;
@@ -1130,11 +1163,20 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
       }) =>
         typeof r.id === "string" &&
         typeof r.name === "string" &&
+        (r.onSlayerTask === undefined || typeof r.onSlayerTask === "boolean") &&
         ["melee", "ranged", "magic"].includes(r.style) &&
         typeof r.weight === "string" &&
         typeof r.locks === "object" &&
         r.locks !== null,
     )
   );
-  return isValid ? (draft as Draft) : null;
+  return isValid
+    ? ({
+        ...draft,
+        roles: draft.roles.map((role: Draft["roles"][number]) => ({
+          ...role,
+          onSlayerTask: role.onSlayerTask ?? false,
+        })),
+      } as Draft)
+    : null;
 }

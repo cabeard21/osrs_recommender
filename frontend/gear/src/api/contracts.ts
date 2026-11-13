@@ -75,6 +75,7 @@ export interface TargetSelection {
   catalog_revision: string;
 }
 export interface Role {
+  onSlayerTask?: boolean;
   prayers?: PrayerPolicy;
   targetSelection?: TargetSelection;
   id: string;
@@ -436,6 +437,14 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  slayer_effects?: {
+    item_id: number;
+    kind: "mask" | "magic_dart";
+    accuracy_numerator: number;
+    damage_numerator: number;
+    denominator: number;
+    base_max_hit: number | null;
+  }[];
   tome_bonus?: {
     item_id: number;
     element: "fire" | "water" | "earth";

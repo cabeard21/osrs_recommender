@@ -121,6 +121,7 @@ export function LiveMultiResultWorkspace() {
                 (role.autoDiscipline ? "unavailable" : role.style)}
             </p>
             <CombatOptionSummary
+              itemName={itemName}
               preparations={loadout.preparations}
               prayerIds={loadout.selected_prayer_ids}
               prayerCatalog={contextPrayers(state.context)}

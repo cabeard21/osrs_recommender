@@ -61,6 +61,16 @@ export function matchesOptimizationPolicy(
   b: OptimizationReply,
 ) {
   return (
+    sameValue(
+      a.scenario.request.roles.map((role) => [
+        role.id,
+        role.onSlayerTask ?? false,
+      ]),
+      b.scenario.request.roles.map((role) => [
+        role.id,
+        role.onSlayerTask ?? false,
+      ]),
+    ) &&
     (a.scenario.request.fire_tome_pages ?? "burnt") ===
       (b.scenario.request.fire_tome_pages ?? "burnt") &&
     (a.scenario.request.support_policy ?? "verified_only") ===

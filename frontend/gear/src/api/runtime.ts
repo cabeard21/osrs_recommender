@@ -56,6 +56,27 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid tome effect metadata");
   }
+  if (value.slayer_effects !== undefined) {
+    if (
+      !Array.isArray(value.slayer_effects) ||
+      value.slayer_effects.some(
+        (effect) =>
+          !effect ||
+          !Number.isSafeInteger(effect.item_id) ||
+          effect.item_id <= 0 ||
+          !["mask", "magic_dart"].includes(effect.kind) ||
+          ![
+            effect.accuracy_numerator,
+            effect.damage_numerator,
+            effect.denominator,
+          ].every((n) => Number.isSafeInteger(n) && n > 0) ||
+          (effect.base_max_hit !== null &&
+            (!Number.isSafeInteger(effect.base_max_hit) ||
+              effect.base_max_hit < 0)),
+      )
+    )
+      throw new Error("Invalid Slayer effect metadata");
+  }
   return {
     dps: value.dps!,
     maxHit: value.max_hit!,

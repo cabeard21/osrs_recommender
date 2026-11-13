@@ -120,7 +120,8 @@ def encounter_presets() -> tuple[EncounterPreset, ...]:
             limitations=(
                 "This selected kill cycle does not require every pairwise transition.",
                 "Equal active-time weights are assumptions, not measured kill durations.",
-                "Respawns, travel, survival, Slayer bonuses and downtime are not simulated.",
+                "Respawns, travel, survival and downtime are not simulated. "
+                "Slayer bonuses require explicit task context.",
                 "Ordinary attacks only; elemental weakness applies to matching standard spells.",
             ),
         ),

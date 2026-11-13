@@ -98,7 +98,7 @@ cdef class StageContext:
     cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
     cdef int[::1] supply_class
     cdef int supply_count
-    cdef double[::1] option_cost, unit_prices, recovery
+    cdef double[::1] option_cost, option_on_hit_cost, unit_prices, recovery
     cdef bint cost_objective
     cdef double[::1] weights, marginals
     cdef vector[string] role_names, slot_names
@@ -123,6 +123,7 @@ cdef class StageContext:
         if self.cost_objective:
             self.option_kind = self.data.cost_data.option_kind
             self.option_cost = self.data.cost_data.option_cost
+            self.option_on_hit_cost = self.data.cost_data.option_on_hit_cost
             self.supply_class = self.data.cost_data.supply_class
             self.supply_count = self.data.cost_data.supply_count
             self.ranged_kind = self.data.cost_data.ranged_kind
@@ -202,6 +203,7 @@ cdef class StageContext:
 
     cdef double attack_cost(self, const int* slots, Score* score) noexcept:
         cdef int option = score.option_index
+        cdef int cost_index
         cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
         cdef double rate, quantity = 1.0
         if not score.supported or option < 0:
@@ -210,7 +212,10 @@ cdef class StageContext:
             if self.torag[slots[slot]]:
                 return -1
         if not self.option_kind[option]:
-            return self.option_cost[option * self.supply_count + self.supply_class[shield]]
+            cost_index = option * self.supply_count + self.supply_class[shield]
+            if self.option_cost[cost_index] < 0 or self.option_on_hit_cost[cost_index] < 0:
+                return -1
+            return self.option_cost[cost_index] + score.accuracy * self.option_on_hit_cost[cost_index]
         if self.ranged_kind[weapon] == 1:
             if not ammo or not self.ammo_valid[ammo]:
                 return -1

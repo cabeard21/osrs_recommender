@@ -12,7 +12,7 @@
       "review_notes": "Exact level-53 profile: Defence 43, Magic 1, melee defence -20/25/0 and light/standard/heavy ranged defence -10/0/0; no elemental weakness. Ordinary direct attacks use these defence rolls; poison immunity does not change direct-hit damage.",
       "limitations": [
         "Ordinary direct attacks only; Poison and venom damage are not included (this NPC is immune).",
-        "Incoming poisonous attacks, survival, movement, Slayer bonuses and time fighting Shayzien soldiers are not simulated.",
+        "Incoming poisonous attacks, survival, movement and time fighting Shayzien soldiers are not simulated.",
         "This review applies only to the Level 53 Lizardman profile; brutes, shamans and other levels require separate review."
       ]
     },
@@ -21,7 +21,7 @@
       "variant": "Standard",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "1173": {
@@ -29,7 +29,7 @@
       "variant": "Normal",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2790": {
@@ -37,7 +37,7 @@
       "variant": "1",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2266": {
@@ -45,7 +45,7 @@
       "variant": "",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2267": {
@@ -53,7 +53,7 @@
       "variant": "",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2265": {
@@ -61,7 +61,7 @@
       "variant": "",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "3028": {
@@ -69,7 +69,7 @@
       "variant": "Level 2",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2025": {
@@ -77,7 +77,7 @@
       "variant": "Level 92",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2098": {
@@ -85,7 +85,7 @@
       "variant": "1",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2005": {
@@ -93,7 +93,7 @@
       "variant": "Level 82",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2090": {
@@ -101,7 +101,7 @@
       "variant": "Level 42",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2043": {
@@ -109,7 +109,7 @@
       "variant": "Magma",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2042": {
@@ -117,7 +117,7 @@
       "variant": "Serpentine",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     },
     "2044": {
@@ -125,7 +125,7 @@
       "variant": "Tanzanite",
       "source_url": "https://github.com/weirdgloop/osrs-dps-calc/blob/c1f7737a7fea01adc9d0c1fe59e88d4584c5bc48/cdn/json/monsters.json",
       "limitations": [
-        "Ordinary attacks only; movement, survival, Slayer bonuses and encounter rotations are not simulated."
+        "Ordinary attacks only; movement, survival and encounter rotations are not simulated."
       ]
     }
   },

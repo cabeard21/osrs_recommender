@@ -146,7 +146,8 @@ class NpcCatalog:
             if review
             else [
                 "Ordinary direct attacks using catalog base stats only; encounter phases, "
-                "survival, movement, poison, venom and Slayer bonuses are not simulated.",
+                "survival, movement, poison and venom are not simulated. "
+                "Slayer bonuses require explicit task context.",
                 "Family attributes do not enable unsupported equipment effects.",
             ],
             "target": target,

@@ -6,9 +6,12 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import lru_cache
 from math import floor
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
-Key = tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None]
+Key = (
+    tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None]
+    | tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None, int, int]
+)
 
 
 class CacheInfo(NamedTuple):
@@ -46,11 +49,14 @@ def calculate(key: Key) -> Outgoing:
         defence_bonus,
         armour,
         cap,
-    ) = key
+    ) = key[:13]
+    numerator, denominator = cast(tuple[int, int], key[13:]) if len(key) == 15 else (1, 1)
     stance_bonus = 3 if stance == "accurate" else 0
     effective_strength = level * strength_prayer // 100 + 8 + stance_bonus
     maximum = max(0, floor(0.5 + effective_strength * (strength_bonus + 64) / 640))
     attack = (level * accuracy_prayer // 100 + 8 + stance_bonus) * (attack_bonus + 64)
+    maximum = maximum * numerator // denominator
+    attack = attack * numerator // denominator
     defence = (defence_level + 9) * (defence_bonus + 64)
     if stance == "rapid":
         speed = max(1, speed - 1)

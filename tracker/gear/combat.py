@@ -25,6 +25,7 @@ from tracker.gear.models import (
     EquipmentDefinition,
     HitsplatPerformance,
     HopperPerformance,
+    SlayerEffect,
     TomeBonus,
 )
 from tracker.gear.powered import base_hit, supports_powered
@@ -36,6 +37,7 @@ from tracker.gear.ranged_numerics import evaluate as evaluate_ranged
 from tracker.gear.ranged_numerics import observer as ranged_observer
 from tracker.gear.ranged_score_finalization import active as score_finalization_active
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
+from tracker.gear.slayer import MAGIC_DART_STAVES, dart_base, mask_factor
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import applied_tome
 
@@ -85,10 +87,10 @@ ANCIENT_SPELLS = {
     "blood_barrage": (92, 29),
     "ice_barrage": (94, 30),
 }
-SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), **ANCIENT_SPELLS}
+SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), "magic_dart": (50, 15), **ANCIENT_SPELLS}
 
 
-MODEL_VERSION = "normal-attacks-v6-elemental-tomes-aquanite-hopper"
+MODEL_VERSION = "normal-attacks-v7-slayer-task"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -244,6 +246,11 @@ def _evaluate_prepared(
         and (spell not in SPELLS or levels.get("magic", 0) < SPELLS[spell][0])
     ):
         problems.append("Selected spell is unknown or its Magic level is unmet.")
+    if style == "magic" and powered_attack is None and spell == "magic_dart":
+        if weapon is None or weapon.id not in MAGIC_DART_STAVES:
+            problems.append("Magic Dart requires a reviewed compatible staff.")
+        if levels.get("slayer", 0) < 55:
+            problems.append("Magic Dart requires 55 Slayer.")
     if style == "magic" and powered_attack is None and weapon and weapon.powered_attack:
         problems.append("Powered weapon cannot autocast the selected standard spell.")
     if (
@@ -324,6 +331,8 @@ def _evaluate_prepared(
         bolt_family=bolt_family,
         bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
+        on_slayer_task=bool(getattr(role, "on_slayer_task", False)),
+        head=next((item for item in equipment if item.slot == "head"), None),
     )
     if not score_only and isinstance(result, CombatPerformance):
         omissions = tuple(dict.fromkeys(e for i in equipment for e in i.omitted_set_effects))
@@ -379,6 +388,8 @@ def _calculate(
     bolt_family: str | None = None,
     bolt_diary: bool = False,
     bolt_diary_known: bool = False,
+    on_slayer_task: bool = False,
+    head: EquipmentDefinition | None = None,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
     weakness = None
@@ -386,12 +397,26 @@ def _calculate(
     tome_report = None
     minimum_hit = 0
     outgoing = None
+    numerator, denominator = mask_factor(head.slayer_bonus if head else None, style, on_slayer_task)
+    task_mask = numerator != denominator
+    slayer_reports: tuple[SlayerEffect, ...] = ()
+    if not score_only and task_mask and head is not None:
+        slayer_reports = (
+            SlayerEffect(
+                item_id=head.id,
+                kind="mask",
+                accuracy_numerator=numerator,
+                damage_numerator=numerator,
+                denominator=denominator,
+            ),
+        )
     # Equipment-dependent spell effects are absent from the prepared attack key.
     # Keep their reviewed calculation until those dependencies are factored too.
     spell_effect = style == "magic" and (
         applied_spell_bonus(amulet, spell, powered_attack)
         or applied_tome(tome, spell, powered_attack)
     )
+    spell_effect = spell_effect or task_mask or (style == "magic" and spell == "magic_dart")
     constants = None if spell_effect else _constants
     cached_ranged = (
         style == "ranged" and powered_attack is None and ranged_experiment_active()
@@ -428,6 +453,8 @@ def _calculate(
             target.bonuses.ranged if subtype is None else subtype,
             target.flat_armour,
             target.damage_cap,
+            numerator,
+            denominator,
         )
         if observer is not None:
             observer.key_seconds += perf_counter() - key_started
@@ -482,6 +509,15 @@ def _calculate(
                 else weapon.powered_attack_base_max_hit
             )
             assert base is not None
+        elif spell == "magic_dart":
+            base = dart_base(
+                levels["magic"], bool(weapon and weapon.slayer_staff_enchanted), on_slayer_task
+            )
+            if not score_only and weapon and weapon.slayer_staff_enchanted and on_slayer_task:
+                slayer_reports = (
+                    *slayer_reports,
+                    SlayerEffect(item_id=weapon.id, kind="magic_dart", base_max_hit=base),
+                )
         elif spell == "iban_blast" or spell in ANCIENT_SPELLS:
             base = SPELLS[spell][1]
         else:
@@ -540,6 +576,9 @@ def _calculate(
                 attack_roll_bonus=roll_bonus,
             )
         tome_effect = applied_tome(tome, spell, powered_attack)
+        if task_mask:
+            max_hit = max_hit * numerator // denominator
+            attack = attack * numerator // denominator
         if tome_effect and tome_effect.element == "water":
             attack = attack * 120 // 100
         if applied:
@@ -604,6 +643,9 @@ def _calculate(
                 defence = (target.defence_level + 9) * (value + 64)
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
+    if style != "magic" and not cached_ranged and task_mask:
+        max_hit = max_hit * numerator // denominator
+        attack = attack * numerator // denominator
     max_hit = max(0, max_hit)
     if (
         constants is not None
@@ -770,6 +812,7 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        slayer_effects=slayer_reports,
         aquanite_hopper=hopper_report,
         bolt_effect=bolt_report,
         elemental_weakness=weakness,

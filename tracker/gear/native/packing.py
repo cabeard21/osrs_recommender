@@ -161,6 +161,8 @@ def pack(search: Any) -> dict[str, Any]:
             ("reviewed_crossbow", 0),
             ("zaryte", 0),
             ("hopper_shield", 0),
+            ("slayer_bonus", 0),
+            ("slayer_staff", 0),
         )
     }
     bonuses = array("q", [0] * 14)
@@ -190,6 +192,14 @@ def pack(search: Any) -> dict[str, Any]:
             "reviewed_crossbow": int(item_id in CROSSBOWS),
             "zaryte": int(item_id == 26374),
             "hopper_shield": int(item_id == 32879 and item.slot == "shield"),
+            "slayer_bonus": (
+                1 if item.slayer_bonus == "melee" else 2 if item.slayer_bonus == "all" else 0
+            )
+            if item.slot == "head"
+            else 0,
+            "slayer_staff": int(
+                getattr(item, "slayer_staff_enchanted", False) and item.slot == "weapon"
+            ),
         }
         for name, value in values.items():
             integers[name].append(value)
@@ -214,6 +224,9 @@ def pack(search: Any) -> dict[str, Any]:
             "diary",
             "target_hp",
             "target_traits",
+            "on_slayer_task",
+            "magic_dart",
+            "magic_level",
         )
     }
     context = PreparedCombat(0)
@@ -278,6 +291,13 @@ def pack(search: Any) -> dict[str, Any]:
                     metadata = {
                         "spell_element": ELEMENT_CODES.get(element or "", 0),
                         "searing": int(configured.fire_tome_pages == "searing"),
+                        "on_slayer_task": int(getattr(configured, "on_slayer_task", False)),
+                        "magic_dart": int(
+                            configured.style == "magic"
+                            and configured.spell == "magic_dart"
+                            and configured.powered_attack is None
+                        ),
+                        "magic_level": search.levels.get("magic", 0),
                         "ranged_level": search.levels.get("ranged", 0),
                         "diary": int(configured.bolt_diary_boost),
                         "target_hp": target.current_hitpoints
