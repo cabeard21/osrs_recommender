@@ -72,25 +72,80 @@ database migrations or provider refresh scheduler and exposes no RuneLite ingest
 endpoint. Stop any normal local app using port 8502 first, or change the desktop port.
 The Pi token stays in the Python process and is never delivered to React.
 
-Desktop Gear defaults to three persistent worker processes for Single-mode Auto
-discipline searches. Workers warm at application startup and stop with the app.
+Desktop Gear defaults to native execution and six persistent worker processes for
+independent Auto, Multi Auto and potion branches. Workers warm at application
+startup and stop with the app. Fixed-discipline searches use native execution
+without requiring six independent branches.
 Melee, Ranged and Magic branches use the same frozen account/prices and the existing
 result merger. Fixed-discipline and joint multi-role searches retain their normal
 execution path. The Pi and standalone MCP service do not create these desktop pools.
 
-Set `optimization_workers` in the private desktop YAML to `1` for serial execution,
-`2` for two workers, or `3` for the default. An environment override is also supported:
+Set `optimization_workers` in the private desktop YAML to any integer from 1 to 6;
+1 uses serial execution. An environment override is also supported:
 
 ```powershell
-$env:TRACKER_DESKTOP_OPTIMIZATION_WORKERS = "3"
+$env:TRACKER_DESKTOP_OPTIMIZATION_WORKERS = "6"
 .\run-gear-desktop.bat
 ```
 
 Existing desktop configs need no change to use the default. Restart the launcher
 after updating the code or worker setting. If the pool cannot start, the startup log
-reports serial fallback. A failed running worker returns a retryable optimizer error;
+reports serial fallback in Python mode; native mode requires a ready pool and fails
+startup rather than hiding a provisioning error. A failed running worker returns a retryable optimizer error;
 the current request is not silently recomputed or partially published. Cancellation
 drains outstanding work before the service accepts another calculation.
+
+`optimization_engine` accepts `native` (default) or `python`. Native execution
+requires compatible release binaries for both compiled modules. Provision Windows
+with MSVC C++ build tools, then run:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[native-build]"
+.\.venv\Scripts\python.exe -m tools.build_gear_native
+```
+
+The worktree setup script performs this release build. Desktop startup only
+validates the binaries and their source/build identity; it never compiles. Missing,
+stale, incompatible or coverage-instrumented binaries fail startup with build
+instructions. Ordinary Python/Pi installations do not require a compiler.
+Stop the desktop and its workers before rebuilding on Windows: loaded native
+modules cannot be replaced. Restart after the release build completes.
+
+To roll back independently, set `TRACKER_DESKTOP_OPTIMIZATION_ENGINE=python`
+and optionally `TRACKER_DESKTOP_OPTIMIZATION_WORKERS=3`, then restart. Baseline
+and lazy profiles also resolve to Python execution. Logs identify the resolved
+engine and worker count; optimizer response schemas are unchanged.
+
+Desktop execution profiles are server-owned. `optimization_profile` accepts
+`baseline`, `lazy`, or `combined`; desktop mode defaults to `combined` after the
+full original-P1 parity, timing, memory and desktop acceptance matrix passed.
+`lazy` avoids rich reports for eligible partial Single states. `combined` also
+prepares immutable attack/target/prayer constants for melee, ranged and magic,
+reuses ranged numerical calculations, and defers configured/fixed Single and Multi
+reports, frontier combat variants and running-cost descriptions until needed.
+After P3 acceptance, `combined` also uses compact equipment and solution states,
+with bounded reuse inside each concrete search. Physical item identities, ordered
+fractional sums, acquisition costs, inventory and directional transitions are
+preserved. Numeric ranking preserves exact attack/prayer choices, full result ties
+and IDs. Startup logs identify fixed-option reporting, factored evaluation and
+compact states separately.
+Baseline and lazy leave these combined extensions disabled. Unsupported paths
+retain their existing behavior. Execution options are passed explicitly to spawned
+workers; each concrete branch starts with fresh optimization contexts. Automated
+live desktop acceptance verified combined, baseline rollback and combined re-enable.
+
+To select a profile, set the private YAML field or use an environment override:
+
+```powershell
+$env:TRACKER_DESKTOP_OPTIMIZATION_PROFILE = "combined"
+.\run-gear-desktop.bat
+```
+
+Rollback uses `TRACKER_DESKTOP_OPTIMIZATION_PROFILE=baseline` followed by the normal
+desktop restart. Startup logs identify the configured profile. Invalid values fail
+configuration validation. Worker startup fallback preserves the configured profile;
+failed optimization requests are not silently retried under baseline. Generic
+services, direct optimizer calls, and Pi execution continue to default to baseline.
 
 For access from another Tailscale device, run `tailscale ip -4` on the development
 PC and set `bind_address` in `config.gear-desktop.yaml` to that address. Restart the

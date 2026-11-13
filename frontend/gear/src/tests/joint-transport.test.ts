@@ -9,6 +9,7 @@ import context from "./live-context.json";
 import { parseJointSolution } from "../api/jointResults";
 import { parseItem } from "../api/httpClient";
 import type { JointSolutionDTO } from "../api/contracts";
+import { workBudgetPolicy } from "../api/optimizationModes";
 const performance = {
   supported: true,
   dps: 2,
@@ -420,6 +421,135 @@ function autoExample() {
   });
   return { scenario, reply, branch };
 }
+
+function multiAutoExample(autoIndex = 0) {
+  const { scenario, reply } = example();
+  scenario.request.roles[autoIndex].autoDiscipline = true;
+  scenario.request.roles[autoIndex].allowedDisciplines = ["melee", "ranged"];
+  reply.scenario = optimizationRequest(scenario);
+  Object.assign(
+    reply.result.selected_solution.loadouts[`role-${autoIndex + 1}`],
+    {
+      discipline: "melee",
+    },
+  );
+  const policy = {
+    ...workBudgetPolicy("fast"),
+    budget_scope: "per_discipline_assignment",
+    discipline_assignment_count: 2,
+  };
+  const fixed = autoIndex === 0 ? "ranged" : "melee";
+  Object.assign(reply, { work_budget_policy: policy });
+  Object.assign(reply.result, {
+    work_budget_policy: policy,
+    discipline_comparison: [],
+    discipline_results: [],
+    search: {
+      discipline_assignment_selection: {
+        policy: "full-per-discipline-assignment-v1",
+        branch_count: 2,
+        branches: Object.fromEntries(
+          ["melee", "ranged"].map((discipline) => [
+            autoIndex === 0
+              ? `role-1=${discipline}/role-2=${fixed}`
+              : `role-1=${fixed}/role-2=${discipline}`,
+            {},
+          ]),
+        ),
+      },
+    },
+  });
+  return { scenario, reply };
+}
+
+it.each([0, 1])(
+  "accepts combined Auto results with Auto in role %i",
+  (autoIndex) => {
+    const { scenario, reply } = multiAutoExample(autoIndex);
+    const parsed = parseOptimization(reply, scenario);
+    expect(parsed.solutions.map((s) => s.id)).toEqual(["curve-0", "curve-1"]);
+    expect(parsed.solutions[0].loadouts[autoIndex].discipline).toBe("melee");
+    expect(
+      optimizationRequest(scenario).roles[autoIndex].allowed_disciplines,
+    ).toEqual(["melee", "ranged"]);
+  },
+);
+
+it("rejects incomplete Multi Auto assignment diagnostics and changed work counts", () => {
+  const { scenario, reply } = multiAutoExample();
+  const search = reply.result.search as unknown as {
+    discipline_assignment_selection: {
+      branch_count: number;
+      branches: Record<string, unknown>;
+    };
+  };
+  delete search.discipline_assignment_selection.branches[
+    "role-1=ranged/role-2=ranged"
+  ];
+  expect(() => parseOptimization(reply, scenario)).toThrow(/assignment/i);
+  const valid = multiAutoExample();
+  Object.assign(valid.reply, {
+    work_budget_policy: {
+      ...workBudgetPolicy("fast"),
+      budget_scope: "per_discipline_assignment",
+      discipline_assignment_count: 1,
+    },
+  });
+  expect(() => parseOptimization(valid.reply, valid.scenario)).toThrow(
+    /budget/i,
+  );
+});
+
+it("rejects disallowed resolved disciplines in every combined point", () => {
+  const { scenario, reply } = multiAutoExample(1);
+  Object.assign(reply.result.selected_solution.loadouts["role-2"], {
+    discipline: "magic",
+  });
+  expect(() => parseOptimization(reply, scenario)).toThrow(/discipline/i);
+});
+
+it("validates Thorough work separately for every discipline assignment", () => {
+  const { scenario, reply } = multiAutoExample(1);
+  scenario.request.optimization_mode = "thorough";
+  reply.scenario = optimizationRequest(scenario);
+  const policy = {
+    ...workBudgetPolicy("thorough"),
+    budget_scope: "per_discipline_assignment",
+    discipline_assignment_count: 2,
+  };
+  for (const row of [reply, reply.result])
+    Object.assign(row, {
+      optimization_mode: "thorough",
+      work_budget_policy: policy,
+    });
+  const diagnostic = {
+    triggered: false,
+    assignment_attempts: 0,
+    work_budget_exhausted: false,
+    objective_improvements: 0,
+    tie_improvements: 0,
+    baseline: { curve_solutions: [null, null], unrestricted: null },
+  };
+  const branches = {
+    "role-1=melee/role-2=melee": {
+      local_refinement: structuredClone(diagnostic),
+    },
+    "role-1=melee/role-2=ranged": {
+      local_refinement: structuredClone(diagnostic),
+    },
+  };
+  Object.assign(reply.result.search, {
+    discipline_assignment_selection: {
+      policy: "full-per-discipline-assignment-v1",
+      branch_count: 2,
+      branches,
+    },
+  });
+  expect(() => parseOptimization(reply, scenario)).not.toThrow();
+  branches["role-1=melee/role-2=ranged"].local_refinement.assignment_attempts =
+    10001;
+  expect(() => parseOptimization(reply, scenario)).toThrow(/assignment cap/i);
+});
 it("retains each Auto discipline as an independently selectable solution", () => {
   const { scenario, reply } = autoExample();
   const parsed = parseOptimization(reply, scenario);

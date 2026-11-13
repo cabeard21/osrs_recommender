@@ -75,7 +75,15 @@ def _trials(search: _Search, best: Solution) -> Iterator[tuple[RoleConfig, dict[
             except StopIteration:
                 continue
             queue.append((role, slot, candidates))
-            yield role, {**best["loadouts"][role.id]["equipment"], slot: item}
+            from tracker.gear.optimizer import _equipment_state
+
+            equipment = _equipment_state(best["loadouts"][role.id]["equipment"])
+            yield (
+                role,
+                equipment.with_slot(slot, item)
+                if getattr(search, "compact_states", False)
+                else {**equipment, slot: item},
+            )
 
 
 def _trial(
@@ -118,8 +126,14 @@ def _trial(
         **(option or {}),
         "__prayer_ids": loadout.get("selected_prayer_ids", []),
     }
-    assignment = {rid: row["equipment"] for rid, row in best["loadouts"].items()}
-    assignment = {**assignment, role.id: equipment}
+    from tracker.gear.optimizer import _assignment_state
+
+    assignment = _assignment_state({rid: row["equipment"] for rid, row in best["loadouts"].items()})
+    assignment = (
+        assignment.with_role(role.id, equipment)
+        if getattr(search, "compact_states", False)
+        else {**assignment, role.id: equipment}
+    )
     # Use the search's objective: CostSearch uses negative GP/damage here.
     if search.secondary(assignment) < best["secondary_value"]:
         return None

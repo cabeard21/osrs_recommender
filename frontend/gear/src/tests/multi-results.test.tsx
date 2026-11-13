@@ -358,6 +358,75 @@ it("uses the selected curve solution for all dependent panels", () => {
   ).not.toBeInTheDocument();
 });
 
+it("shows the selected Auto discipline and options when changing curve or frontier points", () => {
+  const { current, result, rerender } = setup({ roles: 2 });
+  Object.assign(result.scenario.request.roles[1], {
+    style: "melee",
+    autoDiscipline: true,
+    allowedDisciplines: ["ranged", "magic"],
+  });
+  Object.assign(result.live.result.curve[1].solution!.loadouts.b, {
+    discipline: "ranged",
+    combat_option: {
+      attack_type: "heavy",
+      stance: "rapid",
+      spell: null,
+      powered_attack: null,
+    },
+  });
+  Object.assign(result.live.result.curve[0].solution!.loadouts.b, {
+    discipline: "magic",
+    combat_option: {
+      attack_type: "magic",
+      stance: "accurate",
+      spell: "fire_strike",
+      powered_attack: null,
+    },
+  });
+  const panel = () =>
+    within(screen.getByRole("heading", { name: "Bow" }).closest("section")!);
+  rerender(<LiveMultiResultWorkspace />);
+  expect(
+    panel().getByLabelText("Resolved combat discipline"),
+  ).toHaveTextContent("Auto selected ranged");
+  expect(
+    panel().getByLabelText("Selected combat configuration"),
+  ).toHaveTextContent("heavy · rapid");
+  current.solutionId = "curve-0";
+  rerender(<LiveMultiResultWorkspace />);
+  expect(
+    panel().getByLabelText("Resolved combat discipline"),
+  ).toHaveTextContent("Auto selected magic");
+  expect(
+    panel().getByLabelText("Selected combat configuration"),
+  ).toHaveTextContent("magic · accurate · fire strike");
+  Object.assign(result, {
+    solutions: [
+      { id: "frontier-auto", live: result.live.result.curve[1].solution },
+    ],
+  });
+  current.solutionId = "frontier-auto";
+  rerender(<LiveMultiResultWorkspace />);
+  expect(
+    panel().getByLabelText("Resolved combat discipline"),
+  ).toHaveTextContent("Auto selected ranged");
+});
+
+it("shows returned running-cost frontiers when no retained manual style is magic", () => {
+  const { result, rerender } = setup({ roles: 2 });
+  Object.assign(result.scenario.request.roles[1], {
+    autoDiscipline: true,
+    allowedDisciplines: ["ranged", "magic"],
+  });
+  Object.assign(result.live.result, {
+    running_cost_frontiers: [
+      { swap_limit: 1, baseline_dps: 4.5, sampled: false, points: [] },
+    ],
+  });
+  rerender(<LiveMultiResultWorkspace />);
+  expect(screen.getByLabelText("Running cost tradeoffs")).toBeVisible();
+});
+
 it("labels only an actual backend suggested curve point without changing selection", () => {
   const { current, rerender, dispatch } = setup();
   Object.assign(current.result.live.result, { suggested_swap_limit: 0 });

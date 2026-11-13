@@ -6,7 +6,17 @@ port: 8502
 content_dir: content
 # Single Auto searches melee, ranged and magic in desktop worker processes.
 # Set to 1 for serial execution, or 2 to reduce process memory use.
-optimization_workers: 3
+# Six processes execute independent Auto and potion branches.
+optimization_workers: 6
+# Native requires release binaries: python -m tools.build_gear_native.
+# Select python for compiler-free rollback, then restart desktop Gear.
+optimization_engine: native
+# Server-owned profile: baseline, lazy, or combined. Roll back with
+# TRACKER_DESKTOP_OPTIMIZATION_PROFILE=baseline, then restart desktop Gear.
+# Combined enables P1 prepared scoring/deferred reports and P3 compact equipment
+# and solution states for Single and Multi, qualified by exact parity, timing,
+# memory and desktop rollback checks.
+optimization_profile: combined
 
 # Use the Pi's private Tailscale address. No database file is mounted or copied.
 pi_url: http://100.117.157.57:8502

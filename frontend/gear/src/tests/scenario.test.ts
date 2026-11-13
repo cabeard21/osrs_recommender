@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   initialState,
   newDraft,
+  newRole,
   normalize,
   readDrafts,
   reducer,
@@ -49,6 +50,26 @@ describe("scenario normalization", () => {
     expect(normalize(d, "x").request.skill_overrides).toEqual({ attack: 99 });
     expect(contextFixture).not.toHaveProperty("skill_overrides");
   });
+});
+it("normalizes independent Auto configurations while rejecting Auto utility roles", () => {
+  const draft = {
+    ...newDraft(),
+    roles: [newRole(1), newRole(2)].map((role) => ({
+      ...role,
+      autoDiscipline: true,
+      allowedDisciplines: ["melee", "ranged"] as ("melee" | "ranged")[],
+    })),
+  };
+  expect(normalize(draft, "snapshot").request.roles).toHaveLength(2);
+  expect(() =>
+    normalize(
+      {
+        ...draft,
+        roles: [draft.roles[0], { ...draft.roles[1], utility: true }],
+      },
+      "snapshot",
+    ),
+  ).toThrow("ordinary combat configuration");
 });
 describe("workspace reducer", () => {
   it("seeds multi once and preserves independent drafts across navigation", () => {

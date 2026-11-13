@@ -7,6 +7,7 @@ import json
 from time import perf_counter
 from typing import Any
 
+from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_skills
 from tracker.gear.running_frontier import needs_running_cost_frontier
 
@@ -222,7 +223,7 @@ def optimize_potions(
     levels = {**{k: v.level for k, v in snapshot.skills.items()}, **request.skill_overrides}
     from tracker.gear.auto import branch_requests, merge_auto_results
 
-    auto = request.roles[0].allowed_disciplines is not None
+    auto = has_auto(request)
     disciplines = list(branch_requests(request)) if auto else [(None, request)]
     jobs = [
         (
@@ -306,6 +307,9 @@ def optimize_potions(
                 )
             )
             report("profile_completed", i + 1, lane=i, lane_status="complete")
+    cancelled = options.get("cancelled")
+    if cancelled and cancelled():
+        raise ValueError("optimization_cancelled")
     branches_at = perf_counter()
     report("merge", total)
     if auto:

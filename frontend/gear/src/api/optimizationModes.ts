@@ -2,6 +2,7 @@ import type {
   OptimizationMode,
   OptimizationReply,
   WorkBudgetPolicy,
+  Scenario,
 } from "./contracts";
 import { sameValue, object, requireFields } from "./runtime";
 
@@ -13,6 +14,46 @@ export function workBudgetPolicy(
     complete_assignment_limit: mode === "thorough" ? 10000 : 0,
     targeted_head_refinement: false,
   };
+}
+
+export function validateAssignmentDiagnostics(
+  value: unknown,
+  scenario: Scenario,
+) {
+  const selection = object(object(value).discipline_assignment_selection);
+  const expected = scenario.request.roles
+    .filter((role) => !role.utility)
+    .reduce<string[]>(
+      (keys, role) => {
+        const disciplines = role.autoDiscipline
+          ? ["melee", "ranged", "magic"].filter((discipline) =>
+              (
+                role.allowedDisciplines ?? ["melee", "ranged", "magic"]
+              ).includes(discipline as import("./contracts").Style),
+            )
+          : [role.style];
+        return keys.flatMap((key) =>
+          disciplines.map(
+            (discipline) => `${key}${key ? "/" : ""}${role.id}=${discipline}`,
+          ),
+        );
+      },
+      [""],
+    );
+  const branches = object(selection.branches);
+  if (
+    selection.policy !== "full-per-discipline-assignment-v1" ||
+    selection.branch_count !== expected.length ||
+    Object.keys(branches).length !== expected.length ||
+    expected.some((key) => !Object.hasOwn(branches, key))
+  )
+    throw new Error("Incomplete Auto discipline assignment diagnostics");
+  if (scenario.request.optimization_mode === "thorough")
+    for (const key of expected)
+      validateRefinementDiagnostics(
+        object(branches[key]).local_refinement,
+        scenario.request.max_swaps,
+      );
 }
 
 export function matchesOptimizationPolicy(
@@ -40,16 +81,27 @@ export function validateOptimizationPolicy(
   result: Record<string, unknown>,
   mode: OptimizationMode,
   disciplineCount = 1,
+  assignmentCount?: number,
 ) {
   const expected = workBudgetPolicy(mode);
   for (const row of [envelope, result]) {
+    if (assignmentCount !== undefined && row.work_budget_policy === undefined)
+      throw new Error("Missing discipline assignment work budget policy");
     if (row.work_budget_policy !== undefined) {
       const policy = object(row.work_budget_policy);
-      if (
+      if (assignmentCount !== undefined) {
+        if (
+          policy.budget_scope !== "per_discipline_assignment" ||
+          policy.discipline_assignment_count !== assignmentCount ||
+          policy.discipline_count !== undefined
+        )
+          throw new Error("Invalid discipline assignment work budget policy");
+      } else if (
         (policy.budget_scope !== undefined &&
           policy.budget_scope !== "per_discipline") ||
         (policy.discipline_count !== undefined &&
           policy.discipline_count !== disciplineCount) ||
+        policy.discipline_assignment_count !== undefined ||
         (disciplineCount > 1 &&
           (policy.budget_scope !== "per_discipline" ||
             policy.discipline_count !== disciplineCount))
@@ -69,7 +121,12 @@ export function validateOptimizationPolicy(
           ? undefined
           : Object.fromEntries(
               Object.entries(object(row.work_budget_policy)).filter(
-                ([key]) => !["budget_scope", "discipline_count"].includes(key),
+                ([key]) =>
+                  ![
+                    "budget_scope",
+                    "discipline_count",
+                    "discipline_assignment_count",
+                  ].includes(key),
               ),
             ),
         expected,

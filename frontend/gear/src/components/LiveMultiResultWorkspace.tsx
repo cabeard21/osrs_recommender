@@ -114,15 +114,22 @@ export function LiveMultiResultWorkspace() {
         {role.utility ? (
           <p>Utility (unscored)</p>
         ) : (
-          <CombatOptionSummary
-            preparations={loadout.preparations}
-            prayerIds={loadout.selected_prayer_ids}
-            prayerCatalog={contextPrayers(state.context)}
-            performance={loadout.performance}
-            option={loadout.combat_option}
-            role={role}
-            weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"}
-          />
+          <>
+            <p aria-label="Resolved combat discipline">
+              {role.autoDiscipline ? "Auto selected " : "Discipline: "}
+              {loadout.discipline ??
+                (role.autoDiscipline ? "unavailable" : role.style)}
+            </p>
+            <CombatOptionSummary
+              preparations={loadout.preparations}
+              prayerIds={loadout.selected_prayer_ids}
+              prayerCatalog={contextPrayers(state.context)}
+              performance={loadout.performance}
+              option={loadout.combat_option}
+              role={{ ...role, style: loadout.discipline ?? role.style }}
+              weapon={equipment.weapon ? itemName(equipment.weapon) : "Unarmed"}
+            />
+          </>
         )}
         <p>
           Target:{" "}
@@ -313,9 +320,15 @@ export function LiveMultiResultWorkspace() {
           {curvePanel}
         </>
       )}
-      {roles.some(
-        (role) => role.style === "magic" || role.style === "ranged",
-      ) && (
+      {(raw.running_cost_frontiers?.length ||
+        roles.some((role) =>
+          role.autoDiscipline
+            ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"]).some(
+                (discipline) =>
+                  discipline === "magic" || discipline === "ranged",
+              )
+            : role.style === "magic" || role.style === "ranged",
+        )) && (
         <RunningCostFrontier
           group={runningCostGroup}
           selectedId={current.solutionId}

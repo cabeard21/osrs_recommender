@@ -7,6 +7,7 @@ does not choose a setup, infer current equipment slots, or validate joint loadou
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
@@ -19,6 +20,7 @@ from tracker.content.schema import Item
 from tracker.domain.types import Container, Tri
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.catalog import EquipmentCatalog, load_catalog
+from tracker.gear.execution_profile import ExecutionProfile, validate_profile
 from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
@@ -46,16 +48,30 @@ def _has_frontiers(request: OptimizationRequest) -> bool:
     return request.secondary_priority != "default" or needs_running_cost_frontier(request)
 
 
-def _timing_key(request: OptimizationRequest, thorough: bool, parallel: bool) -> tuple[Any, ...]:
+def _timing_key(
+    request: OptimizationRequest,
+    thorough: bool,
+    parallel: bool,
+    profile: ExecutionProfile = "baseline",
+    fixed_reporting: bool = False,
+    factored_evaluation: bool = False,
+    compact_states: bool = False,
+    native_search: bool = False,
+) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
     return (
+        profile,
+        fixed_reporting,
+        factored_evaluation,
+        compact_states,
+        native_search,
         thorough,
         parallel,
         request.mode,
         request.secondary_priority,
         request.potions.mode,
         tuple(role.style for role in request.roles),
-        tuple(request.roles[0].allowed_disciplines or ()),
+        tuple(tuple(role.allowed_disciplines or ()) for role in request.roles),
         request.max_swaps,
         request.budget_gp > 0,
     )
@@ -70,7 +86,30 @@ class GearService:
         *,
         equipment_root: Path | None = None,
         auto_pool: AutoProcessPool | None = None,
+        optimization_profile: ExecutionProfile = "baseline",
+        fixed_reporting: bool = False,
+        factored_evaluation: bool = False,
+        compact_states: bool = False,
+        native_search: bool = False,
     ) -> None:
+        self.optimization_profile = validate_profile(optimization_profile)
+        if not isinstance(fixed_reporting, bool):
+            raise ValueError("Invalid fixed reporting option")
+        self.fixed_reporting = fixed_reporting and self.optimization_profile == "combined"
+        if not isinstance(factored_evaluation, bool):
+            raise ValueError("Invalid factored evaluation option")
+        self.factored_evaluation = factored_evaluation and self.optimization_profile == "combined"
+        if not isinstance(compact_states, bool):
+            raise ValueError("Invalid compact states option")
+        self.compact_states = compact_states and self.factored_evaluation
+        if not isinstance(native_search, bool):
+            raise ValueError("Invalid native search option")
+        self.native_search = native_search
+        self.native_diagnostics: dict[str, Any] = {
+            "native_requests": 0,
+            "fallback_requests": 0,
+            "events": [],
+        }
         self.content = content
         self._ladders = build_ladders(content)
         self._item_ids_by_key = {key: item.owned_item_ids for key, item in content.items.items()}
@@ -123,13 +162,25 @@ class GearService:
         try:
             runner: Callable[..., dict[str, Any]] = optimize
             execution: dict[str, Any] = {}
+            if self.optimization_profile != "baseline":
+                execution["_execution_profile"] = self.optimization_profile
+            if self.fixed_reporting:
+                execution["_fixed_reporting"] = True
+            if self.factored_evaluation:
+                execution["_factored_evaluation"] = True
+            if self.compact_states:
+                execution["_compact_states"] = True
+            if self.native_search:
+                execution["_native_search"] = True
             pool = self.auto_pool
             parallel = False
             if request.potions.mode == "optimize":
                 if pool is not None:
                     execution["potion_branch_runner"] = pool.run_potions
                     parallel = True
-            elif pool is not None and len(request.roles[0].allowed_disciplines or ()) > 1:
+            elif pool is not None and any(
+                len(role.allowed_disciplines or ()) > 1 for role in request.roles
+            ):
                 from tracker.gear.auto import optimize_auto
 
                 runner = optimize_auto
@@ -139,23 +190,41 @@ class GearService:
                 tracker = RunProgress(
                     has_frontiers=_has_frontiers(request),
                     parallelism=getattr(pool, "workers", 1) if parallel else 1,
-                    timing_key=_timing_key(request, local_refinement, parallel),
+                    timing_key=_timing_key(
+                        request,
+                        local_refinement,
+                        parallel,
+                        self.optimization_profile,
+                        self.fixed_reporting,
+                        self.factored_evaluation,
+                        self.compact_states,
+                        self.native_search,
+                    ),
                     model=self._timings,
                     fingerprint=progress_fingerprint,
                 )
                 self._progress_record = (progress_identity, tracker)
                 execution["progress"] = tracker.handle
-            result = runner(
-                snapshot,
-                request,
-                self.equipment_catalog(),
-                self.content,
-                dict(price_records or {}),
-                now or datetime.now(UTC),
-                cancelled=cancelled,
-                **({"local_refinement": True} if local_refinement else {}),
-                **execution,
-            )
+            from tracker.gear.native import capture, merge
+
+            with capture() if self.native_search else nullcontext(None) as native_evidence:
+                try:
+                    result = runner(
+                        snapshot,
+                        request,
+                        self.equipment_catalog(),
+                        self.content,
+                        dict(price_records or {}),
+                        now or datetime.now(UTC),
+                        cancelled=cancelled,
+                        **({"local_refinement": True} if local_refinement else {}),
+                        **execution,
+                    )
+                finally:
+                    if native_evidence is not None:
+                        self.native_diagnostics = native_evidence.snapshot()
+            if self.native_search:
+                merge(self.native_diagnostics)
             if tracker is not None:
                 tracker.finish(succeeded=True)
             return result

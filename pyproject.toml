@@ -25,6 +25,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+native-build = ["Cython>=3,<4", "setuptools>=68", "wheel"]
 dev = [
     "setuptools>=68",
     "wheel",

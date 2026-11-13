@@ -22,6 +22,10 @@ rem Validate configuration before downloading or building anything. Never print 
 "%PY%" -c "from tracker.gear_desktop import load_desktop_settings; load_desktop_settings()"
 if errorlevel 1 goto :fail
 
+rem Native builds belong to provisioning, never to routine startup.
+"%PY%" -c "from tracker.gear_desktop import load_desktop_settings; from tracker.gear.native.readiness import require_native; s=load_desktop_settings(); require_native() if s.optimization_engine == 'native' and s.optimization_profile == 'combined' else None"
+if errorlevel 1 goto :fail
+
 pushd "frontend\gear"
 echo [gear] installing locked frontend dependencies
 call npm ci

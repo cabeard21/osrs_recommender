@@ -63,12 +63,67 @@ def test_auto_rejects_bad_allowlists(client, session_factory, disciplines):
     assert response.status_code == 422
 
 
-def test_auto_rejects_multiple_roles(client, session_factory):
+@pytest.mark.parametrize("auto_first", [False, True])
+def test_auto_supports_multiple_roles(client, session_factory, auto_first):
+    roles = [auto_role(["melee", "ranged"]), {"id": "second", "style": "slash"}]
+    if not auto_first:
+        roles.reverse()
     response = client.post(
         "/ui-api/gear/optimizations",
         json={
             **scenario(client, session_factory),
-            "roles": [auto_role(), {"id": "second", "style": "ranged"}],
+            "roles": roles,
+            "max_swaps": 1,
+        },
+    )
+    assert response.status_code == 200, response.text
+    reply = response.json()
+    assert reply["work_budget_policy"]["budget_scope"] == "per_discipline_assignment"
+    assert reply["work_budget_policy"]["discipline_assignment_count"] == 2
+    assert reply["result"]["discipline_results"] == []
+    assert reply["result"]["discipline_comparison"] == []
+    assert reply["result"]["selected_solution"]["loadouts"]["single"]["discipline"] == "melee"
+    assert reply["baseline"]["status"] == "unavailable"
+
+
+def test_multi_auto_policy_counts_all_roles_and_fingerprints():
+    from tracker.api.gear_optimizations import (
+        BrowserOptimizationRequest,
+        scenario_fingerprint,
+        work_budget_policy,
+    )
+
+    roles = [{**auto_role(), "id": f"r{i}"} for i in range(4)]
+    request = BrowserOptimizationRequest(expected_snapshot_id="frozen", roles=roles)
+    policy = work_budget_policy(request)
+    assert policy.budget_scope == "per_discipline_assignment"
+    assert policy.discipline_assignment_count == 81
+    changed = request.model_copy(
+        update={
+            "roles": (
+                *request.roles[:3],
+                request.roles[3].model_copy(update={"allowed_disciplines": ("melee",)}),
+            )
+        }
+    )
+    assert work_budget_policy(changed).discipline_assignment_count == 27
+    assert scenario_fingerprint(request) != scenario_fingerprint(changed)
+
+
+def test_multi_auto_rejects_utility_auto(client, session_factory):
+    response = client.post(
+        "/ui-api/gear/optimizations",
+        json={
+            **scenario(client, session_factory),
+            "roles": [
+                {"id": "parent", "style": "slash"},
+                {
+                    **auto_role(),
+                    "style": "special",
+                    "parent_role": "parent",
+                    "locks": {"weapon": 4151},
+                },
+            ],
         },
     )
     assert response.status_code == 422

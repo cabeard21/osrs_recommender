@@ -36,7 +36,7 @@ try {
 
     Write-Host "[gear-setup] Worktree: $targetRoot"
     if ($DryRun) {
-        Write-Host '[gear-setup] Would create/reuse a local .venv and install this checkout with dev dependencies.'
+        Write-Host '[gear-setup] Would create/reuse a local .venv and install this checkout with dev/native-build dependencies and build native release binaries.'
         if ($copyConfig) {
             Write-Host '[gear-setup] Would copy the private desktop config from the original checkout or -ConfigSource.'
         } else {
@@ -52,8 +52,12 @@ try {
     }
     & $python -c 'import sys; assert sys.version_info >= (3, 12)'
     if ($LASTEXITCODE -ne 0) { throw 'The existing worktree .venv needs Python 3.12 or newer.' }
-    & $python -m pip install -e '.[dev]'
+    & $python -m pip install -e '.[dev,native-build]'
     if ($LASTEXITCODE -ne 0) { throw 'Installing worktree Python dependencies failed.' }
+    & $python -m tools.build_gear_native
+    if ($LASTEXITCODE -ne 0) { throw 'Native build failed. Install MSVC C++ Build Tools, then rerun setup.' }
+    & $python -c 'from tracker.gear.native.readiness import require_native; require_native()'
+    if ($LASTEXITCODE -ne 0) { throw 'Native release readiness validation failed.' }
     if ($copyConfig) {
         # No -Force: reruns must never overwrite a worktree's private settings.
         [System.IO.File]::Copy((Resolve-Path -LiteralPath $ConfigSource).Path, $config, $false)

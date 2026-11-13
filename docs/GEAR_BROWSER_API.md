@@ -132,37 +132,62 @@ metadata and level-scaling formulas are added. Unarmed standard casting is
 available when its account requirements are observed. Special attacks are outside
 this ordinary-attack model.
 
-## Automatic discipline selection (Single)
+## Automatic discipline selection
 
 An ordinary role may supply `allowed_disciplines`, a nonempty, unique subset of
 `["melee", "ranged", "magic"]`. Its presence enables Auto and requires explicit
-`combat_options`. Auto accepts exactly one ordinary role; multiple roles and
-utility configurations are rejected. Omitting the field preserves manual behavior.
+`combat_options`. Each ordinary role can independently use Auto in Single or
+Multi. Utility configurations cannot use Auto, but their ordinary parent can.
+Omitting the field preserves manual behavior.
 For Auto, the retained fixed `style`, `stance`, and `spell` fields do not restrict
 selection. Empty combat-option allowlists remain empty rather than becoming defaults.
 
-The shared Python optimizer runs each permitted discipline sequentially against
+The shared Python optimizer runs each permitted discipline assignment against
 the same frozen account, target, prices, catalog, assumptions, and evaluation time.
 Each receives the full Fast or Thorough allowance. The existing busy guard spans
 the complete operation, and cancellation stops the operation rather than returning
-a partial comparison. Unexpected branch errors propagate.
+a partial result. Unexpected branch errors propagate. Desktop runs use the existing
+bounded worker pool when configured; other executions run serially.
+
+Multi enumerates the Cartesian product of each Auto role's allowed disciplines,
+preserving fixed roles, targets, weights, locks, and transitions. For example, two
+roles allowing all three disciplines require nine complete joint searches; four
+require 81. Repeated disciplines are permitted. Each assignment runs the joint
+optimizer, so shared purchases, inventory, and swap limits influence discipline
+selection. Potion optimization adds the relevant profiles for each assignment.
+Different swap caps and frontier points may resolve to different assignments.
 
 Every returned solution loadout identifies its resolved `discipline` alongside
-`combat_option`. `result.discipline_comparison` contains one row per permitted
+`combat_option`. In Single, `result.discipline_comparison` contains one row per permitted
 discipline with `discipline`, `status`, `score`, `purchase_cost_gp`, and `reasons`.
 A missing feasible result is a bounded-search outcome, not proof of infeasibility.
 The selected result uses the existing DPS-first ordering and deterministic ties.
 Curve normalization and secondary-frontier DPS losses use the combined winner;
 secondary candidate archives are merged before loss filtering and display sampling.
 Slot alternatives describe substitutions within the winning discipline.
+Multi exposes only the combined joint results, with empty `discipline_comparison`
+and `discipline_results` arrays. Running-cost archives include non-Magic
+assignments whenever any configured role can use Magic.
 
-`result.search.discipline_selection` records `policy: "full-per-discipline-v1"`,
+For Single, `result.search.discipline_selection` records `policy: "full-per-discipline-v1"`,
 `branch_count`, and per-discipline `branches` diagnostics. The effective policy and
 allowlist participate in scenario identity. Considering all three disciplines can
 take roughly three manual searches; results remain `best_found`.
 The response `work_budget_policy` also identifies `budget_scope: "per_discipline"`
 and `discipline_count` (one for manual requests). Its assignment limit applies to
 each branch, not to the sum of all branches.
+
+Multi Auto instead reports `budget_scope: "per_discipline_assignment"` and
+`discipline_assignment_count` (the product of the allowlist sizes, from 1 to 81).
+Its `result.search.discipline_assignment_selection` records
+`policy: "full-per-discipline-assignment-v1"`, `branch_count`, and `branches`
+diagnostics keyed by the ordered role-to-discipline assignment. Search budgets
+apply independently to each compatible assignment and potion profile.
+
+Canonical NPC restrictions still apply. An Auto assignment with a target-incompatible
+discipline is unavailable with a reason; other assignments can run. Stale NPC
+revisions, unsupported mechanics, and tampered canonical restrictions remain request
+errors, as do invalid fixed-discipline selections.
 
 Fixed-loadout evaluations retain Auto scenario identity. Without a pinned combat
 option they choose the best legal option across permitted disciplines for each
@@ -819,8 +844,8 @@ secondary objectives. Potions do not count as equipment swaps or automatically
 change reserved supply slots.
 
 Potion optimization collapses equivalent boost vectors using only skills scored
-by the configured roles. Single Auto enumerates profiles separately for each
-permitted discipline, then schedules the concrete jobs in the same worker pool.
+by the configured roles. Auto enumerates profiles separately for each
+permitted discipline assignment, then schedules the concrete jobs in the same worker pool.
 For example, nine melee profiles and two each for ranged and magic require 13
 searches, rather than 36 combinations each repeating all three disciplines. Combined
 potions remain eligible when cheaper, even if they also boost an unscored skill.
@@ -847,7 +872,7 @@ search) and contains:
   `refinement`, `frontiers` when a frontier runs, `merge` when several searches run),
   each with `status` (`complete` | `active` | `pending`) and `fraction`.
 - `lanes` and `lane_counts` (only when there are several independent searches, e.g.
-  Auto disciplines × potion profiles): rows with `label`, `status` (`complete` |
+  Auto discipline assignments × potion profiles): rows with `label`, `status` (`complete` |
   `running` | `pending`), `stage`, `stage_label` and `fraction`. Every row is sent for
   up to 12 searches; above that only running rows are sent. `lane_counts` always
   gives `{complete, running, pending}`. Browsers show these rows instead of the stage

@@ -239,14 +239,16 @@ Recommended implementation boundaries:
 
 ## November 2, 2026: desktop integration
 
-Desktop Gear now owns a persistent three-process pool by default. Its lifespan
+Desktop Gear now defaults to native execution and a persistent six-process pool.
+Native release binaries are required; explicit Python selection and baseline/lazy
+profiles provide rollback. See [deployment](DEPLOYMENT.md) for provisioning. Its lifespan
 warms every child with the same content/catalog context and closes the pool on
-shutdown. `optimization_workers` accepts one (serial), two or three; the existing
+shutdown. `optimization_workers` accepts integers from one (serial) through six; the existing
 launcher and private desktop config remain the entry point. Normal app/MCP
 services retain their default serial execution. Pi optimizer performance is not
 a gate for this desktop feature; the Pi continues supplying authoritative facts.
 
-Only Single Auto requests with multiple allowed disciplines use the pool. The
+Independent Single/Multi Auto assignments and potion branches use the pool. The
 existing Auto merger consumes complete branch results in canonical discipline
 order, preserves the running/secondary frontier flags, and refuses partial or
 duplicate result sets. Fixed-discipline and joint multi-role searches retain
@@ -261,7 +263,8 @@ five-second cooperative grace, cleanup terminates/kills only the pool's own
 children and checks their exit. A broken pool rebuilds for a fresh request;
 the failed calculation is never silently recomputed. A child or executor
 management thread that cannot be stopped poisons the pool and prevents reuse.
-Startup failures fall back to serial only after cleanup; running-worker and
+In Python mode startup failures fall back to serial only after cleanup; required
+native startup failures stop startup. Running-worker and
 context failures return sanitized retryable HTTP 503 responses. The API's fresh
 snapshot acceptance check remains in the parent.
 

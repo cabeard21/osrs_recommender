@@ -10,11 +10,15 @@ from collections import deque
 from collections.abc import Mapping, Set
 from typing import Any
 
+from tracker.gear.compact_states import EquipmentState
+
 
 def inventory_slots(
     equipment: Mapping[str, int], carried: Set[int], items: Mapping[int, Any]
 ) -> int:
     """One usable instance/stack per concrete item, reused between roles."""
+    if isinstance(equipment, EquipmentState):
+        return len(carried - equipment.physical_ids)
     return len(carried - set(equipment.values()))
 
 
@@ -32,6 +36,21 @@ def plan_transition(
     two-handed weapon removes both occupied hands. Only source/destination gear
     is needed: an intermediate third item cannot improve action count/capacity.
     """
+    from tracker.gear.execution_profile import compact_states_active
+
+    if compact_states_active():
+        from tracker.gear.compact_transitions import SLOT_SET, compact_transition
+
+        if (
+            source.keys() <= SLOT_SET
+            and destination.keys() <= SLOT_SET
+            and all(type(item) is int for item in source.values())
+            and all(type(item) is int for item in destination.values())
+            and (carried is None or all(type(item) is int for item in carried))
+        ):
+            return compact_transition(
+                source, destination, items, carried=carried, capacity=capacity
+            )
     union = frozenset(carried if carried is not None else (*source.values(), *destination.values()))
     start = tuple(sorted(source.items()))
     goal = tuple(sorted(destination.items()))

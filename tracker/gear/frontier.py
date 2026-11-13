@@ -9,12 +9,16 @@ from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from hashlib import sha256
 from itertools import combinations, product
+from operator import attrgetter
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from tracker.content.schema import ItemSlot
+from tracker.gear.compact_states import AssignmentState, EquipmentState
 from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
 from tracker.gear.progress import NODE_REPORT_MASK, NULL_REPORTER
+from tracker.gear.variant_reporting import active as lazy_variants_active
+from tracker.gear.variant_reporting import candidate_identity, compact_variant, materialize
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
@@ -63,6 +67,15 @@ def diverse[Row](
     ordered = sorted(((rank(row), row) for row in rows), key=lambda entry: entry[0])
     if len(ordered) <= limit:
         return [row for _, row in ordered]
+    # Exact homogeneous compact types have cached physical equality keys.
+    # Mixed inputs retain Mapping/list equality, including custom subclasses.
+    row_type = type(ordered[0][1])
+    identity = (
+        attrgetter("slots" if row_type is EquipmentState else "identity")
+        if row_type in (EquipmentState, AssignmentState)
+        and all(type(row) is row_type for _, row in ordered)
+        else None
+    )
     scores = [-key[0] for key, _ in ordered]
     low, high = min(scores), max(scores)
     bands: list[list[tuple[tuple[Any, ...], Row]]] = [[] for _ in range(8)]
@@ -72,16 +85,21 @@ def diverse[Row](
     for bucket in bands:
         bucket.sort(key=lambda entry: (entry[0][1], *entry[0]))
     selected = [ordered[0][1]]
+    seen = {identity(selected[0])} if identity is not None else set()
     extreme = min(ordered, key=lambda entry: (entry[0][1], *entry[0]))[1]
-    if extreme != selected[0]:
+    if (identity(extreme) not in seen) if identity is not None else extreme != selected[0]:
         selected.append(extreme)
+        if identity is not None:
+            seen.add(identity(extreme))
     queues = [deque(band) for band in bands]
     while len(selected) < limit and any(queues):
         for queue in queues:
             if queue:
                 _, row = queue.popleft()
-                if row not in selected:
+                if (identity(row) not in seen) if identity is not None else row not in selected:
                     selected.append(row)
+                    if identity is not None:
+                        seen.add(identity(row))
                     if len(selected) == limit:
                         break
     return selected
@@ -91,14 +109,24 @@ def _identity(loadouts: dict[str, Any]) -> str:
     return json.dumps(loadouts, sort_keys=True, separators=(",", ":"))
 
 
+def _candidate_identity(loadouts: dict[str, Any]) -> str | tuple[Any, ...]:
+    from tracker.gear.compact_costs import active as compact_costs_active
+
+    return (
+        candidate_identity(loadouts)
+        if lazy_variants_active() or compact_costs_active()
+        else _identity(loadouts)
+    )
+
+
 def _shared_assignments(
     search: Any, archives: Iterable[list[Solution]]
 ) -> Iterator[dict[str, Any]]:
     """Round-robin shared slot alternatives without spending extra switch actions."""
-    from tracker.gear.optimizer import SLOTS, _solution_key
+    from tracker.gear.optimizer import SLOTS, _assignment_state, _solution_key
 
     seeds = {
-        _identity(row["loadouts"]): row
+        _candidate_identity(row["loadouts"]): row
         for archive in archives
         for row in diverse(archive, _solution_key, 8)
     }
@@ -118,13 +146,23 @@ def _shared_assignments(
         except StopIteration:
             continue
         schedules.append((seed, slot, candidates))
-        assignment = {
-            role: {
-                **{s: i for s, i in row["equipment"].items() if s != slot},
-                **({slot: item} if item is not None else {}),
+        assignment = _assignment_state(
+            {role: row["equipment"] for role, row in seed["loadouts"].items()}
+        )
+        if getattr(search, "compact_states", False):
+            for role in assignment:
+                equipment = assignment[role].without_slot(slot)
+                if item is not None:
+                    equipment = equipment.with_slot(slot, item)
+                assignment = assignment.with_role(role, equipment)
+        else:
+            assignment = {
+                role: {
+                    **{s: i for s, i in row["equipment"].items() if s != slot},
+                    **({slot: item} if item is not None else {}),
+                }
+                for role, row in seed["loadouts"].items()
             }
-            for role, row in seed["loadouts"].items()
-        }
         if any(assignment[r] != seed["loadouts"][r]["equipment"] for r in assignment):
             yield assignment
 
@@ -192,15 +230,20 @@ def explore(
     thorough: bool,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[Solution | None], Solution | None]:
     """Preserve the DPS lane and independently explore secondary-diverse beams."""
-    from tracker.gear.optimizer import SLOTS, _solution_key
+    from tracker.gear.optimizer import SLOTS, _assignment_state, _solution_key
 
     started = perf_counter()
     # This isolated search overrides its tick method for a separate work budget.
     search: Any = copy(original)
+    from tracker.gear.native import reset_context
+
+    reset_context(search)
+    search.compact_cache = {}
     search.frontier_search = True
     search.nodes = 0
     budget = 1_500_000 if thorough else 500_000
     phase_limit = budget - 25000
+    search.native_limit = phase_limit
     diagnostics: dict[str, Any] = {
         "policy": "tradeoff-frontier-v2",
         "expansion_limit": budget,
@@ -227,6 +270,7 @@ def explore(
         return True
 
     search.tick = tick
+    search.native_report = lambda: reporter.fraction((charged[0] + search.nodes) / budget)
     # Marginals cover all eligible items, including those omitted by DPS pools.
     pools = {}
     for slot in SLOTS:
@@ -266,7 +310,7 @@ def explore(
         nonlocal archives, ranked_archives
         if solution is None:
             return
-        identity = _identity(solution["loadouts"])
+        identity = _candidate_identity(solution["loadouts"])
         if identity in seen:
             return
         seen.add(identity)
@@ -307,6 +351,8 @@ def explore(
     # Accuracy, defence rolls and CostSearch's accuracy projection still need
     # independent winners, including their recorded options and prayers.
     metric: Any = copy(search)
+    reset_context(metric)
+    metric.compact_cache = {}
     metric.metric_first = True
     if search.request.secondary_priority not in EQUIPMENT_BONUS_PRIORITIES:
         metric.performance_cache = {}
@@ -316,6 +362,7 @@ def explore(
     # Multi must leave room for cap-specific assignments even when its shared
     # seed search exhausts the allowance.
     metric_limit = total_metric_limit // 2 if len(roles) > 1 else total_metric_limit
+    metric.native_limit = metric_limit
 
     def metric_tick() -> bool:
         if metric.cancelled and metric.cancelled():
@@ -328,6 +375,7 @@ def explore(
         return True
 
     metric.tick = metric_tick
+    metric.native_report = lambda: reporter.fraction(metric.nodes / budget)
     metric.pools = _metric_pools(metric, original)
     metric_solutions = []
     for equipment in metric.loadouts(roles):
@@ -340,9 +388,11 @@ def explore(
         per_cap = max(0, (total_metric_limit - shared_work) // len(limits))
         for index, limit in enumerate(limits):
             metric_limit = shared_work + per_cap * (index + 1)
+            metric.native_limit = metric_limit
             for assignment in metric.joint_loadouts(limit):
                 metric_solutions.append(metric.solution(assignment, limit))
     metric_limit = total_metric_limit
+    metric.native_limit = metric_limit
     diagnostics["metric_lane"] = {
         "expansion_limit": metric_limit,
         "explored_nodes": metric.nodes,
@@ -352,6 +402,7 @@ def explore(
     # Charge actual metric work to the shared total; unused reserved work is
     # available to the diverse lane.
     phase_limit = budget - 25000 - metric.nodes
+    search.native_limit = phase_limit
     charged[0] = metric.nodes
     individual = {role.id: search.loadouts((role,)) for role in roles}
     # Shared and joint searches preserve constrained joint solutions.
@@ -366,6 +417,7 @@ def explore(
         # Split the reserved 25,000 expansions between coordinated equipment
         # changes and combat options. Both Fast and Thorough keep their total cap.
         phase_limit = budget - 15000 - metric.nodes
+        search.native_limit = phase_limit
         for assignment in _shared_assignments(search, archives.values()):
             if diagnostics["shared_assignment_attempts"] >= 10000 or not tick():
                 break
@@ -377,15 +429,15 @@ def explore(
         identities = set()
         for archive in archives.values():
             for row in diverse(archive, _solution_key, 8):
-                identity = _identity(row["loadouts"])
+                identity = _candidate_identity(row["loadouts"])
                 if identity not in identities:
                     identities.add(identity)
                     seeds.append(row)
-        schedules: deque[
-            tuple[dict[str, Any], str, tuple[ItemSlot, ...], Iterator[tuple[Any, ...]]]
-        ] = deque()
+        schedules: deque[tuple[Any, str, tuple[ItemSlot, ...], Iterator[tuple[Any, ...]]]] = deque()
         for seed in seeds:
-            assignment = {r: dict(row["equipment"]) for r, row in seed["loadouts"].items()}
+            assignment = _assignment_state(
+                {r: row["equipment"] for r, row in seed["loadouts"].items()}
+            )
             for role in roles:
                 locked = set(search.request.locks) | set(role.locks)
                 slots = [s for s in SLOTS if s not in locked]
@@ -402,10 +454,27 @@ def explore(
             schedules.append((assignment, role, group, iterator))
             if search.cancelled and search.cancelled():
                 raise ValueError("optimization_cancelled")
-            replacement = {s: i for s, i in assignment[role].items() if s not in group}
-            replacement.update({s: i for s, i in zip(group, values, strict=True) if i is not None})
+            if getattr(search, "compact_states", False):
+                replacement = assignment[role]
+                for slot in group:
+                    replacement = replacement.without_slot(slot)
+                for slot, item in zip(group, values, strict=True):
+                    if item is not None:
+                        replacement = replacement.with_slot(slot, item)
+            else:
+                replacement = {s: i for s, i in assignment[role].items() if s not in group}
+                replacement.update(
+                    {s: i for s, i in zip(group, values, strict=True) if i is not None}
+                )
             diagnostics["assignment_attempts"] += 1
-            accept(search.solution({**assignment, role: replacement}, None))
+            accept(
+                search.solution(
+                    assignment.with_role(role, replacement)
+                    if getattr(search, "compact_states", False)
+                    else {**assignment, role: replacement},
+                    None,
+                )
+            )
     assignments_at = perf_counter()
     # Reserve work for option tradeoffs even if equipment beam expansion exhausts its share.
     # Keep the existing shared/refinement seed schedule intact before adding
@@ -414,8 +483,9 @@ def explore(
     for solution in metric_solutions:
         accept(solution)
     phase_limit = budget - metric.nodes
+    search.native_limit = phase_limit
     option_seeds = {
-        _identity(row["loadouts"]): row
+        _candidate_identity(row["loadouts"]): row
         for archive in [option_candidates, *archives.values()]
         for row in archive
     }
@@ -431,12 +501,14 @@ def explore(
     cleanup = {"evaluated_assignments": 0, "improved_finalists": 0}
     # A newly dominating metric point must not discard a diverse seed before
     # its local refinement: that seed may improve beyond the new point.
+    retained = [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
     cleaned = {
         _identity(row["loadouts"]): row
-        for row in [*diverse_finalists, *(r for archive in archives.values() for r in archive)]
+        for candidate in retained
+        for row in [materialize(candidate)]
     }
     cleaned = {
-        identity: refine_ammunition(search, row, _solution_key, cleanup)
+        identity: materialize(refine_ammunition(search, row, _solution_key, cleanup))
         for identity, row in cleaned.items()
     }
     ammunition_at = perf_counter()
@@ -450,7 +522,9 @@ def explore(
     refined = {}
     for identity, row in cleaned.items():
         candidate, work = refine_finalist(search, row)
-        refined[identity] = candidate
+        # Refinement can return a freshly scored candidate whose resource report
+        # is deferred, even though the input seed was already materialized.
+        refined[identity] = materialize(candidate)
         finalists["evaluated_assignments"] += work["evaluated_assignments"]
         finalists["improved_finalists"] += int(work["improvements"] > 0)
         finalists["exhausted_finalists"] += int(work["work_budget_exhausted"])
@@ -520,7 +594,7 @@ def explore(
 
 def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> Iterator[Solution]:
     """Enumerate legal option changes with isolated cache overrides and exact validation."""
-    from tracker.gear.optimizer import _solution_key
+    from tracker.gear.optimizer import _Search, _solution_key
 
     states = [seed]
     for role in search.request.roles:
@@ -534,10 +608,22 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
             for configured, option in search.configured_options(role, weapon):
                 if not tick():
                     return
+                if lazy_variants_active() and (
+                    type(search) is _Search or hasattr(search, "variant_secondary")
+                ):
+                    solution = compact_variant(search, state, role, configured, option)
+                    if solution is not None:
+                        expanded.append(solution)
+                        yield solution
+                    continue
                 performance = search.evaluate(equipment, configured).model_dump(mode="json")
                 if not performance["supported"]:
                     continue
                 variant = copy(search)
+                from tracker.gear.native import reset_context
+
+                reset_context(variant)
+                variant.compact_cache = {}
                 # Only the selected roles differ. Keep writes local while using
                 # the shared immutable cached evaluations for other lookups.
                 variant.performance_cache = ChainMap({}, search.performance_cache)

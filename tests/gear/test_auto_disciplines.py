@@ -44,12 +44,11 @@ def test_auto_invalid_allowlist(allowed):
         RoleConfig(id="a", style="slash", allowed_disciplines=allowed, combat_options=OPTIONS)
 
 
-def test_auto_requires_filters_and_single_role():
+def test_auto_requires_filters_and_supports_multiple_roles():
     with pytest.raises(ValidationError):
         RoleConfig(id="a", style="slash", allowed_disciplines=("melee",))
     auto = RoleConfig(id="a", style="slash", allowed_disciplines=("melee",), combat_options=OPTIONS)
-    with pytest.raises(ValidationError):
-        OptimizationRequest(roles=(auto, RoleConfig(id="b", style="ranged")))
+    assert OptimizationRequest(roles=(auto, RoleConfig(id="b", style="ranged"))).roles[0] == auto
 
 
 def context(winner="melee"):

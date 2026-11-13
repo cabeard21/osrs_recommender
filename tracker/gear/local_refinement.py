@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from copy import deepcopy
 from itertools import combinations, product
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
+from tracker.gear.compact_states import AssignmentState
+
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Search
 
 Solution = dict[str, Any]
-Assignment = dict[str, dict[str, int]]
+Assignment = Mapping[str, Mapping[str, int]]
 _MAX_ASSIGNMENTS = 10000
 _MAX_HISTORY_SEEDS = 8
 _SLOTS = (
@@ -36,11 +38,17 @@ def _cancel(search: _Search) -> None:
         raise ValueError("optimization_cancelled")
 
 
-def _assignments(solution: Solution) -> Assignment:
+def _assignments(solution: Solution, compact: bool = False) -> Assignment:
+    if compact:
+        return AssignmentState.from_mapping(
+            {role: row["equipment"] for role, row in solution["loadouts"].items()}
+        )
     return {role: dict(row["equipment"]) for role, row in solution["loadouts"].items()}
 
 
 def _identity(assignment: Assignment) -> tuple[Any, ...]:
+    if isinstance(assignment, AssignmentState):
+        return assignment.identity
     return tuple((role, tuple(sorted(e.items()))) for role, e in sorted(assignment.items()))
 
 
@@ -64,6 +72,15 @@ def _group(
         # Pair trials must change both coordinates; single changes have their own phase.
         if any(equipment.get(slot) == item for slot, item in zip(slots, selected, strict=True)):
             continue
+        if isinstance(original, AssignmentState):
+            replacement = original[role_id]
+            for slot in slots:
+                replacement = replacement.without_slot(slot)
+            for slot, item in zip(slots, selected, strict=True):
+                if item is not None:
+                    replacement = replacement.with_slot(slot, item)
+            yield original.with_role(role_id, replacement)
+            continue
         proposed = {slot: item for slot, item in equipment.items() if slot not in slots}
         proposed = {
             **proposed,
@@ -78,7 +95,7 @@ def _scheduled(
     groups: deque[Iterator[Assignment]] = deque()
     for seed in seeds:
         _cancel(search)
-        original = _assignments(seed)
+        original = _assignments(seed, getattr(search, "compact_states", False))
         for role in search.request.roles:
             _cancel(search)
             if role.style == "special":

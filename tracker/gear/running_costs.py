@@ -200,6 +200,13 @@ def evaluate_running_cost(
     now: datetime,
 ) -> dict[str, Any]:
     """Value consumed resources at replacement prices, even when already owned."""
+    from tracker.gear.compact_costs import active, evaluator
+
+    if active():
+        prepared = evaluator(price_records, now).prepare(equipment, combat_option)
+        return prepared.report(
+            prepared.score(performance.get("attack_interval"), performance.get("dps"))
+        )
     style = combat_option.get("attack_type")
     resources: list[dict[str, Any]] = []
     reasons: list[str] = []

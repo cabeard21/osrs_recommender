@@ -1,4 +1,4 @@
-"""Desktop-owned spawned workers for independent Single Auto alternatives."""
+"""Desktop-owned spawned workers for independent concrete search alternatives."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from tracker.content.loader import Content
 from tracker.estimation.prices import PriceRecord
 from tracker.gear.auto import branch_requests
 from tracker.gear.catalog import EquipmentCatalog
+from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
@@ -65,8 +66,13 @@ def _initialize(
     stopped: Any,
     ready: Any,
     slots: WorkerSlots | None = None,
+    native_required: bool = False,
 ) -> None:
     global _CONTEXT, _PREPARATION, _PROGRESS
+    if native_required:
+        from tracker.gear.native.readiness import require_native
+
+        require_native()
     content, catalog = decode_context(payload, identity)
     _CONTEXT = content, catalog, identity, stopped
     _PREPARATION = None
@@ -91,10 +97,8 @@ def _execute_branch(
         raise ValueError(_UNAVAILABLE)
     content, catalog, identity, stopped = _CONTEXT
     snapshot, request, prices, now = decode_job(payload, identity)
-    if request.potions.mode != "fixed" and (
-        len(request.roles) != 1 or request.roles[0].allowed_disciplines is not None
-    ):
-        raise ValueError("Worker requires a concrete Single discipline")
+    if request.potions.mode != "fixed" and has_auto(request):
+        raise ValueError("Worker requires concrete disciplines")
     prepared = None
     if request.potions.mode == "fixed":
         # Decode/validate every job before consulting the single-entry cache. The
@@ -115,19 +119,27 @@ def _execute_branch(
         if lane is not None and _PROGRESS is not None and isinstance(_PROGRESS[1], int)
         else None
     )
-    return optimize(
-        snapshot,
-        request,
-        catalog,
-        content,
-        prices,
-        now,
-        cancelled=stopped.is_set,
-        _complete_frontiers=True,
-        _prepared=prepared,
-        progress=progress,
-        **options,
-    )
+    from contextlib import nullcontext
+
+    from tracker.gear.native import capture
+
+    with capture() if options.get("_native_search") else nullcontext(None) as evidence:
+        result = optimize(
+            snapshot,
+            request,
+            catalog,
+            content,
+            prices,
+            now,
+            cancelled=stopped.is_set,
+            _complete_frontiers=True,
+            _prepared=prepared,
+            progress=progress,
+            **options,
+        )
+    if evidence is None:
+        return result
+    return {"_native_payload": result, "_native_evidence": evidence.snapshot()}
 
 
 class AutoProcessPool:
@@ -137,8 +149,8 @@ class AutoProcessPool:
     REAP_SECONDS = 1.0
 
     def __init__(self, workers: int) -> None:
-        if isinstance(workers, bool) or workers not in (1, 2, 3):
-            raise ValueError("Gear worker count must be between one and three")
+        if type(workers) is not int or not 1 <= workers <= 6:
+            raise ValueError("Gear worker count must be an integer from one through six")
         self.workers = workers
         self._context = multiprocessing.get_context("spawn")
         self._run_lock = Lock()
@@ -150,6 +162,7 @@ class AutoProcessPool:
         self._slots: WorkerSlots | None = None
         self._unsafe_children: tuple[Any, ...] = ()
         self._unsafe_manager: Any = None
+        self._native_required = False
 
     def _new_executor(self) -> ProcessPoolExecutor:
         assert self._payload is not None and self._identity is not None
@@ -163,6 +176,7 @@ class AutoProcessPool:
                 self._stopped,
                 self._context.Barrier(self.workers),
                 self._slots,
+                self._native_required,
             ),
         )
 
@@ -179,13 +193,24 @@ class AutoProcessPool:
             self._dispose()
             raise ValueError(_UNAVAILABLE) from error
 
-    def start(self, content: Content, catalog: EquipmentCatalog) -> None:
+    def start(
+        self, content: Content, catalog: EquipmentCatalog, *, native_required: bool = False
+    ) -> None:
+        if type(native_required) is not bool:
+            raise ValueError("native_required must be a boolean")
+        if native_required:
+            from tracker.gear.native.readiness import require_native
+
+            require_native()
         payload, identity = context_payload(content, catalog)
         with self._run_lock:
             if self._closed:
                 raise ValueError(_UNAVAILABLE)
             if self._identity is not None and self._identity != identity:
                 raise ValueError("optimizer_worker_context_mismatch")
+            if self._executor is not None and self._native_required != native_required:
+                raise ValueError("optimizer_worker_native_context_mismatch")
+            self._native_required = native_required
             self._payload, self._identity = payload, identity
             if self._executor is None:
                 self._build()
@@ -284,7 +309,7 @@ class AutoProcessPool:
     def _dispatch(
         self,
         jobs: list[dict[str, Any]],
-        options: dict[str, bool],
+        options: dict[str, Any],
         cancelled: Any,
         progress: Any = None,
     ) -> list[dict[str, Any]]:
@@ -328,7 +353,14 @@ class AutoProcessPool:
                     )
             if self._closed or (cancelled is not None and cancelled()):
                 raise ValueError("optimization_cancelled")
-            return [future.result() for future in futures]
+            results = [future.result() for future in futures]
+            if options.get("_native_search"):
+                from tracker.gear.native import merge
+
+                for row in results:
+                    merge(row["_native_evidence"])
+                return [row["_native_payload"] for row in results]
+            return results
         except BaseException as error:
             broken = self._abort(futures) or isinstance(error, BrokenProcessPool)
             if broken:
@@ -373,9 +405,14 @@ class AutoProcessPool:
                 "targeted_head_refinement",
                 "_complete_frontiers",
                 "_running_frontier",
+                "_fixed_reporting",
+                "_factored_evaluation",
+                "_compact_states",
+                "_native_search",
             }
-            if any(k not in allowed or not isinstance(v, bool) for k, v in options.items()):
-                raise ValueError("Invalid desktop worker options")
+            from tracker.gear.execution_profile import validate_worker_options
+
+            validate_worker_options(options, allowed)
             if not branches or any(branch.potions.mode != "fixed" for branch in branches):
                 raise ValueError("Desktop potion workers require fixed potion branches")
             if self._executor is None:
@@ -447,12 +484,21 @@ class AutoProcessPool:
             raise ValueError(_UNAVAILABLE)
         if context_payload(content, catalog)[1] != self._identity:
             raise ValueError("optimizer_worker_context_mismatch")
-        if any(key not in ("local_refinement", "targeted_head_refinement") for key in options):
-            raise ValueError("Unsupported desktop worker options")
-        if any(not isinstance(value, bool) for value in options.values()):
-            raise ValueError("Invalid desktop worker options")
-        if len(request.roles) != 1 or request.roles[0].allowed_disciplines is None:
-            raise ValueError("Desktop workers require Single Auto")
+        from tracker.gear.execution_profile import validate_worker_options
+
+        validate_worker_options(
+            options,
+            {
+                "local_refinement",
+                "targeted_head_refinement",
+                "_fixed_reporting",
+                "_factored_evaluation",
+                "_compact_states",
+                "_native_search",
+            },
+        )
+        if not has_auto(request):
+            raise ValueError("Desktop workers require Auto")
         if self._executor is None:
             self._build()  # A broken pool is recreated only for a fresh request.
         self._stopped.clear()

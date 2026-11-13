@@ -26,6 +26,38 @@ def inputs():
     return snapshot, request, EquipmentCatalog(catalog.items), content, prices, now
 
 
+def test_native_worker_checks_release_readiness_before_barrier(monkeypatch):
+    from types import SimpleNamespace
+
+    from tracker.gear import parallel
+    from tracker.gear.native import readiness
+
+    calls = []
+    monkeypatch.setattr(parallel, "decode_context", lambda *_: (None, None))
+    monkeypatch.setattr(readiness, "require_native", lambda: calls.append("native"))
+    barrier = SimpleNamespace(wait=lambda **_: calls.append("barrier") or 0)
+    parallel._initialize({}, "test", None, barrier, native_required=True)
+    assert calls == ["native", "barrier"]
+
+
+def test_native_pool_validates_before_creating_processes(monkeypatch):
+    from tracker.gear.native import readiness
+
+    _, _, catalog, content, _, _ = inputs()
+
+    def missing():
+        raise RuntimeError("native missing")
+
+    monkeypatch.setattr(readiness, "require_native", missing)
+    pool = AutoProcessPool(6)
+    try:
+        with pytest.raises(RuntimeError, match="native missing"):
+            pool.start(content, catalog, native_required=True)
+        assert pool._executor is None
+    finally:
+        pool.close()
+
+
 def without_timings(value):
     if isinstance(value, dict):
         return {key: without_timings(row) for key, row in value.items() if key != "timings_seconds"}
@@ -34,10 +66,19 @@ def without_timings(value):
     return value
 
 
-@pytest.mark.parametrize("workers", [0, 4, True])
+@pytest.mark.parametrize("workers", [0, 7, -1, True, False, 1.0, 1.5, "2", None])
 def test_worker_capacity_is_bounded(workers):
     with pytest.raises(ValueError):
         AutoProcessPool(workers)
+
+
+@pytest.mark.parametrize("workers", range(1, 7))
+def test_worker_capacity_accepts_supported_integers(workers):
+    pool = AutoProcessPool(workers)
+    try:
+        assert pool.workers == workers
+    finally:
+        pool.close()
 
 
 @pytest.mark.parametrize("multi", [False, True, "auto"])
@@ -182,9 +223,10 @@ def test_potion_pool_validates_base_context_before_dispatch(monkeypatch):
         pool.close()
 
 
-def test_real_spawn_branches_match_serial_and_reuse_pool():
+@pytest.mark.parametrize("workers", [2, 4, 6])
+def test_real_spawn_branches_match_serial_and_reuse_pool(workers):
     snapshot, request, catalog, content, prices, now = inputs()
-    pool = AutoProcessPool(2)
+    pool = AutoProcessPool(workers)
     try:
         pool.start(content, catalog)
         for _ in range(2):
@@ -194,18 +236,17 @@ def test_real_spawn_branches_match_serial_and_reuse_pool():
                 branch_requests(request), rows, strict=True
             ):
                 assert discipline == returned
-                assert without_timings(result) == without_timings(
-                    optimize(
-                        snapshot,
-                        concrete,
-                        catalog,
-                        content,
-                        prices,
-                        now,
-                        _complete_frontiers=True,
-                        _running_frontier=True,
-                    )
+                expected = optimize(
+                    snapshot,
+                    concrete,
+                    catalog,
+                    content,
+                    prices,
+                    now,
+                    _complete_frontiers=True,
+                    _running_frontier=True,
                 )
+                assert without_timings(result) == without_timings(expected)
     finally:
         pool.close()
         pool.close()
@@ -249,8 +290,8 @@ class FakeExecutor:
             worker.join(timeout=5)
 
 
-def fake_pool(monkeypatch):
-    pool = AutoProcessPool(2)
+def fake_pool(monkeypatch, workers=2):
+    pool = AutoProcessPool(workers)
     executors = []
 
     def create():
@@ -264,8 +305,9 @@ def fake_pool(monkeypatch):
     return pool, executors
 
 
-def test_cancellation_drains_before_reuse(monkeypatch):
-    pool, executors = fake_pool(monkeypatch)
+@pytest.mark.parametrize("workers", [2, 6])
+def test_cancellation_drains_before_reuse(monkeypatch, workers):
+    pool, executors = fake_pool(monkeypatch, workers)
     executors[0].block = True
     checks = []
 
@@ -285,8 +327,9 @@ def test_cancellation_drains_before_reuse(monkeypatch):
         pool.close()
 
 
-def test_broken_worker_fails_current_request_and_rebuilds_next(monkeypatch):
-    pool, executors = fake_pool(monkeypatch)
+@pytest.mark.parametrize("workers", [2, 6])
+def test_broken_worker_fails_current_request_and_rebuilds_next(monkeypatch, workers):
+    pool, executors = fake_pool(monkeypatch, workers)
     executors[0].broken = True
     try:
         with pytest.raises(ValueError, match="optimizer_worker_unavailable") as error:
@@ -406,9 +449,10 @@ def test_startup_failure_cleans_up_and_run_options_are_validated(monkeypatch):
     failing.close()
 
 
-def test_real_crashed_worker_is_rebuilt_for_next_request():
+@pytest.mark.parametrize("workers", [2, 6])
+def test_real_crashed_worker_is_rebuilt_for_next_request(workers):
     snapshot, request, catalog, content, prices, now = inputs()
-    pool = AutoProcessPool(2)
+    pool = AutoProcessPool(workers)
     try:
         pool.start(content, catalog)
         crash = pool._executor.submit(os._exit, 1)
@@ -422,11 +466,14 @@ def test_real_crashed_worker_is_rebuilt_for_next_request():
         pool.close()
 
 
-def test_unresponsive_children_are_stopped_before_cancel_returns_and_pool_recovers(monkeypatch):
+@pytest.mark.parametrize("workers", [2, 6])
+def test_unresponsive_children_are_stopped_before_cancel_returns_and_pool_recovers(
+    monkeypatch, workers
+):
     from tracker.gear import parallel
 
     args = inputs()
-    pool = AutoProcessPool(2)
+    pool = AutoProcessPool(workers)
     monkeypatch.setattr(pool, "GRACE_SECONDS", 0.05)
     original = parallel._execute_branch
     try:

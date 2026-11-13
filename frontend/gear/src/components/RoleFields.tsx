@@ -204,6 +204,15 @@ export function RoleFields({
               onChange={(event) =>
                 onChange({
                   utility: event.target.checked,
+                  ...(event.target.checked
+                    ? {
+                        autoDiscipline: false,
+                        allowedDisciplines: undefined,
+                        combatOptionOptimization: role.autoDiscipline
+                          ? role.manualCombatOptionOptimization
+                          : role.combatOptionOptimization,
+                      }
+                    : {}),
                   parentRole: event.target.checked
                     ? draft.roles.find(
                         (candidate) =>
@@ -236,27 +245,25 @@ export function RoleFields({
             role="group"
             aria-label={`${role.name} discipline`}
           >
-            {!isMulti && (
-              <button
-                aria-pressed={!!role.autoDiscipline}
-                onClick={() =>
-                  onChange({
-                    autoDiscipline: true,
-                    manualCombatOptionOptimization: role.autoDiscipline
-                      ? role.manualCombatOptionOptimization
-                      : role.combatOptionOptimization,
-                    combatOptionOptimization: true,
-                    allowedDisciplines: role.allowedDisciplines ?? [
-                      "melee",
-                      "ranged",
-                      "magic",
-                    ],
-                  })
-                }
-              >
-                Auto
-              </button>
-            )}
+            <button
+              aria-pressed={!!role.autoDiscipline}
+              onClick={() =>
+                onChange({
+                  autoDiscipline: true,
+                  manualCombatOptionOptimization: role.autoDiscipline
+                    ? role.manualCombatOptionOptimization
+                    : role.combatOptionOptimization,
+                  combatOptionOptimization: true,
+                  allowedDisciplines: role.allowedDisciplines ?? [
+                    "melee",
+                    "ranged",
+                    "magic",
+                  ],
+                })
+              }
+            >
+              Auto
+            </button>
             {(["melee", "ranged", "magic"] as Style[]).map((style) => (
               <button
                 key={style}
@@ -322,8 +329,9 @@ export function RoleFields({
                 </p>
               )}
               <p>
-                Auto compares each permitted discipline at full search effort.
-                All three can take roughly three manual searches.
+                {isMulti
+                  ? "Auto compares every permitted joint discipline combination at full search effort."
+                  : "Auto compares each permitted discipline at full search effort. All three can take roughly three manual searches."}
               </p>
             </fieldset>
           )}
