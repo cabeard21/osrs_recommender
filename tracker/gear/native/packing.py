@@ -8,8 +8,8 @@ from math import isfinite
 from types import MappingProxyType
 from typing import Any
 
-from tracker.gear.ammo import CAPE_RECOVERY
-from tracker.gear.ammo_armour import COMPATIBLE_BODIES, INTERFERING_BODIES
+from tracker.gear.bolts_catalog import CROSSBOWS
+from tracker.gear.combat import ELEMENTAL_SPELLS
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem
 from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.models import CombatTarget, EquipmentBonuses
@@ -45,6 +45,11 @@ PRIORITIES = {
     },
 }
 OPTION_WIDTH = 18
+ELEMENT_CODES = {"air": 1, "water": 2, "earth": 3, "fire": 4}
+BOLT_CODES = {
+    name: index + 1
+    for index, name in enumerate(("opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"))
+}
 
 
 def support_reason(search: Any) -> str | None:
@@ -56,22 +61,6 @@ def support_reason(search: Any) -> str | None:
         return "discipline"
     if any(getattr(role, "allowed_disciplines", None) for role in search.request.roles):
         return "unresolved_discipline"
-    styles = {role.style for role in search.request.roles}
-    # These effects depend on equipped neck/shield/ammunition, which the native
-    # attack records do not encode. Fall back before packing or expanding states.
-    candidates = [search.items[item_id] for item_id in search.eligible]
-    if "magic" in styles and any(
-        item.elemental_spell_bonus or item.tome_effect for item in candidates
-    ):
-        return "equipment_spell_effect"
-    if "ranged" in styles:
-        if any(item.bolt_effect or item.id == 32879 for item in candidates):
-            return "equipment_ranged_effect"
-        if any(item.id in CAPE_RECOVERY for item in candidates) and any(
-            item.slot == "body" and item.id not in COMPATIBLE_BODIES | INTERFERING_BODIES
-            for item in candidates
-        ):
-            return "unreviewed_body_recovery"
     needed = {
         key
         for role in search.request.roles
@@ -91,6 +80,10 @@ def support_reason(search: Any) -> str | None:
             for field in BONUS_FIELDS
         ):
             return "bonus_range"
+        if item.elemental_spell_bonus and item.elemental_spell_bonus.base_max_hit_bonus > 10000:
+            return "elemental_bonus_range"
+        if item.tome_effect and item.tome_effect.rune_id > 2**63 - 1:
+            return "tome_rune_range"
         if item.attack_speed > 10000:
             return "attack_speed"
         if (
@@ -161,6 +154,13 @@ def pack(search: Any) -> dict[str, Any]:
             ("bad_items", 0),
             ("ammo_required", 0),
             ("ammo_types", 0),
+            ("amulet_mask", 0),
+            ("amulet_bonus", 0),
+            ("tome_element", 0),
+            ("bolt_family", 0),
+            ("reviewed_crossbow", 0),
+            ("zaryte", 0),
+            ("hopper_shield", 0),
         )
     }
     bonuses = array("q", [0] * 14)
@@ -175,6 +175,21 @@ def pack(search: Any) -> dict[str, Any]:
             "bad_items": int(bool(item.unsupported_effects)),
             "ammo_required": int(bool(item.ammo_for)),
             "ammo_types": ammo_type.get(item.ammo_type, 0),
+            "amulet_mask": sum(
+                1 << ELEMENT_CODES[e] for e in set(item.elemental_spell_bonus.elements)
+            )
+            if item.elemental_spell_bonus and item.slot == "neck"
+            else 0,
+            "amulet_bonus": item.elemental_spell_bonus.base_max_hit_bonus
+            if item.elemental_spell_bonus and item.slot == "neck"
+            else 0,
+            "tome_element": ELEMENT_CODES[item.tome_effect.element]
+            if item.tome_effect and item.slot == "shield"
+            else 0,
+            "bolt_family": BOLT_CODES.get(item.bolt_effect, 0) if item.slot == "ammunition" else 0,
+            "reviewed_crossbow": int(item_id in CROSSBOWS),
+            "zaryte": int(item_id == 26374),
+            "hopper_shield": int(item_id == 32879 and item.slot == "shield"),
         }
         for name, value in values.items():
             integers[name].append(value)
@@ -190,6 +205,17 @@ def pack(search: Any) -> dict[str, Any]:
     options = array("q")
     option_records: list[tuple[Any, CombatOption]] = []
     option_weapons: list[int] = []
+    option_effects = {
+        name: array("i")
+        for name in (
+            "spell_element",
+            "searing",
+            "ranged_level",
+            "diary",
+            "target_hp",
+            "target_traits",
+        )
+    }
     context = PreparedCombat(0)
     fixed_roles = array(
         "i",
@@ -221,6 +247,8 @@ def pack(search: Any) -> dict[str, Any]:
                             ),
                         )
                         if fixed_roles[role_index]
+                        else lane.configured_options(role, weapon)
+                        if role.style == "magic" and hasattr(lane, "configured_options")
                         else lane.scoring_options(role, weapon)
                     )
                 offsets.append(len(option_records))
@@ -239,6 +267,32 @@ def pack(search: Any) -> dict[str, Any]:
                 for (configured, option), tie in zip(records, ties, strict=True):
                     option_weapons.append(weapon_id)
                     target = configured.target or CombatTarget()
+                    standard = (
+                        configured.style == "magic"
+                        and configured.powered_attack is None
+                        and configured.spell in ELEMENTAL_SPELLS
+                    )
+                    element = (
+                        configured.spell.split("_")[0].replace("wind", "air") if standard else None
+                    )
+                    metadata = {
+                        "spell_element": ELEMENT_CODES.get(element or "", 0),
+                        "searing": int(configured.fire_tome_pages == "searing"),
+                        "ranged_level": search.levels.get("ranged", 0),
+                        "diary": int(configured.bolt_diary_boost),
+                        "target_hp": target.current_hitpoints
+                        if target.current_hitpoints is not None
+                        else target.hitpoints
+                        if target.hitpoints is not None
+                        else -1,
+                        "target_traits": sum(
+                            bit
+                            for name, bit in (("fiery", 1), ("dragon", 2), ("undead", 4))
+                            if name in target.traits
+                        ),
+                    }
+                    for name, value in metadata.items():
+                        option_effects[name].append(value)
                     legal = _legal(
                         weapon, configured, search.levels, getattr(search, "snapshot", None)
                     )
@@ -312,6 +366,7 @@ def pack(search: Any) -> dict[str, Any]:
                     option_records.append((configured, option))
     return {
         **integers,
+        **option_effects,
         "dense_ids": dense_ids,
         "dense_index": MappingProxyType(dense_index),
         "original_ids": array("q", dense_ids),

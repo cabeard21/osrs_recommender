@@ -3,6 +3,7 @@
 
 from libc.math cimport floor, pow, fabs, isfinite
 from libc.string cimport memset
+from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div
 
 
 cdef double accuracy_for(long long attack, long long defence) noexcept nogil:
@@ -48,6 +49,19 @@ cdef class ScoringContext:
         self.options = packed["options"]
         self.fixed_roles = packed["fixed_roles"]
         self.role_styles = packed["role_styles"]
+        self.amulet_mask = packed["amulet_mask"]
+        self.amulet_bonus = packed["amulet_bonus"]
+        self.tome_element = packed["tome_element"]
+        self.bolt_family = packed["bolt_family"]
+        self.reviewed_crossbow = packed["reviewed_crossbow"]
+        self.zaryte = packed["zaryte"]
+        self.hopper_shield = packed["hopper_shield"]
+        self.spell_element = packed["spell_element"]
+        self.searing = packed["searing"]
+        self.ranged_level = packed["ranged_level"]
+        self.diary = packed["diary"]
+        self.target_hp = packed["target_hp"]
+        self.target_traits = packed["target_traits"]
         self.priority = packed["priority"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
@@ -79,7 +93,11 @@ cdef class ScoringContext:
     cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=NULL) noexcept nogil:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
-        cdef bint legal = True, ammo_ok = False, ranged
+        cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
+        cdef int element, family
+        cdef BoltResult proc, extra
+        cdef long long spell_base, minimum, weakness_roll
+        cdef double secondary_accuracy
         cdef double bonuses[14]
         cdef long long maximum, attack, defence, strength, armor, cap, first, second
         cdef double accuracy, dps, expected, secondary, second_probability, magic_bonus, term, hi=0.0, lo=0.0, total
@@ -137,19 +155,32 @@ cdef class ScoringContext:
             if ranged and ammo and not self.ammo_required[weapon]:
                 strength -= self.item_bonuses[ammo * 14 + 6]
                 attack -= self.item_bonuses[ammo * 14 + 3]
+            minimum = 0
+            element = self.spell_element[index]
+            tome = element != 0 and self.tome_element[slots[1]] == element
             if style == 4:
                 magic_bonus = min(100.0, bonuses[7] * 3) if self.options[base + 12] else bonuses[7]
-                maximum = <long long>floor(self.options[base + 10] * (100 + magic_bonus + self.options[base + 11]) / 100.0)
-                maximum += self.options[base + 14]
+                spell_base = self.options[base + 10]
+                if element and self.amulet_mask[slots[5]] & (1 << element):
+                    spell_base += self.amulet_bonus[slots[5]]
+                maximum = <long long>floor(spell_base * (100 + magic_bonus + self.options[base + 11]) / 100.0)
+                maximum += floor_div(spell_base * self.options[base + 13], 100)
                 if self.options[base + 12]:
                     attack *= 3
             else:
                 maximum = <long long>floor(0.5 + self.options[base + 2] * (strength + 64) / 640.0)
-            if maximum < 0:
-                maximum = 0
             attack = self.options[base + 1] * (attack + 64)
             if style == 4:
-                attack += <long long>floor(attack * self.options[base + 13] / 100.0)
+                weakness_roll = floor_div(attack * self.options[base + 13], 100)
+                if tome and element == 2:
+                    attack = floor_div(attack * 120, 100)
+                attack += weakness_roll
+                if tome:
+                    if element == 4 and self.searing[index]:
+                        minimum = floor_div(maximum, 10)
+                    maximum = floor_div(maximum * 110, 100)
+            if maximum < 0:
+                maximum = 0
             defence = self.options[base + 3]
             pattern, armor, cap = <int>self.options[base + 5], self.options[base + 6], self.options[base + 7]
             if pattern == 0:
@@ -164,8 +195,31 @@ cdef class ScoringContext:
             if pattern != 0:
                 second_probability = pow(accuracy, 2.0) if pattern == 2 else accuracy
                 expected += second_probability * armoured_mean(second, armor)
+            if minimum > 0:
+                expected = accuracy * (minimum + maximum) / 2
             if self.options[base + 15]:
                 expected += accuracy * 0.2 * 8
+            family = self.bolt_family[ammo] if ranged and self.ammo_required[weapon] else 0
+            proc.activation = 0
+            if family:
+                if family == 3 and self.target_hp[index] < 0:
+                    continue
+                proc = bolt_damage(family, self.ranged_level[index], maximum, accuracy,
+                    self.target_hp[index], self.diary[index], self.zaryte[weapon],
+                    self.target_traits[index], armor, 1, 1.0)
+                if cap >= 0 and proc.maximum > cap:
+                    continue
+                expected = proc.expected
+            hopper = ranged and self.ammo_required[weapon] and self.reviewed_crossbow[weapon] and self.hopper_shield[slots[1]] and ammo_ok and ammo != 0
+            if hopper:
+                secondary_accuracy = accuracy_for(floor_div(attack * 2, 3), defence)
+                if family:
+                    extra = bolt_damage(family, self.ranged_level[index], maximum, secondary_accuracy,
+                        self.target_hp[index], self.diary[index], self.zaryte[weapon],
+                        self.target_traits[index], armor, 3, (1 - proc.activation) / 3)
+                    expected += 0.11 * extra.expected
+                else:
+                    expected += 0.11 * (secondary_accuracy * damage_mean(maximum, armor, 0, 3))
             dps = expected / (self.options[base + 4] * 0.6)
             secondary = self.secondary_for(bonuses, accuracy, index)
             # Ranged offensive bonus priorities use the ammunition-adjusted view.

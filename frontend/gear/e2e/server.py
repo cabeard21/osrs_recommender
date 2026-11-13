@@ -37,7 +37,26 @@ if __name__ == "__main__":
             session_factory=factory,
             mount_ui=False,
         )
+        native = os.environ.get("GEAR_E2E_NATIVE") == "1"
+        if native:
+            from tracker.gear.native.readiness import require_native
+            from tracker.gear.service import GearService
+
+            require_native()
+            app.state.gear_service = GearService(
+                app.state.gear_service.content,
+                equipment_root=Path(__file__).resolve().parents[3] / "content" / "equipment",
+                optimization_profile="combined",
+                fixed_reporting=True,
+                factored_evaluation=True,
+                compact_states=True,
+                native_search=True,
+            )
         original_catalog = app.state.gear_service.equipment_catalog()
+
+        @app.get("/test/native-diagnostics")
+        def native_diagnostics():
+            return {"enabled": native, **app.state.gear_service.native_diagnostics}
 
         @app.post("/test/reset-gear")
         def reset_gear():
@@ -250,8 +269,8 @@ if __name__ == "__main__":
         def seed_tome():
             seed_running_cost()
             app.state.gear_service._equipment = EquipmentCatalog(
-                {i: original_catalog.items[i] for i in (1381, 20714, 20716)},
-                revision="browser-tome-v1",
+                {i: original_catalog.items[i] for i in (1381, 20714, 20716, 34425)},
+                revision="browser-tome-amulet-v2",
             )
             with factory() as session:
                 player = session.query(Player).first()
@@ -263,6 +282,53 @@ if __name__ == "__main__":
                         container=Container.BANK,
                         source=Source.RUNELITE,
                         observed_at=datetime.now(UTC),
+                    )
+                )
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=34425,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=datetime.now(UTC),
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
+        @app.post("/test/seed-bolt-hopper")
+        def seed_bolt_hopper():
+            seed_optimization()
+            item_ids = (9185, 9242, 32879)
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in item_ids},
+                revision="browser-bolt-hopper-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                for item_id in item_ids:
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=100 if item_id == 9242 else 1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                session.merge(
+                    ItemPrice(
+                        item_id=9242,
+                        high_price_gp=100,
+                        low_price_gp=100,
+                        high_trade_at=now,
+                        low_trade_at=now,
+                        fetched_at=now,
+                        provider="deterministic-browser-fixture",
+                        source=PriceSourceLayer.CACHED,
                     )
                 )
                 session.commit()

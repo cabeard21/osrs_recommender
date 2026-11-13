@@ -81,6 +81,16 @@ def expand(
     if search.cancelled and search.cancelled():
         raise ValueError("optimization_cancelled")
     result = stage.finish(limit)
-    record("stage", stage=kind, slot=slot, attempts=attempted, retained=len(result))
+    record(
+        "stage",
+        stage=kind,
+        slot=slot,
+        attempts=attempted,
+        retained=len(result),
+        roles=tuple(role.style for role in (roles or search.request.roles)),
+        frontier=getattr(search, "frontier_search", False),
+        metric=getattr(search, "metric_first", False),
+        cost=getattr(search, "native_cost_objective", False),
+    )
     convert = _equipment_state if kind == "loadout" else _assignment_state
     return [convert(row) for row in result]

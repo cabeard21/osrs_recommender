@@ -243,3 +243,54 @@ def test_session_owns_readiness_pool_and_service(monkeypatch, native, workers):
     flags = next(row[1] for row in calls if isinstance(row, tuple) and row[0] == "service")
     assert flags["native_search"] is native
     assert flags["compact_states"] is True
+
+
+def test_cli_effects_selects_declared_cases(cli, monkeypatch):
+    directory, calls = cli
+    monkeypatch.setattr(
+        adoption, "derive_effect_case", lambda base, meta, name: (name, {"effect_case": name})
+    )
+    adoption.main(["--effects", "--output", str(directory)])
+    requested = [row for row in calls if row[0] == "compare"]
+    assert [row[1] for row in requested] == list(adoption.EFFECT_CASES)
+    assert all(row[3] == {"phase": "archives", "workers": 1} for row in requested)
+
+
+@pytest.mark.parametrize(
+    "missing", ["magic", "ranged", "dps", "secondary", "cost", "metric", "attempts"]
+)
+def test_effect_evidence_requires_each_discipline_and_lane(missing):
+    metadata = {"effect_case": "effect_auto", "required_effect_styles": ["magic", "ranged"]}
+    events = [
+        {
+            "event": "stage",
+            "roles": [style],
+            "frontier": lane != "dps",
+            "cost": lane == "cost",
+            "metric": metric,
+            "attempts": 1,
+        }
+        for style in ("magic", "ranged")
+        for lane, metric in (
+            ("dps", False),
+            ("secondary", False),
+            ("secondary", True),
+            ("cost", False),
+            ("cost", True),
+        )
+    ]
+    diagnostics = {"native_requests": 2, "fallback_requests": 0, "events": events}
+    assert adoption.required_native_executed(diagnostics, metadata)
+    if missing in {"magic", "ranged"}:
+        events[:] = [row for row in events if row["roles"] != [missing]]
+    elif missing == "attempts":
+        events[0]["attempts"] = 0
+    elif missing == "metric":
+        events[:] = [row for row in events if not row["metric"]]
+    elif missing == "cost":
+        events[:] = [row for row in events if not row["cost"]]
+    elif missing == "secondary":
+        events[:] = [row for row in events if not row["frontier"] or row["cost"]]
+    else:
+        events[:] = [row for row in events if row["frontier"]]
+    assert not adoption.required_native_executed(diagnostics, metadata)

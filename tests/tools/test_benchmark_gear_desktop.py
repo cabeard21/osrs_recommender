@@ -251,3 +251,26 @@ def test_refinement_materialization_counter_is_observation_not_search_budget():
     b["search"]["local_refinement"]["assignment_attempts"] = 100
     b["selected_solution"]["performance_cache_misses"] = 3
     assert result_digest(a) != result_digest(b)
+
+
+@pytest.mark.parametrize("field", ["duration_seconds", "performance_cache_misses"])
+def test_nested_auto_refinement_observations_do_not_change_digest(field):
+    from copy import deepcopy
+
+    original = {
+        "search": {
+            "discipline_selection": {
+                "branches": {
+                    "magic": {"local_refinement": {field: 1, "evaluated_assignments": 8}},
+                    "ranged": {"local_refinement": {field: 2, "evaluated_assignments": 9}},
+                }
+            }
+        }
+    }
+    observed = deepcopy(original)
+    observed["search"]["discipline_selection"]["branches"]["magic"]["local_refinement"][field] = 99
+    assert result_digest(original) == result_digest(observed)
+    observed["search"]["discipline_selection"]["branches"]["magic"]["local_refinement"][
+        "evaluated_assignments"
+    ] = 10
+    assert result_digest(original) != result_digest(observed)

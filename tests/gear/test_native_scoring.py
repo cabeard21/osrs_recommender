@@ -58,31 +58,29 @@ def test_support_accepts_magic_and_fractional_magic_metric():
 
 
 @pytest.mark.parametrize(
-    "style,item,reason",
+    "style,item",
     [
         (
             "magic",
             {"slot": "neck", "elemental_spell_bonus": {"elements": ("fire",)}},
-            "equipment_spell_effect",
         ),
         (
             "magic",
             {"slot": "shield", "tome_effect": {"element": "fire", "rune_id": 554}},
-            "equipment_spell_effect",
         ),
-        ("ranged", {"slot": "ammunition", "bolt_effect": "diamond"}, "equipment_ranged_effect"),
-        ("ranged", {"id": 32879, "slot": "shield"}, "equipment_ranged_effect"),
+        ("ranged", {"slot": "ammunition", "bolt_effect": "diamond"}),
+        ("ranged", {"id": 32879, "slot": "shield"}),
     ],
 )
-def test_new_equipment_effects_fall_back_before_native_scoring(style, item, reason):
+def test_reviewed_equipment_effects_are_native_supported(style, item):
     search = context(style)
     effect = EquipmentDefinition(**{"id": 3, "name": "Effect", **item})
     search.items = {**search.items, effect.id: effect}
     search.eligible = search.items
-    assert support_reason(search) == reason
+    assert support_reason(search) is None
 
 
-def test_unreviewed_body_recovery_falls_back_before_native_cost_ranking():
+def test_unreviewed_body_recovery_keeps_native_combat_supported():
     search = context("ranged")
     search.items = {
         **search.items,
@@ -90,7 +88,7 @@ def test_unreviewed_body_recovery_falls_back_before_native_cost_ranking():
         999999: EquipmentDefinition(id=999999, name="Unknown body", slot="body"),
     }
     search.eligible = search.items
-    assert support_reason(search) == "unreviewed_body_recovery"
+    assert support_reason(search) is None
 
 
 @pytest.mark.parametrize(

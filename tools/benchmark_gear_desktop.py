@@ -61,7 +61,8 @@ def without_observations(value: Any, path: tuple[str, ...] = ()) -> Any:
             if key not in {"timings_seconds", "elapsed_seconds", "progress"}
             and not (
                 key in {"duration_seconds", "performance_cache_misses"}
-                and path[-2:] == ("search", "local_refinement")
+                and path[-1:] == ("local_refinement",)
+                and "search" in path
             )
         }
     if isinstance(value, (tuple, list)):
