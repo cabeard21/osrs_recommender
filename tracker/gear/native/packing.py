@@ -12,7 +12,7 @@ from tracker.gear.bolts_catalog import CROSSBOWS
 from tracker.gear.combat import ELEMENTAL_SPELLS
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem
 from tracker.gear.compact_states import SLOT_NAMES
-from tracker.gear.models import CombatTarget, EquipmentBonuses
+from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 from tracker.gear.prayers import effects
 from tracker.gear.prepared_combat import PreparedCombat
 
@@ -123,6 +123,22 @@ def _legal(weapon: Any, role: Any, levels: Any, snapshot: Any = None) -> bool:
     target = (role.target or CombatTarget()).model_copy(update={"damage_cap": None})
     configured = role.model_copy(update={"target": target})
     # Required ranged ammunition is validated per candidate in the native loop.
+    if role.style == "ranged" and "leafy" in target.traits:
+        if weapon is None:
+            return False
+        # Preserve actual compatibility while validating a representative attack.
+        # The compiled loop checks the concrete candidate ammunition separately.
+        broad_ids = (4160, 33601, 11875, 21316)
+        for item_id in broad_ids:
+            token = f"{'arrow' if item_id in (4160, 33601) else 'bolt'}:{item_id}"
+            if token in weapon.ammo_for:
+                ammo = EquipmentDefinition(
+                    id=item_id, name="Broad ammunition scaffold", slot="ammunition", ammo_type=token
+                )
+                return evaluate_prepared_score(
+                    prepare_equipment([weapon, ammo]), configured, levels
+                ).supported
+        return False
     checked = weapon.model_copy(update={"ammo_for": ()}) if weapon else None
     return evaluate_prepared_score(
         prepare_equipment([checked] if checked else []), configured, levels
@@ -163,6 +179,9 @@ def pack(search: Any) -> dict[str, Any]:
             ("hopper_shield", 0),
             ("slayer_bonus", 0),
             ("slayer_staff", 0),
+            ("leafy_weapon", 0),
+            ("broad_ammo", 0),
+            ("seeking_ammo", 0),
         )
     }
     bonuses = array("q", [0] * 14)
@@ -173,6 +192,9 @@ def pack(search: Any) -> dict[str, Any]:
         values = {
             "item_slots": SLOT_NAMES.index(item.slot),
             "two_handed": int(item.two_handed),
+            "leafy_weapon": 2 if item_id == 20727 else int(item_id in {4158, 11902}),
+            "broad_ammo": int(item_id in {4160, 33601, 11875, 21316}),
+            "seeking_ammo": int(item_id == 33601),
             "eligible": int(item_id in search.eligible),
             "bad_items": int(bool(item.unsupported_effects)),
             "ammo_required": int(bool(item.ammo_for)),
@@ -226,6 +248,7 @@ def pack(search: Any) -> dict[str, Any]:
             "target_traits",
             "on_slayer_task",
             "magic_dart",
+            "target_leafy",
             "magic_level",
         )
     }
@@ -298,6 +321,7 @@ def pack(search: Any) -> dict[str, Any]:
                             and configured.powered_attack is None
                         ),
                         "magic_level": search.levels.get("magic", 0),
+                        "target_leafy": int("leafy" in target.traits),
                         "ranged_level": search.levels.get("ranged", 0),
                         "diary": int(configured.bolt_diary_boost),
                         "target_hp": target.current_hitpoints

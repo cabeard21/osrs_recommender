@@ -23,6 +23,11 @@ from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
 from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
 from tracker.gear.hopper import REVISION as HOPPER_REVISION
 from tracker.gear.hopper_catalog import apply_review as hopper_review
+from tracker.gear.leafy import FORMS as LEAFY_FORMS
+from tracker.gear.leafy import REQUIREMENTS as LEAFY_REQUIREMENTS
+from tracker.gear.leafy import REVISION as LEAFY_REVISION
+from tracker.gear.leafy import TRADEABLE as LEAFY_TRADEABLE
+from tracker.gear.leafy import apply_review as leafy_review
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.obsidian import REVISION as OBSIDIAN_REVISION
 from tracker.gear.obsidian import apply_review as obsidian_review
@@ -187,6 +192,7 @@ def load_catalog(
                     if e != "Offensive effects have not been validated."
                 ],
             }
+        row = leafy_review(row)
         entries = overlays.get(row["id"], [])
         primary = _reviewed_equivalent(row, by_id)
         if primary is not None:
@@ -241,6 +247,11 @@ def load_catalog(
             else:
                 gates = {"defence": 10}
             requirement = requirement_from_levels(gates, set(content.skills) | set(gates))
+        if row["id"] in LEAFY_REQUIREMENTS:
+            leafy_gates = LEAFY_REQUIREMENTS[row["id"]]
+            requirement = requirement_from_levels(
+                dict(leafy_gates), set(content.skills) | set(leafy_gates)
+            )
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -251,6 +262,7 @@ def load_catalog(
                 "requires": requirement,
                 "requirements_complete": bool(
                     entries
+                    or row["id"] in LEAFY_FORMS
                     or row["id"] in SLAYER_FORMS
                     or review
                     or powered
@@ -262,7 +274,9 @@ def load_catalog(
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    (row["id"] == 4170 or row["name"] == "Black mask")
+                    row["id"] in LEAFY_TRADEABLE
+                    if row["id"] in LEAFY_FORMS
+                    else (row["id"] == 4170 or row["name"] == "Black mask")
                     if row["id"] in SLAYER_FORMS
                     else row["id"] in TOME_MARKET_FORMS
                     if row["id"] in TOME_FORMS
@@ -312,6 +326,7 @@ def load_catalog(
             + BOLT_REVISION
             + HOPPER_REVISION
             + SLAYER_REVISION
+            + LEAFY_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -328,6 +343,7 @@ def load_catalog(
             + BOLT_REVISION
             + HOPPER_REVISION
             + SLAYER_REVISION
+            + LEAFY_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

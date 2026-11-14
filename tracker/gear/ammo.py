@@ -9,7 +9,7 @@ from tracker.gear.ammo_armour import COMPATIBLE_BODIES, INTERFERING_BODIES
 from tracker.gear.facts import hypothetical_snapshot
 
 # Reviewed ordinary physical forms, not ownership aliases.
-ARROWS = frozenset({882, 884, 886, 888, 890, 892, 21326})
+ARROWS = frozenset({882, 884, 886, 888, 890, 892, 21326, 4160, 33601})
 AVA_RECOVERY = {10498: 0.60, 10499: 0.72, 22109: 0.80}
 # Recovery-capable cape exceptions, including physical cosmetic/locked variants.
 # https://oldschool.runescape.wiki/w/Ava%27s_device

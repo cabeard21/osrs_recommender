@@ -50,6 +50,7 @@ from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.fixed_reporting import active as fixed_reporting_active
 from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
 from tracker.gear.lazy_reporting import active as lazy_reporting_active
+from tracker.gear.leafy import MODEL_VERSION as LEAFY_MODEL_VERSION
 from tracker.gear.local_refinement import refine_completed
 from tracker.gear.models import (
     CombatPerformance,
@@ -1316,6 +1317,18 @@ class _Search:
                         ]
                     )
                 )
+            if slot in {"weapon", "ammunition"} and any(
+                r.target is not None and "leafy" in r.target.traits for r in self.request.roles
+            ):
+                from tracker.gear.leafy import BROAD_AMMO, LEAF_WEAPONS
+                from tracker.gear.slayer import MAGIC_DART_STAVES
+
+                contextual = (
+                    BROAD_AMMO if slot == "ammunition" else LEAF_WEAPONS | MAGIC_DART_STAVES
+                )
+                retained = list(
+                    dict.fromkeys([*retained, *(i for i in ordered if i in contextual)])
+                )
             if slot == "ammunition":
                 # Equal-strength dragon bolts have distinct target-dependent procs.
                 # Preserve every reviewed effect/form without dropping ordinary candidates.
@@ -2268,6 +2281,7 @@ def optimize(
     assumptions = {
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
+        "leafy_model_version": LEAFY_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": request.fire_tome_pages,

@@ -260,6 +260,12 @@ export function NpcTargetPicker({
           {detail.reasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
+          {base?.traits?.includes("leafy") && (
+            <p className="npc-note" aria-label="Leafy target restrictions">
+              This target requires leaf-bladed melee weapons, compatible broad
+              ammunition, or Magic Dart.
+            </p>
+          )}
           {selection &&
             detail.catalog_revision !== selection.catalog_revision && (
               <p role="alert">

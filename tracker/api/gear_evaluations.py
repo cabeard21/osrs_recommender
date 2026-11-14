@@ -28,6 +28,7 @@ from tracker.gear.combat import MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
+from tracker.gear.leafy import MODEL_VERSION as LEAFY_MODEL_VERSION
 from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
@@ -257,6 +258,7 @@ def calculate_evaluation(
         "fire_tome_pages": scenario.fire_tome_pages,
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
+        "leafy_model_version": LEAFY_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in scenario.roles},
         "bolt_model_version": "enchanted-bolts-v1",
         "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,

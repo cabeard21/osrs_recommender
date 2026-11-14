@@ -56,6 +56,20 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid tome effect metadata");
   }
+  if (value.leafy_bonus != null) {
+    const effect = value.leafy_bonus;
+    if (
+      effect.item_id !== 20727 ||
+      effect.damage_numerator !== 47 ||
+      effect.denominator !== 40
+    )
+      throw new Error("Invalid leafy effect metadata");
+  }
+  if (value.seeking_arrow_bonus != null) {
+    const effect = value.seeking_arrow_bonus;
+    if (effect.item_id !== 33601 || effect.minimum_hit !== 3)
+      throw new Error("Invalid Seeking arrow effect metadata");
+  }
   if (value.slayer_effects !== undefined) {
     if (
       !Array.isArray(value.slayer_effects) ||

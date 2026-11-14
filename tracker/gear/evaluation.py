@@ -96,7 +96,17 @@ def validate_request_context(
         if any(item_id not in items for item_id in getattr(request, field)):
             raise ValueError(f"unknown physical item ID in {field}")
     for role in request.roles:
+        from tracker.gear.leafy import NPC_SLAYER
+        from tracker.gear.npcs import npc_catalog
         from tracker.gear.prayers import setups as prayer_setups
+
+        if role.target_selection is not None:
+            entry = npc_catalog().detail(role.target_selection.key)
+            minimum = NPC_SLAYER.get(entry["npc_id"])
+            if minimum is not None and (levels.get("slayer") or 0) < minimum:
+                raise ValueError(
+                    f"{entry['name']} requires {minimum} Slayer; current level is unknown or unmet."
+                )
 
         # Policy schemas already validate IDs and conflicts. Only a fixed setup
         # requires account eligibility here; Optimize filters once in the search.

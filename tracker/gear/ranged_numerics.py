@@ -11,6 +11,9 @@ from typing import NamedTuple, cast
 Key = (
     tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None]
     | tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None, int, int]
+    | tuple[
+        int | None, int, int, int, str, int, int, int, str, int, int, int, int | None, int, int, int
+    ]
 )
 
 
@@ -50,7 +53,8 @@ def calculate(key: Key) -> Outgoing:
         armour,
         cap,
     ) = key[:13]
-    numerator, denominator = cast(tuple[int, int], key[13:]) if len(key) == 15 else (1, 1)
+    numerator, denominator = cast(tuple[int, int], key[13:15]) if len(key) >= 15 else (1, 1)
+    accurate_floor = cast(int, key[-1]) if len(key) == 16 else 1
     stance_bonus = 3 if stance == "accurate" else 0
     effective_strength = level * strength_prayer // 100 + 8 + stance_bonus
     maximum = max(0, floor(0.5 + effective_strength * (strength_bonus + 64) / 640))
@@ -70,6 +74,10 @@ def calculate(key: Key) -> Outgoing:
     )
 
     def mean(m: int) -> float:
+        if accurate_floor != 1:
+            from tracker.gear.combat import _armoured_mean
+
+            return _armoured_mean(m, armour, accurate_floor)
         first = max(1, armour + 1)
         count = max(0, m - first + 1)
         positive_sum = count * (first + m - 2 * armour) / 2
@@ -86,7 +94,7 @@ def calculate(key: Key) -> Outgoing:
         maxima,
         probabilities,
         expected,
-        cap is not None and any(max(1, m) > cap for m in maxima),
+        cap is not None and any(max(accurate_floor, m) > cap for m in maxima),
     )
 
 
