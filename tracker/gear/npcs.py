@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
+from tracker.gear.leafy import NPC_SLAYER
+from tracker.gear.leafy import REVISION as LEAFY_REVISION
 from tracker.gear.models import CombatTarget
 
 if TYPE_CHECKING:
@@ -22,10 +24,9 @@ if not ROOT.is_dir():
 # These describe NPC families or equipment affinities. Equipment-specific effects
 # remain gated by the equipment evaluator, rather than disabling ordinary hits.
 ORDINARY_ATTRIBUTES = frozenset(
-    {"undead", "demon", "dragon", "fiery", "golem", "kalphite", "rat", "shade", "spectral"}
+    {"undead", "demon", "dragon", "fiery", "golem", "kalphite", "rat", "shade", "spectral", "leafy"}
 )
 MECHANICAL_ATTRIBUTES = {
-    "leafy": "Leafy targets require leaf-bladed weapon restrictions.",
     "vampyre1": "Vampyre targets have weapon-specific damage adjustments.",
     "vampyre2": "Vampyre targets restrict weapons and damage.",
     "vampyre3": "Vampyre targets require vampyrebane weapon restrictions.",
@@ -45,7 +46,8 @@ class NpcCatalog:
             payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-traits-v5-bolt-hp"
+            + b"ordinary-npc-traits-v6-leafy"
+            + LEAFY_REVISION
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)
@@ -85,6 +87,9 @@ class NpcCatalog:
                 if status == "supported":
                     status = "not_reviewed"
                 reasons.append(f"Unknown NPC mechanic attribute: {attribute}.")
+        if "leafy" in row.get("attributes", []) and row["id"] not in NPC_SLAYER:
+            status = "unsupported"
+            reasons.append("Leafy target profile has not been reviewed.")
         exception = manifest.get("mechanic_exceptions", {}).get(str(row["id"]))
         if exception and not (
             row["id"] == 13012

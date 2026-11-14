@@ -437,6 +437,15 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  leafy_bonus?: {
+    item_id: number;
+    damage_numerator: number;
+    denominator: number;
+  } | null;
+  seeking_arrow_bonus?: {
+    item_id: number;
+    minimum_hit: number;
+  } | null;
   slayer_effects?: {
     item_id: number;
     kind: "mask" | "magic_dart";

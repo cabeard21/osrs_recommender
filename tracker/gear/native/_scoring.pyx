@@ -16,11 +16,11 @@ cdef double accuracy_for(long long attack, long long defence) noexcept nogil:
     return attack / <double>(2 * (defence + 1))
 
 
-cdef double armoured_mean(long long maximum, long long armour) noexcept nogil:
-    cdef long long first = max(1, armour + 1)
+cdef double armoured_mean(long long maximum, long long armour, long long hit_floor=1) noexcept nogil:
+    cdef long long first = max(hit_floor, armour + 1)
     cdef long long count = max(0, maximum - first + 1)
     cdef double positive_sum = count * (first + maximum - 2 * armour) / 2.0
-    return (max(0, 1 - armour) + positive_sum) / (maximum + 1)
+    return (min(hit_floor, maximum + 1) * max(0, hit_floor - armour) + positive_sum) / (maximum + 1)
 
 
 cdef class ScoringContext:
@@ -67,6 +67,10 @@ cdef class ScoringContext:
         self.on_slayer_task = packed["on_slayer_task"]
         self.magic_dart = packed["magic_dart"]
         self.magic_level = packed["magic_level"]
+        self.leafy_weapon = packed["leafy_weapon"]
+        self.broad_ammo = packed["broad_ammo"]
+        self.seeking_ammo = packed["seeking_ammo"]
+        self.target_leafy = packed["target_leafy"]
         self.priority = packed["priority"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
@@ -99,7 +103,7 @@ cdef class ScoringContext:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
-        cdef int element, family, task_bonus
+        cdef int element, family, task_bonus, hit_floor
         cdef BoltResult proc, extra
         cdef long long spell_base, minimum, weakness_roll
         cdef double secondary_accuracy
@@ -155,6 +159,14 @@ cdef class ScoringContext:
             ranged = style == 3
             if ranged and not ammo_ok:
                 continue
+            if self.target_leafy[index]:
+                if style < 3 and not self.leafy_weapon[weapon]:
+                    continue
+                if ranged and not (self.ammo_required[weapon] and ammo_ok and self.broad_ammo[ammo]):
+                    continue
+                if style == 4 and not self.magic_dart[index]:
+                    continue
+            hit_floor = 3 if ranged and self.ammo_required[weapon] and self.seeking_ammo[ammo] else 1
             strength = <long long>bonuses[6 if ranged else 5]
             attack = <long long>bonuses[style]
             if ranged and ammo and not self.ammo_required[weapon]:
@@ -198,6 +210,8 @@ cdef class ScoringContext:
                 elif ranged and task_bonus == 2:
                     maximum = floor_div(maximum * 23, 20)
                     attack = floor_div(attack * 23, 20)
+            if style < 3 and self.target_leafy[index] and self.leafy_weapon[weapon] == 2:
+                maximum = floor_div(maximum * 47, 40)
             if maximum < 0:
                 maximum = 0
             defence = self.options[base + 3]
@@ -207,13 +221,13 @@ cdef class ScoringContext:
             else:
                 first = maximum // 2
                 second = maximum - first
-            if cap >= 0 and (max(1, first) + 8 * self.options[base + 15] > cap or (pattern != 0 and max(1, second) > cap)):
+            if cap >= 0 and (max(hit_floor, first) + 8 * self.options[base + 15] > cap or (pattern != 0 and max(hit_floor, second) > cap)):
                 continue
             accuracy = accuracy_for(attack, defence)
-            expected = 0.0 + accuracy * armoured_mean(first, armor)
+            expected = 0.0 + accuracy * armoured_mean(first, armor, hit_floor)
             if pattern != 0:
                 second_probability = pow(accuracy, 2.0) if pattern == 2 else accuracy
-                expected += second_probability * armoured_mean(second, armor)
+                expected += second_probability * armoured_mean(second, armor, hit_floor)
             if minimum > 0:
                 expected = accuracy * (minimum + maximum) / 2
             if self.options[base + 15]:

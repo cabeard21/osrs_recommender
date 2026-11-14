@@ -15,6 +15,7 @@ from tracker.gear import hopper
 from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.elemental_amulets import applied_spell_bonus
+from tracker.gear.leafy import BROAD_AMMO, LEAF_WEAPONS
 from tracker.gear.models import (
     BoltPerformance,
     CombatPerformance,
@@ -25,6 +26,8 @@ from tracker.gear.models import (
     EquipmentDefinition,
     HitsplatPerformance,
     HopperPerformance,
+    LeafyBonus,
+    SeekingArrowBonus,
     SlayerEffect,
     TomeBonus,
 )
@@ -90,7 +93,7 @@ ANCIENT_SPELLS = {
 SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), "magic_dart": (50, 15), **ANCIENT_SPELLS}
 
 
-MODEL_VERSION = "normal-attacks-v7-slayer-task"
+MODEL_VERSION = "normal-attacks-v8-leafy"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -207,6 +210,28 @@ def _evaluate_prepared(
     if weapon and weapon.two_handed and any(i.slot == "shield" for i in equipment):
         problems.append("Two-handed weapon cannot be equipped with a shield.")
     ammo = prepared.ammunition
+    if "leafy" in target.traits:
+        valid_leafy = (
+            (
+                style in {"stab", "slash", "crush"}
+                and weapon is not None
+                and weapon.id in LEAF_WEAPONS
+            )
+            or (
+                style == "ranged"
+                and weapon is not None
+                and bool(weapon.ammo_for)
+                and ammo is not None
+                and ammo.id in BROAD_AMMO
+                and ammo.ammo_type in weapon.ammo_for
+            )
+            or (style == "magic" and powered_attack is None and spell == "magic_dart")
+        )
+        if not valid_leafy:
+            problems.append(
+                "Leafy targets require leaf-bladed melee weapons, "
+                "compatible broad ammunition, or Magic Dart."
+            )
     if (
         style == "ranged"
         and weapon
@@ -333,6 +358,14 @@ def _evaluate_prepared(
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
         on_slayer_task=bool(getattr(role, "on_slayer_task", False)),
         head=next((item for item in equipment if item.slot == "head"), None),
+        seeking=bool(
+            style == "ranged"
+            and weapon
+            and weapon.ammo_for
+            and ammo
+            and ammo.id == 33601
+            and ammo.ammo_type in weapon.ammo_for
+        ),
     )
     if not score_only and isinstance(result, CombatPerformance):
         omissions = tuple(dict.fromkeys(e for i in equipment for e in i.omitted_set_effects))
@@ -343,17 +376,24 @@ def _evaluate_prepared(
     return result
 
 
-def _armoured_mean(maximum: int, armour: int) -> float:
+def _armoured_mean(maximum: int, armour: int, accurate_floor: int = 1) -> float:
     """Exact mean after raising accurate zeroes, subtracting armour and flooring.
 
     The zero roll contributes the same damage as a one roll; the remaining
     positive rolls form an arithmetic progression. No damage outcomes are
     enumerated in this optimizer hot path.
     """
-    first = max(1, armour + 1)
+    if accurate_floor == 1:
+        first = max(1, armour + 1)
+        count = max(0, maximum - first + 1)
+        positive_sum = count * (first + maximum - 2 * armour) / 2
+        return (max(0, 1 - armour) + positive_sum) / (maximum + 1)
+    repeated = min(maximum, accurate_floor) + 1
+    first = max(accurate_floor + 1, armour + 1)
     count = max(0, maximum - first + 1)
-    positive_sum = count * (first + maximum - 2 * armour) / 2
-    return (max(0, 1 - armour) + positive_sum) / (maximum + 1)
+    return (
+        repeated * max(0, accurate_floor - armour) + count * (first + maximum - 2 * armour) / 2
+    ) / (maximum + 1)
 
 
 def numeric_attack_interval(weapon: EquipmentDefinition | None, role: Any) -> float:
@@ -390,8 +430,16 @@ def _calculate(
     bolt_diary_known: bool = False,
     on_slayer_task: bool = False,
     head: EquipmentDefinition | None = None,
+    seeking: bool = False,
 ) -> CombatPerformance | CombatScore:
     speed = weapon.attack_speed if weapon else 4
+    leafy_axe = bool(
+        weapon
+        and weapon.id == 20727
+        and style in {"stab", "slash", "crush"}
+        and "leafy" in target.traits
+    )
+    accurate_floor = 3 if seeking else 1
     weakness = None
     amulet_report = None
     tome_report = None
@@ -416,7 +464,9 @@ def _calculate(
         applied_spell_bonus(amulet, spell, powered_attack)
         or applied_tome(tome, spell, powered_attack)
     )
-    spell_effect = spell_effect or task_mask or (style == "magic" and spell == "magic_dart")
+    spell_effect = (
+        spell_effect or task_mask or leafy_axe or (style == "magic" and spell == "magic_dart")
+    )
     constants = None if spell_effect else _constants
     cached_ranged = (
         style == "ranged" and powered_attack is None and ranged_experiment_active()
@@ -455,6 +505,7 @@ def _calculate(
             target.damage_cap,
             numerator,
             denominator,
+            accurate_floor,
         )
         if observer is not None:
             observer.key_seconds += perf_counter() - key_started
@@ -646,6 +697,8 @@ def _calculate(
     if style != "magic" and not cached_ranged and task_mask:
         max_hit = max_hit * numerator // denominator
         attack = attack * numerator // denominator
+    if leafy_axe:
+        max_hit = max_hit * 47 // 40
     max_hit = max(0, max_hit)
     if (
         constants is not None
@@ -655,12 +708,13 @@ def _calculate(
     ):
         if (
             constants.damage_cap is not None
-            and max(1, max_hit) + (8 if constants.sanguinesti else 0) > constants.damage_cap
+            and max(accurate_floor, max_hit) + (8 if constants.sanguinesti else 0)
+            > constants.damage_cap
         ):
             return CombatScore(False, None, None, bonuses)
         accuracy = accuracy_probability(attack, defence)
         # Preserve the one-term sum's initial zero and the proc's operation order.
-        expected = 0 + accuracy * _armoured_mean(max_hit, constants.armour)
+        expected = 0 + accuracy * _armoured_mean(max_hit, constants.armour, accurate_floor)
         if constants.sanguinesti:
             expected += accuracy * 0.2 * 8
         return CombatScore(
@@ -686,7 +740,7 @@ def _calculate(
     )
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
     if target.damage_cap is not None and any(
-        max(1, m) + (8 if sang_proc else 0) > target.damage_cap for m in maxima
+        max(accurate_floor, m) + (8 if sang_proc else 0) > target.damage_cap for m in maxima
     ):
         if score_only:
             return CombatScore(False, None, None, bonuses)
@@ -711,7 +765,10 @@ def _calculate(
     expected = (
         outgoing.expected
         if outgoing
-        else sum(p * _armoured_mean(m, armour) for m, p in zip(maxima, probabilities, strict=True))
+        else sum(
+            p * _armoured_mean(m, armour, accurate_floor)
+            for m, p in zip(maxima, probabilities, strict=True)
+        )
     )
     if minimum_hit > 0:
         expected = accuracy * (minimum_hit + max_hit) / 2
@@ -806,13 +863,15 @@ def _calculate(
         )
     hitsplats = tuple(
         HitsplatPerformance(
-            accuracy=p, max_hit=max(0, max(1, m) - armour) + (8 if sang_proc else 0)
+            accuracy=p, max_hit=max(0, max(accurate_floor, m) - armour) + (8 if sang_proc else 0)
         )
         for m, p in zip(maxima, probabilities, strict=True)
     )
     return CombatPerformance(
         supported=True,
         slayer_effects=slayer_reports,
+        leafy_bonus=LeafyBonus(item_id=20727) if leafy_axe else None,
+        seeking_arrow_bonus=SeekingArrowBonus(item_id=33601) if seeking else None,
         aquanite_hopper=hopper_report,
         bolt_effect=bolt_report,
         elemental_weakness=weakness,

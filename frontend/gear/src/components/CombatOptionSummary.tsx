@@ -81,6 +81,17 @@ export function CombatOptionSummary({
         </p>
       ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
+      {performance?.leafy_bonus && (
+        <p aria-label="Leafy weapon effect">
+          Leaf-bladed battleaxe: +17.5% damage against this leafy target
+        </p>
+      )}
+      {performance?.seeking_arrow_bonus && (
+        <p aria-label="Seeking arrow effect">
+          Seeking broad arrows: accurate-hit minimum 3 before flat armour;
+          misses remain 0
+        </p>
+      )}
       {performance?.slayer_effects?.map((effect) => (
         <p
           aria-label="Slayer task effect"

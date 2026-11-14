@@ -166,6 +166,38 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-leafy")
+        def seed_leafy():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in (1333, 20727)},
+                revision="browser-acceptance-leafy-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                session.add(
+                    SkillSnapshot(
+                        player_id=player.id,
+                        skill="slayer",
+                        level=55,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=20727,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-joint")
         def seed_joint():
             seed_optimization()

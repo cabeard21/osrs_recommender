@@ -16,6 +16,7 @@ import httpx
 from tracker.content.loader import load_content
 from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
 from tracker.gear.catalog import load_catalog
+from tracker.gear.leafy import FORMS as LEAFY_FORMS
 from tracker.gear.tomes import FORMS as TOME_FORMS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,6 +58,7 @@ def capture(root: Path, ids: list[int], *, dry_run: bool = False) -> int:
         | BOLTS.keys()
         | CROSSBOWS.keys()
         | TOME_FORMS.keys()
+        | LEAFY_FORMS.keys()
     )
     missing = [item_id for item_id in selected if not (folder / f"{item_id}.png").exists()]
     print(f"{len(selected)} selected; {len(missing)} missing sprites")

@@ -200,7 +200,20 @@ class SlayerEffect(GearModel):
     base_max_hit: int | None = None
 
 
+class LeafyBonus(GearModel):
+    item_id: int
+    damage_numerator: int = 47
+    denominator: int = 40
+
+
+class SeekingArrowBonus(GearModel):
+    item_id: int
+    minimum_hit: int = 3
+
+
 class CombatPerformance(GearModel):
+    leafy_bonus: LeafyBonus | None = None
+    seeking_arrow_bonus: SeekingArrowBonus | None = None
     slayer_effects: tuple[SlayerEffect, ...] = ()
     tome_bonus: TomeBonus | None = None
     aquanite_hopper: HopperPerformance | None = None
