@@ -155,11 +155,12 @@ def calculate_timeline(snapshot, gear, prices, body: PotionTimelineRequest, stop
                 }
             )
             selected = row.combat_option.model_dump()
+            equipment: dict[str, int] = dict(row.equipment.items())
             checked = evaluate_configurations(
                 snapshot,
                 single,
-                row.equipment,
-                row.equipment,
+                equipment,
+                equipment,
                 catalog,
                 gear.content,
                 prices,

@@ -68,7 +68,7 @@ def measure(
     def aggregate(key: str) -> float | None:
         if not weight or any(values[role.id][key] is None for role in active):
             return None
-        return sum(values[role.id][key] * role.weight for role in active) / weight
+        return float(sum(values[role.id][key] * role.weight for role in active) / weight)
 
     return {
         "time_seconds": time,
