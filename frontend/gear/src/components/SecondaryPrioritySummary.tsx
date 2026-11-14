@@ -1,5 +1,7 @@
 import { formatDefenceRoll } from "./defenceRollFormat";
+import { PotionTimelinePanel } from "./PotionTimelinePanel";
 import type {
+  GearClient,
   JointSolutionDTO,
   OptimizationReply,
   PotionDefinition,
@@ -25,11 +27,13 @@ function PotionResult({
   skillOverrides,
   catalog,
   gain,
+  timeline,
 }: {
   potions: PotionSummary;
   skillOverrides: Record<string, number | undefined>;
   catalog: readonly PotionDefinition[];
   gain: string | null;
+  timeline?: React.ReactNode;
 }) {
   const changes = boostedSkillChanges(potions.boosted_levels, {
     ...skillOverrides,
@@ -79,11 +83,12 @@ function PotionResult({
         <p>Potion prices unavailable.</p>
       )}
       <p>
-        Fresh boost only: no decay, duration benefit, drinking downtime or
-        survival estimates are modeled. Defensive-roll metrics include Defence
-        and Magic boosts.
+        Recommendations use fresh boosts. Drinking downtime and survival
+        estimates are not modeled. Defensive-roll metrics include Defence and
+        Magic boosts.
         {hasDivine ? " Divine potions consume HP when drunk." : ""}
       </p>
+      {timeline}
     </section>
   );
 }
@@ -92,10 +97,14 @@ export function SecondaryPrioritySummary({
   result,
   solution,
   potionCatalog = [],
+  client,
+  outdated,
 }: {
   result: OptimizationReply;
   solution?: JointSolutionDTO | null;
   potionCatalog?: readonly PotionDefinition[];
+  client?: GearClient;
+  outdated?: boolean;
 }) {
   const priority = result.scenario.request.secondary_priority ?? "default";
   const rollStyles = defenceRollStyles(priority);
@@ -116,6 +125,14 @@ export function SecondaryPrioritySummary({
             noPotionScore(result.live?.result.search),
             result.scenario.request.roles.length > 1 ? "weighted DPS" : "DPS",
           )}
+          timeline={
+            <PotionTimelinePanel
+              result={result}
+              solution={selected}
+              client={client}
+              outdated={outdated}
+            />
+          }
         />
       )}
       <details

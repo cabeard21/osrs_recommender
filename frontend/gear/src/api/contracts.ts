@@ -649,6 +649,11 @@ export interface OptimizationProgress {
   lane_counts?: ProgressLaneCounts;
 }
 export interface GearClient {
+  potionTimeline?(
+    result: OptimizationReply,
+    solution: JointSolutionDTO,
+    signal: AbortSignal,
+  ): Promise<PotionTimeline>;
   getContext(): Promise<GearContext>;
   getItem(id: number, supportPolicy?: SupportPolicy): Promise<Item>;
   browseItems?(
@@ -670,6 +675,29 @@ export interface GearClient {
     equipment: Equipment,
     signal?: AbortSignal,
   ): Promise<Trial>;
+}
+
+export interface PotionTimelineRole {
+  dps: number | null;
+  secondary_value: number | null;
+  reasons: string[];
+}
+export interface PotionTimelineMeasurement {
+  time_seconds: number;
+  levels: Record<string, number>;
+  dps: number | null;
+  secondary_value: number | null;
+  roles: Record<string, PotionTimelineRole>;
+}
+export interface PotionTimeline {
+  snapshot_id: string;
+  catalog_version: string;
+  model_version: string;
+  decay_model_version: "potion-decay-v1";
+  configuration_fingerprint: string;
+  secondary_priority: SecondaryPriority;
+  baseline: PotionTimelineMeasurement;
+  samples: PotionTimelineMeasurement[];
 }
 
 export const emptyEquipment = (): Equipment =>

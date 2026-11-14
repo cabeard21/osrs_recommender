@@ -50,7 +50,7 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
   );
 }
 export function LiveResultWorkspace() {
-  const { state, current, dispatch, itemById } = useGear();
+  const { state, current, dispatch, itemById, client } = useGear();
   const result = current.result;
   const branches = result?.live?.result.discipline_results ?? [];
   const branch = branches.find((row) =>
@@ -455,6 +455,8 @@ export function LiveResultWorkspace() {
         )}
         <SupportPolicySummary result={viewResult!} />
         <SecondaryPrioritySummary
+          client={client}
+          outdated={current.outdated || current.pending}
           result={viewResult!}
           solution={selected}
           potionCatalog={state.context?.live?.potion_catalog}

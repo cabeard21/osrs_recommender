@@ -31,7 +31,7 @@ function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
 }
 
 export function LiveMultiResultWorkspace() {
-  const { state, current, dispatch, itemById } = useGear();
+  const { state, current, dispatch, itemById, client } = useGear();
   const result = current.result;
   if (!result?.live)
     return (
@@ -431,6 +431,8 @@ export function LiveMultiResultWorkspace() {
       </section>
       <SupportPolicySummary result={result} />
       <SecondaryPrioritySummary
+        client={client}
+        outdated={current.outdated || current.pending}
         result={result}
         solution={solution}
         potionCatalog={state.context?.live?.potion_catalog}

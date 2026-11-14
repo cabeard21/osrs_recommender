@@ -1,0 +1,225 @@
+import { describe, expect, it, vi } from "vitest";
+import { HttpGearClient } from "../api/httpClient";
+import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
+import { newDraft, normalize } from "../state/scenario";
+
+const scenario = normalize(newDraft(), "snapshot");
+const role = scenario.request.roles[0].id;
+const option = {
+  attack_type: "slash",
+  stance: "aggressive",
+  spell: null,
+  powered_attack: null,
+};
+const result = {
+  source: "live",
+  scenario,
+  snapshotId: "snapshot",
+  catalogVersion: "catalog",
+  modelVersion: "combat",
+  live: { scenario: { roles: [{ id: role, style: "slash" }] } },
+} as unknown as OptimizationReply;
+const solution = {
+  score: 5,
+  secondary_value: 0,
+  potions: { selected_ids: ["super_strength"] },
+  loadouts: {
+    [role]: {
+      equipment: { weapon: 4151 },
+      combat_option: option,
+      selected_prayer_ids: [],
+      performance: {},
+    },
+  },
+} as unknown as JointSolutionDTO;
+const point = (time_seconds: number, dps: number | null) => ({
+  time_seconds,
+  levels: { strength: 99 },
+  dps,
+  secondary_value: null,
+  roles: { [role]: { dps, secondary_value: null, reasons: [] } },
+});
+const timeline = () => ({
+  snapshot_id: "snapshot",
+  catalog_version: "catalog",
+  model_version: "combat",
+  decay_model_version: "potion-decay-v1",
+  configuration_fingerprint: "config",
+  secondary_priority: "default",
+  baseline: point(0, 4),
+  samples: [point(0, 5), point(60, null)],
+});
+const transport = (body: unknown, status = 200) =>
+  vi
+    .fn<typeof fetch>()
+    .mockImplementation(
+      async () => new Response(JSON.stringify(body), { status }),
+    );
+
+describe("potion timeline transport", () => {
+  it("validates the selected secondary value and retains finite negative equipment metrics", async () => {
+    const measured = {
+      ...result,
+      scenario: {
+        ...scenario,
+        request: {
+          ...scenario.request,
+          secondary_priority: "magic_defence" as const,
+        },
+      },
+    };
+    const body = {
+      ...timeline(),
+      secondary_priority: "magic_defence",
+      samples: timeline().samples.map((p) => ({ ...p, secondary_value: -3 })),
+    };
+    const client = new HttpGearClient("/gear", transport(body));
+    await expect(
+      client.potionTimeline(measured, solution, new AbortController().signal),
+    ).rejects.toThrow(/Fresh/);
+    await expect(
+      client.potionTimeline(
+        measured,
+        { ...solution, secondary_value: -3 },
+        new AbortController().signal,
+      ),
+    ).resolves.toMatchObject({ secondary_priority: "magic_defence" });
+  });
+  it("uses the selected performance option and excludes utility roles", async () => {
+    const selected = {
+      ...solution,
+      loadouts: {
+        [role]: {
+          ...solution.loadouts[role],
+          combat_option: undefined,
+          performance: {
+            ...solution.loadouts[role].performance,
+            combat_option: option,
+          },
+        },
+      },
+    };
+    const multi = {
+      ...result,
+      scenario: {
+        ...scenario,
+        request: {
+          ...scenario.request,
+          roles: [
+            ...scenario.request.roles,
+            { ...scenario.request.roles[0], id: "utility", utility: true },
+          ],
+        },
+      },
+    };
+    const fetcher = transport(timeline());
+    await new HttpGearClient("/gear", fetcher).potionTimeline(
+      multi,
+      selected,
+      new AbortController().signal,
+    );
+    expect(
+      Object.keys(
+        JSON.parse(fetcher.mock.calls[0][1]!.body as string).loadouts,
+      ),
+    ).toEqual([role]);
+  });
+  it("rejects fixture results before sending and handles a generic API failure", async () => {
+    const fetcher = transport({ error: {} }, 503);
+    const client = new HttpGearClient("/gear", fetcher);
+    await expect(
+      client.potionTimeline(
+        { ...result, source: "fixture" },
+        solution,
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(/live configuration/);
+    expect(fetcher).not.toHaveBeenCalled();
+    await expect(
+      client.potionTimeline(result, solution, new AbortController().signal),
+    ).rejects.toMatchObject({ code: "potion_timeline_failed" });
+  });
+  it("submits the selected exact setup and supports unavailable samples", async () => {
+    const fetcher = transport(timeline());
+    const signal = new AbortController().signal;
+    const response = await new HttpGearClient("/gear", fetcher).potionTimeline(
+      result,
+      solution,
+      signal,
+    );
+    expect(response.samples[1].dps).toBeNull();
+    expect(fetcher.mock.calls[0][0]).toBe("/gear/potion-timelines");
+    const init = fetcher.mock.calls[0][1]!;
+    expect(init.signal).toBe(signal);
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      selected_potion_ids: ["super_strength"],
+      loadouts: {
+        [role]: { combat_option: option, equipment: { weapon: 4151 } },
+      },
+    });
+  });
+  it.each([
+    { snapshot_id: "other" },
+    { catalog_version: "other" },
+    { model_version: "other" },
+    { decay_model_version: "other" },
+    { secondary_priority: "accuracy" },
+    { samples: [point(0, 9)] },
+    { samples: [point(60, 5)] },
+    { samples: [point(0, 5), point(0, 4)] },
+    { samples: [point(0, 5), point(60, -1)] },
+    { samples: [] },
+    { configuration_fingerprint: "" },
+    {
+      samples: [
+        point(0, 5),
+        {
+          ...point(60, 4),
+          roles: { [role]: { dps: -1, secondary_value: null, reasons: [] } },
+        },
+      ],
+    },
+    {
+      samples: [
+        point(0, 5),
+        {
+          ...point(60, 4),
+          roles: { [role]: { dps: 4, secondary_value: null, reasons: [1] } },
+        },
+      ],
+    },
+    { samples: [point(0, 5), { ...point(60, 4), roles: {} }] },
+    { baseline: { ...point(0, 4), levels: { strength: "99" } } },
+  ])("rejects inconsistent timeline data %j", async (change) => {
+    await expect(
+      new HttpGearClient(
+        "/gear",
+        transport({ ...timeline(), ...change }),
+      ).potionTimeline(result, solution, new AbortController().signal),
+    ).rejects.toThrow();
+  });
+  it("preserves API errors and rejects historical results missing fixed options", async () => {
+    await expect(
+      new HttpGearClient(
+        "/gear",
+        transport(
+          { error: { code: "snapshot_changed", message: "Refresh and rerun" } },
+          409,
+        ),
+      ).potionTimeline(result, solution, new AbortController().signal),
+    ).rejects.toMatchObject({ code: "snapshot_changed" });
+    const missing = {
+      ...solution,
+      loadouts: {
+        [role]: { ...solution.loadouts[role], combat_option: undefined },
+      },
+    };
+    await expect(
+      new HttpGearClient("/gear", transport(timeline())).potionTimeline(
+        result,
+        missing,
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(/combat option/i);
+  });
+});

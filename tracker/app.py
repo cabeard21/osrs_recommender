@@ -69,6 +69,9 @@ def create_app(
     from tracker.api.gear_evaluations import router as evaluation_router
 
     app.include_router(evaluation_router)
+    from tracker.api.gear_potion_timelines import router as potion_timeline_router
+
+    app.include_router(potion_timeline_router)
     from tracker.api.gear_ammo import router as ammo_router
 
     app.include_router(ammo_router)
