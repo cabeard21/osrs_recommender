@@ -507,7 +507,7 @@ class AutoProcessPool:
         jobs = [
             job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
         ]
-        selected = {**options, "_running_frontier": needs_running_cost_frontier(request)}
+        selected = {**options, "_running_frontier": needs_running_cost_frontier(request, catalog)}
         results = self._dispatch(jobs, selected, cancelled, progress)
         return [
             (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)

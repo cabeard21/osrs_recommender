@@ -1,3 +1,4 @@
+import { CrystalHalberdFields } from "./CrystalHalberdFields";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useGear } from "../state/GearProvider";
@@ -338,6 +339,12 @@ export function ConfigurationPanel() {
         </select>
       </label>
       <p>Tome page availability, consumption, and costs are excluded.</p>
+      <CrystalHalberdFields
+        policy={draft.crystalHalberdCharging}
+        onChange={(crystalHalberdCharging) =>
+          change({ crystalHalberdCharging })
+        }
+      />
       <PotionFields
         policy={draft.potions}
         catalog={state.context?.live?.potion_catalog ?? []}

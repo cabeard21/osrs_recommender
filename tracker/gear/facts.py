@@ -189,6 +189,49 @@ def equipment_fact(
             if ownership["status"] != "owned"
             else "Actual enchantment charges unknown.",
         }
+    if item.id == 23987:
+        seed = observed_ownership(snapshot, 4207)
+        prepare_owned = ownership["status"] != "owned" and seed["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {
+                **seed,
+                "meaning": "Owned crystal weapon seed; preparation required",
+            }
+        preparation = {
+            "source_item_id": 4207
+            if prepare_owned
+            else 23987
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": 23987,
+            "market_item_id": None,
+            "charging_required": ownership["status"] != "owned",
+            "charges": "unknown",
+            "activation_reserve": [],
+            "message": "Crystal halberd consumes one charge per attack. "
+            "Seed preparation/recharging required; actual remaining charges unknown."
+            if ownership["status"] != "owned"
+            else "Crystal halberd consumes one charge per attack; remaining charges unknown.",
+        }
+    if item.id == 12931:
+        empty = observed_ownership(snapshot, 12929)
+        prepare_owned = ownership["status"] != "owned" and empty["status"] == "owned"
+        if prepare_owned:
+            planning_ownership = {**empty, "meaning": "Owned uncharged helm; charging required"}
+        market_id = 12929
+        preparation = {
+            "source_item_id": 12929
+            if prepare_owned
+            else 12931
+            if ownership["status"] == "owned"
+            else None,
+            "usable_item_id": 12931,
+            "market_item_id": 12929,
+            "charging_required": ownership["status"] != "owned",
+            "charges": "unknown",
+            "activation_reserve": [],
+            "message": "Charged serpentine helm use assumed; actual remaining scales unknown.",
+        }
     authored = next((entry for entry in content.items.values() if entry.item_id == market_id), None)
     price = (
         resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None

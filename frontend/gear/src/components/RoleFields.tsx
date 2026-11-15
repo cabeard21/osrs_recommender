@@ -208,6 +208,7 @@ export function RoleFields({
               onChange={(event) =>
                 onChange({
                   utility: event.target.checked,
+                  ...(event.target.checked ? { safeSpotting: false } : {}),
                   ...(event.target.checked
                     ? {
                         autoDiscipline: false,
@@ -244,6 +245,39 @@ export function RoleFields({
       )}
       {!role.utility && (
         <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={role.safeSpotting ?? false}
+              aria-describedby={`${role.id}-safespot-help`}
+              onChange={(event) =>
+                onChange({ safeSpotting: event.target.checked })
+              }
+            />
+            Safe spotting
+          </label>
+          <p id={`${role.id}-safespot-help`}>
+            Require attacks with at least two-tile reach. Choose a suitable
+            obstacle or location; your selected combat options and locks still
+            apply.
+          </p>
+          <label>
+            Fight duration for status damage (seconds)
+            <input
+              type="number"
+              min="1"
+              max="3600"
+              step="1"
+              value={role.fightDurationSeconds ?? "60"}
+              onChange={(event) =>
+                onChange({ fightDurationSeconds: event.target.value })
+              }
+            />
+          </label>
+          <p>
+            Poison and venom are averaged over this window against a fresh
+            target. Configurations are scored independently.
+          </p>
           <label className="check">
             <input
               type="checkbox"

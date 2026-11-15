@@ -27,6 +27,76 @@ def prices(*ids):
     }
 
 
+@pytest.mark.parametrize("weapon_id", [23987, 29796])
+@pytest.mark.parametrize("duration", [30, 54, 60, 180])
+def test_native_halberd_head_costs_match_python(weapon_id, duration):
+    from tests.gear.test_native_stages import ScoringContext, StageContext, drain, stage_search
+    from tracker.gear.halberd_charging import CrystalChargingPolicy
+    from tracker.gear.models import EquipmentBonuses
+    from tracker.gear.optimizer import RoleConfig
+
+    with stage_search() as search:
+        weapon = EquipmentDefinition(
+            id=weapon_id,
+            name="Halberd",
+            slot="weapon",
+            attack_styles=("slash",),
+            attack_profiles=(("slash", "aggressive"),),
+            attack_speed=5 if weapon_id == 29796 else 7,
+            bonuses=EquipmentBonuses(slash=100, melee_strength=100),
+        )
+        head = EquipmentDefinition(
+            id=12931,
+            name="Serpentine helm",
+            slot="head",
+            bonuses=EquipmentBonuses(melee_strength=5),
+        )
+        search.items = {weapon.id: weapon, head.id: head}
+        search.facts = dict.fromkeys(search.items, search.facts[2])
+        search.eligible = search.items
+        policy = CrystalChargingPolicy(coin_recharge_cost_gp=150000)
+        search.request = search.request.model_copy(
+            update={
+                "crystal_halberd_charging": policy,
+                "roles": (
+                    RoleConfig(
+                        id="z", style="slash", stance="aggressive", fight_duration_seconds=duration
+                    ),
+                ),
+            }
+        )
+        search.running_at, search.running_prices = NOW, prices(12934)
+        search.native_cost_objective = True
+        scorer = ScoringContext(search)
+        engine = CostEvaluator(search.running_prices, NOW)
+        base = {"weapon": weapon.id}
+
+        def rank(equipment):
+            performance = scorer.score(equipment, 0, True)
+            recipe = engine.prepare(
+                {slot: search.items[item] for slot, item in equipment.items()},
+                {"attack_type": "slash"},
+                fight_duration_seconds=duration,
+                crystal_halberd_charging=policy,
+            )
+            numeric = recipe.score(performance["interval"], performance["dps"])
+            return (numeric.gp_per_damage, -performance["dps"])
+
+        expected = sorted([base, {**base, "head": head.id}], key=rank)
+        actual, _ = drain(
+            StageContext(scorer, search).begin(
+                kind="loadout",
+                states=[base],
+                choices=[None, head.id],
+                slot="head",
+                roles=("z",),
+                metric=True,
+            ),
+            8,
+        )
+        assert actual == expected
+
+
 @pytest.mark.parametrize("spell", ["fire_strike", "earth_wave", "iban_blast", "ice_barrage"])
 @pytest.mark.parametrize("missing", [554, 555, 557, 560])
 def test_tome_cost_table_uses_actual_supply_classes(spell, missing):

@@ -15,6 +15,7 @@ from typing import Any
 
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.ammo import recovery_rate
+from tracker.gear.halberd_charging import CrystalChargingPolicy
 from tracker.gear.hopper import PROC_CHANCE
 from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
@@ -24,7 +25,7 @@ from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v8-demonbane"
+COST_MODEL_VERSION = "ordinary-resource-cost-v9-halberds-demonbane"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -134,7 +135,7 @@ def resource_item_ids() -> frozenset[int]:
         potion_item_ids()
         | MARKET_FORMS
         | TOME_MARKET_FORMS
-        | frozenset({4170, 21257})
+        | frozenset({4170, 21257, 4207, 12929, 12934})
         | frozenset(_RUNES)
         | frozenset(
             i for staff in STAFFS for recipe in staff.recipes for i, _ in recipe if i != 995
@@ -206,6 +207,8 @@ def evaluate_running_cost(
     now: datetime,
     *,
     on_slayer_task: bool = False,
+    fight_duration_seconds: int = 60,
+    crystal_halberd_charging: CrystalChargingPolicy | None = None,
     mark_of_darkness: bool = False,
     base_magic: int | None = None,
 ) -> dict[str, Any]:
@@ -219,11 +222,18 @@ def evaluate_running_cost(
         and bool(getattr(equipment.get("weapon"), "slayer_staff_enchanted", False))
     )
     demonbane_cost = mark_of_darkness or any(i.id in {19675, 732} for i in equipment.values())
-    if active() or enchanted_dart or demonbane_cost:
+    if (
+        active()
+        or enchanted_dart
+        or demonbane_cost
+        or any(i.id in {23987, 12931} for i in equipment.values())
+    ):
         prepared = evaluator(price_records, now).prepare(
             equipment,
             combat_option,
             on_slayer_task=on_slayer_task,
+            fight_duration_seconds=fight_duration_seconds,
+            crystal_halberd_charging=crystal_halberd_charging,
             mark_of_darkness=mark_of_darkness,
             base_magic=base_magic,
         )

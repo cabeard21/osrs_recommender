@@ -1,3 +1,4 @@
+import { TargetSusceptibilityFields } from "./TargetSusceptibilityFields";
 import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import { NpcTargetPicker } from "./NpcTargetPicker";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
@@ -80,6 +81,7 @@ export function RoleTargetEditor({
       {!role.targetSelection && (
         <details className="control-help">
           <summary>Use custom target stats</summary>
+          <TargetSusceptibilityFields target={target} onChange={update} />
           <label>
             Role target selection
             <select

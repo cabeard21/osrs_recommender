@@ -13,6 +13,7 @@ from typing import Any, Literal
 
 from tracker.estimation.prices import PriceRecord, ResolvedPrice, resolve_price
 from tracker.gear.ammo import recovery_rate
+from tracker.gear.halberd_charging import CrystalChargingPolicy
 from tracker.gear.hopper import PROC_CHANCE
 from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
@@ -38,13 +39,16 @@ class Resource:
     supplied: float
     supplier: str | None
     quote: ResolvedPrice | None
+    assumed_price: float | None = None
 
     @property
     def consumed(self) -> float:
         return self.quantity - self.supplied
 
     @property
-    def unit_price(self) -> int | None:
+    def unit_price(self) -> float | None:
+        if self.assumed_price is not None:
+            return self.assumed_price
         return 1 if self.item_id == 995 else self.quote.gp if self.quote else 0
 
     def report(self) -> dict[str, Any]:
@@ -57,7 +61,9 @@ class Resource:
             "supplied_quantity": self.supplied,
             "supplied_by": self.supplier,
             "unit_price_gp": self.unit_price,
-            "price_layer": "fixed"
+            "price_layer": "assumed"
+            if self.assumed_price is not None
+            else "fixed"
             if self.item_id == 995
             else quote.layer.value
             if quote
@@ -92,6 +98,7 @@ class PreparedCost:
     tome_assumption: bool = False
     on_hit_resources: tuple[Resource, ...] = ()
     on_hit_cost: float | None = 0
+    extra_assumptions: tuple[str, ...] = ()
     per_second_resources: tuple[Resource, ...] = ()
     per_second_cost: float | None = 0
     consumption_assumption: str | None = None
@@ -154,6 +161,7 @@ class PreparedCost:
         )
         if self.tome_assumption:
             assumptions = (*assumptions, TOME_ASSUMPTION)
+        assumptions = (*assumptions, *self.extra_assumptions)
         return {
             "model_version": COST_MODEL_VERSION,
             "status": numeric.status,
@@ -220,11 +228,15 @@ class CostEvaluator:
         option: Mapping[str, Any],
         *,
         on_slayer_task: bool = False,
+        fight_duration_seconds: int = 60,
+        crystal_halberd_charging: CrystalChargingPolicy | None = None,
         mark_of_darkness: bool = False,
         base_magic: int | None = None,
     ) -> PreparedCost:
         weapon, ammo, cape = (equipment.get(s) for s in ("weapon", "ammunition", "cape"))
         body, shield = equipment.get("body"), equipment.get("shield")
+        head = equipment.get("head")
+        charging = crystal_halberd_charging or CrystalChargingPolicy()
         torag = any(i.id in TORAG_USABLE_IDS for i in equipment.values())
         tome_assumption = any(i.tome_effect for i in equipment.values())
         key = (
@@ -232,6 +244,11 @@ class CostEvaluator:
             (ammo.id, ammo.name, ammo.ammo_type) if ammo else None,
             (cape.id, cape.name) if cape else None,
             body.id if body else None,
+            head.id if head else None,
+            fight_duration_seconds,
+            charging.method,
+            charging.coin_recharge_cost_gp,
+            charging.shard_value_gp,
             (shield.id, shield.name, shield.slot, shield.tome_effect) if shield else None,
             torag,
             tome_assumption,
@@ -247,7 +264,15 @@ class CostEvaluator:
             self._recipes.move_to_end(key)
             return self._recipes[key]
         result = self._prepare(
-            equipment, option, torag, tome_assumption, on_slayer_task, mark_of_darkness, base_magic
+            equipment,
+            option,
+            torag,
+            tome_assumption,
+            on_slayer_task,
+            fight_duration_seconds,
+            charging,
+            mark_of_darkness,
+            base_magic,
         )
         if self.capacity:
             self._recipes[key] = result
@@ -262,6 +287,8 @@ class CostEvaluator:
         torag: bool,
         tome_assumption: bool,
         on_slayer_task: bool,
+        fight_duration_seconds: int,
+        charging: CrystalChargingPolicy,
         mark_of_darkness: bool,
         base_magic: int | None,
     ) -> PreparedCost:
@@ -270,6 +297,7 @@ class CostEvaluator:
         resources: tuple[Resource, ...] = ()
         limitations: tuple[str, ...] = ()
         alternatives: tuple[ChargeAlternative, ...] = ()
+        extra_assumptions: tuple[str, ...] = ()
         if option.get("powered_attack"):
             staff = review(weapon.id) if weapon else None
             recipes = (
@@ -313,6 +341,35 @@ class CostEvaluator:
             resources, limitations = self._ranged(equipment)
         elif style not in {"stab", "slash", "crush"}:
             limitations = ("Attack resource consumption has not been reviewed.",)
+        if weapon and weapon.id == 23987 and style in {"stab", "slash", "crush"}:
+            routes: list[ChargeAlternative] = []
+            if charging.method != "shards":
+                coin = self.resource(995, "Coins", charging.coin_recharge_cost_gp / 2500)
+                routes.append(ChargeAlternative((coin,), coin.consumed))
+            if charging.method != "coins" and charging.shard_value_gp is not None:
+                shard = Resource(
+                    23962, "Crystal shard", 0.01, 0, None, None, charging.shard_value_gp
+                )
+                routes.append(ChargeAlternative((shard,), charging.shard_value_gp / 100))
+            alternatives = tuple(routes)
+            if alternatives:
+                resources += min(alternatives, key=lambda a: a.gp_per_attack or 0).resources
+            else:
+                limitations += ("Crystal shard valuation is unavailable.",)
+        head = equipment.get("head")
+        if head and head.id == 12931:
+            # Fresh continuous combat window: charge at entry and every 90 ticks.
+            batches = 1 + (fight_duration_seconds * 5 - 1) // 270
+            interval = weapon.attack_speed * 0.6 if weapon else 2.4
+            resources += (
+                self.resource(
+                    12934, "Zulrah's scales", 10 * batches * interval / fight_duration_seconds
+                ),
+            )
+            extra_assumptions = (
+                f"Fresh {fight_duration_seconds}s continuous combat window: "
+                "10 scales at entry and every 54 seconds; actual remaining scales unknown.",
+            )
         if torag:
             limitations += ("Torag's hammers degradation and repair costs have not been reviewed.",)
         on_hit_resources: tuple[Resource, ...] = (
@@ -366,6 +423,7 @@ class CostEvaluator:
             tome_assumption,
             on_hit_resources,
             _resource_sum(on_hit_resources),
+            extra_assumptions,
             timed,
             _resource_sum(timed),
             assumption,

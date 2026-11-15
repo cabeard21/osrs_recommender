@@ -104,7 +104,7 @@ SPELLS = {
 }
 
 
-MODEL_VERSION = "normal-attacks-v9-demonbane"
+MODEL_VERSION = "normal-attacks-v10-halberd-status-demonbane"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -189,6 +189,26 @@ def _evaluate_prepared(
     weapon = prepared.weapon
     bonuses = prepared.ranged_bonuses if style == "ranged" else prepared.bonuses
     problems = list(target.unsupported_mechanics)
+    from tracker.gear.status_damage import HALBERD_IDS, SERPENTINE_HEADS
+
+    selected_head = next((item for item in equipment if item.slot == "head"), None)
+    if (
+        selected_head
+        and selected_head.id in SERPENTINE_HEADS
+        and (
+            weapon is None
+            or weapon.id not in HALBERD_IDS
+            or style not in {"stab", "slash", "crush"}
+        )
+    ):
+        problems.append(
+            "Charged serpentine helm interactions are reviewed only with ordinary halberd attacks."
+        )
+    from tracker.gear.attack_reach import safe_spotting_problem
+
+    reach_problem = safe_spotting_problem(weapon, role)
+    if reach_problem:
+        problems.append(reach_problem)
     bolt_family = (
         prepared.ammunition.bolt_effect
         if style == "ranged" and prepared.ammunition and weapon and weapon.ammo_for
@@ -381,6 +401,7 @@ def _evaluate_prepared(
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
         mark_of_darkness=bool(getattr(role, "mark_of_darkness", False)),
         on_slayer_task=bool(getattr(role, "on_slayer_task", False)),
+        status_duration=getattr(role, "fight_duration_seconds", 60),
         head=next((item for item in equipment if item.slot == "head"), None),
         seeking=bool(
             style == "ranged"
@@ -481,7 +502,12 @@ def _calculate(
     on_slayer_task: bool = False,
     head: EquipmentDefinition | None = None,
     seeking: bool = False,
+    status_duration: int = 60,
 ) -> CombatPerformance | CombatScore:
+    from tracker.gear.models import StatusDamage
+    from tracker.gear.status_damage import application_chance, expected_damage, status_kind
+
+    proc = application_chance(weapon.id if weapon else None, head.id if head else None, style)
     speed = weapon.attack_speed if weapon else 4
     leafy_axe = bool(
         weapon
@@ -806,7 +832,7 @@ def _calculate(
         constants is not None
         and score_only
         and constants.pattern == "single"
-        and not (bolt_family or hopper_active)
+        and not (bolt_family or hopper_active or proc)
     ):
         if (
             constants.damage_cap is not None
@@ -963,10 +989,26 @@ def _calculate(
                 assumptions=hopper.ASSUMPTIONS,
             )
     interval = speed * 0.6
+    affliction = (
+        status_kind(target.poison_susceptibility, target.venom_susceptibility) if proc else None
+    )
+    # Status requires nonzero damage. Accurate zero rolls become one before armour.
+    positive = 1.0 if armour < 1 else max(0, max_hit - armour) / (max_hit + 1)
+    status_expected = (
+        expected_damage(proc * accuracy * positive, speed, status_duration, affliction)
+        if affliction in {"venom", "poison"}
+        else 0.0
+    )
+    status_dps = status_expected / status_duration
+    status_notes = (
+        ("Target poison/venom susceptibility is unknown; only direct DPS is scored.",)
+        if affliction == "unknown"
+        else ()
+    )
     if score_only:
         return CombatScore(
             True,
-            expected / interval,
+            expected / interval + status_dps,
             accuracy,
             bonuses,
             (
@@ -998,14 +1040,26 @@ def _calculate(
         hitsplats=hitsplats,
         max_hit=sum(h.max_hit for h in hitsplats),
         attack_interval=interval,
-        dps=expected / interval,
+        dps=expected / interval + status_dps,
+        direct_dps=expected / interval if proc else None,
+        status_damage=StatusDamage(
+            kind=affliction,
+            duration_seconds=status_duration,
+            expected_damage=status_expected,
+            dps=status_dps,
+            application_chance=proc,
+            limitations=status_notes,
+        )
+        if affliction
+        else None,
         attack_roll=attack,
         defence_roll=defence,
         player_defence_rolls=constants.player_defence.report(bonuses)
         if constants is not None
         else player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
-        limitations=(
+        limitations=status_notes
+        + (
             ("Holy water Defence drain is not simulated; fixed target stats are used.",)
             if holy_water
             else ()

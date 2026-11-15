@@ -252,6 +252,7 @@ def pack(search: Any) -> dict[str, Any]:
     role_count, item_count = len(search.request.roles), len(dense_ids)
     offsets, lengths = array("i"), array("i")
     options = array("q")
+    status_kinds, status_durations = array("i"), array("i")
     option_records: list[tuple[Any, CombatOption]] = []
     option_weapons: list[int] = []
     option_effects = {
@@ -324,6 +325,16 @@ def pack(search: Any) -> dict[str, Any]:
                 for (configured, option), tie in zip(records, ties, strict=True):
                     option_weapons.append(weapon_id)
                     target = configured.target or CombatTarget()
+                    from tracker.gear.status_damage import status_kind
+
+                    status_kinds.append(
+                        {"venom": 1, "poison": 2}.get(
+                            status_kind(target.poison_susceptibility, target.venom_susceptibility)
+                            or "",
+                            0,
+                        )
+                    )
+                    status_durations.append(getattr(configured, "fight_duration_seconds", 60))
                     standard = (
                         configured.style == "magic"
                         and configured.powered_attack is None
@@ -437,7 +448,13 @@ def pack(search: Any) -> dict[str, Any]:
                         )
                     )
                     option_records.append((configured, option))
+    from tracker.gear.status_damage import HALBERD_IDS, SERPENTINE_HEADS
+
     return {
+        "status_kind": status_kinds,
+        "status_duration": status_durations,
+        "halberd": array("i", [int(i in HALBERD_IDS) for i in dense_ids]),
+        "serpentine": array("i", [int(i in SERPENTINE_HEADS) for i in dense_ids]),
         **integers,
         **option_effects,
         "dense_ids": dense_ids,

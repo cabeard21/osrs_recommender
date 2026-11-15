@@ -254,7 +254,10 @@ def calculate_evaluation(
     from tracker.gear.potions import potion_summary
 
     bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
+    from tracker.gear.attack_reach import policy_context
+
     assumptions = {
+        **policy_context(scenario),
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": scenario.fire_tome_pages,
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,

@@ -81,6 +81,28 @@ export function CombatOptionSummary({
         </p>
       ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
+      {performance?.status_damage && (
+        <div aria-label="Status damage estimate">
+          <p>
+            Direct DPS:{" "}
+            {(performance.direct_dps ?? performance.dps ?? 0).toFixed(3)};{" "}
+            {performance.status_damage.kind === "unknown"
+              ? "Status damage unknown"
+              : `${performance.status_damage.kind} DPS: ${performance.status_damage.dps.toFixed(3)}`}{" "}
+            over {performance.status_damage.duration_seconds}s
+          </p>
+          <p>
+            Expected status damage:{" "}
+            {performance.status_damage.expected_damage.toFixed(2)}. Total
+            modeled DPS: {(performance.dps ?? 0).toFixed(3)}.
+          </p>
+          {performance.status_damage.limitations.map((message) => (
+            <p className="notice" key={message}>
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
       {performance?.demonbane_bonus && (
         <p aria-label="Demonbane effect">
           Demonbane: +

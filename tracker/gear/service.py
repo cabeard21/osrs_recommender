@@ -43,9 +43,9 @@ _LIMITATIONS = (
 )
 
 
-def _has_frontiers(request: OptimizationRequest) -> bool:
+def _has_frontiers(request: OptimizationRequest, catalog: Any = None) -> bool:
     """Whether any lane runs the secondary or running-cost frontier stage."""
-    return request.secondary_priority != "default" or needs_running_cost_frontier(request)
+    return request.secondary_priority != "default" or needs_running_cost_frontier(request, catalog)
 
 
 def _timing_key(
@@ -188,7 +188,7 @@ class GearService:
                 parallel = True
             if progress_identity is not None:
                 tracker = RunProgress(
-                    has_frontiers=_has_frontiers(request),
+                    has_frontiers=_has_frontiers(request, self.equipment_catalog()),
                     parallelism=getattr(pool, "workers", 1) if parallel else 1,
                     timing_key=_timing_key(
                         request,

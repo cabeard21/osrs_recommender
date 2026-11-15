@@ -1,3 +1,4 @@
+import { TargetSusceptibilityFields } from "./TargetSusceptibilityFields";
 import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import type { ReactNode } from "react";
 import type { CombatTarget, Draft } from "../api/contracts";
@@ -173,6 +174,28 @@ export function TargetFields({
             Applied to each accurate melee or ranged hitsplat; negative values
             increase damage. Magic ignores flat armour.
           </p>
+          <TargetSusceptibilityFields
+            target={
+              draft.combatTarget ?? {
+                name: draft.target,
+                defence_level: Number(draft.defence),
+                magic_level: 1,
+                bonuses: {},
+              }
+            }
+            onChange={(patch) =>
+              change({
+                combatTarget: {
+                  name: draft.target,
+                  defence_level: Number(draft.defence),
+                  magic_level: 1,
+                  bonuses: {},
+                  ...draft.combatTarget,
+                  ...patch,
+                },
+              })
+            }
+          />
           <details className="control-help">
             <summary>About custom targets</summary>
             <p>

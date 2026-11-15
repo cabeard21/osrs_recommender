@@ -44,11 +44,15 @@ class NpcCatalog:
         payload = (root / "monsters.json").read_bytes()
         if hashlib.sha256(payload).hexdigest() != manifest["catalog_sha256"]:
             raise ValueError("NPC catalog checksum mismatch")
+        status_path = root / "status_immunities.json"
+        status_payload = status_path.read_bytes() if status_path.exists() else b""
+        self.status_facts = json.loads(status_payload).get("items", {}) if status_payload else {}
         self.revision = hashlib.sha256(
             payload
+            + status_payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-traits-v6-leafy"
+            + b"ordinary-npc-traits-v7-halberd-status"
             + LEAFY_REVISION
             + DEMONBANE_REVISION
         ).hexdigest()
@@ -82,6 +86,16 @@ class NpcCatalog:
         ):
             review = None
         status = "supported"
+        if (row["id"], row["name"]) in {
+            (13675, "Acidic Araxyte"),
+            (13671, "Mirrorback Araxyte"),
+            (13673, "Ruptura Araxyte"),
+        }:
+            status = "unsupported"
+            reasons.append(
+                "Araxxor spawn attacks require an encounter review, including "
+                "the noxious halberd guaranteed-maximum-hit rule."
+            )
         for attribute in row.get("attributes", []):
             if attribute in MECHANICAL_ATTRIBUTES:
                 status = "unsupported"
@@ -121,6 +135,12 @@ class NpcCatalog:
             try:
                 target = CombatTarget(
                     hitpoints=skills.get("hp"),
+                    **self.status_facts.get(
+                        json.dumps(
+                            [row["id"], row["name"], row.get("version", "")], ensure_ascii=True
+                        ),
+                        {},
+                    ),
                     traits=tuple(
                         sorted(
                             (set(row.get("attributes", ())) & ORDINARY_ATTRIBUTES)
@@ -169,7 +189,8 @@ class NpcCatalog:
             if review
             else [
                 "Ordinary direct attacks using catalog base stats only; encounter phases, "
-                "survival, movement, poison and venom are not simulated. "
+                "survival and movement are not simulated. Status damage uses reviewed "
+                "susceptibility and duration. "
                 "Slayer bonuses require explicit task context.",
                 "Family attributes do not enable unsupported equipment effects.",
             ],
@@ -252,6 +273,8 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         "flat_armour",
         "unsupported_mechanics",
         "traits",
+        "poison_susceptibility",
+        "venom_susceptibility",
         "demonbane_vulnerability_percent",
     ):
         if getattr(effective, field) != getattr(canonical, field):
