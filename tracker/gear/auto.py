@@ -299,7 +299,7 @@ def resolve_auto_role(
     selected: Mapping[str, Any] | None = None,
 ) -> tuple[Any, dict[str, Any]] | None:
     """Resolve a fixed loadout against the same legal filters as equipment search."""
-    from tracker.gear.combat_options import eligible_combat_options
+    from tracker.gear.combat_options import ancient_spell_problem, eligible_combat_options
     from tracker.gear.evaluation import evaluate_equipment
     from tracker.gear.npcs import discipline_problem
 
@@ -324,6 +324,15 @@ def resolve_auto_role(
                 or option.stance not in allowed.stances
                 or (spell_id is not None and spell_id not in allowed.spells)
                 or (selected is not None and payload != dict(selected))
+            ):
+                continue
+            if option.spell and ancient_spell_problem(
+                weapon,
+                snapshot,
+                option.spell,
+                option.stance,
+                levels,
+                mark_of_darkness=role.mark_of_darkness,
             ):
                 continue
             configured = role.model_copy(

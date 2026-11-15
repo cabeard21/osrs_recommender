@@ -368,6 +368,8 @@ def evaluate_configurations(
                 price_records,
                 now,
                 on_slayer_task=configured.on_slayer_task,
+                mark_of_darkness=configured.mark_of_darkness,
+                base_magic=base_levels.get("magic"),
             ),
         }
 
@@ -486,6 +488,7 @@ def evaluate_configurations(
                 configured.spell,
                 configured.stance,
                 levels,
+                mark_of_darkness=configured.mark_of_darkness,
             )
             if problem:
                 return {

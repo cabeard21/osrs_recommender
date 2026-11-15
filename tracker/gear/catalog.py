@@ -18,6 +18,13 @@ from tracker.gear.bolts_catalog import REVISION as BOLT_REVISION
 from tracker.gear.bolts_catalog import TRADEABLE as BOLT_TRADEABLE
 from tracker.gear.bolts_catalog import apply_review as bolt_review
 from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
+from tracker.gear.demonbane import AUTOCAST_STAVES as DEMONBANE_STAVES
+from tracker.gear.demonbane import FORMS as DEMONBANE_FORMS
+from tracker.gear.demonbane import REQUIREMENTS as DEMONBANE_REQUIREMENTS
+from tracker.gear.demonbane import REVISION as DEMONBANE_REVISION
+from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
+from tracker.gear.demonbane import TRADEABLE as DEMONBANE_TRADEABLE
+from tracker.gear.demonbane import apply_review as demonbane_review
 from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
 from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
 from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
@@ -69,6 +76,8 @@ def _reviewed_spells(item_id: int) -> tuple[str, ...]:
     return (
         (tuple(ELEMENTAL_SPELLS) if item_id in REVIEWED_STANDARD_STAVES else ())
         + (tuple(ANCIENT_SPELLS) if item_id in REVIEWED_ANCIENT_STAVES else ())
+        + (tuple(DEMONBANE_SPELLS) if item_id in DEMONBANE_STAVES else ())
+        + (tuple(ELEMENTAL_SPELLS) if item_id == 29594 else ())
         + (("iban_blast",) if item_id in IBAN_STAVES else ())
         + (
             ("magic_dart", *(s for s in ELEMENTAL_SPELLS if s.endswith(("_wave", "_surge"))))
@@ -192,7 +201,7 @@ def load_catalog(
                     if e != "Offensive effects have not been validated."
                 ],
             }
-        row = leafy_review(row)
+        row = demonbane_review(leafy_review(row))
         entries = overlays.get(row["id"], [])
         primary = _reviewed_equivalent(row, by_id)
         if primary is not None:
@@ -252,6 +261,15 @@ def load_catalog(
             requirement = requirement_from_levels(
                 dict(leafy_gates), set(content.skills) | set(leafy_gates)
             )
+        if row["id"] in DEMONBANE_REQUIREMENTS:
+            demonbane_gates = DEMONBANE_REQUIREMENTS[row["id"]]
+            requirement = (
+                requirement_from_levels(
+                    dict(demonbane_gates), set(content.skills) | set(demonbane_gates)
+                )
+                if demonbane_gates
+                else None
+            )
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -262,6 +280,7 @@ def load_catalog(
                 "requires": requirement,
                 "requirements_complete": bool(
                     entries
+                    or row["id"] in DEMONBANE_FORMS
                     or row["id"] in LEAFY_FORMS
                     or row["id"] in SLAYER_FORMS
                     or review
@@ -274,7 +293,9 @@ def load_catalog(
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in LEAFY_TRADEABLE
+                    row["id"] in DEMONBANE_TRADEABLE
+                    if row["id"] in DEMONBANE_FORMS
+                    else row["id"] in LEAFY_TRADEABLE
                     if row["id"] in LEAFY_FORMS
                     else (row["id"] == 4170 or row["name"] == "Black mask")
                     if row["id"] in SLAYER_FORMS
@@ -327,6 +348,7 @@ def load_catalog(
             + HOPPER_REVISION
             + SLAYER_REVISION
             + LEAFY_REVISION
+            + DEMONBANE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -344,6 +366,7 @@ def load_catalog(
             + HOPPER_REVISION
             + SLAYER_REVISION
             + LEAFY_REVISION
+            + DEMONBANE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

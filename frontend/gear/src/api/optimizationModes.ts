@@ -65,10 +65,12 @@ export function matchesOptimizationPolicy(
       a.scenario.request.roles.map((role) => [
         role.id,
         role.onSlayerTask ?? false,
+        role.markOfDarkness ?? false,
       ]),
       b.scenario.request.roles.map((role) => [
         role.id,
         role.onSlayerTask ?? false,
+        role.markOfDarkness ?? false,
       ]),
     ) &&
     (a.scenario.request.fire_tome_pages ?? "burnt") ===

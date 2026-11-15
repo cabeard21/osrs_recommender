@@ -109,3 +109,26 @@ cdef inline BoltResult bolt_damage(int family, long long ranged, long long maxim
     result.maximum = max(normal_max, max(0, floor_div(max(1, maximum + bonus), divisor) - armour),
                          floor_div(bonus, divisor) if family != 5 else 0)
     return result
+
+
+cdef inline long long linear_floor_sum(long long count, long long modulus, long long multiplier) noexcept nogil:
+    cdef long long offset = 0, result = 0, upper, previous
+    while True:
+        result += (count - 1) * count * (multiplier // modulus) // 2
+        multiplier %= modulus
+        result += count * (offset // modulus)
+        offset %= modulus
+        upper = multiplier * count + offset
+        if upper < modulus:
+            return result
+        count, offset = upper // modulus, upper % modulus
+        previous = modulus
+        modulus, multiplier = multiplier, previous
+
+
+cdef inline long long marked_damage_total(long long maximum, long long percent, long long vulnerability) noexcept nogil:
+    cdef long long divisor = 100 // percent
+    cdef long long quotient = maximum // divisor, remainder = maximum % divisor
+    cdef long long bonus = divisor * linear_floor_sum(quotient, 100, vulnerability)
+    bonus += (remainder + 1) * (quotient * vulnerability // 100)
+    return maximum * (maximum + 1) // 2 + 1 + bonus

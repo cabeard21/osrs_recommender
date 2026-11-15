@@ -25,13 +25,20 @@ export function describeDraftChanges(
         typeof value === "object" &&
         "id" in value &&
         value.id === role.id,
-    ) as { onSlayerTask?: boolean } | undefined;
+    ) as { onSlayerTask?: boolean; markOfDarkness?: boolean } | undefined;
     if (
       previous &&
       (previous.onSlayerTask ?? false) !== (role.onSlayerTask ?? false)
     )
       changes.push(
         `${role.name} Slayer task: ${previous.onSlayerTask ? "on" : "off"} → ${role.onSlayerTask ? "on" : "off"}`,
+      );
+    if (
+      previous &&
+      (previous.markOfDarkness ?? false) !== (role.markOfDarkness ?? false)
+    )
+      changes.push(
+        `${role.name} Mark of Darkness: ${previous.markOfDarkness ? "on" : "off"} → ${role.markOfDarkness ? "on" : "off"}`,
       );
   }
   if (

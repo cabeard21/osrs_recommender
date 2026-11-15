@@ -81,6 +81,32 @@ export function CombatOptionSummary({
         </p>
       ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
+      {performance?.demonbane_bonus && (
+        <p aria-label="Demonbane effect">
+          Demonbane: +
+          {Math.floor(
+            (performance.demonbane_bonus.accuracy_percent *
+              performance.demonbane_bonus.vulnerability_percent) /
+              100,
+          )}
+          % accuracy and +
+          {performance.demonbane_bonus.mark_of_darkness
+            ? performance.demonbane_bonus.damage_percent
+            : Math.floor(
+                (performance.demonbane_bonus.damage_percent *
+                  performance.demonbane_bonus.vulnerability_percent) /
+                  100,
+              )}
+          %{" "}
+          {performance.demonbane_bonus.mark_of_darkness
+            ? "damage per rolled hit"
+            : "maximum hit"}
+          {performance.demonbane_bonus.vulnerability_percent !== 100 &&
+            ` · ${performance.demonbane_bonus.vulnerability_percent}% target effectiveness applies to the bonuses`}
+          {performance.demonbane_bonus.mark_of_darkness &&
+            " · Mark of Darkness maintained; rune upkeep included"}
+        </p>
+      )}
       {performance?.leafy_bonus && (
         <p aria-label="Leafy weapon effect">
           Leaf-bladed battleaxe: +17.5% damage against this leafy target
