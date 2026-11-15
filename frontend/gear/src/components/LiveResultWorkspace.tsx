@@ -1,4 +1,5 @@
 import { DisciplineTabs } from "./DisciplineTabs";
+import { BankTagExport } from "./BankTagExport";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
@@ -231,6 +232,11 @@ export function LiveResultWorkspace() {
               roleId={loadout.roleId}
               differences={changedSlots}
               differenceLabel="Changed"
+            />
+            <BankTagExport
+              key={`${result.fingerprint}:${current.solutionId}:${loadout.roleId}`}
+              equipment={loadout.equipment}
+              name={loadout.name}
             />
             <CombatOptionSummary
               itemName={(id) => itemById(id)?.name ?? `Item #${id}`}

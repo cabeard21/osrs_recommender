@@ -19,6 +19,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/api/bankTags.ts",
+        "src/components/BankTagExport.tsx",
         "src/api/optimizationModes.ts",
         "src/components/OptimizationModeSummary.tsx",
         "src/api/httpClient.ts",

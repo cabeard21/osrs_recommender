@@ -1,4 +1,5 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
+import { BankTagExport } from "./BankTagExport";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
@@ -157,6 +158,11 @@ export function LiveMultiResultWorkspace() {
           optimized
           purchaseIds={solution.purchases.map((p) => p.item_id)}
           roleId={id}
+        />
+        <BankTagExport
+          key={`${result!.fingerprint}:${current.solutionId}:${id}`}
+          equipment={equipment}
+          name={role.name}
         />
         {scored ? (
           <PerformanceSummary
