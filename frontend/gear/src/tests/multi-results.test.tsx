@@ -229,6 +229,28 @@ it("changes the curve selection only through visualization actions", async () =>
   );
 });
 
+it("exports each configuration and follows the selected curve without combining gear", async () => {
+  const user = userEvent.setup();
+  const { current, rerender } = setup({ roles: 2 });
+  const exportRole = async (name: string, code: string) => {
+    const card = screen.getByRole("heading", { name }).closest("section")!;
+    await user.click(
+      within(card).getByRole("button", { name: "Export mobile bank tag" }),
+    );
+    expect(screen.getByRole("textbox", { name: "Bank tag code" })).toHaveValue(
+      code,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Close Export mobile bank tag" }),
+    );
+  };
+  await exportRole("Blade", "1,3,9,1,1,1,0,2,2,2,2");
+  await exportRole("Bow", "1,2,9,1,1,3,0,2");
+  current.solutionId = "curve-0";
+  rerender(<LiveMultiResultWorkspace />);
+  await exportRole("Bow", "1,2,9,1,1,1,0,2");
+});
+
 it("keeps both tradeoff panels on the selected action limit when crossing frontiers", async () => {
   const user = userEvent.setup();
   const { current, result, rerender } = setup({ roles: 2 });

@@ -243,6 +243,27 @@ it("shows selected discipline frontier equipment", () => {
   expect(screen.getByText("Equipped weapon 40")).toBeVisible();
   expect(screen.getByText(/Auto selected melee/)).toBeVisible();
 });
+it.each([
+  ["best-found", "100"],
+  ["discipline-ranged-best-found", "50"],
+  ["discipline-ranged-frontier-8-a", "40"],
+])("exports the displayed %s loadout", async (selection, weapon) => {
+  setup(selection, { outdated: true });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Export mobile bank tag" }),
+  );
+  expect(screen.getByRole("textbox", { name: "Bank tag code" })).toHaveValue(
+    `1,1,${weapon},0,2`,
+  );
+  expect(screen.getByText(/Result outdated/)).toBeVisible();
+});
+
+it("does not export an infeasible discipline", () => {
+  setup("discipline-magic-best-found");
+  expect(
+    screen.queryByRole("button", { name: "Export mobile bank tag" }),
+  ).not.toBeInTheDocument();
+});
 it("does not fall back to the winner for an infeasible discipline", async () => {
   setup("discipline-magic-best-found");
   expect(

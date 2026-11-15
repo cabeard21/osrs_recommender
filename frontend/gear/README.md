@@ -85,6 +85,33 @@ loadouts satisfy budgets, supply reservations, or action limits. Fixture lock/ex
 controls demonstrate state changes. Live locks, exclusions and manual trials use
 authoritative Python validation.
 
+## Export a mobile bank tag
+
+Each live optimized configuration has an **Export mobile bank tag** action.
+It exports the equipment currently displayed, including ammunition, selected Auto
+discipline and tradeoff results. Multi exports each configuration separately.
+The tag matches the equipment grid in the first three bank columns, preserving
+gaps for empty slots. It includes owned and unowned equipment using the exact
+equipped IDs, including charged forms. Supplies and manual trials are excluded.
+Outdated results export their displayed equipment; rerun optimization to use edits.
+
+Open the export dialog and choose **Copy code**, or select and copy its read-only
+text if clipboard access is unavailable. In OSRS mobile, open the Bank Tags menu,
+choose **Import**, paste the code, and name the tag in-game. The code contains
+item IDs and coordinates; it does not contain a tag name or withdraw items.
+Empty equipment and invalid IDs cannot be exported. Fixture demonstrations do
+not expose this action.
+
+Encoding follows the [Wiki converter source, revision 15263469](https://oldschool.runescape.wiki/w/MediaWiki:Gadget-banktag-converter-core.js?oldid=15263469&action=raw):
+`1,count,itemId,column,row,...`, without whitespace or a trailing comma.
+For head 10828, weapon 4151 and ring 2550, the code is
+`1,3,10828,1,0,4151,0,2,2550,2,4`.
+
+Compatibility status: serializer and browser verification are automated; actual
+OSRS mobile import has not yet been verified. Before claiming client acceptance,
+import representative full, partial, two-handed, ammunition and charged-equipment
+tags and record the mobile OS, client version, item identities and layout.
+
 ## State boundaries
 
 `GearProvider` owns read-only account or fixture context and separate Single/Multi workspaces.
