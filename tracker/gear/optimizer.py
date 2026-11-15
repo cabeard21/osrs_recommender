@@ -33,6 +33,7 @@ from tracker.gear.combat import (
 )
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
 from tracker.gear.defensive_rolls import raw_player_defence_rolls
+from tracker.gear.demonbane import MODEL_VERSION as DEMONBANE_MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.elemental_amulets import applied_spell_bonus
 from tracker.gear.evaluation import (
@@ -128,6 +129,7 @@ class CombatOptionFilters(BaseModel):
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     on_slayer_task: bool = Field(default=False, strict=True)
+    mark_of_darkness: bool = Field(default=False, strict=True)
     fire_tome_pages: Literal["burnt", "searing"] = Field(default="burnt", exclude=True)
     bolt_diary_boost: bool = Field(default=False, exclude=True)
     bolt_diary_known: bool = Field(default=False, exclude=True)
@@ -687,6 +689,15 @@ class _Search:
                         or (spell_id is not None and spell_id not in allowed.spells)
                     ):
                         continue
+                    if option.spell and ancient_spell_problem(
+                        weapon,
+                        self.snapshot,
+                        option.spell,
+                        option.stance,
+                        self.levels,
+                        mark_of_darkness=role.mark_of_darkness,
+                    ):
+                        continue
                     selected = role.model_copy(
                         update={
                             "style": option.style,
@@ -699,7 +710,12 @@ class _Search:
             elif role.prayers.mode != "disabled":
                 problem = (
                     ancient_spell_problem(
-                        weapon, self.snapshot, role.spell, role.stance, self.levels
+                        weapon,
+                        self.snapshot,
+                        role.spell,
+                        role.stance,
+                        self.levels,
+                        mark_of_darkness=role.mark_of_darkness,
                     )
                     if role.style == "magic" and role.powered_attack is None
                     else None
@@ -769,6 +785,7 @@ class _Search:
             shield.id if shield else None,
             role.fire_tome_pages,
             role.on_slayer_task,
+            role.mark_of_darkness,
             getattr(self, "metric_first", False),
             self.request.secondary_priority,
             (neck.elemental_spell_bonus.elements, neck.elemental_spell_bonus.base_max_hit_bonus)
@@ -995,6 +1012,7 @@ class _Search:
                     role.spell,
                     role.stance,
                     self.levels,
+                    mark_of_darkness=role.mark_of_darkness,
                 )
                 if problem:
                     cached = cached._replace(supported=False, dps=None)
@@ -1078,7 +1096,12 @@ class _Search:
                     role.style == "magic"
                     and role.powered_attack is None
                     and ancient_spell_problem(
-                        weapon, self.snapshot, role.spell, role.stance, self.levels
+                        weapon,
+                        self.snapshot,
+                        role.spell,
+                        role.stance,
+                        self.levels,
+                        mark_of_darkness=role.mark_of_darkness,
                     )
                 ):
                     cached = cached._replace(supported=False, dps=None)
@@ -1194,6 +1217,7 @@ class _Search:
                         role.spell,
                         role.stance,
                         self.levels,
+                        mark_of_darkness=role.mark_of_darkness,
                     )
                     if role.style == "magic" and role.powered_attack is None
                     else None
@@ -1328,6 +1352,16 @@ class _Search:
                 )
                 retained = list(
                     dict.fromkeys([*retained, *(i for i in ordered if i in contextual)])
+                )
+            if slot == "weapon" and any(
+                r.target is not None and "demon" in r.target.traits for r in self.request.roles
+            ):
+                from tracker.gear.demonbane import WEAPON_BONUSES
+
+                retained = list(
+                    dict.fromkeys(
+                        [*retained, *(i for i in ordered if i in WEAPON_BONUSES or i == 29594)]
+                    )
                 )
             if slot == "ammunition":
                 # Equal-strength dragon bolts have distinct target-dependent procs.
@@ -2282,7 +2316,9 @@ def optimize(
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
+        "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
+        "marks_of_darkness": {role.id: role.mark_of_darkness for role in request.roles},
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": request.fire_tome_pages,
         "bolt_model_version": "enchanted-bolts-v1",

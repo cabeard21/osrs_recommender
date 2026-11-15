@@ -13,9 +13,17 @@ from sqlalchemy import delete, update
 
 from tracker.app import _mount_ui, create_app
 from tracker.config.settings import Settings
-from tracker.db.models import Base, ContainerScan, ItemPrice, ObservedItem, Player, SkillSnapshot
+from tracker.db.models import (
+    Base,
+    ContainerScan,
+    ItemPrice,
+    ObservedItem,
+    Player,
+    QuestState,
+    SkillSnapshot,
+)
 from tracker.db.session import build_engine, build_session_factory
-from tracker.domain.types import Container, PriceSourceLayer, Source
+from tracker.domain.types import Container, PriceSourceLayer, QuestStatus, Source
 from tracker.gear.catalog import EquipmentCatalog
 
 if __name__ == "__main__":
@@ -163,6 +171,56 @@ if __name__ == "__main__":
                         observed_at=datetime.now(UTC),
                     )
                 )
+                session.commit()
+            return {"status": "seeded"}
+
+        @app.post("/test/seed-demonbane")
+        def seed_demonbane():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {
+                    item_id: original_catalog.items[item_id]
+                    for item_id in (29589, 29591, 29594, 892)
+                },
+                revision="browser-acceptance-demonbane-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                session.execute(update(SkillSnapshot).values(level=99))
+                session.merge(
+                    QuestState(
+                        player_id=player.id,
+                        quest_id="a_kingdom_divided",
+                        status=QuestStatus.COMPLETE,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                for item_id in (29589, 29591, 29594, 892):
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=1000 if item_id == 892 else 1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                for item_id in (554, 562, 566, 564, 892):
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=100,
+                            low_price_gp=90,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
+                    )
                 session.commit()
             return {"status": "seeded"}
 

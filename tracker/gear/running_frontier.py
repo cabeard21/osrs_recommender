@@ -13,14 +13,21 @@ if TYPE_CHECKING:
     from tracker.gear.compact_costs import NumericCost, PreparedCost
 
 
+def _base_magic(search: Any) -> int | None:
+    snapshot = getattr(search, "snapshot", None)
+    skill = snapshot.skills.get("magic") if snapshot is not None else None
+    return skill.level if skill is not None else None
+
+
 def needs_running_cost_frontier(request: Any) -> bool:
-    """Resource objectives apply to ranged/Magic and every branch of their Auto run."""
+    """Resource objectives include demonbane charge costs across Auto branches."""
     return any(
         (
             bool({"ranged", "magic"}.intersection(role.allowed_disciplines))
             if role.allowed_disciplines is not None
             else role.style in {"ranged", "magic"}
         )
+        or bool(getattr(role, "target", None) and "demon" in role.target.traits)
         for role in request.roles
         if role.style != "special"
     )
@@ -41,7 +48,7 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
         "policy": "running-cost-frontier-v3-tomes",
         "cost_model_version": COST_MODEL_VERSION,
         "consumable_budget_policy": "reviewed-expendable-ranged-v1",
-        "activation": "ranged-or-magic-v1",
+        "activation": "ranged-magic-or-demon-v2",
         "expansion_limit": 1_500_000 if thorough else 500_000,
         "complete_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,
@@ -55,6 +62,7 @@ def running_cost_assumptions(
     return {
         "fire_tome_pages": request.fire_tome_pages,
         "slayer_tasks": {r.id: getattr(r, "on_slayer_task", False) for r in request.roles},
+        "marks_of_darkness": {r.id: getattr(r, "mark_of_darkness", False) for r in request.roles},
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
             str(i): {
@@ -117,7 +125,11 @@ def _report_prepared_costs(
 ) -> dict[str, Any]:
     """Expand frozen resource records without retaining the producing search."""
     reports = {
-        rid: prepared.report(numeric, accuracy)
+        rid: prepared.report(
+            numeric,
+            accuracy,
+            interval=solution["loadouts"][rid]["performance"].get("attack_interval"),
+        )
         for rid, prepared, numeric, accuracy in prepared_costs
     }
     loadouts = {
@@ -146,6 +158,10 @@ def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, 
             on_slayer_task=next(
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
+            mark_of_darkness=next(
+                getattr(r, "mark_of_darkness", False) for r in search.request.roles if r.id == rid
+            ),
+            base_magic=_base_magic(search),
         )
         performance = loadout["performance"]
         numeric = prepared.score(
@@ -196,6 +212,10 @@ def add_solution_costs(
             on_slayer_task=next(
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
+            mark_of_darkness=next(
+                getattr(r, "mark_of_darkness", False) for r in search.request.roles if r.id == rid
+            ),
+            base_magic=_base_magic(search),
         )
         loadouts[rid] = {**loadout, "running_cost": cost}
     costs = [
@@ -298,6 +318,8 @@ def explore_running_costs(
                     {s: self.items[i] for s, i in loadout["equipment"].items()},
                     loadout["combat_option"] or {},
                     on_slayer_task=getattr(role, "on_slayer_task", False),
+                    mark_of_darkness=getattr(role, "mark_of_darkness", False),
+                    base_magic=_base_magic(self),
                 )
                 dps = performance.get("dps") or 0
                 numeric = prepared.score(
@@ -338,6 +360,8 @@ def explore_running_costs(
                     self.running_prices,
                     self.running_at,
                     on_slayer_task=getattr(role, "on_slayer_task", False),
+                    mark_of_darkness=getattr(role, "mark_of_darkness", False),
+                    base_magic=_base_magic(self),
                 )
                 costs.append((role.weight, cost, performance.get("dps") or 0))
             cost = aggregate_cost(costs)["gp_per_damage"]

@@ -76,6 +76,7 @@ export interface TargetSelection {
 }
 export interface Role {
   onSlayerTask?: boolean;
+  markOfDarkness?: boolean;
   prayers?: PrayerPolicy;
   targetSelection?: TargetSelection;
   id: string;
@@ -108,6 +109,7 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  demonbane_vulnerability_percent?: number;
   hitpoints?: number | null;
   current_hitpoints?: number | null;
   traits?: string[];
@@ -437,6 +439,14 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  demonbane_bonus?: {
+    item_id: number | null;
+    spell: string | null;
+    accuracy_percent: number;
+    damage_percent: number;
+    vulnerability_percent: number;
+    mark_of_darkness: boolean;
+  } | null;
   leafy_bonus?: {
     item_id: number;
     damage_numerator: number;

@@ -88,6 +88,7 @@ export function parseOptimization(
     roles: (object(envelope.scenario).roles as unknown[]).map((role) => ({
       ...object(role),
       on_slayer_task: object(role).on_slayer_task ?? false,
+      mark_of_darkness: object(role).mark_of_darkness ?? false,
     })),
     fire_tome_pages: object(envelope.scenario).fire_tome_pages ?? "burnt",
     include_untradeables:
@@ -632,6 +633,7 @@ export function optimizationRequest(scenario: Scenario) {
     roles: r.roles.map((role) => ({
       id: role.id,
       on_slayer_task: role.onSlayerTask ?? false,
+      mark_of_darkness: role.markOfDarkness ?? false,
       ...(role.autoDiscipline
         ? {
             allowed_disciplines: role.allowedDisciplines ?? [

@@ -165,6 +165,11 @@ const STANDARD_SPELL =
 const ANCIENT_SPELL = /^(smoke|shadow|blood|ice)_(rush|burst|blitz|barrage)$/;
 const STANDARD_TIERS = ["strike", "bolt", "blast", "wave", "surge"];
 const ANCIENT_TIERS = ["rush", "burst", "blitz", "barrage"];
+const DEMONBANE_SPELLS = [
+  "inferior_demonbane",
+  "superior_demonbane",
+  "dark_demonbane",
+];
 const ELEMENTS = ["fire", "water", "earth", "air"] as const;
 
 export interface SpellQuickPick {
@@ -194,10 +199,15 @@ export function spellQuickPicks(
     },
     { label: "Ancient", ids: eligible.filter((id) => ANCIENT_SPELL.test(id)) },
     {
+      label: "Demonbane",
+      ids: eligible.filter((id) => DEMONBANE_SPELLS.includes(id)),
+    },
+    {
       label: "Highest tier",
       ids: [
         ...highestTier(eligible, STANDARD_SPELL, STANDARD_TIERS),
         ...highestTier(eligible, ANCIENT_SPELL, ANCIENT_TIERS),
+        ...DEMONBANE_SPELLS.filter((id) => eligible.includes(id)).slice(-1),
       ],
     },
     ...ELEMENTS.map((element) => ({

@@ -419,6 +419,34 @@ def combat_option_capabilities(
     return {"attack_types": attack_types, "stances": stances, "spells": spells}
 
 
+def mark_of_darkness_capability(snapshot: AccountSnapshot | None) -> dict[str, Any]:
+    from tracker.accounts.requirements import evaluate_requirement
+    from tracker.content.requirements import QuestLeaf, UnlockLeaf
+    from tracker.domain.types import Tri
+
+    reasons = []
+    if (
+        snapshot is None
+        or snapshot.skills.get("magic") is None
+        or snapshot.skills["magic"].level < 59
+    ):
+        reasons.append("Magic level 59 required")
+    if (
+        snapshot is None
+        or evaluate_requirement(snapshot, QuestLeaf(quest_id="a_kingdom_divided")).status
+        is not Tri.SATISFIED
+    ):
+        reasons.append("A Kingdom Divided completion is not confirmed")
+    if (
+        snapshot is not None
+        and "spellbook_arceuus" in snapshot.unlocks
+        and evaluate_requirement(snapshot, UnlockLeaf(key="spellbook_arceuus")).status
+        is not Tri.SATISFIED
+    ):
+        reasons.append("Arceuus spellbook unlock is not confirmed")
+    return {"level": 59, "available": not reasons, "reason": "; ".join(reasons) or None}
+
+
 @router.get("/context", response_model=ContextResponse)
 def context(request: Request) -> ContextResponse:
     snapshot, gear, prices = resources(request)
@@ -448,6 +476,7 @@ def context(request: Request) -> ContextResponse:
             for i in sorted({i for s in projection.slots.values() for i in s.candidate_item_ids})
         ],
         capabilities={
+            "mark_of_darkness": mark_of_darkness_capability(snapshot),
             "prayers": prayer_catalog(snapshot),
             "prayer_model_version": PRAYER_MODEL_VERSION,
             "prayer_catalog_revision": PRAYER_CATALOG_REVISION,

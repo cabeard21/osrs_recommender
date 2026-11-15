@@ -12,6 +12,8 @@ from tracker.gear.bolts_catalog import CROSSBOWS
 from tracker.gear.combat import ELEMENTAL_SPELLS
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem
 from tracker.gear.compact_states import SLOT_NAMES
+from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
+from tracker.gear.demonbane import WEAPON_BONUSES
 from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 from tracker.gear.prayers import effects
 from tracker.gear.prepared_combat import PreparedCombat
@@ -115,7 +117,14 @@ def _legal(weapon: Any, role: Any, levels: Any, snapshot: Any = None) -> bool:
         snapshot is not None
         and role.style == "magic"
         and role.powered_attack is None
-        and ancient_spell_problem(weapon, snapshot, role.spell, role.stance, levels)
+        and ancient_spell_problem(
+            weapon,
+            snapshot,
+            role.spell,
+            role.stance,
+            levels,
+            mark_of_darkness=getattr(role, "mark_of_darkness", False),
+        )
     ):
         return False
     # The outgoing legality checks depend only on the weapon/role. Suppress the
@@ -179,6 +188,10 @@ def pack(search: Any) -> dict[str, Any]:
             ("hopper_shield", 0),
             ("slayer_bonus", 0),
             ("slayer_staff", 0),
+            ("demonbane_weapon", 0),
+            ("holy_water", 0),
+            ("purging_staff", 0),
+            ("scorching_bow", 0),
             ("leafy_weapon", 0),
             ("broad_ammo", 0),
             ("seeking_ammo", 0),
@@ -192,6 +205,10 @@ def pack(search: Any) -> dict[str, Any]:
         values = {
             "item_slots": SLOT_NAMES.index(item.slot),
             "two_handed": int(item.two_handed),
+            "demonbane_weapon": WEAPON_BONUSES.get(item_id, 0),
+            "holy_water": int(item_id == 732),
+            "purging_staff": int(item_id == 29594),
+            "scorching_bow": int(item_id == 29591),
             "leafy_weapon": 2 if item_id == 20727 else int(item_id in {4158, 11902}),
             "broad_ammo": int(item_id in {4160, 33601, 11875, 21316}),
             "seeking_ammo": int(item_id == 33601),
@@ -249,6 +266,10 @@ def pack(search: Any) -> dict[str, Any]:
             "on_slayer_task",
             "magic_dart",
             "target_leafy",
+            "target_demon",
+            "demonbane_vulnerability",
+            "demonbane_spell",
+            "mark_of_darkness",
             "magic_level",
         )
     }
@@ -322,6 +343,14 @@ def pack(search: Any) -> dict[str, Any]:
                         ),
                         "magic_level": search.levels.get("magic", 0),
                         "target_leafy": int("leafy" in target.traits),
+                        "target_demon": int("demon" in target.traits),
+                        "demonbane_vulnerability": target.demonbane_vulnerability_percent,
+                        "demonbane_spell": int(
+                            configured.style == "magic"
+                            and configured.powered_attack is None
+                            and configured.spell in DEMONBANE_SPELLS
+                        ),
+                        "mark_of_darkness": int(getattr(configured, "mark_of_darkness", False)),
                         "ranged_level": search.levels.get("ranged", 0),
                         "diary": int(configured.bolt_diary_boost),
                         "target_hp": target.current_hitpoints

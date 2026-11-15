@@ -92,6 +92,9 @@ class PreparedCost:
     tome_assumption: bool = False
     on_hit_resources: tuple[Resource, ...] = ()
     on_hit_cost: float | None = 0
+    per_second_resources: tuple[Resource, ...] = ()
+    per_second_cost: float | None = 0
+    consumption_assumption: str | None = None
 
     def score(
         self, interval: float | None, dps: float | None, accuracy: float | None = None
@@ -107,6 +110,15 @@ class PreparedCost:
                 and accuracy is not None
                 else None
             )
+        if self.per_second_resources:
+            cost = (
+                cost + self.per_second_cost * interval
+                if cost is not None
+                and self.per_second_cost is not None
+                and interval is not None
+                and interval > 0
+                else None
+            )
         rate = cost / interval if cost is not None and interval and interval > 0 else None
         return NumericCost(
             "unavailable" if self.limitations or self.missing_prices or cost is None else "known",
@@ -116,13 +128,15 @@ class PreparedCost:
             rate / dps if rate is not None and dps and dps > 0 else None,
         )
 
-    def report(self, numeric: NumericCost, accuracy: float | None = None) -> dict[str, Any]:
+    def report(
+        self, numeric: NumericCost, accuracy: float | None = None, *, interval: float | None = None
+    ) -> dict[str, Any]:
         assumptions = (
             ("Cheapest priced charging recipe; actual charges unknown.",)
             if self.alternatives
             else ()
         )
-        if self.on_hit_resources:
+        if self.on_hit_resources and not self.consumption_assumption:
             assumptions = (
                 *assumptions,
                 "Slayer enchantment consumption is expected successful "
@@ -133,6 +147,11 @@ class PreparedCost:
             replace(r, quantity=r.quantity * (accuracy if valid_accuracy and accuracy else 0))
             for r in self.on_hit_resources
         )
+        if self.consumption_assumption:
+            assumptions = (*assumptions, self.consumption_assumption)
+        timed = tuple(
+            replace(r, quantity=r.quantity * (interval or 0)) for r in self.per_second_resources
+        )
         if self.tome_assumption:
             assumptions = (*assumptions, TOME_ASSUMPTION)
         return {
@@ -142,7 +161,7 @@ class PreparedCost:
             "gp_per_second": numeric.gp_per_second,
             "gp_per_hour": numeric.gp_per_hour,
             "gp_per_damage": numeric.gp_per_damage,
-            "resources": [r.report() for r in (*self.resources, *conditional)],
+            "resources": [r.report() for r in (*self.resources, *conditional, *timed)],
             "charging_alternatives": [
                 {"resources": [r.report() for r in a.resources], "gp_per_attack": a.gp_per_attack}
                 for a in self.alternatives
@@ -201,6 +220,8 @@ class CostEvaluator:
         option: Mapping[str, Any],
         *,
         on_slayer_task: bool = False,
+        mark_of_darkness: bool = False,
+        base_magic: int | None = None,
     ) -> PreparedCost:
         weapon, ammo, cape = (equipment.get(s) for s in ("weapon", "ammunition", "cape"))
         body, shield = equipment.get("body"), equipment.get("shield")
@@ -219,11 +240,15 @@ class CostEvaluator:
             bool(option.get("powered_attack")),
             on_slayer_task,
             bool(getattr(weapon, "slayer_staff_enchanted", False)),
+            mark_of_darkness,
+            base_magic,
         )
         if key in self._recipes:
             self._recipes.move_to_end(key)
             return self._recipes[key]
-        result = self._prepare(equipment, option, torag, tome_assumption, on_slayer_task)
+        result = self._prepare(
+            equipment, option, torag, tome_assumption, on_slayer_task, mark_of_darkness, base_magic
+        )
         if self.capacity:
             self._recipes[key] = result
             if len(self._recipes) > self.capacity:
@@ -237,6 +262,8 @@ class CostEvaluator:
         torag: bool,
         tome_assumption: bool,
         on_slayer_task: bool,
+        mark_of_darkness: bool,
+        base_magic: int | None,
     ) -> PreparedCost:
         weapon = equipment.get("weapon")
         style = option.get("attack_type")
@@ -288,7 +315,7 @@ class CostEvaluator:
             limitations = ("Attack resource consumption has not been reviewed.",)
         if torag:
             limitations += ("Torag's hammers degradation and repair costs have not been reviewed.",)
-        on_hit_resources = (
+        on_hit_resources: tuple[Resource, ...] = (
             (self.resource(21257, "Slayer's enchantment", 1 / 2500),)
             if on_slayer_task
             and option.get("spell") == "magic_dart"
@@ -296,8 +323,38 @@ class CostEvaluator:
             and bool(getattr(weapon, "slayer_staff_enchanted", False))
             else ()
         )
+        assumption = None
+        if weapon and weapon.id == 19675 and style in {"stab", "slash", "crush"}:
+            on_hit_resources = (self.resource(19677, "Ancient shard", 3 / 1000),)
+            # Ancient shards are untradeable; do not infer a replacement price.
+            on_hit_resources = tuple(
+                replace(r, quote=resolve_price(None, None, now=self.now)) for r in on_hit_resources
+            )
+            assumption = (
+                "Arclight consumes one charge per successful hit "
+                "(three ancient shards per 1,000 charges); actual charges unknown."
+            )
+        timed: tuple[Resource, ...] = ()
+        if (
+            mark_of_darkness
+            and style == "magic"
+            and not option.get("powered_attack")
+            and option.get("spell")
+            in {"inferior_demonbane", "superior_demonbane", "dark_demonbane"}
+        ):
+            if base_magic is None or base_magic < 1:
+                limitations += ("Base Magic is unavailable for Mark of Darkness upkeep.",)
+            else:
+                duration = base_magic * 3 * 0.6 * (5 if weapon and weapon.id == 29594 else 1)
+                timed = tuple(self.resource(i, _RUNES[i], 1 / duration) for i in (566, 564))
+                assumption = (
+                    "Mark of Darkness is maintained using the selected weapon and base Magic; "
+                    "rune upkeep is time based."
+                )
         missing = tuple(
-            r.name for r in (*resources, *on_hit_resources) if r.consumed and r.unit_price is None
+            r.name
+            for r in (*resources, *on_hit_resources, *timed)
+            if r.consumed and r.unit_price is None
         )
         cost = None if limitations or missing else _resource_sum(resources)
         return PreparedCost(
@@ -309,6 +366,9 @@ class CostEvaluator:
             tome_assumption,
             on_hit_resources,
             _resource_sum(on_hit_resources),
+            timed,
+            _resource_sum(timed),
+            assumption,
         )
 
     def _alternative(self, recipe: tuple[tuple[int, int], ...]) -> ChargeAlternative:
@@ -321,6 +381,8 @@ class CostEvaluator:
         self, equipment: Mapping[str, EquipmentDefinition]
     ) -> tuple[tuple[Resource, ...], tuple[str, ...]]:
         weapon = equipment.get("weapon")
+        if weapon and weapon.id == 732:
+            return (self.resource(732, weapon.name, 1),), ()
         ammo = equipment.get("ammunition") if weapon and weapon.ammo_for else weapon
         if (
             not weapon
