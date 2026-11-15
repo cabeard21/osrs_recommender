@@ -27,14 +27,14 @@ const performance = {
   limitations: [],
 };
 const scenario = normalize(newDraft(), context.account.snapshot_id, true);
-function result() {
+function result(submitted = scenario) {
   return parseOptimization(
     {
       api_version: "gear-ui-v1",
       evaluated_at: context.evaluated_at,
       price_revision: context.price_revision,
       scenario_fingerprint: "original-scenario",
-      scenario: optimizationRequest(scenario),
+      scenario: optimizationRequest(submitted),
       items: context.items,
       baseline: {
         status: "available",
@@ -62,7 +62,7 @@ function result() {
         },
       },
     },
-    scenario,
+    submitted,
   );
 }
 it("restores legacy untradeable-policy results as readable but outdated", () => {
@@ -93,7 +93,10 @@ it("restores legacy untradeable-policy results as readable but outdated", () => 
     ),
   ).toThrow(/older acquisition policy/);
 });
-function evaluation(proposed: Record<string, number> = {}) {
+function evaluation(
+  proposed: Record<string, number> = {},
+  submitted = scenario,
+) {
   const fixed = {
     status: "valid",
     equipment: { weapon: 4151 },
@@ -106,7 +109,7 @@ function evaluation(proposed: Record<string, number> = {}) {
   return {
     api_version: "gear-ui-v1",
     evaluated_at: context.evaluated_at,
-    scenario: optimizationRequest(scenario),
+    scenario: optimizationRequest(submitted),
     scenario_fingerprint: "original-scenario",
     snapshot_id: context.account.snapshot_id,
     catalog_version: context.catalog_version,
@@ -199,8 +202,6 @@ describe("live refinement transport", () => {
     });
     expect(JSON.parse(String(init?.body))).toEqual({
       scenario: accepted.live!.scenario,
-      selected_potion_ids: [],
-      selected_prayer_ids: { "role-1": [] },
       baseline_loadouts: { "role-1": { weapon: 4151 } },
       proposed_loadouts: { "role-1": {} },
     });
@@ -211,23 +212,42 @@ describe("live refinement transport", () => {
     });
     expect(accepted).toEqual(before);
   });
-  it("keeps the selected solution prayers fixed for item comparisons", async () => {
-    const accepted = result();
-    accepted.solutions[0].loadouts[0].selectedPrayerIds = ["ultimate_strength"];
-    const fetcher = vi.fn(
-      async () => new Response(JSON.stringify(evaluation())),
-    ) as unknown as typeof fetch;
-    await new HttpGearClient("/ui-api/gear", fetcher).evaluate(
-      accepted,
-      "best-found",
-      "role-1",
-      emptyEquipment(),
-    );
-    const [, init] = vi.mocked(fetcher).mock.calls[0];
-    expect(JSON.parse(String(init?.body)).selected_prayer_ids).toEqual({
-      "role-1": ["ultimate_strength"],
-    });
-  });
+  it.each(["fixed", "optimize"] as const)(
+    "keeps the selected solution prayers fixed for item comparisons in %s mode",
+    async (mode) => {
+      const submitted = {
+        ...scenario,
+        request: {
+          ...scenario.request,
+          roles: scenario.request.roles.map((role) => ({
+            ...role,
+            prayers: {
+              mode,
+              allowed_ids: mode === "optimize" ? ["ultimate_strength"] : [],
+              selected_ids: mode === "fixed" ? ["ultimate_strength"] : [],
+            },
+          })),
+        },
+      };
+      const accepted = result(submitted);
+      accepted.solutions[0].loadouts[0].selectedPrayerIds = [
+        "ultimate_strength",
+      ];
+      const fetcher = vi.fn(
+        async () => new Response(JSON.stringify(evaluation({}, submitted))),
+      ) as unknown as typeof fetch;
+      await new HttpGearClient("/ui-api/gear", fetcher).evaluate(
+        accepted,
+        "best-found",
+        "role-1",
+        emptyEquipment(),
+      );
+      const [, init] = vi.mocked(fetcher).mock.calls[0];
+      expect(JSON.parse(String(init?.body)).selected_prayer_ids).toEqual({
+        "role-1": ["ultimate_strength"],
+      });
+    },
+  );
   it("preserves invalid reasons and null metrics instead of fabricating a trial", async () => {
     const reply = evaluation();
     Object.assign(reply.proposed, {
