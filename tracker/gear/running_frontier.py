@@ -15,13 +15,22 @@ if TYPE_CHECKING:
     from tracker.gear.compact_costs import NumericCost, PreparedCost
 
 
+def _base_magic(search: Any) -> int | None:
+    snapshot = getattr(search, "snapshot", None)
+    skill = snapshot.skills.get("magic") if snapshot is not None else None
+    return skill.level if skill is not None else None
+
+
 def needs_running_cost_frontier(request: Any, catalog: Any = None) -> bool:
-    """Keep the legacy ranged/magic lane and include eligible charged melee gear."""
+    """Include ranged/magic, demon targets, and eligible charged melee gear."""
     ordinary = [r for r in request.roles if r.style != "special"]
     if any(
-        bool({"ranged", "magic"}.intersection(r.allowed_disciplines))
-        if r.allowed_disciplines is not None
-        else r.style in {"ranged", "magic"}
+        (
+            bool({"ranged", "magic"}.intersection(r.allowed_disciplines))
+            if r.allowed_disciplines is not None
+            else r.style in {"ranged", "magic"}
+        )
+        or bool(getattr(r, "target", None) and "demon" in r.target.traits)
         for r in ordinary
     ):
         return True
@@ -42,10 +51,10 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
-        "policy": "running-cost-frontier-v4-halberds",
+        "policy": "running-cost-frontier-v5-halberds-demonbane",
         "cost_model_version": COST_MODEL_VERSION,
         "consumable_budget_policy": "reviewed-expendable-ranged-v1",
-        "activation": "ordinary-attacks-v2-halberds",
+        "activation": "ordinary-attacks-or-demon-v3-halberds",
         "expansion_limit": 1_500_000 if thorough else 500_000,
         "complete_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,
@@ -64,6 +73,7 @@ def running_cost_assumptions(
         "fire_tome_pages": request.fire_tome_pages,
         "crystal_halberd_charging": charging.model_dump() if charging is not None else None,
         "slayer_tasks": {r.id: getattr(r, "on_slayer_task", False) for r in request.roles},
+        "marks_of_darkness": {r.id: getattr(r, "mark_of_darkness", False) for r in request.roles},
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
             str(i): {
@@ -126,7 +136,11 @@ def _report_prepared_costs(
 ) -> dict[str, Any]:
     """Expand frozen resource records without retaining the producing search."""
     reports = {
-        rid: prepared.report(numeric, accuracy)
+        rid: prepared.report(
+            numeric,
+            accuracy,
+            interval=solution["loadouts"][rid]["performance"].get("attack_interval"),
+        )
         for rid, prepared, numeric, accuracy in prepared_costs
     }
     loadouts = {
@@ -156,6 +170,10 @@ def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, 
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
             **cost_context(search.request, rid),
+            mark_of_darkness=next(
+                getattr(r, "mark_of_darkness", False) for r in search.request.roles if r.id == rid
+            ),
+            base_magic=_base_magic(search),
         )
         performance = loadout["performance"]
         numeric = prepared.score(
@@ -207,6 +225,10 @@ def add_solution_costs(
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
             **cost_context(search.request, rid),
+            mark_of_darkness=next(
+                getattr(r, "mark_of_darkness", False) for r in search.request.roles if r.id == rid
+            ),
+            base_magic=_base_magic(search),
         )
         loadouts[rid] = {**loadout, "running_cost": cost}
     costs = [
@@ -310,6 +332,8 @@ def explore_running_costs(
                     loadout["combat_option"] or {},
                     on_slayer_task=getattr(role, "on_slayer_task", False),
                     **cost_context(self.request, role),
+                    mark_of_darkness=getattr(role, "mark_of_darkness", False),
+                    base_magic=_base_magic(self),
                 )
                 dps = performance.get("dps") or 0
                 numeric = prepared.score(
@@ -351,6 +375,8 @@ def explore_running_costs(
                     self.running_at,
                     on_slayer_task=getattr(role, "on_slayer_task", False),
                     **cost_context(self.request, role),
+                    mark_of_darkness=getattr(role, "mark_of_darkness", False),
+                    base_magic=_base_magic(self),
                 )
                 costs.append((role.weight, cost, performance.get("dps") or 0))
             cost = aggregate_cost(costs)["gp_per_damage"]

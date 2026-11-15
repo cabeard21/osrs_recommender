@@ -16,7 +16,7 @@ from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.requirements import QuestLeaf, SkillLeaf, UnlockLeaf
 from tracker.domain.types import Tri
-from tracker.gear.combat import ANCIENT_SPELLS, IBAN_STAVES, SPELLS
+from tracker.gear.combat import ANCIENT_SPELLS, DEMONBANE_SPELLS, IBAN_STAVES, SPELLS
 from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import review as powered_review
@@ -162,7 +162,8 @@ def enumerate_combat_options(
     book = _standard_spellbook_status(snapshot)
     for spell, (level, _) in SPELLS.items():
         ancient = spell in ANCIENT_SPELLS
-        if ancient and weapon is None and not include_weapon_restricted:
+        arceuus = spell in DEMONBANE_SPELLS
+        if (ancient or arceuus) and weapon is None and not include_weapon_restricted:
             continue
         if (
             spell == "iban_blast"
@@ -212,7 +213,33 @@ def enumerate_combat_options(
                 else _skill_status(snapshot, "magic", level),
                 f"Magic level {level} required",
             ),
-            *(((book, "Standard spellbook unlock is not confirmed"),) if not ancient else ()),
+            *(
+                ((book, "Standard spellbook unlock is not confirmed"),)
+                if not ancient and not arceuus
+                else ()
+            ),
+            *(
+                (
+                    (
+                        evaluate_requirement(snapshot, UnlockLeaf(key="spellbook_arceuus")).status,
+                        "Arceuus spellbook access is not confirmed",
+                    ),
+                )
+                if arceuus and "spellbook_arceuus" in snapshot.unlocks
+                else ()
+            ),
+            *(
+                (
+                    (
+                        evaluate_requirement(
+                            snapshot, QuestLeaf(quest_id="a_kingdom_divided")
+                        ).status,
+                        "A Kingdom Divided completion is not confirmed",
+                    ),
+                )
+                if arceuus and spell != "inferior_demonbane"
+                else ()
+            ),
             *extra_checks,
             *(
                 ((_skill_status(snapshot, "slayer", 55), "Slayer level 55 required"),)
@@ -279,10 +306,23 @@ def ancient_spell_problem(
     spell: str,
     stance: str,
     levels: Mapping[str, int] | None = None,
+    *,
+    mark_of_darkness: bool = False,
 ) -> str | None:
-    """Apply the same Ancient access gates to fixed and automatic roles."""
-    if spell not in ANCIENT_SPELLS:
+    """Apply reviewed spell-family access gates to fixed and automatic roles."""
+    if spell not in ANCIENT_SPELLS and spell not in DEMONBANE_SPELLS:
         return None
+    if spell in DEMONBANE_SPELLS and mark_of_darkness:
+        magic = (levels or {}).get(
+            "magic", snapshot.skills["magic"].level if "magic" in snapshot.skills else 0
+        )
+        if magic < 59:
+            return "Maintained Mark of Darkness requires 59 Magic."
+        if (
+            evaluate_requirement(snapshot, QuestLeaf(quest_id="a_kingdom_divided")).status
+            is not Tri.SATISFIED
+        ):
+            return "Mark of Darkness requires confirmed A Kingdom Divided completion."
     matches = tuple(
         option
         for option in enumerate_combat_options(
@@ -294,5 +334,5 @@ def ancient_spell_problem(
         return None
     return next(
         (option.reason for option in matches if option.reason),
-        "Ancient Magicks requires a reviewed compatible autocast weapon and casting stance.",
+        "Selected spell requires a reviewed compatible autocast weapon and casting stance.",
     )

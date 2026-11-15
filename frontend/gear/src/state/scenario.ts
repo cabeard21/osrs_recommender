@@ -25,6 +25,7 @@ export const newRole = (index: number) => ({
   onSlayerTask: false,
   safeSpotting: false,
   fightDurationSeconds: "60",
+  markOfDarkness: false,
   id: `role-${index}`,
   name: `Configuration ${index}`,
   style: (index === 2 ? "ranged" : "melee") as "melee" | "ranged" | "magic",
@@ -211,6 +212,11 @@ export function normalize(
       typeof role.onSlayerTask !== "boolean"
     )
       throw new Error("Choose a valid Slayer task setting.");
+    if (
+      role.markOfDarkness !== undefined &&
+      typeof role.markOfDarkness !== "boolean"
+    )
+      throw new Error("Choose a valid Mark of Darkness setting.");
     if (!role.autoDiscipline) continue;
     if (role.utility)
       throw new Error("Auto requires an ordinary combat configuration.");
@@ -244,6 +250,7 @@ export function normalize(
       onSlayerTask: r.onSlayerTask ?? false,
       safeSpotting: r.safeSpotting ?? false,
       fightDurationSeconds: r.fightDurationSeconds ?? "60",
+      markOfDarkness: r.markOfDarkness ?? false,
       weight: Number(r.weight),
     };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -873,12 +880,14 @@ export function reducer(state: State, action: Action): State {
           current.submitted?.request.roles.map((role) => [
             role.id,
             role.onSlayerTask ?? false,
+            role.markOfDarkness ?? false,
           ]),
         ) !==
         JSON.stringify(
           action.result.scenario.request.roles.map((role) => [
             role.id,
             role.onSlayerTask ?? false,
+            role.markOfDarkness ?? false,
           ]),
         )
       )
@@ -887,7 +896,14 @@ export function reducer(state: State, action: Action): State {
           [action.mode]: {
             ...current,
             pending: false,
-            error: "Slayer task settings changed; rerun optimization.",
+            error: current.submitted?.request.roles.some(
+              (role, index) =>
+                (role.markOfDarkness ?? false) !==
+                (action.result.scenario.request.roles[index]?.markOfDarkness ??
+                  false),
+            )
+              ? "Mark of Darkness settings changed; rerun optimization."
+              : "Slayer task settings changed; rerun optimization.",
           },
         };
       if (
@@ -1239,6 +1255,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
         onSlayerTask?: unknown;
         safeSpotting?: unknown;
         fightDurationSeconds?: unknown;
+        markOfDarkness?: unknown;
         id: unknown;
         name: unknown;
         style: string;
@@ -1259,6 +1276,8 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
                 3600,
               ),
             ))) &&
+        (r.markOfDarkness === undefined ||
+          typeof r.markOfDarkness === "boolean") &&
         ["melee", "ranged", "magic"].includes(r.style) &&
         typeof r.weight === "string" &&
         typeof r.locks === "object" &&
@@ -1273,6 +1292,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
           onSlayerTask: role.onSlayerTask ?? false,
           safeSpotting: role.safeSpotting ?? false,
           fightDurationSeconds: role.fightDurationSeconds ?? "60",
+          markOfDarkness: role.markOfDarkness ?? false,
         })),
       } as Draft)
     : null;

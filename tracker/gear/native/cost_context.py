@@ -19,6 +19,7 @@ class CostData:
     option_kind: array[int]
     option_cost: array[float]
     option_on_hit_cost: array[float]
+    option_per_second_cost: array[float]
     ranged_kind: array[int]
     ammo_valid: array[int]
     unit_prices: array[float]
@@ -53,6 +54,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
     serp_rate = array("d")
     scale_price = evaluator.resource(12934, "Zulrah's scales", 1).unit_price
     option_kind, option_cost, option_on_hit_cost = array("i"), array("d"), array("d")
+    option_per_second_cost = array("d")
     for (configured, option), weapon_id in zip(
         scoring.option_records, scoring.option_weapons, strict=True
     ):
@@ -71,16 +73,26 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
                 equipment,
                 option.model_dump(),
                 on_slayer_task=getattr(configured, "on_slayer_task", False),
+                mark_of_darkness=getattr(configured, "mark_of_darkness", False),
+                base_magic=search.snapshot.skills["magic"].level
+                if getattr(configured, "mark_of_darkness", False)
+                and "magic" in search.snapshot.skills
+                else None,
                 **cost_context(getattr(search, "request", None), configured),
             )
             option_cost.append(recipe.gp_per_attack if recipe.gp_per_attack is not None else -1)
             option_on_hit_cost.append(recipe.on_hit_cost if recipe.on_hit_cost is not None else -1)
+            option_per_second_cost.append(
+                recipe.per_second_cost if recipe.per_second_cost is not None else -1
+            )
     ranged_kind, ammo_valid = array("i", [0]), array("i", [0])
     unit_prices, recovery = array("d", [-1]), array("d", [0])
     body_recovery, torag = array("i", [0]), array("i", [0])
     for item_id in scoring.dense_ids[1:]:
         item = search.items[item_id]
-        ranged_kind.append(1 if item.ammo_for else 2 if item_id in THROWN_IDS else 0)
+        ranged_kind.append(
+            3 if item_id == 732 else 1 if item.ammo_for else 2 if item_id in THROWN_IDS else 0
+        )
         ammo_valid.append(
             int(bool(item.ammo_type and item.ammo_type.startswith(("arrow:", "bolt:"))))
         )
@@ -104,6 +116,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         option_kind,
         option_cost,
         option_on_hit_cost,
+        option_per_second_cost,
         ranged_kind,
         ammo_valid,
         unit_prices,

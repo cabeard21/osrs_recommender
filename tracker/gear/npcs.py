@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
+from tracker.gear.demonbane import HOLY_WATER_SPECIAL_TARGETS, NPC_EFFECTIVENESS
+from tracker.gear.demonbane import REVISION as DEMONBANE_REVISION
 from tracker.gear.leafy import NPC_SLAYER
 from tracker.gear.leafy import REVISION as LEAFY_REVISION
 from tracker.gear.models import CombatTarget
@@ -52,6 +54,7 @@ class NpcCatalog:
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
             + b"ordinary-npc-traits-v7-halberd-status"
             + LEAFY_REVISION
+            + DEMONBANE_REVISION
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)
@@ -117,6 +120,11 @@ class NpcCatalog:
             reasons.append(
                 "Eclipse Moon Clone accuracy, timing and hitsplat rules are not supported."
             )
+        if row["id"] == 5914:
+            status = "unsupported"
+            reasons.append(
+                "Respiratory system minimum-hit and demonbane instant-kill rules are not modeled."
+            )
         if not all(type(value) is int for value in required):
             status = "unsupported"
             reasons.append("Required combat statistics are missing.")
@@ -133,7 +141,17 @@ class NpcCatalog:
                         ),
                         {},
                     ),
-                    traits=tuple(sorted(set(row.get("attributes", ())) & ORDINARY_ATTRIBUTES)),
+                    traits=tuple(
+                        sorted(
+                            (set(row.get("attributes", ())) & ORDINARY_ATTRIBUTES)
+                            | (
+                                {"holy_water_special"}
+                                if row["id"] in HOLY_WATER_SPECIAL_TARGETS
+                                else set()
+                            )
+                        )
+                    ),
+                    demonbane_vulnerability_percent=NPC_EFFECTIVENESS.get(row["id"], 100),
                     name=row["name"] + (f" ({variant})" if variant else ""),
                     defence_level=skills["def"],
                     magic_level=skills["magic"],
@@ -257,6 +275,7 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         "traits",
         "poison_susceptibility",
         "venom_susceptibility",
+        "demonbane_vulnerability_percent",
     ):
         if getattr(effective, field) != getattr(canonical, field):
             raise ValueError("NPC mechanic restrictions cannot be overridden.")

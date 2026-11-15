@@ -133,6 +133,7 @@ class CombatTarget(GearModel):
             raise ValueError("Current hitpoints cannot exceed base hitpoints.")
         return self
 
+    demonbane_vulnerability_percent: int = Field(default=100, ge=0, le=1000, strict=True)
     traits: tuple[str, ...] = ()
     name: str = "Generic target (Defence 1, zero bonuses)"
     defence_level: int = Field(default=1, ge=0, le=10000)
@@ -222,9 +223,19 @@ class StatusDamage(GearModel):
     limitations: tuple[str, ...] = ()
 
 
+class DemonbaneBonus(GearModel):
+    item_id: int | None = None
+    spell: str | None = None
+    accuracy_percent: int
+    damage_percent: int
+    vulnerability_percent: int
+    mark_of_darkness: bool = False
+
+
 class CombatPerformance(GearModel):
     direct_dps: float | None = None
     status_damage: StatusDamage | None = None
+    demonbane_bonus: DemonbaneBonus | None = None
     leafy_bonus: LeafyBonus | None = None
     seeking_arrow_bonus: SeekingArrowBonus | None = None
     slayer_effects: tuple[SlayerEffect, ...] = ()

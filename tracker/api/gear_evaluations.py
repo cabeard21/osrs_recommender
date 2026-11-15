@@ -25,6 +25,7 @@ from tracker.api.gear_optimizations import (
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, Preparation, no_cache, resources
 from tracker.content.schema import ItemSlot
 from tracker.gear.combat import MODEL_VERSION
+from tracker.gear.demonbane import MODEL_VERSION as DEMONBANE_MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
@@ -262,7 +263,9 @@ def calculate_evaluation(
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
+        "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in scenario.roles},
+        "marks_of_darkness": {role.id: role.mark_of_darkness for role in scenario.roles},
         "bolt_model_version": "enchanted-bolts-v1",
         "aquanite_hopper_model_version": HOPPER_MODEL_VERSION,
         "bolt_diary": {

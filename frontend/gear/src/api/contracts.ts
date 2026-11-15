@@ -83,6 +83,7 @@ export interface Role {
   safeSpotting?: boolean;
   fightDurationSeconds?: string;
   onSlayerTask?: boolean;
+  markOfDarkness?: boolean;
   prayers?: PrayerPolicy;
   targetSelection?: TargetSelection;
   id: string;
@@ -117,6 +118,7 @@ export interface Assumptions {
 export interface CombatTarget {
   poison_susceptibility?: "susceptible" | "immune" | "unknown";
   venom_susceptibility?: "susceptible" | "immune" | "unknown";
+  demonbane_vulnerability_percent?: number;
   hitpoints?: number | null;
   current_hitpoints?: number | null;
   traits?: string[];
@@ -456,6 +458,14 @@ export interface CombatPerformance {
     dps: number;
     application_chance: number;
     limitations: string[];
+  } | null;
+  demonbane_bonus?: {
+    item_id: number | null;
+    spell: string | null;
+    accuracy_percent: number;
+    damage_percent: number;
+    vulnerability_percent: number;
+    mark_of_darkness: boolean;
   } | null;
   leafy_bonus?: {
     item_id: number;

@@ -3,7 +3,7 @@
 
 from libc.math cimport floor, pow, fabs, isfinite
 from libc.string cimport memset
-from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div
+from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total
 
 
 cdef double accuracy_for(long long attack, long long defence) noexcept nogil:
@@ -116,6 +116,14 @@ cdef class ScoringContext:
         self.status_duration = packed["status_duration"]
         self.halberd = packed["halberd"]
         self.serpentine = packed["serpentine"]
+        self.demonbane_weapon = packed["demonbane_weapon"]
+        self.holy_water = packed["holy_water"]
+        self.purging_staff = packed["purging_staff"]
+        self.scorching_bow = packed["scorching_bow"]
+        self.target_demon = packed["target_demon"]
+        self.demonbane_vulnerability = packed["demonbane_vulnerability"]
+        self.demonbane_spell = packed["demonbane_spell"]
+        self.mark_of_darkness = packed["mark_of_darkness"]
         self.priority = packed["priority"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
@@ -148,7 +156,8 @@ cdef class ScoringContext:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
-        cdef int element, family, task_bonus, hit_floor
+        cdef int element, family, task_bonus, hit_floor, demon_accuracy, demon_damage, vulnerability
+        cdef bint demon_spell, holy
         cdef BoltResult proc, extra
         cdef long long spell_base, minimum, weakness_roll
         cdef double secondary_accuracy
@@ -214,6 +223,18 @@ cdef class ScoringContext:
                     continue
                 if style == 4 and not self.magic_dart[index]:
                     continue
+            demon_spell = style == 4 and self.demonbane_spell[index] and self.target_demon[index]
+            holy = ranged and self.holy_water[weapon]
+            vulnerability = self.demonbane_vulnerability[index]
+            demon_accuracy = 0
+            demon_damage = 0
+            if self.target_demon[index]:
+                if demon_spell:
+                    demon_accuracy = (40 if self.mark_of_darkness[index] else 20) * (2 if self.purging_staff[weapon] else 1)
+                    demon_damage = (50 if self.purging_staff[weapon] else 25) if self.mark_of_darkness[index] else 0
+                elif style < 4:
+                    demon_accuracy = 0 if holy else self.demonbane_weapon[weapon]
+                    demon_damage = self.demonbane_weapon[weapon]
             hit_floor = 3 if ranged and self.ammo_required[weapon] and self.seeking_ammo[ammo] else 1
             strength = <long long>bonuses[6 if ranged else 5]
             attack = <long long>bonuses[style]
@@ -238,6 +259,8 @@ cdef class ScoringContext:
                     attack *= 3
             else:
                 maximum = <long long>floor(0.5 + self.options[base + 2] * (strength + 64) / 640.0)
+            if holy:
+                maximum = <long long>floor(0.5 + (self.ranged_level[index] + 10) * (self.item_bonuses[weapon * 14 + 6] + 64) / 640.0)
             attack = self.options[base + 1] * (attack + 64)
             if style == 4:
                 weakness_roll = floor_div(attack * self.options[base + 13], 100)
@@ -256,8 +279,13 @@ cdef class ScoringContext:
                     maximum = floor_div(maximum * 7, 6)
                     attack = floor_div(attack * 7, 6)
                 elif ranged and task_bonus == 2:
-                    maximum = floor_div(maximum * 23, 20)
+                    if not holy:
+                        maximum = floor_div(maximum * (115 + floor_div(demon_damage * vulnerability, 100)), 100) if self.scorching_bow[weapon] and self.target_demon[index] else floor_div(maximum * 23, 20)
                     attack = floor_div(attack * 23, 20)
+            if demon_accuracy:
+                attack += floor_div(attack * floor_div(demon_accuracy * vulnerability, 100), 100)
+            if demon_damage and not demon_spell and not (self.scorching_bow[weapon] and self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2):
+                maximum += floor_div(maximum * floor_div(demon_damage * vulnerability, 100), 100)
             if style < 3 and self.target_leafy[index] and self.leafy_weapon[weapon] == 2:
                 maximum = floor_div(maximum * 47, 40)
             if maximum < 0:
@@ -269,13 +297,19 @@ cdef class ScoringContext:
             else:
                 first = maximum // 2
                 second = maximum - first
-            if cap >= 0 and (max(hit_floor, first) + 8 * self.options[base + 15] > cap or (pattern != 0 and max(hit_floor, second) > cap)):
-                continue
+            if cap >= 0:
+                if demon_spell and self.mark_of_darkness[index]:
+                    if max(hit_floor, first) + floor_div(floor_div(max(hit_floor, first) * demon_damage, 100) * vulnerability, 100) > cap:
+                        continue
+                elif max(hit_floor, first) + 8 * self.options[base + 15] > cap or (pattern != 0 and max(hit_floor, second) > cap):
+                    continue
             accuracy = accuracy_for(attack, defence)
             expected = 0.0 + accuracy * armoured_mean(first, armor, hit_floor)
             if pattern != 0:
                 second_probability = pow(accuracy, 2.0) if pattern == 2 else accuracy
                 expected += second_probability * armoured_mean(second, armor, hit_floor)
+            if demon_spell and self.mark_of_darkness[index]:
+                expected = accuracy * marked_damage_total(maximum, demon_damage, vulnerability) / (maximum + 1)
             if minimum > 0:
                 expected = accuracy * (minimum + maximum) / 2
             if self.options[base + 15]:

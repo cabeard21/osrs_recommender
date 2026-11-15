@@ -14,12 +14,17 @@ from typing import Any, Literal, NamedTuple
 from tracker.gear import hopper
 from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
+from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
+from tracker.gear.demonbane import WEAPON_BONUSES
 from tracker.gear.elemental_amulets import applied_spell_bonus
+
+__all__ = ["DEMONBANE_SPELLS"]
 from tracker.gear.leafy import BROAD_AMMO, LEAF_WEAPONS
 from tracker.gear.models import (
     BoltPerformance,
     CombatPerformance,
     CombatTarget,
+    DemonbaneBonus,
     ElementalAmuletBonus,
     ElementalWeakness,
     EquipmentBonuses,
@@ -90,10 +95,16 @@ ANCIENT_SPELLS = {
     "blood_barrage": (92, 29),
     "ice_barrage": (94, 30),
 }
-SPELLS = {**ELEMENTAL_SPELLS, "iban_blast": (50, 25), "magic_dart": (50, 15), **ANCIENT_SPELLS}
+SPELLS = {
+    **ELEMENTAL_SPELLS,
+    "iban_blast": (50, 25),
+    "magic_dart": (50, 15),
+    **ANCIENT_SPELLS,
+    **DEMONBANE_SPELLS,
+}
 
 
-MODEL_VERSION = "normal-attacks-v9-halberd-status"
+MODEL_VERSION = "normal-attacks-v10-halberd-status-demonbane"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -230,6 +241,18 @@ def _evaluate_prepared(
     if weapon and weapon.two_handed and any(i.slot == "shield" for i in equipment):
         problems.append("Two-handed weapon cannot be equipped with a shield.")
     ammo = prepared.ammunition
+    if "demon" not in target.traits and (
+        (style == "magic" and powered_attack is None and spell in DEMONBANE_SPELLS)
+        or (style == "ranged" and weapon and weapon.id == 732)
+    ):
+        problems.append("This demonbane attack requires a demon target.")
+    if weapon and weapon.id == 732 and "holy_water_special" in target.traits:
+        problems.append("Holy water special target damage rules are unsupported.")
+    if style == "magic" and powered_attack is None and spell in DEMONBANE_SPELLS:
+        if weapon is None or spell not in weapon.spell_compatibility:
+            problems.append("Demonbane spells require a reviewed compatible autocast weapon.")
+        if getattr(role, "mark_of_darkness", False) and levels.get("magic", 0) < 59:
+            problems.append("Maintained Mark of Darkness requires 59 Magic.")
     if "leafy" in target.traits:
         valid_leafy = (
             (
@@ -376,6 +399,7 @@ def _evaluate_prepared(
         bolt_family=bolt_family,
         bolt_diary=bool(getattr(role, "bolt_diary_boost", False)),
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
+        mark_of_darkness=bool(getattr(role, "mark_of_darkness", False)),
         on_slayer_task=bool(getattr(role, "on_slayer_task", False)),
         status_duration=getattr(role, "fight_duration_seconds", 60),
         head=next((item for item in equipment if item.slot == "head"), None),
@@ -417,6 +441,31 @@ def _armoured_mean(maximum: int, armour: int, accurate_floor: int = 1) -> float:
     ) / (maximum + 1)
 
 
+def _linear_floor_sum(count: int, modulus: int, multiplier: int) -> int:
+    """Sum floor(multiplier * i / modulus) for i in range(count)."""
+    offset = 0
+    result = 0
+    while True:
+        result += (count - 1) * count * (multiplier // modulus) // 2
+        multiplier %= modulus
+        result += count * (offset // modulus)
+        offset %= modulus
+        upper = multiplier * count + offset
+        if upper < modulus:
+            return result
+        count, offset = divmod(upper, modulus)
+        modulus, multiplier = multiplier, modulus
+
+
+def _marked_damage_total(maximum: int, percent: int, vulnerability: int) -> int:
+    """Exact post-roll Mark total, including accurate-zero promotion."""
+    divisor = 100 // percent  # reviewed Mark bonuses are 25% or 50%
+    quotient, remainder = divmod(maximum, divisor)
+    bonus = divisor * _linear_floor_sum(quotient, 100, vulnerability)
+    bonus += (remainder + 1) * (quotient * vulnerability // 100)
+    return maximum * (maximum + 1) // 2 + 1 + bonus
+
+
 def numeric_attack_interval(weapon: EquipmentDefinition | None, role: Any) -> float:
     """Attack interval for an already supported attack, without a rich report."""
     speed = weapon.attack_speed if weapon else 4
@@ -449,6 +498,7 @@ def _calculate(
     bolt_family: str | None = None,
     bolt_diary: bool = False,
     bolt_diary_known: bool = False,
+    mark_of_darkness: bool = False,
     on_slayer_task: bool = False,
     head: EquipmentDefinition | None = None,
     seeking: bool = False,
@@ -464,6 +514,39 @@ def _calculate(
         and weapon.id == 20727
         and style in {"stab", "slash", "crush"}
         and "leafy" in target.traits
+    )
+    demon = "demon" in target.traits
+    demon_spell = (
+        style == "magic" and powered_attack is None and spell in DEMONBANE_SPELLS and demon
+    )
+    weapon_percent = (
+        WEAPON_BONUSES.get(weapon.id, 0) if weapon and demon and style != "magic" else 0
+    )
+    holy_water = bool(weapon and weapon.id == 732 and style == "ranged")
+    vulnerability = target.demonbane_vulnerability_percent
+    demon_accuracy = (
+        ((40 if mark_of_darkness else 20) * (2 if weapon and weapon.id == 29594 else 1))
+        if demon_spell
+        else (0 if holy_water else weapon_percent)
+    )
+    demon_damage = (
+        ((50 if weapon and weapon.id == 29594 else 25) if mark_of_darkness else 0)
+        if demon_spell
+        else weapon_percent
+    )
+    effective_accuracy = demon_accuracy * vulnerability // 100
+    effective_damage = demon_damage * vulnerability // 100
+    demon_report = (
+        DemonbaneBonus(
+            item_id=weapon.id if weapon else None,
+            spell=spell if demon_spell else None,
+            accuracy_percent=demon_accuracy,
+            damage_percent=demon_damage,
+            vulnerability_percent=vulnerability,
+            mark_of_darkness=bool(demon_spell and mark_of_darkness),
+        )
+        if (weapon_percent or demon_spell) and not score_only
+        else None
     )
     accurate_floor = 3 if seeking else 1
     weakness = None
@@ -491,7 +574,13 @@ def _calculate(
         or applied_tome(tome, spell, powered_attack)
     )
     spell_effect = (
-        spell_effect or task_mask or leafy_axe or (style == "magic" and spell == "magic_dart")
+        spell_effect
+        or task_mask
+        or leafy_axe
+        or weapon_percent
+        or demon_spell
+        or holy_water
+        or (style == "magic" and spell == "magic_dart")
     )
     constants = None if spell_effect else _constants
     cached_ranged = (
@@ -504,6 +593,7 @@ def _calculate(
         if constants is None and not cached_ranged and not spell_effect
         else None
     )
+    cached_ranged = cached_ranged and not (weapon_percent or holy_water)
     if cached_ranged:
         observer = ranged_observer()
         key_started = perf_counter() if observer is not None else 0.0
@@ -595,7 +685,7 @@ def _calculate(
                     *slayer_reports,
                     SlayerEffect(item_id=weapon.id, kind="magic_dart", base_max_hit=base),
                 )
-        elif spell == "iban_blast" or spell in ANCIENT_SPELLS:
+        elif spell == "iban_blast" or spell in ANCIENT_SPELLS or spell in DEMONBANE_SPELLS:
             base = SPELLS[spell][1]
         else:
             tier = spell.split("_")[1]
@@ -720,9 +810,21 @@ def _calculate(
                 defence = (target.defence_level + 9) * (value + 64)
         if is_ranged and stance == "rapid":
             speed = max(1, speed - 1)
+    if holy_water:
+        assert weapon is not None
+        max_hit = floor(0.5 + (levels["ranged"] + 10) * (weapon.bonuses.ranged_strength + 64) / 640)
     if style != "magic" and not cached_ranged and task_mask:
-        max_hit = max_hit * numerator // denominator
+        if not holy_water:
+            max_hit = (
+                max_hit * (100 + 15 + effective_damage) // 100
+                if weapon and weapon.id == 29591 and demon
+                else max_hit * numerator // denominator
+            )
         attack = attack * numerator // denominator
+    if weapon_percent and not (weapon and weapon.id == 29591 and task_mask):
+        max_hit += max_hit * effective_damage // 100
+    if effective_accuracy:
+        attack += attack * effective_accuracy // 100
     if leafy_axe:
         max_hit = max_hit * 47 // 40
     max_hit = max(0, max_hit)
@@ -766,7 +868,15 @@ def _calculate(
     )
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
     if target.damage_cap is not None and any(
-        max(accurate_floor, m) + (8 if sang_proc else 0) > target.damage_cap for m in maxima
+        max(accurate_floor, m)
+        + (
+            (max(accurate_floor, m) * demon_damage // 100) * vulnerability // 100
+            if demon_spell and mark_of_darkness
+            else 0
+        )
+        + (8 if sang_proc else 0)
+        > target.damage_cap
+        for m in maxima
     ):
         if score_only:
             return CombatScore(False, None, None, bonuses)
@@ -796,6 +906,12 @@ def _calculate(
             for m, p in zip(maxima, probabilities, strict=True)
         )
     )
+    if demon_spell and mark_of_darkness:
+        expected = (
+            accuracy * _marked_damage_total(max_hit, demon_damage, vulnerability) / (max_hit + 1)
+        )
+        max_hit += (max_hit * demon_damage // 100) * vulnerability // 100
+        maxima = (max_hit,)
     if minimum_hit > 0:
         expected = accuracy * (minimum_hit + max_hit) / 2
     if sang_proc:
@@ -911,6 +1027,7 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        demonbane_bonus=demon_report,
         slayer_effects=slayer_reports,
         leafy_bonus=LeafyBonus(item_id=20727) if leafy_axe else None,
         seeking_arrow_bonus=SeekingArrowBonus(item_id=33601) if seeking else None,
@@ -942,6 +1059,11 @@ def _calculate(
         else player_defence_rolls(levels, bonuses, stance, prayers),
         bonuses=bonuses,
         limitations=status_notes
+        + (
+            ("Holy water Defence drain is not simulated; fixed target stats are used.",)
+            if holy_water
+            else ()
+        )
         + (hopper.ASSUMPTIONS if hopper_active else ())
         + (
             "Fresh combat levels and sustained active stat prayers only; "

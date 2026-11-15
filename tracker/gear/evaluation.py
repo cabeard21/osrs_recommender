@@ -375,6 +375,8 @@ def evaluate_configurations(
                 on_slayer_task=configured.on_slayer_task,
                 fight_duration_seconds=getattr(configured, "fight_duration_seconds", 60),
                 crystal_halberd_charging=getattr(request, "crystal_halberd_charging", None),
+                mark_of_darkness=configured.mark_of_darkness,
+                base_magic=base_levels.get("magic"),
             ),
         }
 
@@ -493,6 +495,7 @@ def evaluate_configurations(
                 configured.spell,
                 configured.stance,
                 levels,
+                mark_of_darkness=configured.mark_of_darkness,
             )
             if problem:
                 return {

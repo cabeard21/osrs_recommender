@@ -90,6 +90,7 @@ export function parseOptimization(
       on_slayer_task: object(role).on_slayer_task ?? false,
       safe_spotting: object(role).safe_spotting ?? false,
       fight_duration_seconds: object(role).fight_duration_seconds ?? 60,
+      mark_of_darkness: object(role).mark_of_darkness ?? false,
     })),
     fire_tome_pages: object(envelope.scenario).fire_tome_pages ?? "burnt",
     include_untradeables:
@@ -636,6 +637,7 @@ export function optimizationRequest(scenario: Scenario) {
       on_slayer_task: role.onSlayerTask ?? false,
       safe_spotting: role.safeSpotting ?? false,
       fight_duration_seconds: Number(role.fightDurationSeconds ?? "60"),
+      mark_of_darkness: role.markOfDarkness ?? false,
       ...(role.autoDiscipline
         ? {
             allowed_disciplines: role.allowedDisciplines ?? [

@@ -67,12 +67,14 @@ export function matchesOptimizationPolicy(
         role.onSlayerTask ?? false,
         role.safeSpotting ?? false,
         role.fightDurationSeconds ?? "60",
+        role.markOfDarkness ?? false,
       ]),
       b.scenario.request.roles.map((role) => [
         role.id,
         role.onSlayerTask ?? false,
         role.safeSpotting ?? false,
         role.fightDurationSeconds ?? "60",
+        role.markOfDarkness ?? false,
       ]),
     ) &&
     sameValue(

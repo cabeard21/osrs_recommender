@@ -19,6 +19,9 @@ const STANCES: Record<Style, string[]> = {
 };
 const FIXTURE_SPELLS = [
   "magic_dart",
+  "inferior_demonbane",
+  "superior_demonbane",
+  "dark_demonbane",
   "iban_blast",
   "fire_strike",
   "wind_wave",
@@ -289,6 +292,40 @@ export function RoleFields({
           <p id={`${role.id}-slayer-help`}>
             This target counts toward my current Slayer task.
           </p>
+          {(role.style === "magic" || role.autoDiscipline) && (
+            <>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={role.markOfDarkness ?? false}
+                  aria-describedby={`${role.id}-mark-help`}
+                  onChange={(event) =>
+                    onChange({ markOfDarkness: event.target.checked })
+                  }
+                />
+                Maintain Mark of Darkness
+              </label>
+              <p id={`${role.id}-mark-help`}>
+                Applies to demonbane spells only; includes rune upkeep.
+                Refreshes use the selected weapon.
+              </p>
+              {!!context?.live?.capabilities.mark_of_darkness &&
+                (
+                  context.live.capabilities.mark_of_darkness as {
+                    available: boolean;
+                    reason?: string;
+                  }
+                ).available === false && (
+                  <p className="notice">
+                    {(
+                      context.live.capabilities.mark_of_darkness as {
+                        reason?: string;
+                      }
+                    ).reason ?? "Mark of Darkness access is not confirmed."}
+                  </p>
+                )}
+            </>
+          )}
           <div
             className="segmented"
             role="group"

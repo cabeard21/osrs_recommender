@@ -60,3 +60,5 @@ tracker/ui/gear_static/
 
 # Local native release identity, generated with the extension binaries.
 /tracker/gear/native/_build.json
+
+temp.txt

@@ -28,6 +28,7 @@ export function describeDraftChanges(
     ) as
       | {
           onSlayerTask?: boolean;
+          markOfDarkness?: boolean;
           safeSpotting?: boolean;
           fightDurationSeconds?: string;
         }
@@ -53,6 +54,13 @@ export function describeDraftChanges(
     )
       changes.push(
         `${role.name} Slayer task: ${previous.onSlayerTask ? "on" : "off"} → ${role.onSlayerTask ? "on" : "off"}`,
+      );
+    if (
+      previous &&
+      (previous.markOfDarkness ?? false) !== (role.markOfDarkness ?? false)
+    )
+      changes.push(
+        `${role.name} Mark of Darkness: ${previous.markOfDarkness ? "on" : "off"} → ${role.markOfDarkness ? "on" : "off"}`,
       );
   }
   if (

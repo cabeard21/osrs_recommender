@@ -25,6 +25,7 @@ DART_IDS = frozenset(
 
 THROWN_IDS = frozenset(
     {
+        732,
         *range(806, 812),
         *range(863, 870),
         *range(800, 806),

@@ -25,7 +25,7 @@ from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v8-halberds"
+COST_MODEL_VERSION = "ordinary-resource-cost-v9-halberds-demonbane"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -42,6 +42,7 @@ _RUNES = {
     560: "Death rune",
     565: "Blood rune",
     566: "Soul rune",
+    564: "Cosmic rune",
     21880: "Wrath rune",
 }
 # Air quantity for wind/water/earth/fire, then elemental quantity for water/earth/fire.
@@ -54,6 +55,9 @@ _TIERS = {
 }
 SPELL_RECIPES = MappingProxyType(
     {
+        "inferior_demonbane": MappingProxyType({554: 3, 562: 1}),
+        "superior_demonbane": MappingProxyType({554: 5, 566: 1}),
+        "dark_demonbane": MappingProxyType({554: 7, 566: 2}),
         "iban_blast": MappingProxyType({554: 5, 560: 1}),
         "magic_dart": MappingProxyType({560: 1, 558: 4}),
         # Exact per-cast Ancient combat recipes; splash/AoE outcomes do not
@@ -205,6 +209,8 @@ def evaluate_running_cost(
     on_slayer_task: bool = False,
     fight_duration_seconds: int = 60,
     crystal_halberd_charging: CrystalChargingPolicy | None = None,
+    mark_of_darkness: bool = False,
+    base_magic: int | None = None,
 ) -> dict[str, Any]:
     """Value consumed resources at replacement prices, even when already owned."""
     from tracker.gear.compact_costs import active, evaluator
@@ -215,18 +221,27 @@ def evaluate_running_cost(
         and not combat_option.get("powered_attack")
         and bool(getattr(equipment.get("weapon"), "slayer_staff_enchanted", False))
     )
-    if active() or enchanted_dart or any(i.id in {23987, 12931} for i in equipment.values()):
+    demonbane_cost = mark_of_darkness or any(i.id in {19675, 732} for i in equipment.values())
+    if (
+        active()
+        or enchanted_dart
+        or demonbane_cost
+        or any(i.id in {23987, 12931} for i in equipment.values())
+    ):
         prepared = evaluator(price_records, now).prepare(
             equipment,
             combat_option,
             on_slayer_task=on_slayer_task,
             fight_duration_seconds=fight_duration_seconds,
             crystal_halberd_charging=crystal_halberd_charging,
+            mark_of_darkness=mark_of_darkness,
+            base_magic=base_magic,
         )
         accuracy = performance.get("accuracy")
         return prepared.report(
             prepared.score(performance.get("attack_interval"), performance.get("dps"), accuracy),
             accuracy,
+            interval=performance.get("attack_interval"),
         )
     style = combat_option.get("attack_type")
     resources: list[dict[str, Any]] = []

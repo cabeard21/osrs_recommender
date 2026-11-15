@@ -80,6 +80,30 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid tome effect metadata");
   }
+  if (value.demonbane_bonus != null) {
+    const effect = object(value.demonbane_bonus);
+    if (
+      !(
+        effect.item_id === null ||
+        (Number.isSafeInteger(effect.item_id) && Number(effect.item_id) > 0)
+      ) ||
+      !(
+        effect.spell === null ||
+        ["inferior_demonbane", "superior_demonbane", "dark_demonbane"].includes(
+          String(effect.spell),
+        )
+      ) ||
+      ![
+        effect.accuracy_percent,
+        effect.damage_percent,
+        effect.vulnerability_percent,
+      ].every(
+        (n) => Number.isSafeInteger(n) && Number(n) >= 0 && Number(n) <= 1000,
+      ) ||
+      typeof effect.mark_of_darkness !== "boolean"
+    )
+      throw new Error("Invalid demonbane effect metadata");
+  }
   if (value.leafy_bonus != null) {
     const effect = value.leafy_bonus;
     if (

@@ -112,7 +112,7 @@ class PreparedAttack:
 
 def _prepare(key: AttackKey) -> PreparedAttack:
     # Import lazily so combat keeps ownership of the reviewed spell definitions.
-    from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, SPELLS
+    from tracker.gear.combat import ANCIENT_SPELLS, DEMONBANE_SPELLS, ELEMENTAL_SPELLS, SPELLS
 
     magical = key.style == "magic"
     ranged = key.style == "ranged"
@@ -128,7 +128,11 @@ def _prepare(key: AttackKey) -> PreparedAttack:
             assert base is not None
         elif key.spell == "magic_dart":
             base = 10 + key.magic_level // 10
-        elif key.spell == "iban_blast" or key.spell in ANCIENT_SPELLS:
+        elif (
+            key.spell == "iban_blast"
+            or key.spell in ANCIENT_SPELLS
+            or key.spell in DEMONBANE_SPELLS
+        ):
             base = SPELLS[key.spell][1]
         else:
             tier = key.spell.split("_")[1]
