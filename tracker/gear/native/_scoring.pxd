@@ -22,6 +22,7 @@ cdef class ScoringContext:
     cdef int[::1] spell_element, searing, ranged_level, diary, target_hp, target_traits
     cdef int[::1] slayer_bonus, slayer_staff, on_slayer_task, magic_dart, magic_level
     cdef int[::1] leafy_weapon, broad_ammo, seeking_ammo, target_leafy
+    cdef int[::1] status_kind, status_duration, halberd, serpentine
     cdef int priority
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil
     cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=*) noexcept nogil

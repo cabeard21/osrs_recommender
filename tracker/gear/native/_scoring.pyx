@@ -23,6 +23,47 @@ cdef double armoured_mean(long long maximum, long long armour, long long hit_flo
     return (min(hit_floor, maximum + 1) * max(0, hit_floor - armour) + positive_sum) / (maximum + 1)
 
 
+cdef double status_damage(double chance, int speed, int duration, int kind) noexcept nogil:
+    cdef double states[27]
+    cdef double total = 0.0, unchanged, applied
+    cdef int phase, tick, state, attacks, count
+    if chance <= 0 or kind == 0:
+        return 0.0
+    for phase in range(1, 31):
+        memset(states, 0, sizeof(states))
+        states[0] = 1.0
+        attacks = 0
+        tick = phase
+        while tick <= duration * 5 // 3:
+            count = tick // speed + 1
+            unchanged = pow(1 - chance, count - attacks)
+            attacks = count
+            if kind == 1:
+                applied = states[0] * (1 - unchanged)
+                states[0] *= unchanged
+                states[1] += applied
+                for state in range(1, 9):
+                    total += states[state] * (4 + 2 * state)
+                for state in range(8, 1, -1):
+                    if state == 8:
+                        states[state] += states[state - 1]
+                    else:
+                        states[state] = states[state - 1]
+                states[1] = 0
+            else:
+                for state in range(27):
+                    states[state] *= unchanged
+                states[26] += 1 - unchanged
+                for state in range(1, 27):
+                    total += states[state] * ((state + 4) // 5)
+                states[0] += states[1]
+                for state in range(1, 26):
+                    states[state] = states[state + 1]
+                states[26] = 0
+            tick += 30
+    return total / 30
+
+
 cdef class ScoringContext:
     def __init__(self, search):
         from tracker.gear.native.packing import pack
@@ -71,6 +112,10 @@ cdef class ScoringContext:
         self.broad_ammo = packed["broad_ammo"]
         self.seeking_ammo = packed["seeking_ammo"]
         self.target_leafy = packed["target_leafy"]
+        self.status_kind = packed["status_kind"]
+        self.status_duration = packed["status_duration"]
+        self.halberd = packed["halberd"]
+        self.serpentine = packed["serpentine"]
         self.priority = packed["priority"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
@@ -107,6 +152,7 @@ cdef class ScoringContext:
         cdef BoltResult proc, extra
         cdef long long spell_base, minimum, weakness_roll
         cdef double secondary_accuracy
+        cdef double status_proc, positive
         cdef double bonuses[14]
         cdef long long maximum, attack, defence, strength, armor, cap, first, second
         cdef double accuracy, dps, expected, secondary, second_probability, magic_bonus, term, hi=0.0, lo=0.0, total
@@ -157,6 +203,8 @@ cdef class ScoringContext:
                 continue
             style = <int>self.options[base]
             ranged = style == 3
+            if self.serpentine[slots[3]] and (not self.halberd[weapon] or style >= 3):
+                continue
             if ranged and not ammo_ok:
                 continue
             if self.target_leafy[index]:
@@ -254,6 +302,10 @@ cdef class ScoringContext:
                 else:
                     expected += 0.11 * (secondary_accuracy * damage_mean(maximum, armor, 0, 3))
             dps = expected / (self.options[base + 4] * 0.6)
+            status_proc = (0.5 if self.serpentine[slots[3]] else 1.0 / 3) if self.original_ids[weapon] == 29796 else (1.0 / 6 if self.halberd[weapon] and self.serpentine[slots[3]] else 0.0)
+            if style < 3 and status_proc and self.status_kind[index]:
+                positive = 1.0 if armor < 1 else max(0.0, maximum - armor) / (maximum + 1)
+                dps += status_damage(status_proc * accuracy * positive, <int>self.options[base + 4], self.status_duration[index], self.status_kind[index]) / self.status_duration[index]
             secondary = self.secondary_for(bonuses, accuracy, index)
             # Ranged offensive bonus priorities use the ammunition-adjusted view.
             if ranged and ammo and not self.ammo_required[weapon] and self.priority == 10:

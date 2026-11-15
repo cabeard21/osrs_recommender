@@ -4,6 +4,54 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Safe spotting and ordinary halberd attacks
+
+Each scored role accepts strict `safe_spotting` (default `false`) and integer
+`fight_duration_seconds` (1–3,600, default 60). Safe spotting intersects the
+existing options and locks with reviewed attack reach of at least two tiles.
+It does not select Longrange automatically, enable excluded options, identify
+obstacles, or guarantee that an NPC cannot retaliate. Unscored utility roles
+cannot request the constraint. Incompatible choices produce no valid setup
+rather than a relaxed search. The same rule applies to fixed comparisons.
+
+Ordinary halberd forms are reviewed by exact physical ID, with their own wear
+gates and legal profiles. Spears, scythes, and salamanders do not qualify as
+two-tile melee attacks. Instance/event weapons remain outside ordinary coverage.
+The Acidic, Mirrorback, and Ruptura Araxyte encounter profiles remain blocked:
+their guaranteed-maximum-hit interaction needs a dedicated encounter review.
+Reference: [attack range](https://oldschool.runescape.wiki/w/Attack_range).
+
+Targets expose independent `poison_susceptibility` and `venom_susceptibility`
+values (`susceptible`, `immune`, `unknown`). Pinned reviewed NPC facts take
+precedence over submitted overrides; custom targets can declare these facts.
+Missing evidence remains unknown. Noxious halberds remain eligible on direct
+DPS when susceptibility is unknown, with an explicit notice.
+
+`performance.direct_dps` preserves ordinary attack DPS; nullable `status_damage`
+reports the modeled passive contribution. Total `performance.dps` includes
+expected poison/venom damage divided by the role's duration. This is a status
+averaging window with independent clean targets and continuous attacks, not a
+kill-time or rotation simulation. It averages unknown NPC timer phase. Target
+death, healing, prior afflictions, status carryover between roles, special
+attacks, and potion decay within the window are excluded. Existing potion
+previews recalculate a fixed setup at each displayed boost level.
+References: [venom](https://oldschool.runescape.wiki/w/Venom),
+[poison](https://oldschool.runescape.wiki/w/Poison).
+
+Scenario-wide `crystal_halberd_charging` selects `method` (`auto`, `coins`,
+`shards`), `coin_recharge_cost_gp` (750000, 600000, 450000, 300000, 150000;
+default 750000), and optional `shard_value_gp`. Auto chooses the cheapest
+valued replenishment route. A missing shard valuation is unavailable, not free.
+Crystal use consumes one charge per attack; coin recharge provides 2,500
+charges and each shard provides 100. Current remaining charges remain unknown;
+seed preparation does not change the observed physical ownership record or
+bypass untradeable/access policy. Charge expenses follow the existing running
+expense convention rather than implying that a seed is immediately usable.
+Charged serpentine helm costs include its combat-entry and periodic scale use
+for reviewed halberd combinations. References:
+[crystal halberd](https://oldschool.runescape.wiki/w/Crystal_halberd),
+[serpentine helm](https://oldschool.runescape.wiki/w/Serpentine_helm).
+
 ## Offhand tomes
 
 Fire (charged 20714, empty 20716), Water (25574/25576), and Earth

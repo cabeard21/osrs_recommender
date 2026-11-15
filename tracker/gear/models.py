@@ -118,6 +118,8 @@ class TargetSelection(GearModel):
 
 
 class CombatTarget(GearModel):
+    poison_susceptibility: Literal["susceptible", "immune", "unknown"] = "unknown"
+    venom_susceptibility: Literal["susceptible", "immune", "unknown"] = "unknown"
     hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
     current_hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
 
@@ -211,7 +213,18 @@ class SeekingArrowBonus(GearModel):
     minimum_hit: int = 3
 
 
+class StatusDamage(GearModel):
+    kind: Literal["venom", "poison", "unknown"]
+    duration_seconds: int
+    expected_damage: float
+    dps: float
+    application_chance: float
+    limitations: tuple[str, ...] = ()
+
+
 class CombatPerformance(GearModel):
+    direct_dps: float | None = None
+    status_damage: StatusDamage | None = None
     leafy_bonus: LeafyBonus | None = None
     seeking_arrow_bonus: SeekingArrowBonus | None = None
     slayer_effects: tuple[SlayerEffect, ...] = ()

@@ -134,6 +134,30 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-safespot")
+        def seed_safespot():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in (1333, 3198, 3202)},
+                revision="browser-safespot-v1",
+            )
+            with factory() as session:
+                player = session.query(Player).first()
+                player.members = True
+                for item_id in (3198, 3202):
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=item_id,
+                            quantity=1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=datetime.now(UTC),
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-untradeables")
         def seed_untradeables():
             seed_optimization()

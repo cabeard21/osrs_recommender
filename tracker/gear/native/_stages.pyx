@@ -97,6 +97,8 @@ cdef class StageContext:
     cdef int[::1] untradeable, edges, melee, scored
     cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
     cdef int[::1] supply_class
+    cdef int[::1] serp_head
+    cdef double[::1] serp_rate
     cdef int supply_count
     cdef double[::1] option_cost, option_on_hit_cost, unit_prices, recovery
     cdef bint cost_objective
@@ -121,6 +123,8 @@ cdef class StageContext:
         self.scored = self.data.scored
         self.cost_objective = self.data.cost_data is not None
         if self.cost_objective:
+            self.serp_head = self.data.cost_data.serp_head
+            self.serp_rate = self.data.cost_data.serp_rate
             self.option_kind = self.data.cost_data.option_kind
             self.option_cost = self.data.cost_data.option_cost
             self.option_on_hit_cost = self.data.cost_data.option_on_hit_cost
@@ -205,9 +209,13 @@ cdef class StageContext:
         cdef int option = score.option_index
         cdef int cost_index
         cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
-        cdef double rate, quantity = 1.0
+        cdef double rate, head_cost = 0.0, quantity = 1.0
         if not score.supported or option < 0:
             return -1
+        if self.serp_head[slots[3]]:
+            if self.serp_rate[option] < 0:
+                return -1
+            head_cost = self.serp_rate[option] * score.interval
         for slot in range(11):
             if self.torag[slots[slot]]:
                 return -1
@@ -215,7 +223,7 @@ cdef class StageContext:
             cost_index = option * self.supply_count + self.supply_class[shield]
             if self.option_cost[cost_index] < 0 or self.option_on_hit_cost[cost_index] < 0:
                 return -1
-            return self.option_cost[cost_index] + score.accuracy * self.option_on_hit_cost[cost_index]
+            return self.option_cost[cost_index] + score.accuracy * self.option_on_hit_cost[cost_index] + head_cost
         if self.ranged_kind[weapon] == 1:
             if not ammo or not self.ammo_valid[ammo]:
                 return -1
@@ -238,7 +246,7 @@ cdef class StageContext:
         if self.ranged_kind[weapon] == 1 and self.scoring.reviewed_crossbow[weapon] and self.scoring.hopper_shield[shield] and ammo:
             # evaluate() already checked physical ammunition compatibility.
             quantity = 1.11
-        return (quantity - quantity * rate) * self.unit_prices[source]
+        return (quantity - quantity * rate) * self.unit_prices[source] + head_cost
 
     cdef bint evaluate(self, Candidate* row, int* roles, int nroles, int slot,
                        int cap, bint metric) except -1:

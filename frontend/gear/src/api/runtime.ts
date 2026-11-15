@@ -41,6 +41,30 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
   )
     throw new Error("Invalid combat performance metadata");
+  if (
+    value.direct_dps != null &&
+    (!Number.isFinite(value.direct_dps) || value.direct_dps < 0)
+  )
+    throw new Error("Invalid direct DPS metadata");
+  if (value.status_damage != null) {
+    const status = value.status_damage;
+    if (
+      !["venom", "poison", "unknown"].includes(status.kind) ||
+      !Number.isSafeInteger(status.duration_seconds) ||
+      status.duration_seconds < 1 ||
+      status.duration_seconds > 3600 ||
+      ![status.expected_damage, status.dps, status.application_chance].every(
+        (n) => typeof n === "number" && Number.isFinite(n) && n >= 0,
+      ) ||
+      status.application_chance > 1 ||
+      !strings(status.limitations) ||
+      value.direct_dps == null ||
+      Math.abs(value.direct_dps + status.dps - value.dps!) > 1e-8 ||
+      Math.abs(status.expected_damage / status.duration_seconds - status.dps) >
+        1e-8
+    )
+      throw new Error("Invalid status damage metadata");
+  }
   if (value.tome_bonus != null) {
     const t = value.tome_bonus;
     if (

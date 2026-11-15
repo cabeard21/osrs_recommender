@@ -1,0 +1,244 @@
+{
+  "source": "https://oldschool.runescape.wiki/w/Venom",
+  "additional_source": "https://oldschool.runescape.wiki/w/Poison",
+  "reviewed_at": "2026-11-14",
+  "items": {
+    "[8619, \"Alchemical Hydra\", \"Electric\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8621, \"Alchemical Hydra\", \"Extinguished\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8620, \"Alchemical Hydra\", \"Fire\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8615, \"Alchemical Hydra\", \"Serpentine\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[13668, \"Araxxor\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[13011, \"Blood Moon\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[13013, \"Blue Moon\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2054, \"Chaos Elemental\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[2804, \"Chicken\", \"Falador Farm\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[10495, \"Chicken\", \"Gordon and Mary's Farm\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[3661, \"Chicken\", \"Miscellania\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[1173, \"Chicken\", \"Normal\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2790, \"Cow\", \"1\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2791, \"Cow\", \"2\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2793, \"Cow\", \"3\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2795, \"Cow\", \"Isle of Souls\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[5842, \"Cow\", \"Zanaris\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2266, \"Dagannoth Prime\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[2267, \"Dagannoth Rex\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[2265, \"Dagannoth Supreme\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[7144, \"Demonic gorilla\", \"1\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[7147, \"Demonic gorilla\", \"2\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[12191, \"Duke Sucellus\", \"Awakened, Awake\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[12191, \"Duke Sucellus\", \"Post-quest, Awake\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[12195, \"Duke Sucellus\", \"Quest, Awake\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[13012, \"Eclipse Moon\", \"Clone\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[13012, \"Eclipse Moon\", \"Regular\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[5779, \"Giant Mole\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[965, \"Kalphite Queen\", \"Airborne\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[963, \"Kalphite Queen\", \"Crawling\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[494, \"Kraken\", \"Kraken\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[496, \"Kraken\", \"Whirlpool\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[411, \"Kurask\", \"Big\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[410, \"Kurask\", \"Normal\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[7416, \"Obor\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8713, \"Sarachnis\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[7221, \"Scurrius\", \"Group\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[7222, \"Scurrius\", \"Solo\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[498, \"Smoke devil\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[12214, \"The Leviathan\", \"Awakened\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[12214, \"The Leviathan\", \"Post-quest\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[12215, \"The Leviathan\", \"Quest\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[430, \"Turoth\", \"Baby\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[429, \"Turoth\", \"Child\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[427, \"Turoth\", \"Dad\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[428, \"Turoth\", \"Mum\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[3127, \"TzTok-Jad\", \"\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "immune"
+    },
+    "[8058, \"Vorkath\", \"Dragon Slayer II\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8059, \"Vorkath\", \"Post-quest\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8611, \"Wyrm\", \"Attacking\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[8610, \"Wyrm\", \"Idle\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[5816, \"Yak\", \"\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2043, \"Zulrah\", \"Magma\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2042, \"Zulrah\", \"Serpentine\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2044, \"Zulrah\", \"Tanzanite\"]": {
+      "poison_susceptibility": "immune",
+      "venom_susceptibility": "immune"
+    },
+    "[2856, \"Giant rat\", \"Level 3\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "susceptible"
+    },
+    "[3028, \"Goblin\", \"Level 2\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "susceptible"
+    },
+    "[2854, \"Rat\", \"Regular\"]": {
+      "poison_susceptibility": "susceptible",
+      "venom_susceptibility": "susceptible"
+    }
+  },
+  "additional_sources": [
+    "https://oldschool.runescape.wiki/w/Giant_rat",
+    "https://oldschool.runescape.wiki/w/Rat",
+    "https://oldschool.runescape.wiki/w/Goblin"
+  ]
+}

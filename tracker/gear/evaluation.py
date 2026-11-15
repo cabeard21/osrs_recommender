@@ -231,6 +231,11 @@ def loadout_problems(
                     "message": f"Equipment does not satisfy the {slot} lock.",
                 }
             )
+    from tracker.gear.attack_reach import safe_spotting_problem
+
+    reach_problem = safe_spotting_problem(items.get(equipment.get("weapon", -1)), role)
+    if reach_problem:
+        problems.append({"path": "equipment.weapon", "message": reach_problem})
     return tuple(problems)
 
 
@@ -368,6 +373,8 @@ def evaluate_configurations(
                 price_records,
                 now,
                 on_slayer_task=configured.on_slayer_task,
+                fight_duration_seconds=getattr(configured, "fight_duration_seconds", 60),
+                crystal_halberd_charging=getattr(request, "crystal_halberd_charging", None),
             ),
         }
 

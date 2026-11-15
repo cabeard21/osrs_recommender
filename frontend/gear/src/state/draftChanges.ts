@@ -25,7 +25,28 @@ export function describeDraftChanges(
         typeof value === "object" &&
         "id" in value &&
         value.id === role.id,
-    ) as { onSlayerTask?: boolean } | undefined;
+    ) as
+      | {
+          onSlayerTask?: boolean;
+          safeSpotting?: boolean;
+          fightDurationSeconds?: string;
+        }
+      | undefined;
+    if (
+      previous &&
+      (previous.safeSpotting ?? false) !== (role.safeSpotting ?? false)
+    )
+      changes.push(
+        `${role.name} safe spotting changed to ${role.safeSpotting ? "on" : "off"}`,
+      );
+    if (
+      previous &&
+      (previous.fightDurationSeconds ?? "60") !==
+        (role.fightDurationSeconds ?? "60")
+    )
+      changes.push(
+        `${role.name} status duration changed to ${role.fightDurationSeconds ?? "60"} seconds`,
+      );
     if (
       previous &&
       (previous.onSlayerTask ?? false) !== (role.onSlayerTask ?? false)

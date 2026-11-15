@@ -23,6 +23,8 @@ const EMPTY_GROUP_NOUNS = {
 } as const;
 export const newRole = (index: number) => ({
   onSlayerTask: false,
+  safeSpotting: false,
+  fightDurationSeconds: "60",
   id: `role-${index}`,
   name: `Configuration ${index}`,
   style: (index === 2 ? "ranged" : "melee") as "melee" | "ranged" | "magic",
@@ -168,7 +170,42 @@ export function normalize(
     throw new Error("Choose a valid tradeoff metric.");
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
+  const charging = draft.crystalHalberdCharging;
+  if (
+    charging &&
+    (!["auto", "coins", "shards"].includes(charging.method) ||
+      ![750000, 600000, 450000, 300000, 150000].includes(
+        charging.coin_recharge_cost_gp,
+      ) ||
+      (charging.shard_value_gp !== null &&
+        (!Number.isFinite(charging.shard_value_gp) ||
+          charging.shard_value_gp < 0)))
+  )
+    throw new Error("Choose valid crystal halberd charging settings.");
+  const validateSusceptibility = (
+    target: import("../api/contracts").CombatTarget | undefined,
+  ) => {
+    for (const key of [
+      "poison_susceptibility",
+      "venom_susceptibility",
+    ] as const)
+      if (
+        target?.[key] !== undefined &&
+        !["susceptible", "immune", "unknown"].includes(target[key]!)
+      )
+        throw new Error("Choose valid target poison and venom susceptibility.");
+  };
+  validateSusceptibility(draft.combatTarget);
   for (const role of draft.roles) {
+    validateSusceptibility(role.combatTarget);
+    if (
+      role.safeSpotting !== undefined &&
+      typeof role.safeSpotting !== "boolean"
+    )
+      throw new Error("Choose a valid safe spotting setting.");
+    integer(role.fightDurationSeconds ?? "60", "Fight duration", 1, 3600);
+    if (role.utility && role.safeSpotting)
+      throw new Error("Safe spotting requires a scored combat configuration.");
     if (
       role.onSlayerTask !== undefined &&
       typeof role.onSlayerTask !== "boolean"
@@ -205,6 +242,8 @@ export function normalize(
     const role = {
       ...structuredClone(r),
       onSlayerTask: r.onSlayerTask ?? false,
+      safeSpotting: r.safeSpotting ?? false,
+      fightDurationSeconds: r.fightDurationSeconds ?? "60",
       weight: Number(r.weight),
     };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
@@ -442,6 +481,7 @@ export function normalize(
   return {
     objective: "weighted_dps",
     request: {
+      crystal_halberd_charging: draft.crystalHalberdCharging,
       fire_tome_pages: draft.fireTomePages ?? "burnt",
       support_policy: draft.supportPolicy ?? "community_best_effort",
       potions: draft.potions ?? {
@@ -851,6 +891,48 @@ export function reducer(state: State, action: Action): State {
           },
         };
       if (
+        JSON.stringify(
+          current.submitted?.request.roles.map((role) => [
+            role.id,
+            role.safeSpotting ?? false,
+            role.fightDurationSeconds ?? "60",
+          ]),
+        ) !==
+        JSON.stringify(
+          action.result.scenario.request.roles.map((role) => [
+            role.id,
+            role.safeSpotting ?? false,
+            role.fightDurationSeconds ?? "60",
+          ]),
+        )
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error:
+              "Safe spotting or status duration changed; rerun optimization.",
+          },
+        };
+      if (
+        JSON.stringify(
+          current.submitted?.request.crystal_halberd_charging ?? null,
+        ) !==
+        JSON.stringify(
+          action.result.scenario.request.crystal_halberd_charging ?? null,
+        )
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error:
+              "Crystal halberd charging settings changed; rerun optimization.",
+          },
+        };
+      if (
         (current.submitted?.request.support_policy ?? "verified_only") !==
         (action.result.scenario.request.support_policy ?? "verified_only")
       )
@@ -1155,6 +1237,8 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
     !draft.roles.every(
       (r: {
         onSlayerTask?: unknown;
+        safeSpotting?: unknown;
+        fightDurationSeconds?: unknown;
         id: unknown;
         name: unknown;
         style: string;
@@ -1164,6 +1248,17 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
         typeof r.id === "string" &&
         typeof r.name === "string" &&
         (r.onSlayerTask === undefined || typeof r.onSlayerTask === "boolean") &&
+        (r.safeSpotting === undefined || typeof r.safeSpotting === "boolean") &&
+        (r.fightDurationSeconds === undefined ||
+          (typeof r.fightDurationSeconds === "string" &&
+            !errorOf(() =>
+              integer(
+                r.fightDurationSeconds as string,
+                "Fight duration",
+                1,
+                3600,
+              ),
+            ))) &&
         ["melee", "ranged", "magic"].includes(r.style) &&
         typeof r.weight === "string" &&
         typeof r.locks === "object" &&
@@ -1176,6 +1271,8 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
         roles: draft.roles.map((role: Draft["roles"][number]) => ({
           ...role,
           onSlayerTask: role.onSlayerTask ?? false,
+          safeSpotting: role.safeSpotting ?? false,
+          fightDurationSeconds: role.fightDurationSeconds ?? "60",
         })),
       } as Draft)
     : null;

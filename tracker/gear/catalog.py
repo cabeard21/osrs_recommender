@@ -21,6 +21,11 @@ from tracker.gear.combat import ANCIENT_SPELLS, ELEMENTAL_SPELLS, IBAN_STAVES
 from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
 from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
 from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
+from tracker.gear.halberds import FORMS as HALBERD_FORMS
+from tracker.gear.halberds import REVISION as HALBERD_REVISION
+from tracker.gear.halberds import TRADEABLE as HALBERD_TRADEABLE
+from tracker.gear.halberds import apply_review as halberd_review
+from tracker.gear.halberds import requirement as halberd_requirement
 from tracker.gear.hopper import REVISION as HOPPER_REVISION
 from tracker.gear.hopper_catalog import apply_review as hopper_review
 from tracker.gear.leafy import FORMS as LEAFY_FORMS
@@ -192,7 +197,18 @@ def load_catalog(
                     if e != "Offensive effects have not been validated."
                 ],
             }
-        row = leafy_review(row)
+        row = halberd_review(leafy_review(row))
+        if row["id"] == 12931:
+            if row["slot"] != "head" or row["name"] != "Serpentine helm":
+                raise ValueError("Reviewed serpentine physical form changed")
+            row = {
+                **row,
+                "unsupported_effects": [
+                    e
+                    for e in row["unsupported_effects"]
+                    if e != "Offensive effects have not been validated."
+                ],
+            }
         entries = overlays.get(row["id"], [])
         primary = _reviewed_equivalent(row, by_id)
         if primary is not None:
@@ -252,6 +268,8 @@ def load_catalog(
             requirement = requirement_from_levels(
                 dict(leafy_gates), set(content.skills) | set(leafy_gates)
             )
+        if row["id"] in HALBERD_FORMS:
+            requirement = halberd_requirement(row["id"])
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -263,6 +281,7 @@ def load_catalog(
                 "requirements_complete": bool(
                     entries
                     or row["id"] in LEAFY_FORMS
+                    or row["id"] in HALBERD_FORMS
                     or row["id"] in SLAYER_FORMS
                     or review
                     or powered
@@ -270,11 +289,15 @@ def load_catalog(
                     or row["id"] in BOLT_REQUIREMENTS
                     or row["id"] in ELEMENTAL_AMULETS
                     or row["id"] in TOME_FORMS
-                    or row["id"] == 32879
+                    or row["id"] in {32879, 12931}
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
-                    row["id"] in LEAFY_TRADEABLE
+                    False
+                    if row["id"] == 12931
+                    else row["id"] in HALBERD_TRADEABLE
+                    if row["id"] in HALBERD_FORMS
+                    else row["id"] in LEAFY_TRADEABLE
                     if row["id"] in LEAFY_FORMS
                     else (row["id"] == 4170 or row["name"] == "Black mask")
                     if row["id"] in SLAYER_FORMS
@@ -327,6 +350,8 @@ def load_catalog(
             + HOPPER_REVISION
             + SLAYER_REVISION
             + LEAFY_REVISION
+            + b"halberd-status-v1-serp12931"
+            + HALBERD_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -344,6 +369,8 @@ def load_catalog(
             + HOPPER_REVISION
             + SLAYER_REVISION
             + LEAFY_REVISION
+            + b"halberd-status-v1-serp12931"
+            + HALBERD_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

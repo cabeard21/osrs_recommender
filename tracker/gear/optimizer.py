@@ -48,6 +48,7 @@ from tracker.gear.evaluation import (
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.fixed_reporting import active as fixed_reporting_active
+from tracker.gear.halberd_charging import CrystalChargingPolicy
 from tracker.gear.hopper import MODEL_VERSION as HOPPER_MODEL_VERSION
 from tracker.gear.lazy_reporting import active as lazy_reporting_active
 from tracker.gear.leafy import MODEL_VERSION as LEAFY_MODEL_VERSION
@@ -127,6 +128,8 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    safe_spotting: bool = Field(default=False, strict=True)
+    fight_duration_seconds: int = Field(default=60, ge=1, le=3600, strict=True)
     on_slayer_task: bool = Field(default=False, strict=True)
     fire_tome_pages: Literal["burnt", "searing"] = Field(default="burnt", exclude=True)
     bolt_diary_boost: bool = Field(default=False, exclude=True)
@@ -152,6 +155,8 @@ class RoleConfig(BaseModel):
 
     @model_validator(mode="after")
     def freeze_locks(self) -> RoleConfig:
+        if self.safe_spotting and self.style == "special":
+            raise ValueError("Safe spotting requires a scored combat configuration")
         if self.fire_tome_pages != "burnt":
             raise ValueError("fire_tome_pages is scenario-wide, not a role request field")
         if self.bolt_diary_boost or self.bolt_diary_known:
@@ -175,6 +180,7 @@ class RoleConfig(BaseModel):
 
 class OptimizationRequest(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    crystal_halberd_charging: CrystalChargingPolicy = CrystalChargingPolicy()
     potions: PotionPolicy = PotionPolicy()
     fire_tome_pages: Literal["burnt", "searing"] = "burnt"
     roles: tuple[RoleConfig, ...] = Field(min_length=1, max_length=4)
@@ -695,7 +701,10 @@ class _Search:
                             "powered_attack": option.powered_attack,
                         }
                     )
-                    configured.append((selected, option))
+                    from tracker.gear.attack_reach import safe_spotting_problem
+
+                    if safe_spotting_problem(weapon, selected) is None:
+                        configured.append((selected, option))
             elif role.prayers.mode != "disabled":
                 problem = (
                     ancient_spell_problem(
@@ -1301,6 +1310,14 @@ class _Search:
             keep = max(CANDIDATES_PER_SLOT - 1, len(locked & set(candidates)))
             self.truncated |= len(ordered) > keep
             retained = ordered[:keep]
+            if slot in {"weapon", "head"}:
+                from tracker.gear.halberds import FORMS as HALBERD_FORMS
+
+                relevant = set(HALBERD_FORMS) if slot == "weapon" else {12931}
+                if any(r.style in {"stab", "slash", "crush"} for r in self.request.roles):
+                    retained = list(
+                        dict.fromkeys([*retained, *(i for i in ordered if i in relevant)])
+                    )
             if slot in {"head", "weapon"} and any(r.on_slayer_task for r in self.request.roles):
                 # Task effects can beat stronger raw stats in complete loadouts.
                 # Preserve physical choices: ownership, prices and locks differ.
@@ -1373,7 +1390,49 @@ class _Search:
                 )
             else:
                 bases.append(base)
+        bases.extend(self.synergy_seeds((role,))[1:])
         return [b for b in bases if performance(b, role)["supported"]]
+
+    def synergy_seeds(
+        self, roles: tuple[RoleConfig, ...], *, best_only: bool = False
+    ) -> list[dict[str, int]]:
+        """Trial complete reviewed halberd/head pairs before isolated slots prune them."""
+        from tracker.gear.halberds import FORMS as HALBERD_FORMS
+
+        seeds: list[dict[str, int]] = [{}]
+        if 12931 not in self.eligible or any(
+            r.style not in {"stab", "slash", "crush"} for r in roles
+        ):
+            return seeds
+        for weapon in HALBERD_FORMS:
+            pair = {"weapon": weapon, "head": 12931}
+            if (
+                weapon not in self.eligible
+                or self.cost(set(pair.values())) > self.request.budget_gp
+            ):
+                continue
+            if any(
+                any(slot in locks and locks[slot] != item for slot, item in pair.items())
+                or locks.get("shield") is not None
+                for role in roles
+                for locks in ({**self.request.locks, **role.locks},)
+            ):
+                continue
+            seeds.append(pair)
+        if best_only and len(seeds) > 2:
+            tested = [
+                (sum((self.performance(seed, r).get("dps") or 0) * r.weight for r in roles), seed)
+                for seed in seeds[1:]
+                if all(self.performance(seed, r)["supported"] for r in roles)
+            ]
+            if not tested:
+                return [{}]
+            _, best = max(
+                tested,
+                key=lambda row: (row[0], -self.cost(set(row[1].values())), -row[1]["weapon"]),
+            )
+            return [{}, best]
+        return seeds
 
     def joint_loadouts(self, limit: int | None) -> list[dict[str, dict[str, int]]]:
         """Assign each slot jointly, retaining shared choices before role beams lose them.
@@ -1387,7 +1446,10 @@ class _Search:
         numeric = self.compact_multi and type(self) is _Search
         performance = self.search_performance if numeric else self.performance
         secondary = self.partial_secondary if numeric else self.secondary
-        beam = [_assignment_state({r.id: {} for r in roles})]
+        beam = [
+            _assignment_state({r.id: equipment for r, equipment in zip(roles, rows, strict=True)})
+            for rows in product(*(self.synergy_seeds((r,), best_only=True) for r in roles))
+        ]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             candidates = [i for i in self.pools[slot] if i is not None]
@@ -1575,7 +1637,7 @@ class _Search:
                 if slot in locks and locks[slot] != item_id:
                     return []
                 locks[slot] = item_id
-        states = [_equipment_state({})]
+        states = [_equipment_state(seed) for seed in self.synergy_seeds(roles)]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             choices = [locks[slot]] if slot in locks else self.pools[slot]
@@ -2241,7 +2303,7 @@ def optimize(
     refined_at = perf_counter()
     reporter.stage("frontiers", elapsed_seconds=refined_at - started)
     run_secondary = request.secondary_priority != "default"
-    run_running = _running_frontier or needs_running_cost_frontier(request)
+    run_running = _running_frontier or needs_running_cost_frontier(request, search.eligible)
     frontier_units = int(run_secondary) + int(run_running)
     frontier_diagnostics = None
     if run_secondary:
@@ -2278,7 +2340,10 @@ def optimize(
         }
         for limit, solution in enumerate(winners)
     ]
+    from tracker.gear.attack_reach import policy_context
+
     assumptions = {
+        **policy_context(request),
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,

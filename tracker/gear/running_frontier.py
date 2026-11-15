@@ -9,21 +9,25 @@ from math import isfinite
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
+from tracker.gear.halberd_charging import cost_context
+
 if TYPE_CHECKING:
     from tracker.gear.compact_costs import NumericCost, PreparedCost
 
 
-def needs_running_cost_frontier(request: Any) -> bool:
-    """Resource objectives apply to ranged/Magic and every branch of their Auto run."""
-    return any(
-        (
-            bool({"ranged", "magic"}.intersection(role.allowed_disciplines))
-            if role.allowed_disciplines is not None
-            else role.style in {"ranged", "magic"}
-        )
-        for role in request.roles
-        if role.style != "special"
-    )
+def needs_running_cost_frontier(request: Any, catalog: Any = None) -> bool:
+    """Keep the legacy ranged/magic lane and include eligible charged melee gear."""
+    ordinary = [r for r in request.roles if r.style != "special"]
+    if any(
+        bool({"ranged", "magic"}.intersection(r.allowed_disciplines))
+        if r.allowed_disciplines is not None
+        else r.style in {"ranged", "magic"}
+        for r in ordinary
+    ):
+        return True
+    items = catalog if isinstance(catalog, Mapping) else getattr(catalog, "items", {})
+    excluded = set(getattr(request, "excluded_item_ids", ()))
+    return bool(ordinary) and any(i in items and i not in excluded for i in (23987, 12931))
 
 
 def cost_scaffolds(original: Any, role: Any) -> list[dict[str, int]]:
@@ -38,10 +42,10 @@ def running_cost_policy(request: Any, thorough: bool = False) -> dict[str, Any]:
     from tracker.gear.running_costs import COST_MODEL_VERSION
 
     return {
-        "policy": "running-cost-frontier-v3-tomes",
+        "policy": "running-cost-frontier-v4-halberds",
         "cost_model_version": COST_MODEL_VERSION,
         "consumable_budget_policy": "reviewed-expendable-ranged-v1",
-        "activation": "ranged-or-magic-v1",
+        "activation": "ordinary-attacks-v2-halberds",
         "expansion_limit": 1_500_000 if thorough else 500_000,
         "complete_assignment_limit": 10000 if thorough else 0,
         "finalist_assignment_limit": ASSIGNMENT_LIMIT,
@@ -52,8 +56,13 @@ def running_cost_assumptions(
     request: Any, prices: Mapping[int, Any], thorough: bool = False
 ) -> dict[str, Any]:
     """Shared frozen cost inputs for optimization and fixed-loadout evaluations."""
+    from tracker.gear.attack_reach import policy_context
+
+    charging = getattr(request, "crystal_halberd_charging", None)
     return {
+        **policy_context(request),
         "fire_tome_pages": request.fire_tome_pages,
+        "crystal_halberd_charging": charging.model_dump() if charging is not None else None,
         "slayer_tasks": {r.id: getattr(r, "on_slayer_task", False) for r in request.roles},
         "running_cost_policy": running_cost_policy(request, thorough),
         "running_cost_prices": {
@@ -146,6 +155,7 @@ def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, 
             on_slayer_task=next(
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
+            **cost_context(search.request, rid),
         )
         performance = loadout["performance"]
         numeric = prepared.score(
@@ -196,6 +206,7 @@ def add_solution_costs(
             on_slayer_task=next(
                 getattr(r, "on_slayer_task", False) for r in search.request.roles if r.id == rid
             ),
+            **cost_context(search.request, rid),
         )
         loadouts[rid] = {**loadout, "running_cost": cost}
     costs = [
@@ -298,6 +309,7 @@ def explore_running_costs(
                     {s: self.items[i] for s, i in loadout["equipment"].items()},
                     loadout["combat_option"] or {},
                     on_slayer_task=getattr(role, "on_slayer_task", False),
+                    **cost_context(self.request, role),
                 )
                 dps = performance.get("dps") or 0
                 numeric = prepared.score(
@@ -338,6 +350,7 @@ def explore_running_costs(
                     self.running_prices,
                     self.running_at,
                     on_slayer_task=getattr(role, "on_slayer_task", False),
+                    **cost_context(self.request, role),
                 )
                 costs.append((role.weight, cost, performance.get("dps") or 0))
             cost = aggregate_cost(costs)["gp_per_damage"]

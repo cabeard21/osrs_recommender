@@ -65,11 +65,19 @@ export function matchesOptimizationPolicy(
       a.scenario.request.roles.map((role) => [
         role.id,
         role.onSlayerTask ?? false,
+        role.safeSpotting ?? false,
+        role.fightDurationSeconds ?? "60",
       ]),
       b.scenario.request.roles.map((role) => [
         role.id,
         role.onSlayerTask ?? false,
+        role.safeSpotting ?? false,
+        role.fightDurationSeconds ?? "60",
       ]),
+    ) &&
+    sameValue(
+      a.scenario.request.crystal_halberd_charging ?? null,
+      b.scenario.request.crystal_halberd_charging ?? null,
     ) &&
     (a.scenario.request.fire_tome_pages ?? "burnt") ===
       (b.scenario.request.fire_tome_pages ?? "burnt") &&

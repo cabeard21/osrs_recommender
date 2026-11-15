@@ -31,7 +31,7 @@ def optimize_auto(
     complete_frontiers = options.pop("_complete_frontiers", False)
     progress = options.pop("progress", None)
     running_frontier = options.pop("_running_frontier", False) or needs_running_cost_frontier(
-        request
+        request, catalog
     )
     branches = []
     cancelled = options.get("cancelled")

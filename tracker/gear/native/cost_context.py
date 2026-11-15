@@ -9,6 +9,7 @@ from typing import Any
 from tracker.gear.ammo import cape_recovery_rate
 from tracker.gear.ammo_armour import COMPATIBLE_BODIES, INTERFERING_BODIES
 from tracker.gear.compact_costs import CostEvaluator
+from tracker.gear.halberd_charging import cost_context
 from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
@@ -26,6 +27,8 @@ class CostData:
     torag: array[int]
     supply_class: array[int]
     supply_count: int
+    serp_head: array[int]
+    serp_rate: array[float]
 
 
 def pack_costs(search: Any, scoring: Any) -> CostData:
@@ -47,10 +50,15 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
             if item.slot == "shield" and item.tome_effect
             else 0
         )
+    serp_rate = array("d")
+    scale_price = evaluator.resource(12934, "Zulrah's scales", 1).unit_price
     option_kind, option_cost, option_on_hit_cost = array("i"), array("d"), array("d")
     for (configured, option), weapon_id in zip(
         scoring.option_records, scoring.option_weapons, strict=True
     ):
+        duration = getattr(configured, "fight_duration_seconds", 60)
+        batches = 1 + (duration * 5 - 1) // 270
+        serp_rate.append(10 * batches * scale_price / duration if scale_price is not None else -1)
         ranged = option.attack_type in {"ranged", "light", "standard", "heavy"}
         option_kind.append(int(ranged))
         weapon = search.items.get(weapon_id)
@@ -63,6 +71,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
                 equipment,
                 option.model_dump(),
                 on_slayer_task=getattr(configured, "on_slayer_task", False),
+                **cost_context(getattr(search, "request", None), configured),
             )
             option_cost.append(recipe.gp_per_attack if recipe.gp_per_attack is not None else -1)
             option_on_hit_cost.append(recipe.on_hit_cost if recipe.on_hit_cost is not None else -1)
@@ -103,4 +112,6 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         torag,
         supply_class,
         len(supply_ids),
+        array("i", [0, *(int(i == 12931) for i in scoring.dense_ids[1:])]),
+        serp_rate,
     )

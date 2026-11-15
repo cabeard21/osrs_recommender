@@ -271,7 +271,7 @@ def optimize_potions(
         **options,
         "_complete_frontiers": True,
         "_running_frontier": options.get("_running_frontier", False)
-        or needs_running_cost_frontier(request),
+        or needs_running_cost_frontier(request, catalog),
     }
     if branch_runner is not None:
         branches = branch_runner(

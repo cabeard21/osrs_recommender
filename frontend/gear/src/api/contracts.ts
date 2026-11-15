@@ -74,7 +74,14 @@ export interface TargetSelection {
   key: string;
   catalog_revision: string;
 }
+export interface CrystalHalberdCharging {
+  method: "auto" | "coins" | "shards";
+  coin_recharge_cost_gp: 750000 | 600000 | 450000 | 300000 | 150000;
+  shard_value_gp: number | null;
+}
 export interface Role {
+  safeSpotting?: boolean;
+  fightDurationSeconds?: string;
   onSlayerTask?: boolean;
   prayers?: PrayerPolicy;
   targetSelection?: TargetSelection;
@@ -108,6 +115,8 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  poison_susceptibility?: "susceptible" | "immune" | "unknown";
+  venom_susceptibility?: "susceptible" | "immune" | "unknown";
   hitpoints?: number | null;
   current_hitpoints?: number | null;
   traits?: string[];
@@ -168,6 +177,7 @@ export interface PotionDefinition {
 }
 export type FireTomePages = "burnt" | "searing";
 export interface Draft {
+  crystalHalberdCharging?: CrystalHalberdCharging;
   fireTomePages?: FireTomePages;
   includeUntradeables?: boolean;
   potions?: PotionPolicy;
@@ -197,6 +207,7 @@ export interface Draft {
 export interface Scenario {
   objective: "weighted_dps";
   request: {
+    crystal_halberd_charging?: CrystalHalberdCharging;
     fire_tome_pages?: FireTomePages;
     include_untradeables?: boolean;
     potions?: PotionPolicy;
@@ -437,6 +448,15 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  direct_dps?: number | null;
+  status_damage?: {
+    kind: "venom" | "poison" | "unknown";
+    duration_seconds: number;
+    expected_damage: number;
+    dps: number;
+    application_chance: number;
+    limitations: string[];
+  } | null;
   leafy_bonus?: {
     item_id: number;
     damage_numerator: number;

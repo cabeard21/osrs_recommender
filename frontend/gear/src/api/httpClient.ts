@@ -88,6 +88,8 @@ export function parseOptimization(
     roles: (object(envelope.scenario).roles as unknown[]).map((role) => ({
       ...object(role),
       on_slayer_task: object(role).on_slayer_task ?? false,
+      safe_spotting: object(role).safe_spotting ?? false,
+      fight_duration_seconds: object(role).fight_duration_seconds ?? 60,
     })),
     fire_tome_pages: object(envelope.scenario).fire_tome_pages ?? "burnt",
     include_untradeables:
@@ -632,6 +634,8 @@ export function optimizationRequest(scenario: Scenario) {
     roles: r.roles.map((role) => ({
       id: role.id,
       on_slayer_task: role.onSlayerTask ?? false,
+      safe_spotting: role.safeSpotting ?? false,
+      fight_duration_seconds: Number(role.fightDurationSeconds ?? "60"),
       ...(role.autoDiscipline
         ? {
             allowed_disciplines: role.allowedDisciplines ?? [
@@ -697,6 +701,9 @@ export function optimizationRequest(scenario: Scenario) {
               ? { transitions: r.transitions }
               : {}),
         }
+      : {}),
+    ...(r.crystal_halberd_charging
+      ? { crystal_halberd_charging: r.crystal_halberd_charging }
       : {}),
     fire_tome_pages: r.fire_tome_pages ?? "burnt",
     support_policy: r.support_policy ?? "verified_only",
@@ -1355,19 +1362,28 @@ export class HttpGearClient implements GearClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         scenario: result.live.scenario,
-        selected_potion_ids:
-          result.solutions.find((s) => s.id === solution)?.live?.potions
-            ?.selected_ids ?? [],
-        selected_prayer_ids: {
-          [role]:
-            result.solutions.find((s) => s.id === solution)?.live?.loadouts[
-              role
-            ]?.selected_prayer_ids ??
-            result.solutions
-              .find((s) => s.id === solution)
-              ?.loadouts.find((l) => l.roleId === role)?.selectedPrayerIds ??
-            [],
-        },
+        ...((result.scenario.request.potions?.mode ?? "disabled") !== "disabled"
+          ? {
+              selected_potion_ids:
+                result.solutions.find((s) => s.id === solution)?.live?.potions
+                  ?.selected_ids ?? [],
+            }
+          : {}),
+        ...((result.scenario.request.roles.find((r) => r.id === role)?.prayers
+          ?.mode ?? "disabled") !== "disabled"
+          ? {
+              selected_prayer_ids: {
+                [role]:
+                  result.solutions.find((s) => s.id === solution)?.live
+                    ?.loadouts[role]?.selected_prayer_ids ??
+                  result.solutions
+                    .find((s) => s.id === solution)
+                    ?.loadouts.find((l) => l.roleId === role)
+                    ?.selectedPrayerIds ??
+                  [],
+              },
+            }
+          : {}),
         baseline_loadouts: { [role]: concreteEquipment(baseline) },
         proposed_loadouts: { [role]: concreteEquipment(proposal) },
         ...(combatOption
