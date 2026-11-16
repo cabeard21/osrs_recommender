@@ -17,6 +17,7 @@ from tracker.content.loader import load_content
 from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
 from tracker.gear.catalog import load_catalog
 from tracker.gear.leafy import FORMS as LEAFY_FORMS
+from tracker.gear.powered import REVIEWS as POWERED_FORMS
 from tracker.gear.tomes import FORMS as TOME_FORMS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,12 +54,18 @@ def capture(root: Path, ids: list[int], *, dry_run: bool = False) -> int:
     selected = sorted(
         set(ids)
         if ids
-        else {i.id for i in catalog.items.values() if i.content_ids}
+        else {
+            i.id
+            for i in catalog.items.values()
+            if i.content_ids or (i.requirements_complete and not i.unsupported_effects)
+        }
         | catalog.community_items.keys()
         | BOLTS.keys()
         | CROSSBOWS.keys()
         | TOME_FORMS.keys()
         | LEAFY_FORMS.keys()
+        # Uncharged purchase/preparation forms can still have unsupported attacks.
+        | (POWERED_FORMS.keys() & catalog.items.keys())
     )
     missing = [item_id for item_id in selected if not (folder / f"{item_id}.png").exists()]
     print(f"{len(selected)} selected; {len(missing)} missing sprites")
@@ -99,8 +106,8 @@ def main() -> int:
         nargs="*",
         type=int,
         help=(
-            "Default: all authored physical forms, community-supported equipment, "
-            "and reviewed enchanted bolts/crossbows and tome forms"
+            "Default: all authored and supported physical forms, community equipment, "
+            "reviewed bolts/crossbows, tomes, leafy equipment, and powered-staff preparation forms"
         ),
     )
     parser.add_argument("--root", type=Path, default=ROOT)
