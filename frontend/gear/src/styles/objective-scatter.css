@@ -1,0 +1,57 @@
+.objective-scatter {
+  margin: 16px 0;
+}
+.objective-scatter-plot {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  overflow: visible;
+}
+.objective-scatter svg text {
+  fill: #b8c7dc;
+  font-size: 12px;
+  font-family: "JetBrains Mono", monospace;
+}
+.objective-scatter-grid line {
+  stroke: #344154;
+  stroke-width: 0.8;
+}
+.objective-scatter circle {
+  cursor: pointer;
+}
+.objective-scatter circle:hover,
+.objective-scatter circle:focus-visible {
+  stroke: #fff;
+  stroke-width: 3;
+  opacity: 1;
+  outline: none;
+}
+.objective-scatter-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 420px;
+  margin: 6px auto 0;
+  font-size: 12px;
+}
+.objective-scatter-legend svg {
+  width: 260px;
+  max-width: 65%;
+}
+.objective-scatter-hint {
+  color: #9aaac0;
+  font-size: 12px;
+}
+.objective-lab-link {
+  display: inline-flex;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid #6c5835;
+  border-radius: 5px;
+  color: #f0bf5c;
+  font-size: 13px;
+  text-decoration: none;
+}
+.objective-lab-link:hover {
+  background: #302b21;
+}

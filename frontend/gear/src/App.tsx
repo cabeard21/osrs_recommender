@@ -133,6 +133,10 @@ export default function App() {
           <History size={18} />
           Legacy gear view
         </a>
+        <a href="/gear?view=tradeoff-lab">
+          <SlidersHorizontal size={18} />
+          Tradeoff lab
+        </a>
       </nav>
       <div className="sidebar-footer">
         <a href="/settings">

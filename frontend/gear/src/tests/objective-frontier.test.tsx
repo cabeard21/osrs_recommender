@@ -3,8 +3,73 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { ObjectiveFrontier } from "../components/ObjectiveFrontier";
 import type { OptimizationReply } from "../api/contracts";
+import { loadLabSnapshot } from "../tradeoff-lab/snapshot";
 
 afterEach(() => vi.unstubAllGlobals());
+
+it("opens the full lab with the current scoped result and selected point", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ points: [], total: 51, next_cursor: null }),
+          { status: 200 },
+        ),
+    ),
+  );
+  render(
+    <ObjectiveFrontier
+      result={result}
+      swapLimit={0}
+      selectedId="sample"
+      onSelect={() => {}}
+    />,
+  );
+  const link = screen.getByRole("link", { name: /Open full tradeoff lab/ });
+  fireEvent.contextMenu(link);
+  const url = new URL(link.getAttribute("href")!, location.href);
+  expect(url.searchParams.get("view")).toBe("tradeoff-lab");
+  const data = loadLabSnapshot(url.searchParams.get("session")!);
+  expect(data.selectedId).toBe("sample");
+  expect(data.points[0].values).toEqual({ dps: 10, prayer_bonus: 5 });
+  expect(data.sampled).toBe(true);
+  expect(data.totalCount).toBe(51);
+  expect(data.scope).toContain("0");
+});
+
+it("keeps the result visible and explains blocked browser storage", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ points: [], total: 51, next_cursor: null }),
+          { status: 200 },
+        ),
+    ),
+  );
+  render(
+    <ObjectiveFrontier
+      result={result}
+      swapLimit={0}
+      selectedId="sample"
+      onSelect={() => {}}
+    />,
+  );
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw new Error("Storage blocked");
+  });
+  fireEvent.contextMenu(
+    screen.getByRole("link", { name: /Open full tradeoff lab/ }),
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    /storage|save|store/i,
+  );
+  expect(
+    screen.getByRole("table", { name: "All objective tradeoffs" }),
+  ).toBeVisible();
+});
 
 it("formats magic damage percentage points without multiplying by 100", async () => {
   const raw = { ...solution, objective_values: { magic_damage_bonus: 3.5 } };
@@ -66,9 +131,23 @@ const solution = {
   objective_values: { prayer_bonus: 5 },
   purchase_cost_gp: 0,
   maximum_actions: 0,
+  loadouts: {
+    "role-1": {
+      equipment: {},
+      combat_option: { attack_type: "slash", stance: "accurate" },
+    },
+  },
 };
 const result = {
-  scenario: { request: { objectives: [{ kind: "prayer_bonus" }] } },
+  evaluatedAt: "2026-11-16T16:48:56Z",
+  scenario: {
+    request: {
+      objectives: [{ kind: "prayer_bonus" }],
+      roles: [{ id: "role-1", name: "Melee" }],
+      budget_gp: 1000,
+      target: { name: "Test target" },
+    },
+  },
   solutions: [],
   live: {
     run_id: "test-run",

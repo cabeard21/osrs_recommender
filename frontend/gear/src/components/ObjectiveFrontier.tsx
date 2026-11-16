@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
+import { ObjectiveScatter } from "./ObjectiveScatter";
+import {
+  createLabSnapshot,
+  selectedLabSolution,
+  storeLabSnapshot,
+} from "../tradeoff-lab/snapshot";
 import {
   canonicalObjectives,
   objectiveValues,
@@ -62,8 +68,6 @@ export function ObjectiveFrontier({
   useEffect(() => {
     selectionVersion.current += 1;
   }, [result, groupId]);
-  const [x, setX] = useState("dps"),
-    [y, setY] = useState(definitions[0]?.id ?? "dps");
   const [sort, setSort] = useState("dps"),
     [direction, setDirection] = useState("desc");
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
@@ -155,9 +159,7 @@ export function ObjectiveFrontier({
   if (!group || result.scenario.request.objectives === undefined) return null;
   const rows = page?.points ?? samples;
   const axes = [{ id: "dps", label: "DPS" }, ...definitions];
-  const selected = result.solutions.find(
-    (solution) => solution.id === selectedId,
-  )?.live;
+  const selected = selectedLabSolution(result, selectedId);
   const displayed =
     samples.some((p) => p.id === selectedId) || !selected
       ? samples
@@ -173,20 +175,23 @@ export function ObjectiveFrontier({
         ];
   const value = (point: Point, id: string) =>
     id === "dps" ? point.score : point.objective_values[id];
-  const activeX = axes.some((a) => a.id === x) ? x : "dps";
-  const activeY = axes.some((a) => a.id === y)
-    ? y
-    : (definitions[0]?.id ?? "dps");
-  const bounds = (id: string) => {
-    const values = displayed.map((p) => value(p, id)).filter(Number.isFinite);
-    return [Math.min(...values), Math.max(...values)];
+  const openLab = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    try {
+      const token = storeLabSnapshot(
+        createLabSnapshot(result, group, selectedId),
+      );
+      const url = new URL(location.href);
+      url.search = new URLSearchParams({
+        view: "tradeoff-lab",
+        session: token,
+      }).toString();
+      url.hash = "";
+      event.currentTarget.href = url.toString();
+    } catch (failure) {
+      event.preventDefault();
+      setError((failure as Error).message);
+    }
   };
-  const [xmin, xmax] = bounds(activeX),
-    [ymin, ymax] = bounds(activeY);
-  const coordinate = (v: number, low: number, high: number) =>
-    high === low ? 0.5 : (v - low) / (high - low);
-  const xDefinition = definitions.find((d) => d.id === activeX),
-    yDefinition = definitions.find((d) => d.id === activeY);
   return (
     <section className="panel" aria-label="Objective tradeoffs">
       <h2>Best-found objective tradeoffs</h2>
@@ -218,101 +223,32 @@ export function ObjectiveFrontier({
           );
         })}
       </div>
+      <a
+        className="objective-lab-link"
+        href="?view=tradeoff-lab"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={openLab}
+        onAuxClick={openLab}
+        onContextMenu={openLab}
+      >
+        Open full tradeoff lab ↗
+      </a>
       {definitions.length > 0 && (
         <>
-          <div className="objective-shortcuts">
-            <label>
-              Horizontal axis
-              <select value={activeX} onChange={(e) => setX(e.target.value)}>
-                {axes.map((axis) => (
-                  <option key={axis.id} value={axis.id}>
-                    {axis.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Vertical axis
-              <select value={activeY} onChange={(e) => setY(e.target.value)}>
-                {axes.map((axis) => (
-                  <option key={axis.id} value={axis.id}>
-                    {axis.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
           <p>
             Chart shows {samples.length} representative points
             {group.sampled ? " from the full table" : ""}. A point can appear
             worse on these axes while improving another objective.
           </p>
-          <svg
-            viewBox="0 0 520 240"
-            role="img"
-            aria-label="Selected objective projection"
-            style={{ width: "100%", maxWidth: 800 }}
-          >
-            <line x1="65" x2="495" y1="195" y2="195" stroke="currentColor" />
-            <line x1="65" x2="65" y1="20" y2="195" stroke="currentColor" />
-            <text x="65" y="217" fill="currentColor" fontSize="11">
-              {format(xmin, xDefinition)}
-            </text>
-            <text
-              x="495"
-              y="217"
-              textAnchor="end"
-              fill="currentColor"
-              fontSize="11"
-            >
-              {format(xmax, xDefinition)}
-            </text>
-            <text
-              x="58"
-              y="195"
-              textAnchor="end"
-              fill="currentColor"
-              fontSize="11"
-            >
-              {format(ymin, yDefinition)}
-            </text>
-            <text
-              x="58"
-              y="30"
-              textAnchor="end"
-              fill="currentColor"
-              fontSize="11"
-            >
-              {format(ymax, yDefinition)}
-            </text>
-            {displayed.map((point) => (
-              <circle
-                key={point.id}
-                cx={65 + coordinate(value(point, activeX), xmin, xmax) * 430}
-                cy={195 - coordinate(value(point, activeY), ymin, ymax) * 175}
-                r={point.id === selectedId ? 6 : 4}
-                fill="currentColor"
-                opacity={point.id === selectedId ? 1 : 0.55}
-                role="button"
-                tabIndex={0}
-                aria-label={
-                  "Select tradeoff " +
-                  point.id +
-                  ", " +
-                  format(value(point, activeX), xDefinition) +
-                  " by " +
-                  format(value(point, activeY), yDefinition)
-                }
-                onClick={() => void choose(point.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    void choose(point.id);
-                  }
-                }}
-              />
-            ))}
-          </svg>
+          <ObjectiveScatter
+            key={axes.map((axis) => axis.id).join("|")}
+            axes={axes}
+            points={displayed}
+            selectedId={selectedId}
+            disabled={selecting}
+            onSelect={(id) => void choose(id)}
+          />
         </>
       )}
       <div className="objective-shortcuts">
