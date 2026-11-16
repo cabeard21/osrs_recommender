@@ -312,3 +312,63 @@ def test_complete_auto_archive_survives_nested_merge():
         for group in result["secondary_frontiers"]
         for point in group["points"]
     )
+
+
+def cyclops_context():
+    from tracker.gear.npcs import npc_catalog, resolve_request
+
+    args = list(context("magic"))
+    catalog = npc_catalog()
+    entry = next(e for e in catalog.entries.values() if e["npc_id"] == 2137)
+    role = RoleConfig.model_validate(
+        {
+            **args[1].roles[0].model_dump(),
+            "style": "magic",  # Auto's placeholder must not reject the whole request.
+            "target": entry["target"],
+            "target_selection": {
+                "key": entry["key"],
+                "catalog_revision": catalog.revision,
+            },
+        }
+    )
+    args[1] = resolve_request(args[1].model_copy(update={"roles": (role,)}))
+    return args
+
+
+def test_cyclops_auto_selects_melee_and_reports_immune_branches():
+    args = cyclops_context()
+    result = optimize(*args)
+    assert result["selected_solution"]["loadouts"]["a"]["discipline"] == "melee"
+    assert result["selected_solution"]["score"] > 0
+    for branch in result["discipline_results"]:
+        if branch["discipline"] != "melee":
+            assert branch["selected_solution"] is None
+            assert any("immune" in reason for reason in branch["reasons"])
+
+
+def test_cyclops_auto_without_melee_has_no_feasible_solution():
+    args = cyclops_context()
+    role = args[1].roles[0].model_copy(update={"allowed_disciplines": ("ranged", "magic")})
+    args[1] = args[1].model_copy(update={"roles": (role,)})
+    result = optimize(*args)
+    assert result["selected_solution"] is None
+    assert all(branch["selected_solution"] is None for branch in result["discipline_results"])
+
+
+@pytest.mark.parametrize("weapon_id", [2, 3])
+def test_cyclops_auto_exact_evaluation_rejects_immune_options(weapon_id):
+    args = cyclops_context()
+    equipment = {"weapon": weapon_id}
+    option = optimize(*context("magic" if weapon_id == 3 else "ranged"))["selected_solution"][
+        "loadouts"
+    ]["a"]["combat_option"]
+    result = evaluate_configurations(
+        *args[:2], {"weapon": 1}, equipment, *args[2:], proposed_combat_option=option
+    )
+    assert result["baseline"]["status"] == "valid"
+    assert result["baseline"]["discipline"] == "melee"
+    assert result["proposed"]["status"] == "invalid"
+    assert result["proposed"]["performance"] is None
+    unpinned = evaluate_configurations(*args[:2], equipment, equipment, *args[2:])
+    assert unpinned["baseline"]["status"] == "invalid"
+    assert unpinned["proposed"]["status"] == "invalid"

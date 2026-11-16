@@ -2,6 +2,31 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { npcEntryLabel } from "../src/components/npcEntries";
 
+test("Warriors' Guild Cyclops can be selected and optimized for melee", async ({
+  page,
+}) => {
+  await page.request.post("/test/seed-optimization");
+  await page.goto("/gear-next/");
+  const entry = await choose(page, page, "Cyclops");
+  const pending = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/ui-api/gear/optimizations" &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Run optimization", exact: true })
+    .click();
+  const response = await pending;
+  expect(response.status(), await response.text()).toBe(200);
+  const data = await response.json();
+  expect(data.scenario.roles[0].target_selection.key).toBe(entry.key);
+  const roleId = data.scenario.roles[0].id;
+  expect(data.result.selected_solution.loadouts[roleId].discipline).toBe(
+    "melee",
+  );
+  expect(data.result.selected_solution.score).toBeGreaterThan(0);
+});
+
 test("Moon armour survives selection, reload and optimization", async ({
   page,
 }) => {
