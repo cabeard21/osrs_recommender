@@ -9,7 +9,10 @@ import type {
   Workspace,
   CombatTarget,
 } from "../api/contracts";
-import { secondaryPriorities } from "../api/secondaryPriorities";
+import {
+  secondaryPriorities,
+  migrateSecondaryPriority,
+} from "../api/secondaryPriorities";
 import {
   emptyCombatOptionGroups,
   selectedCombatOptions,
@@ -695,7 +698,11 @@ export function reducer(state: State, action: Action): State {
               solutionId: saved.solutionId,
               activeRole: saved.result.scenario.request.roles[0].id,
               outdated:
-                saved.outdated || resultIsStale(saved.result, state.context),
+                saved.outdated ||
+                resultIsStale(saved.result, state.context) ||
+                (state[mode].draft.secondaryPriority ?? "default") !==
+                  (saved.result.scenario.request.secondary_priority ??
+                    "default"),
             },
           ]),
       ),
@@ -1226,6 +1233,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
   if (draft.optimizationMode === undefined) draft.optimizationMode = "fast";
   if (draft.secondaryPriority === undefined)
     draft.secondaryPriority = "default";
+  draft.secondaryPriority = migrateSecondaryPriority(draft.secondaryPriority);
   const isValid = !(
     !["burnt", "searing"].includes(draft.fireTomePages) ||
     typeof draft.includeUntradeables !== "boolean" ||

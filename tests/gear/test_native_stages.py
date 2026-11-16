@@ -110,6 +110,34 @@ def drain(expansion, limit, chunk=1024):
     return expansion.finish(limit), consumed
 
 
+@pytest.mark.parametrize(
+    "priority,requires_magic",
+    [
+        ("melee_defence_roll", False),
+        ("melee_magic_defence_roll", True),
+        ("melee_ranged_defence_roll", False),
+    ],
+)
+@pytest.mark.parametrize("missing", ["magic", "defence", "ranged"])
+def test_melee_stage_validates_only_required_roll_components(priority, requires_magic, missing):
+    with stage_search() as search:
+        search.request = search.request.model_copy(update={"secondary_priority": priority})
+        search.levels = {key: value for key, value in search.levels.items() if key != missing}
+        expansion = StageContext(ScoringContext(search), search).begin(
+            kind="loadout",
+            states=[{"weapon": 2}],
+            choices=[201],
+            slot="head",
+            roles=("z",),
+            metric=True,
+        )
+        if missing == "defence" or (missing == "magic" and requires_magic):
+            with pytest.raises(ValueError, match="unavailable"):
+                drain(expansion, 8)
+        else:
+            assert drain(expansion, 8)[0] == [{"weapon": 2, "head": 201}]
+
+
 def test_native_expansion_preserves_original_equipment_insertion_order():
     with stage_search() as search:
         actual, _ = drain(

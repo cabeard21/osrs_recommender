@@ -32,7 +32,7 @@ function blockedDraft(multi: boolean): Draft {
     draft.defence = "43";
     draft.combatTarget = target;
     draft.targetSelection = selection;
-    draft.secondaryPriority = "balanced_defence";
+    draft.secondaryPriority = "balanced_defence_roll";
     draft.optimizationMode = "thorough";
   }
   return draft;

@@ -1,3 +1,4 @@
+import { readSavedSetups } from "../state/savedSetups";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
@@ -17,7 +18,7 @@ import {
   secondaryPriorities,
   validateSecondaryPriority,
 } from "../api/secondaryPriorities";
-import { FixtureGearClient } from "../fixtures/client";
+import { FixtureGearClient, contextFixture } from "../fixtures/client";
 import { SecondaryPrioritySummary } from "../components/SecondaryPrioritySummary";
 import type { JointSolutionDTO } from "../api/contracts";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
@@ -142,7 +143,7 @@ it("switches priorities while keeping accepted results outdated", async () => {
   expect(screen.getByLabelText("Tradeoff metric")).toHaveValue("default");
   expect(
     screen.getByLabelText("Tradeoff metric").querySelectorAll("option"),
-  ).toHaveLength(20);
+  ).toHaveLength(16);
   await user.click(
     screen.getByRole("button", { name: "Run fixture optimization" }),
   );
@@ -164,17 +165,17 @@ it("retains the combined defence priority through saved drafts and requests", ()
     JSON.stringify({ version: 2, single: draft, multi: draft }),
   );
   const restored = readDrafts("combined-defence", sessionStorage)!;
-  expect(restored.single.secondaryPriority).toBe("magic_ranged_defence");
+  expect(restored.single.secondaryPriority).toBe("magic_ranged_defence_roll");
   expect(
     optimizationRequest(normalize(restored.single, "snapshot"))
       .secondary_priority,
-  ).toBe("magic_ranged_defence");
+  ).toBe("magic_ranged_defence_roll");
 });
 
 it("explains the combined score and selected bonuses in the result summary", async () => {
   const result = await new FixtureGearClient("none", 0).optimize(
     normalize(
-      { ...newDraft(), secondaryPriority: "magic_ranged_defence" },
+      { ...newDraft(), secondaryPriority: "magic_ranged_defence_roll" },
       "fixture-snapshot-01",
     ),
     new AbortController().signal,
@@ -189,7 +190,17 @@ it("explains the combined score and selected bonuses in the result summary", asy
   } as unknown as JointSolutionDTO;
   render(
     <SecondaryPrioritySummary
-      result={{ ...result, source: "live" }}
+      result={{
+        ...result,
+        source: "live",
+        scenario: {
+          ...result.scenario,
+          request: {
+            ...result.scenario.request,
+            secondary_priority: "magic_ranged_defence",
+          },
+        },
+      }}
       solution={solution}
     />,
   );
@@ -203,4 +214,83 @@ it("explains the combined score and selected bonuses in the result summary", asy
   expect(
     screen.getByText(/single defence bonuses: magic -5 \/ ranged 20/),
   ).toBeVisible();
+});
+
+it.each([
+  "balanced_defence",
+  "magic_ranged_defence",
+  "stab_defence",
+  "slash_defence",
+  "crush_defence",
+  "ranged_defence",
+  "magic_defence",
+] as const)(
+  "migrates %s in Single/Multi drafts and named setups",
+  (priority) => {
+    const original = {
+      ...newDraft(),
+      secondaryPriority: priority,
+      budget: "12345",
+    };
+    sessionStorage.setItem(
+      storageKey("migration"),
+      JSON.stringify({ version: 3, single: original, multi: original }),
+    );
+    const loaded = readDrafts("migration", sessionStorage)!;
+    for (const draft of [loaded.single, loaded.multi]) {
+      expect(draft.secondaryPriority).toBe(`${priority}_roll`);
+      expect(draft.budget).toBe("12345");
+      expect(
+        optimizationRequest(normalize(draft, "snapshot")).secondary_priority,
+      ).toBe(`${priority}_roll`);
+    }
+    sessionStorage.setItem(
+      "gear.savedSetups.v1",
+      JSON.stringify([
+        {
+          name: "Legacy",
+          mode: "single",
+          savedAt: "2026-11-15",
+          draft: original,
+        },
+      ]),
+    );
+    expect(readSavedSetups(sessionStorage)[0].draft).toMatchObject({
+      secondaryPriority: `${priority}_roll`,
+      budget: "12345",
+    });
+    expect(original.secondaryPriority).toBe(priority);
+  },
+);
+
+it("restores a legacy result as outdated after draft migration without changing its metric", async () => {
+  const result = await new FixtureGearClient("none", 0).optimize(
+    normalize(newDraft(), "fixture-snapshot-01"),
+    new AbortController().signal,
+  );
+  const historical = {
+    ...result,
+    scenario: {
+      ...result.scenario,
+      request: {
+        ...result.scenario.request,
+        secondary_priority: "stab_defence" as const,
+      },
+    },
+  };
+  const state = { ...initialState(), context: contextFixture };
+  state.single.draft = {
+    ...state.single.draft,
+    secondaryPriority: "stab_defence_roll",
+  };
+  const restored = reducer(state, {
+    type: "restore-results",
+    results: {
+      single: { result: historical, solutionId: "saved", outdated: false },
+    },
+  });
+  expect(restored.single.outdated).toBe(true);
+  expect(restored.single.result?.scenario.request.secondary_priority).toBe(
+    "stab_defence",
+  );
 });

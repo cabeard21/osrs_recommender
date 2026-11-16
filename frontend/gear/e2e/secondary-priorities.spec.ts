@@ -14,8 +14,8 @@ test("tradeoff metric persists, identifies requests/results, and invalidates acc
     exact: true,
   });
   await expect(priority).toHaveValue("default");
-  await expect(priority.locator("option")).toHaveCount(20);
-  await priority.selectOption("magic_ranged_defence");
+  await expect(priority.locator("option")).toHaveCount(16);
+  await priority.selectOption("magic_ranged_defence_roll");
   const response = page.waitForResponse(
     (r) =>
       new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
@@ -27,30 +27,28 @@ test("tradeoff metric persists, identifies requests/results, and invalidates acc
   const reply = await response;
   expect(reply.status(), await reply.text()).toBe(200);
   expect(reply.request().postDataJSON().secondary_priority).toBe(
-    "magic_ranged_defence",
+    "magic_ranged_defence_roll",
   );
   const body = await reply.json();
-  expect(body.secondary_priority).toBe("magic_ranged_defence");
-  expect(body.result.secondary_priority).toBe("magic_ranged_defence");
+  expect(body.secondary_priority).toBe("magic_ranged_defence_roll");
+  expect(body.result.secondary_priority).toBe("magic_ranged_defence_roll");
   expect(body.result.selected_solution.secondary_priority).toBe(
-    "magic_ranged_defence",
+    "magic_ranged_defence_roll",
   );
   expect(typeof body.result.selected_solution.secondary_value).toBe("number");
   const loadouts = body.result.selected_solution.loadouts;
   const roleIds = Object.keys(loadouts);
   expect(roleIds).toHaveLength(1);
-  const bonuses = loadouts[roleIds[0]].performance.bonuses;
+  const rolls = loadouts[roleIds[0]].performance.player_defence_rolls;
   expect(body.result.selected_solution.secondary_value).toBe(
-    Math.min(bonuses.defence_magic, bonuses.defence_ranged),
+    Math.min(rolls.magic, rolls.ranged),
   );
   await page.getByText("Tradeoff metric", { exact: true }).click();
   await expect(
-    page.getByText(/Tradeoff metric: Magic & ranged defence/),
+    page.getByText(/Tradeoff metric: Magic & ranged defence roll/),
   ).toBeVisible();
   await expect(
-    page
-      .getByText(/lower of the magic and ranged equipment defence bonuses/)
-      .first(),
+    page.getByText(/lower of those two player defence rolls/).first(),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Best-found tradeoff frontier" }),
@@ -74,7 +72,7 @@ test("tradeoff metric persists, identifies requests/results, and invalidates acc
   await priority.selectOption("accuracy");
   await expect(page.getByText(/Result outdated/)).toBeVisible();
   await expect(
-    page.getByText(/Tradeoff metric: Magic & ranged defence/),
+    page.getByText(/Tradeoff metric: Magic & ranged defence roll/),
   ).toBeVisible();
   await page.reload();
   await page
@@ -82,13 +80,13 @@ test("tradeoff metric persists, identifies requests/results, and invalidates acc
     .filter({ hasText: /^Advanced settings/ })
     .click();
   await expect(priority).toHaveValue("accuracy");
-  await priority.selectOption("magic_ranged_defence");
+  await priority.selectOption("magic_ranged_defence_roll");
   await page.reload();
   await page
     .locator("summary")
     .filter({ hasText: /^Advanced settings/ })
     .click();
-  await expect(priority).toHaveValue("magic_ranged_defence");
+  await expect(priority).toHaveValue("magic_ranged_defence_roll");
 });
 
 test("selecting a lower-DPS frontier point updates the complete result", async ({
@@ -126,7 +124,7 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
     .click();
   await page
     .getByRole("combobox", { name: "Tradeoff metric", exact: true })
-    .selectOption("balanced_defence");
+    .selectOption("balanced_defence_roll");
   await page
     .getByRole("button", { name: "Run optimization", exact: true })
     .click();
@@ -140,7 +138,11 @@ test("selecting a lower-DPS frontier point updates the complete result", async (
   await expect(
     page.getByRole("button", { name: "Select chart tradeoff 2", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText(/role-1 defence bonuses:/)).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "Metric tradeoffs" })
+      .getByText(/role-1 defence rolls:/),
+  ).toBeVisible();
   await page.getByRole("region", { name: "Metric tradeoffs" }).screenshot({
     path: testInfo.outputPath("secondary-frontier-tradeoff.png"),
   });
@@ -159,13 +161,13 @@ test("Multi frontier endpoints select complete joint solutions", async ({
     .click();
   await page
     .getByRole("combobox", { name: "Tradeoff metric", exact: true })
-    .selectOption("balanced_defence");
+    .selectOption("balanced_defence_roll");
   await page
     .getByRole("button", { name: "Run optimization", exact: true })
     .click();
   const endpoints = page.getByRole("group", { name: "Frontier endpoints" });
   const metric = endpoints.getByRole("button", {
-    name: "Highest Balanced defence",
+    name: "Highest Balanced defence roll",
   });
   await expect(metric).toBeVisible();
   await metric.click();

@@ -9,7 +9,19 @@ from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 
 
 @pytest.mark.parametrize(
-    "metric", ["balanced", "magic_ranged", "stab", "slash", "crush", "ranged", "magic"]
+    "metric",
+    [
+        "balanced",
+        "magic_ranged",
+        "stab",
+        "slash",
+        "crush",
+        "ranged",
+        "magic",
+        "melee",
+        "melee_magic",
+        "melee_ranged",
+    ],
 )
 def test_player_roll_metrics_roundtrip_and_provenance(client, session_factory, metric):
     from tracker.gear.priorities import secondary_value

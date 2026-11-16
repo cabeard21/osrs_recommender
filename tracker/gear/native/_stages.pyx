@@ -8,7 +8,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string, to_string
 from libcpp.algorithm cimport sort
 
-from tracker.gear.native._scoring cimport ScoringContext, Score
+from tracker.gear.native._scoring cimport ScoringContext, Score, required_defence_mask
 
 from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.native.stage_context import pack_stage
@@ -256,7 +256,6 @@ cdef class StageContext:
         cdef int physical[44]
         cdef int count = 0
         cdef int index, item, previous, r, s, j, k, d, outside
-        cdef int first_defence, last_defence
         cdef long long cost = 0
         cdef long long amount, market, untradeable = 0, strength = 0
         cdef bint duplicate, later, all_melee = True
@@ -337,15 +336,8 @@ cdef class StageContext:
             self.scoring.evaluate(&row.slots[0 if row.kind == 0 else r * 11], r, metric, &score,
                                   &row.order[0 if row.kind == 0 else r * 11])
             if score.supported and self.scoring.priority >= 20:
-                if self.scoring.priority == 20:
-                    first_defence, last_defence = 0, 5
-                elif self.scoring.priority == 21:
-                    first_defence, last_defence = 3, 5
-                else:
-                    first_defence = self.scoring.priority - 22
-                    last_defence = first_defence + 1
-                for j in range(first_defence, last_defence):
-                    if score.defence_rolls[j] < 0:
+                for j in range(5):
+                    if required_defence_mask(self.scoring.priority) & (1 << j) and score.defence_rolls[j] < 0:
                         raise ValueError("Player defensive roll is unavailable: required combat levels are unknown")
             if row.kind != 2 and slot > 1 and not score.supported:
                 return False

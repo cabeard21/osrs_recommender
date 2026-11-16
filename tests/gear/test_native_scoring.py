@@ -58,6 +58,54 @@ def test_support_accepts_magic_and_fractional_magic_metric():
 
 
 @pytest.mark.parametrize(
+    "priority,styles",
+    [
+        ("melee_defence_roll", ("stab", "slash", "crush")),
+        ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
+        ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+    ],
+)
+@pytest.mark.parametrize("metric", [False, True])
+@pytest.mark.parametrize("weakest", ["stab", "slash", "crush", "magic", "ranged"])
+def test_native_melee_minimum_components(priority, styles, metric, weakest):
+    native = pytest.importorskip("tracker.gear.native._scoring")
+    search = context()
+    search.request.secondary_priority = priority
+    search.items[2] = search.items[2].model_copy(
+        update={
+            "bonuses": EquipmentBonuses(
+                **{f"defence_{style}": 1 if style == weakest else 100 for style in styles}
+            )
+        }
+    )
+    assert support_reason(search) is None
+    actual = native.ScoringContext(search).score({"weapon": 1, "head": 2}, 0, metric)
+    assert actual["secondary"] == min(actual["player_defence_rolls"][s] for s in styles)
+
+
+@pytest.mark.parametrize(
+    "priority,requires_magic",
+    [
+        ("melee_defence_roll", False),
+        ("melee_magic_defence_roll", True),
+        ("melee_ranged_defence_roll", False),
+    ],
+)
+@pytest.mark.parametrize("missing", ["magic", "defence"])
+def test_native_melee_required_levels(priority, requires_magic, missing):
+    native = pytest.importorskip("tracker.gear.native._scoring")
+    search = context()
+    search.request.secondary_priority = priority
+    search.levels = {key: value for key, value in search.levels.items() if key != missing}
+    scorer = native.ScoringContext(search)
+    if missing == "defence" or requires_magic:
+        with pytest.raises(ValueError, match="unavailable"):
+            scorer.score({"weapon": 1}, 0, True)
+    else:
+        assert scorer.score({"weapon": 1}, 0, True)["secondary"] > 0
+
+
+@pytest.mark.parametrize(
     "style,item",
     [
         (
@@ -98,6 +146,9 @@ def test_unreviewed_body_recovery_keeps_native_combat_supported():
         "balanced_defence_roll",
         "magic_ranged_defence_roll",
         "magic_defence_roll",
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
     ],
 )
 @pytest.mark.parametrize("metric", [False, True])
@@ -212,6 +263,9 @@ def test_native_reviewed_spells_and_weakness(spell):
         "crush_defence_roll",
         "ranged_defence_roll",
         "magic_defence_roll",
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
     ],
 )
 def test_native_defensive_prayer_option_winner(priority):
@@ -230,7 +284,7 @@ def test_native_defensive_prayer_option_winner(priority):
             CombatOption(attack_type="slash", stance=stance),
         )
         for stance in ("accurate", "defensive")
-        for prayers in ((), ("piety",), ("steel_skin",))
+        for prayers in ((), ("piety",), ("steel_skin",), ("augury",))
     )
     search.request.roles = (role,)
     search.request.secondary_priority = priority

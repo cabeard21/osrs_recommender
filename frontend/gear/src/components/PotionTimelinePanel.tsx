@@ -6,7 +6,7 @@ import type {
   PotionTimeline,
   PotionTimelineMeasurement,
 } from "../api/contracts";
-import { secondaryPriorities } from "../api/secondaryPriorities";
+import { secondaryPriorityLabel } from "../api/secondaryPriorities";
 
 const clock = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -284,8 +284,7 @@ export function PotionTimelinePanel({
         .join(" · ") || "No stat boosts",
   );
   const priority = data.secondary_priority;
-  const label =
-    secondaryPriorities.find(([id]) => id === priority)?.[1] ?? priority;
+  const label = secondaryPriorityLabel(priority);
   const percent = priority === "accuracy";
   const divine =
     solution.potions?.selected_ids.some((id) => id.startsWith("divine_")) ??

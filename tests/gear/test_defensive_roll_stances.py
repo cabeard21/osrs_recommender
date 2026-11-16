@@ -1,10 +1,21 @@
 """Defensive roll frontiers preserve complete legal stance alternatives."""
 
+import pytest
+
 from tests.gear.test_optimizer import run, weapon
 from tracker.gear.optimizer import CombatOptionFilters, RoleConfig
 
 
-def test_roll_frontier_keeps_longrange_and_rapid_with_selected_options():
+@pytest.mark.parametrize(
+    "priority",
+    [
+        "ranged_defence_roll",
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
+    ],
+)
+def test_roll_frontier_keeps_longrange_and_rapid_with_selected_options(priority):
     item = weapon(1, "ranged", attack_profiles=(("ranged", "rapid"), ("ranged", "longrange")))
     result = run(
         [item],
@@ -20,7 +31,7 @@ def test_roll_frontier_keeps_longrange_and_rapid_with_selected_options():
             ),
         ),
         max_swaps=0,
-        secondary_priority="ranged_defence_roll",
+        secondary_priority=priority,
         max_dps_loss_pct=100,
     )
     rows = [point["solution"] for point in result["secondary_frontiers"][0]["points"]]

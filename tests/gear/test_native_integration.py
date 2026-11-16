@@ -24,6 +24,29 @@ FLAGS = {
 }
 
 
+@pytest.mark.parametrize("mode", ["single", "multi", "auto"])
+@pytest.mark.parametrize(
+    "priority", ["melee_defence_roll", "melee_magic_defence_roll", "melee_ranged_defence_roll"]
+)
+def test_melee_roll_complete_frontiers_match_python_without_fallback(mode, priority):
+    pytest.importorskip("tracker.gear.native._stages")
+    from tests.gear.test_factored_multi import multi_case
+    from tests.gear.test_multi_auto import inputs as auto_inputs
+
+    args = list(auto_inputs(count=1) if mode == "auto" else multi_case(True))
+    roles = args[1].roles[:1] if mode == "single" else args[1].roles
+    args[1] = args[1].model_copy(
+        update={"roles": roles, "secondary_priority": priority, "max_dps_loss_pct": 100}
+    )
+    reference = optimize(*args, **FLAGS)
+    with capture() as evidence:
+        actual = optimize(*args, **FLAGS, _native_search=True)
+    assert result_digest(actual) == result_digest(reference)
+    assert evidence.snapshot()["native_requests"] >= 1
+    assert evidence.snapshot()["fallback_requests"] == 0
+    assert any(row["event"] == "stage" for row in evidence.snapshot()["events"])
+
+
 @pytest.mark.parametrize(
     "name",
     [

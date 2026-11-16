@@ -6,6 +6,22 @@ from libc.string cimport memset
 from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total
 
 
+cdef int required_defence_mask(int priority) noexcept nogil:
+    if priority == 20:
+        return 31
+    if priority == 21:
+        return 24
+    if 22 <= priority <= 26:
+        return 1 << (priority - 22)
+    if priority == 27:
+        return 7
+    if priority == 28:
+        return 23
+    if priority == 29:
+        return 15
+    return 0
+
+
 cdef double accuracy_for(long long attack, long long defence) noexcept nogil:
     if attack < 0:
         attack = 0
@@ -141,6 +157,12 @@ cdef class ScoringContext:
                 return (rolls[0] + rolls[1] + rolls[2] + rolls[3] + rolls[4]) / 5.0
             if self.priority == 21:
                 return min(rolls[3], rolls[4])
+            if self.priority == 27:
+                return min(rolls[0], rolls[1], rolls[2])
+            if self.priority == 28:
+                return min(rolls[0], rolls[1], rolls[2], rolls[4])
+            if self.priority == 29:
+                return min(rolls[0], rolls[1], rolls[2], rolls[3])
             return rolls[self.priority - 22]
         if self.priority == 0:
             return 0.0
@@ -378,7 +400,7 @@ cdef class ScoringContext:
         cdef int order[11]
         cdef Score result
         cdef int index
-        cdef object needed
+        cdef int needed
         if role_index < 0 or role_index >= self.role_count:
             raise ValueError("Invalid native role index")
         memset(slots, 0, sizeof(slots))
@@ -392,14 +414,9 @@ cdef class ScoringContext:
             index += 1
         self.evaluate(slots, role_index, metric, &result, order)
         if result.supported and self.priority >= 20:
-            if self.priority == 20:
-                needed = range(5)
-            elif self.priority == 21:
-                needed = (3, 4)
-            else:
-                needed = (self.priority - 22,)
-            for index in needed:
-                if result.defence_rolls[index] < 0:
+            needed = required_defence_mask(self.priority)
+            for index in range(5):
+                if needed & (1 << index) and result.defence_rolls[index] < 0:
                     raise ValueError("Player defensive roll is unavailable: required combat levels are unknown")
         return {
             "supported": bool(result.supported),
