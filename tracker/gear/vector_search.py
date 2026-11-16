@@ -224,15 +224,28 @@ class VectorSearch:
                             )
                             for item in candidates
                         }
-                        lanes.append(sorted(candidates, key=lambda item: (-grades[item], item)))
+                        lanes.append(
+                            sorted(
+                                candidates,
+                                key=lambda item: (
+                                    -grades[item],
+                                    *self.search.acquisition_tie({item}),
+                                    item,
+                                ),
+                            )
+                        )
                 if objective.kind in fields:
                     components = [fields[objective.kind]]
                 if objective.kind == "accuracy":
                     components = ["stab", "slash", "crush", "ranged", "magic"]
                 for field in components:
 
-                    def component_rank(item: int, field: str = field) -> tuple[float, int]:
-                        return -float(getattr(self.search.items[item].bonuses, field)), item
+                    def component_rank(item: int, field: str = field) -> tuple[Any, ...]:
+                        return (
+                            -float(getattr(self.search.items[item].bonuses, field)),
+                            *self.search.acquisition_tie({item}),
+                            item,
+                        )
 
                     lanes.append(
                         sorted(
@@ -277,7 +290,7 @@ class VectorSearch:
                 retained = retain(
                     expanded,
                     lambda row: row[1],
-                    lambda row: tuple(sorted(row[0].items())),
+                    lambda row: self.equipment_tie(row[0]),
                     BEAM_WIDTH,
                 )
             else:
@@ -286,13 +299,22 @@ class VectorSearch:
                     key=lambda row: (
                         -row[1][anchor],
                         tuple(-value for value in row[1]),
-                        tuple(sorted(row[0].items())),
+                        self.equipment_tie(row[0]),
                     ),
                 )[:BEAM_WIDTH]
             states = [row[0] for row in retained]
             if not states:
                 break
         return states
+
+    def equipment_tie(self, equipment: Mapping[str, int]) -> tuple[Any, ...]:
+        """Keep affordable physical forms during ties before complete cost validation."""
+        ids = set(equipment.values())
+        return (
+            self.search.cost(ids),
+            self.search.untradeable_acquisitions(ids),
+            tuple(sorted(equipment.items())),
+        )
 
     def _python_equipment(
         self,
@@ -397,7 +419,15 @@ class VectorSearch:
                 states = [
                     row[0]
                     for row in retain(
-                        expanded, lambda row: row[1], lambda row: self.identity(row[0]), BEAM_WIDTH
+                        expanded,
+                        lambda row: row[1],
+                        lambda row: (
+                            *self.search.acquisition_tie(
+                                {item for gear in row[0].values() for item in gear.values()}
+                            ),
+                            self.identity(row[0]),
+                        ),
+                        BEAM_WIDTH,
                     )
                 ]
                 if not states:

@@ -146,6 +146,43 @@ def test_restore_metadata_update_preserves_manifest_identity():
         assert manifest["groups"]
 
 
+def test_every_displayed_configuration_has_a_stored_reference_without_frontier_membership():
+    reports = [
+        {
+            "score": index + 1,
+            "objective_values": {"prayer_bonus": index},
+            "loadouts": {"a": {"equipment": {"weapon": index + 1}}},
+        }
+        for index in range(4)
+    ]
+    data = {
+        "selected_solution": reports[0],
+        "curve": [{"swap_limit": 0, "solution": reports[1]}, {"swap_limit": 1, "solution": None}],
+        "unrestricted": reports[2],
+        "objective_frontiers": [],
+        "discipline_results": [
+            {"discipline": "melee", "selected_solution": reports[3], "objective_frontiers": []},
+            {"discipline": "magic", "selected_solution": None, "objective_frontiers": []},
+        ],
+    }
+    with ObjectiveRunStore() as store:
+        published = store.publish_result(data, metadata={}, player_id=1)
+        run_id = published["run_id"]
+        references = published["objective_run"]["solution_references"]
+        assert set(references) == {
+            "best-found",
+            "curve-0",
+            "unrestricted",
+            "discipline-melee-best-found",
+        }
+        assert references["best-found"] == published["objective_run"]["selected_solution_id"]
+        for alias, report in zip(references, reports, strict=True):
+            assert store.solution(run_id, references[alias], player_id=1)["solution"] == report
+            with pytest.raises(RunUnavailable):
+                store.solution(run_id, references[alias], player_id=2)
+        assert store.metadata(run_id, player_id=1)["solution_references"] == references
+
+
 def test_shared_solutions_have_distinct_cap_and_view_point_ids():
     data = result(2)
     first = data["objective_frontiers"][0]

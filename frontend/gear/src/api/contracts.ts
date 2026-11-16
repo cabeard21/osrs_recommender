@@ -414,6 +414,7 @@ export interface ObjectiveFrontierGroup {
   sampled: boolean;
   points: {
     id: string;
+    solution_id?: string;
     solution: JointSolutionDTO;
     dps_loss: number;
     dps_loss_pct: number | null;
@@ -566,6 +567,10 @@ export interface CombatPerformance {
 }
 export interface OptimizationDTO {
   run_id?: string;
+  objective_run?: {
+    selected_solution_id?: string | null;
+    solution_references?: Record<string, string>;
+  };
   objective_definitions?: ObjectiveDefinition[];
   frontier_policy?: Record<string, unknown> | null;
   secondary_priority?: SecondaryPriority;
@@ -585,6 +590,7 @@ export interface OptimizationDTO {
   items: PhysicalItem[];
   result: {
     run_id?: string;
+    objective_run?: OptimizationDTO["objective_run"];
     objective_definitions?: ObjectiveDefinition[];
     objective_frontiers?: ObjectiveFrontierGroup[];
     support_policy?: SupportPolicy;
@@ -761,13 +767,13 @@ export interface GearClient {
 }
 
 export interface PotionTimelineRole {
-  objective_values?: Record<string, number>;
+  objective_values?: Record<string, number | null>;
   dps: number | null;
   secondary_value: number | null;
   reasons: string[];
 }
 export interface PotionTimelineMeasurement {
-  objective_values?: Record<string, number>;
+  objective_values?: Record<string, number | null>;
   time_seconds: number;
   levels: Record<string, number>;
   dps: number | null;

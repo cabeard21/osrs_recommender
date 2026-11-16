@@ -201,16 +201,24 @@ class ObjectiveRunStore:
 
         with self._lock, self._connection, _archive_sources(result):
             check()
-            selected_id = None
-            selected = result.get("selected_solution")
-            if selected is not None:
-                selected_id = self._put_solution(run_id, selected)
+            references = {}
+
+            def reference(alias: str, solution: Any) -> None:
+                if solution is not None:
+                    check()
+                    references[alias] = self._put_solution(run_id, solution)
+
+            reference("best-found", result.get("selected_solution"))
+            for point in result.get("curve", ()):
+                reference(f"curve-{point['swap_limit']}", point.get("solution"))
+            reference("unrestricted", result.get("unrestricted"))
             published, groups = self._publish_groups(
                 run_id, result.get("objective_frontiers", []), "global", definitions, check
             )
             children = []
             for child in result.get("discipline_results", []):
                 name = str(child.get("discipline", "unknown"))
+                reference(f"discipline-{name}-best-found", child.get("selected_solution"))
                 view = "discipline-" + name
                 child_groups, child_metadata = self._publish_groups(
                     run_id, child.get("objective_frontiers", []), view, definitions, check
@@ -222,7 +230,8 @@ class ObjectiveRunStore:
                 "run_id": run_id,
                 "objective_definitions": definitions,
                 "groups": groups,
-                "selected_solution_id": selected_id,
+                "selected_solution_id": references.get("best-found"),
+                "solution_references": references,
             }
             check()
             self._connection.execute(

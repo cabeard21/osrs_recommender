@@ -1289,8 +1289,26 @@ export class HttpGearClient implements GearClient {
     const parsedPoint = result.solutions?.find(
       (point) => point.live === solution || sameValue(point.live, solution),
     );
+    const manifest =
+      result.live.objective_run ?? result.live.result?.objective_run;
+    const selectedId = sameValue(
+      result.live.result?.selected_solution,
+      solution,
+    )
+      ? manifest?.selected_solution_id
+      : undefined;
+    const configurationAlias =
+      parsedPoint?.id ??
+      (sameValue(result.unrestricted?.live, solution) ||
+      sameValue(result.live.result?.unrestricted, solution)
+        ? "unrestricted"
+        : undefined);
     const storedId =
+      storedPoint?.solution_id ??
       storedPoint?.id ??
+      (configurationAlias &&
+        manifest?.solution_references?.[configurationAlias]) ??
+      selectedId ??
       parsedPoint?.id.replace(/^discipline-(melee|ranged|magic)-/, "");
     if (
       result.scenario.request.objectives !== undefined &&

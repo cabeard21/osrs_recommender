@@ -638,12 +638,8 @@ class _Search:
         )
 
     def acquisition_tie(self, ids: set[int]) -> tuple[int, int]:
-        """Preserve historical candidate ordering when the option is disabled."""
-        return (
-            (self.cost(ids), self.untradeable_acquisitions(ids))
-            if self.request.include_untradeables
-            else (0, 0)
-        )
+        """Retain owned or cheaper equipment when combat projections are equal."""
+        return self.cost(ids), self.untradeable_acquisitions(ids)
 
     def prayer_options(self, role: RoleConfig, style: str) -> tuple[tuple[str, ...], ...]:
         """Reuse legal setups and collapse only identical reported combat effects.
