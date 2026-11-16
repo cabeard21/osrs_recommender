@@ -32,7 +32,7 @@ from tracker.gear.combat import (
     evaluate_prepared_score,
 )
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
-from tracker.gear.defensive_rolls import raw_player_defence_rolls
+from tracker.gear.defensive_rolls import raw_player_defence_rolls, required_defensive_skills
 from tracker.gear.demonbane import MODEL_VERSION as DEMONBANE_MODEL_VERSION
 from tracker.gear.dragonbane import MODEL_VERSION as DRAGONBANE_MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
@@ -769,8 +769,7 @@ class _Search:
             return offensive
         defensive = (
             (modifiers.defence, modifiers.magic_defence)
-            if priority
-            in {"balanced_defence_roll", "magic_ranged_defence_roll", "magic_defence_roll"}
+            if "magic" in required_defensive_skills(priority)
             else (modifiers.defence,)
         )
         return (*offensive, *defensive)

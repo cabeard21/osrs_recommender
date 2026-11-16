@@ -43,7 +43,18 @@ PRIORITIES = {
     **{
         name + "_defence_roll": 20 + index
         for index, name in enumerate(
-            ("balanced", "magic_ranged", "stab", "slash", "crush", "ranged", "magic")
+            (
+                "balanced",
+                "magic_ranged",
+                "stab",
+                "slash",
+                "crush",
+                "ranged",
+                "magic",
+                "melee",
+                "melee_magic",
+                "melee_ranged",
+            )
         )
     },
 }

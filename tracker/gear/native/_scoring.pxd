@@ -1,3 +1,5 @@
+cdef int required_defence_mask(int priority) noexcept nogil
+
 cdef struct Score:
     bint supported
     double dps

@@ -4,7 +4,8 @@ import type {
   SecondaryPriority,
 } from "../api/contracts";
 import {
-  secondaryPriorities,
+  secondaryPriorityLabel,
+  defenceRollExplanation,
   defenceRollStyles,
 } from "../api/secondaryPriorities";
 export function SecondaryFrontier({
@@ -22,8 +23,7 @@ export function SecondaryFrontier({
 }) {
   if (priority === "default" || !group) return null;
   const points = group.points;
-  const label =
-    secondaryPriorities.find(([id]) => id === priority)?.[1] ?? priority;
+  const label = secondaryPriorityLabel(priority);
   const rollStyles = defenceRollStyles(priority);
   const percent = priority === "accuracy" ? 100 : 1;
   const unit =
@@ -57,11 +57,7 @@ export function SecondaryFrontier({
       {rollStyles.length > 0 && (
         <>
           <p>
-            {priority === "balanced_defence_roll"
-              ? "Balanced defence roll is the mean of all five player defence rolls. "
-              : priority === "magic_ranged_defence_roll"
-                ? "Magic & ranged defence roll is the lower of those two player defence rolls. "
-                : ""}
+            {defenceRollExplanation(priority)}
             Player defence rolls include boosted levels, equipment and legal
             stance bonuses. Larger rolls resist ordinary attack accuracy; they
             do not measure damage reduction or survival probability.

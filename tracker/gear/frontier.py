@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from tracker.content.schema import ItemSlot
 from tracker.gear.compact_states import AssignmentState, EquipmentState
-from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES
+from tracker.gear.priorities import EQUIPMENT_BONUS_PRIORITIES, ROLL_METRICS
 from tracker.gear.progress import NODE_REPORT_MASK, NULL_REPORTER
 from tracker.gear.variant_reporting import active as lazy_variants_active
 from tracker.gear.variant_reporting import candidate_identity, compact_variant, materialize
@@ -193,22 +193,27 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
                     ),
                 )
             )
-        if search.request.secondary_priority in {
-            "magic_ranged_defence",
-            "magic_ranged_defence_roll",
-        }:
-            # Individual minima cannot express complementary pieces. Keep both
-            # component leaders and score their combinations in partial beams.
-            for field in ("defence_magic", "defence_ranged"):
-                lanes.append(
-                    sorted(
-                        candidates,
-                        key=lambda i: (
-                            -getattr(search.items[i].bonuses, field),
-                            i,
-                        ),
-                    )
+        metric = ROLL_METRICS.get(search.request.secondary_priority)
+        components = (
+            ("magic", "ranged")
+            if search.request.secondary_priority == "magic_ranged_defence"
+            else metric.styles
+            if metric is not None and metric.aggregation == "minimum"
+            else ()
+        )
+        # Individual minima cannot express complementary pieces. Keep each
+        # component leader and score their combinations in partial beams.
+        for style in components:
+            field = "defence_" + style
+            lanes.append(
+                sorted(
+                    candidates,
+                    key=lambda i: (
+                        -getattr(search.items[i].bonuses, field),
+                        i,
+                    ),
                 )
+            )
         lanes.extend(
             [
                 [i for i in original.pools[slot] if i is not None],

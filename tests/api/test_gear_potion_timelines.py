@@ -185,7 +185,17 @@ def test_timeline_boundaries(client, app, session_factory):
         app.state.gear_service._optimization_lock.release()
 
 
-@pytest.mark.parametrize("priority", ["balanced_defence_roll", "prayer_bonus", "default"])
+@pytest.mark.parametrize(
+    "priority",
+    [
+        "balanced_defence_roll",
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
+        "prayer_bonus",
+        "default",
+    ],
+)
 def test_secondary_metric_parity(client, session_factory, priority):
     body, selected = timeline_body(client, session_factory, secondary_priority=priority)
     reply = client.post("/ui-api/gear/potion-timelines", json=body)
@@ -194,6 +204,29 @@ def test_secondary_metric_parity(client, session_factory, priority):
     assert data["samples"][0]["dps"] == selected["score"]
     assert data["samples"][0]["secondary_value"] == (
         None if priority == "default" else selected["secondary_value"]
+    )
+
+
+@pytest.mark.parametrize(
+    "priority", ["melee_defence_roll", "melee_magic_defence_roll", "melee_ranged_defence_roll"]
+)
+def test_melee_roll_timeline_tracks_defensive_boost_decay(client, session_factory, priority):
+    body, selected = timeline_body(
+        client,
+        session_factory,
+        secondary_priority=priority,
+        potions={"mode": "fixed", "selected_ids": ["super_defence", "magic"]},
+    )
+    reply = client.post("/ui-api/gear/potion-timelines", json=body)
+    assert reply.status_code == 200, reply.text
+    data = reply.json()
+    assert data["secondary_priority"] == priority
+    assert data["samples"][0]["secondary_value"] == selected["secondary_value"]
+    assert data["samples"][0]["secondary_value"] > data["baseline"]["secondary_value"]
+    assert data["samples"][-1]["secondary_value"] == data["baseline"]["secondary_value"]
+    assert all(
+        earlier["secondary_value"] >= later["secondary_value"]
+        for earlier, later in zip(data["samples"], data["samples"][1:], strict=False)
     )
 
 

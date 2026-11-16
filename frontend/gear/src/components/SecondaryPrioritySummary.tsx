@@ -8,7 +8,8 @@ import type {
   PotionSummary,
 } from "../api/contracts";
 import {
-  secondaryPriorities,
+  secondaryPriorityLabel,
+  defenceRollExplanation,
   defenceRollStyles,
 } from "../api/secondaryPriorities";
 import {
@@ -108,9 +109,7 @@ export function SecondaryPrioritySummary({
 }) {
   const priority = result.scenario.request.secondary_priority ?? "default";
   const rollStyles = defenceRollStyles(priority);
-  const priorityLabel = secondaryPriorities.find(
-    ([value]) => value === priority,
-  )?.[1];
+  const priorityLabel = secondaryPriorityLabel(priority);
   const selected = solution ?? result.live?.result.selected_solution;
   const secondaryValue = selected?.secondary_value;
   return (
@@ -160,9 +159,10 @@ export function SecondaryPrioritySummary({
         </p>
         {rollStyles.length > 0 && (
           <p>
-            Defensive rolls include boosted levels, equipment and the selected
-            legal stance. Higher rolls resist ordinary attack accuracy; they are
-            not damage-reduction or survival percentages.
+            {defenceRollExplanation(priority)}Defensive rolls include boosted
+            levels, equipment and the selected legal stance. Higher rolls resist
+            ordinary attack accuracy; they are not damage-reduction or survival
+            percentages.
           </p>
         )}
         {rollStyles.length > 0 &&

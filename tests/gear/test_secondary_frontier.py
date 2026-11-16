@@ -281,3 +281,77 @@ def test_complementary_defence_frontier_matches_tiny_exhaustive_oracle():
     assert points[-1]["dps_loss_pct"] > 10
     diagnostics = result["search"]["secondary_frontier"]
     assert diagnostics["explored_nodes"] <= diagnostics["expansion_limit"]
+
+
+@pytest.mark.parametrize(
+    "priority,styles",
+    [
+        ("melee_defence_roll", ("stab", "slash", "crush")),
+        ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
+        ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+    ],
+)
+def test_melee_complementary_frontier_matches_exhaustive_oracle(priority, styles):
+    from itertools import product
+
+    from tests.gear.test_optimizer import run, weapon
+    from tests.gear.test_secondary_priorities import armour
+    from tracker.gear.optimizer import RoleConfig
+
+    head_bonus = {"defence_" + style: (-10 if style == styles[-1] else 90) for style in styles}
+    body_bonus = {"defence_" + style: (90 if style == styles[-1] else -10) for style in styles}
+    items = [
+        weapon(1, "slash"),
+        armour(20, melee_strength=35),
+        armour(21, **head_bonus),
+        armour(30, melee_strength=35).model_copy(update={"slot": "body"}),
+        armour(31, **body_bonus).model_copy(update={"slot": "body"}),
+    ]
+    roles = (RoleConfig(id="a", style="slash"),)
+    options = {"max_swaps": 0, "secondary_priority": priority, "max_dps_loss_pct": 100}
+    exhaustive = [
+        run(items, roles, locks={"weapon": 1, "head": head, "body": body}, **options)[
+            "selected_solution"
+        ]
+        for head, body in product([None, 20, 21], [None, 30, 31])
+    ]
+    expected = {(row["score"], row["secondary_value"]) for row in pareto(exhaustive)}
+    result = run(items, roles, **options)
+    points = result["secondary_frontiers"][0]["points"]
+    assert {(p["solution"]["score"], p["solution"]["secondary_value"]) for p in points} == expected
+    assert points[-1]["solution"]["secondary_value"] == (80 + 64) * 78
+
+
+@pytest.mark.parametrize(
+    "priority,styles",
+    [
+        ("melee_defence_roll", ("stab", "slash", "crush")),
+        ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
+        ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+    ],
+)
+def test_truncated_metric_pools_retain_each_melee_component_leader(priority, styles):
+    from types import SimpleNamespace
+
+    from tests.gear.test_secondary_priorities import armour
+    from tracker.gear.frontier import _metric_pools
+    from tracker.gear.optimizer import SLOTS
+
+    ordinary = [armour(i) for i in range(1, 101)]
+    leaders = [
+        armour(200 + index, **{"defence_" + style: 100}) for index, style in enumerate(styles)
+    ]
+    items = {item.id: item for item in [*ordinary, *leaders]}
+    search = SimpleNamespace(
+        eligible=items,
+        items=items,
+        secondary_marginals={},
+        marginals={},
+        request=SimpleNamespace(
+            secondary_priority=priority, roles=(SimpleNamespace(id="a", style="slash"),)
+        ),
+        cost=lambda _: 0,
+    )
+    pools = _metric_pools(search, SimpleNamespace(pools={slot: [None] for slot in SLOTS}))
+    assert len(pools["head"]) == 48
+    assert {item.id for item in leaders}.issubset(pools["head"])

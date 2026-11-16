@@ -32,7 +32,13 @@ def test_multi_defensive_rolls_take_each_roles_minimum_before_weighting():
 
 @pytest.mark.parametrize(
     "priority,potion,expected_level",
-    [("ranged_defence_roll", "super_defence", 85), ("magic_defence_roll", "magic", 74)],
+    [
+        ("ranged_defence_roll", "super_defence", 85),
+        ("magic_defence_roll", "magic", 74),
+        ("melee_defence_roll", "super_defence", 85),
+        ("melee_ranged_defence_roll", "super_defence", 85),
+        ("melee_magic_defence_roll", "super_defence", 85),
+    ],
 )
 def test_defensive_potion_search_matches_fixed_setup_and_manual_evaluator(
     priority, potion, expected_level
@@ -62,3 +68,41 @@ def test_defensive_potion_search_matches_fixed_setup_and_manual_evaluator(
     manual = evaluate_equipment(row["equipment"], {i.id: i for i in items}, role, levels)
     assert secondary_value(priority, manual.model_dump(mode="json")) == best["secondary_value"]
     assert manual.dps == best["score"]
+
+
+@pytest.mark.parametrize(
+    "priority,other",
+    [
+        ("melee_defence_roll", "slash"),
+        ("melee_magic_defence_roll", "magic"),
+        ("melee_ranged_defence_roll", "ranged"),
+    ],
+)
+def test_melee_multi_minimum_precedes_active_time_weighting(priority, other):
+    first = {
+        "defence_stab": 100,
+        "defence_slash": 100,
+        "defence_crush": 100,
+        "defence_magic": 100,
+        "defence_ranged": 100,
+        "defence_" + other: 10,
+    }
+    second = {
+        "defence_stab": 20,
+        "defence_slash": 100,
+        "defence_crush": 100,
+        "defence_magic": 100,
+        "defence_ranged": 100,
+    }
+    result = run(
+        [weapon(1, "slash"), armour(20, **first), armour(30, **second)],
+        (
+            RoleConfig(id="a", style="slash", weight=1, locks={"head": 20}),
+            RoleConfig(id="b", style="slash", weight=3, locks={"head": 30}),
+        ),
+        max_swaps=1,
+        secondary_priority=priority,
+    )
+    assert (
+        result["selected_solution"]["secondary_value"] == ((10 + 64) * 78 + 3 * (20 + 64) * 78) / 4
+    )

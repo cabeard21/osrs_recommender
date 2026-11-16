@@ -3,14 +3,10 @@ import type { OptimizationReply, SecondaryPriority } from "./contracts";
 
 export const secondaryPriorities = [
   ["default", "None — DPS only"],
-  ["balanced_defence", "Balanced defence"],
-  ["magic_ranged_defence", "Magic & ranged defence"],
-  ["stab_defence", "Stab defence"],
-  ["slash_defence", "Slash defence"],
-  ["crush_defence", "Crush defence"],
-  ["ranged_defence", "Ranged defence"],
-  ["magic_defence", "Magic defence"],
   ["balanced_defence_roll", "Balanced defence roll"],
+  ["melee_defence_roll", "Melee defence roll"],
+  ["melee_magic_defence_roll", "Melee & magic defence roll"],
+  ["melee_ranged_defence_roll", "Melee & ranged defence roll"],
   ["magic_ranged_defence_roll", "Magic & ranged defence roll"],
   ["stab_defence_roll", "Stab defence roll"],
   ["slash_defence_roll", "Slash defence roll"],
@@ -24,6 +20,40 @@ export const secondaryPriorities = [
   ["accuracy", "Accuracy"],
 ] as const;
 
+// Historical results keep their original labels and measurements.
+const legacyDefencePriorities = [
+  ["balanced_defence", "Balanced defence"],
+  ["magic_ranged_defence", "Magic & ranged defence"],
+  ["stab_defence", "Stab defence"],
+  ["slash_defence", "Slash defence"],
+  ["crush_defence", "Crush defence"],
+  ["ranged_defence", "Ranged defence"],
+  ["magic_defence", "Magic defence"],
+] as const;
+export function secondaryPriorityLabel(priority: SecondaryPriority): string {
+  return (
+    [...secondaryPriorities, ...legacyDefencePriorities].find(
+      ([id]) => id === priority,
+    )?.[1] ?? priority
+  );
+}
+export function migrateSecondaryPriority(
+  priority: SecondaryPriority,
+): SecondaryPriority {
+  return legacyDefencePriorities.some(([id]) => id === priority)
+    ? (`${priority}_roll` as SecondaryPriority)
+    : priority;
+}
+export function defenceRollExplanation(priority: SecondaryPriority): string {
+  if (priority === "balanced_defence_roll")
+    return "Balanced defence roll is the mean of all five player defence rolls. ";
+  if (priority === "magic_ranged_defence_roll")
+    return "Magic & ranged defence roll is the lower of those two player defence rolls. ";
+  if (priority.startsWith("melee_") && priority.endsWith("_defence_roll"))
+    return `${secondaryPriorityLabel(priority)} is the lowest of the ${defenceRollStyles(priority).join(", ")} player defence rolls. `;
+  return "";
+}
+
 export function defenceRollStyles(
   priority: SecondaryPriority,
 ): readonly ("stab" | "slash" | "crush" | "ranged" | "magic")[] {
@@ -31,6 +61,11 @@ export function defenceRollStyles(
   if (priority === "balanced_defence_roll")
     return ["stab", "slash", "crush", "ranged", "magic"];
   if (priority === "magic_ranged_defence_roll") return ["magic", "ranged"];
+  if (priority === "melee_defence_roll") return ["stab", "slash", "crush"];
+  if (priority === "melee_magic_defence_roll")
+    return ["stab", "slash", "crush", "magic"];
+  if (priority === "melee_ranged_defence_roll")
+    return ["stab", "slash", "crush", "ranged"];
   return [
     priority.replace("_defence_roll", "") as
       "stab" | "slash" | "crush" | "ranged" | "magic",

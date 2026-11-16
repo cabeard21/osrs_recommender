@@ -11,19 +11,17 @@ from types import MappingProxyType
 
 from tracker.gear.models import EquipmentBonuses, PlayerDefenceRolls
 from tracker.gear.prayers import NO_PRAYERS, PrayerEffects
+from tracker.gear.priorities import ROLL_METRICS
 
 MODEL_VERSION = "player-defence-roll-v2"
 STYLES = ("stab", "slash", "crush", "ranged", "magic")
 
 
 def required_defensive_skills(priority: str) -> frozenset[str]:
-    if not priority.endswith("_defence_roll"):
+    metric = ROLL_METRICS.get(priority)
+    if metric is None:
         return frozenset()
-    return frozenset(
-        ("defence", "magic")
-        if priority in {"balanced_defence_roll", "magic_ranged_defence_roll", "magic_defence_roll"}
-        else ("defence",)
-    )
+    return frozenset(("defence", "magic") if "magic" in metric.styles else ("defence",))
 
 
 def raw_player_defence_rolls(

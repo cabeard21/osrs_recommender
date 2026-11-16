@@ -2,6 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 import {
   validateSecondaryPriority,
+  defenceRollExplanation,
+  migrateSecondaryPriority,
+  matchesSecondaryPriority,
   secondaryPriorities,
 } from "../api/secondaryPriorities";
 import { SecondaryFrontier } from "../components/SecondaryFrontier";
@@ -27,10 +30,14 @@ const solution = {
   loadouts: { single: { performance: { player_defence_rolls: rolls } } },
 };
 
-it("offers seven additional roll metrics", () => {
+it("offers ten roll metrics and no equipment defence metrics", () => {
   expect(
     secondaryPriorities.filter(([id]) => id.endsWith("_defence_roll")),
-  ).toHaveLength(7);
+  ).toHaveLength(10);
+  expect(secondaryPriorities).toHaveLength(16);
+  expect(secondaryPriorities.some(([id]) => id.endsWith("_defence"))).toBe(
+    false,
+  );
 });
 it("formats summary rolls and fractional components in thousands", () => {
   const selected = {
@@ -194,3 +201,118 @@ it.each([0, 12345.67])(
     ).toBeInTheDocument();
   },
 );
+
+const meleeMetrics = [
+  ["melee_defence_roll", ["stab", "slash", "crush"]],
+  ["melee_magic_defence_roll", ["stab", "slash", "crush", "magic"]],
+  ["melee_ranged_defence_roll", ["stab", "slash", "crush", "ranged"]],
+] as const;
+it.each(meleeMetrics)(
+  "validates all and only included components for %s",
+  (priority, styles) => {
+    const measured = (components: Record<string, number | null>) => ({
+      ...solution,
+      secondary_priority: priority,
+      loadouts: {
+        single: { performance: { player_defence_rolls: components } },
+      },
+    });
+    const included = Object.fromEntries(styles.map((style) => [style, 1234]));
+    expect(() =>
+      validateSecondaryPriority(measured(included), priority, true),
+    ).not.toThrow();
+    for (const style of styles) {
+      expect(() =>
+        validateSecondaryPriority(
+          measured({ ...included, [style]: null }),
+          priority,
+          true,
+        ),
+      ).toThrow(/roll/);
+    }
+  },
+);
+
+it.each(meleeMetrics)(
+  "explains the weakest included components for %s",
+  (priority, styles) => {
+    expect(defenceRollExplanation(priority)).toContain(
+      `lowest of the ${styles.join(", ")} player defence rolls`,
+    );
+  },
+);
+it("does not describe strength bonuses as defensive rolls", () => {
+  expect(defenceRollExplanation("melee_strength_bonus")).toBe("");
+});
+
+it("leaves current roll metrics unchanged during migration", () => {
+  expect(migrateSecondaryPriority("melee_defence_roll")).toBe(
+    "melee_defence_roll",
+  );
+});
+it("excludes utility roles but validates supported combat roles", () => {
+  expect(() =>
+    validateSecondaryPriority(
+      {
+        ...solution,
+        loadouts: { utility: { performance: { supported: true } } },
+      },
+      "magic_ranged_defence_roll",
+      true,
+    ),
+  ).not.toThrow();
+  for (const performance of [
+    { supported: true, dps: 1, player_defence_rolls: rolls },
+    { supported: true, bonuses: {}, player_defence_rolls: rolls },
+  ])
+    expect(() =>
+      validateSecondaryPriority(
+        { ...solution, loadouts: { single: { performance } } },
+        "magic_ranged_defence_roll",
+        true,
+      ),
+    ).not.toThrow();
+  expect(() =>
+    validateSecondaryPriority(
+      { ...solution, loadouts: { single: { performance: { dps: 1 } } } },
+      "magic_ranged_defence_roll",
+      true,
+    ),
+  ).toThrow(/Invalid/);
+});
+it("rejects invented DPS-only measurements but accepts historical null", () => {
+  expect(() =>
+    validateSecondaryPriority({ secondary_value: 1 }, "default", true),
+  ).toThrow(/invent/);
+  expect(() =>
+    validateSecondaryPriority({ secondary_value: null }, "default", true),
+  ).not.toThrow();
+});
+it("compares historical defaults, caps and frontier policies", () => {
+  const reply = (
+    request: Record<string, unknown>,
+    policy?: Record<string, unknown>,
+  ) =>
+    ({
+      scenario: { request },
+      ...(policy ? { live: { frontier_policy: policy } } : {}),
+    }) as unknown as OptimizationReply;
+  expect(
+    matchesSecondaryPriority(
+      reply({}),
+      reply({ secondary_priority: "default", max_dps_loss_pct: 10 }),
+    ),
+  ).toBe(true);
+  expect(
+    matchesSecondaryPriority(
+      reply({ max_dps_loss_pct: 10 }),
+      reply({ max_dps_loss_pct: 100 }),
+    ),
+  ).toBe(false);
+  expect(
+    matchesSecondaryPriority(
+      reply({}, { policy: "old" }),
+      reply({}, { policy: "new" }),
+    ),
+  ).toBe(false);
+});

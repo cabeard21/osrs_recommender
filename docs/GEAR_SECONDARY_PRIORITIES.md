@@ -1,12 +1,20 @@
 # Gear Optimizer tradeoff metrics
 
-The configuration offers a **Tradeoff metric** alongside DPS: Balanced defence, Magic & ranged defence, individual Stab/Slash/Crush/Ranged/Magic defence, Prayer bonus, Melee/Ranged strength, Magic damage bonus, and Accuracy. **None — DPS only** retains the ordinary DPS search. Existing API identifiers (`secondary_priority`, `secondary_value`, `secondary_frontiers`) remain compatible.
+The configuration offers a **Tradeoff metric** alongside DPS: ten player defensive-roll metrics, Prayer bonus, Melee/Ranged strength, Magic damage bonus, and Accuracy. **None — DPS only** retains the ordinary DPS search. Existing API identifiers (`secondary_priority`, `secondary_value`, `secondary_frontiers`) remain compatible.
 
-Magic & ranged defence is the minimum of magic and ranged equipment defence bonuses in each complete loadout. Balanced defence is the arithmetic mean of all five defence bonuses. These describe equipment bonuses, not damage reduction or survivability. Negative bonuses remain negative. Multi averages per-loadout metric values using normalized active-time role weights; unscored utility roles do not contribute.
+The seven equipment-bonus defence metrics are no longer selectable in the UI. Stored Single/Multi drafts and named setups using them migrate to the matching roll metric (for example, `slash_defence` becomes `slash_defence_roll`), preserving all other settings. Run optimization again to measure the new metric. Historical results retain their original labels and values, and backend API callers can still request the old identifiers with their original meanings: Magic & ranged defence takes the lower equipment bonus, Balanced defence averages all five bonuses, and individual metrics use the named bonus. Negative equipment bonuses remain negative.
 
 ## Player defensive rolls
 
-Seven additional tradeoff metrics use player defence rolls: Balanced defence roll, Magic & ranged defence roll, and individual Stab/Slash/Crush/Ranged/Magic defence rolls. Existing equipment-bonus metrics retain their meanings.
+The selectable defensive metrics are Balanced defence roll, Melee defence roll, Melee & magic defence roll, Melee & ranged defence roll, Magic & ranged defence roll, and individual Stab/Slash/Crush/Ranged/Magic defence rolls.
+
+| Metric identifier | Value within each complete loadout |
+| --- | --- |
+| `melee_defence_roll` | Minimum of stab, slash, and crush rolls |
+| `melee_magic_defence_roll` | Minimum of stab, slash, crush, and magic rolls |
+| `melee_ranged_defence_roll` | Minimum of stab, slash, crush, and ranged rolls |
+
+These three metrics improve the weakest included roll. All require a known Defence level; Melee & magic also requires Magic. Missing unrelated levels do not prevent defensive scoring.
 
 Rolls use freshly boosted Defence and Magic levels, selected stat-prayer modifiers, complete equipment defence bonuses and the selected legal combat stance. Defensive and longrange stances add 3 effective levels; controlled adds 1. Physical effective defence is `floor(Defence * prayer_defence_multiplier) + stance + 8`. Magic effective defence is `floor(7 * floor(Magic * prayer_magic_defence_multiplier) / 10) + floor(3 * floor(Defence * prayer_defence_multiplier) / 10) + stance + 8`, with the contributions truncated separately. Each usable roll is `max(0, effective_defence * (equipment_defence_bonus + 64))`. These rules follow the [OSRS Wiki calculator player-defence implementation](https://github.com/weirdgloop/osrs-dps-calc/blob/main/src/lib/NPCVsPlayerCalc.ts).
 

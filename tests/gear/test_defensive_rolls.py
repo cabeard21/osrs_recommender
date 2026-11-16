@@ -107,6 +107,9 @@ def test_unsupported_partial_loadout_can_be_ranked_without_inventing_rolls():
         ("stab_defence_roll", {}, "defence"),
         ("balanced_defence_roll", {"defence": 70}, "magic"),
         ("magic_ranged_defence_roll", {"magic": 70}, "defence"),
+        ("melee_defence_roll", {}, "defence"),
+        ("melee_ranged_defence_roll", {}, "defence"),
+        ("melee_magic_defence_roll", {"defence": 70}, "magic"),
     ],
 )
 def test_request_validation_rejects_unknown_required_defensive_stat(priority, levels, missing):
@@ -123,9 +126,56 @@ def test_request_validation_rejects_unknown_required_defensive_stat(priority, le
         validate_request_context(request, snapshot, {}, None)
 
 
-def test_physical_metric_does_not_require_magic_or_ranged_level():
+@pytest.mark.parametrize(
+    "priority", ["ranged_defence_roll", "melee_defence_roll", "melee_ranged_defence_roll"]
+)
+def test_physical_metric_does_not_require_magic_or_ranged_level(priority):
     rolls = player_defence_rolls({"defence": 70}, EquipmentBonuses(), "accurate")
+    assert secondary_value(priority, {"player_defence_rolls": rolls.model_dump()}) == 78 * 64
+
+
+@pytest.mark.parametrize(
+    "priority,styles",
+    [
+        ("melee_defence_roll", ("stab", "slash", "crush")),
+        ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
+        ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+    ],
+)
+def test_melee_metrics_use_every_included_weakest_roll(priority, styles):
+    for weakest in styles:
+        rolls = dict.fromkeys(styles, 1000)
+        rolls[weakest] = 17
+        assert secondary_value(priority, {"player_defence_rolls": rolls}) == 17
+        rolls[weakest] = 0
+        assert secondary_value(priority, {"player_defence_rolls": rolls}) == 0
+        rolls[weakest] = None
+        with pytest.raises(ValueError, match="unavailable"):
+            secondary_value(priority, {"player_defence_rolls": rolls})
+    assert secondary_value(priority, {"player_defence_rolls": dict.fromkeys(styles, 99)}) == 99
+    assert secondary_value(priority, {"supported": False}) == 0
+
+
+@pytest.mark.parametrize(
+    "priority,skills",
+    [
+        ("melee_defence_roll", {"defence"}),
+        ("melee_ranged_defence_roll", {"defence"}),
+        ("melee_magic_defence_roll", {"defence", "magic"}),
+    ],
+)
+def test_melee_metric_required_skills_and_potion_relevance(priority, skills):
+    from tracker.gear.defensive_rolls import required_defensive_skills
+
+    assert required_defensive_skills(priority) == skills
+    role = SimpleNamespace(style="slash", allowed_disciplines=None)
+    request = SimpleNamespace(roles=(role,), secondary_priority=priority)
+    assert relevant_boost_skills(request) == skills | {"attack", "strength"}
+
+
+def test_melee_magic_metric_does_not_require_ranged_level():
+    rolls = player_defence_rolls({"defence": 70, "magic": 70}, EquipmentBonuses(), "accurate")
     assert (
-        secondary_value("ranged_defence_roll", {"player_defence_rolls": rolls.model_dump()})
+        secondary_value("melee_magic_defence_roll", {"player_defence_rolls": rolls.model_dump()})
         == 78 * 64
     )

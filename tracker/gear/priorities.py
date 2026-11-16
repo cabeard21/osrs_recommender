@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal
+from types import MappingProxyType
+from typing import Any, Literal, NamedTuple
 
 SecondaryPriority = Literal[
+    "melee_defence_roll",
+    "melee_magic_defence_roll",
+    "melee_ranged_defence_roll",
     "balanced_defence_roll",
     "magic_ranged_defence_roll",
     "stab_defence_roll",
@@ -27,6 +31,27 @@ SecondaryPriority = Literal[
     "magic_damage_bonus",
     "accuracy",
 ]
+
+
+class RollMetric(NamedTuple):
+    styles: tuple[str, ...]
+    aggregation: Literal["mean", "minimum"]
+
+
+ROLL_METRICS: Mapping[str, RollMetric] = MappingProxyType(
+    {
+        "balanced_defence_roll": RollMetric(("stab", "slash", "crush", "ranged", "magic"), "mean"),
+        "magic_ranged_defence_roll": RollMetric(("magic", "ranged"), "minimum"),
+        "melee_defence_roll": RollMetric(("stab", "slash", "crush"), "minimum"),
+        "melee_magic_defence_roll": RollMetric(("stab", "slash", "crush", "magic"), "minimum"),
+        "melee_ranged_defence_roll": RollMetric(("stab", "slash", "crush", "ranged"), "minimum"),
+        **{
+            style + "_defence_roll": RollMetric((style,), "mean")
+            for style in ("stab", "slash", "crush", "ranged", "magic")
+        },
+    }
+)
+
 
 _DEFENCES = ("defence_stab", "defence_slash", "defence_crush", "defence_ranged", "defence_magic")
 _BONUSES = {
@@ -60,21 +85,14 @@ def secondary_value(
         if performance.get("supported") is False:
             return 0.0  # Incomplete search beams may not yet have a legal weapon.
         rolls = performance.get("player_defence_rolls") or {}
-        roll_fields = (
-            ("stab", "slash", "crush", "ranged", "magic")
-            if priority == "balanced_defence_roll"
-            else ("magic", "ranged")
-            if priority == "magic_ranged_defence_roll"
-            else (priority.removesuffix("_defence_roll"),)
-        )
+        metric = ROLL_METRICS[priority]
+        roll_fields = metric.styles
         if any(rolls.get(field) is None for field in roll_fields):
             raise ValueError(
                 "Player defensive roll is unavailable: required combat levels are unknown"
             )
         values = [rolls[field] for field in roll_fields]
-        return float(
-            min(values) if priority == "magic_ranged_defence_roll" else sum(values) / len(values)
-        )
+        return float(min(values) if metric.aggregation == "minimum" else sum(values) / len(values))
     bonuses = performance.get("bonuses", {})
     if priority == "magic_ranged_defence":
         return float(min(bonuses.get("defence_magic", 0), bonuses.get("defence_ranged", 0)))
