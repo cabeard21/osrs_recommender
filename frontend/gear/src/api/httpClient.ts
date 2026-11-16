@@ -211,7 +211,7 @@ export function parseOptimization(
           (scenario.request.optimization_mode === "thorough"
             ? 1500000
             : 500000) *
-            Math.max(1, count)
+            count
       )
         throw new Error(
           "Vector objective search policy does not match the submitted objectives",

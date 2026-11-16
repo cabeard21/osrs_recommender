@@ -10,6 +10,7 @@ import {
 import { GearProvider } from "../state/GearProvider";
 import { newDraft, normalize } from "../state/scenario";
 import context from "./live-context.json";
+import { dpsObjectiveResponse } from "./dps-objective-response";
 
 // Transport contract examples only. Combat parity is verified by Python tests.
 const performance = {
@@ -54,6 +55,28 @@ const response = () => ({
       purchase_cost_gp: 0,
     },
   },
+});
+it("accepts the backend DPS-only objective policy and rejects a nonzero objective budget", () => {
+  const scenario = normalize(newDraft(), context.account.snapshot_id, true);
+  const body = dpsObjectiveResponse({
+    ...response(),
+    scenario: optimizationRequest(scenario),
+  });
+  expect(parseOptimization(body, scenario).solutions).toHaveLength(1);
+  const frontier_policy = {
+    policy: "vector-pareto-v1",
+    objective_count: 0,
+    expansion_limit: 500000,
+  };
+  expect(() =>
+    parseOptimization({ ...body, frontier_policy }, scenario),
+  ).toThrow(/objective search policy/);
+  expect(() =>
+    parseOptimization(
+      { ...body, result: { ...body.result, frontier_policy } },
+      scenario,
+    ),
+  ).toThrow(/objective search policy/);
 });
 it("defaults legacy response acquisition policy off and rejects unsubmitted untradeable access", () => {
   const scenario = normalize(newDraft(), context.account.snapshot_id);
@@ -134,10 +157,12 @@ function setup(
       return optimize
         ? optimize(init)
         : new Response(
-            JSON.stringify({
-              ...reply,
-              scenario: JSON.parse(String(init?.body)),
-            }),
+            JSON.stringify(
+              dpsObjectiveResponse({
+                ...reply,
+                scenario: JSON.parse(String(init?.body)),
+              }),
+            ),
           );
     return new Response(JSON.stringify(context.items[0]));
   }) as unknown as typeof fetch;

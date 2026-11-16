@@ -16,6 +16,7 @@ import { GearProvider, useGear } from "../state/GearProvider";
 import { initialState, newDraft, normalize, reducer } from "../state/scenario";
 import context from "./live-context.json";
 import { parseAlternatives } from "../api/contextualAlternatives";
+import { dpsObjectiveResponse } from "./dps-objective-response";
 
 const performance = {
   supported: true,
@@ -29,7 +30,7 @@ const performance = {
 const scenario = normalize(newDraft(), context.account.snapshot_id, true);
 function result(submitted = scenario) {
   return parseOptimization(
-    {
+    dpsObjectiveResponse({
       api_version: "gear-ui-v1",
       evaluated_at: context.evaluated_at,
       price_revision: context.price_revision,
@@ -61,7 +62,7 @@ function result(submitted = scenario) {
           loadouts: { "role-1": { equipment: { weapon: 4151 }, performance } },
         },
       },
-    },
+    }),
     submitted,
   );
 }

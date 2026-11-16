@@ -23,7 +23,10 @@ function example(count = 2) {
   const draft = newDraft();
   draft.roles = Array.from({ length: count }, (_, i) => newRole(i + 1));
   draft.maxActions = "1";
-  const scenario = normalize(draft, context.account.snapshot_id, true);
+  const normalized = normalize(draft, context.account.snapshot_id, true);
+  // These fixtures exercise the legacy secondary-priority transport contract.
+  const { objectives: _objectives, ...request } = normalized.request;
+  const scenario = { ...normalized, request };
   const solution = {
     score: 2,
     loadouts: Object.fromEntries(

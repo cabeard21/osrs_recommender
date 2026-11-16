@@ -13,6 +13,7 @@ import {
   parseGp,
 } from "../state/scenario";
 import context from "./live-context.json";
+import { dpsObjectiveResponse } from "./dps-objective-response";
 
 const performance = {
   supported: true,
@@ -24,40 +25,41 @@ const performance = {
   limitations: [],
 };
 const weaponId = context.items[0].item_id;
-const reply = (scenario: unknown) => ({
-  api_version: "gear-ui-v1",
-  evaluated_at: context.evaluated_at,
-  scenario,
-  scenario_fingerprint: "scenario-1",
-  price_revision: context.price_revision,
-  items: context.items,
-  baseline: {
-    status: "unavailable",
-    equipment: {},
-    performance: null,
-    reasons: ["No scan"],
-  },
-  result: {
-    snapshot_id: context.account.snapshot_id,
-    catalog_version: context.catalog_version,
-    model_version: context.model_version,
-    assumptions_fingerprint: "assumptions",
-    search: {
-      quality: "best_found",
-      candidate_truncation: false,
-      termination_reason: "bounded_search_complete",
+const reply = (scenario: unknown) =>
+  dpsObjectiveResponse({
+    api_version: "gear-ui-v1",
+    evaluated_at: context.evaluated_at,
+    scenario,
+    scenario_fingerprint: "scenario-1",
+    price_revision: context.price_revision,
+    items: context.items,
+    baseline: {
+      status: "unavailable",
+      equipment: {},
+      performance: null,
+      reasons: ["No scan"],
     },
-    limitations: [],
-    selected_solution: {
-      score: performance.dps,
-      loadouts: {
-        "role-1": { equipment: { weapon: weaponId }, performance },
+    result: {
+      snapshot_id: context.account.snapshot_id,
+      catalog_version: context.catalog_version,
+      model_version: context.model_version,
+      assumptions_fingerprint: "assumptions",
+      search: {
+        quality: "best_found",
+        candidate_truncation: false,
+        termination_reason: "bounded_search_complete",
       },
-      purchases: [],
-      purchase_cost_gp: 0,
+      limitations: [],
+      selected_solution: {
+        score: performance.dps,
+        loadouts: {
+          "role-1": { equipment: { weapon: weaponId }, performance },
+        },
+        purchases: [],
+        purchase_cost_gp: 0,
+      },
     },
-  },
-});
+  });
 
 type Handler = (init?: RequestInit) => Promise<Response> | Response;
 function setup(
