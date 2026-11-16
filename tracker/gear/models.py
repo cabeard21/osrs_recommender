@@ -232,10 +232,18 @@ class DemonbaneBonus(GearModel):
     mark_of_darkness: bool = False
 
 
+class DragonbaneBonus(GearModel):
+    item_id: int
+    accuracy_percent: int
+    damage_percent: int
+    slayer_damage_additive: bool = False
+
+
 class CombatPerformance(GearModel):
     direct_dps: float | None = None
     status_damage: StatusDamage | None = None
     demonbane_bonus: DemonbaneBonus | None = None
+    dragonbane_bonus: DragonbaneBonus | None = None
     leafy_bonus: LeafyBonus | None = None
     seeking_arrow_bonus: SeekingArrowBonus | None = None
     slayer_effects: tuple[SlayerEffect, ...] = ()

@@ -34,6 +34,7 @@ from tracker.gear.combat import (
 from tracker.gear.combat_options import CombatOption, ancient_spell_problem, eligible_combat_options
 from tracker.gear.defensive_rolls import raw_player_defence_rolls
 from tracker.gear.demonbane import MODEL_VERSION as DEMONBANE_MODEL_VERSION
+from tracker.gear.dragonbane import MODEL_VERSION as DRAGONBANE_MODEL_VERSION
 from tracker.gear.elemental_amulets import MODEL_VERSION as ELEMENTAL_AMULET_MODEL_VERSION
 from tracker.gear.elemental_amulets import applied_spell_bonus
 from tracker.gear.evaluation import (
@@ -1380,6 +1381,14 @@ class _Search:
                         [*retained, *(i for i in ordered if i in WEAPON_BONUSES or i == 29594)]
                     )
                 )
+            if slot == "weapon" and any(
+                r.target is not None and "dragon" in r.target.traits for r in self.request.roles
+            ):
+                from tracker.gear.dragonbane import FORMS as DRAGONBANE_FORMS
+
+                retained = list(
+                    dict.fromkeys([*retained, *(i for i in ordered if i in DRAGONBANE_FORMS)])
+                )
             if slot == "ammunition":
                 # Equal-strength dragon bolts have distinct target-dependent procs.
                 # Preserve every reviewed effect/form without dropping ordinary candidates.
@@ -2382,6 +2391,7 @@ def optimize(
         "slayer_model_version": SLAYER_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
+        "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
         "marks_of_darkness": {role.id: role.mark_of_darkness for role in request.roles},
         "tome_model_version": TOME_MODEL_VERSION,

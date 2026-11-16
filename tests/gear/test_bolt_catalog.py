@@ -62,7 +62,7 @@ def test_bolt_review_exact_forms(catalog, normal, dragon, effect, level):
 
 
 def test_review_does_not_enable_utility_ammunition_or_special_weapons(catalog):
-    for item_id in (9237, 9239, 9240, 9241, 21934, 21012):
+    for item_id in (9237, 9239, 9240, 9241, 21934):
         assert catalog.items[item_id].unsupported_effects
 
 

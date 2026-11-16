@@ -103,6 +103,14 @@ export function CombatOptionSummary({
           ))}
         </div>
       )}
+      {performance?.dragonbane_bonus && (
+        <p aria-label="Dragonbane effect">
+          Dragonbane: +{performance.dragonbane_bonus.accuracy_percent}% accuracy{" "}
+          and +{performance.dragonbane_bonus.damage_percent}% maximum hit
+          {performance.dragonbane_bonus.slayer_damage_additive &&
+            " · Damage adds to the Slayer task bonus: combined +40% maximum hit"}
+        </p>
+      )}
       {performance?.demonbane_bonus && (
         <p aria-label="Demonbane effect">
           Demonbane: +

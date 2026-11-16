@@ -80,6 +80,27 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid tome effect metadata");
   }
+  if (value.dragonbane_bonus != null) {
+    const effect = object(value.dragonbane_bonus);
+    const crossbow = [21012, 25916, 25918].includes(Number(effect.item_id));
+    const expected =
+      effect.item_id === 22978
+        ? [20, 20]
+        : effect.item_id === 30070
+          ? [75, 40]
+          : crossbow
+            ? [30, 25]
+            : null;
+    if (
+      !Number.isSafeInteger(effect.item_id) ||
+      expected === null ||
+      effect.accuracy_percent !== expected[0] ||
+      effect.damage_percent !== expected[1] ||
+      typeof effect.slayer_damage_additive !== "boolean" ||
+      (effect.slayer_damage_additive && !crossbow)
+    )
+      throw new Error("Invalid dragonbane effect metadata");
+  }
   if (value.demonbane_bonus != null) {
     const effect = object(value.demonbane_bonus);
     if (

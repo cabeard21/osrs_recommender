@@ -48,6 +48,9 @@ CROSSBOWS = MappingProxyType(
         9185: ("Rune crossbow", 61, _METAL[:7], _RUNE),
         8880: ("Dorgeshuun crossbow", 28, (*_METAL[:3], 8882), _OPAL),
         21902: ("Dragon crossbow", 64, _METAL, _DRAGON),
+        21012: ("Dragon hunter crossbow", 70, _METAL, _DRAGON),
+        25916: ("Dragon hunter crossbow (t)", 70, _METAL, _DRAGON),
+        25918: ("Dragon hunter crossbow (b)", 70, _METAL, _DRAGON),
         11785: ("Armadyl crossbow", 70, _METAL, _DRAGON),
         26374: ("Zaryte crossbow", 80, _METAL, _DRAGON),
     }
@@ -58,7 +61,7 @@ REQUIREMENTS = MappingProxyType(
         **{item_id: row[1] for item_id, row in CROSSBOWS.items()},
     }
 )
-TRADEABLE = frozenset(REQUIREMENTS) - {9176}
+TRADEABLE = frozenset(REQUIREMENTS) - {9176, 25916, 25918}
 REVISION = json.dumps(
     ["enchanted-bolt-catalog-v1", dict(BOLTS), dict(CROSSBOWS), sorted(TRADEABLE)],
     sort_keys=True,

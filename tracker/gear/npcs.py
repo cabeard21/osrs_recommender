@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 from tracker.gear.demonbane import HOLY_WATER_SPECIAL_TARGETS, NPC_EFFECTIVENESS
 from tracker.gear.demonbane import REVISION as DEMONBANE_REVISION
+from tracker.gear.dragonbane import REVISION as DRAGONBANE_REVISION
 from tracker.gear.leafy import NPC_SLAYER
 from tracker.gear.leafy import REVISION as LEAFY_REVISION
 from tracker.gear.models import CombatTarget
@@ -55,6 +56,7 @@ class NpcCatalog:
             + b"ordinary-npc-traits-v7-halberd-status"
             + LEAFY_REVISION
             + DEMONBANE_REVISION
+            + DRAGONBANE_REVISION
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)

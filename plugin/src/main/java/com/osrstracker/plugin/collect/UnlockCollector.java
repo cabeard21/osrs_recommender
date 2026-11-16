@@ -87,6 +87,7 @@ public final class UnlockCollector
 		unlocks.add(prayerUnlock("zeal", client.getVarbitValue(VarbitID.PRAYER_ZEAL_UNLOCKED)));
 		unlocks.add(knightWaves(client));
 		unlocks.add(daeroTraining(client));
+		unlocks.add(hastaTraining(client));
 
 		unlocks.addAll(questGranted(client));
 		return unlocks;
@@ -103,6 +104,19 @@ public final class UnlockCollector
 		final String state = progress == 10 ? UNLOCKED
 			: progress >= 0 && progress <= 9 ? LOCKED : "unknown";
 		return new AccountSnapshot.Unlock("daero_training_complete", state);
+	}
+
+	/**
+	 * BRUT_SMITH_HASTA (3763): 1=taught/task assigned, 2=made, 3=finished.
+	 * This taught-hasta eligibility mapping is inferred from Quest Helper's BarbarianTraining
+	 * states and the Wiki Otto Godblessed requirement (learn to make hastae before wielding).
+	 * It does not require finishing the entire miniquest, nor infer training from ownership.
+	 */
+	static AccountSnapshot.Unlock hastaTraining(Client client)
+	{
+		final int progress = client.getVarbitValue(VarbitID.BRUT_SMITH_HASTA);
+		return new AccountSnapshot.Unlock("barbarian_hasta_training",
+			progress == 0 ? LOCKED : progress >= 1 && progress <= 3 ? UNLOCKED : "unknown");
 	}
 
 	/** Permanent training progress, independent of the currently active prayer. */

@@ -207,6 +207,34 @@ public class CollectorMappingTest
 	}
 
 	@Test
+	public void hastaTrainingUsesTheTaughtHastaMilestone()
+	{
+		final Client client = mock(Client.class);
+		for (int progress : new int[]{-1, 0, 1, 2, 3, 4, Integer.MAX_VALUE})
+		{
+			when(client.getVarbitValue(VarbitID.BRUT_SMITH_HASTA)).thenReturn(progress);
+			final AccountSnapshot.Unlock training = UnlockCollector.hastaTraining(client);
+			assertEquals("barbarian_hasta_training", training.toJson().get("key").getAsString());
+			assertEquals(progress == 0 ? "locked" : progress >= 1 && progress <= 3
+				? "unlocked" : "unknown", training.toJson().get("state").getAsString());
+		}
+	}
+
+	@Test
+	public void collectedUnlocksIncludeHastaTraining()
+	{
+		final Client client = mock(Client.class);
+		when(client.getIntStack()).thenReturn(new int[]{0});
+		when(client.getVarbitValue(VarbitID.BRUT_SMITH_HASTA)).thenReturn(1);
+		final AccountSnapshot.Unlock[] training = UnlockCollector.collect(client).stream()
+			.filter(unlock -> unlock.toJson().get("key").getAsString()
+				.equals("barbarian_hasta_training"))
+			.toArray(AccountSnapshot.Unlock[]::new);
+		assertEquals(1, training.length);
+		assertEquals("unlocked", training[0].toJson().get("state").getAsString());
+	}
+
+	@Test
 	public void nothingIsEverReportedAsAvailable()
 	{
 		// A5 again, from the other side: `available` means purchasable but not owned. No varbit

@@ -14,6 +14,7 @@ from tracker.gear.combat_options import CombatOption, ancient_spell_problem
 from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
 from tracker.gear.demonbane import WEAPON_BONUSES
+from tracker.gear.dragonbane import BONUSES as DRAGONBANE_BONUSES
 from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 from tracker.gear.prayers import effects
 from tracker.gear.prepared_combat import PreparedCombat
@@ -188,6 +189,8 @@ def pack(search: Any) -> dict[str, Any]:
             ("hopper_shield", 0),
             ("slayer_bonus", 0),
             ("slayer_staff", 0),
+            ("dragonbane_accuracy", 0),
+            ("dragonbane_damage", 0),
             ("demonbane_weapon", 0),
             ("holy_water", 0),
             ("purging_staff", 0),
@@ -205,6 +208,8 @@ def pack(search: Any) -> dict[str, Any]:
         values = {
             "item_slots": SLOT_NAMES.index(item.slot),
             "two_handed": int(item.two_handed),
+            "dragonbane_accuracy": DRAGONBANE_BONUSES.get(item_id, (0, 0))[0],
+            "dragonbane_damage": DRAGONBANE_BONUSES.get(item_id, (0, 0))[1],
             "demonbane_weapon": WEAPON_BONUSES.get(item_id, 0),
             "holy_water": int(item_id == 732),
             "purging_staff": int(item_id == 29594),
