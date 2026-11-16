@@ -37,6 +37,12 @@ MECHANICAL_ATTRIBUTES = {
     "xerician": "Xerician targets require raid scaling and encounter rules.",
     "flying": "Flying targets require attack-style reach and immunity rules.",
 }
+WARRIORS_GUILD_CYCLOPES = frozenset(
+    {(2463, "Cyclops", "Level 56"), (2464, "Cyclops", "Level 76"), (2137, "Cyclops", "Level 106")}
+)
+CYCLOPS_IMMUNITY_REASONS = frozenset(
+    {"Target has ranged damage immunity.", "Target has magic damage immunity."}
+)
 
 
 class NpcCatalog:
@@ -53,7 +59,7 @@ class NpcCatalog:
             + status_payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-traits-v7-halberd-status"
+            + b"ordinary-npc-traits-v8-cyclops-melee"
             + LEAFY_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
@@ -77,6 +83,7 @@ class NpcCatalog:
 
     def _entry(self, key: str, row: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
         skills, defence = row.get("skills", {}), row.get("defensive", {})
+        guild_cyclops = (row["id"], row["name"], row.get("version", "")) in WARRIORS_GUILD_CYCLOPES
         required = [skills.get("def"), skills.get("magic")] + [
             defence.get(k)
             for k in ("stab", "slash", "crush", "magic", "light", "standard", "heavy")
@@ -115,8 +122,16 @@ class NpcCatalog:
             and row.get("version") == "Regular"
             and exception["reasons"] == ["Target has phase-specific damage rules."]
         ):
-            status = "unsupported"
-            reasons.extend(exception["reasons"])
+            # These immunities are enforced per discipline, including Auto branches.
+            # New restrictions must still block the profile until supported.
+            unmodeled = [
+                reason
+                for reason in exception["reasons"]
+                if not (guild_cyclops and reason in CYCLOPS_IMMUNITY_REASONS)
+            ]
+            if unmodeled:
+                status = "unsupported"
+                reasons.extend(unmodeled)
         if row["id"] == 13012 and row.get("version") == "Clone":
             status = "unsupported"
             reasons.append(
@@ -182,20 +197,25 @@ class NpcCatalog:
             "source_url": manifest["source_url"],
             "wiki_url": "https://oldschool.runescape.wiki/w/"
             + quote(row["name"].replace(" ", "_")),
-            "limitations": [
-                "Ordinary attacks only; Moon curses, healing, survival and encounter "
-                "downtime are not simulated."
-            ]
-            if row["id"] in {13011, 13012, 13013}
-            else review.get("limitations", [])
-            if review
-            else [
-                "Ordinary direct attacks using catalog base stats only; encounter phases, "
-                "survival and movement are not simulated. Status damage uses reviewed "
-                "susceptibility and duration. "
-                "Slayer bonuses require explicit task context.",
-                "Family attributes do not enable unsupported equipment effects.",
-            ],
+            "limitations": (
+                ["Melee attacks only; immune to ranged and magic damage."] if guild_cyclops else []
+            )
+            + (
+                [
+                    "Ordinary attacks only; Moon curses, healing, survival and encounter "
+                    "downtime are not simulated."
+                ]
+                if row["id"] in {13011, 13012, 13013}
+                else review.get("limitations", [])
+                if review
+                else [
+                    "Ordinary direct attacks using catalog base stats only; encounter phases, "
+                    "survival and movement are not simulated. Status damage uses reviewed "
+                    "susceptibility and duration. "
+                    "Slayer bonuses require explicit task context.",
+                    "Family attributes do not enable unsupported equipment effects.",
+                ]
+            ),
             "target": target,
             "source_record": row,
         }
@@ -251,12 +271,8 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
     if selection.catalog_revision != catalog.revision:
         raise ValueError("NPC catalog revision changed; refresh and reselect the target.")
     entry = catalog.detail(selection.key)
-    if (
-        role.allowed_disciplines is None
-        and entry["npc_id"] in {2042, 2043, 2044}
-        and role.style in {"stab", "slash", "crush"}
-    ):
-        raise ValueError("Zulrah is immune to melee damage; choose a ranged or magic role.")
+    if role.allowed_disciplines is None and (problem := discipline_problem(role)):
+        raise ValueError(problem)
     if entry["support_status"] != "supported":
         raise ValueError(
             "NPC mechanics unsupported or not reviewed: " + "; ".join(entry["reasons"])
@@ -286,11 +302,17 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
 
 def discipline_problem(role: RoleConfig) -> str | None:
     """Concrete target immunity; Auto placeholders are resolved before search."""
-    if role.target_selection is None or role.style not in {"stab", "slash", "crush"}:
+    if role.target_selection is None:
         return None
     entry = npc_catalog().detail(role.target_selection.key)
-    if entry["npc_id"] in {2042, 2043, 2044}:
+    if entry["npc_id"] in {2042, 2043, 2044} and role.style in {"stab", "slash", "crush"}:
         return "Zulrah is immune to melee damage; choose a ranged or magic role."
+    if (
+        entry["npc_id"],
+        entry["name"],
+        entry["variant"],
+    ) in WARRIORS_GUILD_CYCLOPES and role.style in {"ranged", "magic"}:
+        return f"Warriors' Guild Cyclopes are immune to {role.style} damage; choose a melee role."
     return None
 
 

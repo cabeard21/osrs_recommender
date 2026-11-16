@@ -221,3 +221,62 @@ def test_eclipse_regular_does_not_bypass_new_manifest_restrictions():
     )
     assert entry["support_status"] == "unsupported"
     assert entry["reasons"] == ["A new unsupported restriction."]
+
+
+@pytest.mark.parametrize("npc_id", [2463, 2464, 2137])
+@pytest.mark.parametrize("style", ["stab", "slash", "crush", "ranged", "magic"])
+def test_warriors_guild_cyclops_supports_only_melee(npc_id, style):
+    catalog = npc_catalog()
+    entry = next(e for e in catalog.entries.values() if e["npc_id"] == npc_id)
+    assert entry["support_status"] == "supported"
+    assert entry["reasons"] == []
+    assert entry["target"]["unsupported_mechanics"] == []
+    assert any("melee" in note.lower() for note in entry["limitations"])
+    role = RoleConfig(
+        id="cyclops",
+        style=style,
+        target=entry["target"],
+        target_selection={"key": entry["key"], "catalog_revision": catalog.revision},
+    )
+    if style in {"ranged", "magic"}:
+        with pytest.raises(ValueError, match=f"immune to {style}"):
+            resolve_target(role)
+    else:
+        assert resolve_target(role).target == role.target
+
+
+def test_cyclops_does_not_bypass_new_manifest_restrictions():
+    catalog = npc_catalog()
+    original = next(e for e in catalog.entries.values() if e["npc_id"] == 2463)
+    entry = catalog._entry(
+        "future",
+        original["source_record"],
+        {
+            "source_url": "https://example.com",
+            "mechanic_exceptions": {
+                "2463": {
+                    "reasons": [
+                        "Target has ranged damage immunity.",
+                        "Target has magic damage immunity.",
+                        "A new unsupported restriction.",
+                    ]
+                }
+            },
+        },
+    )
+    assert entry["support_status"] == "unsupported"
+    assert entry["reasons"] == ["A new unsupported restriction."]
+
+
+@pytest.mark.parametrize("npc_id", [2097, 7271, 7270, 2235, 2236])
+def test_other_cyclops_variants_allow_ranged_and_magic(npc_id):
+    catalog = npc_catalog()
+    entry = next(e for e in catalog.entries.values() if e["npc_id"] == npc_id)
+    assert entry["support_status"] == "supported"
+    for style in ("ranged", "magic"):
+        role = RoleConfig(
+            id="cyclops",
+            style=style,
+            target_selection={"key": entry["key"], "catalog_revision": catalog.revision},
+        )
+        assert resolve_target(role).target is not None

@@ -134,3 +134,35 @@ def test_invalid_custom_armour(client, session_factory, armour):
     body["roles"][0]["target"] = {"flat_armour": armour}
     reply = client.post("/ui-api/gear/optimizations", json=body)
     assert reply.status_code == 422, reply.text
+
+
+@pytest.mark.parametrize("endpoint", ["optimizations", "evaluations"])
+@pytest.mark.parametrize("style", ["slash", "ranged", "magic"])
+def test_cyclops_calculations_enforce_melee_only(client, session_factory, endpoint, style):
+    body = scenario(client, session_factory)
+    result = client.get("/ui-api/gear/targets", params={"q": "2137"}).json()
+    entry = result["items"][0]
+    assert entry["support_status"] == "supported"
+    detail = client.get("/ui-api/gear/targets/" + entry["key"]).json()
+    body["roles"][0].update(
+        style=style,
+        target=detail["target"],
+        target_selection={"key": entry["key"], "catalog_revision": result["catalog_revision"]},
+    )
+    payload = (
+        body
+        if endpoint == "optimizations"
+        else {
+            "scenario": body,
+            "baseline_loadouts": {"single": {"weapon": 4151}},
+            "proposed_loadouts": {"single": {"weapon": 4151}},
+        }
+    )
+    reply = client.post("/ui-api/gear/" + endpoint, json=payload)
+    assert reply.status_code == (200 if style == "slash" else 422), reply.text
+    if style != "slash":
+        assert f"immune to {style}" in reply.text
+    elif endpoint == "optimizations":
+        assert reply.json()["result"]["selected_solution"]["score"] > 0
+    else:
+        assert reply.json()["baseline"]["status"] == "valid"
