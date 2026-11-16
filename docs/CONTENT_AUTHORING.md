@@ -85,10 +85,20 @@ alone does not establish that gate. See [the exact-ID review](GEAR_HIGH_IMPACT_C
 Item artwork lives in `tracker/ui/assets/items/{item_id}.png`. Both Gear interfaces
 use these bundled files; no frontend rebuild is needed to add a sprite to a source
 checkout. Repackage/redeploy the application to update an installed wheel or image.
+
+Whenever you add optimizer item support, ensure every exact physical form is included
+in the default missing-icon download logic in `tools/capture_gear_icons.py`, including
+charged, uncharged, imbued, and cosmetic forms that can appear in results or preparation
+steps. The default selection includes authored forms, catalog-supported equipment
+(`requirements_complete` with no `unsupported_effects`), community equipment, and
+reviewed bolt/crossbow, tome, leafy, and powered-staff preparation forms. Add any new
+preparation forms that fall outside those groups and extend
+`tests/gear/test_capture_gear_icons.py` to cover them. Check the complete default scope,
+download missing sprites, and retain the corresponding `source.json` provenance.
 Use the offline capture tool to preview or fill missing artwork:
 
 ```bash
-python -m tools.capture_gear_icons --dry-run  # Missing icons for authored physical forms
+python -m tools.capture_gear_icons --dry-run  # Missing icons across the default scope
 python -m tools.capture_gear_icons           # Download those missing icons
 python -m tools.capture_gear_icons 7460 7459 # Specific catalog IDs
 ```

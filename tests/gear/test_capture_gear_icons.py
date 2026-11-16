@@ -10,6 +10,8 @@ import pytest
 
 from tools.capture_gear_icons import MIRROR, capture, download
 from tracker.gear.bolts_catalog import BOLTS, CROSSBOWS
+from tracker.gear.powered import REVIEWS as POWERED_FORMS
+from tracker.gear.slayer import FORMS as SLAYER_FORMS
 from tracker.gear.tomes import FORMS as TOME_FORMS
 
 
@@ -32,8 +34,16 @@ def mock_client(monkeypatch, handler):
 
 @pytest.mark.parametrize(
     "missing_ids",
-    [{30895}, set(BOLTS), set(CROSSBOWS), set(TOME_FORMS)],
-    ids=["community", "bolts", "crossbows", "tomes"],
+    [
+        {30895},
+        set(BOLTS),
+        set(CROSSBOWS),
+        set(TOME_FORMS),
+        set(SLAYER_FORMS),
+        set(POWERED_FORMS),
+        None,
+    ],
+    ids=["community", "bolts", "crossbows", "tomes", "slayer", "powered", "all-supported"],
 )
 def test_default_capture_includes_community_and_reviewed_equipment(
     icon_root, monkeypatch, missing_ids
@@ -43,6 +53,14 @@ def test_default_capture_includes_community_and_reviewed_equipment(
 
     root, folder = icon_root
     catalog = load_catalog(load_content(root / "content"), root / "content/equipment")
+    if missing_ids is None:
+        missing_ids = {
+            item.id
+            for item in catalog.items.values()
+            if item.requirements_complete and not item.unsupported_effects
+        }
+    else:
+        missing_ids = missing_ids & catalog.items.keys()
     assert 30895 in catalog.community_items
     assert not catalog.items[30895].content_ids
     assert not catalog.items[9242].content_ids
