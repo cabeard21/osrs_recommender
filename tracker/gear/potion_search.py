@@ -12,6 +12,44 @@ from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_ski
 from tracker.gear.running_frontier import needs_running_cost_frontier
 
 
+def merge_objective_frontiers(
+    request: Any,
+    branches: list[dict[str, Any]],
+    *,
+    id_prefix: str = "",
+    complete_frontiers: bool = False,
+) -> dict[str, Any]:
+    """Merge complete vectors; browser filtering and chart sampling happen later."""
+    objectives = getattr(request, "objectives", None)
+    if objectives is None:
+        return {}
+    from tracker.gear.objectives import objective_definitions
+    from tracker.gear.vector_publish import filter_groups, publish_groups
+
+    sources: dict[int | None, list[Any]] = {
+        cap: [] for cap in [*range(request.max_swaps + 1), None]
+    }
+    for branch in branches:
+        groups = branch.get("objective_frontiers")
+        if groups is None:
+            raise ValueError("Objective branch results require complete vector archives")
+        for group in groups:
+            if group.get("sampled", False):
+                raise ValueError("Objective branch results require complete vector archives")
+            sources[group["swap_limit"]].append(group["points"])
+    archives = {
+        cap: (point["solution"] for points in groups for point in points)
+        for cap, groups in sources.items()
+    }
+    groups = publish_groups(archives, request, id_prefix=id_prefix)
+    if not complete_frontiers:
+        groups = filter_groups(groups, request.max_dps_loss_pct)
+    return {
+        "objective_frontiers": groups,
+        "objective_definitions": objective_definitions(objectives),
+    }
+
+
 def merge_results(
     request: Any, branches: list[dict[str, Any]], *, complete_frontiers: bool = False
 ) -> dict[str, Any]:
@@ -134,6 +172,9 @@ def merge_results(
                 }
                 for d in parts
             ],
+            complete_frontiers=complete_frontiers
+            if getattr(request, "objectives", None) is not None
+            else False,
         )
         disciplines.append(
             {
@@ -141,6 +182,12 @@ def merge_results(
                 "selected_solution": detail["selected_solution"],
                 "secondary_frontiers": detail["secondary_frontiers"],
                 "running_cost_frontiers": detail["running_cost_frontiers"],
+                **merge_objective_frontiers(
+                    request,
+                    [detail],
+                    id_prefix=f"discipline-{discipline}-",
+                    complete_frontiers=complete_frontiers,
+                ),
                 "search": detail["search"],
             }
         )
@@ -151,6 +198,7 @@ def merge_results(
         "curve": curve,
         "secondary_frontiers": secondary,
         "running_cost_frontiers": running,
+        **merge_objective_frontiers(request, branches, complete_frontiers=complete_frontiers),
         **(
             {
                 "discipline_results": disciplines,

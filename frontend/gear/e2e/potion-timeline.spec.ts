@@ -11,8 +11,9 @@ for (const potion of ["Super strength", "Divine super strength"]) {
       .filter({ hasText: /^Advanced settings/ })
       .click();
     await page
-      .getByRole("combobox", { name: "Tradeoff metric", exact: true })
-      .selectOption("accuracy");
+      .getByRole("region", { name: "Tradeoff objectives", exact: true })
+      .getByLabel("Accuracy", { exact: true })
+      .check();
     await page.getByLabel("Optimize potions", { exact: true }).check();
     await page.getByLabel(potion, { exact: true }).check();
     const optimization = page.waitForResponse(

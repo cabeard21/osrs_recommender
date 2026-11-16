@@ -1,3 +1,4 @@
+import type { Objective, ObjectiveDefinition } from "./objectives";
 export const slots = [
   "head",
   "cape",
@@ -16,6 +17,15 @@ export type Workspace = "single" | "multi";
 export type SupportPolicy = "verified_only" | "community_best_effort";
 export type OptimizationMode = "fast" | "thorough";
 export type SecondaryPriority =
+  | "stab_magic_defence_roll"
+  | "stab_ranged_defence_roll"
+  | "stab_magic_ranged_defence_roll"
+  | "slash_magic_defence_roll"
+  | "slash_ranged_defence_roll"
+  | "slash_magic_ranged_defence_roll"
+  | "crush_magic_defence_roll"
+  | "crush_ranged_defence_roll"
+  | "crush_magic_ranged_defence_roll"
   | "default"
   | "balanced_defence"
   | "magic_ranged_defence"
@@ -182,6 +192,7 @@ export interface PotionDefinition {
 }
 export type FireTomePages = "burnt" | "searing";
 export interface Draft {
+  objectives?: Objective[];
   crystalHalberdCharging?: CrystalHalberdCharging;
   fireTomePages?: FireTomePages;
   includeUntradeables?: boolean;
@@ -217,6 +228,7 @@ export interface Scenario {
     include_untradeables?: boolean;
     potions?: PotionPolicy;
     support_policy?: SupportPolicy;
+    objectives?: Objective[];
     secondary_priority?: SecondaryPriority;
     max_dps_loss_pct?: number;
     optimization_mode?: OptimizationMode;
@@ -362,6 +374,7 @@ export interface RunningCostFrontierGroup {
   }[];
 }
 export interface JointSolutionDTO {
+  objective_values?: Record<string, number>;
   unowned_untradeable_item_ids?: number[];
   potions?: PotionSummary;
   running_cost?: RunningCost;
@@ -392,6 +405,21 @@ export interface JointSolutionDTO {
   reserved_supply_slots: number;
   maximum_actions: number;
 }
+export interface ObjectiveFrontierGroup {
+  id?: string;
+  group_id?: string;
+  swap_limit: number | null;
+  baseline_dps: number | null;
+  total_count?: number;
+  sampled: boolean;
+  points: {
+    id: string;
+    solution_id?: string;
+    solution: JointSolutionDTO;
+    dps_loss: number;
+    dps_loss_pct: number | null;
+  }[];
+}
 export interface SecondaryFrontierGroup {
   swap_limit: number | null;
   baseline_dps: number | null;
@@ -405,6 +433,8 @@ export interface SecondaryFrontierGroup {
   }[];
 }
 export interface DisciplineResult {
+  objective_definitions?: ObjectiveDefinition[];
+  objective_frontiers?: ObjectiveFrontierGroup[];
   discipline: Style;
   status: "best_found" | "no_feasible_solution_found";
   reasons: string[];
@@ -536,6 +566,12 @@ export interface CombatPerformance {
   limitations: string[];
 }
 export interface OptimizationDTO {
+  run_id?: string;
+  objective_run?: {
+    selected_solution_id?: string | null;
+    solution_references?: Record<string, string>;
+  };
+  objective_definitions?: ObjectiveDefinition[];
   frontier_policy?: Record<string, unknown> | null;
   secondary_priority?: SecondaryPriority;
   optimization_mode?: OptimizationMode;
@@ -553,8 +589,13 @@ export interface OptimizationDTO {
   };
   items: PhysicalItem[];
   result: {
+    run_id?: string;
+    objective_run?: OptimizationDTO["objective_run"];
+    objective_definitions?: ObjectiveDefinition[];
+    objective_frontiers?: ObjectiveFrontierGroup[];
     support_policy?: SupportPolicy;
     support_provenance?: string;
+    objectives?: Objective[];
     secondary_priority?: SecondaryPriority;
     optimization_mode?: OptimizationMode;
     work_budget_policy?: WorkBudgetPolicy;
@@ -726,11 +767,13 @@ export interface GearClient {
 }
 
 export interface PotionTimelineRole {
+  objective_values?: Record<string, number | null>;
   dps: number | null;
   secondary_value: number | null;
   reasons: string[];
 }
 export interface PotionTimelineMeasurement {
+  objective_values?: Record<string, number | null>;
   time_seconds: number;
   levels: Record<string, number>;
   dps: number | null;
@@ -738,6 +781,7 @@ export interface PotionTimelineMeasurement {
   roles: Record<string, PotionTimelineRole>;
 }
 export interface PotionTimeline {
+  objective_definitions?: ObjectiveDefinition[];
   snapshot_id: string;
   catalog_version: string;
   model_version: string;

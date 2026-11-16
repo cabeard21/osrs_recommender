@@ -116,6 +116,15 @@ def drain(expansion, limit, chunk=1024):
         ("melee_defence_roll", False),
         ("melee_magic_defence_roll", True),
         ("melee_ranged_defence_roll", False),
+        ("stab_magic_defence_roll", True),
+        ("stab_ranged_defence_roll", False),
+        ("stab_magic_ranged_defence_roll", True),
+        ("slash_magic_defence_roll", True),
+        ("slash_ranged_defence_roll", False),
+        ("slash_magic_ranged_defence_roll", True),
+        ("crush_magic_defence_roll", True),
+        ("crush_ranged_defence_roll", False),
+        ("crush_magic_ranged_defence_roll", True),
     ],
 )
 @pytest.mark.parametrize("missing", ["magic", "defence", "ranged"])

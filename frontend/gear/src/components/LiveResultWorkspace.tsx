@@ -3,10 +3,14 @@ import { BankTagExport } from "./BankTagExport";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
+import { ObjectiveFrontier } from "./ObjectiveFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment, slots } from "../api/contracts";
-import type { OptimizationReply } from "../api/contracts";
+import type {
+  ObjectiveFrontierGroup,
+  OptimizationReply,
+} from "../api/contracts";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
@@ -22,6 +26,23 @@ import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 import { matchesOptimizationPolicy } from "../api/optimizationModes";
 
+export function isDisciplineSolution(id: string, discipline: string): boolean {
+  return (
+    id.startsWith(`discipline-${discipline}-`) ||
+    id.startsWith(`frontier-discipline-${discipline}-`)
+  );
+}
+export function selectedObjectiveGroup(
+  groups: readonly ObjectiveFrontierGroup[],
+  id: string,
+) {
+  return groups.find(
+    (group) =>
+      group.points.some((point) => point.id === id) ||
+      (!!(group.id ?? group.group_id) &&
+        id.startsWith(`${group.id ?? group.group_id}-`)),
+  );
+}
 function comparable(a: OptimizationReply, b: OptimizationReply) {
   const combat = (r: OptimizationReply) => {
     const role = r.scenario.request.roles[0];
@@ -51,11 +72,12 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
   );
 }
 export function LiveResultWorkspace() {
-  const { state, current, dispatch, itemById, client } = useGear();
+  const { state, current, dispatch, itemById, client, selectObjective } =
+    useGear();
   const result = current.result;
   const branches = result?.live?.result.discipline_results ?? [];
   const branch = branches.find((row) =>
-    current.solutionId.startsWith(`discipline-${row.discipline}-`),
+    isDisciplineSolution(current.solutionId, row.discipline),
   );
   const active = branch?.discipline ?? "overall";
   const viewResult =
@@ -69,6 +91,8 @@ export function LiveResultWorkspace() {
               search: branch.search,
               limitations: branch.limitations,
               selected_solution: branch.selected_solution,
+              objective_definitions: branch.objective_definitions,
+              objective_frontiers: branch.objective_frontiers,
             },
           },
         }
@@ -116,18 +140,34 @@ export function LiveResultWorkspace() {
     branch?.running_cost_frontiers ??
     result.live?.result.running_cost_frontiers ??
     [];
-  const selectedGroup = [...secondaryGroups, ...costGroups].find((group) =>
-    group.points.some((point) => point.id === current.solutionId),
-  );
+  const objectiveGroups =
+    branch?.objective_frontiers ??
+    result.live?.result.objective_frontiers ??
+    [];
+  const selectedGroup =
+    [...secondaryGroups, ...costGroups].find((group) =>
+      group.points.some((point) => point.id === current.solutionId),
+    ) ?? selectedObjectiveGroup(objectiveGroups, current.solutionId);
   const curvePoint = result.live?.result.curve?.find(
     (point) => `curve-${point.swap_limit}` === current.solutionId,
   );
+  const objectiveCap = current.solutionId.match(/(?:^|-)objective-(None|\d+)-/);
+  const objectiveSwapLimit =
+    current.objectiveSwapLimit !== undefined
+      ? current.objectiveSwapLimit
+      : objectiveCap
+        ? objectiveCap[1] === "None"
+          ? null
+          : Number(objectiveCap[1])
+        : undefined;
   const selectedSwapLimit =
-    current.solutionId === "unrestricted"
-      ? null
-      : selectedGroup
-        ? selectedGroup.swap_limit
-        : (curvePoint?.swap_limit ?? request.max_swaps);
+    objectiveSwapLimit !== undefined
+      ? objectiveSwapLimit
+      : current.solutionId === "unrestricted"
+        ? null
+        : selectedGroup
+          ? selectedGroup.swap_limit
+          : (curvePoint?.swap_limit ?? request.max_swaps);
   const isComparableToPrevious = !!previous && comparable(previous, result);
   // The previous run only offers its overall best, so tabs and tradeoff points have no peer.
   const previousDps =
@@ -379,6 +419,22 @@ export function LiveResultWorkspace() {
             roleName={roleName}
             onSelect={(solutionId) =>
               dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
+            }
+          />
+        )}
+        {request.objectives !== undefined && (
+          <ObjectiveFrontier
+            result={viewResult!}
+            swapLimit={selectedSwapLimit}
+            selectedId={current.solutionId}
+            onSelect={(id, raw) =>
+              selectObjective(
+                state.mode,
+                id,
+                raw,
+                selectedSwapLimit,
+                result.fingerprint,
+              )
             }
           />
         )}

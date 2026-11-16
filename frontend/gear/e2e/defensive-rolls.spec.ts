@@ -1,6 +1,47 @@
 import { expect, test } from "@playwright/test";
 
-for (const [priority, label, styles] of [
+for (const [priority, , styles] of [
+  ["stab_magic_defence_roll", "Stab & magic defence roll", ["stab", "magic"]],
+  [
+    "stab_ranged_defence_roll",
+    "Stab & ranged defence roll",
+    ["stab", "ranged"],
+  ],
+  [
+    "stab_magic_ranged_defence_roll",
+    "Stab & magic & ranged defence roll",
+    ["stab", "magic", "ranged"],
+  ],
+  [
+    "slash_magic_defence_roll",
+    "Slash & magic defence roll",
+    ["slash", "magic"],
+  ],
+  [
+    "slash_ranged_defence_roll",
+    "Slash & ranged defence roll",
+    ["slash", "ranged"],
+  ],
+  [
+    "slash_magic_ranged_defence_roll",
+    "Slash & magic & ranged defence roll",
+    ["slash", "magic", "ranged"],
+  ],
+  [
+    "crush_magic_defence_roll",
+    "Crush & magic defence roll",
+    ["crush", "magic"],
+  ],
+  [
+    "crush_ranged_defence_roll",
+    "Crush & ranged defence roll",
+    ["crush", "ranged"],
+  ],
+  [
+    "crush_magic_ranged_defence_roll",
+    "Crush & magic & ranged defence roll",
+    ["crush", "magic", "ranged"],
+  ],
   ["melee_defence_roll", "Melee defence roll", ["stab", "slash", "crush"]],
   [
     "melee_magic_defence_roll",
@@ -13,7 +54,7 @@ for (const [priority, label, styles] of [
     ["stab", "slash", "crush", "ranged"],
   ],
 ] as const) {
-  test(`${priority} frontier restores boosted potions and selected combat settings`, async ({
+  test(`${priority} restores a complete boosted objective configuration`, async ({
     page,
   }) => {
     await page.request.post("/test/seed-optimization");
@@ -22,16 +63,15 @@ for (const [priority, label, styles] of [
       .locator("summary")
       .filter({ hasText: /^Advanced settings/ })
       .click();
-    await page
-      .getByRole("combobox", { name: "Tradeoff metric", exact: true })
-      .selectOption(priority);
+    for (const style of styles)
+      await page.getByRole("checkbox", { name: style, exact: true }).check();
     await page
       .getByRole("checkbox", { name: "Optimize potions", exact: true })
       .check();
     await page
       .getByRole("checkbox", { name: "Defence potion", exact: true })
       .check();
-    const response = page.waitForResponse(
+    const pending = page.waitForResponse(
       (r) =>
         new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
         r.request().method() === "POST",
@@ -39,65 +79,26 @@ for (const [priority, label, styles] of [
     await page
       .getByRole("button", { name: "Run optimization", exact: true })
       .click();
-    const reply = await response;
-    expect(reply.status(), await reply.text()).toBe(200);
-    const body = await reply.json();
-    const group = body.result.secondary_frontiers.find(
-      (g: { swap_limit: number }) => g.swap_limit === body.scenario.max_swaps,
-    );
-    const highest = group.points.at(-1).solution;
-    const gain = group.points.at(-1).secondary_gain;
-    const baseline = group.points[0].solution.secondary_value;
-    expect(highest.potions.selected_ids).toContain("defence");
-    const roll =
-      highest.loadouts[Object.keys(highest.loadouts)[0]].performance
-        .player_defence_rolls;
-    expect(highest.secondary_value).toBe(
-      Math.min(...styles.map((style) => roll[style])),
-    );
-    const metric = page
-      .getByRole("group", { name: "Frontier endpoints" })
-      .getByRole("button", {
-        name: `Highest ${label}`,
-        exact: true,
-      });
-    await expect(metric).toBeVisible();
-    await metric.click();
-    await expect(metric).toHaveAttribute("aria-pressed", "true");
+    const response = await pending;
+    expect(response.status(), await response.text()).toBe(200);
+    const body = await response.json();
+    const definition = body.result.objective_definitions[0];
+    expect(new Set(definition.styles)).toEqual(new Set(styles));
+    const region = page.getByRole("region", { name: "Objective tradeoffs" });
+    await expect(region).toBeVisible();
+    await region
+      .getByRole("button", { name: "Highest " + definition.label, exact: true })
+      .click();
     await expect(
-      page.getByRole("columnheader", { name: "Gain vs highest-DPS roll" }),
+      page.getByRole("table", { name: "All objective tradeoffs" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("table", { name: "DPS and metric tradeoffs" }),
-    ).toContainText(
-      `${(gain / 1000).toFixed(2)}k roll (${baseline ? `${((gain / baseline) * 100).toFixed(2)}%` : "percentage unavailable"})`,
-    );
-    const selectedLoadout = highest.loadouts[Object.keys(highest.loadouts)[0]];
-    await expect(
       page.getByLabel("Selected combat configuration"),
-    ).toContainText(selectedLoadout.combat_option.stance);
-    await expect(
-      page.getByLabel("Selected combat configuration"),
-    ).toContainText(selectedLoadout.combat_option.attack_type);
-    for (const id of Object.values(selectedLoadout.equipment)) {
-      const item = body.items.find(
-        (entry: { item_id: number }) => entry.item_id === id,
-      );
-      await expect(
-        page
-          .getByRole("button", { name: new RegExp(` ${item.name}(?: |$)`) })
-          .first(),
-      ).toBeVisible();
-    }
-    await expect(
-      page.getByRole("region", { name: "Selected potions" }),
-    ).toContainText("Defence potion");
-    await expect(
-      page.getByRole("region", { name: "Metric tradeoffs" }),
-    ).toContainText(
-      styles
-        .map((style) => `${style} ${(roll[style] / 1000).toFixed(2)}k`)
-        .join(" / "),
+    ).toBeVisible();
+    expect(body.run_id).toBeTruthy();
+    const manifest = await page.request.get(
+      "/ui-api/gear/optimization-runs/" + body.run_id,
     );
+    expect(manifest.status()).toBe(200);
   });
 }

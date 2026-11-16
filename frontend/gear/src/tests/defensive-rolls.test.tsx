@@ -30,11 +30,11 @@ const solution = {
   loadouts: { single: { performance: { player_defence_rolls: rolls } } },
 };
 
-it("offers ten roll metrics and no equipment defence metrics", () => {
+it("offers nineteen roll metrics and no equipment defence metrics", () => {
   expect(
     secondaryPriorities.filter(([id]) => id.endsWith("_defence_roll")),
-  ).toHaveLength(10);
-  expect(secondaryPriorities).toHaveLength(16);
+  ).toHaveLength(19);
+  expect(secondaryPriorities).toHaveLength(25);
   expect(secondaryPriorities.some(([id]) => id.endsWith("_defence"))).toBe(
     false,
   );
@@ -206,6 +206,15 @@ const meleeMetrics = [
   ["melee_defence_roll", ["stab", "slash", "crush"]],
   ["melee_magic_defence_roll", ["stab", "slash", "crush", "magic"]],
   ["melee_ranged_defence_roll", ["stab", "slash", "crush", "ranged"]],
+  ["stab_magic_defence_roll", ["stab", "magic"]],
+  ["stab_ranged_defence_roll", ["stab", "ranged"]],
+  ["stab_magic_ranged_defence_roll", ["stab", "magic", "ranged"]],
+  ["slash_magic_defence_roll", ["slash", "magic"]],
+  ["slash_ranged_defence_roll", ["slash", "ranged"]],
+  ["slash_magic_ranged_defence_roll", ["slash", "magic", "ranged"]],
+  ["crush_magic_defence_roll", ["crush", "magic"]],
+  ["crush_ranged_defence_roll", ["crush", "ranged"]],
+  ["crush_magic_ranged_defence_roll", ["crush", "magic", "ranged"]],
 ] as const;
 it.each(meleeMetrics)(
   "validates all and only included components for %s",

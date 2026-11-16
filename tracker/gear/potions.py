@@ -231,7 +231,14 @@ def relevant_boost_skills(request: Any) -> frozenset[str]:
     }
     from tracker.gear.defensive_rolls import required_defensive_skills
 
-    return required_defensive_skills(getattr(request, "secondary_priority", "default")) | frozenset(
+    objectives = getattr(request, "objectives", None)
+    if objectives is None:
+        defensive = required_defensive_skills(getattr(request, "secondary_priority", "default"))
+    else:
+        from tracker.gear.objectives import required_objective_skills
+
+        defensive = required_objective_skills(objectives)
+    return defensive | frozenset(
         skill
         for role in request.roles
         if role.style != "special"

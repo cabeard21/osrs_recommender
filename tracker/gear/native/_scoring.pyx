@@ -3,10 +3,101 @@
 
 from libc.math cimport floor, pow, fabs, isfinite
 from libc.string cimport memset
+from libcpp.vector cimport vector
 from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total
 
 
+cdef double retention_distance(vector[double]& values, size_t dimensions, size_t first, size_t second) noexcept nogil:
+    """CPython 3.12 compensated float sum, with the same squared-distance terms."""
+    cdef size_t dimension
+    cdef double difference, term, total, hi = 0.0, lo = 0.0
+    for dimension in range(dimensions):
+        difference = values[first * dimensions + dimension] - values[second * dimensions + dimension]
+        term = pow(fabs(difference), 2.0)
+        total = hi + term
+        if fabs(hi) >= fabs(term):
+            lo += (hi - total) + term
+        else:
+            lo += (term - total) + hi
+        hi = total
+    return hi + lo if lo and isfinite(lo) else hi
+
+
+def farthest_indices(vectors, int limit):
+    """Exact farthest-point retention for vectors already sorted by physical identity."""
+    cdef size_t count = len(vectors), dimensions, index, dimension, maximum, minimum, anchor, chosen, target
+    cdef vector[double] values, ranges, nearest
+    cdef vector[unsigned char] included
+    cdef vector[size_t] selected
+    cdef double value, candidate_distance, best_distance
+    if not count:
+        return []
+    dimensions = len(vectors[0])
+    if not 1 <= dimensions <= 63:
+        raise ValueError("Unsupported native retention dimensions")
+    values.resize(count * dimensions)
+    ranges.resize(dimensions)
+    nearest.resize(count)
+    included.resize(count, 0)
+    for index in range(count):
+        if len(vectors[index]) != dimensions:
+            raise ValueError("Mismatched native retention dimensions")
+        for dimension in range(dimensions):
+            value = vectors[index][dimension]
+            if not isfinite(value):
+                raise ValueError("Non-finite native retention value")
+            values[index * dimensions + dimension] = value
+    # Stable identity order means maximum ties keep the first candidate, while
+    # minimum ties keep the last: exactly Python's reverse-value sorted endpoints.
+    for dimension in range(dimensions):
+        maximum = minimum = 0
+        for index in range(1, count):
+            value = values[index * dimensions + dimension]
+            if value > values[maximum * dimensions + dimension]:
+                maximum = index
+            if value <= values[minimum * dimensions + dimension]:
+                minimum = index
+        if not included[maximum]:
+            included[maximum] = 1
+            selected.push_back(maximum)
+        if not included[minimum]:
+            included[minimum] = 1
+            selected.push_back(minimum)
+        ranges[dimension] = values[maximum * dimensions + dimension] - values[minimum * dimensions + dimension]
+    for index in range(count):
+        for dimension in range(dimensions):
+            values[index * dimensions + dimension] = values[index * dimensions + dimension] / ranges[dimension] if ranges[dimension] else 0.0
+    target = min(count, max(limit, selected.size()))
+    with nogil:
+        for index in range(count):
+            if included[index]:
+                continue
+            best_distance = retention_distance(values, dimensions, index, selected[0])
+            for anchor in range(1, selected.size()):
+                candidate_distance = retention_distance(values, dimensions, index, selected[anchor])
+                if candidate_distance < best_distance:
+                    best_distance = candidate_distance
+            nearest[index] = best_distance
+        while selected.size() < target:
+            chosen = count
+            best_distance = -1.0
+            for index in range(count):
+                if not included[index] and (chosen == count or nearest[index] > best_distance):
+                    chosen = index
+                    best_distance = nearest[index]
+            selected.push_back(chosen)
+            included[chosen] = 1
+            for index in range(count):
+                if included[index]:
+                    continue
+                candidate_distance = retention_distance(values, dimensions, index, chosen)
+                if candidate_distance < nearest[index]:
+                    nearest[index] = candidate_distance
+    return [selected[index] for index in range(selected.size())]
+
+
 cdef int required_defence_mask(int priority) noexcept nogil:
+    cdef int melee, combination
     if priority == 20:
         return 31
     if priority == 21:
@@ -19,6 +110,15 @@ cdef int required_defence_mask(int priority) noexcept nogil:
         return 23
     if priority == 29:
         return 15
+    # IDs 30-38 group each melee style with magic, ranged, then both.
+    if 30 <= priority <= 38:
+        melee = 1 << ((priority - 30) // 3)
+        combination = (priority - 30) % 3
+        if combination == 0:
+            return melee | 16
+        if combination == 1:
+            return melee | 8
+        return melee | 24
     return 0
 
 
@@ -143,6 +243,10 @@ cdef class ScoringContext:
         self.demonbane_spell = packed["demonbane_spell"]
         self.mark_of_darkness = packed["mark_of_darkness"]
         self.priority = packed["priority"]
+        self.objective_ids = packed["objective_ids"]
+        self.objective_kinds = packed["objective_kinds"]
+        self.objective_masks = packed["objective_masks"]
+        self.objective_means = packed["objective_means"]
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
         cdef double rolls[5]
@@ -165,6 +269,13 @@ cdef class ScoringContext:
                 return min(rolls[0], rolls[1], rolls[2], rolls[4])
             if self.priority == 29:
                 return min(rolls[0], rolls[1], rolls[2], rolls[3])
+            if 30 <= self.priority <= 38:
+                index = (self.priority - 30) // 3
+                if (self.priority - 30) % 3 == 0:
+                    return min(rolls[index], rolls[4])
+                if (self.priority - 30) % 3 == 1:
+                    return min(rolls[index], rolls[3])
+                return min(rolls[index], rolls[4], rolls[3])
             return rolls[self.priority - 22]
         if self.priority == 0:
             return 0.0
@@ -176,7 +287,7 @@ cdef class ScoringContext:
             return accuracy
         return bonuses[self.priority - 4]
 
-    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=NULL) noexcept nogil:
+    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=NULL, int specific_option=-1) noexcept nogil:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
@@ -231,6 +342,8 @@ cdef class ScoringContext:
             ammo_ok = True
         base = ((<int>metric * self.role_count + role_index) * self.item_count + weapon)
         start, length = self.offsets[base], self.lengths[base]
+        if specific_option >= 0:
+            start, length = specific_option, 1
         for index in range(start, start + length):
             base = index * 18
             if not self.options[base + 9]:
@@ -411,6 +524,122 @@ cdef class ScoringContext:
         if output.supported and self.options[output.option_index * 18] == 3 and ammo and not self.ammo_required[weapon]:
             output.bonuses[3] = bonuses[3] - self.item_bonuses[ammo * 14 + 3]
             output.bonuses[6] = bonuses[6] - self.item_bonuses[ammo * 14 + 6]
+
+    cdef void project_objectives(self, Score* result, double* values) except *:
+        cdef int index, style, count, mask, kind
+        cdef double value, roll
+        for index in range(self.objective_kinds.shape[0]):
+            kind = self.objective_kinds[index]
+            if kind == 0:
+                mask = self.objective_masks[index]
+                value, count = 0.0, 0
+                for style in range(5):
+                    if not mask & (1 << style):
+                        continue
+                    roll = result.defence_rolls[style]
+                    if roll < 0:
+                        raise ValueError("Player defensive roll is unavailable: required combat levels are unknown")
+                    value = value + roll if self.objective_means[index] else min(value, roll) if count else roll
+                    count += 1
+                if count == 0:
+                    raise ValueError("Empty native defence group")
+                values[index] = value / count if self.objective_means[index] else value
+            elif kind == 1:
+                values[index] = result.bonuses[13]
+            elif kind == 2:
+                values[index] = result.bonuses[5]
+            elif kind == 3:
+                values[index] = result.bonuses[6]
+            elif kind == 4:
+                values[index] = result.bonuses[7]
+            else:
+                values[index] = result.accuracy
+
+    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum) except -1:
+        cdef Score result
+        cdef double values[62]
+        cdef int index, dimension
+        cdef int offset = role_index * self.item_count + slots[0]
+        cdef int start = self.offsets[offset], length = self.lengths[offset]
+        cdef bint supported = False
+        for index in range(start, start + length):
+            self.evaluate(slots, role_index, False, &result, order, index)
+            if not result.supported:
+                continue
+            self.project_objectives(&result, values)
+            if not supported or result.dps > maximum[0]:
+                maximum[0] = result.dps
+            for dimension in range(self.objective_kinds.shape[0]):
+                if not supported or values[dimension] > maximum[dimension + 1]:
+                    maximum[dimension + 1] = values[dimension]
+            supported = True
+        return supported
+
+    def score_projection(self, equipment, int role_index):
+        """Return component maxima for a partial beam, without public option records.
+
+        This is a heuristic envelope, never a complete configuration's vector.
+        Concrete archives must still use score_variants and full feasibility.
+        """
+        from tracker.gear.compact_states import SLOT_NAMES
+        cdef int slots[11]
+        cdef int order[11]
+        cdef Score result
+        cdef double values[62]
+        cdef double maximum[63]
+        cdef int index, position = 0, start, length, offset, dimension
+        cdef bint supported = False
+        if role_index < 0 or role_index >= self.role_count:
+            raise ValueError("Invalid native role index")
+        memset(slots, 0, sizeof(slots))
+        memset(order, -1, sizeof(order))
+        for slot, item in equipment.items():
+            if slot not in SLOT_NAMES or type(item) is not int or item not in self.dense_index or item == 0:
+                raise ValueError("Invalid native equipment")
+            slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
+            order[position] = SLOT_NAMES.index(slot)
+            position += 1
+        supported = self.project_slots(slots, role_index, order, maximum)
+        return tuple(maximum[dimension] for dimension in range(self.objective_kinds.shape[0] + 1)) if supported else None
+
+    def score_variants(self, equipment, int role_index):
+        """Score every concrete configured option, without projection-based pruning."""
+        from tracker.gear.compact_states import SLOT_NAMES
+        cdef int slots[11]
+        cdef int order[11]
+        cdef Score result
+        cdef double values[62]
+        cdef int index, position = 0, start, length, offset
+        if role_index < 0 or role_index >= self.role_count:
+            raise ValueError("Invalid native role index")
+        memset(slots, 0, sizeof(slots))
+        memset(order, -1, sizeof(order))
+        for slot, item in equipment.items():
+            if slot not in SLOT_NAMES or type(item) is not int or item not in self.dense_index or item == 0:
+                raise ValueError("Invalid native equipment")
+            slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
+            order[position] = SLOT_NAMES.index(slot)
+            position += 1
+        offset = role_index * self.item_count + slots[0]
+        start, length = self.offsets[offset], self.lengths[offset]
+        rows = []
+        for index in range(start, start + length):
+            self.evaluate(slots, role_index, False, &result, order, index)
+            if not result.supported:
+                continue
+            self.project_objectives(&result, values)
+            rows.append({
+                "supported": True,
+                "dps": result.dps,
+                "accuracy": result.accuracy,
+                "secondary": result.secondary,
+                "interval": result.interval,
+                "player_defence_rolls": {name: result.defence_rolls[position] if result.defence_rolls[position] >= 0 else None for position, name in enumerate(("stab", "slash", "crush", "ranged", "magic"))},
+                "option_index": result.option_index,
+                "bonuses": tuple(result.bonuses[position] for position in range(14)),
+                "objective_values": {name: values[position] for position, name in enumerate(self.objective_ids)},
+            })
+        return rows
 
     def score(self, equipment, int role_index, bint metric=False):
         from tracker.gear.compact_states import SLOT_NAMES

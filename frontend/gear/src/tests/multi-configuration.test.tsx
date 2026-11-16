@@ -409,14 +409,16 @@ it("Auto is opt-in, preserves manual settings, and follows the draft into Multi"
     JSON.parse(screen.getByTestId("draft").textContent!).roles[0]
       .allowedDisciplines,
   ).toEqual(["melee", "ranged", "magic"]);
-  fireEvent.click(screen.getByRole("checkbox", { name: "magic" }));
+  const allowed = () =>
+    within(screen.getByRole("group", { name: "Allowed combat disciplines" }));
+  fireEvent.click(allowed().getByRole("checkbox", { name: "magic" }));
   fireEvent.click(screen.getByRole("button", { name: "melee" }));
   expect(
     JSON.parse(screen.getByTestId("draft").textContent!).roles[0]
       .autoDiscipline,
   ).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: "Auto" }));
-  expect(screen.getByRole("checkbox", { name: "magic" })).not.toBeChecked();
+  expect(allowed().getByRole("checkbox", { name: "magic" })).not.toBeChecked();
   fireEvent.click(screen.getByRole("button", { name: "Enter Multi" }));
   expect(screen.getAllByRole("button", { name: "Auto" })).toHaveLength(2);
   const roles = JSON.parse(screen.getByTestId("draft").textContent!).roles;

@@ -208,7 +208,21 @@ def test_secondary_metric_parity(client, session_factory, priority):
 
 
 @pytest.mark.parametrize(
-    "priority", ["melee_defence_roll", "melee_magic_defence_roll", "melee_ranged_defence_roll"]
+    "priority",
+    [
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
+        "stab_magic_defence_roll",
+        "stab_ranged_defence_roll",
+        "stab_magic_ranged_defence_roll",
+        "slash_magic_defence_roll",
+        "slash_ranged_defence_roll",
+        "slash_magic_ranged_defence_roll",
+        "crush_magic_defence_roll",
+        "crush_ranged_defence_roll",
+        "crush_magic_ranged_defence_roll",
+    ],
 )
 def test_melee_roll_timeline_tracks_defensive_boost_decay(client, session_factory, priority):
     body, selected = timeline_body(
@@ -381,3 +395,61 @@ def test_auto_selection_is_frozen(client, session_factory):
     reply = client.post("/ui-api/gear/potion-timelines", json=body)
     assert reply.status_code == 200, reply.text
     assert reply.json()["samples"][0]["dps"] == selected["score"]
+
+
+def test_displayed_objective_configurations_have_frozen_timelines_without_frontier_membership(
+    client, app, session_factory
+):
+    from datetime import UTC, datetime
+
+    from tracker.accounts.service import AccountService
+
+    body, selected = timeline_body(
+        client,
+        session_factory,
+        objectives=[{"kind": "defence_roll", "styles": ["stab", "magic"]}],
+        potions={"mode": "fixed", "selected_ids": ["super_defence", "magic"]},
+    )
+    gear = app.state.gear_service
+    # Every default display choice remains selectable even when chart sampling
+    # and frontier filtering contain no copy of its report.
+    published = gear.objective_store.publish_result(
+        {
+            "selected_solution": selected,
+            "curve": [{"swap_limit": 0, "solution": selected}],
+            "unrestricted": selected,
+            "objective_frontiers": [],
+            "discipline_results": [
+                {"discipline": "melee", "selected_solution": selected, "objective_frontiers": []}
+            ],
+        },
+        metadata={
+            "scenario": body["scenario"],
+            "model_version": body["expected_model_version"],
+            "catalog_version": body["expected_catalog_version"],
+        },
+        player_id=1,
+        context={
+            "snapshot": AccountService(session_factory).get_snapshot(1),
+            "catalog": gear.equipment_catalog(),
+            "content": gear.content,
+            "prices": {},
+            "evaluated_at": datetime.now(UTC),
+        },
+    )
+    references = published["objective_run"]["solution_references"]
+    assert set(references) == {
+        "best-found",
+        "curve-0",
+        "unrestricted",
+        "discipline-melee-best-found",
+    }
+    for solution_id in references.values():
+        reply = client.post(
+            "/ui-api/gear/potion-timelines",
+            json={"run_id": published["run_id"], "solution_id": solution_id},
+        )
+        assert reply.status_code == 200, reply.text
+        fresh = reply.json()["samples"][0]
+        assert fresh["dps"] == selected["score"]
+        assert fresh["objective_values"] == selected["objective_values"]

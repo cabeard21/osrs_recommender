@@ -7,7 +7,9 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from threading import Event
-from typing import Literal
+from types import SimpleNamespace
+from typing import Any, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import Field, model_validator
@@ -15,6 +17,7 @@ from pydantic import Field, model_validator
 from tracker.api.gear_evaluations import FixedCombatOption
 from tracker.api.gear_optimizations import (
     BrowserOptimizationRequest,
+    ObjectiveProjection,
     consume,
     error,
     same_origin,
@@ -73,13 +76,62 @@ class PotionTimelineRequest(DTO):
         return self
 
 
-class RoleMeasurement(DTO):
+class FrozenPotionTimelineRequest(DTO):
+    run_id: UUID
+    solution_id: str = Field(min_length=1, max_length=160)
+
+
+def frozen_timeline_inputs(body: FrozenPotionTimelineRequest, snapshot, gear):
+    """Resolve an owner-scoped archived selection without rereading live scoring facts."""
+    identity = str(snapshot.player_id)
+    run_id = str(body.run_id)
+    from tracker.gear.objective_store import RunUnavailable
+
+    try:
+        metadata = gear.objective_store.metadata(run_id, player_id=identity)
+        context = gear.objective_store.get_context(run_id, player_id=identity)
+        solution = gear.objective_store.solution(run_id, body.solution_id, player_id=identity)[
+            "solution"
+        ]
+    except RunUnavailable as exc:
+        raise error("optimization_run_unavailable", str(exc), 410) from exc
+    if not context:
+        raise error("run_expired", "Results expired; rerun optimization", 410)
+    scenario = BrowserOptimizationRequest.model_validate(metadata["scenario"])
+    fixed = PotionTimelineRequest(
+        scenario=scenario,
+        selected_potion_ids=(solution.get("potions") or {}).get("selected_ids", ()),
+        loadouts={
+            key: {
+                "equipment": row["equipment"],
+                "combat_option": row["combat_option"],
+                "selected_prayer_ids": row.get("selected_prayer_ids", ()),
+            }
+            for key, row in solution["loadouts"].items()
+            if scenario.roles[[r.id for r in scenario.roles].index(key)].style != "special"
+        },
+        expected_catalog_version=metadata["catalog_version"]
+        if "catalog_version" in metadata
+        else context["catalog"].revision,
+        expected_model_version=metadata["model_version"],
+    )
+    frozen_gear = SimpleNamespace(
+        _optimization_lock=gear._optimization_lock,
+        equipment_catalog=lambda: context["catalog"],
+        content=context["content"],
+    )
+    return context["snapshot"], frozen_gear, context["prices"], fixed, context["evaluated_at"]
+
+
+class RoleMeasurement(ObjectiveProjection):
+    objective_values: dict[str, float | None] = Field(default_factory=dict)
     dps: float | None
     secondary_value: float | None
     reasons: list[str]
 
 
-class TimelineMeasurement(DTO):
+class TimelineMeasurement(ObjectiveProjection):
+    objective_values: dict[str, float | None] = Field(default_factory=dict)
     time_seconds: int
     levels: dict[str, int]
     dps: float | None
@@ -87,7 +139,8 @@ class TimelineMeasurement(DTO):
     roles: dict[str, RoleMeasurement]
 
 
-class PotionTimelineResponse(DTO):
+class PotionTimelineResponse(ObjectiveProjection):
+    objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
     snapshot_id: str
     catalog_version: str
     model_version: str
@@ -98,7 +151,9 @@ class PotionTimelineResponse(DTO):
     samples: list[TimelineMeasurement]
 
 
-def calculate_timeline(snapshot, gear, prices, body: PotionTimelineRequest, stopped: Event):
+def calculate_timeline(
+    snapshot, gear, prices, body: PotionTimelineRequest, stopped: Event, *, frozen_at=None
+):
     from tracker.gear.combat_options import CombatOption
     from tracker.gear.evaluation import (
         evaluate_configurations,
@@ -114,7 +169,7 @@ def calculate_timeline(snapshot, gear, prices, body: PotionTimelineRequest, stop
     if not gear._optimization_lock.acquire(blocking=False):
         raise ValueError("optimizer_busy")
     try:
-        now = datetime.now(UTC)
+        now = frozen_at or datetime.now(UTC)
         catalog = gear.equipment_catalog()
         if (
             catalog.revision != body.expected_catalog_version
@@ -204,11 +259,14 @@ def calculate_timeline(snapshot, gear, prices, body: PotionTimelineRequest, stop
             key = tuple(sorted(effective.items()))
             if key not in measurements:
                 measurements[key] = measure(
-                    0, effective, roles, prepared, request.secondary_priority
+                    0, effective, roles, prepared, request.secondary_priority, request.objectives
                 )
             return {**measurements[key], "time_seconds": seconds}
 
+        from tracker.gear.objectives import objective_definitions
+
         return PotionTimelineResponse(
+            objective_definitions=objective_definitions(request.objectives or ()),
             snapshot_id=snapshot.fingerprint,
             catalog_version=catalog.revision,
             model_version=MODEL_VERSION,
@@ -227,14 +285,34 @@ def calculate_timeline(snapshot, gear, prices, body: PotionTimelineRequest, stop
 
 
 @router.post("/potion-timelines", response_model=PotionTimelineResponse)
-async def potion_timelines(request: Request, body: PotionTimelineRequest):
+async def potion_timelines(
+    request: Request, body: PotionTimelineRequest | FrozenPotionTimelineRequest
+):
     same_origin(request)
     snapshot, gear, prices = await asyncio.to_thread(resources, request)
-    if snapshot is None or snapshot.fingerprint != body.scenario.expected_snapshot_id:
+    frozen_at = None
+    frozen = isinstance(body, FrozenPotionTimelineRequest)
+    if isinstance(body, FrozenPotionTimelineRequest):
+        if snapshot is None:
+            raise error("account_unavailable", "Account is unavailable", 409)
+        snapshot, gear, prices, timeline_body, frozen_at = frozen_timeline_inputs(
+            body, snapshot, gear
+        )
+    else:
+        timeline_body = body
+    if snapshot is None or snapshot.fingerprint != timeline_body.scenario.expected_snapshot_id:
         raise error("snapshot_changed", "Refresh account facts and rerun optimization", 409)
     stopped = Event()
     worker = asyncio.create_task(
-        asyncio.to_thread(calculate_timeline, snapshot, gear, prices, body, stopped)
+        asyncio.to_thread(
+            calculate_timeline,
+            snapshot,
+            gear,
+            prices,
+            timeline_body,
+            stopped,
+            **({"frozen_at": frozen_at} if frozen_at is not None else {}),
+        )
     )
     try:
         while not worker.done():
@@ -245,7 +323,7 @@ async def potion_timelines(request: Request, body: PotionTimelineRequest):
                 raise error("evaluation_cancelled", "Timeline cancelled", 499)
         result = worker.result()
         fresh, _, _ = await asyncio.to_thread(resources, request)
-        if fresh is None or fresh.fingerprint != snapshot.fingerprint:
+        if not frozen and (fresh is None or fresh.fingerprint != snapshot.fingerprint):
             raise error(
                 "snapshot_changed", "Account changed during evaluation; rerun optimization", 409
             )

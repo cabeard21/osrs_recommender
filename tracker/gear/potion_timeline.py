@@ -46,21 +46,28 @@ def measure(
     roles: Sequence[Any],
     prepared: Mapping[str, Any],
     priority: Any,
+    objectives: Sequence[Any] | None = None,
 ) -> dict[str, Any]:
     from tracker.gear.combat import evaluate_prepared_loadout
     from tracker.gear.priorities import secondary_value
 
-    values = {}
+    values: dict[str, dict[str, Any]] = {}
     for role in roles:
         performance = evaluate_prepared_loadout(prepared[role.id], role, levels)
         row = performance.model_dump(mode="json")
         valid = performance.supported and performance.dps is not None
+        objective_measurements = {}
+        if objectives is not None and valid:
+            from tracker.gear.objectives import objective_values
+
+            objective_measurements = objective_values(objectives, row)
         values[role.id] = {
             "dps": performance.dps if valid else None,
             "secondary_value": secondary_value(priority, row)
             if valid and priority != "default"
             else None,
             "reasons": list(performance.limitations) if not valid else [],
+            **({"objective_values": objective_measurements} if objectives is not None else {}),
         }
     active = [role for role in roles if role.weight > 0]
     weight = sum(role.weight for role in active)
@@ -70,10 +77,23 @@ def measure(
             return None
         return float(sum(values[role.id][key] * role.weight for role in active) / weight)
 
+    objective_totals = {}
+    if objectives is not None and weight:
+        from tracker.gear.objectives import objective_definitions
+
+        for definition in objective_definitions(objectives):
+            key = definition["id"]
+            objective_totals[key] = (
+                sum(values[role.id]["objective_values"][key] * role.weight for role in active)
+                / weight
+                if all(key in values[role.id]["objective_values"] for role in active)
+                else None
+            )
     return {
         "time_seconds": time,
         "levels": {k: v for k, v in levels.items() if not k.startswith("_")},
         "dps": aggregate("dps"),
         "secondary_value": aggregate("secondary_value"),
         "roles": values,
+        **({"objective_values": objective_totals} if objectives is not None else {}),
     }

@@ -39,6 +39,19 @@ const point = (time_seconds: number, dps: number | null) => ({
   secondary_value: null,
   roles: { [role]: { dps, secondary_value: null, reasons: [] } },
 });
+const objectivePoint = (
+  sample: ReturnType<typeof point>,
+  values: Record<string, number | null>,
+) => ({
+  ...sample,
+  objective_values: values,
+  roles: {
+    [role]: {
+      ...sample.roles[role],
+      objective_values: sample.dps === null ? {} : values,
+    },
+  },
+});
 const timeline = () => ({
   snapshot_id: "snapshot",
   catalog_version: "catalog",
@@ -49,6 +62,59 @@ const timeline = () => ({
   baseline: point(0, 4),
   samples: [point(0, 5), point(60, null)],
 });
+
+it("uses frozen session references for vector timelines", async () => {
+  const selected = { ...solution, objective_values: { prayer_bonus: 3 } };
+  const vector = {
+    ...result,
+    scenario: {
+      ...scenario,
+      request: {
+        ...scenario.request,
+        objectives: [{ kind: "prayer_bonus" as const }],
+      },
+    },
+    solutions: [],
+    live: {
+      ...result.live!,
+      run_id: "frozen-run",
+      result: {
+        objective_frontiers: [
+          { points: [{ id: "group-objective-point", solution: selected }] },
+        ],
+      },
+    },
+  } as unknown as OptimizationReply;
+  const data = timeline();
+  const enriched = {
+    ...data,
+    objective_definitions: [
+      {
+        id: "prayer_bonus",
+        kind: "prayer_bonus",
+        label: "Prayer bonus",
+        unit: "bonus",
+      },
+    ],
+    baseline: objectivePoint(data.baseline, { prayer_bonus: 3 }),
+    samples: data.samples.map((point) =>
+      objectivePoint(point, { prayer_bonus: 3 }),
+    ),
+  };
+  const transport = vi.fn(
+    async () => new Response(JSON.stringify(enriched), { status: 200 }),
+  );
+  await new HttpGearClient(
+    "/ui-api/gear",
+    transport as typeof fetch,
+  ).potionTimeline(vector, selected, new AbortController().signal);
+  expect(
+    JSON.parse(
+      (transport.mock.calls[0] as unknown as [string, RequestInit])[1]
+        .body as string,
+    ),
+  ).toEqual({ run_id: "frozen-run", solution_id: "group-objective-point" });
+});
 const transport = (body: unknown, status = 200) =>
   vi
     .fn<typeof fetch>()
@@ -56,7 +122,133 @@ const transport = (body: unknown, status = 200) =>
       async () => new Response(JSON.stringify(body), { status }),
     );
 
+it.each([
+  "best-found",
+  "curve-2",
+  "unrestricted",
+  "discipline-melee-best-found",
+])(
+  "loads the archived %s setup even when it is absent from the chart sample",
+  async (alias) => {
+    const selected = { ...solution, objective_values: { prayer_bonus: 3 } };
+    const vector = {
+      ...result,
+      scenario: {
+        ...scenario,
+        request: {
+          ...scenario.request,
+          objectives: [{ kind: "prayer_bonus" }],
+        },
+      },
+      solutions:
+        alias === "unrestricted" ? [] : [{ id: alias, live: selected }],
+      unrestricted:
+        alias === "unrestricted" ? { id: alias, live: selected } : undefined,
+      live: {
+        ...result.live!,
+        run_id: "frozen-run",
+        result: {
+          selected_solution:
+            alias === "unrestricted" ? { ...selected, score: 6 } : selected,
+          unrestricted: alias === "unrestricted" ? selected : null,
+          objective_frontiers: [],
+          objective_run: {
+            selected_solution_id:
+              alias === "unrestricted"
+                ? "objective-another"
+                : "objective-stored-selection",
+            solution_references: { [alias]: "objective-stored-selection" },
+          },
+        },
+      },
+    } as unknown as OptimizationReply;
+    const data = timeline();
+    const fetcher = transport({
+      ...data,
+      baseline: objectivePoint(data.baseline, { prayer_bonus: 3 }),
+      samples: data.samples.map((point) =>
+        objectivePoint(point, { prayer_bonus: 3 }),
+      ),
+    });
+    await new HttpGearClient("/gear", fetcher).potionTimeline(
+      vector,
+      selected,
+      new AbortController().signal,
+    );
+    expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).toEqual({
+      run_id: "frozen-run",
+      solution_id: "objective-stored-selection",
+    });
+  },
+);
+
 describe("potion timeline transport", () => {
+  it("accepts an explicit DPS-only timeline with omitted empty objective maps", async () => {
+    const vector = {
+      ...result,
+      scenario: {
+        ...scenario,
+        request: { ...scenario.request, objectives: [] },
+      },
+      live: {
+        ...result.live!,
+        run_id: "run",
+        result: {
+          selected_solution: solution,
+          objective_run: { selected_solution_id: "objective-selected" },
+        },
+      },
+    } as unknown as OptimizationReply;
+    await expect(
+      new HttpGearClient("/gear", transport(timeline())).potionTimeline(
+        vector,
+        solution,
+        new AbortController().signal,
+      ),
+    ).resolves.toMatchObject({ secondary_priority: "default" });
+  });
+
+  it.each([true, false])(
+    "allows unavailable objective samples only when the attack is unavailable (%s)",
+    async (unavailable) => {
+      const selected = { ...solution, objective_values: { prayer_bonus: 3 } };
+      const vector = {
+        ...result,
+        scenario: {
+          ...scenario,
+          request: {
+            ...scenario.request,
+            objectives: [{ kind: "prayer_bonus" }],
+          },
+        },
+        live: {
+          ...result.live!,
+          run_id: "run",
+          result: {
+            selected_solution: selected,
+            objective_run: { selected_solution_id: "objective-selected" },
+          },
+        },
+      } as unknown as OptimizationReply;
+      const invalid = objectivePoint(point(60, unavailable ? null : 4), {
+        prayer_bonus: null,
+      });
+      const body = {
+        ...timeline(),
+        baseline: { ...invalid, time_seconds: 0 },
+        samples: [objectivePoint(point(0, 5), { prayer_bonus: 3 }), invalid],
+      };
+      const reply = new HttpGearClient("/gear", transport(body)).potionTimeline(
+        vector,
+        selected,
+        new AbortController().signal,
+      );
+      if (unavailable)
+        await expect(reply).resolves.toMatchObject({ baseline: { dps: null } });
+      else await expect(reply).rejects.toThrow(/objective/i);
+    },
+  );
+
   it("validates the selected secondary value and retains finite negative equipment metrics", async () => {
     const measured = {
       ...result,

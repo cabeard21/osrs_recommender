@@ -305,6 +305,40 @@ def fake_pool(monkeypatch, workers=2):
     return pool, executors
 
 
+def test_worker_archive_ownership_is_adopted_on_caller_thread(monkeypatch):
+    import pickle
+    from pathlib import Path
+
+    from tracker.gear.vector_archive import VectorArchive, own_vector_archives
+    from tracker.gear.vector_publish import FrontierPoints
+
+    producer = VectorArchive(())
+    transferred = pickle.loads(pickle.dumps(FrontierPoints(producer, 0)))
+    # The sending worker has finished; only its transferred file remains live.
+    producer.connection.close()
+    producer._connection = None
+    path = Path(producer.path)
+    pool, executors = fake_pool(monkeypatch)
+
+    def completed(*args):
+        future = Future()
+        future.set_result({"objective_frontiers": [{"points": transferred}]})
+        return future
+
+    monkeypatch.setattr(executors[0], "submit", completed)
+
+    @own_vector_archives
+    def discard_consumed_branch():
+        pool._dispatch([{}], {}, None)
+
+    try:
+        discard_consumed_branch()
+        assert not path.exists()
+    finally:
+        producer.close()
+        pool.close()
+
+
 @pytest.mark.parametrize("workers", [2, 6])
 def test_cancellation_drains_before_reuse(monkeypatch, workers):
     pool, executors = fake_pool(monkeypatch, workers)

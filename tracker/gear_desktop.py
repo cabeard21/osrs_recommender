@@ -85,6 +85,7 @@ class DesktopSettings(BaseSettings):
 
 def create_app(settings: DesktopSettings) -> FastAPI:
     from tracker.api.gear_evaluations import router as evaluations
+    from tracker.api.gear_objective_runs import router as objective_runs
     from tracker.api.gear_optimizations import router as optimizations
     from tracker.api.gear_potion_timelines import router as potion_timelines
     from tracker.api.gear_ui import router as gear_ui
@@ -157,11 +158,14 @@ def create_app(settings: DesktopSettings) -> FastAPI:
                     )
             yield
         finally:
-            if pool is not None:
-                try:
-                    await asyncio.to_thread(pool.close)
-                finally:
-                    gear.auto_pool = None
+            try:
+                if pool is not None:
+                    try:
+                        await asyncio.to_thread(pool.close)
+                    finally:
+                        gear.auto_pool = None
+            finally:
+                await asyncio.to_thread(gear.close_objective_store)
 
     app = FastAPI(title="Desktop Gear", lifespan=lifespan)
     app.state.gear_execution = "serial"
@@ -173,6 +177,7 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     )
     app.include_router(gear_ui)
     app.include_router(optimizations)
+    app.include_router(objective_runs)
     app.include_router(evaluations)
     app.include_router(potion_timelines)
     from tracker.api.gear_ammo import router as ammo_router

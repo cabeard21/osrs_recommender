@@ -63,6 +63,15 @@ def test_support_accepts_magic_and_fractional_magic_metric():
         ("melee_defence_roll", ("stab", "slash", "crush")),
         ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
         ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+        ("stab_magic_defence_roll", ("stab", "magic")),
+        ("stab_ranged_defence_roll", ("stab", "ranged")),
+        ("stab_magic_ranged_defence_roll", ("stab", "magic", "ranged")),
+        ("slash_magic_defence_roll", ("slash", "magic")),
+        ("slash_ranged_defence_roll", ("slash", "ranged")),
+        ("slash_magic_ranged_defence_roll", ("slash", "magic", "ranged")),
+        ("crush_magic_defence_roll", ("crush", "magic")),
+        ("crush_ranged_defence_roll", ("crush", "ranged")),
+        ("crush_magic_ranged_defence_roll", ("crush", "magic", "ranged")),
     ],
 )
 @pytest.mark.parametrize("metric", [False, True])
@@ -89,6 +98,15 @@ def test_native_melee_minimum_components(priority, styles, metric, weakest):
         ("melee_defence_roll", False),
         ("melee_magic_defence_roll", True),
         ("melee_ranged_defence_roll", False),
+        ("stab_magic_defence_roll", True),
+        ("stab_ranged_defence_roll", False),
+        ("stab_magic_ranged_defence_roll", True),
+        ("slash_magic_defence_roll", True),
+        ("slash_ranged_defence_roll", False),
+        ("slash_magic_ranged_defence_roll", True),
+        ("crush_magic_defence_roll", True),
+        ("crush_ranged_defence_roll", False),
+        ("crush_magic_ranged_defence_roll", True),
     ],
 )
 @pytest.mark.parametrize("missing", ["magic", "defence"])

@@ -80,6 +80,22 @@ def expand(
             search.native_report()
     if search.cancelled and search.cancelled():
         raise ValueError("optimization_cancelled")
+    vector_search = getattr(search, "vector_search", None)
+    from tracker.gear.compact_states import SLOT_NAMES
+
+    complete = (kind in {"loadout", "joint"} and slot == SLOT_NAMES[-1]) or (
+        kind == "tuple" and tuple_role == search.request.roles[-1].id
+    )
+    if vector_search is not None and complete:
+        for row in stage.complete_candidates():
+            if search.cancelled and search.cancelled():
+                raise ValueError("optimization_cancelled")
+            assignment = (
+                {role.id: row for role in (roles or search.request.roles)}
+                if kind == "loadout"
+                else row
+            )
+            vector_search.capture_base(assignment)
     result = stage.finish(limit)
     record(
         "stage",

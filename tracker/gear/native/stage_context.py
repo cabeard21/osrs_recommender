@@ -121,7 +121,7 @@ def pack_stage(search: Any, scoring: Any) -> StageData:
         slot_json=tuple(json.dumps(name).encode("ascii") for name in SLOT_NAMES),
         budget=search.request.budget_gp,
         capacity=28 - search.request.reserved_supply_slots,
-        acquisition_ties=search.request.include_untradeables,
+        acquisition_ties=True,
     )
 
 

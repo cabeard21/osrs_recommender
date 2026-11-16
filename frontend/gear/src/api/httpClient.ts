@@ -1,3 +1,8 @@
+import {
+  canonicalObjectives,
+  objectiveId,
+  objectiveValues,
+} from "./objectives";
 import { parsePotionTimeline } from "./potionTimelines";
 import { createProgressId, pollOptimizationProgress } from "./progress";
 import { validateUntradeables } from "./untradeables";
@@ -196,6 +201,23 @@ export function parseOptimization(
           finalist_assignment_limit: 2048,
         };
   for (const row of [envelope, result]) {
+    if (scenario.request.objectives !== undefined) {
+      const policy = object(row.frontier_policy);
+      const count = canonicalObjectives(scenario.request.objectives).length;
+      if (
+        policy.policy !== "vector-pareto-v1" ||
+        policy.objective_count !== count ||
+        policy.expansion_limit !==
+          (scenario.request.optimization_mode === "thorough"
+            ? 1500000
+            : 500000) *
+            count
+      )
+        throw new Error(
+          "Vector objective search policy does not match the submitted objectives",
+        );
+      continue;
+    }
     if (
       (row.frontier_policy !== undefined ||
         result.secondary_frontiers !== undefined) &&
@@ -504,6 +526,47 @@ export function parseOptimization(
       }
     }
   }
+  if (scenario.request.objectives !== undefined) {
+    const objectives = canonicalObjectives(scenario.request.objectives);
+    const definitions = result.objective_definitions;
+    if (
+      !Array.isArray(definitions) ||
+      !sameValue(
+        definitions.map((value) => object(value).id).sort(),
+        objectives.map(objectiveId).sort(),
+      )
+    )
+      throw new Error(
+        "Objective definitions do not match the submitted scenario",
+      );
+    if (!Array.isArray(result.objective_frontiers))
+      throw new Error("Missing objective frontiers");
+    for (const raw of result.objective_frontiers) {
+      const group = object(raw);
+      if (
+        !Array.isArray(group.points) ||
+        group.points.length > 128 ||
+        typeof group.sampled !== "boolean"
+      )
+        throw new Error("Invalid objective frontier sample");
+      for (const entry of group.points) {
+        const point = object(entry);
+        if (typeof point.id !== "string" || frontierIds.has(point.id))
+          throw new Error("Invalid objective frontier identity");
+        objectiveValues(object(point.solution).objective_values, objectives);
+        frontierIds.add(point.id);
+        solutions.push(
+          parseJointSolution(
+            point.solution,
+            scenario,
+            items,
+            point.id,
+            group.swap_limit === null ? 100 : Number(group.swap_limit),
+          ),
+        );
+      }
+    }
+  }
   if (result.secondary_frontiers !== undefined)
     parseFrontiers(result.secondary_frontiers);
   if (result.running_cost_frontiers !== undefined)
@@ -717,7 +780,12 @@ export function optimizationRequest(scenario: Scenario) {
       allowed_ids: [],
       selected_ids: [],
     },
-    secondary_priority: r.secondary_priority ?? "default",
+    ...(r.objectives !== undefined
+      ? {
+          objectives: canonicalObjectives(r.objectives),
+          secondary_priority: "default",
+        }
+      : { secondary_priority: r.secondary_priority ?? "default" }),
     max_dps_loss_pct: 100,
     budget_gp: r.budget_gp,
     reserved_supply_slots: r.reserved_supply_slots,
@@ -1214,19 +1282,62 @@ export class HttpGearClient implements GearClient {
         ];
       }),
     );
+    const runId = result.live.run_id ?? result.live.result?.run_id;
+    const storedPoint = result.live.result?.objective_frontiers
+      ?.flatMap((group) => group.points)
+      .find((point) => sameValue(point.solution, solution));
+    const parsedPoint = result.solutions?.find(
+      (point) => point.live === solution || sameValue(point.live, solution),
+    );
+    const manifest =
+      result.live.objective_run ?? result.live.result?.objective_run;
+    const selectedId = sameValue(
+      result.live.result?.selected_solution,
+      solution,
+    )
+      ? manifest?.selected_solution_id
+      : undefined;
+    const configurationAlias =
+      parsedPoint?.id ??
+      (sameValue(result.unrestricted?.live, solution) ||
+      sameValue(result.live.result?.unrestricted, solution)
+        ? "unrestricted"
+        : undefined);
+    const storedId =
+      storedPoint?.solution_id ??
+      storedPoint?.id ??
+      (configurationAlias &&
+        manifest?.solution_references?.[configurationAlias]) ??
+      selectedId ??
+      parsedPoint?.id.replace(/^discipline-(melee|ranged|magic)-/, "");
+    if (
+      result.scenario.request.objectives !== undefined &&
+      (!runId ||
+        !storedId ||
+        storedId === "best-found" ||
+        storedId.startsWith("curve-") ||
+        storedId === "unrestricted")
+    )
+      throw new Error(
+        "Select an archived objective configuration before requesting its timeline.",
+      );
     const response = await this.transport(`${this.base}/potion-timelines`, {
       method: "POST",
       credentials: "same-origin",
       cache: "no-store",
       signal,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scenario: result.live.scenario,
-        selected_potion_ids: solution.potions?.selected_ids ?? [],
-        loadouts,
-        expected_catalog_version: result.catalogVersion,
-        expected_model_version: result.modelVersion,
-      }),
+      body: JSON.stringify(
+        result.scenario.request.objectives !== undefined
+          ? { run_id: runId, solution_id: storedId }
+          : {
+              scenario: result.live.scenario,
+              selected_potion_ids: solution.potions?.selected_ids ?? [],
+              loadouts,
+              expected_catalog_version: result.catalogVersion,
+              expected_model_version: result.modelVersion,
+            },
+      ),
     });
     const body = await response.json();
     if (!response.ok) {

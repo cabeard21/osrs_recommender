@@ -55,6 +55,50 @@ const timeline = {
   secondary_priority: "accuracy",
 } as unknown as PotionTimeline;
 
+it("switches independent objective decay charts without recalculating the setup", async () => {
+  const measure = (time: number, prayer: number, accuracy: number) => ({
+    ...sample(time, 5),
+    objective_values: { prayer_bonus: prayer, accuracy },
+  });
+  const data = {
+    ...timeline,
+    secondary_priority: "default",
+    objective_definitions: [
+      {
+        id: "prayer_bonus",
+        kind: "prayer_bonus",
+        label: "Prayer bonus",
+        unit: "bonus",
+      },
+      {
+        id: "accuracy",
+        kind: "accuracy",
+        label: "Accuracy",
+        unit: "probability",
+      },
+    ],
+    baseline: measure(0, 5, 0.5),
+    samples: [measure(0, 5, 0.6), measure(60, 5, 0.5)],
+  };
+  const calculate = vi.fn().mockResolvedValue(data);
+  render(
+    <PotionTimelinePanel
+      result={result}
+      solution={solution}
+      client={{ potionTimeline: calculate } as unknown as GearClient}
+    />,
+  );
+  expect(
+    await screen.findByRole("img", { name: "Prayer bonus (bonus) over time" }),
+  ).toBeVisible();
+  await userEvent.selectOptions(
+    screen.getByLabelText("Graph objective"),
+    "accuracy",
+  );
+  expect(screen.getByRole("img", { name: "Accuracy over time" })).toBeVisible();
+  expect(calculate).toHaveBeenCalledTimes(1);
+});
+
 it("labels both y-axes as relative percent gains while keeping exact point values", async () => {
   const data = {
     ...timeline,

@@ -21,6 +21,15 @@ from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
         "melee",
         "melee_magic",
         "melee_ranged",
+        "stab_magic",
+        "stab_ranged",
+        "stab_magic_ranged",
+        "slash_magic",
+        "slash_ranged",
+        "slash_magic_ranged",
+        "crush_magic",
+        "crush_ranged",
+        "crush_magic_ranged",
     ],
 )
 def test_player_roll_metrics_roundtrip_and_provenance(client, session_factory, metric):

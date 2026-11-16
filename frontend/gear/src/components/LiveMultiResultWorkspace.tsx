@@ -2,6 +2,7 @@ import { EquipmentBonuses } from "./EquipmentBonuses";
 import { BankTagExport } from "./BankTagExport";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
+import { ObjectiveFrontier } from "./ObjectiveFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { slots } from "../api/contracts";
@@ -32,7 +33,8 @@ function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
 }
 
 export function LiveMultiResultWorkspace() {
-  const { state, current, dispatch, itemById, client } = useGear();
+  const { state, current, dispatch, itemById, client, selectObjective } =
+    useGear();
   const result = current.result;
   if (!result?.live)
     return (
@@ -57,18 +59,36 @@ export function LiveMultiResultWorkspace() {
   const solution = point
     ? point.solution
     : result.solutions.find((s) => s.id === current.solutionId)?.live;
-  const selectedFrontierGroup = [
-    ...(raw.secondary_frontiers ?? []),
-    ...(raw.running_cost_frontiers ?? []),
-  ].find((g) => g.points.some((p) => p.id === current.solutionId));
+  const selectedFrontierGroup =
+    [
+      ...(raw.secondary_frontiers ?? []),
+      ...(raw.running_cost_frontiers ?? []),
+    ].find((g) => g.points.some((p) => p.id === current.solutionId)) ??
+    raw.objective_frontiers?.find(
+      (g) =>
+        g.points.some((p) => p.id === current.solutionId) ||
+        (!!(g.id ?? g.group_id) &&
+          current.solutionId.startsWith(`${g.id ?? g.group_id}-`)),
+    );
   // Both tradeoff panels describe the same action cap, even when the selected
   // solution belongs to the other frontier. Null explicitly means unrestricted.
+  const objectiveCap = current.solutionId.match(/(?:^|-)objective-(None|\d+)-/);
+  const objectiveSwapLimit =
+    current.objectiveSwapLimit !== undefined
+      ? current.objectiveSwapLimit
+      : objectiveCap
+        ? objectiveCap[1] === "None"
+          ? null
+          : Number(objectiveCap[1])
+        : undefined;
   const selectedSwapLimit =
-    current.solutionId === "unrestricted"
-      ? null
-      : selectedFrontierGroup
-        ? selectedFrontierGroup.swap_limit
-        : (point?.swap_limit ?? result.scenario.request.max_swaps);
+    objectiveSwapLimit !== undefined
+      ? objectiveSwapLimit
+      : current.solutionId === "unrestricted"
+        ? null
+        : selectedFrontierGroup
+          ? selectedFrontierGroup.swap_limit
+          : (point?.swap_limit ?? result.scenario.request.max_swaps);
   const frontierGroup = raw.secondary_frontiers?.find(
     (g) => g.swap_limit === selectedSwapLimit,
   );
@@ -343,6 +363,22 @@ export function LiveMultiResultWorkspace() {
           itemName={itemName}
           roleName={roleName}
           onSelect={(solutionId) => ui({ solutionId })}
+        />
+      )}
+      {result.scenario.request.objectives !== undefined && (
+        <ObjectiveFrontier
+          result={result}
+          swapLimit={selectedSwapLimit}
+          selectedId={current.solutionId}
+          onSelect={(id, raw) =>
+            selectObjective(
+              "multi",
+              id,
+              raw,
+              selectedSwapLimit,
+              result.fingerprint,
+            )
+          }
         />
       )}
       <SecondaryFrontier

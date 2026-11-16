@@ -155,6 +155,77 @@ cdef class StageContext:
               frontier=False, metric=False, tuple_role=None):
         return Expansion(self, kind, states, choices, slot, roles, cap, frontier, metric, tuple_role)
 
+    def begin_projection(self, *, states, choices, slot, roles):
+        if slot not in SLOT_NAMES or slot == SLOT_NAMES[10]:
+            raise ValueError("Native projection requires a partial equipment slot")
+        return Expansion(self, "loadout", states, choices, slot, roles, None, False, False, None)
+
+    cdef bint project_partial(self, Candidate* row, int* roles, int nroles, int slot, double* output) except -1:
+        """Only the Python partial beam's compatibility, eligibility and cost filters."""
+        cdef int physical[11]
+        cdef int count = 0, s, j, k, item, role, dimension
+        cdef long long cost = 0
+        cdef bint duplicate, later, supported
+        cdef double maximum[63]
+        cdef Sum totals[63]
+        cdef Sum weight = Sum(0.0, 0.0)
+        cdef double denominator
+        cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
+        if row.slots[0] and row.slots[1] and self.scoring.two_handed[row.slots[0]]:
+            return False
+        for s in range(11):
+            item = row.slots[s]
+            if not item:
+                continue
+            if not self.scoring.eligible[item]:
+                return False
+            duplicate = False
+            for j in range(count):
+                if physical[j] == item:
+                    duplicate = True
+                    break
+            if not duplicate:
+                physical[count] = item
+                count += 1
+        # Dense indices follow ascending physical IDs; aliases retain the last quote.
+        for j in range(1, count):
+            item = physical[j]
+            k = j
+            while k > 0 and physical[k - 1] > item:
+                physical[k] = physical[k - 1]
+                k -= 1
+            physical[k] = item
+        for j in range(count):
+            item = physical[j]
+            if not self.markets[item]:
+                continue
+            later = False
+            for k in range(j + 1, count):
+                if self.markets[physical[k]] == self.markets[item]:
+                    later = True
+                    break
+            if not later:
+                cost += self.costs[item]
+        if cost > self.budget:
+            return False
+        memset(totals, 0, sizeof(totals))
+        for j in range(nroles):
+            role = roles[j]
+            if not self.scored[role]:
+                continue
+            memset(maximum, 0, sizeof(maximum))
+            supported = self.scoring.project_slots(row.slots, role, row.order, maximum)
+            if not supported and slot > 1:
+                return False
+            add(&weight, self.weights[role])
+            if supported:
+                for dimension in range(dimensions):
+                    add(&totals[dimension], maximum[dimension] * self.weights[role])
+        denominator = value(&weight) or 1.0
+        for dimension in range(dimensions):
+            output[dimension] = value(&totals[dimension]) / denominator
+        return True
+
     cdef void identity(self, Candidate* row) except *:
         cdef int r, s, order, j, n = 0
         cdef bint first_role = True
@@ -516,6 +587,59 @@ cdef class Expansion:
         self.consumed += consumed
         self.candidate_count = self.candidates.size()
         return consumed
+
+    def advance_projection(self, max_attempts=1024):
+        """Stream an attempt-ordered chunk of accepted partial equipment envelopes."""
+        cdef long long end, combination, consumed = 0
+        cdef Candidate row
+        cdef int assigned, s, dimension
+        cdef double projection[63]
+        if self.kind != 0 or self.slot < 0 or self.slot >= 10:
+            raise ValueError("Native projection requires a partial loadout stage")
+        if type(max_attempts) is not int or not 1 <= max_attempts <= 1024:
+            raise ValueError("Native chunks require 1 through 1024 attempts")
+        if self.finished:
+            raise ValueError("Native stage already finalized")
+        end = min(self.total, self.cursor + max_attempts)
+        result = []
+        while self.cursor < end:
+            row = self.states[self.cursor // self.combinations]
+            combination = self.cursor % self.combinations
+            assigned = self.choices[0][combination]
+            if assigned:
+                if not row.slots[self.slot]:
+                    row.order[row.order_count[0]] = self.slot
+                    row.order_count[0] += 1
+                row.slots[self.slot] = assigned
+            self.cursor += 1
+            consumed += 1
+            if self.context.project_partial(&row, self.roles, self.nroles, self.slot, projection):
+                result.append((
+                    {SLOT_NAMES[row.order[s]]: self.context.scoring.dense_ids[row.slots[row.order[s]]]
+                     for s in range(row.order_count[0])},
+                    tuple(projection[dimension] for dimension in range(self.context.scoring.objective_kinds.shape[0] + 1)),
+                ))
+        self.consumed += consumed
+        self.candidate_count += len(result)
+        return result
+
+    def complete_candidates(self):
+        """Stream expanded mappings before retention; caller decides stage completeness."""
+        cdef size_t index
+        cdef int r, s
+        cdef Candidate row
+        if self.finished:
+            raise ValueError("Native stage already finalized")
+        for index in range(self.candidates.size()):
+            row = self.candidates[index]
+            if self.kind == 0:
+                yield {SLOT_NAMES[row.order[s]]: self.context.scoring.dense_ids[row.slots[row.order[s]]]
+                       for s in range(row.order_count[0])}
+            else:
+                yield {self.context.data.role_names[r]: {
+                    SLOT_NAMES[row.order[r * 11 + s]]: self.context.scoring.dense_ids[row.slots[r * 11 + row.order[r * 11 + s]]]
+                    for s in range(row.order_count[r])
+                } for r in range(self.context.scoring.role_count) if row.present & (1 << r)}
 
     def finish(self, limit):
         cdef vector[Candidate] selected

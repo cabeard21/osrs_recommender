@@ -8,6 +8,15 @@ export const secondaryPriorities = [
   ["melee_magic_defence_roll", "Melee & magic defence roll"],
   ["melee_ranged_defence_roll", "Melee & ranged defence roll"],
   ["magic_ranged_defence_roll", "Magic & ranged defence roll"],
+  ["stab_magic_defence_roll", "Stab & magic defence roll"],
+  ["stab_ranged_defence_roll", "Stab & ranged defence roll"],
+  ["stab_magic_ranged_defence_roll", "Stab & magic & ranged defence roll"],
+  ["slash_magic_defence_roll", "Slash & magic defence roll"],
+  ["slash_ranged_defence_roll", "Slash & ranged defence roll"],
+  ["slash_magic_ranged_defence_roll", "Slash & magic & ranged defence roll"],
+  ["crush_magic_defence_roll", "Crush & magic defence roll"],
+  ["crush_ranged_defence_roll", "Crush & ranged defence roll"],
+  ["crush_magic_ranged_defence_roll", "Crush & magic & ranged defence roll"],
   ["stab_defence_roll", "Stab defence roll"],
   ["slash_defence_roll", "Slash defence roll"],
   ["crush_defence_roll", "Crush defence roll"],
@@ -49,7 +58,7 @@ export function defenceRollExplanation(priority: SecondaryPriority): string {
     return "Balanced defence roll is the mean of all five player defence rolls. ";
   if (priority === "magic_ranged_defence_roll")
     return "Magic & ranged defence roll is the lower of those two player defence rolls. ";
-  if (priority.startsWith("melee_") && priority.endsWith("_defence_roll"))
+  if (defenceRollStyles(priority).length > 1)
     return `${secondaryPriorityLabel(priority)} is the lowest of the ${defenceRollStyles(priority).join(", ")} player defence rolls. `;
   return "";
 }
@@ -66,10 +75,9 @@ export function defenceRollStyles(
     return ["stab", "slash", "crush", "magic"];
   if (priority === "melee_ranged_defence_roll")
     return ["stab", "slash", "crush", "ranged"];
-  return [
-    priority.replace("_defence_roll", "") as
-      "stab" | "slash" | "crush" | "ranged" | "magic",
-  ];
+  return priority.replace("_defence_roll", "").split("_") as (
+    "stab" | "slash" | "crush" | "ranged" | "magic"
+  )[];
 }
 
 export function validateSecondaryPriority(
@@ -121,6 +129,10 @@ export function matchesSecondaryPriority(
   b: OptimizationReply,
 ) {
   return (
+    sameValue(
+      a.scenario.request.objectives ?? null,
+      b.scenario.request.objectives ?? null,
+    ) &&
     (a.scenario.request.secondary_priority ?? "default") ===
       (b.scenario.request.secondary_priority ?? "default") &&
     (a.scenario.request.max_dps_loss_pct ?? 10) ===

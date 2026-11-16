@@ -1,3 +1,4 @@
+import { legacyObjectives } from "../api/objectives";
 import { readSavedSetups } from "../state/savedSetups";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -140,18 +141,14 @@ it("switches priorities while keeping accepted results outdated", async () => {
     </GearProvider>,
   );
   await screen.findByText("Demo adventurer", { exact: true });
-  expect(screen.getByLabelText("Tradeoff metric")).toHaveValue("default");
   expect(
-    screen.getByLabelText("Tradeoff metric").querySelectorAll("option"),
-  ).toHaveLength(16);
+    screen.getByRole("region", { name: "Tradeoff objectives" }),
+  ).toBeInTheDocument();
   await user.click(
     screen.getByRole("button", { name: "Run fixture optimization" }),
   );
   await screen.findByText("Fixture result", { exact: true });
-  await user.selectOptions(
-    screen.getByLabelText("Tradeoff metric"),
-    "prayer_bonus",
-  );
+  await user.click(screen.getByRole("checkbox", { name: "Prayer bonus" }));
   expect(screen.getByText(/Result outdated/)).toBeVisible();
 });
 
@@ -167,9 +164,8 @@ it("retains the combined defence priority through saved drafts and requests", ()
   const restored = readDrafts("combined-defence", sessionStorage)!;
   expect(restored.single.secondaryPriority).toBe("magic_ranged_defence_roll");
   expect(
-    optimizationRequest(normalize(restored.single, "snapshot"))
-      .secondary_priority,
-  ).toBe("magic_ranged_defence_roll");
+    optimizationRequest(normalize(restored.single, "snapshot")),
+  ).toHaveProperty("objectives", legacyObjectives("magic_ranged_defence_roll"));
 });
 
 it("explains the combined score and selected bonuses in the result summary", async () => {
@@ -240,9 +236,10 @@ it.each([
     for (const draft of [loaded.single, loaded.multi]) {
       expect(draft.secondaryPriority).toBe(`${priority}_roll`);
       expect(draft.budget).toBe("12345");
-      expect(
-        optimizationRequest(normalize(draft, "snapshot")).secondary_priority,
-      ).toBe(`${priority}_roll`);
+      expect(optimizationRequest(normalize(draft, "snapshot"))).toHaveProperty(
+        "objectives",
+        legacyObjectives(priority),
+      );
     }
     sessionStorage.setItem(
       "gear.savedSetups.v1",

@@ -74,7 +74,13 @@ def validate_request_context(
     """Validate catalog-bound request facts for every transport, before any search."""
     from tracker.gear.defensive_rolls import required_defensive_skills
 
-    required = required_defensive_skills(request.secondary_priority)
+    objectives = getattr(request, "objectives", None)
+    if objectives is None:
+        required = required_defensive_skills(request.secondary_priority)
+    else:
+        from tracker.gear.objectives import required_objective_skills
+
+        required = required_objective_skills(objectives)
     levels = {
         **{key: value.level for key, value in snapshot.skills.items()},
         **request.skill_overrides,

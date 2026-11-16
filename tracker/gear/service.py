@@ -29,6 +29,7 @@ from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
+    from tracker.gear.objective_store import ObjectiveRunStore
     from tracker.gear.parallel import AutoProcessPool
 
 _STYLES = frozenset({"melee", "ranged", "magic"})
@@ -45,7 +46,11 @@ _LIMITATIONS = (
 
 def _has_frontiers(request: OptimizationRequest, catalog: Any = None) -> bool:
     """Whether any lane runs the secondary or running-cost frontier stage."""
-    return request.secondary_priority != "default" or needs_running_cost_frontier(request, catalog)
+    return (
+        bool(getattr(request, "objectives", None))
+        or request.secondary_priority != "default"
+        or needs_running_cost_frontier(request, catalog)
+    )
 
 
 def _timing_key(
@@ -59,7 +64,7 @@ def _timing_key(
     native_search: bool = False,
 ) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
-    return (
+    key = (
         profile,
         fixed_reporting,
         factored_evaluation,
@@ -75,6 +80,8 @@ def _timing_key(
         request.max_swaps,
         request.budget_gp > 0,
     )
+    objectives = getattr(request, "objectives", None)
+    return key if objectives is None else (*key, tuple(objective.id for objective in objectives))
 
 
 class GearService:
@@ -119,6 +126,22 @@ class GearService:
         self.auto_pool = auto_pool
         self._progress_record: tuple[str, RunProgress] | None = None
         self._timings = TimingModel()
+        self._objective_store: ObjectiveRunStore | None = None
+        self._objective_store_lock = Lock()
+
+    @property
+    def objective_store(self) -> ObjectiveRunStore:
+        """Allocate temporary result storage only when a vector run needs it."""
+        from tracker.gear.objective_store import ObjectiveRunStore
+
+        with self._objective_store_lock:
+            if self._objective_store is None:
+                self._objective_store = ObjectiveRunStore()
+            return self._objective_store
+
+    def close_objective_store(self) -> None:
+        if self._objective_store is not None:
+            self._objective_store.close()
 
     def optimization_progress(self, identity: str) -> dict[str, Any] | None:
         """Read the latest request-local progress without exposing another request."""
