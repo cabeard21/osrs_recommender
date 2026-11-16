@@ -38,6 +38,15 @@ def test_multi_defensive_rolls_take_each_roles_minimum_before_weighting():
         ("melee_defence_roll", "super_defence", 85),
         ("melee_ranged_defence_roll", "super_defence", 85),
         ("melee_magic_defence_roll", "super_defence", 85),
+        ("stab_magic_defence_roll", "super_defence", 85),
+        ("stab_ranged_defence_roll", "super_defence", 85),
+        ("stab_magic_ranged_defence_roll", "super_defence", 85),
+        ("slash_magic_defence_roll", "super_defence", 85),
+        ("slash_ranged_defence_roll", "super_defence", 85),
+        ("slash_magic_ranged_defence_roll", "super_defence", 85),
+        ("crush_magic_defence_roll", "super_defence", 85),
+        ("crush_ranged_defence_roll", "super_defence", 85),
+        ("crush_magic_ranged_defence_roll", "super_defence", 85),
     ],
 )
 def test_defensive_potion_search_matches_fixed_setup_and_manual_evaluator(
@@ -76,6 +85,15 @@ def test_defensive_potion_search_matches_fixed_setup_and_manual_evaluator(
         ("melee_defence_roll", "slash"),
         ("melee_magic_defence_roll", "magic"),
         ("melee_ranged_defence_roll", "ranged"),
+        ("stab_magic_defence_roll", "magic"),
+        ("stab_ranged_defence_roll", "ranged"),
+        ("stab_magic_ranged_defence_roll", "ranged"),
+        ("slash_magic_defence_roll", "magic"),
+        ("slash_ranged_defence_roll", "ranged"),
+        ("slash_magic_ranged_defence_roll", "ranged"),
+        ("crush_magic_defence_roll", "magic"),
+        ("crush_ranged_defence_roll", "ranged"),
+        ("crush_magic_ranged_defence_roll", "ranged"),
     ],
 )
 def test_melee_multi_minimum_precedes_active_time_weighting(priority, other):
@@ -88,11 +106,12 @@ def test_melee_multi_minimum_precedes_active_time_weighting(priority, other):
         "defence_" + other: 10,
     }
     second = {
-        "defence_stab": 20,
+        "defence_stab": 100,
         "defence_slash": 100,
         "defence_crush": 100,
         "defence_magic": 100,
         "defence_ranged": 100,
+        "defence_" + ("stab" if priority.startswith("melee_") else priority.split("_")[0]): 20,
     }
     result = run(
         [weapon(1, "slash"), armour(20, **first), armour(30, **second)],

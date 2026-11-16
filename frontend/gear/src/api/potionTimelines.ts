@@ -1,3 +1,4 @@
+import { canonicalObjectives, objectiveValues } from "./objectives";
 import type {
   JointSolutionDTO,
   OptimizationReply,
@@ -35,6 +36,11 @@ export function parsePotionTimeline(
     (typeof v === "number" && Number.isFinite(v) && (!nonnegative || v >= 0));
   const measurement = (value: unknown): PotionTimelineMeasurement => {
     const point = object(value);
+    if (result.scenario.request.objectives !== undefined)
+      objectiveValues(
+        point.objective_values,
+        canonicalObjectives(result.scenario.request.objectives),
+      );
     const levels = object(point.levels),
       roles = object(point.roles);
     if (
@@ -89,5 +95,16 @@ export function parsePotionTimeline(
     throw new Error(
       "Fresh potion timeline measurements do not match the selected result",
     );
+  if (result.scenario.request.objectives !== undefined) {
+    const expected = objectiveValues(
+      solution.objective_values,
+      canonicalObjectives(result.scenario.request.objectives),
+    );
+    for (const [id, value] of Object.entries(expected))
+      if (!close(samples[0].objective_values?.[id] ?? null, value))
+        throw new Error(
+          "Fresh objective timeline does not match the selected result",
+        );
+  }
   return { ...row, baseline, samples } as unknown as PotionTimeline;
 }

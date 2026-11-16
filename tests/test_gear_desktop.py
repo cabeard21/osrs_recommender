@@ -22,6 +22,42 @@ def test_desktop_has_no_database_or_write_routes():
     assert not hasattr(app.state, "scheduler")
 
 
+def test_desktop_objective_run_routes_and_session_cleanup_use_injected_facts():
+    from types import SimpleNamespace
+
+    from tests.gear.test_objective_store import result
+    from tracker.gear.objective_store import RunUnavailable
+
+    class LocalFacts:
+        def load(self):
+            return SimpleNamespace(player_id=1), {}
+
+    app = create_app(settings(optimization_workers=1))
+    app.state.gear_data_source = LocalFacts()
+    store = app.state.gear_service.objective_store
+    with TestClient(app) as client:
+        published = store.publish_result(
+            result(140), metadata={"response": {"snapshot_id": "frozen"}}, player_id=1
+        )
+        run_id = published["run_id"]
+        group = published["objective_frontiers"][0]
+        base = f"/ui-api/gear/optimization-runs/{run_id}"
+        restored = client.get(base)
+        assert restored.status_code == 200, restored.text
+        assert restored.json()["response"]["snapshot_id"] == "frozen"
+        page = client.get(f"{base}/frontiers/{group['id']}/points")
+        assert page.status_code == 200, page.text
+        assert page.json()["total"] == 140
+        point = page.json()["points"][0]
+        detail = client.get(f"{base}/solutions/{point['id']}")
+        assert detail.status_code == 200, detail.text
+        assert detail.json()["solution"]["score"] == point["score"]
+        assert restored.headers["cache-control"] == "no-store"
+    assert not store.directory.exists()
+    with pytest.raises(RunUnavailable):
+        store.metadata(run_id, player_id=1)
+
+
 def test_desktop_rejects_exposure_and_placeholder():
     with pytest.raises(ValidationError):
         settings(bind_address="0.0.0.0")
@@ -201,9 +237,11 @@ def test_desktop_detaches_pool_if_shutdown_fails(monkeypatch):
     pool = FailedClosePool(3)
     monkeypatch.setattr(desktop, "_process_pool", lambda workers: pool)
     app = create_app(settings())
+    store = app.state.gear_service.objective_store
     with pytest.raises(RuntimeError, match="close failed"), TestClient(app):
         assert app.state.gear_service.auto_pool is pool
     assert app.state.gear_service.auto_pool is None
+    assert not store.directory.exists()
 
 
 def test_native_service_configuration_and_startup(monkeypatch, caplog):

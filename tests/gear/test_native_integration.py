@@ -26,7 +26,21 @@ FLAGS = {
 
 @pytest.mark.parametrize("mode", ["single", "multi", "auto"])
 @pytest.mark.parametrize(
-    "priority", ["melee_defence_roll", "melee_magic_defence_roll", "melee_ranged_defence_roll"]
+    "priority",
+    [
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
+        "stab_magic_defence_roll",
+        "stab_ranged_defence_roll",
+        "stab_magic_ranged_defence_roll",
+        "slash_magic_defence_roll",
+        "slash_ranged_defence_roll",
+        "slash_magic_ranged_defence_roll",
+        "crush_magic_defence_roll",
+        "crush_ranged_defence_roll",
+        "crush_magic_ranged_defence_roll",
+    ],
 )
 def test_melee_roll_complete_frontiers_match_python_without_fallback(mode, priority):
     pytest.importorskip("tracker.gear.native._stages")

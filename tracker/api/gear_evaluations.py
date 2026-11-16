@@ -14,6 +14,7 @@ from pydantic import Field, model_validator
 
 from tracker.api.gear_optimizations import (
     BrowserOptimizationRequest,
+    ObjectiveProjection,
     Purchase,
     RunningCost,
     consume,
@@ -121,7 +122,8 @@ class EvaluationReason(DTO):
     message: str
 
 
-class FixedEvaluation(DTO):
+class FixedEvaluation(ObjectiveProjection):
+    objective_values: dict[str, float] = Field(default_factory=dict)
     preparations: list[Preparation] = Field(default_factory=list)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     selected_prayer_ids: list[str] = Field(default_factory=list)
@@ -144,7 +146,8 @@ class EquipmentChange(DTO):
     proposed_item_id: int | None
 
 
-class EvaluationDeltas(DTO):
+class EvaluationDeltas(ObjectiveProjection):
+    objective_values: dict[str, float] = Field(default_factory=dict)
     dps: float
     max_hit: int
     accuracy: float
@@ -155,7 +158,8 @@ class EvaluationDeltas(DTO):
     removed_purchase_ids: list[int]
 
 
-class EquipmentEvaluationResponse(DTO):
+class EquipmentEvaluationResponse(ObjectiveProjection):
+    objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
     support_policy: SupportPolicy = "verified_only"
     support_provenance: str = ""
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
@@ -297,7 +301,39 @@ def calculate_evaluation(
         "assumed_item_ids": scenario.assumed_item_ids,
         **running_cost_assumptions(scenario, prices, scenario.optimization_mode == "thorough"),
     }
+    if scenario.objectives is not None:
+        from tracker.gear.objectives import objective_definitions, objective_values
+
+        result = {
+            **result,
+            **{
+                side: {
+                    **result[side],
+                    "objective_values": objective_values(
+                        scenario.objectives, result[side]["performance"]
+                    )
+                    if result[side]["status"] == "valid"
+                    else {},
+                }
+                for side in ("baseline", "proposed")
+            },
+        }
+        definitions = objective_definitions(scenario.objectives)
+        if result["deltas"] is not None:
+            result = {
+                **result,
+                "deltas": {
+                    **result["deltas"],
+                    "objective_values": {
+                        key: result["proposed"]["objective_values"][key] - value
+                        for key, value in result["baseline"]["objective_values"].items()
+                    },
+                },
+            }
+    else:
+        definitions = []
     return EquipmentEvaluationResponse(
+        objective_definitions=definitions,
         **support_context(catalog, scenario.support_policy),
         evaluated_at=now,
         scenario=body.scenario,

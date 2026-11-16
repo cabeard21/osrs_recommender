@@ -289,6 +289,15 @@ def test_complementary_defence_frontier_matches_tiny_exhaustive_oracle():
         ("melee_defence_roll", ("stab", "slash", "crush")),
         ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
         ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+        ("stab_magic_defence_roll", ("stab", "magic")),
+        ("stab_ranged_defence_roll", ("stab", "ranged")),
+        ("stab_magic_ranged_defence_roll", ("stab", "magic", "ranged")),
+        ("slash_magic_defence_roll", ("slash", "magic")),
+        ("slash_ranged_defence_roll", ("slash", "ranged")),
+        ("slash_magic_ranged_defence_roll", ("slash", "magic", "ranged")),
+        ("crush_magic_defence_roll", ("crush", "magic")),
+        ("crush_ranged_defence_roll", ("crush", "ranged")),
+        ("crush_magic_ranged_defence_roll", ("crush", "magic", "ranged")),
     ],
 )
 def test_melee_complementary_frontier_matches_exhaustive_oracle(priority, styles):
@@ -328,6 +337,15 @@ def test_melee_complementary_frontier_matches_exhaustive_oracle(priority, styles
         ("melee_defence_roll", ("stab", "slash", "crush")),
         ("melee_magic_defence_roll", ("stab", "slash", "crush", "magic")),
         ("melee_ranged_defence_roll", ("stab", "slash", "crush", "ranged")),
+        ("stab_magic_defence_roll", ("stab", "magic")),
+        ("stab_ranged_defence_roll", ("stab", "ranged")),
+        ("stab_magic_ranged_defence_roll", ("stab", "magic", "ranged")),
+        ("slash_magic_defence_roll", ("slash", "magic")),
+        ("slash_ranged_defence_roll", ("slash", "ranged")),
+        ("slash_magic_ranged_defence_roll", ("slash", "magic", "ranged")),
+        ("crush_magic_defence_roll", ("crush", "magic")),
+        ("crush_ranged_defence_roll", ("crush", "ranged")),
+        ("crush_magic_ranged_defence_roll", ("crush", "magic", "ranged")),
     ],
 )
 def test_truncated_metric_pools_retain_each_melee_component_leader(priority, styles):

@@ -7,6 +7,15 @@ from types import MappingProxyType
 from typing import Any, Literal, NamedTuple
 
 SecondaryPriority = Literal[
+    "stab_magic_defence_roll",
+    "stab_ranged_defence_roll",
+    "stab_magic_ranged_defence_roll",
+    "slash_magic_defence_roll",
+    "slash_ranged_defence_roll",
+    "slash_magic_ranged_defence_roll",
+    "crush_magic_defence_roll",
+    "crush_ranged_defence_roll",
+    "crush_magic_ranged_defence_roll",
     "melee_defence_roll",
     "melee_magic_defence_roll",
     "melee_ranged_defence_roll",
@@ -45,6 +54,13 @@ ROLL_METRICS: Mapping[str, RollMetric] = MappingProxyType(
         "melee_defence_roll": RollMetric(("stab", "slash", "crush"), "minimum"),
         "melee_magic_defence_roll": RollMetric(("stab", "slash", "crush", "magic"), "minimum"),
         "melee_ranged_defence_roll": RollMetric(("stab", "slash", "crush", "ranged"), "minimum"),
+        **{
+            melee + "_" + "_".join(others) + "_defence_roll": RollMetric(
+                (melee, *others), "minimum"
+            )
+            for melee in ("stab", "slash", "crush")
+            for others in (("magic",), ("ranged",), ("magic", "ranged"))
+        },
         **{
             style + "_defence_roll": RollMetric((style,), "mean")
             for style in ("stab", "slash", "crush", "ranged", "magic")

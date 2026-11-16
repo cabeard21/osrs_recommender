@@ -26,6 +26,7 @@ from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
 from tracker.gear.running_frontier import needs_running_cost_frontier
+from tracker.gear.vector_archive import adopt_vector_archives, own_vector_archives
 
 logger = logging.getLogger(__name__)
 _CONTEXT: tuple[Content, EquipmentCatalog, str, Any] | None = None
@@ -306,6 +307,7 @@ class AutoProcessPool:
                 continue
         return broken
 
+    @own_vector_archives
     def _dispatch(
         self,
         jobs: list[dict[str, Any]],
@@ -335,7 +337,7 @@ class AutoProcessPool:
                     raise ValueError("optimization_cancelled")
                 completed, pending = wait(pending, timeout=0.025, return_when=FIRST_COMPLETED)
                 for future in completed:
-                    future.result()
+                    adopt_vector_archives(future.result())
                 if reader is not None:
                     reader.poll()
                 if progress is None:
@@ -363,6 +365,9 @@ class AutoProcessPool:
             return results
         except BaseException as error:
             broken = self._abort(futures) or isinstance(error, BrokenProcessPool)
+            for future in futures:
+                if future.done() and not future.cancelled() and future.exception() is None:
+                    adopt_vector_archives(future.result())
             if broken:
                 self._dispose()
             if isinstance(error, (KeyboardInterrupt, SystemExit)):

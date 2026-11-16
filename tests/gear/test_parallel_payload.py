@@ -24,6 +24,25 @@ def inputs():
     return snapshot, request, catalog, content, prices, now
 
 
+def test_typed_shared_objectives_round_trip_worker_payload_without_closures():
+    from tracker.gear.optimizer import OptimizationRequest
+
+    snapshot, request, _, _, prices, now = inputs()
+    configured = OptimizationRequest.model_validate(
+        {
+            **request.model_dump(mode="json"),
+            "objectives": [
+                {"kind": "defence_roll", "styles": ["magic", "stab"], "aggregation": "mean"},
+                {"kind": "prayer_bonus"},
+            ],
+        }
+    )
+    payload = pickle.loads(pickle.dumps(job_payload(snapshot, configured, prices, now, "context")))
+    _, restored, _, _ = decode_job(payload, "context")
+    assert restored.objectives == configured.objectives
+    assert all(not callable(value) for value in payload["request"].values())
+
+
 def test_context_and_job_round_trip_pickle_preserves_all_revisions():
     snapshot, request, catalog, content, prices, now = inputs()
     packed, identity = context_payload(content, catalog)

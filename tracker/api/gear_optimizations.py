@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import Field, model_validator
+from pydantic import Field, TypeAdapter, model_serializer, model_validator
 
 from tracker.api.gear_scenario_validation import validate_browser_scenario
 from tracker.api.gear_ui import (
@@ -106,6 +106,10 @@ def work_budget_policy(
 def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
     from tracker.gear.finalist_refinement import ASSIGNMENT_LIMIT
 
+    if body.objectives is not None:
+        from tracker.gear.objectives import objective_policy
+
+        return objective_policy(body.objectives, thorough=body.optimization_mode == "thorough")
     if body.secondary_priority == "default":
         return None
     thorough = body.optimization_mode == "thorough"
@@ -216,7 +220,30 @@ class EquipmentTransition(DTO):
     max_gear_inventory_slots: int
 
 
-class Solution(DTO):
+class ObjectiveProjection(DTO):
+    """Add vector fields without changing historical scalar payloads."""
+
+    @model_serializer(mode="wrap")
+    def serialize_objectives(self, handler):
+        result = handler(self)
+        return {
+            key: value
+            for key, value in result.items()
+            if key
+            not in {
+                "objective_values",
+                "objective_definitions",
+                "objective_frontiers",
+                "objective_run",
+                "run_id",
+            }
+            or value
+        }
+
+
+class Solution(ObjectiveProjection):
+    objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
+    objective_values: dict[str, float] = Field(default_factory=dict)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
     score: float
@@ -259,6 +286,25 @@ class SecondaryFrontier(DTO):
     sampled: bool = False
 
 
+class ObjectiveFrontierPoint(DTO):
+    solution_id: str | None = None
+    id: str
+    solution: Solution
+    dps_loss: float = 0
+    dps_loss_pct: float | None = None
+
+
+class ObjectiveFrontier(DTO):
+    view: str | None = None
+    id: str | None = None
+    group_id: str | None = None
+    total_count: int | None = None
+    swap_limit: int | None
+    baseline_dps: float | None
+    points: list[ObjectiveFrontierPoint]
+    sampled: bool = False
+
+
 class RunningCostPoint(DTO):
     id: str
     solution: Solution
@@ -274,7 +320,9 @@ class RunningCostFrontier(DTO):
     sampled: bool = False
 
 
-class DisciplineResult(DisciplineComparison):
+class DisciplineResult(DisciplineComparison, ObjectiveProjection):
+    objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
+    objective_frontiers: list[ObjectiveFrontier] = Field(default_factory=list)
     selected_solution: Solution | None
     secondary_frontiers: list[SecondaryFrontier]
     search: dict[str, Any]
@@ -284,7 +332,11 @@ class DisciplineResult(DisciplineComparison):
     running_cost_policy: dict[str, Any] | None = None
 
 
-class OptimizationResult(DTO):
+class OptimizationResult(ObjectiveProjection):
+    run_id: str | None = None
+    objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
+    objective_frontiers: list[ObjectiveFrontier] = Field(default_factory=list)
+    objective_run: dict[str, Any] | None = None
     support_policy: SupportPolicy = "verified_only"
     support_provenance: str = ""
     optimization_mode: Literal["fast", "thorough"]
@@ -314,7 +366,9 @@ class OptimizationResult(DTO):
     running_cost_policy: dict[str, Any] | None = None
 
 
-class OptimizationResponse(DTO):
+class OptimizationResponse(ObjectiveProjection):
+    run_id: str | None = None
+    objective_run: dict[str, Any] | None = None
     api_version: Literal["gear-ui-v1"] = "gear-ui-v1"
     evaluated_at: datetime
     optimization_mode: Literal["fast", "thorough"]
@@ -345,6 +399,25 @@ def same_origin(request: Request) -> None:
 def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any) -> None:
     from tracker.gear.npcs import resolve_target
 
+    if body.objectives is not None:
+        from tracker.gear.objectives import required_objective_skills
+
+        levels = {
+            **{key: value.level for key, value in snapshot.skills.items()},
+            **body.skill_overrides,
+        }
+        for index, objective in enumerate(body.objectives):
+            missing = sorted(
+                skill
+                for skill in required_objective_skills((objective,))
+                if levels.get(skill, 0) < 1
+            )
+            if missing:
+                raise error(
+                    "invalid_request",
+                    "Unknown required level: " + ", ".join(missing),
+                    field=f"objectives.{index}",
+                )
     for index, role in enumerate(body.roles):
         try:
             resolve_target(role)
@@ -422,7 +495,7 @@ def calculate(
     stopped: Event,
     *,
     progress_identity: str | None = None,
-) -> OptimizationResponse:
+) -> OptimizationResponse | dict[str, Any]:
     now = datetime.now(UTC)
     if stopped.is_set():
         raise ValueError("optimization_cancelled")
@@ -537,6 +610,19 @@ def calculate(
             reasons.extend(calculated.limitations)
     referenced = {r["item_id"] for r in result["items"]} | set(projection.equipment.values())
     for branch in [result, *result.get("discipline_results", [])]:
+        for group in branch.get("objective_frontiers", []):
+            for point in group["points"]:
+                solution = point["solution"]
+                referenced.update(solution["carried_item_ids"])
+                referenced.update(p["item_id"] for p in solution["purchases"])
+                for loadout in solution["loadouts"].values():
+                    referenced.update(loadout["equipment"].values())
+                    referenced.update(
+                        preparation[key]
+                        for preparation in loadout.get("preparations", [])
+                        for key in ("source_item_id", "usable_item_id", "market_item_id")
+                        if preparation.get(key) in gear.equipment_catalog().items
+                    )
         for group in branch.get("running_cost_frontiers", []):
             solutions = [p["solution"] for p in group["points"]]
             if group.get("baseline_solution") is not None:
@@ -558,37 +644,57 @@ def calculate(
         if (tome := tome_review(i)) is not None
         and tome.uncharged_id in gear.equipment_catalog().items
     )
-    return OptimizationResponse(
-        evaluated_at=now,
-        optimization_mode=body.optimization_mode,
-        secondary_priority=body.secondary_priority,
-        work_budget_policy=policy,
-        frontier_policy=frontier_policy(body),
-        running_cost_policy=result.get("running_cost_policy"),
-        scenario=body,
-        scenario_fingerprint=scenario_fingerprint(body),
-        price_revision=hashlib.sha256(
+    response = {
+        "objective_run": result.get("objective_run"),
+        "evaluated_at": now,
+        "optimization_mode": body.optimization_mode,
+        "secondary_priority": body.secondary_priority,
+        "work_budget_policy": policy,
+        "frontier_policy": frontier_policy(body),
+        "running_cost_policy": result.get("running_cost_policy"),
+        "scenario": body,
+        "scenario_fingerprint": scenario_fingerprint(body),
+        "price_revision": hashlib.sha256(
             json.dumps({k: str(v) for k, v in sorted(prices.items())}, sort_keys=True).encode()
         ).hexdigest(),
-        result=result,
-        baseline=Baseline(
+        "result": result,
+        "baseline": Baseline(
             status="available" if performance else "unavailable",
             equipment=projection.equipment,
             performance=performance,
             reasons=list(dict.fromkeys(reasons)),
         ),
-        items=[
+        "items": [
             gear.physical_item(
                 projected, i, price_records=prices, now=now, support_policy=body.support_policy
             )
             for i in sorted(referenced)
         ],
-    )
+    }
+    # Vector archives may be disk-backed sequences. Publish them before DTO list
+    # validation or JSON conversion so only the chart sample enters the response.
+    return response if body.objectives is not None else OptimizationResponse(**response)
 
 
 def consume(task: asyncio.Task) -> None:
-    if not task.cancelled():
-        task.exception()
+    if not task.cancelled() and task.exception() is None:
+        from tracker.gear.objective_store import close_result_archives
+
+        close_result_archives(task.result())
+
+
+async def _await_publication(request: Request, stopped: Event, task: asyncio.Task) -> Any:
+    """Continue watching disconnects while complete archives are admitted to disk."""
+    try:
+        while not task.done():
+            await asyncio.wait({task}, timeout=0.05)
+            if await request.is_disconnected():
+                raise error("optimization_cancelled", "Optimization cancelled", 499)
+        return task.result()
+    except BaseException:
+        stopped.set()
+        task.add_done_callback(consume)
+        raise
 
 
 class OptimizationProgressResponse(DTO):
@@ -633,6 +739,8 @@ async def optimizations(
             **({"progress_identity": str(progress_id)} if progress_id is not None else {}),
         )
     )
+    archive_result = None
+    publisher: asyncio.Task | None = None
     try:
         while not worker.done():
             await asyncio.wait({worker}, timeout=0.05)
@@ -641,6 +749,8 @@ async def optimizations(
                 worker.add_done_callback(consume)
                 raise error("optimization_cancelled", "Optimization cancelled", 499)
         result = worker.result()
+        if isinstance(result, dict):
+            archive_result = result["result"]
         fresh, _, _ = await asyncio.to_thread(resources, request)
         if fresh is None or fresh.fingerprint != snapshot.fingerprint:
             raise error(
@@ -648,6 +758,46 @@ async def optimizations(
                 "Account observations changed during optimization; refresh and rerun",
                 409,
                 "expected_snapshot_id",
+            )
+        if isinstance(result, dict):
+            raw_result = result["result"]
+            metadata = TypeAdapter(dict[str, Any]).dump_python(
+                {key: value for key, value in result.items() if key != "result"}, mode="json"
+            )
+            publisher = asyncio.create_task(
+                asyncio.to_thread(
+                    gear.objective_store.publish_result,
+                    raw_result,
+                    metadata={
+                        **metadata,
+                        "model_version": raw_result["model_version"],
+                        "catalog_version": raw_result["catalog_version"],
+                    },
+                    player_id=str(snapshot.player_id),
+                    cancelled=stopped.is_set,
+                    context={
+                        "snapshot": snapshot,
+                        "catalog": gear.equipment_catalog(),
+                        "prices": dict(prices),
+                        "content": gear.content,
+                        "evaluated_at": result["evaluated_at"],
+                    },
+                )
+            )
+            stored = await _await_publication(request, stopped, publisher)
+            result = OptimizationResponse(
+                **{
+                    **result,
+                    "result": stored,
+                    "objective_run": stored["objective_run"],
+                    "run_id": stored["run_id"],
+                }
+            )
+            await asyncio.to_thread(
+                gear.objective_store.update_metadata,
+                stored["run_id"],
+                player_id=str(snapshot.player_id),
+                metadata={"response": result.model_dump(mode="json")},
             )
         return result
     except asyncio.CancelledError:
@@ -669,3 +819,11 @@ async def optimizations(
                 503,
             ) from exc
         raise error("invalid_request", message) from exc
+    finally:
+        if archive_result is not None:
+            from tracker.gear.objective_store import close_result_archives
+
+            if publisher is not None and not publisher.done():
+                publisher.add_done_callback(lambda _: close_result_archives(archive_result))
+            else:
+                close_result_archives(archive_result)

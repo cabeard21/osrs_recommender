@@ -18,7 +18,14 @@ from time import perf_counter
 from types import MappingProxyType
 from typing import Annotated, Any, Literal, NamedTuple
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    model_serializer,
+    model_validator,
+)
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
@@ -62,6 +69,7 @@ from tracker.gear.models import (
     TargetSelection,
 )
 from tracker.gear.npcs import discipline_problem
+from tracker.gear.objectives import ObjectiveDescriptor, canonical_objectives, objective_definitions
 from tracker.gear.potions import PotionPolicy, boosted_levels, potion_summary
 from tracker.gear.powered import review as powered_review
 from tracker.gear.prayers import (
@@ -91,6 +99,7 @@ from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
 from tracker.gear.tomes import applied_tome
 from tracker.gear.tomes import review as tome_review
 from tracker.gear.transitions import inventory_slots, plan_transition
+from tracker.gear.vector_archive import own_vector_archives
 
 SLOTS: tuple[ItemSlot, ...] = (
     "weapon",
@@ -192,6 +201,7 @@ class OptimizationRequest(BaseModel):
     support_policy: SupportPolicy = "verified_only"
     budget_gp: int = Field(default=0, ge=0, strict=True)
     secondary_priority: SecondaryPriority = "default"
+    objectives: tuple[ObjectiveDescriptor, ...] | None = None
     max_dps_loss_pct: float = Field(default=10, strict=True, ge=0, le=100, allow_inf_nan=False)
     locks: Mapping[ItemSlot, ItemId | None] = Field(default_factory=dict)
     base_role: str | None = None
@@ -208,6 +218,10 @@ class OptimizationRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_context(self) -> OptimizationRequest:
+        if self.objectives is not None:
+            if self.secondary_priority != "default":
+                raise ValueError("objectives cannot be combined with nondefault secondary_priority")
+            object.__setattr__(self, "objectives", canonical_objectives(self.objectives))
         ids = {r.id for r in self.roles}
         if len(ids) != len(self.roles):
             raise ValueError("role IDs must be unique")
@@ -335,6 +349,13 @@ class OptimizationRequest(BaseModel):
         )
         return execution
 
+    @model_serializer(mode="wrap")
+    def serialize_optional_objectives(self, handler: Any) -> dict[str, Any]:
+        result: dict[str, Any] = handler(self)
+        return {
+            key: value for key, value in result.items() if key != "objectives" or value is not None
+        }
+
     @field_serializer("locks", "skill_overrides", "quest_overrides")
     def serialize_mappings(self, value: Mapping[str, Any]) -> dict[str, Any]:
         return dict(value)
@@ -398,6 +419,7 @@ def _assignment_state(loadouts: Any) -> Any:
 
 
 class _Search:
+    vector_search: Any
     native_cost_objective: bool = False
     running_prices: Mapping[int, PriceRecord]
     running_at: datetime
@@ -1008,11 +1030,38 @@ class _Search:
             prepared = self.prepare(equipment)
             if not isinstance(prepared, PreparedEquipment):
                 return self.performance(equipment, role)
-            cached = evaluate_prepared_score(
-                prepared,
-                role,
-                self.levels,
-                include_defence=self.request.secondary_priority.endswith("_defence_roll"),
+            include_defence = self.request.secondary_priority.endswith("_defence_roll")
+            native_role = next(
+                (
+                    index
+                    for index, configured in enumerate(self.request.roles)
+                    if configured is role
+                ),
+                None,
+            )
+            native_score = None
+            if self.native_context is not None and native_role is not None:
+                try:
+                    native_score = self.native_context.score(equipment, native_role)
+                except ValueError as exc:
+                    # Numeric fixed projections preserve unknown rolls; the
+                    # secondary-value consumer raises when it requires them.
+                    if not str(exc).startswith("Player defensive roll is unavailable"):
+                        raise
+            cached = (
+                CombatScore(
+                    native_score["supported"],
+                    native_score["dps"],
+                    native_score["accuracy"],
+                    prepared.ranged_bonuses if role.style == "ranged" else prepared.bonuses,
+                    native_score["player_defence_rolls"]
+                    if include_defence and native_score["supported"]
+                    else None,
+                )
+                if native_score is not None
+                else evaluate_prepared_score(
+                    prepared, role, self.levels, include_defence=include_defence
+                )
             )
             if role.style == "magic" and role.powered_attack is None:
                 problem = ancient_spell_problem(
@@ -1659,6 +1708,9 @@ class _Search:
                     self.assignment_tie(c),
                 )
 
+            if index == len(SLOTS) - 1 and hasattr(self, "vector_search"):
+                for candidate in expanded:
+                    self.vector_search.capture_base(candidate)
             beam = self.retain(
                 expanded, rank, 32 if getattr(self, "frontier_search", False) else 16
             )
@@ -1759,6 +1811,9 @@ class _Search:
                     _equipment_identity(e),
                 )
 
+            if index == len(SLOTS) - 1 and hasattr(self, "vector_search"):
+                for candidate in expanded:
+                    self.vector_search.capture_base({role.id: candidate for role in roles})
             states = self.retain(expanded, rank, BEAM_WIDTH)
             if not states:
                 return []
@@ -1998,6 +2053,7 @@ def prepare_optimization(
     )
 
 
+@own_vector_archives
 def optimize(
     snapshot: AccountSnapshot,
     request: OptimizationRequest | Mapping[str, Any],
@@ -2134,6 +2190,12 @@ def optimize(
     search.running_prices = price_records
     search.running_at = now
     search.complete_frontiers = _complete_frontiers
+    vector_search = None
+    if request.objectives is not None:
+        from tracker.gear.vector_search import VectorSearch
+
+        vector_search = VectorSearch(search, local_refinement)
+        search.vector_search = vector_search
     swap_limits = [*range(request.max_swaps + 1), None] if len(request.roles) > 1 else []
     # Equal progress segments: per-role beams, Multi's common/joint/tuple beams, scoring.
     search_units = len(request.roles) + (1 + 2 * len(swap_limits) if swap_limits else 0) + 1
@@ -2253,6 +2315,9 @@ def optimize(
                     ):
                         continue
                 expanded.append(candidate)
+            if role_index == len(request.roles) - 1 and vector_search is not None:
+                for candidate in expanded:
+                    vector_search.capture_base(candidate)
             beam = sorted(expanded, key=partial_rank)[:BEAM_WIDTH]
             # Only the selected beam survives this expansion. In particular the
             # last product's rejected states must not stay live through frontiers.
@@ -2341,17 +2406,32 @@ def optimize(
         unrestricted = materialize(
             refine_ammunition(search, materialize(unrestricted), _solution_key, refinement)
         )
-    secondary_frontiers: list[dict[str, Any]] = []
+    objective_frontiers: list[dict[str, Any]] = []
+    objective_diagnostics = None
     refined_at = perf_counter()
     reporter.stage("frontiers", elapsed_seconds=refined_at - started)
     run_secondary = request.secondary_priority != "default"
     run_running = _running_frontier or needs_running_cost_frontier(request, search.eligible)
-    frontier_units = int(run_secondary) + int(run_running)
+    frontier_units = int(vector_search is not None) + int(run_secondary) + int(run_running)
+    if vector_search is not None:
+        reporter.segment(0, frontier_units)
+        vector_result = vector_search.explore([*winners, unrestricted])
+        objective_frontiers = vector_result["groups"]
+        objective_diagnostics = vector_result["diagnostics"]
+        archive_winners = {
+            archive: min(archive.iter_solutions(), key=_solution_key, default=None)
+            for archive in dict.fromkeys(vector_search.archives.values())
+        }
+        winners = [
+            archive_winners[vector_search.archives[cap]] for cap in range(request.max_swaps + 1)
+        ]
+        unrestricted = archive_winners[vector_search.archives[None]]
+    secondary_frontiers: list[dict[str, Any]] = []
     frontier_diagnostics = None
     if run_secondary:
         from tracker.gear.frontier import explore
 
-        reporter.segment(0, frontier_units)
+        reporter.segment(int(vector_search is not None), frontier_units)
         secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
             search, winners, unrestricted, local_refinement
         )
@@ -2368,6 +2448,13 @@ def optimize(
         running_frontiers, running_diagnostics = explore_running_costs(
             search, winners, unrestricted, local_refinement
         )
+        if vector_search is not None:
+            for group in running_frontiers:
+                for point in group["points"]:
+                    vector_search.offer(point["solution"])
+            vector_result = vector_search.publish()
+            objective_frontiers = vector_result["groups"]
+            objective_diagnostics = vector_result["diagnostics"]
     frontiers_at = perf_counter()
     reporter.finish()
     winners = [materialize(row) if row is not None else None for row in winners]
@@ -2434,7 +2521,7 @@ def optimize(
     }
     referenced |= {
         i
-        for group in [*secondary_frontiers, *running_frontiers]
+        for group in [*secondary_frontiers, *running_frontiers, *objective_frontiers]
         for point in group["points"]
         for loadout in point["solution"]["loadouts"].values()
         for i in loadout["equipment"].values()
@@ -2467,6 +2554,10 @@ def optimize(
         if market_id is not None
     }
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
+    if request.objectives is not None and not _complete_frontiers:
+        from tracker.gear.vector_publish import filter_groups
+
+        objective_frontiers = filter_groups(objective_frontiers, request.max_dps_loss_pct)
     return {
         "snapshot_id": snapshot.fingerprint,
         **support_context(catalog, request.support_policy),
@@ -2493,6 +2584,14 @@ def optimize(
         "unrestricted": unrestricted,
         "selected_solution": winners[-1],
         "secondary_frontiers": secondary_frontiers,
+        **(
+            {
+                "objective_frontiers": objective_frontiers,
+                "objective_definitions": objective_definitions(request.objectives),
+            }
+            if request.objectives is not None
+            else {}
+        ),
         "running_cost_frontiers": running_frontiers,
         "running_cost_policy": running_cost_policy(request, local_refinement),
         "alternatives": alternatives,
@@ -2522,6 +2621,7 @@ def optimize(
                 else {}
             ),
             **({"secondary_frontier": frontier_diagnostics} if frontier_diagnostics else {}),
+            **({"objective_frontier": objective_diagnostics} if objective_diagnostics else {}),
             **({"running_cost_frontier": running_diagnostics} if running_diagnostics else {}),
             **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),
             **(

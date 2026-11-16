@@ -1,3 +1,4 @@
+import { canonicalObjectives, objectiveValues } from "./objectives";
 import { validateRunningCost } from "./runningCosts";
 import { purchaseItemIds } from "./preparedPurchases";
 import { validateUntradeables } from "./untradeables";
@@ -32,6 +33,11 @@ export function parseJointSolution(
     purchase_cost_gp: "number",
   });
   validateRunningCost(row.running_cost);
+  if (scenario.request.objectives !== undefined)
+    objectiveValues(
+      row.objective_values,
+      canonicalObjectives(scenario.request.objectives),
+    );
   validateSecondaryPriority(
     row,
     scenario.request.secondary_priority ?? "default",

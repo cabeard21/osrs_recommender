@@ -29,5 +29,9 @@ cdef class ScoringContext:
     cdef int[::1] demonbane_weapon, holy_water, purging_staff, scorching_bow
     cdef int[::1] target_demon, demonbane_vulnerability, demonbane_spell, mark_of_darkness
     cdef int priority
+    cdef readonly object objective_ids
+    cdef int[::1] objective_kinds, objective_masks, objective_means
+    cdef void project_objectives(self, Score* result, double* values) except *
+    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum) except -1
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil
-    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=*) noexcept nogil
+    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=*, int specific_option=*) noexcept nogil

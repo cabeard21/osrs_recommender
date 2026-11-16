@@ -111,6 +111,7 @@ def merge_auto_results(
         return merge_assignment_results(request, branches, complete_frontiers=complete_frontiers)
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _solution_key
+    from tracker.gear.potion_search import merge_objective_frontiers
 
     def best(rows: Any) -> dict[str, Any] | None:
         return min((r for r in rows if r is not None), key=_solution_key, default=None)
@@ -233,6 +234,12 @@ def merge_auto_results(
                 **summary,
                 "selected_solution": result["selected_solution"],
                 "secondary_frontiers": groups,
+                **merge_objective_frontiers(
+                    request,
+                    [result],
+                    id_prefix=f"discipline-{discipline}-",
+                    complete_frontiers=complete_frontiers,
+                ),
                 "running_cost_frontiers": [
                     {
                         **group,
@@ -266,6 +273,9 @@ def merge_auto_results(
         "unrestricted": unrestricted,
         "secondary_frontiers": frontiers,
         "running_cost_frontiers": running_groups,
+        **merge_objective_frontiers(
+            request, [result for _, result in branches], complete_frontiers=complete_frontiers
+        ),
         "discipline_comparison": comparison,
         "discipline_results": discipline_results,
         "items": list({i["item_id"]: i for _, r in branches for i in r["items"]}.values()),

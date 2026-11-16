@@ -54,6 +54,15 @@ PRIORITIES = {
                 "melee",
                 "melee_magic",
                 "melee_ranged",
+                "stab_magic",
+                "stab_ranged",
+                "stab_magic_ranged",
+                "slash_magic",
+                "slash_ranged",
+                "slash_magic_ranged",
+                "crush_magic",
+                "crush_ranged",
+                "crush_magic_ranged",
             )
         )
     },
@@ -171,6 +180,25 @@ def pack(search: Any) -> dict[str, Any]:
     reason = support_reason(search)
     if reason:
         raise ValueError(f"native_search_unsupported: {reason}")
+    objectives = getattr(search.request, "objectives", None) or ()
+    objective_ids = tuple(objective.id for objective in objectives)
+    objective_kinds = array("i")
+    objective_masks = array("i")
+    objective_means = array("i")
+    kinds = {
+        "defence_roll": 0,
+        "prayer_bonus": 1,
+        "melee_strength_bonus": 2,
+        "ranged_strength_bonus": 3,
+        "magic_damage_bonus": 4,
+        "accuracy": 5,
+    }
+    if len(objectives) > 62:
+        raise ValueError("Too many native objectives")
+    for objective in objectives:
+        objective_kinds.append(kinds[objective.kind])
+        objective_masks.append(sum(1 << STYLE_CODES[style] for style in objective.styles))
+        objective_means.append(int(objective.aggregation == "mean"))
     dense_ids = (0, *sorted(search.items))
     dense_index = {item_id: index for index, item_id in enumerate(dense_ids)}
     names = sorted(
@@ -322,7 +350,8 @@ def pack(search: Any) -> dict[str, Any]:
                         )
                         if fixed_roles[role_index]
                         else lane.configured_options(role, weapon)
-                        if role.style == "magic" and hasattr(lane, "configured_options")
+                        if (objectives or role.style == "magic")
+                        and hasattr(lane, "configured_options")
                         else lane.scoring_options(role, weapon)
                     )
                 offsets.append(len(option_records))
@@ -467,6 +496,10 @@ def pack(search: Any) -> dict[str, Any]:
     from tracker.gear.status_damage import HALBERD_IDS, SERPENTINE_HEADS
 
     return {
+        "objective_ids": objective_ids,
+        "objective_kinds": objective_kinds,
+        "objective_masks": objective_masks,
+        "objective_means": objective_means,
         "status_kind": status_kinds,
         "status_duration": status_durations,
         "halberd": array("i", [int(i in HALBERD_IDS) for i in dense_ids]),

@@ -49,6 +49,60 @@ const timeline = () => ({
   baseline: point(0, 4),
   samples: [point(0, 5), point(60, null)],
 });
+
+it("uses frozen session references for vector timelines", async () => {
+  const selected = { ...solution, objective_values: { prayer_bonus: 3 } };
+  const vector = {
+    ...result,
+    scenario: {
+      ...scenario,
+      request: {
+        ...scenario.request,
+        objectives: [{ kind: "prayer_bonus" as const }],
+      },
+    },
+    solutions: [],
+    live: {
+      ...result.live!,
+      run_id: "frozen-run",
+      result: {
+        objective_frontiers: [
+          { points: [{ id: "group-objective-point", solution: selected }] },
+        ],
+      },
+    },
+  } as unknown as OptimizationReply;
+  const data = timeline();
+  const enriched = {
+    ...data,
+    objective_definitions: [
+      {
+        id: "prayer_bonus",
+        kind: "prayer_bonus",
+        label: "Prayer bonus",
+        unit: "bonus",
+      },
+    ],
+    baseline: { ...data.baseline, objective_values: { prayer_bonus: 3 } },
+    samples: data.samples.map((point) => ({
+      ...point,
+      objective_values: { prayer_bonus: 3 },
+    })),
+  };
+  const transport = vi.fn(
+    async () => new Response(JSON.stringify(enriched), { status: 200 }),
+  );
+  await new HttpGearClient(
+    "/ui-api/gear",
+    transport as typeof fetch,
+  ).potionTimeline(vector, selected, new AbortController().signal);
+  expect(
+    JSON.parse(
+      (transport.mock.calls[0] as unknown as [string, RequestInit])[1]
+        .body as string,
+    ),
+  ).toEqual({ run_id: "frozen-run", solution_id: "group-objective-point" });
+});
 const transport = (body: unknown, status = 200) =>
   vi
     .fn<typeof fetch>()

@@ -11,7 +11,7 @@ import {
 import { draftFieldErrors, newRole, parseGp } from "../state/scenario";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
 import { potionCombatContext } from "../api/combatOptions";
-import { secondaryPriorities } from "../api/secondaryPriorities";
+import { ObjectiveBuilder } from "./ObjectiveBuilder";
 import { AssumptionFields } from "./AssumptionFields";
 import { FieldError, fieldProps } from "./FieldError";
 import { LockConstraints } from "./LockConstraints";
@@ -69,7 +69,9 @@ export function ConfigurationPanel() {
   const secondaryPriority = draft.secondaryPriority ?? "default";
   const supportPolicy = draft.supportPolicy ?? DEFAULT_SUPPORT_POLICY;
   const hasAdvancedChanges =
-    supportPolicy !== DEFAULT_SUPPORT_POLICY || secondaryPriority !== "default";
+    supportPolicy !== DEFAULT_SUPPORT_POLICY ||
+    secondaryPriority !== "default" ||
+    !!draft.objectives?.length;
   const budgetSection = (
     <>
       <span className="eyebrow">Budget and equipment</span>
@@ -377,23 +379,14 @@ export function ConfigurationPanel() {
             remain excluded. Verified only requires reviewed eligibility.
           </p>
         </details>
-        <label>
-          Tradeoff metric
-          <select
-            value={secondaryPriority}
-            onChange={(e) =>
-              change({
-                secondaryPriority: e.target.value as Draft["secondaryPriority"],
-              })
-            }
-          >
-            {secondaryPriorities.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ObjectiveBuilder
+          objectives={draft.objectives}
+          legacyPriority={draft.secondaryPriority}
+          mode={draft.optimizationMode}
+          onChange={(objectives) =>
+            change({ objectives, secondaryPriority: "default" })
+          }
+        />
         {isSingle && (
           <>
             <label>

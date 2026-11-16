@@ -200,7 +200,8 @@ export function PotionTimelinePanel({
   }>({ key: "" });
   const [retry, setRetry] = useState(0),
     [active, setActive] = useState(0),
-    [role, setRole] = useState("");
+    [role, setRole] = useState(""),
+    [objectiveId, setObjectiveId] = useState("");
   const key = JSON.stringify([
     result.snapshotId,
     result.catalogVersion,
@@ -254,14 +255,20 @@ export function PotionTimelinePanel({
       </div>
     );
   const data = state.data!;
-  const project = (s: PotionTimelineMeasurement) =>
-    role
-      ? {
-          ...s,
-          dps: s.roles[role]?.dps ?? null,
-          secondary_value: s.roles[role]?.secondary_value ?? null,
-        }
-      : s;
+  const definitions = data.objective_definitions ?? [];
+  const objective =
+    definitions.find((entry) => entry.id === objectiveId) ?? definitions[0];
+  const project = (s: PotionTimelineMeasurement) => ({
+    ...s,
+    dps: role ? (s.roles[role]?.dps ?? null) : s.dps,
+    secondary_value: objective
+      ? ((role ? s.roles[role]?.objective_values : s.objective_values)?.[
+          objective.id
+        ] ?? null)
+      : role
+        ? (s.roles[role]?.secondary_value ?? null)
+        : s.secondary_value,
+  });
   const samples = data.samples.map(project),
     baseline = project(data.baseline);
   const current = samples[active] ?? samples[0];
@@ -283,8 +290,9 @@ export function PotionTimelinePanel({
         )
         .join(" · ") || "No stat boosts",
   );
-  const priority = data.secondary_priority;
-  const label = secondaryPriorityLabel(priority);
+  const priority: string = objective?.kind ?? data.secondary_priority;
+  const label =
+    objective?.label ?? secondaryPriorityLabel(data.secondary_priority);
   const percent = priority === "accuracy";
   const divine =
     solution.potions?.selected_ids.some((id) => id.startsWith("divine_")) ??
@@ -292,7 +300,7 @@ export function PotionTimelinePanel({
   const unit =
     priority === "magic_damage_bonus"
       ? "%"
-      : priority.endsWith("_defence_roll")
+      : priority.endsWith("_defence_roll") || priority === "defence_roll"
         ? " roll"
         : priority === "accuracy"
           ? ""
@@ -324,6 +332,22 @@ export function PotionTimelinePanel({
               <option key={id} value={id}>
                 {result.scenario.request.roles.find((r) => r.id === id)?.name ??
                   id}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {definitions.length > 0 && (
+        <label>
+          Graph objective{" "}
+          <select
+            aria-label="Graph objective"
+            value={objective?.id ?? ""}
+            onChange={(event) => setObjectiveId(event.target.value)}
+          >
+            {definitions.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.label}
               </option>
             ))}
           </select>

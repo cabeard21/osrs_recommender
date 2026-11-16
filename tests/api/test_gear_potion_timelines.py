@@ -208,7 +208,21 @@ def test_secondary_metric_parity(client, session_factory, priority):
 
 
 @pytest.mark.parametrize(
-    "priority", ["melee_defence_roll", "melee_magic_defence_roll", "melee_ranged_defence_roll"]
+    "priority",
+    [
+        "melee_defence_roll",
+        "melee_magic_defence_roll",
+        "melee_ranged_defence_roll",
+        "stab_magic_defence_roll",
+        "stab_ranged_defence_roll",
+        "stab_magic_ranged_defence_roll",
+        "slash_magic_defence_roll",
+        "slash_ranged_defence_roll",
+        "slash_magic_ranged_defence_roll",
+        "crush_magic_defence_roll",
+        "crush_ranged_defence_roll",
+        "crush_magic_ranged_defence_roll",
+    ],
 )
 def test_melee_roll_timeline_tracks_defensive_boost_decay(client, session_factory, priority):
     body, selected = timeline_body(

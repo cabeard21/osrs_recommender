@@ -13,6 +13,15 @@ from tracker.gear.optimizer import CombatOptionFilters, RoleConfig
         "melee_defence_roll",
         "melee_magic_defence_roll",
         "melee_ranged_defence_roll",
+        "stab_magic_defence_roll",
+        "stab_ranged_defence_roll",
+        "stab_magic_ranged_defence_roll",
+        "slash_magic_defence_roll",
+        "slash_ranged_defence_roll",
+        "slash_magic_ranged_defence_roll",
+        "crush_magic_defence_roll",
+        "crush_ranged_defence_roll",
+        "crush_magic_ranged_defence_roll",
     ],
 )
 def test_roll_frontier_keeps_longrange_and_rapid_with_selected_options(priority):

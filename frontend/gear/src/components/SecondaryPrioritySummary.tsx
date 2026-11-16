@@ -1,5 +1,6 @@
 import { formatDefenceRoll } from "./defenceRollFormat";
 import { PotionTimelinePanel } from "./PotionTimelinePanel";
+import { objectiveId, objectiveLabel } from "../api/objectives";
 import type {
   GearClient,
   JointSolutionDTO,
@@ -112,6 +113,7 @@ export function SecondaryPrioritySummary({
   const priorityLabel = secondaryPriorityLabel(priority);
   const selected = solution ?? result.live?.result.selected_solution;
   const secondaryValue = selected?.secondary_value;
+  const objectives = result.scenario.request.objectives;
   return (
     <>
       {selected?.potions && selected.potions.selected_ids.length > 0 && (
@@ -134,75 +136,113 @@ export function SecondaryPrioritySummary({
           }
         />
       )}
-      <details
-        className="panel result-explanation"
-        aria-label="Tradeoff metric explanation"
-      >
-        <summary>Tradeoff metric</summary>
-        <p>
-          Tradeoff metric: {priorityLabel} ·{" "}
-          {priority === "default"
-            ? "inventory / cost / actions / identity ordering"
-            : result.source === "fixture"
-              ? "not measured in authored fixture"
-              : typeof secondaryValue === "number"
-                ? priority === "accuracy"
-                  ? `${(secondaryValue * 100).toFixed(2)}% hit chance`
-                  : `${rollStyles.length ? formatDefenceRoll(secondaryValue) : secondaryValue.toFixed(2)}${priority === "magic_damage_bonus" ? "%" : rollStyles.length ? " roll" : " bonus"}`
-                : "no feasible measurement"}
-          .
-        </p>
-        <p>
-          The frontier explores DPS and the selected metric as equal objectives.
-          The initial selection has the highest DPS found. Bounded search does
-          not guarantee either global optimum or a complete frontier.
-        </p>
-        {rollStyles.length > 0 && (
+      {objectives !== undefined ? (
+        <details
+          className="panel result-explanation"
+          aria-label="Tradeoff objectives explanation"
+        >
+          <summary>Tradeoff objectives</summary>
           <p>
-            {defenceRollExplanation(priority)}Defensive rolls include boosted
-            levels, equipment and the selected legal stance. Higher rolls resist
-            ordinary attack accuracy; they are not damage-reduction or survival
-            percentages.
+            DPS is always included. Each selected objective remains an
+            independent tradeoff.
           </p>
-        )}
-        {rollStyles.length > 0 &&
-          result.source !== "fixture" &&
-          selected &&
-          Object.entries(selected.loadouts)
-            .filter(([, loadout]) => loadout.performance.player_defence_rolls)
-            .map(([role, loadout]) => (
+          {objectives.length === 0 && <p>DPS only.</p>}
+          {objectives.map((objective) => {
+            const value = selected?.objective_values?.[objectiveId(objective)];
+            return (
+              <p key={objectiveId(objective)}>
+                {objectiveLabel(objective)}:{" "}
+                {typeof value !== "number"
+                  ? "not measured"
+                  : objective.kind === "defence_roll"
+                    ? `${formatDefenceRoll(value)} roll`
+                    : objective.kind === "accuracy"
+                      ? `${(value * 100).toFixed(2)}% hit chance`
+                      : `${value.toFixed(2)}${objective.kind === "magic_damage_bonus" ? "%" : " bonus"}`}
+              </p>
+            );
+          })}
+          <p>
+            Defence groups combine their rolls within each role before applying
+            normalized active-time weights. Utility roles do not contribute.
+          </p>
+          <p>
+            These are best-found tradeoffs within the search limits. Defence
+            rolls are not damage-reduction or survival percentages.
+          </p>
+        </details>
+      ) : (
+        <details
+          className="panel result-explanation"
+          aria-label="Tradeoff metric explanation"
+        >
+          <summary>Tradeoff metric</summary>
+          <p>
+            Tradeoff metric: {priorityLabel} ·{" "}
+            {priority === "default"
+              ? "inventory / cost / actions / identity ordering"
+              : result.source === "fixture"
+                ? "not measured in authored fixture"
+                : typeof secondaryValue === "number"
+                  ? priority === "accuracy"
+                    ? `${(secondaryValue * 100).toFixed(2)}% hit chance`
+                    : `${rollStyles.length ? formatDefenceRoll(secondaryValue) : secondaryValue.toFixed(2)}${priority === "magic_damage_bonus" ? "%" : rollStyles.length ? " roll" : " bonus"}`
+                  : "no feasible measurement"}
+            .
+          </p>
+          <p>
+            The frontier explores DPS and the selected metric as equal
+            objectives. The initial selection has the highest DPS found. Bounded
+            search does not guarantee either global optimum or a complete
+            frontier.
+          </p>
+          {rollStyles.length > 0 && (
+            <p>
+              {defenceRollExplanation(priority)}Defensive rolls include boosted
+              levels, equipment and the selected legal stance. Higher rolls
+              resist ordinary attack accuracy; they are not damage-reduction or
+              survival percentages.
+            </p>
+          )}
+          {rollStyles.length > 0 &&
+            result.source !== "fixture" &&
+            selected &&
+            Object.entries(selected.loadouts)
+              .filter(([, loadout]) => loadout.performance.player_defence_rolls)
+              .map(([role, loadout]) => (
+                <p key={role}>
+                  {role} defence rolls:{" "}
+                  {rollStyles
+                    .map(
+                      (style) =>
+                        `${style} ${formatDefenceRoll(loadout.performance.player_defence_rolls?.[style])}`,
+                    )
+                    .join(" / ")}
+                </p>
+              ))}
+          {priority !== "default" && (
+            <p>
+              {priority === "balanced_defence"
+                ? "Balanced defence is the mean of the five equipment defence bonuses. "
+                : priority === "magic_ranged_defence"
+                  ? "Magic & ranged defence is the lower of the magic and ranged equipment defence bonuses; it does not measure damage reduction. "
+                  : ""}
+              Multi-style values use normalized active-time weights across
+              scored roles; utility roles do not contribute.
+            </p>
+          )}
+          {priority === "magic_ranged_defence" &&
+            result.source !== "fixture" &&
+            selected &&
+            Object.entries(selected.loadouts).map(([role, loadout]) => (
               <p key={role}>
-                {role} defence rolls:{" "}
-                {rollStyles
-                  .map(
-                    (style) =>
-                      `${style} ${formatDefenceRoll(loadout.performance.player_defence_rolls?.[style])}`,
-                  )
-                  .join(" / ")}
+                {role} defence bonuses: magic{" "}
+                {loadout.performance.bonuses.defence_magic ?? 0} / ranged{" "}
+                {loadout.performance.bonuses.defence_ranged ?? 0}
               </p>
             ))}
-        {priority !== "default" && (
-          <p>
-            {priority === "balanced_defence"
-              ? "Balanced defence is the mean of the five equipment defence bonuses. "
-              : priority === "magic_ranged_defence"
-                ? "Magic & ranged defence is the lower of the magic and ranged equipment defence bonuses; it does not measure damage reduction. "
-                : ""}
-            Multi-style values use normalized active-time weights across scored
-            roles; utility roles do not contribute.
-          </p>
-        )}
-        {priority === "magic_ranged_defence" &&
-          result.source !== "fixture" &&
-          selected &&
-          Object.entries(selected.loadouts).map(([role, loadout]) => (
-            <p key={role}>
-              {role} defence bonuses: magic{" "}
-              {loadout.performance.bonuses.defence_magic ?? 0} / ranged{" "}
-              {loadout.performance.bonuses.defence_ranged ?? 0}
-            </p>
-          ))}
-      </details>
+        </details>
+      )}
     </>
   );
 }

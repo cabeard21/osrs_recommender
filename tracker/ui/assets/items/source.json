@@ -5360,6 +5360,21 @@
       "source": "https://static.runelite.net/cache/item/icon/33449.png",
       "retrieved_on": "2026-11-16",
       "sha256": "2a50247fee839031171cf1dfd2a2081632441f18263600bae6b371ae42c0c074"
+    },
+    "22978": {
+      "source": "https://static.runelite.net/cache/item/icon/22978.png",
+      "retrieved_on": "2026-11-16",
+      "sha256": "187a79b0aef35f3ae2251b376843ad0576934c4418ebf6285182f443b321c2f7"
+    },
+    "25916": {
+      "source": "https://static.runelite.net/cache/item/icon/25916.png",
+      "retrieved_on": "2026-11-16",
+      "sha256": "c23a08081eaf7ede72b6d3126b503719cd5916abae3c67a87fc1c47ae852d4f7"
+    },
+    "25918": {
+      "source": "https://static.runelite.net/cache/item/icon/25918.png",
+      "retrieved_on": "2026-11-16",
+      "sha256": "2dfd1e937d81f2ecc548ab3cc56eab5cf143fcc6b9305b326bdf98d5e862845b"
     }
   }
 }

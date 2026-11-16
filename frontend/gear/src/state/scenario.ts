@@ -1,3 +1,4 @@
+import { canonicalObjectives, legacyObjectives } from "../api/objectives";
 import type {
   Draft,
   GearContext,
@@ -8,6 +9,7 @@ import type {
   Equipment,
   Workspace,
   CombatTarget,
+  Solution,
 } from "../api/contracts";
 import {
   secondaryPriorities,
@@ -172,6 +174,7 @@ export function normalize(
     )
   )
     throw new Error("Choose a valid tradeoff metric.");
+  if (draft.objectives !== undefined) canonicalObjectives(draft.objectives);
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
   const charging = draft.crystalHalberdCharging;
@@ -499,7 +502,14 @@ export function normalize(
         allowed_ids: [],
         selected_ids: [],
       },
-      secondary_priority: draft.secondaryPriority ?? "default",
+      ...(draft.objectives !== undefined || live
+        ? {
+            objectives: canonicalObjectives(
+              draft.objectives ?? legacyObjectives(draft.secondaryPriority),
+            ),
+            secondary_priority: "default" as const,
+          }
+        : { secondary_priority: draft.secondaryPriority ?? "default" }),
       max_dps_loss_pct: 100,
       optimization_mode: draft.optimizationMode ?? "fast",
       roles,
@@ -537,6 +547,7 @@ export function normalize(
   };
 }
 export interface WorkspaceState {
+  objectiveSwapLimit?: number | null;
   draft: Draft;
   revision: number;
   submitted: Scenario | null;
@@ -602,6 +613,13 @@ export const initialState = (): State => ({
   multi: workspace(),
 });
 export type Action =
+  | {
+      type: "objective-select";
+      mode: Workspace;
+      fingerprint: string;
+      solution: Solution;
+      swapLimit: number | null;
+    }
   | { type: "context"; context: GearContext }
   | { type: "navigate"; mode: Workspace }
   | { type: "use-single-in-multi" }
@@ -700,6 +718,10 @@ export function reducer(state: State, action: Action): State {
               outdated:
                 saved.outdated ||
                 resultIsStale(saved.result, state.context) ||
+                JSON.stringify(state[mode].draft.objectives ?? null) !==
+                  JSON.stringify(
+                    saved.result.scenario.request.objectives ?? null,
+                  ) ||
                 (state[mode].draft.secondaryPriority ?? "default") !==
                   (saved.result.scenario.request.secondary_priority ??
                     "default"),
@@ -969,6 +991,18 @@ export function reducer(state: State, action: Action): State {
           },
         };
       if (
+        JSON.stringify(current.submitted?.request.objectives ?? null) !==
+        JSON.stringify(action.result.scenario.request.objectives ?? null)
+      )
+        return {
+          ...state,
+          [action.mode]: {
+            ...current,
+            pending: false,
+            error: "Objectives changed; rerun optimization.",
+          },
+        };
+      if (
         (current.submitted?.request.secondary_priority ?? "default") !==
         (action.result.scenario.request.secondary_priority ?? "default")
       )
@@ -1056,9 +1090,36 @@ export function reducer(state: State, action: Action): State {
         ...clearedTrial(current),
       };
       break;
+    case "objective-select":
+      if (
+        !current.result ||
+        current.result.fingerprint !== action.fingerprint ||
+        current.pending
+      )
+        return state;
+      next = {
+        ...current,
+        ...clearedTrial(current),
+        slot: null,
+        objectiveSwapLimit: action.swapLimit,
+        solutionId: action.solution.id,
+        result: {
+          ...current.result,
+          solutions: [
+            ...current.result.solutions.filter(
+              (s) => s.id !== action.solution.id,
+            ),
+            action.solution,
+          ],
+        },
+      };
+      break;
     case "ui":
       next = {
         ...current,
+        ...(action.patch.solutionId !== undefined
+          ? { objectiveSwapLimit: undefined }
+          : {}),
         ...action.patch,
         ...((action.patch.solutionId !== undefined &&
           action.patch.solutionId !== current.solutionId) ||
@@ -1234,6 +1295,14 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
   if (draft.secondaryPriority === undefined)
     draft.secondaryPriority = "default";
   draft.secondaryPriority = migrateSecondaryPriority(draft.secondaryPriority);
+  try {
+    draft.objectives =
+      draft.objectives === undefined
+        ? legacyObjectives(draft.secondaryPriority)
+        : canonicalObjectives(draft.objectives);
+  } catch {
+    return null;
+  }
   const isValid = !(
     !["burnt", "searing"].includes(draft.fireTomePages) ||
     typeof draft.includeUntradeables !== "boolean" ||

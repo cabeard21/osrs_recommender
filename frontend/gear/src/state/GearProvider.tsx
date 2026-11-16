@@ -14,9 +14,11 @@ import type {
   OptimizationProgress,
   GearClient,
   Workspace,
+  JointSolutionDTO,
 } from "../api/contracts";
 import { FixtureGearClient } from "../fixtures/client";
 import { GearApiError } from "../api/httpClient";
+import { parseJointSolution } from "../api/jointResults";
 import {
   initialState,
   normalize,
@@ -78,6 +80,7 @@ function useGearState(client: GearClient) {
           "cancel",
           "trial-cancel",
           "trial",
+          "objective-select",
         ].includes(action.type) ||
         (action.type === "ui" &&
           Object.entries(action.patch).some(
@@ -107,11 +110,57 @@ function useGearState(client: GearClient) {
         restored.current = true;
       }
       dispatch({ type: "context", context });
-      if (isFirstLoad && context.live)
-        dispatch({
-          type: "restore-results",
-          results: readResults(context.playerId, sessionStorage),
-        });
+      if (isFirstLoad && context.live) {
+        const savedResults = readResults(context.playerId, sessionStorage);
+        const restoredResults = await Promise.all(
+          Object.entries(savedResults).map(async ([mode, saved]) => {
+            const runId =
+              saved.result.live?.run_id ?? saved.result.live?.result.run_id;
+            if (!runId)
+              return { mode: mode as Workspace, saved, expired: false };
+            try {
+              const response = await fetch(
+                `/ui-api/gear/optimization-runs/${encodeURIComponent(runId)}`,
+                { credentials: "same-origin", cache: "no-store" },
+              );
+              return {
+                mode: mode as Workspace,
+                saved,
+                expired: response.status === 410,
+              };
+            } catch {
+              // Keep the frozen report during a temporary connection failure;
+              // the archive panel exposes its own retryable retrieval error.
+              return { mode: mode as Workspace, saved, expired: false };
+            }
+          }),
+        );
+        if (generation !== contextGeneration.current) return;
+        const available = Object.fromEntries(
+          restoredResults
+            .filter(
+              (entry) =>
+                !entry.expired &&
+                !stateRef.current[entry.mode].pending &&
+                !stateRef.current[entry.mode].result,
+            )
+            .map((entry) => [entry.mode, entry.saved]),
+        );
+        saveResults(context.playerId, available, sessionStorage);
+        dispatch({ type: "restore-results", results: available });
+        for (const entry of restoredResults) {
+          const workspace = stateRef.current[entry.mode];
+          if (entry.expired && !workspace.pending && !workspace.result)
+            dispatch({
+              type: "error",
+              mode: entry.mode,
+              generation: workspace.generation,
+              error:
+                "The previous optimization session has expired. Run optimization again to browse its tradeoffs.",
+              validation: false,
+            });
+        }
+      }
       setContextError(null);
     } catch (error) {
       if (generation === contextGeneration.current)
@@ -291,6 +340,30 @@ function useGearState(client: GearClient) {
   function cancelTrial() {
     revertTrial();
   }
+  function selectObjective(
+    mode: Workspace,
+    id: string,
+    raw: JointSolutionDTO,
+    swapLimit: number | null,
+    expectedFingerprint: string,
+  ) {
+    const result = stateRef.current[mode].result;
+    if (!result || result.fingerprint !== expectedFingerprint) return;
+    const solution = parseJointSolution(
+      raw,
+      result.scenario,
+      result.items ?? [],
+      id,
+      swapLimit ?? 12,
+    );
+    dispatch({
+      type: "objective-select",
+      mode,
+      solution,
+      fingerprint: expectedFingerprint,
+      swapLimit,
+    });
+  }
   return {
     state,
     liveMode: !(client instanceof FixtureGearClient),
@@ -307,6 +380,7 @@ function useGearState(client: GearClient) {
     previewTrial,
     revertTrial,
     cancelTrial,
+    selectObjective,
     contextError,
     loadContext,
     failure,

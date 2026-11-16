@@ -66,6 +66,14 @@ def create_app(
     from tracker.api.gear_optimizations import router as optimization_router
 
     app.include_router(optimization_router)
+    from tracker.api.gear_objective_runs import router as objective_run_router
+
+    app.include_router(objective_run_router)
+
+    @app.on_event("shutdown")
+    def _close_objective_results() -> None:
+        app.state.gear_service.close_objective_store()
+
     from tracker.api.gear_evaluations import router as evaluation_router
 
     app.include_router(evaluation_router)

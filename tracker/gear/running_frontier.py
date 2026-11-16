@@ -395,7 +395,9 @@ def explore_running_costs(
     search.option_cache = dict(original.option_cache)
     search.compact_cache = {}
     search.cost_evaluator = evaluator(search.running_prices, search.running_at)
-    search.request = original.request.model_copy(update={"secondary_priority": "accuracy"})
+    search.request = original.request.model_copy(
+        update={"secondary_priority": "accuracy", "objectives": None}
+    )
     search.native_cost_objective = True
     from tracker.gear.native import reset_context
 
@@ -458,6 +460,14 @@ def explore_running_costs(
     explored_at = perf_counter()
 
     def restore(row: dict[str, Any]) -> dict[str, Any]:
+        if getattr(original.request, "objectives", None) is not None:
+            from tracker.gear.objectives import annotate_solution
+
+            return annotate_solution(
+                {**row, "secondary_priority": "default", "secondary_value": None},
+                original.request.objectives,
+                original.request.roles,
+            )
         roles = [r for r in original.request.roles if r.style != "special"]
         weight = sum(r.weight for r in roles)
         value = sum(
