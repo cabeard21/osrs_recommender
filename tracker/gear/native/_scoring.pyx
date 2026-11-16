@@ -116,6 +116,8 @@ cdef class ScoringContext:
         self.status_duration = packed["status_duration"]
         self.halberd = packed["halberd"]
         self.serpentine = packed["serpentine"]
+        self.dragonbane_accuracy = packed["dragonbane_accuracy"]
+        self.dragonbane_damage = packed["dragonbane_damage"]
         self.demonbane_weapon = packed["demonbane_weapon"]
         self.holy_water = packed["holy_water"]
         self.purging_staff = packed["purging_staff"]
@@ -157,6 +159,7 @@ cdef class ScoringContext:
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
         cdef int element, family, task_bonus, hit_floor, demon_accuracy, demon_damage, vulnerability
+        cdef int dragon_accuracy, dragon_damage
         cdef bint demon_spell, holy
         cdef BoltResult proc, extra
         cdef long long spell_base, minimum, weakness_roll
@@ -226,6 +229,8 @@ cdef class ScoringContext:
             demon_spell = style == 4 and self.demonbane_spell[index] and self.target_demon[index]
             holy = ranged and self.holy_water[weapon]
             vulnerability = self.demonbane_vulnerability[index]
+            dragon_accuracy = self.dragonbane_accuracy[weapon] if self.target_traits[index] & 2 else 0
+            dragon_damage = self.dragonbane_damage[weapon] if self.target_traits[index] & 2 else 0
             demon_accuracy = 0
             demon_damage = 0
             if self.target_demon[index]:
@@ -254,6 +259,8 @@ cdef class ScoringContext:
                 maximum = <long long>floor(spell_base * (100 + magic_bonus + self.options[base + 11]) / 100.0)
                 if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
                     maximum = floor_div(maximum * 23, 20)
+                if dragon_damage:
+                    maximum = floor_div(maximum * (100 + dragon_damage), 100)
                 maximum += floor_div(spell_base * self.options[base + 13], 100)
                 if self.options[base + 12]:
                     attack *= 3
@@ -264,6 +271,8 @@ cdef class ScoringContext:
             attack = self.options[base + 1] * (attack + 64)
             if style == 4:
                 weakness_roll = floor_div(attack * self.options[base + 13], 100)
+                if dragon_accuracy:
+                    attack = floor_div(attack * (100 + dragon_accuracy), 100)
                 if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
                     attack = floor_div(attack * 23, 20)
                 if tome and element == 2:
@@ -280,8 +289,17 @@ cdef class ScoringContext:
                     attack = floor_div(attack * 7, 6)
                 elif ranged and task_bonus == 2:
                     if not holy:
-                        maximum = floor_div(maximum * (115 + floor_div(demon_damage * vulnerability, 100)), 100) if self.scorching_bow[weapon] and self.target_demon[index] else floor_div(maximum * 23, 20)
+                        if dragon_damage == 25:
+                            maximum = floor_div(maximum * 140, 100)
+                        elif self.scorching_bow[weapon] and self.target_demon[index]:
+                            maximum = floor_div(maximum * (115 + floor_div(demon_damage * vulnerability, 100)), 100)
+                        else:
+                            maximum = floor_div(maximum * 23, 20)
                     attack = floor_div(attack * 23, 20)
+            if style != 4 and dragon_accuracy:
+                attack = floor_div(attack * (100 + dragon_accuracy), 100)
+            if style != 4 and dragon_damage and not (ranged and self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2):
+                maximum = floor_div(maximum * (100 + dragon_damage), 100)
             if demon_accuracy:
                 attack += floor_div(attack * floor_div(demon_accuracy * vulnerability, 100), 100)
             if demon_damage and not demon_spell and not (self.scorching_bow[weapon] and self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2):

@@ -459,6 +459,12 @@ export interface CombatPerformance {
     application_chance: number;
     limitations: string[];
   } | null;
+  dragonbane_bonus?: {
+    item_id: number;
+    accuracy_percent: number;
+    damage_percent: number;
+    slayer_damage_additive: boolean;
+  } | null;
   demonbane_bonus?: {
     item_id: number | null;
     spell: string | null;

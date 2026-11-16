@@ -382,3 +382,20 @@ Source inspection establishes activity signals and the user supplied the two fig
 offscreen tests do not establish live-game acceptance. Complete the checklist above before calling
 that gate passed. Unknown tutorial forms and other exercises still require manual scaling. Restoration
 previews, combat auto-hide, and combat analytics remain outside Phase 1.
+
+
+## Barbarian hasta training sync
+
+Dragon hunter lance eligibility uses the permanent `barbarian_hasta_training`
+unlock. Rebuild/update the companion plugin and sync after upgrading the gear
+optimizer. Existing snapshots without the key remain unknown, so a lance is
+excluded from verified eligibility until the milestone is confirmed; ownership
+of a tradeable lance does not establish training.
+
+The collector reads RuneLite `VarbitID.BRUT_SMITH_HASTA` (3763): 0 is locked,
+1 through 3 are unlocked, and unexpected values remain unknown. This is the
+inferred **taught-hasta** milestone, not completion of the entire miniquest:
+[Quest Helper](https://github.com/Zoinkwiz/quest-helper/blob/master/src/main/java/com/questhelper/helpers/miniquests/barbariantraining/BarbarianTraining.java)
+labels 1 as tasked with smithing a hasta, 2 as made, and 3 as finished;
+[Otto's requirement](https://oldschool.runescape.wiki/w/Otto_Godblessed) is learning
+to make hastae. The mapping needs no database or sync-envelope migration.

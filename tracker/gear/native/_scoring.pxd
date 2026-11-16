@@ -23,6 +23,7 @@ cdef class ScoringContext:
     cdef int[::1] slayer_bonus, slayer_staff, on_slayer_task, magic_dart, magic_level
     cdef int[::1] leafy_weapon, broad_ammo, seeking_ammo, target_leafy
     cdef int[::1] status_kind, status_duration, halberd, serpentine
+    cdef int[::1] dragonbane_accuracy, dragonbane_damage
     cdef int[::1] demonbane_weapon, holy_water, purging_staff, scorching_bow
     cdef int[::1] target_demon, demonbane_vulnerability, demonbane_spell, mark_of_darkness
     cdef int priority

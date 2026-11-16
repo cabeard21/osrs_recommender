@@ -402,7 +402,7 @@ Target current HP defaults to the selected NPC base HP. Saved target definitions
 inherit newly available base HP; explicit current HP survives. Custom targets need
 base or current HP for ruby. This is static DPS at that HP, with sufficient player
 HP assumed. Declining HP, ruby self-damage endurance, healing, poison, utility
-procs, specials and Dragon hunter crossbow bonuses are not simulated.
+procs and specials are not simulated. Dragon hunter crossbow support is described below.
 Confirmed synced Kandarin Hard completion enables the activation boost; unknown
 completion uses base rates and is disclosed. Ammunition remains exempt from gear
 purchase budgets and retains replacement/Ava costs with proc-adjusted GP/damage.
@@ -416,7 +416,7 @@ pool truncation; running-cost scaffolds cover reviewed crossbow/bolt pairings.
 The exact physical Aquanite hopper `32879` is a tradeable shield requiring
 60 Ranged to equip. Its ordinary bonuses are retained, and its passive is
 enabled for the already-reviewed crossbow IDs and compatible ammunition only.
-This does not add Hunters' crossbows or Dragon hunter crossbow support.
+This does not add Hunters' crossbows. Dragon hunter crossbow support is described below.
 
 The [documented passive](https://oldschool.runescape.wiki/w/Aquanite_hopper)
 gives an 11% chance of a secondary shot. The model rolls that chance independently
@@ -461,3 +461,35 @@ offhands) completed in median 0.439 seconds with the passive disabled and 0.358
 seconds enabled over three runs each. This is a bounded desktop smoke comparison,
 not a full-catalog benchmark or evidence of a speedup. The fixture selected the
 hopper with the passive enabled and an alternative offhand when disabled.
+
+
+## Dragonbane ordinary attacks (2026-11-15)
+
+The reviewed physical forms are dragon hunter lance `22978`, crossbow `21012`,
+black/turquoise crossbows `25918`/`25916`, and wand `30070`. They receive their
+passives only against canonical targets with the `dragon` trait. Existing
+unsupported encounters remain blocked; Elvarg and revenant dragons have no such
+trait. Salve and Void effects remain unreviewed.
+
+The lance requires 78 Attack and confirmed `barbarian_hasta_training`. Its legal
+profiles are controlled stab/slash/crush and defensive stab. Crossbows require
+70 Ranged, accept reviewed bolts through dragon tier (including broad bolts),
+and use heavy defence. Cosmetic crossbows remain exact untradeable physical
+forms, without purchase or ownership aliases. The wand requires 65 Magic and
+supports reviewed elemental and Ancient autocast with existing spellbook gates.
+Spells take five ticks; four ticks refers to wand melee bashing. It grants no
+free runes or rune-saving chance.
+
+Accuracy/damage passives are lance 20%/20%, crossbow 30%/25%, wand 75%/40%.
+Crossbow damage on an imbued Slayer task uses a combined 40% increase; accuracy
+applies the Slayer factor then the dragonbane factor. Wand magic accuracy applies
+dragonbane before task/tome accuracy and then adds base elemental weakness.
+Magic maximum hit applies gear, Slayer, dragonbane, elemental weakness and tome
+in that order, truncating each stage. Bolt effects consume the boosted ordinary
+maximum; ruby's HP proc is not multiplied by dragonbane.
+
+Sources: [draconic attribute](https://oldschool.runescape.wiki/w/Draconic_%28attribute%29),
+[wand](https://oldschool.runescape.wiki/w/Dragon_hunter_wand), and
+[pinned Wiki DPS arithmetic](https://github.com/weirdgloop/osrs-dps-calc/blob/74958b18f6559cf1bf58f7ac74e7a442a7ac8e2f/src/lib/PlayerVsNPCCalc.ts).
+Both Python and native scoring implement the effect. Structured performance
+reports retain intrinsic percentages and identify additive Slayer damage.

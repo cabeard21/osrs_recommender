@@ -25,6 +25,11 @@ from tracker.gear.demonbane import REVISION as DEMONBANE_REVISION
 from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
 from tracker.gear.demonbane import TRADEABLE as DEMONBANE_TRADEABLE
 from tracker.gear.demonbane import apply_review as demonbane_review
+from tracker.gear.dragonbane import FORMS as DRAGONBANE_FORMS
+from tracker.gear.dragonbane import REVISION as DRAGONBANE_REVISION
+from tracker.gear.dragonbane import TRADEABLE as DRAGONBANE_TRADEABLE
+from tracker.gear.dragonbane import apply_review as dragonbane_review
+from tracker.gear.dragonbane import requirement as dragonbane_requirement
 from tracker.gear.elemental_amulets import FORMS as ELEMENTAL_AMULETS
 from tracker.gear.elemental_amulets import REVISION as ELEMENTAL_AMULET_REVISION
 from tracker.gear.elemental_amulets import apply_review as elemental_amulet_review
@@ -66,11 +71,11 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 2
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
 # https://oldschool.runescape.wiki/w/Ancient_staff
 REVIEWED_STANDARD_STAVES = frozenset(
-    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 6526, 27785, 27788, 27676, 27679}
+    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 6526, 27785, 27788, 27676, 27679, 30070}
 )
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
-REVIEWED_ANCIENT_STAVES = frozenset({4675, 27785, 27788, 27676, 27679})
+REVIEWED_ANCIENT_STAVES = frozenset({4675, 27785, 27788, 27676, 27679, 30070})
 REVIEWED_AUTOCAST_SCEPTRES = {27785: 60, 27788: 60, 27676: 70, 27679: 70}
 REVIEWED_POWERED_TRADEABLE = frozenset(
     {28585, 11905, 11908, 12900, 22481, 22552, 27662, 31115, 27277, 22290, 22294}
@@ -206,7 +211,7 @@ def load_catalog(
                     if e != "Offensive effects have not been validated."
                 ],
             }
-        row = demonbane_review(halberd_review(leafy_review(row)))
+        row = dragonbane_review(demonbane_review(halberd_review(leafy_review(row))))
         if row["id"] == 12931:
             if row["slot"] != "head" or row["name"] != "Serpentine helm":
                 raise ValueError("Reviewed serpentine physical form changed")
@@ -288,6 +293,8 @@ def load_catalog(
                 if demonbane_gates
                 else None
             )
+        if row["id"] in DRAGONBANE_FORMS:
+            requirement = dragonbane_requirement(row["id"])
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -298,6 +305,7 @@ def load_catalog(
                 "requires": requirement,
                 "requirements_complete": bool(
                     entries
+                    or row["id"] in DRAGONBANE_FORMS
                     or row["id"] in DEMONBANE_FORMS
                     or row["id"] in LEAFY_FORMS
                     or row["id"] in HALBERD_FORMS
@@ -314,6 +322,8 @@ def load_catalog(
                 "tradeable": (
                     False
                     if row["id"] == 12931
+                    else row["id"] in DRAGONBANE_TRADEABLE
+                    if row["id"] in DRAGONBANE_FORMS
                     else row["id"] in HALBERD_TRADEABLE
                     if row["id"] in HALBERD_FORMS
                     else row["id"] in DEMONBANE_TRADEABLE
@@ -374,6 +384,7 @@ def load_catalog(
             + b"halberd-status-v1-serp12931"
             + HALBERD_REVISION
             + DEMONBANE_REVISION
+            + DRAGONBANE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -394,6 +405,7 @@ def load_catalog(
             + b"halberd-status-v1-serp12931"
             + HALBERD_REVISION
             + DEMONBANE_REVISION
+            + DRAGONBANE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

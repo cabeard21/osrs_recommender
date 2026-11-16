@@ -16,6 +16,7 @@ from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
 from tracker.gear.demonbane import WEAPON_BONUSES
+from tracker.gear.dragonbane import BONUSES as DRAGONBANE_BONUSES
 from tracker.gear.elemental_amulets import applied_spell_bonus
 
 __all__ = ["DEMONBANE_SPELLS"]
@@ -25,6 +26,7 @@ from tracker.gear.models import (
     CombatPerformance,
     CombatTarget,
     DemonbaneBonus,
+    DragonbaneBonus,
     ElementalAmuletBonus,
     ElementalWeakness,
     EquipmentBonuses,
@@ -104,7 +106,7 @@ SPELLS = {
 }
 
 
-MODEL_VERSION = "normal-attacks-v10-halberd-status-demonbane"
+MODEL_VERSION = "normal-attacks-v11-dragonbane"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -515,6 +517,12 @@ def _calculate(
         and style in {"stab", "slash", "crush"}
         and "leafy" in target.traits
     )
+    dragon_accuracy, dragon_damage = (
+        DRAGONBANE_BONUSES.get(weapon.id, (0, 0))
+        if weapon and "dragon" in target.traits
+        else (0, 0)
+    )
+    dragon_crossbow = bool(dragon_damage and style == "ranged")
     demon = "demon" in target.traits
     demon_spell = (
         style == "magic" and powered_attack is None and spell in DEMONBANE_SPELLS and demon
@@ -580,6 +588,7 @@ def _calculate(
         or weapon_percent
         or demon_spell
         or holy_water
+        or dragon_damage
         or (style == "magic" and spell == "magic_dart")
     )
     constants = None if spell_effect else _constants
@@ -593,7 +602,7 @@ def _calculate(
         if constants is None and not cached_ranged and not spell_effect
         else None
     )
-    cached_ranged = cached_ranged and not (weapon_percent or holy_water)
+    cached_ranged = cached_ranged and not (weapon_percent or holy_water or dragon_damage)
     if cached_ranged:
         observer = ranged_observer()
         key_started = perf_counter() if observer is not None else 0.0
@@ -743,9 +752,13 @@ def _calculate(
                 attack_roll_bonus=roll_bonus,
             )
         tome_effect = applied_tome(tome, spell, powered_attack)
+        if dragon_accuracy:
+            attack = attack * (100 + dragon_accuracy) // 100
         if task_mask:
             max_hit = max_hit * numerator // denominator
             attack = attack * numerator // denominator
+        if dragon_damage:
+            max_hit = max_hit * (100 + dragon_damage) // 100
         if tome_effect and tome_effect.element == "water":
             attack = attack * 120 // 100
         if applied:
@@ -818,9 +831,15 @@ def _calculate(
             max_hit = (
                 max_hit * (100 + 15 + effective_damage) // 100
                 if weapon and weapon.id == 29591 and demon
+                else max_hit * 140 // 100
+                if dragon_crossbow
                 else max_hit * numerator // denominator
             )
         attack = attack * numerator // denominator
+    if style != "magic" and dragon_damage:
+        if not (dragon_crossbow and task_mask):
+            max_hit = max_hit * (100 + dragon_damage) // 100
+        attack = attack * (100 + dragon_accuracy) // 100
     if weapon_percent and not (weapon and weapon.id == 29591 and task_mask):
         max_hit += max_hit * effective_damage // 100
     if effective_accuracy:
@@ -1028,6 +1047,14 @@ def _calculate(
     return CombatPerformance(
         supported=True,
         demonbane_bonus=demon_report,
+        dragonbane_bonus=DragonbaneBonus(
+            item_id=weapon.id,
+            accuracy_percent=dragon_accuracy,
+            damage_percent=dragon_damage,
+            slayer_damage_additive=bool(dragon_crossbow and task_mask),
+        )
+        if weapon and dragon_damage
+        else None,
         slayer_effects=slayer_reports,
         leafy_bonus=LeafyBonus(item_id=20727) if leafy_axe else None,
         seeking_arrow_bonus=SeekingArrowBonus(item_id=33601) if seeking else None,
