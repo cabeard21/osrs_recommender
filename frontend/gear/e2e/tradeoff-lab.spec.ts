@@ -31,6 +31,73 @@ test("colored default opens a full lab for the actual optimization result", asyn
   await expect(region.getByLabel("Color represents")).toBeVisible();
   await expect(region.getByLabel("Color represents")).not.toHaveValue("");
   await expect(region.getByRole("img", { name: /color scale/ })).toBeVisible();
+  const chart = region.locator(".objective-scatter-plot");
+  const initialSelection = chart.locator('circle[aria-pressed="true"]');
+  await expect(initialSelection).toHaveCount(1);
+  const selectedRow = region
+    .getByRole("table", { name: "All objective tradeoffs" })
+    .getByRole("row", { selected: true });
+  await expect(selectedRow).toHaveCount(1);
+  await expect(
+    selectedRow.getByRole("button", { name: "Starting setup" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    selectedRow.getByRole("cell", {
+      name: body.result.selected_solution.score.toFixed(3),
+      exact: true,
+    }),
+  ).toBeVisible();
+  const initialLabel = (await initialSelection.getAttribute("aria-label"))!;
+  const positions = () =>
+    chart.locator("circle").evaluateAll((circles) =>
+      Object.fromEntries(
+        circles.map((circle) => [
+          circle.getAttribute("aria-label"),
+          {
+            x: circle.getAttribute("cx"),
+            y: circle.getAttribute("cy"),
+          },
+        ]),
+      ),
+    );
+  const beforeSelection = await positions();
+  const axisLabels = await chart.locator("text").allTextContents();
+  const alternative = region.getByRole("button", {
+    name: "Select setup 1",
+    exact: true,
+  });
+  await alternative.scrollIntoViewIfNeeded();
+  const frontierTable = region.getByRole("table", {
+    name: "All objective tradeoffs",
+  });
+  await expect(frontierTable).toHaveAttribute("aria-busy", "false");
+  const starting = region.getByRole("button", {
+    name: "Starting setup",
+    exact: true,
+  });
+  const layout = async () => ({
+    chart: await chart.boundingBox(),
+    table: await frontierTable.boundingBox(),
+    scrollY: await page.evaluate(() => window.scrollY),
+    rows: await frontierTable.locator("tbody button").allTextContents(),
+  });
+  const beforeLayout = await layout();
+  await alternative.click();
+  await expect(alternative).toHaveAttribute("aria-pressed", "true");
+  await expect(starting).toHaveAttribute("aria-pressed", "false");
+  await expect(frontierTable).toHaveAttribute("aria-busy", "false");
+  expect(await layout()).toEqual(beforeLayout);
+  expect(await positions()).toEqual(beforeSelection);
+  expect(await chart.locator("text").allTextContents()).toEqual(axisLabels);
+  const original = chart.getByRole("button", {
+    name: initialLabel,
+    exact: true,
+  });
+  await starting.click();
+  await expect(original).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    selectedRow.getByRole("button", { name: "Starting setup" }),
+  ).toHaveAttribute("aria-pressed", "true");
   const popupEvent = page.waitForEvent("popup");
   await region.getByRole("link", { name: /Open full tradeoff lab/ }).click();
   const lab = await popupEvent;
