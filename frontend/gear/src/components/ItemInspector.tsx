@@ -598,6 +598,13 @@ function LiveItemInspector() {
             spells before damage and weakness bonuses. Air includes wind spells.
           </p>
         )}
+        {facts?.equipment.size_damage_bonus && (
+          <p aria-label="Target size weapon bonus">
+            +{facts.equipment.size_damage_bonus.damage_per_size} max hit per
+            target size, up to size {facts.equipment.size_damage_bonus.max_size}
+            . Applied after other damage bonuses.
+          </p>
+        )}
         {multi && (
           <p className="notice">
             Item differences only. Lock a candidate and rerun to evaluate the

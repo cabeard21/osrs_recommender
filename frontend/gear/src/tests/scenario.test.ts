@@ -290,3 +290,58 @@ it("preserves negative custom global armour", () => {
     normalize(draft, "snapshot").request.target.definition?.flat_armour,
   ).toBe(-5);
 });
+
+it.each(["", "-1", "1.5", "65"])("rejects invalid target size %s", (size) => {
+  for (const scope of ["global", "role"]) {
+    const draft = newDraft();
+    const target = {
+      name: "Custom",
+      defence_level: 1,
+      magic_level: 1,
+      bonuses: {},
+      size: Number(size),
+    };
+    if (scope === "global") {
+      draft.combatTarget = target;
+      draft.targetInputs = { size };
+    } else {
+      draft.roles[0].combatTarget = target;
+      draft.roles[0].targetInputs = { size };
+    }
+    expect(() => normalize(draft, "snapshot")).toThrow(
+      /size|target configuration/i,
+    );
+  }
+});
+
+it("preserves global and per-role target size", () => {
+  const draft = newDraft();
+  const target = {
+    name: "Custom",
+    defence_level: 1,
+    magic_level: 1,
+    bonuses: {},
+    size: 5,
+  };
+  draft.combatTarget = target;
+  draft.roles[0].combatTarget = { ...target, size: 3 };
+  const request = normalize(draft, "snapshot").request;
+  expect(request.target.definition?.size).toBe(5);
+  expect(request.roles[0].combatTarget?.size).toBe(3);
+});
+
+it("preserves a zero size without assuming a footprint", () => {
+  const draft = newDraft();
+  const target = {
+    name: "Custom",
+    defence_level: 1,
+    magic_level: 1,
+    bonuses: {},
+    size: 0,
+  };
+  draft.combatTarget = target;
+  draft.roles[0].combatTarget = target;
+  const request = normalize(draft, "snapshot").request;
+  expect(request.target.definition?.size).toBe(0);
+  expect(request.roles[0].combatTarget?.size).toBe(0);
+});

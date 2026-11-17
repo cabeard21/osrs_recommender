@@ -171,6 +171,7 @@ def _validate_target(target: Any, path: tuple[str | int, ...], issue: Issue) -> 
     if target.get("unsupported_mechanics"):
         issue((*path, "target", "unsupported_mechanics"), "Target mechanics are unsupported")
     numeric = {
+        "size",
         "defence_level",
         "magic_level",
         "ranged_light",
@@ -183,6 +184,8 @@ def _validate_target(target: Any, path: tuple[str | int, ...], issue: Issue) -> 
     for name in numeric & target.keys():
         if target[name] is not None and type(target[name]) is not int:
             issue((*path, "target", name), "Target values require integers")
+        elif name == "size" and (target[name] is None or not 0 <= target[name] <= 64):
+            issue((*path, "target", name), "Target size must be between 0 and 64")
         elif name == "flat_armour" and (
             target[name] is None or not -10000 <= target[name] <= 10000
         ):

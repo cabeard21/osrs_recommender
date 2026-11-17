@@ -281,6 +281,12 @@ export function NpcTargetPicker({
               </div>
               <dl className="npc-flat-armour">
                 <div>
+                  <dt>Size</dt>
+                  <dd>
+                    {target.size ?? 1} × {target.size ?? 1}
+                  </dd>
+                </div>
+                <div>
                   <dt>Flat armour</dt>
                   <dd>{target.flat_armour ?? 0}</dd>
                 </div>

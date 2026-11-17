@@ -59,7 +59,7 @@ class NpcCatalog:
             + status_payload
             + json.dumps(manifest.get("reviewed_profiles", {}), sort_keys=True).encode()
             + json.dumps(manifest.get("mechanic_exceptions", {}), sort_keys=True).encode()
-            + b"ordinary-npc-traits-v8-cyclops-melee"
+            + b"ordinary-npc-traits-v9-target-size"
             + LEAFY_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
@@ -151,6 +151,7 @@ class NpcCatalog:
             weakness = row.get("weakness") or {}
             try:
                 target = CombatTarget(
+                    size=row.get("size", 1),
                     hitpoints=skills.get("hp"),
                     **self.status_facts.get(
                         json.dumps(
@@ -287,6 +288,7 @@ def resolve_target(role: RoleConfig) -> RoleConfig:
         }
     )
     for field in (
+        "size",
         "damage_cap",
         "flat_armour",
         "unsupported_mechanics",

@@ -228,6 +228,9 @@ cdef class ScoringContext:
         self.broad_ammo = packed["broad_ammo"]
         self.seeking_ammo = packed["seeking_ammo"]
         self.target_leafy = packed["target_leafy"]
+        self.size_damage_per_size = packed["size_damage_per_size"]
+        self.size_damage_max_size = packed["size_damage_max_size"]
+        self.target_size = packed["target_size"]
         self.status_kind = packed["status_kind"]
         self.status_duration = packed["status_duration"]
         self.halberd = packed["halberd"]
@@ -441,6 +444,8 @@ cdef class ScoringContext:
                 maximum += floor_div(maximum * floor_div(demon_damage * vulnerability, 100), 100)
             if style < 3 and self.target_leafy[index] and self.leafy_weapon[weapon] == 2:
                 maximum = floor_div(maximum * 47, 40)
+            if style < 3:
+                maximum += self.size_damage_per_size[weapon] * min(self.target_size[index], self.size_damage_max_size[weapon])
             if maximum < 0:
                 maximum = 0
             defence = self.options[base + 3]

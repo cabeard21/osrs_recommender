@@ -5405,6 +5405,11 @@
       "source": "https://static.runelite.net/cache/item/icon/11978.png",
       "retrieved_on": "2026-11-17",
       "sha256": "2a861252db310bca17dce0609051df49b73cfb49efb07f0695195c0f7cfc2464"
+    },
+    "27021": {
+      "source": "https://static.runelite.net/cache/item/icon/27021.png",
+      "retrieved_on": "2026-11-17",
+      "sha256": "841d4f1049f43e6b7e16062ec1df74b407ff88af3202d2f6237f1ce44f54b34e"
     }
   }
 }

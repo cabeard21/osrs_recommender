@@ -42,6 +42,17 @@ class ElementalAmuletBonus(GearModel):
     base_max_hit_bonus: int
 
 
+class SizeDamageBonus(GearModel):
+    damage_per_size: int = Field(ge=1, le=100, strict=True)
+    max_size: int = Field(ge=1, le=64, strict=True)
+
+
+class SizeDamagePerformance(GearModel):
+    item_id: int
+    target_size: int
+    max_hit_bonus: int
+
+
 class TomeEffect(GearModel):
     element: Literal["fire", "water", "earth"]
     rune_id: int = Field(gt=0)
@@ -57,6 +68,7 @@ class TomeBonus(GearModel):
 
 
 class EquipmentDefinition(GearModel):
+    size_damage_bonus: SizeDamageBonus | None = None
     slayer_bonus: Literal["melee", "all"] | None = None
     slayer_staff_enchanted: bool = False
     tome_effect: TomeEffect | None = None
@@ -118,6 +130,8 @@ class TargetSelection(GearModel):
 
 
 class CombatTarget(GearModel):
+    # Preserve zero-size NPC records from the pinned calculator catalog.
+    size: int = Field(default=1, ge=0, le=64, strict=True)
     poison_susceptibility: Literal["susceptible", "immune", "unknown"] = "unknown"
     venom_susceptibility: Literal["susceptible", "immune", "unknown"] = "unknown"
     hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
@@ -240,6 +254,7 @@ class DragonbaneBonus(GearModel):
 
 
 class CombatPerformance(GearModel):
+    size_damage_bonus: SizeDamagePerformance | None = None
     direct_dps: float | None = None
     status_damage: StatusDamage | None = None
     demonbane_bonus: DemonbaneBonus | None = None

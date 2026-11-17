@@ -129,6 +129,7 @@ export interface Assumptions {
   completedQuests?: string;
 }
 export interface CombatTarget {
+  size?: number;
   poison_susceptibility?: "susceptible" | "immune" | "unknown";
   venom_susceptibility?: "susceptible" | "immune" | "unknown";
   demonbane_vulnerability_percent?: number;
@@ -511,6 +512,11 @@ export interface CombatPerformance {
     damage_numerator: number;
     denominator: number;
   } | null;
+  size_damage_bonus?: {
+    item_id: number;
+    target_size: number;
+    max_hit_bonus: number;
+  } | null;
   seeking_arrow_bonus?: {
     item_id: number;
     minimum_hit: number;
@@ -809,6 +815,10 @@ export interface PhysicalItem {
   name: string;
   slot: Slot;
   equipment: {
+    size_damage_bonus?: {
+      damage_per_size: number;
+      max_size: number;
+    } | null;
     tome_effect?: {
       element: "fire" | "water" | "earth";
       rune_id: number;

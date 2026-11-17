@@ -24,6 +24,7 @@ cdef class ScoringContext:
     cdef int[::1] spell_element, searing, ranged_level, diary, target_hp, target_traits
     cdef int[::1] slayer_bonus, slayer_staff, on_slayer_task, magic_dart, magic_level
     cdef int[::1] leafy_weapon, broad_ammo, seeking_ammo, target_leafy
+    cdef int[::1] size_damage_per_size, size_damage_max_size, target_size
     cdef int[::1] status_kind, status_duration, halberd, serpentine
     cdef int[::1] dragonbane_accuracy, dragonbane_damage
     cdef int[::1] demonbane_weapon, holy_water, purging_staff, scorching_bow

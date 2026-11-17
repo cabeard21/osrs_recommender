@@ -24,6 +24,30 @@ def test_npc_search_detail_and_validation(client):
     assert context["capabilities"]["npc_catalog"]["available"] is True
 
 
+def test_npc_detail_preserves_target_size(client):
+    result = client.get("/ui-api/gear/targets", params={"q": "Gemstone Crab"}).json()
+    detail = client.get("/ui-api/gear/targets/" + result["items"][0]["key"]).json()
+    assert detail["target"]["size"] == 5
+
+
+@pytest.mark.parametrize("size", [0, 1, 5, 64])
+def test_custom_size_roundtrip(client, session_factory, size):
+    body = scenario(client, session_factory)
+    body["roles"][0]["target"] = {"size": size}
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 200, reply.text
+    assert reply.json()["scenario"]["roles"][0]["target"]["size"] == size
+
+
+@pytest.mark.parametrize("size", [None, True, 1.5, "2", -1, 65])
+def test_invalid_custom_size(client, session_factory, size):
+    body = scenario(client, session_factory)
+    body["roles"][0]["target"] = {"size": size}
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 422, reply.text
+    assert any(error["path"] == "roles.0.target.size" for error in reply.json()["error"]["fields"])
+
+
 @pytest.mark.parametrize("endpoint", ["optimizations", "evaluations"])
 @pytest.mark.parametrize("invalid", ["stale", "unsupported", "mechanics"])
 def test_catalog_validation_on_both_calculations(client, session_factory, endpoint, invalid):

@@ -90,6 +90,7 @@ export function TargetFields({
                   const target = targets.find((t) => t.name === e.target.value);
                   change({
                     combatTarget: target ? structuredClone(target) : undefined,
+                    targetInputs: {},
                     target: target?.name ?? "Custom ordinary-attack target",
                     defence: String(target?.defence_level ?? 1),
                   });
@@ -141,6 +142,32 @@ export function TargetFields({
             />
           </label>
           <FieldError id="defence" message={errors.defence} />
+          <label>
+            Target size
+            <input
+              type="number"
+              min="0"
+              max="64"
+              value={draft.targetInputs?.size ?? draft.combatTarget?.size ?? 1}
+              onChange={(event) =>
+                change({
+                  targetInputs: {
+                    ...draft.targetInputs,
+                    size: event.target.value,
+                  },
+                  combatTarget: {
+                    name: draft.target,
+                    defence_level: Number(draft.defence),
+                    magic_level: 1,
+                    bonuses: {},
+                    ...draft.combatTarget,
+                    size: Number(event.target.value),
+                  },
+                })
+              }
+            />
+          </label>
+          <p>Side length in tiles; a size of 5 means a 5 × 5 target.</p>
           <label>
             Flat armour
             <input

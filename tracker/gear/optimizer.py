@@ -1439,6 +1439,12 @@ class _Search:
                 retained = list(
                     dict.fromkeys([*retained, *(i for i in ordered if self.items[i].bolt_effect)])
                 )
+            if slot == "weapon":
+                retained = list(
+                    dict.fromkeys(
+                        [*retained, *(i for i in ordered if self.items[i].size_damage_bonus)]
+                    )
+                )
             if slot == "shield":
                 retained = list(
                     dict.fromkeys([*retained, *(i for i in ordered if self.items[i].tome_effect)])
@@ -2466,6 +2472,7 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     from tracker.gear.attack_reach import policy_context
+    from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 
     assumptions = {
         **policy_context(request),
@@ -2474,6 +2481,7 @@ def optimize(
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
+        "size_damage_model_version": SIZE_DAMAGE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
         "marks_of_darkness": {role.id: role.mark_of_darkness for role in request.roles},
         "tome_model_version": TOME_MODEL_VERSION,

@@ -142,6 +142,13 @@ export function CombatOptionSummary({
           Leaf-bladed battleaxe: +17.5% damage against this leafy target
         </p>
       )}
+      {performance?.size_damage_bonus && (
+        <p aria-label="Target size weapon effect">
+          Target size bonus: +{performance.size_damage_bonus.max_hit_bonus} max
+          hit against size {performance.size_damage_bonus.target_size}; applied
+          after other damage bonuses.
+        </p>
+      )}
       {performance?.seeking_arrow_bonus && (
         <p aria-label="Seeking arrow effect">
           Seeking broad arrows: accurate-hit minimum 3 before flat armour;

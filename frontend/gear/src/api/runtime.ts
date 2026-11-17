@@ -134,6 +134,20 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid leafy effect metadata");
   }
+  if (value.size_damage_bonus != null) {
+    const effect = object(value.size_damage_bonus);
+    if (
+      !Number.isSafeInteger(effect.item_id) ||
+      Number(effect.item_id) < 1 ||
+      !Number.isSafeInteger(effect.target_size) ||
+      Number(effect.target_size) < 0 ||
+      Number(effect.target_size) > 64 ||
+      !Number.isSafeInteger(effect.max_hit_bonus) ||
+      Number(effect.max_hit_bonus) < 0 ||
+      Number(effect.max_hit_bonus) > 6400
+    )
+      throw new Error("Invalid target size effect metadata");
+  }
   if (value.seeking_arrow_bonus != null) {
     const effect = value.seeking_arrow_bonus;
     if (effect.item_id !== 33601 || effect.minimum_hit !== 3)

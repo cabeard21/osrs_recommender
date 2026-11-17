@@ -4,6 +4,28 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Target size and Colossal blade
+
+Combat targets accept `size`, the side length of their footprint in tiles (strict
+integer 0–64, default 1 for older custom targets). Selected NPCs use their pinned
+catalog size; it cannot be overridden independently of the NPC selection. Custom
+targets expose size in both the global and role target editors. Zero-size source
+records remain usable and receive no size bonus.
+
+Reviewed Colossal blade (physical ID 27021, Attack 60, untradeable) adds
+`2 * min(size, 5)` to melee maximum damage after other damage multipliers,
+including Slayer. This increases the rolled maximum, before flat armour and
+damage-cap validation. Its four legal attack profiles are reviewed explicitly.
+The same rule runs in ordinary evaluation, prepared scoring and native search.
+`performance.size_damage_bonus` reports the weapon ID, target size and applied
+maximum-hit bonus; item facts expose `size_damage_bonus` effect parameters.
+Size-effect weapons survive bounded candidate retention, and catalog/model
+revisions include this mechanic. Other size-dependent attack mechanics, such as
+Scythe of vitur's multiple hits, retain their existing support restrictions.
+
+References: [Colossal blade](https://oldschool.runescape.wiki/w/Colossal_blade),
+[calculator ordering](https://github.com/weirdgloop/osrs-dps-calc/blob/main/src/lib/PlayerVsNPCCalc.ts).
+
 ## Safe spotting and ordinary halberd attacks
 
 Each scored role accepts strict `safe_spotting` (default `false`) and integer
