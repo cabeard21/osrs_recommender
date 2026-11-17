@@ -105,6 +105,11 @@ def support_reason(search: Any) -> str | None:
             return "bonus_range"
         if item.elemental_spell_bonus and item.elemental_spell_bonus.base_max_hit_bonus > 10000:
             return "elemental_bonus_range"
+        if item.size_damage_bonus and (
+            not 1 <= item.size_damage_bonus.damage_per_size <= 100
+            or not 1 <= item.size_damage_bonus.max_size <= 64
+        ):
+            return "size_bonus_range"
         if item.tome_effect and item.tome_effect.rune_id > 2**63 - 1:
             return "tome_rune_range"
         if item.attack_speed > 10000:
@@ -116,6 +121,8 @@ def support_reason(search: Any) -> str | None:
             return "powered_damage_range"
     for role in search.request.roles:
         target = role.target or CombatTarget()
+        if not 0 <= target.size <= 64:
+            return "target_size_range"
         if target.damage_cap is not None and target.damage_cap > 2**63 - 1:
             return "damage_cap_range"
         if any(abs(value) > 1000000 for value in target.bonuses.model_dump().values()):
@@ -237,6 +244,8 @@ def pack(search: Any) -> dict[str, Any]:
             ("leafy_weapon", 0),
             ("broad_ammo", 0),
             ("seeking_ammo", 0),
+            ("size_damage_per_size", 0),
+            ("size_damage_max_size", 0),
         )
     }
     bonuses = array("q", [0] * 14)
@@ -256,6 +265,12 @@ def pack(search: Any) -> dict[str, Any]:
             "leafy_weapon": 2 if item_id == 20727 else int(item_id in {4158, 11902}),
             "broad_ammo": int(item_id in {4160, 33601, 11875, 21316}),
             "seeking_ammo": int(item_id == 33601),
+            "size_damage_per_size": item.size_damage_bonus.damage_per_size
+            if item.size_damage_bonus and item.slot == "weapon"
+            else 0,
+            "size_damage_max_size": item.size_damage_bonus.max_size
+            if item.size_damage_bonus and item.slot == "weapon"
+            else 0,
             "eligible": int(item_id in search.eligible),
             "bad_items": int(bool(item.unsupported_effects)),
             "ammo_required": int(bool(item.ammo_for)),
@@ -311,6 +326,7 @@ def pack(search: Any) -> dict[str, Any]:
             "on_slayer_task",
             "magic_dart",
             "target_leafy",
+            "target_size",
             "target_demon",
             "demonbane_vulnerability",
             "demonbane_spell",
@@ -399,6 +415,7 @@ def pack(search: Any) -> dict[str, Any]:
                         ),
                         "magic_level": search.levels.get("magic", 0),
                         "target_leafy": int("leafy" in target.traits),
+                        "target_size": target.size,
                         "target_demon": int("demon" in target.traits),
                         "demonbane_vulnerability": target.demonbane_vulnerability_percent,
                         "demonbane_spell": int(

@@ -226,3 +226,22 @@ it("shows signed catalog armour without offering a mechanic override", async () 
   fireEvent.click(screen.getByRole("button", { name: "Edit stats" }));
   expect(screen.queryByLabelText("Flat armour")).not.toBeInTheDocument();
 });
+
+it("shows catalog size without offering a size override", async () => {
+  const large = { ...detail, target: { ...detail.target, size: 5 } };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response(large)),
+  );
+  render(
+    <NpcTargetPicker
+      selection={selection}
+      target={large.target}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("Size")).toBeInTheDocument();
+  expect(screen.getByText("5 × 5")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Edit stats" }));
+  expect(screen.queryByLabelText("Target size")).not.toBeInTheDocument();
+});

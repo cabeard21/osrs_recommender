@@ -134,6 +134,15 @@ function normalizeHitpoints(
 ): CombatTarget | undefined {
   if (!target) return target;
   const result = { ...target };
+  const sizeInput = inputs.size;
+  if (sizeInput !== undefined) {
+    if (!sizeInput.trim())
+      throw new Error("Target size requires a whole number between 0 and 64.");
+    result.size = Number(sizeInput);
+  }
+  const size = result.size ?? 1;
+  if (!Number.isSafeInteger(size) || size < 0 || size > 64)
+    throw new Error("Target size requires a whole number between 0 and 64.");
   for (const key of ["hitpoints", "current_hitpoints"] as const) {
     const raw = inputs[key];
     if (raw !== undefined) result[key] = raw.trim() ? Number(raw) : null;
@@ -329,11 +338,13 @@ export function normalize(
           !Number.isSafeInteger(n) ||
           n < min ||
           n >
-            (key === "weakness_percent"
-              ? 1000
-              : key === "damage_cap"
-                ? Number.MAX_SAFE_INTEGER
-                : 10000)
+            (key === "size"
+              ? 64
+              : key === "weakness_percent"
+                ? 1000
+                : key === "damage_cap"
+                  ? Number.MAX_SAFE_INTEGER
+                  : 10000)
         )
           throw new Error(
             `${role.name} target ${key} requires a valid whole number.`,

@@ -26,7 +26,7 @@ class EncounterPreset:
     ordered_roles: tuple[str, ...]
     loop: bool
     limitations: tuple[str, ...]
-    version: int = 1
+    version: int = 2
     source_url: str = SOURCE_URL
 
     @property
@@ -73,6 +73,7 @@ def _king(
         spell="earth_strike" if style == "magic" else "fire_strike",
         target=CombatTarget(
             name=name,
+            size=3,
             defence_level=defence,
             magic_level=magic,
             bonuses=TargetDefenceBonuses(
@@ -94,6 +95,7 @@ def _zulrah(role_id: str, style: str, magic_bonus: int, ranged_bonus: int) -> Ro
         style=style,
         target=CombatTarget(
             name=f"Zulrah ({role_id})",
+            size=5,
             defence_level=300,
             magic_level=300,
             bonuses=TargetDefenceBonuses(magic=magic_bonus, ranged=ranged_bonus),

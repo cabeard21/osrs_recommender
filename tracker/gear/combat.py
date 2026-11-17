@@ -35,6 +35,7 @@ from tracker.gear.models import (
     HopperPerformance,
     LeafyBonus,
     SeekingArrowBonus,
+    SizeDamagePerformance,
     SlayerEffect,
     TomeBonus,
 )
@@ -106,7 +107,7 @@ SPELLS = {
 }
 
 
-MODEL_VERSION = "normal-attacks-v11-dragonbane"
+MODEL_VERSION = "normal-attacks-v12-target-size"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -846,6 +847,13 @@ def _calculate(
         attack += attack * effective_accuracy // 100
     if leafy_axe:
         max_hit = max_hit * 47 // 40
+    size_effect = (
+        weapon.size_damage_bonus if weapon and style in {"stab", "slash", "crush"} else None
+    )
+    size_bonus = (
+        size_effect.damage_per_size * min(target.size, size_effect.max_size) if size_effect else 0
+    )
+    max_hit += size_bonus
     max_hit = max(0, max_hit)
     if (
         constants is not None
@@ -1046,6 +1054,13 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        size_damage_bonus=SizeDamagePerformance(
+            item_id=weapon.id,
+            target_size=target.size,
+            max_hit_bonus=size_bonus,
+        )
+        if weapon and size_effect
+        else None,
         demonbane_bonus=demon_report,
         dragonbane_bonus=DragonbaneBonus(
             item_id=weapon.id,

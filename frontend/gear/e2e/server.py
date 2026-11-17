@@ -143,6 +143,30 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-target-size")
+        def seed_target_size():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in (1333, 27021)},
+                revision="browser-acceptance-target-size-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                player.members = True
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=27021,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-safespot")
         def seed_safespot():
             seed_optimization()

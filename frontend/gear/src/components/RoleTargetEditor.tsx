@@ -134,6 +134,17 @@ export function RoleTargetEditor({
           <details>
             <summary>Target defence details</summary>
             <label>
+              Role target size
+              <input
+                type="number"
+                min="0"
+                max="64"
+                value={role.targetInputs?.size ?? target.size ?? 1}
+                onChange={(event) => numeric("size", event.target.value)}
+              />
+            </label>
+            <p>Side length in tiles; a size of 5 means a 5 × 5 target.</p>
+            <label>
               Target Magic level
               <input
                 type="number"

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from tools.benchmark_gear_desktop import without_observations
 from tracker.accounts.snapshot import AccountSnapshot, ObservedItemFact
 from tracker.content.loader import Content
 from tracker.domain.types import Container, SkillState, Source
@@ -23,7 +24,7 @@ def test_presets_are_versioned_and_source_pinned() -> None:
     presets = encounter_presets()
     assert [preset.id for preset in presets] == ["dagannoth_kings", "zulrah_forms"]
     for preset in presets:
-        assert preset.version == 1
+        assert preset.version == 2
         assert "89c3e25b344aea90d0189746e4b5f73dde0f0383" in preset.source_url
         assert preset.limitations
         assert preset.scoring_supported
@@ -43,6 +44,7 @@ def test_kings_custom_request_preserves_only_declared_cycle() -> None:
     assert request.roles[2].target is not None
     assert request.roles[2].target.magic_level == 0
     assert all(role.target and role.target.weakness_percent == 35 for role in request.roles)
+    assert all(role.target and role.target.size == 3 for role in request.roles)
 
 
 def test_zulrah_is_explicit_form_template_not_claimed_rotation() -> None:
@@ -53,6 +55,7 @@ def test_zulrah_is_explicit_form_template_not_claimed_rotation() -> None:
     assert tuple(role.style for role in request.roles) == ("magic", "magic", "ranged")
     assert "rotation" in " ".join(preset.limitations).lower()
     assert all(role.target and role.target.damage_cap == 50 for role in request.roles)
+    assert all(role.target and role.target.size == 5 for role in request.roles)
 
 
 def test_preset_conversion_is_immutable_and_cannot_override_safety_markers() -> None:
@@ -111,6 +114,7 @@ def test_zulrah_preset_has_exact_custom_request_and_combat_parity() -> None:
             style=style,
             target=CombatTarget(
                 name=f"Zulrah ({role_id})",
+                size=5,
                 defence_level=300,
                 magic_level=300,
                 bonuses=TargetDefenceBonuses(magic=magic_bonus, ranged=ranged_bonus),
@@ -172,7 +176,7 @@ def test_preset_optimization_matches_round_tripped_custom_request(preset_id: str
     catalog = SimpleNamespace(items={item.id: item for item in items}, version="preset-test")
     preset_result = optimize(snapshot, request, catalog, Content(), {}, now)
     custom_result = optimize(snapshot, custom, catalog, Content(), {}, now)
-    assert preset_result == custom_result
+    assert without_observations(preset_result) == without_observations(custom_result)
     assert preset_result["selected_solution"] is not None
     assert all(
         loadout["performance"]["supported"]

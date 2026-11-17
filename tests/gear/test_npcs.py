@@ -35,6 +35,30 @@ def test_catalog_search_and_mapping():
     assert catalog.search(str(entry["npc_id"]))["items"]
 
 
+def test_catalog_size_is_preserved_and_cannot_be_overridden():
+    catalog = npc_catalog()
+    entry = next(e for e in catalog.entries.values() if e["name"] == "Gemstone Crab")
+    assert entry["target"]["size"] == 5
+    role = RoleConfig(
+        id="large",
+        style="slash",
+        target=entry["target"],
+        target_selection={"key": entry["key"], "catalog_revision": catalog.revision},
+    )
+    assert resolve_target(role).target.size == 5
+    with pytest.raises(ValueError, match="restrictions"):
+        resolve_target(
+            role.model_copy(update={"target": role.target.model_copy(update={"size": 1})})
+        )
+
+
+def test_zero_size_catalog_target_stays_supported():
+    entry = next(e for e in npc_catalog().entries.values() if e["npc_id"] == 8865)
+    assert entry["name"] == "Arianwyn"
+    assert entry["support_status"] == "supported"
+    assert entry["target"]["size"] == 0
+
+
 def test_catalog_rat_traits_are_preserved_and_cannot_be_overridden():
     catalog = npc_catalog()
     entry = next(

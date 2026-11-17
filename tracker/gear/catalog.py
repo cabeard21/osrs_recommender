@@ -52,6 +52,9 @@ from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
+from tracker.gear.size_damage import COLOSSAL_BLADE
+from tracker.gear.size_damage import REVISION as SIZE_DAMAGE_REVISION
+from tracker.gear.size_damage import apply_review as size_damage_review
 from tracker.gear.slayer import FORMS as SLAYER_FORMS
 from tracker.gear.slayer import MAGIC_DART_STAVES
 from tracker.gear.slayer import REVISION as SLAYER_REVISION
@@ -224,7 +227,9 @@ def load_catalog(
                     if e != "Offensive effects have not been validated."
                 ],
             }
-        row = dragonbane_review(demonbane_review(halberd_review(leafy_review(row))))
+        row = size_damage_review(
+            dragonbane_review(demonbane_review(halberd_review(leafy_review(row))))
+        )
         if row["id"] == 12931:
             if row["slot"] != "head" or row["name"] != "Serpentine helm":
                 raise ValueError("Reviewed serpentine physical form changed")
@@ -276,6 +281,8 @@ def load_catalog(
             requirement = SkillLeaf(skill="magic", level=autocast_level)
         if row["id"] == 32879:
             requirement = SkillLeaf(skill="ranged", level=60)
+        if row["id"] == COLOSSAL_BLADE:
+            requirement = SkillLeaf(skill="attack", level=60)
         if row["id"] in ELEMENTAL_AMULETS:
             requirement = SkillLeaf(skill="magic", level=59)
         if row["id"] in BOLT_REQUIREMENTS:
@@ -329,12 +336,12 @@ def load_catalog(
                     or row["id"] in BOLT_REQUIREMENTS
                     or row["id"] in ELEMENTAL_AMULETS
                     or row["id"] in TOME_FORMS
-                    or row["id"] in {32879, 12931}
+                    or row["id"] in {32879, 12931, COLOSSAL_BLADE}
                 )
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
                     False
-                    if row["id"] == 12931
+                    if row["id"] in {12931, COLOSSAL_BLADE}
                     else row["id"] in DRAGONBANE_TRADEABLE
                     if row["id"] in DRAGONBANE_FORMS
                     else row["id"] in HALBERD_TRADEABLE
@@ -400,6 +407,7 @@ def load_catalog(
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
+            + SIZE_DAMAGE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -422,6 +430,7 @@ def load_catalog(
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
+            + SIZE_DAMAGE_REVISION
             + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
