@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
-import { ObjectiveScatter } from "./ObjectiveScatter";
+import { ObjectiveFrontierChart } from "./ObjectiveFrontierChart";
 import {
   createLabSnapshot,
   selectedLabSolution,
@@ -140,6 +140,7 @@ export function ObjectiveFrontier({
       const existing = group?.points.find((point) => point.id === id);
       const raw =
         existing?.solution ??
+        selectedLabSolution(result, id) ??
         (
           await get(
             encodeURIComponent(runId!) + "/solutions/" + encodeURIComponent(id),
@@ -159,20 +160,28 @@ export function ObjectiveFrontier({
   if (!group || result.scenario.request.objectives === undefined) return null;
   const rows = page?.points ?? samples;
   const axes = [{ id: "dps", label: "DPS" }, ...definitions];
-  const selected = selectedLabSolution(result, selectedId);
-  const displayed =
-    samples.some((p) => p.id === selectedId) || !selected
-      ? samples
-      : [
-          ...samples,
-          {
-            id: selectedId,
-            score: selected.score,
-            objective_values: selected.objective_values ?? {},
-            purchase_cost_gp: selected.purchase_cost_gp,
-            maximum_actions: selected.maximum_actions,
-          },
-        ];
+  const selected =
+    selectedLabSolution(result, selectedId) ??
+    group.points.find((point) => point.id === selectedId)?.solution;
+  const selectedRow: Point | undefined =
+    selected && !rows.some((point) => point.id === selectedId)
+      ? {
+          id: selectedId,
+          score: selected.score,
+          objective_values: selected.objective_values ?? {},
+          purchase_cost_gp: selected.purchase_cost_gp,
+          maximum_actions: selected.maximum_actions,
+        }
+      : undefined;
+  const tableRows = [
+    ...(selectedRow
+      ? [{ point: selectedRow, label: "Current selection" }]
+      : []),
+    ...rows.map((point, index) => ({
+      point,
+      label: `Select setup ${(cursors.length - 1) * 50 + index + 1}`,
+    })),
+  ];
   const value = (point: Point, id: string) =>
     id === "dps" ? point.score : point.objective_values[id];
   const openLab = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -241,10 +250,25 @@ export function ObjectiveFrontier({
             {group.sampled ? " from the full table" : ""}. A point can appear
             worse on these axes while improving another objective.
           </p>
-          <ObjectiveScatter
-            key={axes.map((axis) => axis.id).join("|")}
+          <ObjectiveFrontierChart
+            key={JSON.stringify([
+              runId,
+              groupId,
+              swapLimit,
+              axes.map((axis) => axis.id),
+            ])}
             axes={axes}
-            points={displayed}
+            points={samples}
+            selected={
+              selected
+                ? {
+                    id: selectedId,
+                    score: selected.score,
+                    objective_values: selected.objective_values ?? {},
+                    purchase_cost_gp: selected.purchase_cost_gp,
+                  }
+                : undefined
+            }
             selectedId={selectedId}
             disabled={selecting}
             onSelect={(id) => void choose(id)}
@@ -299,7 +323,7 @@ export function ObjectiveFrontier({
             </tr>
           </thead>
           <tbody>
-            {rows.map((point, index) => (
+            {tableRows.map(({ point, label }) => (
               <tr key={point.id} aria-selected={selectedId === point.id}>
                 <td>
                   <button
@@ -308,7 +332,7 @@ export function ObjectiveFrontier({
                     aria-pressed={selectedId === point.id}
                     onClick={() => void choose(point.id)}
                   >
-                    Select setup {(cursors.length - 1) * 50 + index + 1}
+                    {label}
                   </button>
                 </td>
                 <td>{format(point.score)}</td>

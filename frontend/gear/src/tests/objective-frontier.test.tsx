@@ -1,11 +1,309 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { ObjectiveFrontier } from "../components/ObjectiveFrontier";
 import type { OptimizationReply } from "../api/contracts";
 import { loadLabSnapshot } from "../tradeoff-lab/snapshot";
 
 afterEach(() => vi.unstubAllGlobals());
+
+it("lists the default defence-roll setup separately from a tradeoff with the same DPS", () => {
+  const baseline = {
+    ...solution,
+    score: 4.093,
+    objective_values: { "defence_roll:minimum:stab": 22792 },
+  };
+  const tradeoff = {
+    ...baseline,
+    objective_values: { "defence_roll:minimum:stab": 27100 },
+  };
+  const scoped = {
+    ...result,
+    scenario: {
+      ...result.scenario,
+      request: {
+        ...result.scenario.request,
+        objectives: [
+          { kind: "defence_roll", styles: ["stab"], aggregation: "minimum" },
+        ],
+      },
+    },
+    live: {
+      ...result.live!,
+      run_id: undefined,
+      result: {
+        ...result.live!.result,
+        selected_solution: baseline,
+        objective_definitions: [
+          {
+            id: "defence_roll:minimum:stab",
+            kind: "defence_roll",
+            label: "Stab defence roll (minimum)",
+            unit: "roll",
+          },
+        ],
+        objective_frontiers: [
+          {
+            ...result.live!.result.objective_frontiers![0],
+            points: [
+              {
+                id: "sample",
+                solution: tradeoff,
+                dps_loss: 0,
+                dps_loss_pct: 0,
+              },
+              {
+                id: "defence",
+                solution: {
+                  ...tradeoff,
+                  score: 3.5,
+                  objective_values: { "defence_roll:minimum:stab": 37048 },
+                },
+                dps_loss: 0.593,
+                dps_loss_pct: 14.49,
+              },
+            ],
+          },
+        ],
+      },
+    },
+  } as unknown as OptimizationReply;
+  const onSelect = vi.fn();
+  render(
+    <ObjectiveFrontier
+      result={scoped}
+      swapLimit={0}
+      selectedId="best-found"
+      onSelect={onSelect}
+    />,
+  );
+  const table = screen.getByRole("table", { name: "All objective tradeoffs" });
+  const row = within(table).getByRole("row", { selected: true });
+  expect(within(row).getByRole("cell", { name: "22.79k" })).toBeVisible();
+  expect(within(row).getByRole("cell", { name: "4.093" })).toBeVisible();
+  expect(within(table).getByRole("cell", { name: "27.10k" })).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Highest DPS" }));
+  expect(onSelect).toHaveBeenCalledWith("sample", tradeoff);
+});
+
+it("highlights the starting setup and preserves chart points and bounds when selecting tradeoffs", async () => {
+  const baseline = { ...solution, objective_values: { prayer_bonus: 2 } };
+  const initial = {
+    ...result,
+    solutions: [{ id: "best-found", live: baseline }],
+  } as unknown as OptimizationReply;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            points: [{ id: "sample", ...solution }],
+            total: 1,
+            next_cursor: null,
+          }),
+          { status: 200 },
+        ),
+    ),
+  );
+  function Selection() {
+    const [id, setId] = useState("best-found");
+    return (
+      <ObjectiveFrontier
+        result={initial}
+        swapLimit={0}
+        selectedId={id}
+        onSelect={setId}
+      />
+    );
+  }
+  render(<Selection />);
+  const table = screen.getByRole("table", { name: "All objective tradeoffs" });
+  const selectedRow = within(table).getByRole("row", { selected: true });
+  expect(
+    within(selectedRow).getByRole("button", { name: "Current selection" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    within(selectedRow).getByRole("cell", { name: "2.000" }),
+  ).toBeVisible();
+  await waitFor(() => expect(table).toHaveAttribute("aria-busy", "false"));
+  expect(within(table).getAllByRole("row", { selected: true })).toHaveLength(1);
+  const baselinePoint = screen.getByRole("button", {
+    name: /Select tradeoff best-found,/,
+  });
+  expect(baselinePoint).toHaveAttribute("aria-pressed", "true");
+  const point = screen.getByRole("button", { name: /Select tradeoff sample,/ });
+  const position = [point.getAttribute("cx"), point.getAttribute("cy")];
+  const chart = screen.getByRole("group", { name: "DPS vs Prayer bonus" });
+  const ticks = Array.from(
+    chart.querySelectorAll("text"),
+    (node) => node.textContent,
+  );
+  fireEvent.click(point);
+  await waitFor(() => expect(point).toHaveAttribute("aria-pressed", "true"));
+  expect(
+    screen.queryByRole("button", { name: "Current selection" }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(table).getByRole("button", { name: "Select setup 1" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(baselinePoint).toBeInTheDocument();
+  expect(baselinePoint).toHaveAttribute("aria-pressed", "false");
+  expect([point.getAttribute("cx"), point.getAttribute("cy")]).toEqual(
+    position,
+  );
+  expect(
+    Array.from(chart.querySelectorAll("text"), (node) => node.textContent),
+  ).toEqual(ticks);
+  fireEvent.click(baselinePoint);
+  await waitFor(() =>
+    expect(baselinePoint).toHaveAttribute("aria-pressed", "true"),
+  );
+  expect(point).toHaveAttribute("aria-pressed", "false");
+  expect(
+    within(table).getByRole("button", { name: "Current selection" }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+it("keeps a selected chart configuration visible while browsing and sorting other table results", async () => {
+  const fetcher = vi.fn(
+    async (input: string) =>
+      new Response(
+        JSON.stringify({
+          points:
+            input.includes("cursor=") || input.includes("direction=asc")
+              ? [{ id: "other", ...solution, score: 8 }]
+              : [{ id: "sample", ...solution }],
+          total: 51,
+          next_cursor: input.includes("cursor=") ? null : "next",
+        }),
+        { status: 200 },
+      ),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <ObjectiveFrontier
+      result={result}
+      swapLimit={0}
+      selectedId="sample"
+      onSelect={() => {}}
+    />,
+  );
+  const table = screen.getByRole("table", { name: "All objective tradeoffs" });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled(),
+  );
+  expect(within(table).getAllByRole("row", { selected: true })).toHaveLength(1);
+  expect(
+    screen.queryByRole("button", { name: "Current selection" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  await screen.findByRole("button", { name: "Select setup 51" });
+  const pinned = await screen.findByRole("button", {
+    name: "Current selection",
+  });
+  expect(pinned).toHaveAttribute("aria-pressed", "true");
+  expect(
+    within(pinned.closest("tr")!).getByRole("cell", {
+      name: "10.000",
+    }),
+  ).toBeVisible();
+  fireEvent.change(screen.getByRole("combobox", { name: "Sort direction" }), {
+    target: { value: "asc" },
+  });
+  await waitFor(() =>
+    expect(
+      fetcher.mock.calls.some(([url]) => url.includes("direction=asc")),
+    ).toBe(true),
+  );
+  await waitFor(() => expect(table).toHaveAttribute("aria-busy", "false"));
+  expect(
+    screen.getByRole("button", { name: "Current selection" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", { name: "Select setup 1" }),
+  ).toHaveAttribute("aria-pressed", "false");
+  expect(within(table).getAllByRole("row", { selected: true })).toHaveLength(1);
+});
+
+it.each(["run", "group", "swap limit"])(
+  "retains unsampled selections until the %s changes",
+  (scope) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              points: [],
+              total: 0,
+              next_cursor: null,
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+    const unsampled = {
+      ...solution,
+      score: 8,
+      objective_values: { prayer_bonus: 8 },
+    };
+    const selectedResult = {
+      ...result,
+      solutions: [{ id: "unsampled", live: unsampled }],
+    } as unknown as OptimizationReply;
+    const props = { result: selectedResult, swapLimit: 0, onSelect: vi.fn() };
+    const { rerender } = render(
+      <ObjectiveFrontier {...props} selectedId="unsampled" />,
+    );
+    const point = screen.getByRole("button", {
+      name: /Select tradeoff sample,/,
+    });
+    const position = [point.getAttribute("cx"), point.getAttribute("cy")];
+    rerender(<ObjectiveFrontier {...props} selectedId="sample" />);
+    expect(
+      screen.getByRole("button", { name: /Select tradeoff unsampled,/ }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect([point.getAttribute("cx"), point.getAttribute("cy")]).toEqual(
+      position,
+    );
+    const next = {
+      ...selectedResult,
+      live: {
+        ...selectedResult.live!,
+        run_id: scope === "run" ? "next-run" : selectedResult.live!.run_id,
+        result: {
+          ...selectedResult.live!.result,
+          objective_frontiers: [
+            {
+              ...selectedResult.live!.result.objective_frontiers![0],
+              id: scope === "group" ? "next-group" : "group",
+              swap_limit: scope === "swap limit" ? 1 : 0,
+            },
+          ],
+        },
+      },
+    };
+    rerender(
+      <ObjectiveFrontier
+        {...props}
+        result={next}
+        swapLimit={scope === "swap limit" ? 1 : 0}
+        selectedId="sample"
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /Select tradeoff unsampled,/ }),
+    ).not.toBeInTheDocument();
+  },
+);
 
 it("opens the full lab with the current scoped result and selected point", async () => {
   vi.stubGlobal(

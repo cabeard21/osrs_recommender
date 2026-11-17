@@ -31,6 +31,57 @@ test("colored default opens a full lab for the actual optimization result", asyn
   await expect(region.getByLabel("Color represents")).toBeVisible();
   await expect(region.getByLabel("Color represents")).not.toHaveValue("");
   await expect(region.getByRole("img", { name: /color scale/ })).toBeVisible();
+  const chart = region.locator(".objective-scatter-plot");
+  const initialSelection = chart.locator('circle[aria-pressed="true"]');
+  await expect(initialSelection).toHaveCount(1);
+  const selectedRow = region
+    .getByRole("table", { name: "All objective tradeoffs" })
+    .getByRole("row", { selected: true });
+  await expect(selectedRow).toHaveCount(1);
+  await expect(
+    selectedRow.getByRole("button", { name: "Current selection" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    selectedRow.getByRole("cell", {
+      name: body.result.selected_solution.score.toFixed(3),
+      exact: true,
+    }),
+  ).toBeVisible();
+  const initialLabel = (await initialSelection.getAttribute("aria-label"))!;
+  const positions = () =>
+    chart.locator("circle").evaluateAll((circles) =>
+      Object.fromEntries(
+        circles.map((circle) => [
+          circle.getAttribute("aria-label"),
+          {
+            x: circle.getAttribute("cx"),
+            y: circle.getAttribute("cy"),
+          },
+        ]),
+      ),
+    );
+  const beforeSelection = await positions();
+  const axisLabels = await chart.locator("text").allTextContents();
+  const alternative = chart.locator('circle[aria-pressed="false"]').first();
+  const alternativeLabel = (await alternative.getAttribute("aria-label"))!;
+  await alternative.scrollIntoViewIfNeeded();
+  await alternative.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    chart.getByRole("button", { name: alternativeLabel, exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(await positions()).toEqual(beforeSelection);
+  expect(await chart.locator("text").allTextContents()).toEqual(axisLabels);
+  const original = chart.getByRole("button", {
+    name: initialLabel,
+    exact: true,
+  });
+  await original.focus();
+  await page.keyboard.press("Enter");
+  await expect(original).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    selectedRow.getByRole("button", { name: "Current selection" }),
+  ).toHaveAttribute("aria-pressed", "true");
   const popupEvent = page.waitForEvent("popup");
   await region.getByRole("link", { name: /Open full tradeoff lab/ }).click();
   const lab = await popupEvent;
