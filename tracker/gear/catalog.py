@@ -64,7 +64,20 @@ from tracker.gear.tomes import apply_review as tome_review
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
 # Their physical rows must still match before sharing requirements/effects review.
-REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType({25264: 11773, 26770: 11773})
+# Glory charges power teleports; all six ordinary charged forms retain the same
+# combat bonuses and wear gates. https://oldschool.runescape.wiki/w/Amulet_of_glory
+REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType(
+    {
+        25264: 11773,
+        26770: 11773,
+        1706: 1704,
+        1708: 1704,
+        1710: 1704,
+        1712: 1704,
+        11976: 1704,
+        11978: 1704,
+    }
+)
 
 # Exact physical staves with reviewed Standard spellbook autocast.
 # https://oldschool.runescape.wiki/w/Autocast
@@ -367,12 +380,14 @@ def load_catalog(
         },
         sort_keys=True,
     ).encode("utf-8")
+    equivalent_reviews = json.dumps(dict(REVIEWED_EQUIVALENT_FORMS), sort_keys=True).encode()
     revision = (
         sha256(
             payload
             + source_payload
             + community_payload
             + reviewed_spells
+            + equivalent_reviews
             + POWERED_REVISION
             + OBSIDIAN_REVISION
             + TOME_REVISION
@@ -394,6 +409,7 @@ def load_catalog(
         else sha256(
             payload
             + reviewed_spells
+            + equivalent_reviews
             + POWERED_REVISION
             + OBSIDIAN_REVISION
             + TOME_REVISION
