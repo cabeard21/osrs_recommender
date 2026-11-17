@@ -468,6 +468,37 @@ it("scrolls to results after a run only on the stacked layout", async () => {
   await user.click(screen.getByRole("button", { name: "Run optimization" }));
   await screen.findByRole("heading", { name: /Best configuration found/ });
   expect(scrollIntoView).toHaveBeenCalledOnce();
+  await user.click(screen.getByRole("button", { name: "Reoptimize" }));
+  await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(2));
+});
+
+it("scrolls when a pending run completes after returning from another workspace", async () => {
+  const user = userEvent.setup();
+  const scrollIntoView = vi.fn();
+  Element.prototype.scrollIntoView = scrollIntoView;
+  vi.spyOn(window, "matchMedia").mockImplementation(
+    (query: string) =>
+      ({ matches: query.includes("max-width") }) as MediaQueryList,
+  );
+  let complete: (() => void) | undefined;
+  setup({
+    optimize: (init) =>
+      new Promise<Response>((resolve) => {
+        complete = () =>
+          resolve(
+            new Response(JSON.stringify(reply(JSON.parse(String(init?.body))))),
+          );
+      }),
+  });
+  await ready();
+  await user.click(screen.getByRole("button", { name: "Run optimization" }));
+  await waitFor(() => expect(complete).toBeTypeOf("function"));
+  await user.click(screen.getByRole("button", { name: "Multi-style" }));
+  await user.click(screen.getByRole("button", { name: "Single-style" }));
+  expect(scrollIntoView).not.toHaveBeenCalled();
+  complete!();
+  await screen.findByRole("heading", { name: /Best configuration found/ });
+  expect(scrollIntoView).toHaveBeenCalledOnce();
 });
 
 it("closes the side-panel inspector with Escape when focus is outside it", async () => {

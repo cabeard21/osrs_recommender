@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
-import { ObjectiveFrontierChart } from "./ObjectiveFrontierChart";
+import { ObjectiveScatter } from "./ObjectiveScatter";
+import { useRetainedObjectivePoints } from "./useRetainedObjectivePoints";
 import {
   createLabSnapshot,
   selectedLabSolution,
@@ -87,6 +88,28 @@ export function ObjectiveFrontier({
       })),
     [group],
   );
+  const axes = [{ id: "dps", label: "DPS" }, ...definitions];
+  const scope = JSON.stringify([
+    runId,
+    groupId,
+    swapLimit,
+    axes.map((axis) => axis.id),
+  ]);
+  const selected =
+    selectedLabSolution(result, selectedId) ??
+    group?.points.find((point) => point.id === selectedId)?.solution;
+  const retained = useRetainedObjectivePoints<Point>(
+    scope,
+    selected
+      ? {
+          id: selectedId,
+          score: selected.score,
+          objective_values: selected.objective_values ?? {},
+          purchase_cost_gp: selected.purchase_cost_gp,
+          maximum_actions: selected.maximum_actions,
+        }
+      : undefined,
+  );
   useEffect(() => {
     setCursors([null]);
     setPage(null);
@@ -159,24 +182,13 @@ export function ObjectiveFrontier({
   };
   if (!group || result.scenario.request.objectives === undefined) return null;
   const rows = page?.points ?? samples;
-  const axes = [{ id: "dps", label: "DPS" }, ...definitions];
-  const selected =
-    selectedLabSolution(result, selectedId) ??
-    group.points.find((point) => point.id === selectedId)?.solution;
-  const selectedRow: Point | undefined =
-    selected && !rows.some((point) => point.id === selectedId)
-      ? {
-          id: selectedId,
-          score: selected.score,
-          objective_values: selected.objective_values ?? {},
-          purchase_cost_gp: selected.purchase_cost_gp,
-          maximum_actions: selected.maximum_actions,
-        }
-      : undefined;
   const tableRows = [
-    ...(selectedRow
-      ? [{ point: selectedRow, label: "Current selection" }]
-      : []),
+    ...retained
+      .map((point, index) => ({
+        point,
+        label: index === 0 ? "Starting setup" : `Viewed setup ${index}`,
+      }))
+      .filter(({ point }) => !rows.some((row) => row.id === point.id)),
     ...rows.map((point, index) => ({
       point,
       label: `Select setup ${(cursors.length - 1) * 50 + index + 1}`,
@@ -250,25 +262,15 @@ export function ObjectiveFrontier({
             {group.sampled ? " from the full table" : ""}. A point can appear
             worse on these axes while improving another objective.
           </p>
-          <ObjectiveFrontierChart
-            key={JSON.stringify([
-              runId,
-              groupId,
-              swapLimit,
-              axes.map((axis) => axis.id),
-            ])}
+          <ObjectiveScatter
+            key={scope}
             axes={axes}
-            points={samples}
-            selected={
-              selected
-                ? {
-                    id: selectedId,
-                    score: selected.score,
-                    objective_values: selected.objective_values ?? {},
-                    purchase_cost_gp: selected.purchase_cost_gp,
-                  }
-                : undefined
-            }
+            points={[
+              ...samples,
+              ...retained.filter(
+                (point) => !samples.some((p) => p.id === point.id),
+              ),
+            ]}
             selectedId={selectedId}
             disabled={selecting}
             onSelect={(id) => void choose(id)}

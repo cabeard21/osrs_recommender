@@ -68,19 +68,21 @@ export default function App() {
     observer.observe(bar);
     return () => observer.disconnect();
   }, []);
-  const lastResult = useRef({ mode: state.mode, result: current.result });
+  // Selecting a tradeoff updates parsed solutions within the same live run.
+  const resultIdentity = current.result?.live ?? current.result;
+  const lastResult = useRef({ mode: state.mode, result: resultIdentity });
   useEffect(() => {
     const previous = lastResult.current;
-    lastResult.current = { mode: state.mode, result: current.result };
+    lastResult.current = { mode: state.mode, result: resultIdentity };
     if (
       previous.mode !== state.mode ||
-      !current.result ||
-      previous.result === current.result ||
+      !resultIdentity ||
+      previous.result === resultIdentity ||
       !window.matchMedia(STACKED_LAYOUT_QUERY).matches
     )
       return;
     document.querySelector(".result-column")?.scrollIntoView?.();
-  }, [state.mode, current.result]);
+  }, [state.mode, resultIdentity]);
   const solution = current.result?.solutions.find(
     (s) => s.id === current.solutionId,
   );

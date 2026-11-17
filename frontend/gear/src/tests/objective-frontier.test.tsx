@@ -128,7 +128,7 @@ it("highlights the starting setup and preserves chart points and bounds when sel
   const table = screen.getByRole("table", { name: "All objective tradeoffs" });
   const selectedRow = within(table).getByRole("row", { selected: true });
   expect(
-    within(selectedRow).getByRole("button", { name: "Current selection" }),
+    within(selectedRow).getByRole("button", { name: "Starting setup" }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(
     within(selectedRow).getByRole("cell", { name: "2.000" }),
@@ -146,11 +146,20 @@ it("highlights the starting setup and preserves chart points and bounds when sel
     chart.querySelectorAll("text"),
     (node) => node.textContent,
   );
-  fireEvent.click(point);
+  const rowLabels = within(table)
+    .getAllByRole("button")
+    .map((button) => button.textContent);
+  fireEvent.click(
+    within(table).getByRole("button", { name: "Select setup 1" }),
+  );
   await waitFor(() => expect(point).toHaveAttribute("aria-pressed", "true"));
+  expect(selectedRow).toBeInTheDocument();
+  expect(selectedRow).toHaveAttribute("aria-selected", "false");
   expect(
-    screen.queryByRole("button", { name: "Current selection" }),
-  ).not.toBeInTheDocument();
+    within(table)
+      .getAllByRole("button")
+      .map((button) => button.textContent),
+  ).toEqual(rowLabels);
   expect(
     within(table).getByRole("button", { name: "Select setup 1" }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -162,13 +171,13 @@ it("highlights the starting setup and preserves chart points and bounds when sel
   expect(
     Array.from(chart.querySelectorAll("text"), (node) => node.textContent),
   ).toEqual(ticks);
-  fireEvent.click(baselinePoint);
+  fireEvent.click(within(selectedRow).getByRole("button"));
   await waitFor(() =>
     expect(baselinePoint).toHaveAttribute("aria-pressed", "true"),
   );
   expect(point).toHaveAttribute("aria-pressed", "false");
   expect(
-    within(table).getByRole("button", { name: "Current selection" }),
+    within(table).getByRole("button", { name: "Starting setup" }),
   ).toHaveAttribute("aria-pressed", "true");
 });
 
@@ -202,12 +211,12 @@ it("keeps a selected chart configuration visible while browsing and sorting othe
   );
   expect(within(table).getAllByRole("row", { selected: true })).toHaveLength(1);
   expect(
-    screen.queryByRole("button", { name: "Current selection" }),
+    screen.queryByRole("button", { name: "Starting setup" }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   await screen.findByRole("button", { name: "Select setup 51" });
   const pinned = await screen.findByRole("button", {
-    name: "Current selection",
+    name: "Starting setup",
   });
   expect(pinned).toHaveAttribute("aria-pressed", "true");
   expect(
@@ -225,7 +234,7 @@ it("keeps a selected chart configuration visible while browsing and sorting othe
   );
   await waitFor(() => expect(table).toHaveAttribute("aria-busy", "false"));
   expect(
-    screen.getByRole("button", { name: "Current selection" }),
+    screen.getByRole("button", { name: "Starting setup" }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(
     screen.getByRole("button", { name: "Select setup 1" }),
@@ -271,6 +280,9 @@ it.each(["run", "group", "swap limit"])(
     expect(
       screen.getByRole("button", { name: /Select tradeoff unsampled,/ }),
     ).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.getByRole("button", { name: "Starting setup" }),
+    ).toHaveAttribute("aria-pressed", "false");
     expect([point.getAttribute("cx"), point.getAttribute("cy")]).toEqual(
       position,
     );
@@ -301,6 +313,9 @@ it.each(["run", "group", "swap limit"])(
     );
     expect(
       screen.queryByRole("button", { name: /Select tradeoff unsampled,/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Starting setup" }),
     ).not.toBeInTheDocument();
   },
 );
