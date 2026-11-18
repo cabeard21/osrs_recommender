@@ -1,5 +1,7 @@
 """Vector search retains complete tradeoffs before bounded beam selection."""
 
+import pytest
+
 from tests.gear.test_optimizer import run, weapon
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 from tracker.gear.optimizer import CombatOptionFilters, RoleConfig
@@ -112,8 +114,6 @@ def test_exhausted_option_products_resume_in_later_reserved_phase(monkeypatch):
 
 
 def test_cancelled_search_removes_all_owned_temporary_archives(monkeypatch, tmp_path):
-    import pytest
-
     import tracker.gear.vector_archive as archive_module
     from tracker.gear.vector_search import VectorSearch
 
@@ -176,3 +176,72 @@ def test_group_metric_leader_survives_crowded_component_specialists(monkeypatch)
     points = result["objective_frontiers"][0]["points"]
     assert len(points) == 1
     assert points[0]["solution"]["loadouts"]["a"]["equipment"]["head"] == 1000
+
+
+@pytest.mark.parametrize(
+    ("style", "locked", "ranged_strength", "expected_ammunition", "expected_prayer"),
+    [
+        ("slash", False, False, 20226, 1),
+        ("slash", True, False, 882, 0),
+        ("ranged", False, False, 882, 0),
+        ("slash", False, True, 882, 0),
+    ],
+)
+def test_vector_frontier_checks_prayer_ammunition_beyond_refinement_seeds(
+    monkeypatch, style, locked, ranged_strength, expected_ammunition, expected_prayer
+):
+    from tracker.gear.vector_search import VectorSearch
+
+    original_explore = VectorSearch.explore
+    equipment = {"weapon": 1, "ammunition": 882}
+
+    def explore(engine, _seeds):
+        return original_explore(engine, ())
+
+    def bounded_equipment(engine, *_args, **_kwargs):
+        engine.capture({"a": equipment})
+        return [equipment]
+
+    # Isolate a frontier member whose alternate ammo assignment was missed.
+    monkeypatch.setattr(VectorSearch, "capture_base", lambda *_args: None)
+    monkeypatch.setattr(VectorSearch, "explore", explore)
+    monkeypatch.setattr(VectorSearch, "equipment", bounded_equipment)
+    monkeypatch.setattr("tracker.gear.vector_refinement._seeds", lambda *_args: [])
+    monkeypatch.setattr("tracker.gear.optimizer.needs_running_cost_frontier", lambda *_args: False)
+
+    items = [
+        weapon(1, style, 30, ammo_for=("arrow:882",) if style == "ranged" else ()),
+        EquipmentDefinition(
+            id=882,
+            name="Bronze arrow",
+            slot="ammunition",
+            ammo_type="arrow:882",
+            bonuses=EquipmentBonuses(ranged_strength=7),
+            requirements_complete=True,
+        ),
+        EquipmentDefinition(
+            id=20226,
+            name="Peaceful blessing",
+            slot="ammunition",
+            ammo_type="bolt:20226",
+            bonuses=EquipmentBonuses(prayer=1),
+            requirements_complete=True,
+        ),
+    ]
+    role = RoleConfig(id="a", style=style, locks={"ammunition": 882} if locked else {})
+    objectives = [{"kind": "defence_roll", "styles": ["slash"]}, {"kind": "prayer_bonus"}]
+    if ranged_strength:
+        objectives.append({"kind": "ranged_strength_bonus"})
+    original = run(items[:-1], (role,), max_swaps=0, objectives=objectives)
+    expected = original["objective_frontiers"][0]["points"][0]["solution"]
+    result = run(items, (role,), max_swaps=0, objectives=objectives)
+    (point,) = result["objective_frontiers"][0]["points"]
+    solution = point["solution"]
+    assert solution["loadouts"]["a"]["equipment"]["ammunition"] == expected_ammunition
+    assert solution["objective_values"]["prayer_bonus"] == expected_prayer
+    assert solution["purchase_cost_gp"] == 0
+    assert solution["score"] == expected["score"]
+    slash_defence = "defence_roll:minimum:slash"
+    defence = solution["objective_values"][slash_defence]
+    assert defence == expected["objective_values"][slash_defence]
+    assert solution["loadouts"]["a"]["combat_option"] == expected["loadouts"]["a"]["combat_option"]
