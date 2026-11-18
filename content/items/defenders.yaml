@@ -1,0 +1,151 @@
+# Ordinary shield stats and wear requirements.
+# https://oldschool.runescape.wiki/w/Defender
+# https://oldschool.runescape.wiki/w/Rune_defender_(t)
+# https://oldschool.runescape.wiki/w/Dragon_defender_(t)
+# https://oldschool.runescape.wiki/w/Ghommal%27s_avernic_defender_5
+# https://oldschool.runescape.wiki/w/Ghommal%27s_avernic_defender_6
+# The optimizer scores ordinary combat stats. Travel and Barrows prayer drain
+# are outside its combat model. Combat Achievement unlocks still gate wear.
+# Variant IDs are wearable locked forms confirmed against RuneLite's ItemID.
+
+- id: bronze_defender
+  name: Bronze defender
+  item_id: 8844
+  variant_item_ids: [24136]
+  slot: shield
+  acquisition: untradeable
+  price_mode: static
+
+- id: iron_defender
+  name: Iron defender
+  item_id: 8845
+  variant_item_ids: [24137]
+  slot: shield
+  acquisition: untradeable
+  price_mode: static
+
+- id: steel_defender
+  name: Steel defender
+  item_id: 8846
+  variant_item_ids: [24138]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 5
+    - skill:
+        defence: 5
+  acquisition: untradeable
+  price_mode: static
+
+- id: black_defender
+  name: Black defender
+  item_id: 8847
+  variant_item_ids: [24139]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 10
+    - skill:
+        defence: 10
+  acquisition: untradeable
+  price_mode: static
+
+- id: mithril_defender
+  name: Mithril defender
+  item_id: 8848
+  variant_item_ids: [24140]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 20
+    - skill:
+        defence: 20
+  acquisition: untradeable
+  price_mode: static
+
+- id: adamant_defender
+  name: Adamant defender
+  item_id: 8849
+  variant_item_ids: [24141]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 30
+    - skill:
+        defence: 30
+  acquisition: untradeable
+  price_mode: static
+
+- id: rune_defender
+  name: Rune defender
+  item_id: 8850
+  variant_item_ids: [24142]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 40
+    - skill:
+        defence: 40
+  acquisition: untradeable
+  price_mode: static
+
+- id: rune_defender_trimmed
+  name: Rune defender (t)
+  item_id: 23230
+  variant_item_ids: [27009]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 40
+    - skill:
+        defence: 40
+  acquisition: untradeable
+  price_mode: static
+
+- id: dragon_defender_trimmed
+  name: Dragon defender (t)
+  item_id: 19722
+  variant_item_ids: [27008]
+  slot: shield
+  requires:
+    skill:
+      defence: 60
+  acquisition: untradeable
+  price_mode: static
+
+- id: ghommal_avernic_defender_5
+  name: Ghommal's avernic defender 5
+  item_id: 27550
+  variant_item_ids: [27551]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 70
+    - skill:
+        defence: 70
+    - unlock: ca_master
+  acquisition: untradeable
+  price_mode: static
+
+- id: ghommal_avernic_defender_6
+  name: Ghommal's avernic defender 6
+  item_id: 27552
+  variant_item_ids: [27553]
+  slot: shield
+  requires:
+    all_of:
+    - skill:
+        attack: 70
+    - skill:
+        defence: 70
+    - unlock: ca_grandmaster
+  acquisition: untradeable
+  price_mode: static
+

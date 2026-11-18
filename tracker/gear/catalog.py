@@ -79,6 +79,21 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType(
         1712: 1704,
         11976: 1704,
         11978: 1704,
+        # Wearable locked defenders share combat stats and wear gates with the
+        # ordinary form. Broken forms need repair and are excluded.
+        24136: 8844,
+        24137: 8845,
+        24138: 8846,
+        24139: 8847,
+        24140: 8848,
+        24141: 8849,
+        24142: 8850,
+        24143: 12954,
+        24186: 22322,
+        27008: 19722,
+        27009: 23230,
+        27551: 27550,
+        27553: 27552,
     }
 )
 
