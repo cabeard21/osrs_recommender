@@ -1088,7 +1088,7 @@
 - id: dragon_defender
   name: Dragon defender
   item_id: 12954
-  variant_item_ids: [20463, 24143]
+  variant_item_ids: [24143]
   slot: shield
   style: melee
   tier: 3
@@ -1102,7 +1102,7 @@
 - id: avernic_defender
   name: Avernic defender
   item_id: 22322
-  variant_item_ids: [22441, 24186]
+  variant_item_ids: [24186]
   slot: shield
   style: melee
   tier: 4
