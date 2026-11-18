@@ -8,11 +8,13 @@ from collections.abc import Iterable, Mapping
 from itertools import product
 from typing import Any
 
-from tracker.gear.evaluation import loadout_problems
+from tracker.gear.evaluation import loadout_problems, planning_owned
+from tracker.gear.models import EquipmentDefinition
 from tracker.gear.objectives import annotate_solution, objective_policy
 from tracker.gear.vector_archive import VectorArchive
 from tracker.gear.vector_options import OptionVariant, VectorOptions
 from tracker.gear.vector_publish import FrontierPoints
+from tracker.gear.vector_refinement import _safe_improvement
 from tracker.gear.vector_retention import retain
 
 
@@ -25,6 +27,20 @@ class VectorSearch:
         self.ids = tuple(objective.id for objective in self.objectives)
         self.policy = objective_policy(self.objectives, thorough)
         self.options = VectorOptions(search)
+        self.prayer_ammunition: tuple[EquipmentDefinition, ...] = ()
+        if len(search.request.roles) == 1 and "prayer_bonus" in self.ids:
+            self.prayer_ammunition = tuple(
+                sorted(
+                    (
+                        item
+                        for item in search.eligible.values()
+                        if item.slot == "ammunition"
+                        and item.bonuses.prayer > 0
+                        and planning_owned(search.facts[item.id])["status"] == "owned"
+                    ),
+                    key=lambda item: (-item.bonuses.prayer, item.id),
+                )
+            )
         caps = [*range(search.request.max_swaps + 1), None]
         common = VectorArchive(self.ids) if len(search.request.roles) == 1 else None
         self.archives = {
@@ -71,8 +87,50 @@ class VectorSearch:
         updated = set()
         for cap, archive in self.archives.items():
             if (cap is None or annotated["maximum_actions"] <= cap) and id(archive) not in updated:
-                self.accepted += int(archive.add(annotated))
                 updated.add(id(archive))
+                if archive.add(annotated):
+                    self.accepted += 1
+                    if self.prayer_ammunition:
+                        upgrade = self._prayer_ammunition_upgrade(annotated)
+                        if upgrade is not None:
+                            self.accepted += int(archive.add(upgrade))
+
+    def _prayer_ammunition_upgrade(self, solution: dict[str, Any]) -> dict[str, Any] | None:
+        """Check idle melee ammunition on admission, including rows outside the seed pool."""
+        role = self.search.request.roles[0]
+        loadout = solution["loadouts"][role.id]
+        option = loadout["combat_option"]
+        if (
+            not option
+            or option["attack_type"] not in ("stab", "slash", "crush")
+            or "ammunition" in self.search.request.locks
+            or "ammunition" in role.locks
+        ):
+            return None
+        equipment = loadout["equipment"]
+        current = self.search.items.get(equipment.get("ammunition"))
+        current_prayer = current.bonuses.prayer if current is not None else 0
+        prayers = tuple(loadout["selected_prayer_ids"])
+        for item in self.prayer_ammunition:
+            if item.bonuses.prayer <= current_prayer:
+                break
+            assignment = {role.id: {**equipment, "ammunition": item.id}}
+            for variant in self.options.variants(assignment[role.id], role):
+                attack = variant.option
+                if (
+                    attack is None
+                    or any(getattr(attack, key) != value for key, value in option.items())
+                    or tuple(variant.configured.active_prayer_ids) != prayers
+                ):
+                    continue
+                candidate = self.options.solution(assignment, (variant,))
+                if (
+                    candidate is not None
+                    and candidate["running_cost"] == solution["running_cost"]
+                    and _safe_improvement(candidate, solution, self.ids)
+                ):
+                    return candidate
+        return None
 
     def capture_base(self, assignment: Mapping[str, Mapping[str, int]]) -> None:
         """Archive the DPS configuration already scored; queue paid option exploration."""
