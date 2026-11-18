@@ -528,7 +528,12 @@ export function parseOptimization(
   }
   if (scenario.request.objectives !== undefined) {
     const objectives = canonicalObjectives(scenario.request.objectives);
-    const definitions = result.objective_definitions;
+    // The API omits empty objective fields when serializing a DPS-only run.
+    const emptyObjectiveList = objectives.length === 0 ? [] : undefined;
+    const {
+      objective_definitions: definitions = emptyObjectiveList,
+      objective_frontiers: frontiers = emptyObjectiveList,
+    } = result;
     if (
       !Array.isArray(definitions) ||
       !sameValue(
@@ -539,9 +544,9 @@ export function parseOptimization(
       throw new Error(
         "Objective definitions do not match the submitted scenario",
       );
-    if (!Array.isArray(result.objective_frontiers))
+    if (!Array.isArray(frontiers))
       throw new Error("Missing objective frontiers");
-    for (const raw of result.objective_frontiers) {
+    for (const raw of frontiers) {
       const group = object(raw);
       if (
         !Array.isArray(group.points) ||
