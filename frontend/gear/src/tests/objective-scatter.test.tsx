@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { ObjectiveScatter } from "../components/ObjectiveScatter";
 
@@ -21,6 +21,54 @@ const points = [
     purchase_cost_gp: 50,
   },
 ];
+it("starts both axes at zero and positions points on the zero-based scales", () => {
+  render(
+    <ObjectiveScatter
+      axes={axes}
+      points={points}
+      selectedId="a"
+      onSelect={() => {}}
+    />,
+  );
+  const chart = within(
+    screen.getByRole("group", {
+      name: "DPS vs Accuracy, colored by Magic damage",
+    }),
+  );
+  expect(chart.getByText("0.000", { exact: true })).toBeVisible();
+  expect(chart.getByText("0.00%", { exact: true })).toBeVisible();
+  expect(
+    chart.getByRole("button", { name: /Select tradeoff b,/ }),
+  ).toHaveAttribute("cx", "457.5");
+  const point = chart.getByRole("button", { name: /Select tradeoff a,/ });
+  expect(Number(point.getAttribute("cy"))).toBeCloseTo(50);
+});
+
+it("plots zero-valued points at the origin and keeps negative values off the chart", () => {
+  render(
+    <ObjectiveScatter
+      axes={[axes[0], axes[2]]}
+      points={[
+        { ...points[0], score: 0, objective_values: { magic_damage_bonus: 0 } },
+        {
+          ...points[1],
+          score: 0,
+          objective_values: { magic_damage_bonus: -1 },
+        },
+      ]}
+      selectedId="a"
+      onSelect={() => {}}
+    />,
+  );
+  const point = screen.getByRole("button", { name: /Select tradeoff a,/ });
+  expect(point).toHaveAttribute("cx", "90");
+  expect(point).toHaveAttribute("cy", "250");
+  expect(
+    screen.queryByRole("button", { name: /Select tradeoff b,/ }),
+  ).toBeNull();
+  expect(screen.getByText(/negative value on either axis/)).toBeVisible();
+});
+
 it("can color by a current axis after clearing color without duplicating dimensions", () => {
   render(
     <ObjectiveScatter

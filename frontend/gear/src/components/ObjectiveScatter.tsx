@@ -78,15 +78,22 @@ export function ObjectiveScatter({
     : [];
   if (!y || !available.length)
     return <p>No chart values are available for these objectives.</p>;
-  const bounds = (axis: Axis): [number, number] => {
-    const values = available
+  const plotted = available.filter(
+    (point) => value(point, x.id) >= 0 && value(point, y.id) >= 0,
+  );
+  const axisBounds = (axis: Axis): [number, number] => [
+    0,
+    Math.max(0, ...plotted.map((point) => value(point, axis.id))) || 1,
+  ];
+  const colorBounds = (axis: Axis): [number, number] => {
+    const values = plotted
       .map((point) => value(point, axis.id))
       .filter(Number.isFinite);
     return values.length ? [Math.min(...values), Math.max(...values)] : [0, 1];
   };
-  const xb = bounds(x),
-    yb = bounds(y),
-    cb = colorAxis ? bounds(colorAxis) : [0, 1];
+  const xb = axisBounds(x),
+    yb = axisBounds(y),
+    cb = colorAxis ? colorBounds(colorAxis) : [0, 1];
   const normalized = (number: number, range: number[]) =>
     range[0] === range[1] ? 0.5 : (number - range[0]) / (range[1] - range[0]);
   return (
@@ -145,7 +152,7 @@ export function ObjectiveScatter({
         <text x="17" y="137" transform="rotate(-90 17 137)" textAnchor="middle">
           {y.label} →
         </text>
-        {[...available]
+        {[...plotted]
           .sort(
             (a, b) => Number(a.id === selectedId) - Number(b.id === selectedId),
           )
@@ -192,7 +199,7 @@ export function ObjectiveScatter({
             );
           })}
       </svg>
-      {colorAxis && (
+      {colorAxis && plotted.length > 0 && (
         <div className="objective-scatter-legend">
           <span>{colorAxis.label}</span>
           <svg
@@ -224,10 +231,18 @@ export function ObjectiveScatter({
           </svg>
         </div>
       )}
-      <p className="objective-scatter-hint">
-        Select a point to inspect its configuration. The selected point has a
-        white outline.
-      </p>
+      {plotted.length > 0 && (
+        <p className="objective-scatter-hint">
+          Select a point to inspect its configuration. The selected point has a
+          white outline.
+        </p>
+      )}
+      {plotted.length < available.length && (
+        <p className="objective-scatter-hint">
+          Use the table below for configurations with a negative value on either
+          axis.
+        </p>
+      )}
     </div>
   );
 }

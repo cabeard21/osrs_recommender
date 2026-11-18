@@ -258,9 +258,9 @@ export function ObjectiveFrontier({
       {definitions.length > 0 && (
         <>
           <p>
-            Chart shows {samples.length} representative points
-            {group.sampled ? " from the full table" : ""}. A point can appear
-            worse on these axes while improving another objective.
+            {group.sampled && "The chart uses a sample from the full table. "}A
+            point can appear worse on these axes while improving another
+            objective.
           </p>
           <ObjectiveScatter
             key={scope}
