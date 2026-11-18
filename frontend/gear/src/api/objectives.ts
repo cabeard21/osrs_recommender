@@ -153,6 +153,7 @@ export function objectiveValues(
   value: unknown,
   expected: Objective[],
 ): Record<string, number> {
+  if (value === undefined && expected.length === 0) return {};
   if (!value || typeof value !== "object")
     throw new Error("Missing objective measurements.");
   const measurements = value as Record<string, unknown>,

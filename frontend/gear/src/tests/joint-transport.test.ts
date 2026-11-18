@@ -10,6 +10,7 @@ import { parseJointSolution } from "../api/jointResults";
 import { parseItem } from "../api/httpClient";
 import type { JointSolutionDTO } from "../api/contracts";
 import { workBudgetPolicy } from "../api/optimizationModes";
+import { dpsObjectiveResponse } from "./dps-objective-response";
 const performance = {
   supported: true,
   dps: 2,
@@ -132,6 +133,41 @@ it("rejects malformed joint identity and inventory facts", () => {
   const { scenario, reply } = example();
   reply.result.selected_solution.remaining_inventory_slots = 17;
   expect(() => parseOptimization(reply, scenario)).toThrow(/inventory/);
+});
+it("accepts a DPS-only joint response whose empty objective fields are omitted", () => {
+  const { scenario: legacy, reply } = example();
+  const scenario = {
+    ...legacy,
+    request: { ...legacy.request, objectives: [] },
+  };
+  const body = dpsObjectiveResponse({
+    ...reply,
+    scenario: optimizationRequest(scenario),
+  });
+  const liveBody = {
+    ...body,
+    result: {
+      ...body.result,
+      objective_frontiers: [
+        {
+          swap_limit: 1,
+          sampled: false,
+          points: [
+            { id: "dps-point", solution: body.result.selected_solution },
+          ],
+        },
+      ],
+    },
+  };
+  expect(
+    parseOptimization(liveBody, scenario).solutions.map((s) => s.id),
+  ).toEqual(["curve-0", "curve-1", "dps-point"]);
+  Object.assign(body.result.selected_solution, {
+    objective_values: { prayer_bonus: 1 },
+  });
+  expect(() => parseOptimization(body, scenario)).toThrow(
+    /measurements do not match/,
+  );
 });
 it("keeps unsupported utility metrics unavailable and refuses joint manual evaluation", async () => {
   const { scenario, reply } = example();

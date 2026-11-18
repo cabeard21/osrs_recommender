@@ -78,6 +78,39 @@ it("accepts the backend DPS-only objective policy and rejects a nonzero objectiv
     ),
   ).toThrow(/objective search policy/);
 });
+it("requires objective metadata when a tradeoff objective was submitted", () => {
+  const scenario = normalize(
+    { ...newDraft(), objectives: [{ kind: "prayer_bonus" }] },
+    context.account.snapshot_id,
+    true,
+  );
+  const frontier_policy = {
+    policy: "vector-pareto-v1",
+    objective_count: 1,
+    expansion_limit: 500000,
+  };
+  const body = {
+    ...response(),
+    scenario: optimizationRequest(scenario),
+    frontier_policy,
+    result: { ...response().result, frontier_policy },
+  };
+  expect(() => parseOptimization(body, scenario)).toThrow(
+    /Objective definitions do not match/,
+  );
+  expect(() =>
+    parseOptimization(
+      {
+        ...body,
+        result: {
+          ...body.result,
+          objective_definitions: [{ id: "prayer_bonus" }],
+        },
+      },
+      scenario,
+    ),
+  ).toThrow(/Missing objective frontiers/);
+});
 it("defaults legacy response acquisition policy off and rejects unsubmitted untradeable access", () => {
   const scenario = normalize(newDraft(), context.account.snapshot_id);
   const body = response();

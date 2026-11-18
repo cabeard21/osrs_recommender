@@ -3,7 +3,7 @@
 export function dpsObjectiveResponse<
   T extends {
     scenario: unknown;
-    result: { selected_solution: object | null };
+    result: object;
   },
 >(body: T): T {
   const scenario = body.scenario as { objectives?: unknown };
@@ -33,12 +33,6 @@ export function dpsObjectiveResponse<
     result: {
       ...body.result,
       frontier_policy,
-      objective_definitions: [],
-      objective_frontiers: [],
-      selected_solution: body.result.selected_solution && {
-        ...body.result.selected_solution,
-        objective_values: {},
-      },
     },
   };
 }
