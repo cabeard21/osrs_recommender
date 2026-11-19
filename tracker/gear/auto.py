@@ -10,8 +10,10 @@ from typing import Any
 
 from tracker.gear.discipline_assignments import branch_requests as branch_requests
 from tracker.gear.discipline_assignments import merge_assignment_results
+from tracker.gear.vector_archive import own_vector_archives
 
 
+@own_vector_archives
 def optimize_auto(
     snapshot: Any,
     request: Any,
@@ -83,7 +85,13 @@ def optimize_auto(
     branches_at = perf_counter()
     if progress is not None:
         progress({"phase": "merge"})
-    result = merge_auto_results(request, branches, complete_frontiers=complete_frontiers)
+    result = merge_auto_results(
+        request,
+        branches,
+        complete_frontiers=complete_frontiers,
+        native_merge=options.get("_native_search", False),
+        cancelled=cancelled,
+    )
     finished = perf_counter()
     return {
         **result,
@@ -99,11 +107,19 @@ def optimize_auto(
 
 
 def merge_auto_results(
-    request: Any, branches: list[tuple[str, dict[str, Any]]], *, complete_frontiers: bool = False
+    request: Any,
+    branches: list[tuple[str, dict[str, Any]]],
+    *,
+    complete_frontiers: bool = False,
+    native_merge: bool = False,
+    cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     """Combine complete concrete-discipline archives using the requested global cap."""
+    merge_options: dict[str, Any] = {"native_merge": native_merge, "cancelled": cancelled}
     if len(request.roles) > 1:
-        return merge_assignment_results(request, branches, complete_frontiers=complete_frontiers)
+        return merge_assignment_results(
+            request, branches, complete_frontiers=complete_frontiers, **merge_options
+        )
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _objective_winner_key
     from tracker.gear.potion_search import merge_objective_frontiers
@@ -213,6 +229,7 @@ def merge_auto_results(
                     [result],
                     id_prefix=f"discipline-{discipline}-",
                     complete_frontiers=complete_frontiers,
+                    **merge_options,
                 ),
                 "running_cost_frontiers": [],
                 "search": result["search"],
@@ -228,7 +245,10 @@ def merge_auto_results(
         "secondary_frontiers": frontiers,
         "running_cost_frontiers": [],
         **merge_objective_frontiers(
-            request, [result for _, result in branches], complete_frontiers=complete_frontiers
+            request,
+            [result for _, result in branches],
+            complete_frontiers=complete_frontiers,
+            **merge_options,
         ),
         "discipline_comparison": comparison,
         "discipline_results": discipline_results,

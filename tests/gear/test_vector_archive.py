@@ -1,5 +1,7 @@
 """Exact arbitrary-dimensional dominance and configuration identity."""
 
+import pytest
+
 from tracker.gear.vector_archive import VectorArchive, dominates
 
 
@@ -33,6 +35,30 @@ def test_archive_order_does_not_change_membership():
     for candidate in reversed(candidates):
         second.add(candidate)
     assert first.solutions() == second.solutions()
+
+
+def test_live_native_index_tracks_equal_replacements_and_dominated_deletions():
+    pytest.importorskip("tracker.gear.native._frontier")
+    native, reference = VectorArchive(("a", "b")), VectorArchive(("a", "b"))
+    try:
+        initial = row(2, 10, 5, 5)
+        for archive in (native, reference):
+            archive.add(initial)
+        native.enable_native_index()
+        for candidate in (
+            row(1, 10, 5, 5),
+            row(1, 11, 2, 2),
+            row(3, 9, 4, 4),
+            row(4, 12, 4, 4),
+            row(5, 10, 4, 4),
+        ):
+            assert native.add(candidate) == reference.add(candidate)
+            assert native.solutions() == reference.solutions()
+            for sample in ((9, 3, 3), (10, 5, 5), (10, 3, 3), (12, 4, 4)):
+                assert native.strictly_dominated(sample) == reference.strictly_dominated(sample)
+    finally:
+        native.close()
+        reference.close()
 
 
 def test_equal_potion_resource_ties_do_not_depend_on_branch_completion_order():

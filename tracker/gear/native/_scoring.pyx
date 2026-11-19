@@ -355,25 +355,14 @@ cdef class ScoringContext:
             return accuracy
         return bonuses[self.priority - 4]
 
-    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
-                       const int* order=NULL, int specific_option=-1,
-                       const unsigned char* allowed=NULL) noexcept nogil:
-        cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
-        cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
-        cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
-        cdef int element, family, task_bonus, hit_floor, demon_accuracy, demon_damage, vulnerability
-        cdef int dragon_accuracy, dragon_damage
-        cdef bint demon_spell, holy
-        cdef BoltResult proc, extra
-        cdef long long spell_base, minimum, weakness_roll
-        cdef double secondary_accuracy
-        cdef double status_proc, positive
-        cdef double bonuses[14]
-        cdef long long maximum, attack, defence, strength, armor, cap, first, second
-        cdef double accuracy, dps, expected, secondary, second_probability, magic_bonus, term, hi=0.0, lo=0.0, total
-        memset(output, 0, sizeof(Score))
-        output.option_index = -1
-        memset(bonuses, 0, sizeof(bonuses))
+    cdef void prepare_gear(self, const int* slots, const int* order,
+                           PreparedGear* gear) noexcept nogil:
+        cdef int slot, item, field, position, index
+        cdef int weapon = slots[0], ammo = slots[2]
+        cdef double* bonuses = gear.bonuses
+        cdef double term, hi=0.0, lo=0.0, total
+        cdef bint legal = True, ammo_ok = False
+        memset(bonuses, 0, sizeof(gear.bonuses))
         for position in range(11):
             slot = order[position] if order != NULL else position
             if slot < 0:
@@ -393,15 +382,7 @@ cdef class ScoringContext:
                     lo += (term - total) + hi
                 hi = total
         bonuses[7] = hi + lo if lo and isfinite(lo) else hi
-        for field in range(14):
-            output.bonuses[field] = bonuses[field]
-        if self.fixed_roles[role_index]:
-            if self.role_styles[role_index] == 3 and ammo and not self.ammo_required[weapon]:
-                output.bonuses[3] -= self.item_bonuses[ammo * 14 + 3]
-                output.bonuses[6] -= self.item_bonuses[ammo * 14 + 6]
-            output.secondary = self.secondary_for(output.bonuses, 0.0, -1)
-        if not legal or (weapon and self.two_handed[weapon] and slots[1]):
-            return
+        gear.legal = legal and not (weapon and self.two_handed[weapon] and slots[1])
         if self.ammo_required[weapon]:
             if ammo:
                 for index in range(self.ammo_offsets[weapon], self.ammo_offsets[weapon + 1]):
@@ -410,6 +391,41 @@ cdef class ScoringContext:
                         break
         else:
             ammo_ok = True
+        gear.ammo_ok = ammo_ok
+
+    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
+                       const int* order=NULL, int specific_option=-1,
+                       const unsigned char* allowed=NULL,
+                       PreparedGear* prepared=NULL) noexcept nogil:
+        cdef PreparedGear local
+        cdef int weapon = slots[0], ammo = slots[2], field
+        cdef int start, length, index, base, style, pattern, best_tie = -1, tie
+        cdef bint ranged, tome, hopper
+        cdef int element, family, task_bonus, hit_floor, demon_accuracy, demon_damage, vulnerability
+        cdef int dragon_accuracy, dragon_damage
+        cdef bint demon_spell, holy
+        cdef BoltResult proc, extra
+        cdef long long spell_base, minimum, weakness_roll
+        cdef double secondary_accuracy
+        cdef double status_proc, positive
+        cdef long long maximum, attack, defence, strength, armor, cap, first, second
+        cdef double accuracy, dps, expected, secondary, second_probability, magic_bonus, term
+        cdef double* bonuses
+        if prepared == NULL:
+            self.prepare_gear(slots, order, &local)
+            prepared = &local
+        bonuses = prepared.bonuses
+        memset(output, 0, sizeof(Score))
+        output.option_index = -1
+        for field in range(14):
+            output.bonuses[field] = bonuses[field]
+        if self.fixed_roles[role_index]:
+            if self.role_styles[role_index] == 3 and ammo and not self.ammo_required[weapon]:
+                output.bonuses[3] -= self.item_bonuses[ammo * 14 + 3]
+                output.bonuses[6] -= self.item_bonuses[ammo * 14 + 6]
+            output.secondary = self.secondary_for(output.bonuses, 0.0, -1)
+        if not prepared.legal:
+            return
         base = ((<int>metric * self.role_count + role_index) * self.item_count + weapon)
         start, length = self.offsets[base], self.lengths[base]
         if specific_option >= 0:
@@ -424,12 +440,12 @@ cdef class ScoringContext:
             ranged = style == 3
             if self.serpentine[slots[3]] and (not self.halberd[weapon] or style >= 3):
                 continue
-            if ranged and not ammo_ok:
+            if ranged and not prepared.ammo_ok:
                 continue
             if self.target_leafy[index]:
                 if style < 3 and not self.leafy_weapon[weapon]:
                     continue
-                if ranged and not (self.ammo_required[weapon] and ammo_ok and self.broad_ammo[ammo]):
+                if ranged and not (self.ammo_required[weapon] and prepared.ammo_ok and self.broad_ammo[ammo]):
                     continue
                 if style == 4 and not self.magic_dart[index]:
                     continue
@@ -552,7 +568,7 @@ cdef class ScoringContext:
                 if cap >= 0 and proc.maximum > cap:
                     continue
                 expected = proc.expected
-            hopper = ranged and self.ammo_required[weapon] and self.reviewed_crossbow[weapon] and self.hopper_shield[slots[1]] and ammo_ok and ammo != 0
+            hopper = ranged and self.ammo_required[weapon] and self.reviewed_crossbow[weapon] and self.hopper_shield[slots[1]] and prepared.ammo_ok and ammo != 0
             if hopper:
                 secondary_accuracy = accuracy_for(floor_div(attack * 2, 3), defence)
                 if family:
@@ -661,7 +677,8 @@ cdef class ScoringContext:
                 values[index] = -(value / result.interval) / result.dps if value >= 0 and result.interval > 0 and result.dps > 0 else -1e100
 
     cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum,
-                            object option_allowed=None, object equipment=None, int settled_slot=10) except -1:
+                            object option_allowed=None, object equipment=None, int settled_slot=10,
+                            const unsigned char* prepared_mask=NULL) except -1:
         cdef Score result
         cdef double values[64]
         cdef int index, dimension
@@ -669,11 +686,16 @@ cdef class ScoringContext:
         cdef int start = self.offsets[offset], length = self.lengths[offset]
         cdef bint supported = False
         cdef vector[unsigned char] mask
-        self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, settled_slot, mask)
+        cdef PreparedGear gear
+        self.prepare_gear(slots, order, &gear)
+        if prepared_mask == NULL:
+            self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, settled_slot, mask)
+            if mask.size():
+                prepared_mask = &mask[0]
         for index in range(start, start + length):
-            if mask.size() and not mask[index - start]:
+            if prepared_mask != NULL and not prepared_mask[index - start]:
                 continue
-            self.evaluate(slots, role_index, False, &result, order, index)
+            self.evaluate(slots, role_index, False, &result, order, index, NULL, &gear)
             if not result.supported:
                 continue
             self.project_objectives(slots, &result, values)
@@ -685,7 +707,8 @@ cdef class ScoringContext:
             supported = True
         return supported
 
-    def score_projection(self, equipment, int role_index, *, option_allowed=None):
+    def score_projection(self, equipment, int role_index, *, option_allowed=None,
+                         const unsigned char[::1] option_mask=None):
         """Return component maxima for a partial beam, without public option records.
 
         This is a heuristic envelope, never a complete configuration's vector.
@@ -693,10 +716,9 @@ cdef class ScoringContext:
         """
         cdef int slots[11]
         cdef int order[11]
-        cdef Score result
-        cdef double values[64]
         cdef double maximum[65]
-        cdef int index, position = 0, start, length, offset, dimension
+        cdef int position = 0, offset, dimension
+        cdef const unsigned char* packed_mask = NULL
         cdef bint supported = False
         if role_index < 0 or role_index >= self.role_count:
             raise ValueError("Invalid native role index")
@@ -708,17 +730,28 @@ cdef class ScoringContext:
             slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
             order[position] = SLOT_NAMES.index(slot)
             position += 1
-        supported = self.project_slots(slots, role_index, order, maximum, option_allowed, equipment)
+        if option_mask is not None:
+            offset = role_index * self.item_count + slots[0]
+            if option_mask.shape[0] != self.lengths[offset]:
+                raise ValueError("Invalid native option mask length")
+            if option_mask.shape[0]:
+                packed_mask = &option_mask[0]
+        supported = self.project_slots(
+            slots, role_index, order, maximum, option_allowed, equipment, 10, packed_mask
+        )
         return tuple(maximum[dimension] for dimension in range(self.objective_kinds.shape[0] + 1)) if supported else None
 
-    def score_variants(self, equipment, int role_index, *, option_allowed=None):
+    def score_variants(self, equipment, int role_index, *, option_allowed=None,
+                       const unsigned char[::1] option_mask=None, bint compact=False):
         """Score every concrete configured option, without projection-based pruning."""
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
+        cdef PreparedGear gear
         cdef double values[64]
         cdef int index, position = 0, start, length, offset
         cdef vector[unsigned char] mask
+        cdef const unsigned char* packed_mask = NULL
         if role_index < 0 or role_index >= self.role_count:
             raise ValueError("Invalid native role index")
         memset(slots, 0, sizeof(slots))
@@ -731,15 +764,31 @@ cdef class ScoringContext:
             position += 1
         offset = role_index * self.item_count + slots[0]
         start, length = self.offsets[offset], self.lengths[offset]
-        self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, 10, mask)
+        if option_mask is not None:
+            if option_mask.shape[0] != length:
+                raise ValueError("Invalid native option mask length")
+            if length:
+                packed_mask = &option_mask[0]
+        else:
+            self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, 10, mask)
+            if mask.size():
+                packed_mask = &mask[0]
+        self.prepare_gear(slots, order, &gear)
         rows = []
         for index in range(start, start + length):
-            if mask.size() and not mask[index - start]:
+            if packed_mask != NULL and not packed_mask[index - start]:
                 continue
-            self.evaluate(slots, role_index, False, &result, order, index)
+            self.evaluate(slots, role_index, False, &result, order, index, NULL, &gear)
             if not result.supported:
                 continue
             self.project_objectives(slots, &result, values)
+            if compact:
+                rows.append((result.option_index, (result.dps, *(
+                    (None if values[position] == -1e100 else -values[position])
+                    if self.objective_kinds[position] == 6 else values[position]
+                    for position in range(self.objective_kinds.shape[0])
+                )), result.accuracy, result.interval))
+                continue
             rows.append({
                 "supported": True,
                 "dps": result.dps,
@@ -757,12 +806,14 @@ cdef class ScoringContext:
             })
         return rows
 
-    def score(self, equipment, int role_index, bint metric=False, *, option_allowed=None):
+    def score(self, equipment, int role_index, bint metric=False, *, option_allowed=None,
+              const unsigned char[::1] option_mask=None):
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
         cdef int index
-        cdef int needed
+        cdef int needed, offset
+        cdef const unsigned char* packed_mask = NULL
         if role_index < 0 or role_index >= self.role_count:
             raise ValueError("Invalid native role index")
         memset(slots, 0, sizeof(slots))
@@ -774,7 +825,14 @@ cdef class ScoringContext:
             slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
             order[index] = SLOT_NAMES.index(slot)
             index += 1
-        if option_allowed is None or self.role_styles[role_index] != 4:
+        if option_mask is not None:
+            offset = ((<int>metric * self.role_count + role_index) * self.item_count + slots[0])
+            if option_mask.shape[0] != self.lengths[offset]:
+                raise ValueError("Invalid native option mask length")
+            if option_mask.shape[0]:
+                packed_mask = &option_mask[0]
+            self.evaluate(slots, role_index, metric, &result, order, -1, packed_mask)
+        elif option_allowed is None or self.role_styles[role_index] != 4:
             self.evaluate(slots, role_index, metric, &result, order)
         else:
             self.evaluate_filtered(slots, role_index, metric, &result, order, option_allowed, equipment)

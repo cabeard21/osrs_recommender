@@ -36,7 +36,8 @@ def main() -> None:
     # inside the object directory, exceeding MSVC's path limit on long worktrees.
     build = Path(".tmp") / "native-build" / ("coverage" if args.coverage else "release")
     build.mkdir(parents=True, exist_ok=True)
-    modules = ("_scoring", "_stages")
+    from tracker.gear.native.readiness import MODULES
+
     extensions = [
         Extension(
             f"tracker.gear.native.{name}",
@@ -47,7 +48,7 @@ def main() -> None:
             if os.name == "nt"
             else ["-O3", "-ffp-contract=off", "-std=c++17"],
         )
-        for name in modules
+        for name in MODULES
     ]
     distribution = Distribution(
         {
@@ -67,7 +68,7 @@ def main() -> None:
     distribution.run_command("build_ext")
     # Cython.Coverage discovers generated source beside the extension. Keeping
     # this ignored copy makes traced native lines visible to coverage.py.
-    for name in modules:
+    for name in MODULES:
         shutil.copyfile(
             build / "generated" / "tracker" / "gear" / "native" / f"{name}.cpp",
             root / "tracker" / "gear" / "native" / f"{name}.cpp",
@@ -75,7 +76,7 @@ def main() -> None:
     compiler_path = Path(command.compiler.cc)
     binaries = {
         str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for name in modules
+        for name in MODULES
         for suffix in importlib.machinery.EXTENSION_SUFFIXES
         for path in [root / "tracker" / "gear" / "native" / f"{name}{suffix}"]
         if path.is_file()

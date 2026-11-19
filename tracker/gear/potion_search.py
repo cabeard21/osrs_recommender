@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from time import perf_counter
 from typing import Any
 
 from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_skills
+from tracker.gear.vector_archive import own_vector_archives
 
 
 def merge_objective_frontiers(
@@ -17,6 +19,8 @@ def merge_objective_frontiers(
     *,
     id_prefix: str = "",
     complete_frontiers: bool = False,
+    native_merge: bool = False,
+    cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     """Merge complete vectors; browser filtering and chart sampling happen later."""
     objectives = getattr(request, "objectives", None)
@@ -46,11 +50,14 @@ def merge_objective_frontiers(
                 or _objective_winner_key(row) < _objective_winner_key(baselines[cap])
             ):
                 baselines[cap] = row
-    archives = {
-        cap: (point["solution"] for points in groups for point in points)
-        for cap, groups in sources.items()
-    }
-    groups = publish_groups(archives, request, id_prefix=id_prefix, baselines=baselines)
+    groups = publish_groups(
+        sources,
+        request,
+        id_prefix=id_prefix,
+        baselines=baselines,
+        native_merge=native_merge,
+        cancelled=cancelled,
+    )
     if not complete_frontiers:
         groups = filter_groups(groups, request.max_dps_loss_pct)
     return {
@@ -60,11 +67,18 @@ def merge_objective_frontiers(
 
 
 def merge_results(
-    request: Any, branches: list[dict[str, Any]], *, complete_frontiers: bool = False
+    request: Any,
+    branches: list[dict[str, Any]],
+    *,
+    complete_frontiers: bool = False,
+    native_merge: bool = False,
+    cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     """Merge the independent objective archives, preserving each selected setup."""
     from tracker.gear.frontier import pareto
     from tracker.gear.optimizer import _objective_winner_key
+
+    merge_options: dict[str, Any] = {"native_merge": native_merge, "cancelled": cancelled}
 
     def best(rows: Any) -> Any:
         return min((r for r in rows if r is not None), key=_objective_winner_key, default=None)
@@ -161,6 +175,7 @@ def merge_results(
             complete_frontiers=complete_frontiers
             if getattr(request, "objectives", None) is not None
             else False,
+            **merge_options,
         )
         disciplines.append(
             {
@@ -173,6 +188,7 @@ def merge_results(
                     [detail],
                     id_prefix=f"discipline-{discipline}-",
                     complete_frontiers=complete_frontiers,
+                    **merge_options,
                 ),
                 "search": detail["search"],
             }
@@ -184,7 +200,9 @@ def merge_results(
         "curve": curve,
         "secondary_frontiers": secondary,
         "running_cost_frontiers": [],
-        **merge_objective_frontiers(request, branches, complete_frontiers=complete_frontiers),
+        **merge_objective_frontiers(
+            request, branches, complete_frontiers=complete_frontiers, **merge_options
+        ),
         **(
             {
                 "discipline_results": disciplines,
@@ -245,6 +263,7 @@ def _no_potion_scores(
     return [best(limit) for limit in range(request.max_swaps + 1)]
 
 
+@own_vector_archives
 def optimize_potions(
     snapshot: Any, request: Any, catalog: Any, content: Any, prices: Any, now: Any, **options: Any
 ) -> dict[str, Any]:
@@ -344,6 +363,7 @@ def optimize_potions(
         raise ValueError("optimization_cancelled")
     branches_at = perf_counter()
     report("merge", total)
+    merge_options = {"native_merge": options.get("_native_search", False), "cancelled": cancelled}
     if auto:
         results = [
             (
@@ -356,17 +376,24 @@ def optimize_potions(
                         if d == discipline
                     ],
                     complete_frontiers=True,
+                    **merge_options,
                 ),
             )
             for discipline, concrete in disciplines
             if discipline is not None
         ]
         result = merge_auto_results(
-            request, results, complete_frontiers=options.get("_complete_frontiers", False)
+            request,
+            results,
+            complete_frontiers=options.get("_complete_frontiers", False),
+            **merge_options,
         )
     else:
         result = merge_results(
-            request, branches, complete_frontiers=options.get("_complete_frontiers", False)
+            request,
+            branches,
+            complete_frontiers=options.get("_complete_frontiers", False),
+            **merge_options,
         )
     assumptions = {
         **result["assumptions"],

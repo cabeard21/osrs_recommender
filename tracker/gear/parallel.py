@@ -13,7 +13,7 @@ from concurrent.futures.process import BrokenProcessPool
 from datetime import datetime
 from functools import partial
 from threading import Lock
-from time import monotonic, sleep
+from time import monotonic, perf_counter, sleep
 from typing import Any
 
 from tracker.accounts.snapshot import AccountSnapshot
@@ -122,9 +122,10 @@ def _execute_branch(
     )
     from contextlib import nullcontext
 
-    from tracker.gear.native import capture
+    from tracker.gear.native import capture, record
 
     with capture() if options.get("_native_search") else nullcontext(None) as evidence:
+        started = perf_counter()
         result = optimize(
             snapshot,
             request,
@@ -138,6 +139,13 @@ def _execute_branch(
             progress=progress,
             **options,
         )
+        if evidence is not None:
+            record(
+                "branch_timing",
+                lane=lane,
+                roles=tuple(role.style for role in request.roles),
+                seconds=perf_counter() - started,
+            )
     if evidence is None:
         return result
     return {"_native_payload": result, "_native_evidence": evidence.snapshot()}

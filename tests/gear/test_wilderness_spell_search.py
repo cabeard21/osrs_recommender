@@ -94,5 +94,9 @@ def test_unaffordable_spell_falls_back_to_the_allowed_cheaper_spell(
         if native:
             assert service.native_diagnostics["native_requests"] > 0
             assert service.native_diagnostics["fallback_requests"] == 0
+            events = {event["event"] for event in service.native_diagnostics["events"]}
+            assert "rune_option_mask" in events
+            if fixed_trip:
+                assert "trip_loss" in events
     finally:
         close_result_archives(result)

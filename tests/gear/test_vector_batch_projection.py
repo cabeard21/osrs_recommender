@@ -10,7 +10,12 @@ from tracker.gear.vector_search import VectorSearch
 
 def test_large_batch_preserves_retained_order_without_rescoring_after_cache_eviction():
     role = SimpleNamespace(id="a", style="slash", weight=1, locks={})
-    request = SimpleNamespace(locks={}, budget_gp=0, objectives=(SimpleNamespace(id="defence"),))
+    request = SimpleNamespace(
+        locks={},
+        budget_gp=0,
+        roles=(role,),
+        objectives=(SimpleNamespace(id="defence", kind="defence_roll"),),
+    )
     items = {
         1: SimpleNamespace(slot="weapon"),
         **{item: SimpleNamespace(slot="head") for item in range(100, 868)},
@@ -20,7 +25,10 @@ def test_large_batch_preserves_retained_order_without_rescoring_after_cache_evic
         cancelled=None,
         reporter=NULL_REPORTER,
         compatible=lambda equipment: True,
+        may_equip_ammunition=lambda equipment, roles: True,
         cost=lambda carried: 0,
+        slot_budget=lambda *args, **kwargs: True,
+        untradeable_acquisitions=lambda carried: 0,
         eligible=items,
     )
 
@@ -48,7 +56,9 @@ def test_large_batch_preserves_retained_order_without_rescoring_after_cache_evic
 
     # A stateless numeric oracle fixes the retained physical configurations and
     # their order independently of cache contents and materialization strategy.
-    expected = equipment(SimpleNamespace(projection=lambda row, roles, **kwargs: values(row)))
+    expected = equipment(
+        SimpleNamespace(risk_index=None, projection=lambda row, roles, **kwargs: values(row))
+    )
     cached = NumericOptions()
     actual = equipment(cached)
     assert actual == expected
@@ -63,7 +73,8 @@ def test_projection_preserves_weighting_and_independent_option_extremes():
         SimpleNamespace(id="a", style="slash", weight=1),
         SimpleNamespace(id="b", style="ranged", weight=3),
     )
-    options = VectorOptions(SimpleNamespace(request=SimpleNamespace(objectives=("defence",))))
+    objectives = (SimpleNamespace(id="defence", kind="defence_roll"),)
+    options = VectorOptions(SimpleNamespace(request=SimpleNamespace(objectives=objectives)))
     alternatives = {
         "a": ((10.0, 1.0), (2.0, 9.0)),
         "b": ((4.0, 7.0), (6.0, 5.0)),

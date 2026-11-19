@@ -12,7 +12,7 @@ import sysconfig
 from pathlib import Path
 from typing import Any
 
-MODULES = ("_scoring", "_stages")
+MODULES = ("_scoring", "_stages", "_frontier")
 MANIFEST = "_build.json"
 
 

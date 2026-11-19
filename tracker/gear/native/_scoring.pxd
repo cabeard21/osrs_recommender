@@ -13,6 +13,11 @@ cdef struct Score:
     int option_index
     double bonuses[14]
 
+cdef struct PreparedGear:
+    double bonuses[14]
+    bint legal
+    bint ammo_ok
+
 cdef class ScoringContext:
     cdef readonly int item_count, role_count
     cdef readonly object dense_ids, dense_index, option_records, option_weapons
@@ -46,10 +51,13 @@ cdef class ScoringContext:
                                 object option_allowed, object equipment,
                                 int settled_slot, vector[unsigned char]& mask) except *
     cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum,
-                            object option_allowed=*, object equipment=*, int settled_slot=*) except -1
+                            object option_allowed=*, object equipment=*, int settled_slot=*,
+                            const unsigned char* prepared_mask=*) except -1
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil
+    cdef void prepare_gear(self, const int* slots, const int* order, PreparedGear* gear) noexcept nogil
     cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
-                       const int* order=*, int specific_option=*, const unsigned char* allowed=*) noexcept nogil
+                       const int* order=*, int specific_option=*, const unsigned char* allowed=*,
+                       PreparedGear* prepared=*) noexcept nogil
     cdef void evaluate_filtered(self, const int* slots, int role_index, bint metric, Score* output,
                                 const int* order, object option_allowed, object equipment=*,
                                 int settled_slot=*) except *

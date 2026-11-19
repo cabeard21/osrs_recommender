@@ -18,18 +18,21 @@ def test_equivalent_cape_beam_prefers_owned_or_cheaper_form(monkeypatch, anchor,
     costs = {6568: 1000, 20050: variant_cost}
     role = RoleConfig(id="one", style="slash")
     search = SimpleNamespace(
-        request=SimpleNamespace(locks={}, budget_gp=10000),
+        request=SimpleNamespace(locks={}, budget_gp=10000, roles=(role,)),
         eligible={item: catalog.items[item] for item in costs},
         cost=lambda ids: sum(costs[item] for item in ids),
         untradeable_acquisitions=lambda ids: 0,
         compatible=lambda equipment: True,
+        may_equip_ammunition=lambda equipment, roles: True,
+        slot_budget=lambda *args, **kwargs: True,
         cancelled=None,
         reporter=SimpleNamespace(fraction=lambda value: None),
     )
     engine = object.__new__(VectorSearch)
     engine.search = search
     engine.options = SimpleNamespace(
-        projection=lambda equipment, roles, **kwargs: (1.0, 9.0) if equipment else (0.0, 0.0)
+        risk_index=None,
+        projection=lambda equipment, roles, **kwargs: (1.0, 9.0) if equipment else (0.0, 0.0),
     )
     engine.limit = 10000
     engine.nodes = 0

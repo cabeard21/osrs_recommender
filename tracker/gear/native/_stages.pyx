@@ -4,6 +4,7 @@
 
 from libc.math cimport fabs, isfinite
 from libc.string cimport memset, memcpy
+from cpython.bytes cimport PyBytes_FromStringAndSize
 from libcpp.vector cimport vector
 from libcpp.string cimport string, to_string
 from libcpp.algorithm cimport sort
@@ -11,7 +12,8 @@ from libcpp.algorithm cimport sort
 from tracker.gear.native._scoring cimport ScoringContext, Score, required_defence_mask
 
 from tracker.gear.compact_states import SLOT_NAMES
-from tracker.gear.native.stage_context import pack_stage
+from tracker.gear.native import record
+from tracker.gear.native.stage_context import pack_stage, pack_runes
 
 
 cdef struct Candidate:
@@ -109,6 +111,10 @@ cdef class StageContext:
     cdef int[::1] guarded_ammunition
     cdef int ammunition_users, ammunition_keepers, ammunition_attack_roles
     cdef object rune_option_allowed
+    cdef bint packed_runes
+    cdef unsigned long long[::1] rune_suppliers, rune_tomes, rune_collisions, rune_masks
+    cdef int[::1] rune_gear, rune_recipes, rune_quantities
+    cdef long long[::1] rune_prices
 
     def __init__(self, ScoringContext scoring, search):
         cdef bytes encoded
@@ -129,6 +135,20 @@ cdef class StageContext:
         self.rune_option_allowed = (
             search.rune_option_allowed if getattr(search, "rune_limits_active", False) else None
         )
+        runes = pack_runes(search, scoring)
+        self.packed_runes = runes is not None
+        if self.packed_runes:
+            self.rune_suppliers = runes.suppliers
+            self.rune_tomes = runes.tome_suppliers
+            self.rune_collisions = runes.collisions
+            self.rune_masks = runes.recipe_masks
+            self.rune_gear = runes.known_gear
+            self.rune_recipes = runes.recipes
+            self.rune_quantities = runes.quantities
+            self.rune_prices = runes.prices
+            record("rune_option_mask", roles=self.data.role_names)
+        elif self.rune_option_allowed is not None:
+            record("fallback", reason="Wilderness rune bounds exceed native range")
         self.risk_dimension = (scoring.objective_ids.index("wilderness_loss_gp") + 1
                                if "wilderness_loss_gp" in scoring.objective_ids else -1)
         self.risk_feasible = None
@@ -272,6 +292,110 @@ cdef class StageContext:
         ids = {self.scoring.original_ids[physical[j]] for j in range(count)}
         return self.risk_feasible(ids)
 
+    cdef bint rune_bundle_fits(self, unsigned long long bundle, unsigned long long collisions,
+                               int recipe, long long exposed, const long long* gear_saved) noexcept:
+        cdef long long saved[4]
+        cdef long long price, swap
+        cdef int rune, quantity, copy, slot
+        cdef int rune_count = self.rune_prices.shape[0]
+        if bundle & collisions:
+            return False
+        memcpy(saved, gear_saved, sizeof(saved))
+        for rune in range(rune_count):
+            if not bundle & (1ULL << rune):
+                continue
+            price = self.rune_prices[rune]
+            quantity = self.rune_quantities[recipe * rune_count + rune]
+            if price == -2 or (price == -1 and quantity > self.risk_kept_slots):
+                return False
+            if price <= 0:
+                continue
+            exposed += price * quantity
+            for copy in range(min(quantity, self.risk_kept_slots)):
+                price = self.rune_prices[rune]
+                for slot in range(self.risk_kept_slots):
+                    if price > saved[slot]:
+                        swap = price
+                        price = saved[slot]
+                        saved[slot] = swap
+        if self.risk_budget < 0:
+            return True
+        for slot in range(self.risk_kept_slots):
+            exposed -= saved[slot]
+        return exposed <= self.risk_budget
+
+    cdef void fill_rune_mask(self, const int* slots, int role, bint metric, int settled,
+                             vector[unsigned char]& mask) except *:
+        cdef int physical[11]
+        cdef long long saved[4]
+        cdef long long amount, swap, exposed = 0, gear_loss
+        cdef unsigned long long supplies = self.rune_suppliers[slots[0]] | self.rune_tomes[slots[1]]
+        cdef unsigned long long collisions = 0, bundle
+        cdef int offset = ((<int>metric * self.scoring.role_count + role) * self.scoring.item_count + slots[0])
+        cdef int start = self.scoring.offsets[offset], length = self.scoring.lengths[offset]
+        cdef int position, count = 0, j, item, recipe, index
+        cdef bint gear_fits = True
+        if self.scoring.role_styles[role] != 4 or not length:
+            return
+        memset(saved, 0, sizeof(saved))
+        for position in range(settled + 1):
+            item = slots[position]
+            if not item:
+                continue
+            for j in range(count):
+                if physical[j] == item:
+                    break
+            else:
+                physical[count] = item
+                count += 1
+                gear_fits &= self.rune_gear[item] and self.risk_unpriced[item] != 2
+                collisions |= self.rune_collisions[item]
+                amount = self.risk_recoverable[item]
+                exposed += self.risk_unavoidable[item] + amount
+                for j in range(self.risk_kept_slots):
+                    if amount > saved[j]:
+                        swap = amount
+                        amount = saved[j]
+                        saved[j] = swap
+        gear_loss = exposed
+        for j in range(self.risk_kept_slots):
+            gear_loss -= saved[j]
+        gear_fits &= self.risk_budget < 0 or gear_loss <= self.risk_budget
+        for j in range(count):
+            if self.risk_unpriced[physical[j]] == 1 and self.wilderness_could_expose(physical, count, j):
+                gear_fits = False
+                break
+        mask.resize(length, 1)
+        for index in range(start, start + length):
+            if self.scoring.options[index * 18] != 4 or not self.scoring.options[index * 18 + 9]:
+                continue
+            recipe = self.rune_recipes[index]
+            if recipe == -2:
+                continue
+            if recipe == -1:
+                mask[index - start] = 0
+                continue
+            bundle = self.rune_masks[recipe] & ~supplies
+            mask[index - start] = not bundle or (gear_fits and self.rune_bundle_fits(
+                bundle, collisions, recipe, exposed, saved
+            ))
+
+    def option_mask(self, equipment, int role_index, bint metric=False):
+        """Return the native mask for a Python-requested concrete option batch."""
+        cdef int slots[11]
+        cdef vector[unsigned char] mask
+        if not self.packed_runes:
+            return None
+        if not 0 <= role_index < self.scoring.role_count:
+            raise ValueError("Invalid native role index")
+        memset(slots, 0, sizeof(slots))
+        for slot, item in equipment.items():
+            if slot not in SLOT_NAMES or type(item) is not int or item not in self.scoring.dense_index or item == 0:
+                raise ValueError("Invalid native equipment")
+            slots[SLOT_NAMES.index(slot)] = self.scoring.dense_index[item]
+        self.fill_rune_mask(slots, role_index, metric, 10, mask)
+        return PyBytes_FromStringAndSize(<char*>&mask[0], mask.size()) if mask.size() else None
+
     cdef bint purchase_fits(self, const int* physical, int count, long long cost,
                             bint head_pending) noexcept:
         if self.purchase_budget < 0:
@@ -306,6 +430,7 @@ cdef class StageContext:
         cdef Sum weight = Sum(0.0, 0.0)
         cdef double denominator, risk_bound = 0.0
         cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
+        cdef vector[unsigned char] mask
         if row.slots[0] and row.slots[1] and self.scoring.two_handed[row.slots[0]]:
             return False
         if slot == 2 and self.risk_feasible is not None and not self.may_equip_ammunition(row.slots, roles, nroles):
@@ -353,7 +478,14 @@ cdef class StageContext:
             if not self.scored[role]:
                 continue
             memset(maximum, 0, sizeof(maximum))
-            if self.rune_option_allowed is not None and slot >= 2:
+            if self.packed_runes and slot >= 2:
+                mask.clear()
+                self.fill_rune_mask(row.slots, role, False, slot, mask)
+                supported = self.scoring.project_slots(
+                    row.slots, role, row.order, maximum, None, None, slot,
+                    &mask[0] if mask.size() else NULL,
+                )
+            elif self.rune_option_allowed is not None and slot >= 2:
                 supported = self.scoring.project_slots(
                     row.slots, role, row.order, maximum, self.rune_option_allowed, None, slot
                 )
@@ -426,6 +558,7 @@ cdef class StageContext:
     cdef bint evaluate(self, Candidate* row, int* roles, int nroles, int slot,
                        int cap, bint metric) except -1:
         cdef int physical[44]
+        cdef vector[unsigned char] mask
         cdef int count = 0
         cdef int index, item, previous, r, s, j, k, d, outside
         cdef int equipment_offset
@@ -518,7 +651,16 @@ cdef class StageContext:
             if not self.scored[r]:
                 continue
             equipment_offset = 0 if row.kind == 0 else r * 11
-            if self.rune_option_allowed is not None and self.scoring.role_styles[r] == 4 and (row.kind == 2 or slot >= 2):
+            if self.packed_runes and self.scoring.role_styles[r] == 4 and (row.kind == 2 or slot >= 2):
+                mask.clear()
+                self.fill_rune_mask(&row.slots[equipment_offset], r, metric, 10 if row.kind == 2 else slot, mask)
+                self.scoring.evaluate(
+                    &row.slots[equipment_offset], r, metric, &score, &row.order[equipment_offset],
+                    -1, &mask[0] if mask.size() else NULL,
+                )
+                if not score.supported:
+                    return False
+            elif self.rune_option_allowed is not None and self.scoring.role_styles[r] == 4 and (row.kind == 2 or slot >= 2):
                 self.scoring.evaluate_filtered(
                     &row.slots[equipment_offset], r, metric, &score, &row.order[equipment_offset],
                     self.rune_option_allowed, None, 10 if row.kind == 2 else slot,
@@ -806,3 +948,142 @@ cdef class Expansion:
                     for s in range(row.order_count[r])
                 } for r in range(self.context.scoring.role_count) if row.present & (1 << r)})
         return result
+
+cdef struct TripRule:
+    long long priority, exposed, protected, charge
+    bint slot, ammo, charged, always_lost
+
+cdef struct TripItem:
+    TripRule rule
+    long long item, quantity
+
+cdef struct TripEntry:
+    long long item, priority, exposed, protected, saving
+
+
+cdef bint trip_order(const TripEntry& left, const TripEntry& right) noexcept nogil:
+    if left.priority != right.priority:
+        return left.priority > right.priority
+    if left.saving != right.saving:
+        return left.saving < right.saving
+    return left.item < right.item
+
+
+cdef long long trip_amount(TripRule rule, long long quantity, bint kept) noexcept nogil:
+    cdef long long base = rule.protected if kept else rule.exposed
+    if base < 0:
+        return -1
+    if rule.charged and (rule.always_lost or not kept):
+        return -1 if rule.charge < 0 else base + quantity * rule.charge
+    return base * quantity if rule.ammo else base
+
+
+cdef long long trip_interpretation(vector[TripItem]& items, int keep, bint stack) except -2:
+    cdef vector[TripEntry] known, uncertain
+    cdef TripItem item
+    cdef TripEntry entry
+    cdef size_t i
+    cdef long long exposed = 0, worst = 0, total, amount, remainder, copies
+    cdef int keep_known, keep_uncertain, j
+    for i in range(items.size()):
+        item = items[i]
+        entry.item = item.item
+        entry.priority = item.rule.priority
+        if stack and item.rule.ammo and entry.priority >= 0:
+            entry.priority *= item.quantity
+        copies = min(keep, item.quantity) if not stack and item.rule.ammo else 1
+        if item.rule.slot:
+            entry.exposed = trip_amount(item.rule, item.quantity if stack or not item.rule.ammo else 1, False)
+            entry.protected = trip_amount(item.rule, item.quantity if stack or not item.rule.ammo else 1, True)
+            if entry.exposed < 0:
+                entry.saving = 1LL << 57
+            elif entry.protected < 0:
+                entry.saving = -(1LL << 57)
+            else:
+                entry.saving = entry.exposed - entry.protected
+            for j in range(copies):
+                if entry.priority < 0:
+                    uncertain.push_back(entry)
+                else:
+                    known.push_back(entry)
+        remainder = item.quantity if not item.rule.slot else item.quantity - copies
+        if not item.rule.slot or (item.rule.ammo and not stack and remainder > 0):
+            amount = trip_amount(item.rule, remainder, False)
+            if amount < 0:
+                return -1
+            exposed += amount
+    sort(known.begin(), known.end(), trip_order)
+    sort(uncertain.begin(), uncertain.end(), trip_order)
+    keep = min(keep, <int>(known.size() + uncertain.size()))
+    for keep_uncertain in range(max(0, keep - <int>known.size()), min(keep, <int>uncertain.size()) + 1):
+        keep_known = keep - keep_uncertain
+        total = exposed
+        for i in range(known.size()):
+            amount = known[i].protected if i < <size_t>keep_known else known[i].exposed
+            if amount < 0:
+                return -1
+            total += amount
+        for i in range(uncertain.size()):
+            amount = uncertain[i].protected if i < <size_t>keep_uncertain else uncertain[i].exposed
+            if amount < 0:
+                return -1
+            total += amount
+        worst = max(worst, total)
+    return worst
+
+
+cdef class TripLossContext:
+    """Frozen death rules and numeric worst-case stack loss for a complete trip."""
+    cdef vector[TripRule] rules
+    cdef dict indices
+
+    def __init__(self, death_rules):
+        cdef TripRule rule
+        self.indices = {}
+        for item, death in death_rules.items():
+            charge = death.charge
+            values = (death.priority, death.unprotected_loss_gp, death.protected_loss_gp,
+                      charge.unit_gp if charge else 0)
+            if any(value is not None and not 0 <= value < (1 << 55) for value in values):
+                raise OverflowError("Wilderness death rules exceed native range")
+            rule.priority, rule.exposed, rule.protected, rule.charge = [
+                -1 if value is None else value for value in values
+            ]
+            rule.slot = death.protection_slot
+            rule.ammo = death.ammo
+            rule.charged = charge is not None
+            rule.always_lost = bool(charge and charge.always_lost)
+            self.indices[item] = self.rules.size()
+            self.rules.push_back(rule)
+
+    def loss(self, quantities, int keep):
+        cdef vector[TripItem] items
+        cdef TripItem item
+        cdef long long whole, units, maximum, safe_term_limit = 1LL << 54
+        cdef bint check_units = False
+        if not 0 <= keep <= 4 or len(quantities) > 64:
+            raise OverflowError("Wilderness trip dimensions exceed native range")
+        for item_id, quantity in quantities.items():
+            index = self.indices.get(item_id)
+            if index is None:
+                return None
+            if not 1 <= quantity <= (1 << 31) - 1:
+                raise OverflowError("Wilderness quantity exceeds native range")
+            item.item = item_id
+            item.quantity = quantity
+            item.rule = self.rules[<size_t>index]
+            maximum = max(item.rule.exposed, item.rule.protected, item.rule.charge, item.rule.priority)
+            # Reserve room for two terms per item before multiplying or adding.
+            if maximum >= (safe_term_limit // item.quantity):
+                raise OverflowError("Wilderness trip value exceeds native range")
+            check_units |= item.rule.ammo and item.quantity > 1
+            items.push_back(item)
+        whole = trip_interpretation(items, keep, True)
+        if whole < 0:
+            return None
+        if keep and check_units:
+            units = trip_interpretation(items, keep, False)
+            if units < 0:
+                return None
+            whole = max(whole, units)
+        return whole
