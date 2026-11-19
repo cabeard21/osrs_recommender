@@ -13,6 +13,8 @@ interface Point {
   purchase_cost_gp: number;
 }
 type Slot = "x" | "y" | "color";
+type CostScale = "log" | "linear";
+const runningCostId = "gp_per_damage";
 const color = (value: number) =>
   `hsl(${205 - value * 165} 78% ${58 + value * 8}%)`;
 const value = (point: Point, id: string): number =>
@@ -28,6 +30,62 @@ const format = (number: number, axis: Axis) => {
     maximumFractionDigits: axis.id === "dps" ? 3 : 2,
   });
 };
+
+function logarithmicTicks(max: number, logMax: number, gap: number) {
+  const min = Math.max(Number.MIN_VALUE, Math.expm1(gap * logMax));
+  const maxPower = Math.floor(Math.log10(max));
+  const ticks = [0];
+  let previous = 0;
+  for (let power = Math.floor(Math.log10(min)); power <= maxPower; power++) {
+    for (const multiplier of [1, 3]) {
+      const tick = multiplier * 10 ** power;
+      const fraction = Math.log1p(tick) / logMax;
+      if (fraction - previous >= gap && 1 - fraction >= gap) {
+        ticks.push(tick);
+        previous = fraction;
+      }
+    }
+  }
+  const midpoint = Math.expm1(logMax / 2);
+  if (ticks.length === 1 && midpoint > 0 && midpoint < max)
+    ticks.push(midpoint);
+  return [...ticks, max];
+}
+
+function plotScale(
+  axis: Axis,
+  maxValue: number,
+  costScale: CostScale,
+  tickGap = 0.1,
+) {
+  const isCost = axis.id === runningCostId;
+  const logarithmic = isCost && costScale === "log";
+  const max = isCost ? maxValue : maxValue || 1;
+  const logMax = Math.log1p(max);
+  const position = (value: number) => {
+    if (max === 0) return 0;
+    return logarithmic ? Math.log1p(value) / logMax : value / max;
+  };
+  const ticks =
+    max === 0
+      ? [0]
+      : logarithmic
+        ? logarithmicTicks(max, logMax, tickGap)
+        : [0, max / 2, max].filter((tick, index) => index === 0 || tick > 0);
+  const label = isCost
+    ? `${axis.label} (GP/damage${logarithmic ? ", log scale" : ""})`
+    : axis.label;
+  const tickLabel = (tick: number) => {
+    if (!isCost) return format(tick, axis);
+    return tick.toLocaleString("en-US", {
+      maximumSignificantDigits: 3,
+      notation:
+        tick > 0 && (tick < 0.001 || tick >= 1000) ? "scientific" : "standard",
+    });
+  };
+  return { label, position, ticks, tickLabel };
+}
+
 export function ObjectiveScatter({
   axes,
   points,
@@ -46,6 +104,7 @@ export function ObjectiveScatter({
     y: axes[1]?.id ?? "dps",
     color: axes[2]?.id ?? "",
   });
+  const [costScale, setCostScale] = useState<CostScale>("log");
   const gradientId = useId().replaceAll(":", "");
   const x = axes.find((a) => a.id === chosen.x) ?? axes[0];
   const y =
@@ -83,21 +142,34 @@ export function ObjectiveScatter({
   const plotted = available.filter(
     (point) => value(point, x.id) >= 0 && value(point, y.id) >= 0,
   );
-  const axisBounds = (axis: Axis): [number, number] => [
-    0,
-    Math.max(0, ...plotted.map((point) => value(point, axis.id))) || 1,
-  ];
-  const colorBounds = (axis: Axis): [number, number] => {
-    const values = plotted
-      .map((point) => value(point, axis.id))
-      .filter(Number.isFinite);
-    return values.length ? [Math.min(...values), Math.max(...values)] : [0, 1];
-  };
-  const xb = axisBounds(x),
-    yb = axisBounds(y),
-    cb = colorAxis ? colorBounds(colorAxis) : [0, 1];
-  const normalized = (number: number, range: number[]) =>
-    range[0] === range[1] ? 0.5 : (number - range[0]) / (range[1] - range[0]);
+  const scaleFor = (axis: Axis) =>
+    plotScale(
+      axis,
+      Math.max(0, ...plotted.map((point) => value(point, axis.id))),
+      costScale,
+    );
+  const xs = scaleFor(x);
+  const ys = scaleFor(y);
+  const plotX = (number: number) => 90 + xs.position(number) * 490;
+  const plotY = (number: number) => 250 - ys.position(number) * 225;
+  const colorValues = colorAxis
+    ? plotted.map((point) => value(point, colorAxis.id)).filter(Number.isFinite)
+    : [];
+  const [colorMin, colorMax] = colorValues.length
+    ? [Math.min(...colorValues), Math.max(...colorValues)]
+    : [0, 1];
+  const costColor =
+    colorAxis?.id === runningCostId
+      ? plotScale(colorAxis, colorMax, costScale, 0.2)
+      : undefined;
+  const colorLabel = costColor?.label ?? colorAxis?.label;
+  const colorPosition =
+    costColor?.position ??
+    ((number: number) =>
+      colorMin === colorMax
+        ? 0.5
+        : (number - colorMin) / (colorMax - colorMin));
+  const legendWidth = costColor ? 380 : 260;
   return (
     <div className="objective-scatter">
       <div className="objective-shortcuts">
@@ -129,30 +201,48 @@ export function ObjectiveScatter({
             </select>
           </label>
         ))}
+        {(x.id === runningCostId || y.id === runningCostId || costColor) && (
+          <label>
+            Running cost scale
+            <select
+              value={costScale}
+              onChange={(event) =>
+                setCostScale(event.target.value === "linear" ? "linear" : "log")
+              }
+            >
+              <option value="log">Logarithmic</option>
+              <option value="linear">Linear</option>
+            </select>
+          </label>
+        )}
       </div>
       <svg
         className="objective-scatter-plot"
         viewBox="0 0 620 320"
         role="group"
-        aria-label={`${x.label} vs ${y.label}${colorAxis ? `, colored by ${colorAxis.label}` : ""}`}
+        aria-label={`${xs.label} vs ${ys.label}${colorAxis ? `, colored by ${colorAxis.label}` : ""}`}
       >
-        {[0, 0.5, 1].map((t) => (
-          <g key={t} className="objective-scatter-grid">
-            <line x1={90 + t * 490} x2={90 + t * 490} y1="25" y2="250" />
-            <line x1="90" x2="580" y1={250 - t * 225} y2={250 - t * 225} />
-            <text x={90 + t * 490} y="275" textAnchor="middle">
-              {format(xb[0] + t * (xb[1] - xb[0]), x)}
+        {xs.ticks.map((tick) => (
+          <g key={tick} className="objective-scatter-grid">
+            <line x1={plotX(tick)} x2={plotX(tick)} y1="25" y2="250" />
+            <text x={plotX(tick)} y="275" textAnchor="middle">
+              {xs.tickLabel(tick)}
             </text>
-            <text x="80" y={254 - t * 225} textAnchor="end">
-              {format(yb[0] + t * (yb[1] - yb[0]), y)}
+          </g>
+        ))}
+        {ys.ticks.map((tick) => (
+          <g key={tick} className="objective-scatter-grid">
+            <line x1="90" x2="580" y1={plotY(tick)} y2={plotY(tick)} />
+            <text x="80" y={plotY(tick) + 4} textAnchor="end">
+              {ys.tickLabel(tick)}
             </text>
           </g>
         ))}
         <text x="335" y="307" textAnchor="middle">
-          {x.label} →
+          {xs.label} →
         </text>
         <text x="17" y="137" transform="rotate(-90 17 137)" textAnchor="middle">
-          {y.label} →
+          {ys.label} →
         </text>
         {[...plotted]
           .sort(
@@ -169,12 +259,12 @@ export function ObjectiveScatter({
             return (
               <circle
                 key={point.id}
-                cx={90 + normalized(value(point, x.id), xb) * 490}
-                cy={250 - normalized(value(point, y.id), yb) * 225}
+                cx={plotX(value(point, x.id))}
+                cy={plotY(value(point, y.id))}
                 r={selected ? 7 : 4.5}
                 fill={
                   colorAxis && Number.isFinite(value(point, colorAxis.id))
-                    ? color(normalized(value(point, colorAxis.id), cb))
+                    ? color(colorPosition(value(point, colorAxis.id)))
                     : "#7bd0ff"
                 }
                 stroke={selected ? "#fff" : "#10131a"}
@@ -202,35 +292,66 @@ export function ObjectiveScatter({
           })}
       </svg>
       {colorAxis && plotted.length > 0 && (
-        <div className="objective-scatter-legend">
-          <span>{colorAxis.label}</span>
-          <svg
-            viewBox="0 0 260 48"
-            role="img"
-            aria-label={`${colorAxis.label} color scale: ${format(cb[0], colorAxis)} to ${format(cb[1], colorAxis)}`}
-          >
-            <defs>
-              <linearGradient id={gradientId}>
-                {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-                  <stop key={t} offset={`${t * 100}%`} stopColor={color(t)} />
-                ))}
-              </linearGradient>
-            </defs>
-            <rect
-              x="4"
-              y="2"
-              width="252"
-              height="12"
-              rx="3"
-              fill={`url(#${gradientId})`}
-            />
-            <text x="4" y="36">
-              {format(cb[0], colorAxis)}
-            </text>
-            <text x="256" y="36" textAnchor="end">
-              {format(cb[1], colorAxis)}
-            </text>
-          </svg>
+        <div
+          className={`objective-scatter-legend${costColor ? " objective-scatter-legend-cost" : ""}`}
+        >
+          <span>{colorLabel}</span>
+          {costColor && !colorValues.length ? (
+            <span>Unavailable</span>
+          ) : (
+            <svg
+              viewBox={`0 0 ${legendWidth} 48`}
+              role="img"
+              aria-label={`${colorLabel} color scale: ${format(costColor ? 0 : colorMin, colorAxis)} to ${format(colorMax, colorAxis)}`}
+            >
+              <defs>
+                <linearGradient id={gradientId}>
+                  {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+                    <stop
+                      key={t}
+                      offset={`${t * 100}%`}
+                      stopColor={color(costColor && colorMax === 0 ? 0 : t)}
+                    />
+                  ))}
+                </linearGradient>
+              </defs>
+              <rect
+                x="4"
+                y="2"
+                width={legendWidth - 8}
+                height="12"
+                rx="3"
+                fill={`url(#${gradientId})`}
+              />
+              {costColor ? (
+                costColor.ticks.map((tick) => (
+                  <text
+                    key={tick}
+                    x={4 + colorPosition(tick) * (legendWidth - 8)}
+                    y="36"
+                    textAnchor={
+                      tick === 0
+                        ? "start"
+                        : tick === colorMax
+                          ? "end"
+                          : "middle"
+                    }
+                  >
+                    {costColor.tickLabel(tick)}
+                  </text>
+                ))
+              ) : (
+                <>
+                  <text x="4" y="36">
+                    {format(colorMin, colorAxis)}
+                  </text>
+                  <text x="256" y="36" textAnchor="end">
+                    {format(colorMax, colorAxis)}
+                  </text>
+                </>
+              )}
+            </svg>
+          )}
         </div>
       )}
       {plotted.length > 0 && (

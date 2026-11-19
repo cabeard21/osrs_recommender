@@ -38,6 +38,16 @@
   width: 260px;
   max-width: 65%;
 }
+.objective-scatter-legend-cost {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 380px;
+}
+.objective-scatter-legend-cost svg {
+  width: 100%;
+  max-width: 100%;
+}
 .objective-scatter-hint {
   color: #9aaac0;
   font-size: 12px;
