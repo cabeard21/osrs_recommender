@@ -409,6 +409,26 @@ describe("live tradeoff lab snapshots", () => {
     expect(localStorage.getItem("unrelated")).toBe("keep");
   });
 
+  it("round-trips distinct sessions when randomUUID is unavailable on HTTP", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+    });
+    try {
+      const { result, group } = setup();
+      const snapshot = createLabSnapshot(result, group, "best-found");
+      const token = storeLabSnapshot(snapshot);
+      const second = storeLabSnapshot(snapshot);
+      expect(token).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+      expect(second).not.toBe(token);
+      expect(loadLabSnapshot(token)).toEqual(snapshot);
+      expect(loadLabSnapshot(second)).toEqual(snapshot);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("retains only the three newest handoffs and removes expired handoffs", () => {
     const { result, group } = setup();
     const snapshot = createLabSnapshot(result, group, "best-found");

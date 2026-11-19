@@ -3,6 +3,7 @@ import type {
   ObjectiveFrontierGroup,
   OptimizationReply,
 } from "../api/contracts";
+import { createBrowserUuid } from "../browserUuid";
 import type { LabExample, LabPoint } from "./model";
 
 const PREFIX = "gear-tradeoff-lab:";
@@ -346,7 +347,11 @@ export function storeLabSnapshot(
   storage?: Storage,
 ): string {
   assertSnapshot(snapshot);
-  const token = crypto.randomUUID();
+  const token = createBrowserUuid();
+  if (token === null)
+    throw new Error(
+      "This browser cannot create a Tradeoff Lab session. Open Gear in a browser with Web Crypto support.",
+    );
   const createdAt = Date.now();
   const encoded = JSON.stringify({
     version: VERSION,
