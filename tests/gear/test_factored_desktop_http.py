@@ -19,11 +19,13 @@ import httpx
 import pytest
 import uvicorn
 
+from tests.gear.test_auto_disciplines import OPTIONS
 from tests.gear.test_prayer_search_efficiency import scenario
 from tools.benchmark_gear_desktop import without_observations
 from tracker.gear.catalog import EquipmentCatalog
-from tracker.gear.optimizer import _Search
+from tracker.gear.native import adapter
 from tracker.gear.prayers import PrayerPolicy
+from tracker.gear.service import GearService
 from tracker.gear_desktop import DesktopSettings, create_app
 
 ENDPOINT = "/ui-api/gear/optimizations"
@@ -73,9 +75,9 @@ def _serve(app):
             assert not thread.is_alive(), "Isolated desktop server did not stop"
 
 
-@pytest.fixture(params=[False, True], ids=["p1", "p3"])
-def desktop_factory(monkeypatch, request):
-    compact_states = request.param
+@pytest.fixture
+def desktop_factory(monkeypatch):
+    pytest.importorskip("tracker.gear.native._stages")
     snapshot, request, catalog, content, _, now = scenario("ranged", PrayerPolicy())
     request = request.model_copy(
         update={
@@ -98,21 +100,15 @@ def desktop_factory(monkeypatch, request):
     monkeypatch.setattr("tracker.content.loader.load_content", lambda _: content)
     monkeypatch.setattr("tracker.api.gear_optimizations.datetime", FrozenTime)
 
-    def build(profile="combined"):
+    def build(workers=1):
         app = create_app(
             DesktopSettings(
                 pi_url="http://127.0.0.1:1",
                 player_id=1,
                 read_token="fixture-only",
-                optimization_workers=1,
-                optimization_profile=profile,
-                optimization_engine="python",
+                optimization_workers=workers,
             )
         )
-        # P3 exercises actual factory activation; P1 remains an explicit off-reference.
-        assert app.state.gear_service.compact_states is (profile == "combined")
-        if not compact_states:
-            app.state.gear_service.compact_states = False
         app.state.gear_service._equipment = EquipmentCatalog(catalog.items, "http-fixture")
         app.state.gear_data_source = FrozenSource(snapshot)
         body = {**request.model_dump(mode="json"), "expected_snapshot_id": snapshot.fingerprint}
@@ -137,20 +133,19 @@ def _run(client, body):
     return result
 
 
-def test_http_factored_fixed_result_progress_and_baseline_rollback(desktop_factory, monkeypatch):
+def test_http_native_fixed_result_progress_and_reference_parity(desktop_factory, monkeypatch):
     observations = []
-    original = _Search.tick
+    original = adapter.expand
 
-    def observed_tick(search):
+    def observed_expand(search, *args, **kwargs):
         from tracker.gear.execution_profile import compact_states_active
 
-        assert compact_states_active() == expected_compact
+        assert compact_states_active()
         observations.append(_active_contexts())
-        return original(search)
+        return original(search, *args, **kwargs)
 
-    monkeypatch.setattr(_Search, "tick", observed_tick)
+    monkeypatch.setattr(adapter, "expand", observed_expand)
     app, body = desktop_factory()
-    expected_compact = app.state.gear_service.compact_states
     with _serve(app) as (client, _):
         assert client.get("/healthz").json() == {"status": "ok"}
         context = client.get("/ui-api/gear/context")
@@ -158,15 +153,23 @@ def test_http_factored_fixed_result_progress_and_baseline_rollback(desktop_facto
         assert context.json()["account"]["snapshot_id"] == body["expected_snapshot_id"]
         candidate = _run(client, body)
         assert observations and all(all(flags) for flags in observations)
+        evidence = app.state.gear_service.native_diagnostics
+        assert evidence["native_requests"] > 0
+        assert evidence["fallback_requests"] == 0
     assert not any(_active_contexts())
 
     observations.clear()
-    rollback, same_body = desktop_factory("baseline")
-    expected_compact = False
-    with _serve(rollback) as (client, _):
-        baseline = _run(client, same_body)
-        assert observations and not any(any(flags) for flags in observations)
-    assert without_observations(candidate) == without_observations(baseline)
+    from tracker.api.gear_optimizations import BrowserOptimizationRequest, calculate
+
+    desktop = app.state.gear_service
+    reference = GearService(desktop.content)
+    reference._equipment = desktop.equipment_catalog()
+    snapshot, prices = app.state.gear_data_source.load()
+    baseline = calculate(
+        snapshot, reference, prices, BrowserOptimizationRequest.model_validate(body), Event()
+    ).model_dump(mode="json")
+    assert not observations
+    assert without_observations(candidate["result"]) == without_observations(baseline["result"])
 
 
 def test_tcp_disconnect_cancels_factored_search_and_next_request_recovers(
@@ -174,10 +177,10 @@ def test_tcp_disconnect_cancels_factored_search_and_next_request_recovers(
     monkeypatch,
 ):
     entered, cancelled = Event(), Event()
-    original = _Search.tick
+    original = adapter.expand
     pause = True
 
-    def wait_for_disconnect(search):
+    def wait_for_disconnect(search, *args, **kwargs):
         from tracker.gear.execution_profile import compact_states_active
 
         assert compact_states_active() == app.state.gear_service.compact_states
@@ -189,9 +192,9 @@ def test_tcp_disconnect_cancels_factored_search_and_next_request_recovers(
                 Event().wait(0.005)
             assert search.cancelled(), "HTTP disconnect did not reach the optimizer"
             cancelled.set()
-        return original(search)
+        return original(search, *args, **kwargs)
 
-    monkeypatch.setattr(_Search, "tick", wait_for_disconnect)
+    monkeypatch.setattr(adapter, "expand", wait_for_disconnect)
     app, body = desktop_factory()
     with _serve(app) as (client, address):
         identity = str(uuid4())
@@ -217,7 +220,71 @@ def test_tcp_disconnect_cancels_factored_search_and_next_request_recovers(
         assert progress.json()["progress"]["phase"] == "failed"
         pause = False
         _run(client, body)
+        assert app.state.gear_service.native_diagnostics["native_requests"] > 0
+        assert app.state.gear_service.native_diagnostics["fallback_requests"] == 0
     assert not any(_active_contexts())
+
+
+@pytest.mark.parametrize("workers", [1, 2])
+def test_native_limit_aborts_all_auto_branches_and_next_request_recovers(
+    desktop_factory, monkeypatch, workers
+):
+    from tracker.gear.objective_store import ObjectiveRunStore
+    from tracker.gear.optimizer import _Search
+
+    app, body = desktop_factory(workers)
+    publishes = []
+    original = ObjectiveRunStore.publish_result
+
+    def publish(store, *args, **kwargs):
+        publishes.append(True)
+        return original(store, *args, **kwargs)
+
+    monkeypatch.setattr(ObjectiveRunStore, "publish_result", publish)
+    role = {
+        **body["roles"][0],
+        "allowed_disciplines": ["ranged", "melee"],
+        "combat_options": OPTIONS.model_dump(mode="json"),
+    }
+    rejected = {
+        **body,
+        "objectives": [{"kind": "prayer_bonus"}],
+        "roles": [{**role, "target": {"damage_cap": 2**63}}],
+    }
+
+    def reject_python_search(*args):
+        pytest.fail("A rejected native branch must never enter Python candidate expansion")
+
+    with _serve(app) as (client, _):
+        with monkeypatch.context() as search_patch:
+            search_patch.setattr(_Search, "tick", reject_python_search)
+            response = client.post(ENDPOINT, params={"progress_id": str(uuid4())}, json=rejected)
+        assert response.status_code == 422, response.text
+        assert response.json()["error"]["code"] == "native_search_unsupported"
+        assert "damage cap" in response.json()["error"]["message"].lower()
+        assert not publishes
+        assert app.state.gear_service.native_diagnostics["fallback_requests"] == 0
+        _run(client, {**body, "roles": [role]})
+        evidence = app.state.gear_service.native_diagnostics
+        assert evidence["native_requests"] >= 2
+        assert evidence["fallback_requests"] == 0
+
+
+def test_native_runtime_unavailability_returns_retryable_error(desktop_factory, monkeypatch):
+    from tracker.gear.native import NativeSearchUnavailable
+
+    app, body = desktop_factory()
+
+    def unavailable(*args, **kwargs):
+        raise NativeSearchUnavailable("Internal extension fault.")
+
+    monkeypatch.setattr(adapter, "expand", unavailable)
+    with _serve(app) as (client, _):
+        response = client.post(ENDPOINT, json=body)
+    assert response.status_code == 503, response.text
+    assert response.json()["error"]["code"] == "native_search_unavailable"
+    assert "Rebuild the native release" in response.json()["error"]["message"]
+    assert "Internal extension fault" not in response.text
 
 
 @pytest.mark.browser

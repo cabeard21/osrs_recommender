@@ -179,3 +179,140 @@ it("handles two objectives, constant ranges, unavailable data, and disabled sele
     screen.getByText("No chart values are available for these objectives."),
   ).toBeVisible();
 });
+
+const runningCost = {
+  id: "gp_per_damage",
+  label: "Running cost",
+  unit: "GP/damage",
+};
+const costPoint = (id: string, cost: number | null) => ({
+  id,
+  score: 4,
+  objective_values: { gp_per_damage: cost, accuracy: 0.8 },
+  purchase_cost_gp: 0,
+});
+
+it("defaults to log running cost and redraws the same selected point on a linear scale", () => {
+  const onSelect = vi.fn();
+  render(
+    <ObjectiveScatter
+      axes={[axes[0], runningCost, axes[1]]}
+      points={[
+        costPoint("free", 0),
+        costPoint("mid", 30),
+        costPoint("max", 867.3212),
+        costPoint("unknown", null),
+      ]}
+      selectedId="mid"
+      onSelect={onSelect}
+    />,
+  );
+  const scale = screen.getByLabelText("Running cost scale");
+  expect(scale).toHaveValue("log");
+  expect(
+    screen.getByText("Running cost (GP/damage, log scale) →"),
+  ).toBeVisible();
+  const point = screen.getByRole("button", { name: /Select tradeoff mid,/ });
+  const costFraction = () => (250 - Number(point.getAttribute("cy"))) / 225;
+  expect(costFraction()).toBeCloseTo(0.5075, 4);
+  expect(
+    screen.getByRole("button", { name: /Select tradeoff free,/ }),
+  ).toHaveAttribute("cy", "250");
+  expect(
+    screen.getByRole("button", { name: /Select tradeoff max,/ }),
+  ).toHaveAttribute("cy", "25");
+  expect(
+    screen.queryByRole("button", { name: /Select tradeoff unknown,/ }),
+  ).toBeNull();
+  expect(screen.getByText("300", { exact: true })).toBeVisible();
+  expect(screen.getByText("30", { exact: true })).toHaveAttribute(
+    "y",
+    String(Number(point.getAttribute("cy")) + 4),
+  );
+
+  fireEvent.change(scale, { target: { value: "linear" } });
+  expect(screen.getByText("Running cost (GP/damage) →")).toBeVisible();
+  expect(costFraction()).toBeCloseTo(0.03459, 4);
+  expect(point).toHaveAttribute("aria-pressed", "true");
+  expect(point).toHaveAccessibleName(/Running cost: 30\.0000 GP\/damage/);
+  expect(onSelect).not.toHaveBeenCalled();
+
+  fireEvent.change(screen.getByLabelText("Horizontal axis"), {
+    target: { value: "gp_per_damage" },
+  });
+  const horizontalCostFraction = () =>
+    (Number(point.getAttribute("cx")) - 90) / 490;
+  expect(horizontalCostFraction()).toBeCloseTo(0.03459, 4);
+  fireEvent.change(scale, { target: { value: "log" } });
+  expect(horizontalCostFraction()).toBeCloseTo(0.5075, 4);
+  fireEvent.change(scale, { target: { value: "linear" } });
+
+  fireEvent.change(screen.getByLabelText("Color represents"), {
+    target: { value: "gp_per_damage" },
+  });
+  expect(screen.getByLabelText("Running cost scale")).toHaveValue("linear");
+  const linearLegend = screen.getByRole("img", {
+    name: /Running cost .*color scale/,
+  });
+  const linearFill = point.getAttribute("fill");
+  expect(within(linearLegend).getByText("0", { exact: true })).toBeVisible();
+  const positionBefore = [point.getAttribute("cx"), point.getAttribute("cy")];
+  fireEvent.change(scale, { target: { value: "log" } });
+  const logLegend = screen.getByRole("img", {
+    name: /Running cost .*log scale.*color scale/,
+  });
+  const legendX = (tick: string) =>
+    Number(
+      within(logLegend).getByText(tick, { exact: true }).getAttribute("x"),
+    );
+  expect(
+    (legendX("30") - legendX("0")) / (legendX("867") - legendX("0")),
+  ).toBeCloseTo(0.5075, 4);
+  expect(point.getAttribute("fill")).not.toBe(linearFill);
+  expect([point.getAttribute("cx"), point.getAttribute("cy")]).toEqual(
+    positionBefore,
+  );
+  expect(point).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", { name: /Select tradeoff unknown,/ }),
+  ).toHaveAttribute("fill", "#7bd0ff");
+  fireEvent.change(scale, { target: { value: "linear" } });
+  fireEvent.change(screen.getByLabelText("Vertical axis"), {
+    target: { value: "gp_per_damage" },
+  });
+  expect(screen.getByLabelText("Running cost scale")).toHaveValue("linear");
+  expect(costFraction()).toBeCloseTo(0.03459, 4);
+});
+
+it("renders readable log ticks for small and all-zero running costs", () => {
+  const { rerender } = render(
+    <ObjectiveScatter
+      axes={[axes[0], runningCost]}
+      points={[costPoint("free", 0), costPoint("low", 0.02)]}
+      selectedId="free"
+      onSelect={() => {}}
+    />,
+  );
+  expect(screen.getByText("0.02", { exact: true })).toBeVisible();
+  expect(screen.getByText("0.01", { exact: true })).toBeVisible();
+  rerender(
+    <ObjectiveScatter
+      axes={[axes[0], runningCost]}
+      points={[costPoint("free", 0)]}
+      selectedId="free"
+      onSelect={() => {}}
+    />,
+  );
+  expect(screen.getByText("0", { exact: true })).toBeVisible();
+  expect(screen.queryByText("0.02", { exact: true })).toBeNull();
+  expect(
+    screen.getByRole("button", { name: /Select tradeoff free,/ }),
+  ).toHaveAttribute("cy", "250");
+  fireEvent.change(screen.getByLabelText("Running cost scale"), {
+    target: { value: "linear" },
+  });
+  expect(screen.getByText("0", { exact: true })).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: /Select tradeoff free,/ }),
+  ).toHaveAttribute("cy", "250");
+});

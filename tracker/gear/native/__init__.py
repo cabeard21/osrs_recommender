@@ -14,7 +14,16 @@ from copy import deepcopy
 from typing import Any
 
 _active: ContextVar[bool] = ContextVar("native_search", default=False)
+_required: ContextVar[bool] = ContextVar("native_required", default=False)
 _evidence: ContextVar[Evidence | None] = ContextVar("native_evidence", default=None)
+
+
+class NativeSearchUnsupported(ValueError):
+    """The search inputs exceed the native optimizer's supported domain."""
+
+
+class NativeSearchUnavailable(RuntimeError):
+    """The required native optimizer is unavailable or misconfigured."""
 
 
 class Evidence:
@@ -59,14 +68,22 @@ def active() -> bool:
     return _active.get()
 
 
+def required() -> bool:
+    return _required.get()
+
+
 @contextmanager
-def execution(enabled: bool) -> Iterator[None]:
-    if not isinstance(enabled, bool):
+def execution(enabled: bool, *, required: bool = False) -> Iterator[None]:
+    if not isinstance(enabled, bool) or not isinstance(required, bool):
         raise ValueError("Invalid native search option")
+    if required and not enabled:
+        raise NativeSearchUnavailable("Required native search is disabled")
     token = _active.set(enabled)
+    required_token = _required.set(required)
     try:
         yield
     finally:
+        _required.reset(required_token)
         _active.reset(token)
 
 
@@ -93,11 +110,30 @@ def create_context(search: Any) -> Any:
 
         reason = scoring_support(search) or preflight(search)
     if reason is not None:
+        if required():
+            if reason == "requires_combined_compact_execution":
+                raise NativeSearchUnavailable("Native search requires combined compact execution")
+            if reason == "unknown_combat_levels":
+                raise NativeSearchUnsupported(
+                    "Required combat levels are missing. Sync the account or enter skill overrides."
+                )
+            if target_field := {
+                "target_size_range": "size",
+                "damage_cap_range": "damage cap",
+                "target_bonus_range": "defence bonuses",
+            }.get(reason):
+                raise NativeSearchUnsupported(
+                    f"Target {target_field} exceeds the native range. "
+                    f"Adjust the target {target_field} and rerun Gear."
+                )
+            raise NativeSearchUnsupported(f"Native search cannot handle these inputs ({reason}).")
         record("fallback", reason=reason)
         return None
     try:
         from tracker.gear.native._scoring import ScoringContext
     except ImportError as exc:
+        if required():
+            raise NativeSearchUnavailable("The native scoring extension could not load") from exc
         raise ValueError(
             "native_extension_unavailable: run python -m tools.build_gear_native"
         ) from exc

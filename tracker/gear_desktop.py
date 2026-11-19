@@ -11,11 +11,10 @@ from typing import Literal
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from tracker.config.settings import _YamlSettingsSource
-from tracker.gear.execution_profile import ExecutionProfile
 from tracker.gear.native.readiness import require_native
 
 logger = logging.getLogger(__name__)
@@ -45,11 +44,23 @@ class DesktopSettings(BaseSettings):
     port: int = Field(default=8502, gt=0, lt=65536)
     content_dir: Path = Path("content")
     optimization_workers: int = Field(default=6, ge=1, le=6)
-    optimization_profile: ExecutionProfile = "combined"
-    optimization_engine: Literal["native", "python"] = "native"
+    optimization_profile: Literal["combined"] = "combined"
+    optimization_engine: Literal["native"] = "native"
     pi_url: str
     player_id: int = Field(gt=0)
     read_token: SecretStr
+
+    @field_validator("optimization_profile", "optimization_engine", mode="before")
+    @classmethod
+    def native_only(cls, value: object, info: ValidationInfo) -> object:
+        field = info.field_name
+        assert field is not None
+        if value != cls.model_fields[field].default:
+            raise ValueError(
+                f"Remove {field} from the desktop YAML or unset TRACKER_DESKTOP_{field.upper()}. "
+                "Desktop Gear requires native combined execution."
+            )
+        return value
 
     @field_validator("optimization_workers", mode="before")
     @classmethod
@@ -94,30 +105,25 @@ def create_app(settings: DesktopSettings) -> FastAPI:
     from tracker.gear.service import GearService
     from tracker.ui.gear_preview import mount_gear_preview
 
-    native = (
-        settings.optimization_engine == "native" and settings.optimization_profile == "combined"
-    )
     content = load_content(settings.content_dir)
     gear = GearService(
         content,
         equipment_root=settings.content_dir / "equipment",
-        optimization_profile=settings.optimization_profile,
-        fixed_reporting=settings.optimization_profile == "combined",
-        factored_evaluation=settings.optimization_profile == "combined",
-        compact_states=settings.optimization_profile == "combined",
-        native_search=native,
+        optimization_profile="combined",
+        fixed_reporting=True,
+        factored_evaluation=True,
+        compact_states=True,
+        native_search=True,
+        native_required=True,
     )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         pool = None
         try:
-            if native:
-                require_native()
-            logger.info("Desktop Gear optimization engine: %s", "native" if native else "python")
-            if settings.optimization_engine == "native" and not native:
-                logger.info("Desktop Gear rollback profile selects Python execution")
-            logger.info("Desktop Gear optimization profile: %s", settings.optimization_profile)
+            require_native()
+            logger.info("Desktop Gear optimization engine: native")
+            logger.info("Desktop Gear optimization profile: %s", gear.optimization_profile)
             logger.info(
                 "Desktop Gear fixed-option reporting: %s",
                 "enabled" if gear.fixed_reporting else "disabled",
@@ -131,31 +137,15 @@ def create_app(settings: DesktopSettings) -> FastAPI:
                 "enabled" if gear.compact_states else "disabled",
             )
             if settings.optimization_workers > 1:
-                try:
-                    pool = _process_pool(settings.optimization_workers)
-                    if native:
-                        await asyncio.to_thread(
-                            pool.start, content, gear.equipment_catalog(), native_required=True
-                        )
-                    else:
-                        await asyncio.to_thread(pool.start, content, gear.equipment_catalog())
-                except Exception as exc:
-                    if pool is not None:
-                        await asyncio.to_thread(pool.close)
-                        pool = None
-                    if native:
-                        raise
-                    app.state.gear_execution = "serial_startup_fallback"
-                    logger.warning(
-                        "Desktop Gear process pool could not start (%s); using serial execution",
-                        type(exc).__name__,
-                    )
-                else:
-                    gear.auto_pool = pool
-                    app.state.gear_execution = "processes"
-                    logger.info(
-                        "Desktop Gear ready with %d worker processes", settings.optimization_workers
-                    )
+                pool = _process_pool(settings.optimization_workers)
+                await asyncio.to_thread(
+                    pool.start, content, gear.equipment_catalog(), native_required=True
+                )
+                gear.auto_pool = pool
+                app.state.gear_execution = "processes"
+                logger.info(
+                    "Desktop Gear ready with %d worker processes", settings.optimization_workers
+                )
             yield
         finally:
             try:
@@ -169,7 +159,7 @@ def create_app(settings: DesktopSettings) -> FastAPI:
 
     app = FastAPI(title="Desktop Gear", lifespan=lifespan)
     app.state.gear_execution = "serial"
-    app.state.gear_engine = "native" if native else "python"
+    app.state.gear_engine = "native"
     gear.auto_pool = None
     app.state.gear_service = gear
     app.state.gear_data_source = RemoteGearDataSource(

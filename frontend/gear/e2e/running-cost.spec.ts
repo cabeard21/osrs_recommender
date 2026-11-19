@@ -1,4 +1,42 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Request } from "@playwright/test";
+
+function isOptimization(request: Request) {
+  return (
+    new URL(request.url()).pathname === "/ui-api/gear/optimizations" &&
+    request.method() === "POST"
+  );
+}
+
+async function expectAxisLabelsToFit(chart: Locator) {
+  await expect
+    .poll(() =>
+      chart.evaluate((svg) => {
+        const bounds = svg.getBoundingClientRect();
+        const labels = Array.from(svg.querySelectorAll("text"), (label) => ({
+          text: label.textContent,
+          box: label.getBoundingClientRect(),
+        }));
+        return labels.flatMap(({ text, box }, index) => {
+          const clipped =
+            box.left < bounds.left ||
+            box.right > bounds.right ||
+            box.top < bounds.top ||
+            box.bottom > bounds.bottom;
+          const overlapping = labels
+            .slice(0, index)
+            .some(
+              ({ box: other }) =>
+                box.left < other.right &&
+                box.right > other.left &&
+                box.top < other.bottom &&
+                box.bottom > other.top,
+            );
+          return clipped || overlapping ? [text] : [];
+        });
+      }),
+    )
+    .toEqual([]);
+}
 
 for (const [discipline, fixture] of [
   ["magic", "running-cost"],
@@ -46,11 +84,15 @@ for (const [discipline, fixture] of [
         .filter({ hasText: /^Advanced settings/ })
         .click();
     await expect(cost).toBeChecked();
-    const response = page.waitForResponse(
-      (r) =>
-        new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
-        r.request().method() === "POST",
-    );
+    if (discipline === "magic")
+      await page
+        .getByRole("checkbox", { name: "Prayer bonus", exact: true })
+        .check();
+    const optimizationRequests: Request[] = [];
+    page.on("request", (request) => {
+      if (isOptimization(request)) optimizationRequests.push(request);
+    });
+    const response = page.waitForResponse((r) => isOptimization(r.request()));
     await page
       .getByRole("button", { name: "Run optimization", exact: true })
       .click();
@@ -76,14 +118,70 @@ for (const [discipline, fixture] of [
           p.solution.objective_values.gp_per_damage,
       ),
     );
-    await expect(region.getByRole("row", { selected: true })).toContainText(
-      cheapest.toFixed(4),
-    );
-    await expect(details).toContainText(
+    const selectedRow = region.getByRole("row", { selected: true });
+    const rawCost =
       cheapest.toLocaleString("en-US", { maximumFractionDigits: 4 }) +
-        " GP/damage",
-    );
+      " GP/damage";
+    await expect(selectedRow).toContainText(cheapest.toFixed(4));
+    await expect(details).toContainText(rawCost);
     await expect(details).toContainText("GP/hour");
+
+    const scale = region.getByRole("combobox", { name: "Running cost scale" });
+    const colorBy = region.getByLabel("Color represents");
+    const chart = region.locator(".objective-scatter-plot");
+    const selectedPoint = chart.getByRole("button", { pressed: true });
+    await region.getByLabel("Vertical axis").selectOption("gp_per_damage");
+    await expect(scale).toHaveValue("log");
+    await expect(
+      chart.getByText("Running cost (GP/damage, log scale) →"),
+    ).toBeVisible();
+    await expectAxisLabelsToFit(chart);
+    await expect(selectedPoint).toHaveAccessibleName(
+      new RegExp(`${cheapest.toFixed(4).replace(".", "\\.")} GP/damage`),
+    );
+    const selectedLabel = await selectedPoint.getAttribute("aria-label");
+
+    await (
+      discipline === "magic" ? colorBy : region.getByLabel("Vertical axis")
+    ).press("Tab");
+    await expect(scale).toBeFocused();
+    await scale.press("ArrowDown");
+    await expect(scale).toHaveValue("linear");
+    await expect(chart.getByText("Running cost (GP/damage) →")).toBeVisible();
+    await expectAxisLabelsToFit(chart);
+    expect(await selectedPoint.getAttribute("aria-label")).toBe(selectedLabel);
+    await expect(selectedRow).toContainText(cheapest.toFixed(4));
+    await expect(details).toContainText(rawCost);
+
+    await scale.selectOption("log");
+    await expect(
+      chart.getByText("Running cost (GP/damage, log scale) →"),
+    ).toBeVisible();
+    expect(await selectedPoint.getAttribute("aria-label")).toBe(selectedLabel);
+
+    await region.getByLabel("Horizontal axis").selectOption("gp_per_damage");
+    await expect(chart).toHaveAccessibleName(/^Running cost .* vs DPS/);
+    await expect(scale).toHaveValue("log");
+    await expectAxisLabelsToFit(chart);
+
+    if (discipline === "magic") {
+      await colorBy.selectOption("gp_per_damage");
+      const legend = region.getByRole("img", {
+        name: /Running cost .*color scale/,
+      });
+      await expect(legend).toHaveAccessibleName(/log scale/);
+      await expect(legend.getByText("0", { exact: true })).toBeVisible();
+      await expectAxisLabelsToFit(legend);
+      await scale.selectOption("linear");
+      await expect(legend).toHaveAccessibleName(
+        /Running cost \(GP\/damage\) color scale/,
+      );
+      await expectAxisLabelsToFit(legend);
+      expect(await selectedPoint.getAttribute("aria-label")).toBe(
+        selectedLabel,
+      );
+    }
+    expect(optimizationRequests).toHaveLength(1);
   });
 }
 

@@ -45,30 +45,6 @@ def test_timing_profiles_are_isolated():
     assert len(keys) == 3
 
 
-@pytest.mark.parametrize("profile", ["baseline", "lazy", "combined"])
-def test_desktop_setting_injects_service(profile):
-    settings = DesktopSettings(
-        pi_url="http://pi.local:8502",
-        player_id=1,
-        read_token="test-token",
-        optimization_workers=1,
-        optimization_profile=profile,
-    )
-    app = create_app(settings)
-    assert app.state.gear_service.optimization_profile == profile
-
-
-def test_desktop_env_rolls_back(tmp_path, monkeypatch):
-    config = tmp_path / "desktop.yaml"
-    config.write_text(
-        "pi_url: http://pi.local:8502\nplayer_id: 1\n"
-        "read_token: test-token\noptimization_profile: combined\n"
-    )
-    monkeypatch.setenv("TRACKER_CONFIG_FILE", str(config))
-    monkeypatch.setenv("TRACKER_DESKTOP_OPTIMIZATION_PROFILE", "baseline")
-    assert DesktopSettings().optimization_profile == "baseline"
-
-
 @pytest.mark.parametrize("profile", ["invalid", "", True, None])
 def test_desktop_rejects_invalid_profiles(profile):
     with pytest.raises(ValidationError):
@@ -121,9 +97,10 @@ def test_service_worker_dispatch_keeps_profile(branch, fixed, monkeypatch):
     assert expected_key in captured[0]
 
 
-def test_startup_profile_log_has_no_secret(caplog):
+def test_startup_profile_log_has_no_secret(monkeypatch, caplog):
     from fastapi.testclient import TestClient
 
+    monkeypatch.setattr("tracker.gear_desktop.require_native", lambda: None)
     caplog.set_level("INFO", logger="tracker.gear_desktop")
     secret = "profile-test-secret"
     settings = DesktopSettings(
@@ -131,11 +108,10 @@ def test_startup_profile_log_has_no_secret(caplog):
         player_id=1,
         read_token=secret,
         optimization_workers=1,
-        optimization_profile="lazy",
     )
     with TestClient(create_app(settings)):
         pass
-    assert "optimization profile: lazy" in caplog.text
+    assert "optimization profile: combined" in caplog.text
     assert secret not in caplog.text
 
 
@@ -157,31 +133,6 @@ def test_failure_is_not_retried_and_service_recovers(monkeypatch):
     assert calls == ["lazy"]
     assert service.optimize(case.snapshot, case.request, now=case.at) == {"ok": True}
     assert calls == ["lazy", "lazy"]
-
-
-def test_startup_worker_fallback_keeps_profile(monkeypatch):
-    from fastapi.testclient import TestClient
-
-    class Pool:
-        def start(self, *args):
-            raise RuntimeError("worker unavailable")
-
-        def close(self):
-            pass
-
-    monkeypatch.setattr("tracker.gear_desktop._process_pool", lambda _: Pool())
-    config = DesktopSettings(
-        pi_url="http://pi.local:8502",
-        player_id=1,
-        read_token="test-token",
-        optimization_profile="combined",
-        optimization_engine="python",
-    )
-    app = create_app(config)
-    with TestClient(app):
-        assert app.state.gear_execution == "serial_startup_fallback"
-        assert app.state.gear_service.optimization_profile == "combined"
-        assert app.state.gear_service.auto_pool is None
 
 
 def test_qualified_desktop_default_is_combined(tmp_path, monkeypatch):

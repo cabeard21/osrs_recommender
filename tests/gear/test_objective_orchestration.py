@@ -260,10 +260,11 @@ def test_real_vector_branches_match_native_without_fallback(mode, potions, inclu
     try:
         reference = optimize(*args, **flags)
         with capture() as evidence:
-            actual = optimize(*args, **flags, _native_search=True)
+            actual = optimize(*args, **flags, _native_search=True, _native_required=True)
         assert result_summary(actual) == result_summary(reference)
         assert evidence.snapshot()["native_requests"] >= 1
         assert evidence.snapshot()["fallback_requests"] == 0
+        assert any(row["event"] == "stage" for row in evidence.snapshot()["events"])
     finally:
         _close_result(reference)
         _close_result(actual)

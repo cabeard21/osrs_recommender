@@ -58,6 +58,26 @@ def test_native_pool_validates_before_creating_processes(monkeypatch):
         pool.close()
 
 
+@pytest.mark.parametrize("potion", [False, True])
+def test_native_pool_rejects_python_job_before_dispatch(monkeypatch, potion):
+    from tracker.gear.native import readiness
+    from tracker.gear.potions import PotionPolicy
+
+    monkeypatch.setattr(readiness, "require_native", lambda: None)
+    pool, executors = fake_pool(monkeypatch, native_required=True)
+    args = inputs()
+    branches = [args[1].model_copy(update={"potions": PotionPolicy(mode="fixed")})]
+    try:
+        with pytest.raises(RuntimeError, match="requires native"):
+            if potion:
+                pool.run_potions(*args, branches=branches)
+            else:
+                pool.run(*args)
+        assert not executors[0].jobs
+    finally:
+        pool.close()
+
+
 def without_timings(value):
     if isinstance(value, dict):
         return {key: without_timings(row) for key, row in value.items() if key != "timings_seconds"}
@@ -290,7 +310,7 @@ class FakeExecutor:
             worker.join(timeout=5)
 
 
-def fake_pool(monkeypatch, workers=2):
+def fake_pool(monkeypatch, workers=2, *, native_required=False):
     pool = AutoProcessPool(workers)
     executors = []
 
@@ -301,7 +321,7 @@ def fake_pool(monkeypatch, workers=2):
 
     monkeypatch.setattr(pool, "_new_executor", create)
     _, _, catalog, content, _, _ = inputs()
-    pool.start(content, catalog)
+    pool.start(content, catalog, native_required=native_required)
     return pool, executors
 
 

@@ -1181,6 +1181,18 @@ class _Search:
                     # secondary-value consumer raises when it requires them.
                     if not str(exc).startswith("Player defensive roll is unavailable"):
                         raise
+                    from tracker.gear.native import NativeSearchUnsupported, required
+
+                    if required():
+                        raise NativeSearchUnsupported(
+                            "Required defensive levels are missing. Sync the account or enter "
+                            "skill overrides."
+                        ) from exc
+            if self.native_context is not None and native_role is None:
+                from tracker.gear.native import NativeSearchUnavailable, required
+
+                if required():
+                    raise NativeSearchUnavailable("Native fixed scoring could not bind its role")
             cached = (
                 CombatScore(
                     native_score["supported"],
@@ -2416,6 +2428,7 @@ def optimize(
     _factored_evaluation: bool = False,
     _compact_states: bool = False,
     _native_search: bool = False,
+    _native_required: bool = False,
 ) -> dict[str, Any]:
     """Return a frozen-context curve; experimental refinements are Python-only opt-in."""
     from tracker.gear.execution_profile import execution_context, validate_profile
@@ -2427,8 +2440,14 @@ def optimize(
         raise ValueError("Invalid factored evaluation option")
     if not isinstance(_compact_states, bool):
         raise ValueError("Invalid compact states option")
-    if not isinstance(_native_search, bool):
+    if not isinstance(_native_search, bool) or not isinstance(_native_required, bool):
         raise ValueError("Invalid native search option")
+    if _native_required and not (
+        _native_search and profile == "combined" and _factored_evaluation and _compact_states
+    ):
+        from tracker.gear.native import NativeSearchUnavailable
+
+        raise NativeSearchUnavailable("Native search requires combined compact execution")
     if _native_search and profile == "baseline":
         from tracker.gear.native import record
 
@@ -2443,6 +2462,8 @@ def optimize(
         execution["_compact_states"] = True
     if _native_search:
         execution["_native_search"] = True
+    if _native_required:
+        execution["_native_required"] = True
     started = perf_counter()
     request = (
         request
@@ -2495,6 +2516,7 @@ def optimize(
             factored_evaluation=_factored_evaluation,
             compact_states=_compact_states,
             native_search=_native_search,
+            native_required=_native_required,
         ):
             return optimize(
                 snapshot,

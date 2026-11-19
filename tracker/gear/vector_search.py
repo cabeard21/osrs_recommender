@@ -585,6 +585,7 @@ class VectorSearch:
         native = getattr(self.search, "native_context", None)
         if native is None:
             return None
+        from tracker.gear.native import NativeSearchUnavailable, required
         from tracker.gear.native._stages import StageContext
 
         context = getattr(self, "_projection_context", None)
@@ -592,6 +593,8 @@ class VectorSearch:
             context = StageContext(native, self.search)
             self._projection_context = context
         if not hasattr(context, "begin_projection"):
+            if required():
+                raise NativeSearchUnavailable("Native vector expansion is unavailable")
             return None
         expansion = context.begin_projection(
             states=states, choices=choices, slot=slot, roles=tuple(role.id for role in roles)
@@ -607,7 +610,7 @@ class VectorSearch:
             rows = expansion.advance_projection(min(1024 - (self.nodes & 1023), remaining))
             consumed = expansion.consumed - previous
             if consumed <= 0:
-                raise RuntimeError("Native vector expansion made no progress")
+                raise NativeSearchUnavailable("Native vector expansion made no progress")
             self.nodes += consumed
             expanded.extend(rows)
             if self.search.cancelled and self.search.cancelled():
