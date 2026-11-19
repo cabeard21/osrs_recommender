@@ -11,7 +11,8 @@ from tracker.gear.native.stage_context import MAX_NATIVE_ITEM_COST, pack_stage, 
 def search_context(**updates):
     request = SimpleNamespace(
         roles=(SimpleNamespace(id="a", style="slash", weight=1.0),),
-        budget_gp=1000,
+        purchase_budget=1000,
+        wilderness_risk_limit=None,
         reserved_supply_slots=0,
         include_untradeables=False,
     )
@@ -23,8 +24,11 @@ def search_context(**updates):
 
 
 @pytest.mark.parametrize("value", [-1, 2**63, True, 1.5])
-def test_budget_cannot_overflow_or_change_integer_semantics(value):
-    assert "budget" in preflight(search_context(budget_gp=value), AcquisitionFacts({}, frozenset()))
+@pytest.mark.parametrize("field", ["purchase_budget", "wilderness_risk_limit"])
+def test_budget_cannot_overflow_or_change_integer_semantics(value, field):
+    assert "budget" in preflight(
+        search_context(**{field: value}), AcquisitionFacts({}, frozenset())
+    )
 
 
 @pytest.mark.parametrize("value", [-1, 29, True])

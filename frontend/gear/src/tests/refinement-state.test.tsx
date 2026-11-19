@@ -13,7 +13,13 @@ import {
   parseEvaluation,
 } from "../api/httpClient";
 import { GearProvider, useGear } from "../state/GearProvider";
-import { initialState, newDraft, normalize, reducer } from "../state/scenario";
+import {
+  initialState,
+  newDraft,
+  normalize,
+  reducer,
+  upgradeStoredDraft,
+} from "../state/scenario";
 import context from "./live-context.json";
 import { parseAlternatives } from "../api/contextualAlternatives";
 import { dpsObjectiveResponse } from "./dps-objective-response";
@@ -94,6 +100,56 @@ it("restores legacy untradeable-policy results as readable but outdated", () => 
     ),
   ).toThrow(/older acquisition policy/);
 });
+
+it.each([
+  { cap: undefined, casts: 100 },
+  { cap: null, casts: 100 },
+  { cap: 0, casts: undefined },
+  { cap: 0, casts: null },
+  { cap: 0, casts: 100 },
+])(
+  "checks Wilderness settings when restoring a result ($cap GP, $casts casts)",
+  ({ cap, casts }) => {
+    const saved = result();
+    const settings = {
+      depth: "level_21_plus",
+      skulled: false,
+      protect_item: false,
+    } as const;
+    const wilderness = {
+      ...settings,
+      ...(cap === undefined ? {} : { max_loss_gp: cap }),
+      ...(casts === undefined ? {} : { spell_casts: casts }),
+    };
+    saved.scenario.request.wilderness = wilderness;
+    saved.live!.scenario.wilderness = wilderness;
+    const draft = upgradeStoredDraft({
+      ...newDraft(),
+      wilderness: settings,
+      wildernessRiskBudget: cap == null ? undefined : "0",
+    })!;
+    const initial = initialState();
+    const state = reducer(
+      {
+        ...initial,
+        context: parseContext(context),
+        single: { ...initial.single, draft },
+      },
+      {
+        type: "restore-results",
+        results: {
+          single: {
+            result: saved,
+            solutionId: saved.solutions[0].id,
+            outdated: false,
+          },
+        },
+      },
+    );
+    expect(state.single.result).toBe(saved);
+    expect(state.single.outdated).toBe(cap == null || casts == null);
+  },
+);
 function evaluation(
   proposed: Record<string, number> = {},
   submitted = scenario,

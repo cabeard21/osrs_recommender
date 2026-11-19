@@ -1,8 +1,9 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
-import type { Trial } from "../api/contracts";
+import type { Trial, WildernessPolicy } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { PurchaseRows } from "./PurchaseRows";
 import { UntradeablesToObtain } from "./UntradeablesToObtain";
+import { WildernessRiskDetails, riskAmount } from "./WildernessRiskDetails";
 
 type LiveTrial = Extract<Trial, { source: "live" }>;
 const number = (value: number, digits = 2) => value.toFixed(digits);
@@ -15,11 +16,13 @@ export function TrialComparison({
   onRevert,
   onLock,
   itemName,
+  wilderness,
 }: {
   trial: LiveTrial;
   onRevert: () => void;
   onLock: () => void;
   itemName: (id: number) => string;
+  wilderness?: WildernessPolicy;
 }) {
   const { baseline, proposed, deltas } = trial.live;
   const first = baseline.performance;
@@ -58,6 +61,22 @@ export function TrialComparison({
           gp(proposed.purchase_cost_gp!),
           `${deltas.purchase_cost_gp > 0 ? "+" : ""}${gp(deltas.purchase_cost_gp)}`,
         ],
+        ...(baseline.wilderness_risk && proposed.wilderness_risk
+          ? [
+              [
+                "Wilderness gear loss",
+                riskAmount(baseline.wilderness_risk.loss_gp),
+                riskAmount(proposed.wilderness_risk.loss_gp),
+                baseline.wilderness_risk.loss_gp !== null &&
+                proposed.wilderness_risk.loss_gp !== null
+                  ? gp(
+                      proposed.wilderness_risk.loss_gp -
+                        baseline.wilderness_risk.loss_gp,
+                    )
+                  : "Unavailable",
+              ],
+            ]
+          : []),
       ]
     : [];
   return (
@@ -146,6 +165,16 @@ export function TrialComparison({
           {p.message}
         </p>
       ))}
+      {wilderness && proposed.wilderness_risk && (
+        <>
+          <h4>Trial Wilderness risk</h4>
+          <WildernessRiskDetails
+            risk={proposed.wilderness_risk}
+            policy={wilderness}
+            itemName={itemName}
+          />
+        </>
+      )}
       <h4>Trial acquisition requirements</h4>
       <p>
         {proposed.purchase_cost_gp === null

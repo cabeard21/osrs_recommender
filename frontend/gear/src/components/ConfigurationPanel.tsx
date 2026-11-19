@@ -2,18 +2,13 @@ import { CrystalHalberdFields } from "./CrystalHalberdFields";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useGear } from "../state/GearProvider";
-import {
-  BUDGET_PRESETS,
-  SLIDER_MAX,
-  budgetToSlider,
-  sliderToBudget,
-} from "../state/budget";
 import { draftFieldErrors, newRole, parseGp } from "../state/scenario";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
 import { potionCombatContext } from "../api/combatOptions";
 import { ObjectiveBuilder } from "./ObjectiveBuilder";
 import { AssumptionFields } from "./AssumptionFields";
 import { FieldError, fieldProps } from "./FieldError";
+import { GpBudgetInputs } from "./GpBudgetInputs";
 import { LockConstraints } from "./LockConstraints";
 import { MultiLockEditor } from "./MultiLockEditor";
 import { MultiTemplates } from "./MultiTemplates";
@@ -27,6 +22,11 @@ import {
 } from "./multiDraft";
 import { RoleFields } from "./RoleFields";
 import { SavedSetups } from "./SavedSetups";
+import {
+  DEFAULT_WILDERNESS_SPELL_CASTS,
+  defaultWilderness,
+  wildernessMayUseMagic,
+} from "../api/wilderness";
 import { TargetFields } from "./TargetFields";
 
 const DEFAULT_SUPPORT_POLICY = "community_best_effort";
@@ -66,6 +66,7 @@ export function ConfigurationPanel() {
     }
   };
   const budgetGp = Number(parseGp(draft.budget));
+  const wilderness = draft.wilderness;
   const secondaryPriority = draft.secondaryPriority ?? "default";
   const supportPolicy = draft.supportPolicy ?? DEFAULT_SUPPORT_POLICY;
   const hasAdvancedChanges =
@@ -76,52 +77,18 @@ export function ConfigurationPanel() {
     <>
       <span className="eyebrow">Budget and equipment</span>
       <div className="raised">
-        <label>
-          Additional purchase budget (GP)
-          <input
-            inputMode="numeric"
-            placeholder="10m, 500k or 12345"
-            data-run-on-enter
-            value={draft.budget}
-            {...fieldProps("budget", errors.budget)}
-            onChange={(e) => change({ budget: e.target.value })}
-          />
-        </label>
-        <FieldError id="budget" message={errors.budget} />
-        {!errors.budget && budgetGp > 0 && (
-          <span className="numeric">{budgetGp.toLocaleString()} GP</span>
-        )}
-        <input
-          aria-label="Budget slider"
-          aria-valuetext={`${(budgetGp || 0).toLocaleString()} GP`}
-          type="range"
-          min="0"
-          max={SLIDER_MAX}
-          step="1"
-          value={budgetToSlider(budgetGp)}
-          onChange={(e) =>
-            change({ budget: String(sliderToBudget(Number(e.target.value))) })
-          }
+        <GpBudgetInputs
+          name="budget"
+          label="Additional purchase budget (GP)"
+          sliderLabel="Budget slider"
+          value={draft.budget}
+          error={errors.budget}
+          onChange={(budget) => change({ budget })}
+          presets
         />
-        <div
-          className="budget-presets"
-          role="group"
-          aria-label="Budget presets"
-        >
-          {BUDGET_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={draft.budget === preset}
-              onClick={() => change({ budget: preset })}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
         <p>
           {liveMode
-            ? "Additional gear purchases only. Consumable ammunition ignore this budget. Items you own are reused; prices are cached estimates."
+            ? "This budget covers additional gear purchases. Consumable ammunition are exempt. Items you own are reused, and prices are cached estimates."
             : "Fixture quotes only. Shared purchases counted once in the demo summary."}
         </p>
         {draft.mode === "usable" && !errors.budget && budgetGp === 0 && (
@@ -130,6 +97,121 @@ export function ConfigurationPanel() {
               ? "Budget is 0, so tradeable gear must already be owned. Eligible untradeables are considered as hypothetical upgrades. Consumable ammunition are exempt."
               : "Budget is 0, so gear must already be owned. Consumable ammunition are exempt."}
           </p>
+        )}
+      </div>
+      <div className="raised">
+        <label>
+          <input
+            type="checkbox"
+            checked={!!wilderness}
+            onChange={(e) =>
+              change({
+                wilderness: e.target.checked
+                  ? { ...defaultWilderness }
+                  : undefined,
+              })
+            }
+          />{" "}
+          Wilderness
+        </label>
+        {wilderness && (
+          <>
+            <GpBudgetInputs
+              name="wildernessRiskBudget"
+              label="Max gear loss if PK’d (GP)"
+              sliderLabel="Wilderness risk slider"
+              value={draft.wildernessRiskBudget ?? "0"}
+              error={errors.wildernessRiskBudget}
+              onChange={(wildernessRiskBudget) =>
+                change({ wildernessRiskBudget })
+              }
+              minimum={10}
+            />
+            <label>
+              Wilderness depth
+              <select
+                value={wilderness.depth}
+                onChange={(e) =>
+                  change({
+                    wilderness: {
+                      ...wilderness,
+                      depth:
+                        e.target.value === "level_1_20"
+                          ? "level_1_20"
+                          : "level_21_plus",
+                    },
+                  })
+                }
+              >
+                <option value="level_1_20">Level 1–20</option>
+                <option value="level_21_plus">Level 21+</option>
+              </select>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={wilderness.skulled}
+                onChange={(e) =>
+                  change({
+                    wilderness: { ...wilderness, skulled: e.target.checked },
+                  })
+                }
+              />{" "}
+              Skulled at death
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={wilderness.protect_item}
+                onChange={(e) =>
+                  change({
+                    wilderness: {
+                      ...wilderness,
+                      protect_item: e.target.checked,
+                    },
+                  })
+                }
+              />{" "}
+              Assume Protect Item is active at death
+            </label>
+            <p>Protect Item requires level 25 Prayer.</p>
+            {wildernessMayUseMagic(draft.roles) && (
+              <>
+                <label>
+                  Casts to pack per Magic setup
+                  <input
+                    inputMode="numeric"
+                    data-run-on-enter
+                    value={
+                      draft.wildernessSpellCasts ??
+                      String(DEFAULT_WILDERNESS_SPELL_CASTS)
+                    }
+                    {...fieldProps(
+                      "wilderness-spell-casts",
+                      errors.wildernessSpellCasts,
+                    )}
+                    onChange={(event) =>
+                      change({ wildernessSpellCasts: event.target.value })
+                    }
+                  />
+                </label>
+                <FieldError
+                  id="wilderness-spell-casts"
+                  message={errors.wildernessSpellCasts}
+                />
+                <p>
+                  The optimizer packs loose runes after accounting for runes
+                  supplied by your staff.
+                </p>
+              </>
+            )}
+            <p>
+              Estimates loss on a standard Wilderness PvP death for worn gear,
+              switches, and the recommended ammo, charges, and spell runes.
+              Extra inventory can add losses or change which items are
+              protected.
+            </p>
+          </>
         )}
       </div>
     </>

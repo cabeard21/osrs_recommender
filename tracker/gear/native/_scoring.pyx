@@ -6,6 +6,8 @@ from libc.string cimport memset
 from libcpp.vector cimport vector
 from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total
 
+from tracker.gear.compact_states import SLOT_NAMES
+
 
 cdef double retention_distance(vector[double]& values, size_t dimensions, size_t first, size_t second) noexcept nogil:
     """CPython 3.12 compensated float sum, with the same squared-distance terms."""
@@ -290,7 +292,9 @@ cdef class ScoringContext:
             return accuracy
         return bonuses[self.priority - 4]
 
-    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=NULL, int specific_option=-1) noexcept nogil:
+    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
+                       const int* order=NULL, int specific_option=-1,
+                       const unsigned char* allowed=NULL) noexcept nogil:
         cdef int slot, item, field, weapon = slots[0], ammo = slots[2]
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie, position
         cdef bint legal = True, ammo_ok = False, ranged, tome, hopper
@@ -348,6 +352,8 @@ cdef class ScoringContext:
         if specific_option >= 0:
             start, length = specific_option, 1
         for index in range(start, start + length):
+            if allowed != NULL and not allowed[index - start]:
+                continue
             base = index * 18
             if not self.options[base + 9]:
                 continue
@@ -530,6 +536,31 @@ cdef class ScoringContext:
             output.bonuses[3] = bonuses[3] - self.item_bonuses[ammo * 14 + 3]
             output.bonuses[6] = bonuses[6] - self.item_bonuses[ammo * 14 + 6]
 
+    cdef void build_option_mask(self, const int* slots, int role_index, int start, int length,
+                                object option_allowed, object equipment,
+                                int settled_slot, vector[unsigned char]& mask) except *:
+        cdef int index, slot, base
+        if option_allowed is None or self.role_styles[role_index] != 4 or not length:
+            return
+        if equipment is None:
+            equipment = {SLOT_NAMES[slot]: self.original_ids[slots[slot]]
+                         for slot in range(settled_slot + 1) if slots[slot]}
+        mask.resize(length, 1)
+        for index in range(start, start + length):
+            base = index * 18
+            if self.options[base] == 4 and self.options[base + 9]:
+                configured, option = self.option_records[index]
+                mask[index - start] = bool(option_allowed(equipment, configured, option))
+
+    cdef void evaluate_filtered(self, const int* slots, int role_index, bint metric, Score* output,
+                                const int* order, object option_allowed, object equipment=None,
+                                int settled_slot=10) except *:
+        cdef int offset = ((<int>metric * self.role_count + role_index) * self.item_count + slots[0])
+        cdef vector[unsigned char] mask
+        self.build_option_mask(slots, role_index, self.offsets[offset], self.lengths[offset],
+                               option_allowed, equipment, settled_slot, mask)
+        self.evaluate(slots, role_index, metric, output, order, -1, &mask[0] if mask.size() else NULL)
+
     cdef void project_objectives(self, Score* result, double* values) except *:
         cdef int index, style, count, mask, kind
         cdef double value, roll
@@ -560,14 +591,19 @@ cdef class ScoringContext:
             else:
                 values[index] = result.accuracy
 
-    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum) except -1:
+    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum,
+                            object option_allowed=None, object equipment=None, int settled_slot=10) except -1:
         cdef Score result
         cdef double values[62]
         cdef int index, dimension
         cdef int offset = role_index * self.item_count + slots[0]
         cdef int start = self.offsets[offset], length = self.lengths[offset]
         cdef bint supported = False
+        cdef vector[unsigned char] mask
+        self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, settled_slot, mask)
         for index in range(start, start + length):
+            if mask.size() and not mask[index - start]:
+                continue
             self.evaluate(slots, role_index, False, &result, order, index)
             if not result.supported:
                 continue
@@ -580,13 +616,12 @@ cdef class ScoringContext:
             supported = True
         return supported
 
-    def score_projection(self, equipment, int role_index):
+    def score_projection(self, equipment, int role_index, *, option_allowed=None):
         """Return component maxima for a partial beam, without public option records.
 
         This is a heuristic envelope, never a complete configuration's vector.
         Concrete archives must still use score_variants and full feasibility.
         """
-        from tracker.gear.compact_states import SLOT_NAMES
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
@@ -604,17 +639,17 @@ cdef class ScoringContext:
             slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
             order[position] = SLOT_NAMES.index(slot)
             position += 1
-        supported = self.project_slots(slots, role_index, order, maximum)
+        supported = self.project_slots(slots, role_index, order, maximum, option_allowed, equipment)
         return tuple(maximum[dimension] for dimension in range(self.objective_kinds.shape[0] + 1)) if supported else None
 
-    def score_variants(self, equipment, int role_index):
+    def score_variants(self, equipment, int role_index, *, option_allowed=None):
         """Score every concrete configured option, without projection-based pruning."""
-        from tracker.gear.compact_states import SLOT_NAMES
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
         cdef double values[62]
         cdef int index, position = 0, start, length, offset
+        cdef vector[unsigned char] mask
         if role_index < 0 or role_index >= self.role_count:
             raise ValueError("Invalid native role index")
         memset(slots, 0, sizeof(slots))
@@ -627,8 +662,11 @@ cdef class ScoringContext:
             position += 1
         offset = role_index * self.item_count + slots[0]
         start, length = self.offsets[offset], self.lengths[offset]
+        self.build_option_mask(slots, role_index, start, length, option_allowed, equipment, 10, mask)
         rows = []
         for index in range(start, start + length):
+            if mask.size() and not mask[index - start]:
+                continue
             self.evaluate(slots, role_index, False, &result, order, index)
             if not result.supported:
                 continue
@@ -646,8 +684,7 @@ cdef class ScoringContext:
             })
         return rows
 
-    def score(self, equipment, int role_index, bint metric=False):
-        from tracker.gear.compact_states import SLOT_NAMES
+    def score(self, equipment, int role_index, bint metric=False, *, option_allowed=None):
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
@@ -664,7 +701,10 @@ cdef class ScoringContext:
             slots[SLOT_NAMES.index(slot)] = self.dense_index[item]
             order[index] = SLOT_NAMES.index(slot)
             index += 1
-        self.evaluate(slots, role_index, metric, &result, order)
+        if option_allowed is None or self.role_styles[role_index] != 4:
+            self.evaluate(slots, role_index, metric, &result, order)
+        else:
+            self.evaluate_filtered(slots, role_index, metric, &result, order, option_allowed, equipment)
         if result.supported and self.priority >= 20:
             needed = required_defence_mask(self.priority)
             for index in range(5):

@@ -20,6 +20,7 @@ from tracker.gear.optimizer import (
     _Search,
     prepare_optimization,
 )
+from tracker.gear.wilderness import WildernessPolicy
 
 ScoringContext = pytest.importorskip("tracker.gear.native._scoring").ScoringContext
 StageContext = pytest.importorskip("tracker.gear.native._stages").StageContext
@@ -505,6 +506,176 @@ def test_market_alias_cost_uses_highest_physical_id_quote(monkeypatch):
             16,
         )
         assert rows == [{"z": {"weapon": 2}, "a": {"weapon": 10}}]
+
+
+def stage_risk(**fields):
+    return SimpleNamespace(
+        **{
+            "minimum_unavoidable": {},
+            "recoverable_loss": {},
+            "kept_slots": 3,
+            "minimum_priorities": {},
+            "requires_protection": frozenset(),
+            "unpriced_always": frozenset(),
+            **fields,
+        }
+    )
+
+
+def test_wilderness_checks_complete_loadouts_before_retention(monkeypatch):
+    from tracker.gear.compact_acquisition import AcquisitionFacts
+
+    with stage_search() as search:
+        search.request = search.request.model_copy(update={"wilderness": WildernessPolicy()})
+        quotes = dict.fromkeys(search.facts)
+        quotes[10] = (10, 100_000)
+        monkeypatch.setattr(
+            AcquisitionFacts,
+            "from_facts",
+            classmethod(lambda cls, facts, request: cls(quotes, frozenset())),
+        )
+        complete_unions = []
+
+        def feasible(ids):
+            complete_unions.append(set(ids))
+            return 201 not in ids
+
+        search.wilderness = stage_risk(feasible=feasible)
+        context = StageContext(ScoringContext(search), search)
+        projection = context.begin_projection(
+            states=[{"weapon": 10}], choices=[201, 202], slot="head", roles=("z",)
+        )
+        states = [equipment for equipment, _ in projection.advance_projection()]
+        assert len(states) == 2 and complete_unions == []
+        rows, _ = drain(
+            context.begin(kind="loadout", states=states, choices=[None], slot="ring", roles=("z",)),
+            1,
+        )
+        assert complete_unions == [{10, 201}, {10, 202}]
+        assert rows == [{"weapon": 10, "head": 202}]
+
+
+def test_wilderness_projection_applies_both_caps_with_a_provisional_head(monkeypatch):
+    from tracker.gear.compact_acquisition import AcquisitionFacts
+
+    with stage_search() as search:
+        search.request = search.request.model_copy(
+            update={"budget_gp": 20, "wilderness": WildernessPolicy(max_loss_gp=10)}
+        )
+        quotes = {**dict.fromkeys(search.facts), 2: (2, 20), 10: (10, 21), 201: (201, 5)}
+        monkeypatch.setattr(
+            AcquisitionFacts,
+            "from_facts",
+            classmethod(lambda cls, facts, request: cls(quotes, frozenset())),
+        )
+        search.wilderness = stage_risk(
+            minimum_unavoidable={100: 11},
+            feasible=lambda ids: pytest.fail("partial projection ran the exact risk check"),
+        )
+        context = StageContext(ScoringContext(search), search)
+        early = context.begin_projection(
+            states=[{"head": 201}], choices=[2, 10, 100], slot="weapon", roles=("z",)
+        )
+        assert [equipment for equipment, _ in early.advance_projection()] == [
+            {"head": 201, "weapon": 2}
+        ]
+        settled = context.begin_projection(
+            states=[{"weapon": 2}], choices=[201], slot="head", roles=("z",)
+        )
+        assert settled.advance_projection() == []
+
+
+def test_wilderness_projection_prunes_only_a_bound_on_settled_slots():
+    with stage_search() as search:
+        search.request = search.request.model_copy(
+            update={"budget_gp": 15, "wilderness": WildernessPolicy()}
+        )
+        search.wilderness = stage_risk(
+            minimum_unavoidable={2: 1, 201: 20},
+            recoverable_loss={2: 100, 202: 10, 203: 20},
+            kept_slots=1,
+            feasible=lambda ids: pytest.fail("partial projection ran the exact risk check"),
+        )
+        context = StageContext(ScoringContext(search), search)
+        projection = context.begin_projection(
+            states=[{"head": 201}], choices=[2], slot="weapon", roles=("z",)
+        )
+        assert [equipment for equipment, _ in projection.advance_projection()] == [
+            {"head": 201, "weapon": 2}
+        ]
+        projection = context.begin_projection(
+            states=[{"head": 201, "weapon": 2}], choices=[201, 202, 203], slot="head", roles=("z",)
+        )
+        assert [equipment for equipment, _ in projection.advance_projection()] == [
+            {"head": 202, "weapon": 2}
+        ]
+
+
+def test_wilderness_tuple_stage_checks_exactly_once_all_roles_are_assigned():
+    with stage_search(multiple=True) as search:
+        search.request = search.request.model_copy(
+            update={"budget_gp": 12, "wilderness": WildernessPolicy()}
+        )
+        exact_calls = []
+
+        def feasible(ids):
+            exact_calls.append(set(ids))
+            return 10 not in ids
+
+        search.wilderness = stage_risk(
+            minimum_unavoidable={2: 12, 10: 0},
+            minimum_priorities={2: 100, 10: 50},
+            requires_protection=frozenset({2}),
+            kept_slots=1,
+            feasible=feasible,
+        )
+        context = StageContext(ScoringContext(search), search)
+        first, _ = drain(
+            context.begin(
+                kind="tuple", states=[{}], choices=[{"weapon": 2}], roles=("z", "a"), tuple_role="z"
+            ),
+            1,
+        )
+        assert first == [{"z": {"weapon": 2}}] and exact_calls == []
+        second, _ = drain(
+            context.begin(
+                kind="tuple",
+                states=first,
+                choices=[{"weapon": 2}, {"weapon": 10}],
+                roles=("z", "a"),
+                tuple_role="a",
+            ),
+            1,
+        )
+        assert exact_calls == [{2}, {2, 10}]
+        assert second == [{"z": {"weapon": 2}, "a": {"weapon": 2}}]
+
+
+def test_wilderness_projection_prunes_only_when_unpriced_loss_can_be_exposed():
+    with stage_search() as search:
+        search.request = search.request.model_copy(update={"wilderness": WildernessPolicy()})
+        search.wilderness = stage_risk(
+            minimum_priorities={2: 100, 201: 100, 202: None, 203: 150, 300: None},
+            requires_protection=frozenset({201, 202, 203}),
+            unpriced_always=frozenset({204}),
+            kept_slots=1,
+            feasible=lambda ids: pytest.fail("partial projection ran the exact risk check"),
+        )
+        context = StageContext(ScoringContext(search), search)
+        projection = context.begin_projection(
+            states=[{"head": 204}], choices=[2], slot="weapon", roles=("z",)
+        )
+        assert len(projection.advance_projection()) == 1
+        projection = context.begin_projection(
+            states=[{"weapon": 2}], choices=[201, 202, 203, 204], slot="head", roles=("z",)
+        )
+        assert [equipment for equipment, _ in projection.advance_projection()] == [
+            {"head": 203, "weapon": 2}
+        ]
+        projection = context.begin_projection(
+            states=[{"weapon": 2, "shield": 300}], choices=[203], slot="head", roles=("z",)
+        )
+        assert projection.advance_projection() == []
 
 
 def test_pack_rejects_acquisition_overflow(monkeypatch):

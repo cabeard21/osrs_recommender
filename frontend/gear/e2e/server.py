@@ -143,6 +143,42 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-wilderness-magic")
+        def seed_wilderness_magic():
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {1381: original_catalog.items[1381]},
+                revision="browser-acceptance-wilderness-magic-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=1381,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                for item_id, gp in ((1381, 900), (554, 5), (556, 2), (558, 1)):
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=gp,
+                            low_price_gp=gp,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-target-size")
         def seed_target_size():
             seed_optimization()

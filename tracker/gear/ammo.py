@@ -162,6 +162,7 @@ def compare_arrows(
             )["price"]
             if price["amount_gp"] is None:
                 reasons.append(f"No price available for {catalog.items[ammo].name}.")
+            risk = result.get("wilderness_risk")
             points.append(
                 {
                     "ammo_id": ammo,
@@ -174,6 +175,7 @@ def compare_arrows(
                     "price": price,
                     "reasons": reasons + notes,
                     "current": equipment == loadout,
+                    **({"wilderness_risk": risk} if risk is not None else {}),
                     **running_cost(
                         performance.get("attack_interval"),
                         performance.get("dps"),

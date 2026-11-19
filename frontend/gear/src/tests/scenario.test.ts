@@ -8,14 +8,65 @@ import {
   reducer,
   saveDrafts,
   storageKey,
+  upgradeStoredDraft,
 } from "../state/scenario";
 import { contextFixture, FixtureGearClient } from "../fixtures/client";
+import { MAX_BUDGET_GP } from "../state/budget";
 const reply = () =>
   new FixtureGearClient("none", 0).optimize(
     normalize(newDraft(), contextFixture.snapshotId),
     new AbortController().signal,
   );
 describe("scenario normalization", () => {
+  it("migrates legacy Wilderness drafts without converting their risk amount into a purchase cap", () => {
+    const wilderness = {
+      depth: "level_21_plus",
+      skulled: false,
+      protect_item: false,
+    } as const;
+    const old = {
+      ...newDraft(),
+      budget: "100k",
+      wilderness,
+      wildernessRiskBudget: undefined,
+    };
+    const migrated = upgradeStoredDraft(old)!;
+    expect(migrated).toMatchObject({
+      budget: String(MAX_BUDGET_GP),
+      wildernessRiskBudget: "100k",
+    });
+    expect(normalize(migrated, "snapshot").request).toMatchObject({
+      budget_gp: MAX_BUDGET_GP,
+      wilderness: { ...wilderness, max_loss_gp: 100_000, spell_casts: 100 },
+    });
+    expect(upgradeStoredDraft(migrated)).toMatchObject({
+      budget: String(MAX_BUDGET_GP),
+      wildernessRiskBudget: "100k",
+    });
+  });
+  it("validates the Wilderness cast count for Magic and ignores hidden invalid values", () => {
+    const draft = {
+      ...newDraft(),
+      wilderness: {
+        depth: "level_21_plus",
+        skulled: false,
+        protect_item: false,
+      } as const,
+      wildernessSpellCasts: "10001",
+    };
+    expect(normalize(draft, "snapshot").request.wilderness?.spell_casts).toBe(
+      100,
+    );
+    const magic = {
+      ...draft,
+      roles: [{ ...draft.roles[0], style: "magic" as const }],
+    };
+    expect(() => normalize(magic, "snapshot")).toThrow(/casts.*1 to 10000/i);
+    expect(
+      normalize({ ...magic, wildernessSpellCasts: "1" }, "snapshot").request
+        .wilderness?.spell_casts,
+    ).toBe(1);
+  });
   it("preserves backend defaults and explicit empty locks", () => {
     const d = newDraft();
     d.roles[0].locks = { ammo: null };

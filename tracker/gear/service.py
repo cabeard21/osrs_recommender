@@ -64,7 +64,7 @@ def _timing_key(
     native_search: bool = False,
 ) -> tuple[Any, ...]:
     """Request shape whose per-lane stage durations are comparable between runs."""
-    key = (
+    key: tuple[Any, ...] = (
         profile,
         fixed_reporting,
         factored_evaluation,
@@ -78,8 +78,17 @@ def _timing_key(
         tuple(role.style for role in request.roles),
         tuple(tuple(role.allowed_disciplines or ()) for role in request.roles),
         request.max_swaps,
-        request.budget_gp > 0,
+        (request.purchase_budget or 0) > 0,
     )
+    if request.wilderness is not None:
+        key = (
+            *key,
+            request.wilderness.depth,
+            request.wilderness.skulled,
+            request.wilderness.protect_item,
+            request.purchase_budget is None,
+            (request.wilderness_risk_limit or 0) > 0,
+        )
     objectives = getattr(request, "objectives", None)
     return key if objectives is None else (*key, tuple(objective.id for objective in objectives))
 

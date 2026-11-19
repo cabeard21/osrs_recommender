@@ -46,6 +46,7 @@ include = ["contracts", "tracker*"]
 
 [tool.setuptools.package-data]
 contracts = ["*.json"]
+"tracker.gear" = ["wilderness-guide.json"]
 "tracker.ui" = ["assets/items/*.png", "assets/items/*.json", "gear_static/**/*"]
 
 # --------------------------------------------------------------------------

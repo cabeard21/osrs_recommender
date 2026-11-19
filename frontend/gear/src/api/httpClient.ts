@@ -9,6 +9,11 @@ import { validateUntradeables } from "./untradeables";
 import { validateRunningCost } from "./runningCosts";
 import { purchaseItemIds } from "./preparedPurchases";
 import {
+  normalizedWilderness,
+  parseWildernessRisk,
+  wildernessRiskCap,
+} from "./wilderness";
+import {
   object,
   requireFields,
   strings,
@@ -118,6 +123,10 @@ export function parseOptimization(
   const submittedConstraints = object(submitted);
   if (
     !sameValue(serverScenario.locks ?? {}, submitted.locks ?? {}) ||
+    !sameValue(
+      normalizedWilderness(serverScenario.wilderness),
+      normalizedWilderness(submitted.wilderness),
+    ) ||
     !sameValue(
       serverScenario.transitions ?? [],
       submittedConstraints.transitions ?? [],
@@ -367,6 +376,10 @@ export function parseOptimization(
       score: "number",
       purchase_cost_gp: "number",
     });
+    const wildernessRisk = parseWildernessRisk(
+      selected.wilderness_risk,
+      scenario.request,
+    );
     validateRunningCost(selected.running_cost);
     validateSecondaryPriority(selected, priority, true);
     if (
@@ -444,6 +457,7 @@ export function parseOptimization(
       weightedDps: selected.score as number,
       purchases,
       cost: selected.purchase_cost_gp as number,
+      ...(wildernessRisk ? { wildernessRisk } : {}),
       shared: [],
       transitions: [],
     });
@@ -653,6 +667,7 @@ export function parseOptimization(
           branch.alternatives,
           items,
           scenario.request.excluded_item_ids,
+          wildernessRiskCap(scenario.request),
         ),
       );
     }
@@ -671,6 +686,7 @@ export function parseOptimization(
     result.alternatives,
     items,
     scenario.request.excluded_item_ids,
+    wildernessRiskCap(scenario.request),
   );
   return {
     source: "live",
@@ -793,6 +809,7 @@ export function optimizationRequest(scenario: Scenario) {
       : { secondary_priority: r.secondary_priority ?? "default" }),
     max_dps_loss_pct: 100,
     budget_gp: r.budget_gp,
+    ...(r.wilderness ? { wilderness: r.wilderness } : {}),
     reserved_supply_slots: r.reserved_supply_slots,
     max_swaps: r.max_swaps,
     skill_overrides: r.skill_overrides,
@@ -823,7 +840,7 @@ function parseFixedEvaluation(
   value: unknown,
   expected: Equipment,
   items: Item[],
-  includeUntradeables: boolean,
+  request: Scenario["request"],
 ): FixedEvaluation {
   const row = requireFields(value, { status: "string" });
   if (
@@ -891,11 +908,12 @@ function parseFixedEvaluation(
     throw new Error("Invalid evaluation assumed acquisitions");
   if (row.status === "valid" && row.purchase_cost_gp === null)
     throw new Error("Valid evaluation requires acquisition total");
+  parseWildernessRisk(row.wilderness_risk, request, row.status === "valid");
   validateUntradeables(
     row.unowned_untradeable_item_ids,
     Object.values(equipment).filter((id): id is number => id !== null),
     [...purchased],
-    includeUntradeables,
+    request.include_untradeables === true && request.mode !== "owned",
   );
   return structuredClone(value) as FixedEvaluation;
 }
@@ -926,10 +944,17 @@ export function parseEvaluation(
     assumptions_fingerprint: "string",
     price_revision: "string",
   });
+  const comparableScenario = (value: unknown) => {
+    const row = object(value);
+    return { ...row, wilderness: normalizedWilderness(row.wilderness) };
+  };
   if (
     envelope.api_version !== "gear-ui-v1" ||
     !Array.isArray(envelope.items) ||
-    !sameValue(result.live.scenario, envelope.scenario) ||
+    !sameValue(
+      comparableScenario(result.live.scenario),
+      comparableScenario(envelope.scenario),
+    ) ||
     envelope.scenario_fingerprint !== result.fingerprint
   )
     throw new Error(
@@ -974,15 +999,13 @@ export function parseEvaluation(
       envelope.baseline,
       baselineEquipment,
       items,
-      result.scenario.request.include_untradeables === true &&
-        result.scenario.request.mode !== "owned",
+      result.scenario.request,
     ),
     proposed = parseFixedEvaluation(
       envelope.proposed,
       equipment,
       items,
-      result.scenario.request.include_untradeables === true &&
-        result.scenario.request.mode !== "owned",
+      result.scenario.request,
     );
   const valid = baseline.status === "valid" && proposed.status === "valid";
   if (valid) {

@@ -212,6 +212,27 @@ it("renders every joint configuration at once with shared items and distinct inv
   ).toBeVisible();
 });
 
+it("shows the Wilderness risk of the unrestricted joint configuration", () => {
+  const { result, rerender } = setup({ selected: "unrestricted" });
+  Object.assign(result.scenario.request, {
+    wilderness: { depth: "level_21_plus", skulled: false, protect_item: false },
+  });
+  Object.assign(result.live.result.unrestricted, {
+    wilderness_risk: {
+      loss_gp: 750,
+      without_protect_item_gp: null,
+      items: [{ item_id: 9, quantity: 1, outcome: "dropped", loss_gp: 750 }],
+      quantities: [],
+      rules_revision: "reviewed-fixture",
+    },
+  });
+  rerender(<LiveMultiResultWorkspace />);
+  expect(
+    screen.getByRole("region", { name: "Wilderness risk" }),
+  ).toHaveTextContent("750 GP estimated loss if PK’d");
+  expect(screen.getByText(/1,000 GP max gear loss if PK’d/)).toBeVisible();
+});
+
 it("changes the curve selection only through visualization actions", async () => {
   const user = userEvent.setup();
   const { dispatch } = setup();

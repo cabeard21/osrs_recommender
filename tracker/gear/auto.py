@@ -307,6 +307,8 @@ def resolve_auto_role(
     snapshot: Any,
     levels: Mapping[str, int],
     selected: Mapping[str, Any] | None = None,
+    *,
+    prefer: Callable[[Mapping[str, Any]], bool] | None = None,
 ) -> tuple[Any, dict[str, Any]] | None:
     """Resolve a fixed loadout against the same legal filters as equipment search."""
     from tracker.gear.combat_options import ancient_spell_problem, eligible_combat_options
@@ -361,6 +363,7 @@ def resolve_auto_role(
             if performance.supported:
                 candidates.append(
                     (
+                        prefer(payload) if prefer is not None else True,
                         performance.dps or 0,
                         option.attack_type,
                         option.stance,
@@ -371,5 +374,5 @@ def resolve_auto_role(
                 )
     if not candidates:
         return None
-    chosen = max(candidates, key=lambda row: row[:4])
+    chosen = max(candidates, key=lambda row: row[:5])
     return chosen[-2], chosen[-1]

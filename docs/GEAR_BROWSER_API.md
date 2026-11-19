@@ -4,6 +4,79 @@ The architecture authority remains [the redesign plan](GEAR_OPTIMIZER_REDESIGN_P
 This document describes account/item reads, real single/joint optimization, and
 exact fixed-loadout comparisons.
 
+## Wilderness gear risk
+
+An optional `wilderness` object applies to both optimization and fixed evaluation.
+`budget_gp` caps additional purchases. `wilderness.max_loss_gp` is a separate
+integer cap from 0 to 2,147,483,647 GP on estimated gear loss if a player kills you
+in the Wilderness. A loadout must satisfy both limits. `mode` controls account
+access, and results report `purchase_cost_gp` alongside estimated loss.
+
+```json
+{
+  "budget_gp": 2000000,
+  "wilderness": {
+    "max_loss_gp": 100000,
+    "spell_casts": 100,
+    "depth": "level_21_plus",
+    "skulled": false,
+    "protect_item": true
+  }
+}
+```
+
+Omit `wilderness` or send `null` for purchase-only planning. Older Wilderness
+requests omit `max_loss_gp` and use `budget_gp` as the risk cap with uncapped
+purchases. An explicit `max_loss_gp: null` is the same legacy form.
+
+`depth` accepts `level_1_20` or `level_21_plus`. `skulled` and `protect_item` are
+strict booleans. Standard unskulled and skulled deaths protect up to three and zero
+eligible items respectively. Active Protect Item adds one slot and requires level
+25 Prayer, including modeled level overrides in Future mode. This models standard
+worlds and standard account death rules. [Items Kept on Death](https://oldschool.runescape.wiki/w/Items_Kept_on_Death)
+
+`wilderness_risk` reports `loss_gp`, rules revision, item outcomes and selected
+ammo, charge and rune quantities. `without_protect_item_gp` estimates loss for the same
+gear and quantities with the prayer off when prayer was assumed active. Null
+means an unverified total or an inapplicable prayer-off comparison.
+An unknown loss cannot qualify a loadout under the cap. Item outcomes include
+known drop, repair and conversion rules for the exact physical form. [Jagex's Trouver update](https://secure.runescape.com/m=news/bank-tags-trouver-system-rework--more?oldschool=1)
+
+The risk calculation covers the union of worn gear and modeled switches, counting
+shared equipment once. Ammo and charge quantities are selected within the loss
+cap and reviewed item limits while preserving protection for durable gear. The
+base role gets first priority for shared risk, followed by configured role order.
+Ammo-slot stacks get a quantity recommendation when a configured attack uses them.
+An unused stack explicitly equipped in a fixed or locked setup counts as one
+carried unit. Ammo quantities use the more conservative result of unit and stack
+protection.
+When a reviewed form's protection priority is unknown, the estimate uses the
+highest loss across its plausible positions.
+
+Set `spell_casts` to a strict integer from 1 to 10,000 to pack loose combat runes
+for that many casts per spellcasting role. Omitted or null keeps the earlier risk
+scope. The browser starts at 100 casts. The exact selected spell determines the
+recipe. Rune supply from eligible equipped staves and charged tomes reduces the
+loose stacks, and powered attacks use the charge model. Shared rune types are
+combined and use one inventory slot per type, drawing on reserved supplies first.
+Reported quantities have `kind: "rune"` and use the rune ID for both `item_id`
+and `resource_id`. Unpriced or unreviewed spell resources can make a trial invalid.
+
+Food, loot, rune pouches and utility runes such as Mark of Darkness can change
+actual loss and protected items. The bundled GE guide snapshot supplies the ordinary
+tradeable protection priorities. The request and rules revision contribute to
+the scenario fingerprint, and `price_revision` identifies the frozen cached
+prices used to estimate loss.
+[Guide price data](https://runescape.wiki/w/RuneScape:Grand_Exchange_Market_Watch/Usage_and_APIs)
+
+Full optimization solutions, fixed evaluations and eligible arrow comparisons
+return the breakdown. Fixed trials over either cap return `status: "invalid"`
+and can still show purchase cost and known loss. The violation path is `budget_gp`
+for the purchase cap and `wilderness.max_loss_gp` for the separate risk cap.
+Archived objective point summaries expose `purchase_cost_gp` and
+`wilderness_loss_gp` as independent sort fields for Wilderness runs. The
+corresponding archived solution provides the full item details and quantities.
+
 ## Target size and Colossal blade
 
 Combat targets accept `size`, the side length of their footprint in tiles (strict
