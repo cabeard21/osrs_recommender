@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from itertools import product
 from typing import Any
 
@@ -54,7 +54,12 @@ def branch_requests(request: Any) -> Iterator[tuple[str, Any]]:
 
 
 def merge_assignment_results(
-    request: Any, branches: list[tuple[str, dict[str, Any]]], *, complete_frontiers: bool = False
+    request: Any,
+    branches: list[tuple[str, dict[str, Any]]],
+    *,
+    complete_frontiers: bool = False,
+    native_merge: bool = False,
+    cancelled: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     """Merge full joint archives without publishing a response per assignment."""
     import json
@@ -63,7 +68,11 @@ def merge_assignment_results(
     from tracker.gear.potion_search import merge_results
 
     result = merge_results(
-        request, [row for _, row in branches], complete_frontiers=complete_frontiers
+        request,
+        [row for _, row in branches],
+        complete_frontiers=complete_frontiers,
+        native_merge=native_merge,
+        cancelled=cancelled,
     )
     assumptions = {
         **result["assumptions"],

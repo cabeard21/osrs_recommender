@@ -68,12 +68,31 @@ def test_empty_objectives_is_explicit_vector_dps_only():
     assert result["search"]["objective_frontier"]["explored_nodes"] == 0
 
 
-def test_exhausted_option_products_resume_in_later_reserved_phase(monkeypatch):
+@pytest.mark.parametrize("native", [False, True])
+def test_exhausted_option_products_resume_in_later_reserved_phase(monkeypatch, native):
+    from functools import partial
+
+    from tests.gear import test_optimizer
     from tracker.gear.vector_search import VectorSearch
+
+    if native:
+        pytest.importorskip("tracker.gear.native._frontier")
+        monkeypatch.setattr(
+            test_optimizer,
+            "optimize",
+            partial(
+                test_optimizer.optimize,
+                _native_search=True,
+                _execution_profile="combined",
+                _factored_evaluation=True,
+                _compact_states=True,
+            ),
+        )
 
     def explore(engine, seeds):
         seed = next(row for row in seeds if row is not None)
         assignment = {key: row["equipment"] for key, row in seed["loadouts"].items()}
+        assert (engine.archives[None].native_candidate_index is not None) == native
         engine.phase_limit = 1
         engine.capture(assignment)
         row = engine.seen.execute(
@@ -81,6 +100,7 @@ def test_exhausted_option_products_resume_in_later_reserved_phase(monkeypatch):
             (engine.identity(assignment),),
         ).fetchone()
         assert row == (1, 0)
+        assert engine.option_attempts == engine.complete_attempts == engine.nodes == 1
         engine.phase_limit = 100
         engine.capture(assignment)
         assert (
@@ -90,6 +110,7 @@ def test_exhausted_option_products_resume_in_later_reserved_phase(monkeypatch):
             ).fetchone()[0]
             == 1
         )
+        assert engine.option_attempts == engine.complete_attempts == engine.nodes == 2
         return engine.publish()
 
     monkeypatch.setattr(VectorSearch, "explore", explore)

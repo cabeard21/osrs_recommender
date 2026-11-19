@@ -180,6 +180,62 @@ def test_merge_rejects_sampled_or_missing_vector_branch_archives():
         )
 
 
+@pytest.mark.parametrize("case", ["shared", "conflicting_identity", "distinct_caps"])
+def test_native_vector_merge_preserves_reference_and_shares_equivalent_caps(case):
+    pytest.importorskip("tracker.gear.native._frontier")
+    from tracker.gear.potion_search import merge_objective_frontiers
+    from tracker.gear.vector_archive import VectorArchive, own_vector_archives
+    from tracker.gear.vector_publish import FrontierPoints
+
+    configured = request().model_copy(update={"max_dps_loss_pct": 50})
+    rows = [
+        [solution(configured, 1, 10, (1, 1)), solution(configured, 2, 6, (3, 3))],
+        [solution(configured, 3, 10, (1, 1)), solution(configured, 4, 4, (5, 5))],
+    ]
+    if case == "conflicting_identity":
+        rows[1][1] = solution(configured, 1, 4, (5, 5))
+    elif case == "distinct_caps":
+        rows[0][0]["maximum_actions"] = 1
+
+    @own_vector_archives
+    def compare():
+        source = []
+        for members in rows:
+            archive = VectorArchive(tuple(objective.id for objective in configured.objectives))
+            for row in members:
+                archive.add(row)
+            source.append(
+                {
+                    "objective_frontiers": [
+                        {"swap_limit": cap, "points": FrontierPoints(archive, cap)}
+                        for cap in (0, 1, None)
+                    ],
+                }
+            )
+        expected = merge_objective_frontiers(configured, source, id_prefix="discipline-test-")
+        actual = merge_objective_frontiers(
+            configured, source, id_prefix="discipline-test-", native_merge=True
+        )
+        actual_groups, expected_groups = (
+            result["objective_frontiers"] for result in (actual, expected)
+        )
+        for actual_group, expected_group in zip(actual_groups, expected_groups, strict=True):
+            assert {**actual_group, "points": list(actual_group["points"])} == {
+                **expected_group,
+                "points": list(expected_group["points"]),
+            }
+        assert len({group["points"].archive.path for group in actual_groups}) == (
+            2 if case == "distinct_caps" else 1
+        )
+        discipline = merge_objective_frontiers(configured, source[:1], native_merge=True)
+        assert (
+            discipline["objective_frontiers"][1]["points"].archive
+            is source[0]["objective_frontiers"][1]["points"].archive
+        )
+
+    compare()
+
+
 def test_objective_skills_retain_defensive_potion_branches_and_validate_missing_magic():
     from tracker.gear.evaluation import validate_request_context
     from tracker.gear.potions import relevant_boost_skills

@@ -135,6 +135,42 @@ def test_session_cleanup_preserves_another_active_store_and_bounds_read_gate():
         assert first.allow_read("another reader")
 
 
+def test_shared_archive_reuses_membership_with_distinct_cap_outputs(monkeypatch):
+    from tracker.gear.vector_archive import VectorArchive
+    from tracker.gear.vector_publish import FrontierPoints
+
+    data = result(3)
+    group = data["objective_frontiers"][0]
+    archive = VectorArchive(("prayer_bonus",))
+    for point in group["points"]:
+        archive.add(point["solution"])
+    data["objective_frontiers"] = [
+        {
+            **group,
+            "swap_limit": cap,
+            "baseline_dps": 3 + cap,
+            "points": FrontierPoints(archive, cap),
+        }
+        for cap in (0, 1)
+    ]
+    with ObjectiveRunStore() as store:
+        original = store._put_solution
+        calls = []
+
+        def put(run_id, solution):
+            calls.append(solution)
+            return original(run_id, solution)
+
+        monkeypatch.setattr(store, "_put_solution", put)
+        published = store.publish_result(data, metadata={}, player_id=1)
+        first, second = published["objective_frontiers"]
+        assert len(calls) == 4  # Three members and the selected solution.
+        assert first["total_count"] == second["total_count"] == 3
+        assert first["points"][0]["id"] != second["points"][0]["id"]
+        assert first["points"][0]["dps_loss"] + 1 == second["points"][0]["dps_loss"]
+        assert store.page(published["run_id"], second["id"], player_id=1)["total"] == 3
+
+
 def test_restore_metadata_update_preserves_manifest_identity():
     with ObjectiveRunStore() as store:
         published = store.publish_result(result(2), metadata={}, player_id=1)

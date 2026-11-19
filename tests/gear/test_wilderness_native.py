@@ -13,6 +13,33 @@ from tracker.gear.optimizer import RoleConfig
 from tracker.gear.service import GearService
 
 
+@pytest.mark.parametrize("keep", range(5))
+def test_native_trip_loss_matches_conservative_quantity_rules(keep):
+    from tracker.gear.native import _stages
+    from tracker.gear.wilderness import Charge, DeathItem, WildernessPolicy, WildernessRisk
+
+    rules = {
+        10: DeathItem(100, 70),
+        20: DeathItem(100, 100, protected_loss_gp=40),
+        30: DeathItem(None, 125, charge=Charge(((5, 2, 3),), 1, 100)),
+        40: DeathItem(80, 3, ammo=True),
+        50: DeathItem(None, None, ammo=True),
+        60: DeathItem(2, 30, protected_loss_gp=None),
+        70: DeathItem(None, 17, protection_slot=False),
+    }
+    risk = WildernessRisk(WildernessPolicy(), None, rules)
+    context = _stages.TripLossContext(rules)
+    for quantities in (
+        {},
+        {10: 1, 20: 1, 30: 5, 40: 25},
+        {10: 1, 50: 1},
+        {20: 1, 50: 2, 60: 1},
+        {60: 1, 70: 1},
+        {80: 1},
+    ):
+        assert context.loss(quantities, keep) == risk._worst(quantities, keep).loss_gp
+
+
 @pytest.mark.parametrize("multiple", [False, True], ids=["single", "multi"])
 @pytest.mark.parametrize("limits", ["legacy", "both", "purchase", "risk"])
 def test_wilderness_objective_archives_match_native_without_fallback(

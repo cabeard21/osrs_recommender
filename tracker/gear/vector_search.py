@@ -49,6 +49,9 @@ class VectorSearch:
         self.archives = {
             cap: common if common is not None else VectorArchive(self.ids) for cap in caps
         }
+        if getattr(search, "native_context", None) is not None:
+            for archive in dict.fromkeys(self.archives.values()):
+                archive.enable_native_index()
         self.seen = self.archives[None].connection
         self.seen.execute(
             "CREATE TABLE seen_assignments(identity TEXT PRIMARY KEY,"
@@ -58,6 +61,9 @@ class VectorSearch:
         self.option_attempts = 0
         self.accepted = 0
         self.complete_attempts = 0
+        self.native_option_attempts = 0
+        self.native_option_screened = 0
+        self.native_option_reports = 0
         self.limit = int(self.policy["expansion_limit"])
         self.phase_limit = self.limit
         self.pools: dict[str, list[int | None]] = {}
@@ -216,31 +222,24 @@ class VectorSearch:
         if previous is not None and previous[1]:
             return
         cursor = previous[0] if previous is not None else 0
-        self.seen.execute("INSERT OR IGNORE INTO seen_assignments VALUES(?,0,0)", (identity,))
         if any(
             loadout_problems(
                 assignment[role.id], self.search.items, self.search.facts, self.search.request, role
             )
             for role in roles
         ):
-            self.seen.execute(
-                "UPDATE seen_assignments SET complete=1 WHERE identity=?", (identity,)
-            )
+            self._remember_assignment(identity, cursor, complete=True)
             return
         alternatives = tuple(self.options.variants(assignment[role.id], role) for role in roles)
         if any(not values for values in alternatives):
-            self.seen.execute(
-                "UPDATE seen_assignments SET complete=1 WHERE identity=?", (identity,)
-            )
+            self._remember_assignment(identity, cursor, complete=True)
             return
         # Physical legality, acquisition, inventory and transition feasibility do
         # not depend on the attack/prayer configuration chosen for this gear.
         first = tuple(values[0] for values in alternatives)
         feasibility = self.options.numeric_feasibility(assignment, first, physical_checked=True)
         if feasibility is None:
-            self.seen.execute(
-                "UPDATE seen_assignments SET complete=1 WHERE identity=?", (identity,)
-            )
+            self._remember_assignment(identity, cursor, complete=True)
             return
         applicable = tuple(
             dict.fromkeys(
@@ -252,19 +251,41 @@ class VectorSearch:
 
         risk_index = self.options.risk_index
         trip_loss = trip_loss_lookup(self.search, assignment) if risk_index is not None else None
+        native = getattr(self.search, "native_context", None) is not None
+        single_vector = (
+            len(roles) == 1
+            and roles[0].style != "special"
+            and roles[0].weight == 1
+            and self.options.cost_index is None
+        )
+        if (
+            single_vector
+            and len(applicable) == 1
+            and applicable[0].native_candidate_index is not None
+        ):
+            position = self._scan_native_options(
+                assignment, alternatives[0], applicable[0], cursor, charge, trip_loss, risk_index
+            )
+            if position == len(alternatives[0]):
+                self._remember_assignment(identity, cursor, complete=True)
+                return
+            if charge and self.nodes >= self.phase_limit:
+                self._remember_assignment(identity, position, complete=False)
+                return
+            cursor = position
         for position, selected in enumerate(product(*alternatives)):
             if position < cursor:
                 continue
             if self.search.cancelled and self.search.cancelled():
                 raise ValueError("optimization_cancelled")
             if charge and not self.tick():
-                self.seen.execute(
-                    "UPDATE seen_assignments SET cursor=? WHERE identity=?", (position, identity)
-                )
+                self._remember_assignment(identity, position, complete=False)
                 return
             self.option_attempts += 1
             self.complete_attempts += 1
-            vector = self.weighted(selected, roles)
+            if native:
+                self.native_option_attempts += 1
+            vector = selected[0].values if single_vector else self.weighted(selected, roles)
             if trip_loss is not None and risk_index is not None:
                 loss = trip_loss(selected)
                 if loss is None:
@@ -282,10 +303,62 @@ class VectorSearch:
                     continue
             elif all(archive.strictly_dominated(vector) for archive in applicable):
                 continue
+            if native:
+                self.native_option_reports += 1
             solution = self.options.solution(assignment, selected)
             if solution is not None:
                 self.offer(solution)
-        self.seen.execute("UPDATE seen_assignments SET complete=1 WHERE identity=?", (identity,))
+        self._remember_assignment(identity, cursor, complete=True)
+
+    def _scan_native_options(
+        self,
+        assignment: Mapping[str, Mapping[str, int]],
+        variants: tuple[OptionVariant, ...],
+        archive: VectorArchive,
+        position: int,
+        charge: bool,
+        trip_loss: Any,
+        risk_index: int | None,
+    ) -> int:
+        """Advance to each viable option in order, then recheck the updated archive."""
+        while position < len(variants) and (index := archive.native_candidate_index) is not None:
+            if self.search.cancelled and self.search.cancelled():
+                raise ValueError("optimization_cancelled")
+            stop = min(position + 128, len(variants))
+            if charge:
+                quota = min(self.phase_limit - self.nodes, 1024 - (self.nodes & 1023))
+                if quota <= 0:
+                    break
+                stop = min(stop, position + quota)
+            candidate = index.next_candidate(
+                variants, position, stop, trip_loss, -1 if risk_index is None else risk_index
+            )
+            if candidate < 0:
+                break
+            end = min(candidate + 1, stop)
+            consumed = end - position
+            self.option_attempts += consumed
+            self.complete_attempts += consumed
+            self.native_option_attempts += consumed
+            self.native_option_screened += consumed
+            if charge:
+                self.nodes += consumed
+                if not self.nodes & 1023:
+                    self.search.reporter.fraction(0.65 * self.nodes / self.limit)
+            if candidate < stop:
+                self.native_option_reports += 1
+                solution = self.options.solution(assignment, (variants[candidate],))
+                if solution is not None:
+                    self.offer(solution)
+            position = end
+        return position
+
+    def _remember_assignment(self, identity: str, cursor: int, *, complete: bool) -> None:
+        self.seen.execute(
+            "INSERT INTO seen_assignments VALUES(?,?,?) "
+            "ON CONFLICT(identity) DO UPDATE SET cursor=excluded.cursor,complete=excluded.complete",
+            (identity, cursor, complete),
+        )
 
     def weighted(
         self, selected: tuple[OptionVariant, ...], roles: tuple[Any, ...]
@@ -733,6 +806,16 @@ class VectorSearch:
         return result
 
     def publish(self) -> dict[str, Any]:
+        if self.native_option_attempts:
+            from tracker.gear.native import record
+
+            record(
+                "vector_option_batch",
+                roles=tuple(role.style for role in self.search.request.roles),
+                attempts=self.native_option_attempts,
+                screened=self.native_option_screened,
+                report_evaluations=self.native_option_reports,
+            )
         if self.options.cost_index is not None:
             from tracker.gear.optimizer import _objective_winner_key
 

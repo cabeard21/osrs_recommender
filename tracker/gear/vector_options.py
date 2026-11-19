@@ -21,8 +21,10 @@ from tracker.gear.objectives import annotate_solution, objective_values
 from tracker.gear.scoring import PreparedEquipment
 from tracker.gear.transitions import inventory_slots
 
+_SUPPORTED_VARIANT = {"supported": True}
 
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, slots=True)
 class OptionVariant:
     configured: Any
     option: CombatOption | None
@@ -117,7 +119,7 @@ class VectorOptions:
             result = native.score_projection(
                 equipment,
                 self.role_indices[role.id],
-                **self.native_rune_filter(role),
+                **self.native_rune_filter(role, equipment),
             )
         else:
             alternatives = self.variants(equipment, role)
@@ -188,25 +190,29 @@ class VectorOptions:
             )
         native = self.search.native_context
         if native is not None:
-            from tracker.gear.native.packing import BONUS_FIELDS
-
-            index = next(
-                i for i, current in enumerate(self.search.request.roles) if current.id == role.id
-            )
+            index = self.role_indices[role.id]
             result = []
-            for performance in native.score_variants(
-                equipment, index, **self.native_rune_filter(role)
+            for option_index, values, accuracy, interval in native.score_variants(
+                equipment, index, compact=True, **self.native_rune_filter(role, equipment)
             ):
-                configured, option = native.option_records[performance["option_index"]]
-                public = {
-                    **performance,
-                    "bonuses": dict(zip(BONUS_FIELDS, performance["bonuses"], strict=True)),
-                }
-                result.append(
-                    self._variant(
-                        equipment, configured, option, public, performance["objective_values"]
+                configured, option = native.option_records[option_index]
+                if self.cost_evaluator is None:
+                    result.append(OptionVariant(configured, option, _SUPPORTED_VARIANT, values))
+                else:
+                    result.append(
+                        self._variant(
+                            equipment,
+                            configured,
+                            option,
+                            {
+                                "supported": True,
+                                "dps": values[0],
+                                "accuracy": accuracy,
+                                "interval": interval,
+                            },
+                            dict(zip(native.objective_ids, values[1:], strict=True)),
+                        )
                     )
-                )
             return tuple(result)
         prepared = self.search.prepare(equipment)
         if not isinstance(prepared, PreparedEquipment):
@@ -261,8 +267,16 @@ class VectorOptions:
             result.append(self._variant(equipment, selected, option, public, values))
         return tuple(result)
 
-    def native_rune_filter(self, role: Any) -> dict[str, Any]:
+    def native_rune_filter(
+        self, role: Any, equipment: Mapping[str, int] | None = None
+    ) -> dict[str, Any]:
         if role.style == "magic" and getattr(self.search, "rune_limits_active", False):
+            if equipment is not None and self.search.native_context is not None:
+                from tracker.gear.native.adapter import rune_context
+
+                mask = rune_context(self.search).option_mask(equipment, self.role_indices[role.id])
+                if mask is not None:
+                    return {"option_mask": mask}
             return {"option_allowed": self.search.rune_option_allowed}
         return {}
 

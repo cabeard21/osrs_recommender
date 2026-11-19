@@ -10,12 +10,13 @@ import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from contextvars import ContextVar
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from tracker.gear.objectives import MINIMIZED_OBJECTIVES
 from tracker.gear.vector_session import archive_directory, receive_archive
 
 _OWNERS: ContextVar[list[VectorArchive] | None] = ContextVar("vector_archive_owners", default=None)
+_INDEX_CAPACITY_BYTES = 64 * 1024 * 1024
 
 
 def adopt_vector_archives(value: Any) -> None:
@@ -128,6 +129,7 @@ class VectorArchive:
         os.close(descriptor)
         self._connection: sqlite3.Connection | None = None
         self._committed_changes = 0
+        self._native_index: Any = None
         owners = _OWNERS.get()
         if owners is not None:
             owners.append(self)
@@ -173,6 +175,79 @@ class VectorArchive:
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         self.__dict__.update({**state, "path": receive_archive(state["path"])})
+        self._native_index = None
+
+    def enable_native_index(self) -> None:
+        """Mirror the numeric frontier in an ephemeral native index."""
+        from tracker.gear.native._frontier import ArchiveIndex
+
+        if len(self) > self._native_row_capacity:
+            self._disable_native_index("capacity")
+            return
+        try:
+            index = ArchiveIndex(len(self.objective_ids) + 1)
+            for _, identity, *vector in self.numeric_rows():
+                index.insert(identity, vector)
+        except ValueError:
+            self._disable_native_index("numeric_range")
+            return
+        self._native_index = index
+
+    @property
+    def _native_row_capacity(self) -> int:
+        # Include the digest, vector storage, container entries, and allocator overhead.
+        return _INDEX_CAPACITY_BYTES // (256 + 8 * (len(self.objective_ids) + 1))
+
+    @property
+    def native_candidate_index(self) -> Any:
+        return self._native_index
+
+    def _disable_native_index(self, reason: str) -> None:
+        from tracker.gear.native import record
+
+        self._native_index = None
+        record("fallback", reason=f"native_archive_index_{reason}")
+
+    def numeric_rows(
+        self, minimum_dps: float | None = None, maximum_actions: int | None = None
+    ) -> Iterator[tuple[Any, ...]]:
+        """Read compact rows in exactly the order used by frontier publication."""
+        names = tuple(f"v{index}" for index in range(len(self.objective_ids) + 1))
+        order = ",".join(f"{name} DESC" for name in names)
+        tests, parameters = [], []
+        if minimum_dps is not None:
+            tests.append("v0>=?")
+            parameters.append(minimum_dps)
+        if maximum_actions is not None:
+            tests.append("json_extract(report,'$.maximum_actions')<=?")
+            parameters.append(maximum_actions)
+        condition = " WHERE " + " AND ".join(tests) if tests else ""
+        yield from self.connection.execute(
+            f"SELECT rowid,identity,{','.join(names)} FROM candidates{condition} "
+            f"ORDER BY {order},identity",
+            parameters,
+        )
+
+    def max_actions(self) -> int:
+        """Upper bound on the action count of every row in this backing archive."""
+        return int(
+            self.connection.execute(
+                "SELECT COALESCE(MAX(json_extract(report,'$.maximum_actions')),0) FROM candidates"
+            ).fetchone()[0]
+        )
+
+    def raw_report(self, rowid: int) -> str:
+        return cast(
+            str,
+            self.connection.execute(
+                "SELECT report FROM candidates WHERE rowid=?", (rowid,)
+            ).fetchone()[0],
+        )
+
+    def write_survivors(self, rows: Iterator[tuple[Any, ...]]) -> None:
+        """Insert proven distinct, nondominated rows into a new archive."""
+        placeholders = ",".join("?" for _ in range(len(self.objective_ids) + 3))
+        self.connection.executemany(f"INSERT INTO candidates VALUES({placeholders})", rows)
 
     def add(self, solution: Mapping[str, Any]) -> bool:
         if any(solution["objective_values"].get(key) is None for key in self.objective_ids):
@@ -188,15 +263,9 @@ class VectorArchive:
             if resource_tie(json.loads(previous[1])) <= resource_tie(solution):
                 return False
             self.connection.execute("DELETE FROM candidates WHERE identity=?", (previous[0],))
-        greater = " AND ".join(f"{name}>=?" for name in names)
-        strict = " OR ".join(f"{name}>?" for name in names)
-        if (
-            self.connection.execute(
-                f"SELECT 1 FROM candidates WHERE {greater} AND ({strict}) LIMIT 1",
-                (*vector, *vector),
-            ).fetchone()
-            is not None
-        ):
+            if self._native_index is not None:
+                self._native_index.discard(previous[0])
+        if self.strictly_dominated(vector):
             return False
         lesser = " AND ".join(f"{name}<=?" for name in names)
         strict_less = " OR ".join(f"{name}<?" for name in names)
@@ -208,19 +277,31 @@ class VectorArchive:
             f"INSERT OR REPLACE INTO candidates VALUES({parameters})",
             (identity, *vector, json.dumps(solution, sort_keys=True, separators=(",", ":"))),
         )
+        if self._native_index is not None:
+            self._native_index.remove_dominated(vector)
+            self._native_index.insert(identity, vector)
+            if len(self._native_index) > self._native_row_capacity:
+                self._disable_native_index("capacity")
         return True
 
     def solutions(self) -> list[dict[str, Any]]:
         return list(self.iter_solutions())
 
     def iter_solutions(self, minimum_dps: float | None = None) -> Iterator[dict[str, Any]]:
+        for _, solution in self.iter_identified_solutions(minimum_dps):
+            yield solution
+
+    def iter_identified_solutions(
+        self, minimum_dps: float | None = None
+    ) -> Iterator[tuple[str, dict[str, Any]]]:
         order = ",".join(f"v{index} DESC" for index in range(len(self.objective_ids) + 1))
         condition = " WHERE v0>=?" if minimum_dps is not None else ""
         parameters = (minimum_dps,) if minimum_dps is not None else ()
-        for row in self.connection.execute(
-            f"SELECT report FROM candidates{condition} ORDER BY {order},identity", parameters
+        for identity, report in self.connection.execute(
+            f"SELECT identity,report FROM candidates{condition} ORDER BY {order},identity",
+            parameters,
         ):
-            yield json.loads(row[0])
+            yield identity, json.loads(report)
 
     def __len__(self) -> int:
         return int(self.connection.execute("SELECT COUNT(*) FROM candidates").fetchone()[0])
@@ -238,6 +319,11 @@ class VectorArchive:
         return float(self.connection.execute("SELECT MAX(v0) FROM candidates").fetchone()[0] or 0)
 
     def strictly_dominated(self, vector: tuple[float, ...]) -> bool:
+        if self._native_index is not None:
+            try:
+                return bool(self._native_index.strictly_dominated(vector))
+            except ValueError:
+                self._disable_native_index("numeric_range")
         names = tuple(f"v{index}" for index in range(len(vector)))
         greater = " AND ".join(f"{name}>=?" for name in names)
         strict = " OR ".join(f"{name}>?" for name in names)
@@ -250,6 +336,7 @@ class VectorArchive:
         )
 
     def close(self) -> None:
+        self._native_index = None
         if self._connection is not None:
             self._connection.close()
             self._connection = None

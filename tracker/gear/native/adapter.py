@@ -22,7 +22,14 @@ def winner(search: Any, equipment: Any, role: Any, prepared: Any = None) -> _Win
     score = search.native_context.score
     metric = getattr(search, "metric_first", False)
     if role.style == "magic" and getattr(search, "rune_limits_active", False):
-        result = score(equipment, index, metric, option_allowed=search.rune_option_allowed)
+        mask = rune_context(search).option_mask(equipment, index, metric)
+        result = score(
+            equipment,
+            index,
+            metric,
+            option_allowed=search.rune_option_allowed if mask is None else None,
+            option_mask=mask,
+        )
     else:
         result = score(equipment, index, metric)
     if not result["supported"]:
@@ -36,6 +43,19 @@ def winner(search: Any, equipment: Any, role: Any, prepared: Any = None) -> _Win
         option,
         configured,
     )
+
+
+def rune_context(search: Any) -> Any:
+    from tracker.gear.native._stages import StageContext
+
+    # Winner selection can run while candidate-pool marginals are still being built.
+    # An expansion context must capture the finished marginals.
+    context = getattr(search, "_native_rune_context", None)
+    if context is None or getattr(search, "_native_rune_owner", None) != id(search):
+        context = StageContext(search.native_context, search)
+        search._native_rune_context = context
+        search._native_rune_owner = id(search)
+    return context
 
 
 def expand(

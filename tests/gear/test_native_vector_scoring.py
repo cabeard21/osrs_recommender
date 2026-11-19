@@ -66,6 +66,55 @@ def test_native_vectors_require_every_selected_defensive_component():
         native.ScoringContext(search).score_variants({"weapon": 1}, 0)
 
 
+@pytest.mark.parametrize("equipment", [{"head": 2, "weapon": 1}, {"head": 1}, {}])
+def test_native_numeric_variants_keep_option_order_and_objective_values(equipment):
+    native = pytest.importorskip("tracker.gear.native._scoring")
+    scoring = native.ScoringContext(vector_context())
+    expected = scoring.score_variants(equipment, 0)
+    assert scoring.score_variants(equipment, 0, compact=True) == [
+        (
+            row["option_index"],
+            (row["dps"], *(row["objective_values"][axis] for axis in scoring.objective_ids)),
+            row["accuracy"],
+            row["interval"],
+        )
+        for row in expected
+    ]
+
+
+def test_native_option_mask_filters_projection_and_concrete_scores():
+    native = pytest.importorskip("tracker.gear.native._scoring")
+    scoring = native.ScoringContext(vector_context())
+    equipment = {"weapon": 1, "head": 2}
+    rows = scoring.score_variants(equipment, 0, compact=True)
+    assert scoring.score_variants(equipment, 0, compact=True, option_mask=b"\x00\x01") == rows[1:]
+    assert scoring.score_projection(equipment, 0, option_mask=b"\x00\x01") == rows[1][1]
+    assert scoring.score(equipment, 0, option_mask=b"\x00\x01")["option_index"] == rows[1][0]
+    with pytest.raises(ValueError, match="mask length"):
+        scoring.score_variants(equipment, 0, option_mask=b"")
+
+
+def test_native_candidate_scan_preserves_live_archive_and_equal_vectors():
+    from tracker.gear.vector_options import OptionVariant
+
+    native = pytest.importorskip("tracker.gear.native._frontier")
+    archive = native.ArchiveIndex(3)
+    archive.insert("first", (3, 4, -10))
+    variants = tuple(
+        OptionVariant(None, None, {"supported": True}, values)
+        for values in ((1, 1, 0), (3, 4, 0), (5, 1, 0), (6, 1, 0))
+    )
+    losses = iter((11, 10, None, 12))
+
+    def trip_loss(selected):
+        return next(losses)
+
+    assert archive.next_candidate(variants, 0, 2, trip_loss, 2) == 1
+    archive.insert("later", (8, 10, -4))
+    assert archive.next_candidate(variants, 2, 4, trip_loss, 2) == 4
+    assert archive.next_candidate(variants, 2, 3) == 2
+
+
 def test_native_vectors_reject_invalid_role_and_equipment():
     native = pytest.importorskip("tracker.gear.native._scoring")
     scoring = native.ScoringContext(vector_context())

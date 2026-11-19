@@ -11,6 +11,8 @@ from typing import Any
 
 from tracker.gear.compact_acquisition import AcquisitionFacts
 from tracker.gear.compact_states import SLOT_NAMES
+from tracker.gear.running_costs import SPELL_RECIPES, STAFF_RUNES
+from tracker.gear.wilderness_runes import RUNE_IDS
 
 MAX_NATIVE_ITEM_COST = (2**53 - 1) // (4 * len(SLOT_NAMES))
 MAX_NATIVE_RISK = 2**63 - 1
@@ -29,6 +31,18 @@ class RiskStageData:
     unpriced: array[int]
     kept_slots: int
     feasible: Callable[[Set[int]], bool]
+
+
+@dataclass(frozen=True)
+class RuneStageData:
+    suppliers: array[int]
+    tome_suppliers: array[int]
+    collisions: array[int]
+    known_gear: array[int]
+    prices: array[int]
+    recipes: array[int]
+    recipe_masks: array[int]
+    quantities: array[int]
 
 
 @dataclass(frozen=True)
@@ -199,4 +213,69 @@ def _risk_data(search: Any, dense_ids: tuple[int, ...]) -> RiskStageData | None:
         if getattr(search, "rune_limits_active", False)
         or getattr(getattr(risk, "policy", None), "attacks_per_setup", None)
         else risk.feasible,
+    )
+
+
+def pack_runes(search: Any, scoring: Any) -> RuneStageData | None:
+    if not getattr(search, "rune_limits_active", False):
+        return None
+    risk = search.wilderness
+    casts = risk.policy.attacks_per_setup or risk.policy.spell_casts
+    ids = tuple(sorted(RUNE_IDS))
+    bits = {item: 1 << position for position, item in enumerate(ids)}
+    spells = tuple(SPELL_RECIPES)
+    spell_indices = {spell: index for index, spell in enumerate(spells)}
+    recipes = [tuple(SPELL_RECIPES[spell].get(item, 0) * casts for item in ids) for spell in spells]
+    greatest_stack = [max(recipe[index] for recipe in recipes) for index in range(len(ids))]
+    prices = [
+        -2
+        if item not in risk.rune_rules
+        else (-1 if (price := risk.rune_rules[item].unprotected_loss_gp) is None else price)
+        for item in ids
+    ]
+    # The worst complete role fits a signed accumulator including exposed rune stacks.
+    term = 2**55
+    if (
+        len(ids) >= 63
+        or any(
+            price * qty >= term or qty >= 2**31
+            for price, qty in zip(prices, greatest_stack, strict=True)
+        )
+        or any(
+            value >= term
+            for value in (*risk.minimum_unavoidable.values(), *risk.recoverable_loss.values())
+        )
+    ):
+        return None
+    tome_runes = {
+        item: definition.tome_effect.rune_id
+        for item, definition in search.items.items()
+        if definition.tome_effect is not None
+    }
+    return RuneStageData(
+        suppliers=array(
+            "Q",
+            [
+                sum(bits.get(rune, 0) for rune in STAFF_RUNES.get(item, ()))
+                for item in scoring.dense_ids
+            ],
+        ),
+        tome_suppliers=array(
+            "Q", [bits.get(tome_runes.get(item, 0), 0) for item in scoring.dense_ids]
+        ),
+        collisions=array("Q", [bits.get(item, 0) for item in scoring.dense_ids]),
+        known_gear=array("i", [int(item in risk.rules) for item in scoring.dense_ids]),
+        prices=array("q", prices),
+        recipes=array(
+            "i",
+            [
+                -2 if option.powered_attack else spell_indices.get(option.spell or "", -1)
+                for _, option in scoring.option_records
+            ],
+        ),
+        recipe_masks=array(
+            "Q",
+            [sum(1 << index for index, qty in enumerate(recipe) if qty) for recipe in recipes],
+        ),
+        quantities=array("i", [qty for recipe in recipes for qty in recipe]),
     )

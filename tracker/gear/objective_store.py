@@ -14,6 +14,7 @@ import zlib
 from collections import OrderedDict, deque
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from threading import RLock
 from time import monotonic
@@ -285,33 +286,55 @@ class ObjectiveRunStore:
         definitions: list[dict[str, Any]],
         check: Callable[[], None],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        from tracker.gear.vector_publish import FrontierPoints
+
         published, groups = [], []
+        shared: dict[tuple[str, float | None], tuple[str, int, list[str]]] = {}
         for index, group in enumerate(input_groups):
             check()
             group_id = f"frontier-{view}-{index}"
-            for point in group["points"]:
-                check()
-                solution_id = self._put_solution(run_id, point["solution"])
+            points = group["points"]
+            key = (
+                (points.archive.path, points.minimum_dps)
+                if isinstance(points, FrontierPoints)
+                else None
+            )
+            source = shared.get(key) if key is not None else None
+            if source is not None:
+                source_id, total, sample = source
                 self._connection.execute(
-                    "INSERT OR IGNORE INTO members VALUES(?,?,?)",
-                    (run_id, group_id, solution_id),
+                    "INSERT INTO members SELECT run,?,solution FROM members "
+                    "WHERE run=? AND group_id=?",
+                    (group_id, run_id, source_id),
                 )
-            total = self._connection.execute(
-                "SELECT count(*) FROM members WHERE run=? AND group_id=?", (run_id, group_id)
-            ).fetchone()[0]
-            sample = self._sample_group(run_id, group_id, definitions, check)
+            else:
+                for point in points:
+                    check()
+                    solution_id = self._put_solution(run_id, point["solution"])
+                    self._connection.execute(
+                        "INSERT OR IGNORE INTO members VALUES(?,?,?)",
+                        (run_id, group_id, solution_id),
+                    )
+                total = self._connection.execute(
+                    "SELECT count(*) FROM members WHERE run=? AND group_id=?", (run_id, group_id)
+                ).fetchone()[0]
+                sample = self._sample_group(run_id, group_id, definitions, check)
+                if key is not None:
+                    shared[key] = (group_id, total, sample)
             summaries, chart_points = [], []
             baseline = group.get("baseline_dps")
-            for key in sample:
+            for solution_id in sample:
+                check()
                 blob, summary = self._connection.execute(
-                    "SELECT report,summary FROM solutions WHERE run=? AND id=?", (run_id, key)
+                    "SELECT report,summary FROM solutions WHERE run=? AND id=?",
+                    (run_id, solution_id),
                 ).fetchone()
                 solution = json.loads(zlib.decompress(blob))
                 summaries.append(_point_summary(json.loads(summary), group_id))
                 chart_points.append(
                     {
-                        "id": f"{group_id}-{key}",
-                        "solution_id": key,
+                        "id": f"{group_id}-{solution_id}",
+                        "solution_id": solution_id,
                         "solution": solution,
                         "dps_loss": baseline - solution["score"] if baseline is not None else 0,
                         "dps_loss_pct": 100 * (baseline - solution["score"]) / baseline
@@ -442,25 +465,29 @@ class ObjectiveRunStore:
                         selected.append(identity)
             pending = list(selected)
             keys = [d["id"] for d in definitions]
+
+            @lru_cache(maxsize=4096)
+            def vector(text: str) -> tuple[float, ...]:
+                row = json.loads(text)
+                return (row["score"], *(row["objective_values"][key] for key in keys))
+
             while len(selected) < sample_size:
                 for identity in pending:
                     check()
-                    reference = json.loads(
+                    reference = vector(
                         db.execute(
                             "SELECT summary FROM sample_points WHERE id=?", (identity,)
                         ).fetchone()[0]
                     )
-                    vector = [
-                        reference["score"],
-                        *[reference["objective_values"][key] for key in keys],
-                    ]
 
-                    def distance(text: str, reference_vector: list[float] = vector) -> float:
-                        row = json.loads(text)
-                        values = [row["score"], *[row["objective_values"][key] for key in keys]]
+                    def distance(
+                        text: str, reference_vector: tuple[float, ...] = reference
+                    ) -> float:
                         return sum(
                             ((a - b) / (hi - lo)) ** 2 if hi != lo else 0.0
-                            for a, b, (lo, hi) in zip(values, reference_vector, bounds, strict=True)
+                            for a, b, (lo, hi) in zip(
+                                vector(text), reference_vector, bounds, strict=True
+                            )
                         )
 
                     db.create_function("objective_distance", 1, distance)
@@ -474,6 +501,7 @@ class ObjectiveRunStore:
                 ).fetchone()[0]
                 selected.append(candidate)
                 pending = [candidate]
+            vector.cache_clear()
             return selected
         finally:
             db.create_function("objective_distance", 1, None)
