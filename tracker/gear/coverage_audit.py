@@ -190,7 +190,12 @@ def _scenario_restrictions(
         reasons.append(f"The {item.slot} slot is locked to another item or empty.")
     locked_equipment: dict[str, int] = {s: i for s, i in locks.items() if i is not None}
     reasons.extend(equipment_problems({**locked_equipment, item.slot: item.id}, search.items))
-    if item.id in search.eligible and search.cost({item.id}) > search.request.budget_gp:
+    purchase_budget = search.request.purchase_budget
+    if (
+        purchase_budget is not None
+        and item.id in search.eligible
+        and search.cost({item.id}) > purchase_budget
+    ):
         reasons.append("Individual acquisition cost exceeds the scenario budget.")
     return list(dict.fromkeys(reasons))
 

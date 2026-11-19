@@ -54,6 +54,7 @@ from tracker.gear.evaluation import (
     resolve_tome_context,
     unowned_untradeables,
     validate_request_context,
+    wilderness_provenance,
 )
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.fixed_reporting import active as fixed_reporting_active
@@ -100,6 +101,12 @@ from tracker.gear.tomes import applied_tome
 from tracker.gear.tomes import review as tome_review
 from tracker.gear.transitions import inventory_slots, plan_transition
 from tracker.gear.vector_archive import own_vector_archives
+from tracker.gear.wilderness import WildernessPolicy, WildernessRisk
+from tracker.gear.wilderness_ammo import (
+    consumes_ammunition,
+    idle_ammunition,
+    only_ranged_ammunition,
+)
 
 SLOTS: tuple[ItemSlot, ...] = (
     "weapon",
@@ -200,6 +207,7 @@ class OptimizationRequest(BaseModel):
     include_untradeables: bool = Field(default=False, strict=True)
     support_policy: SupportPolicy = "verified_only"
     budget_gp: int = Field(default=0, ge=0, strict=True)
+    wilderness: WildernessPolicy | None = None
     secondary_priority: SecondaryPriority = "default"
     objectives: tuple[ObjectiveDescriptor, ...] | None = None
     max_dps_loss_pct: float = Field(default=10, strict=True, ge=0, le=100, allow_inf_nan=False)
@@ -283,6 +291,19 @@ class OptimizationRequest(BaseModel):
             object.__setattr__(self, field, MappingProxyType(dict(getattr(self, field))))
         return self
 
+    @property
+    def purchase_budget(self) -> int | None:
+        if self.wilderness is not None and self.wilderness.max_loss_gp is None:
+            return None
+        return self.budget_gp
+
+    @property
+    def wilderness_risk_limit(self) -> int | None:
+        if self.wilderness is None:
+            return None
+        limit = self.wilderness.max_loss_gp
+        return self.budget_gp if limit is None else limit
+
     def prepared_weapon_locks(self) -> OptimizationRequest:
         """A locked uncharged edition requests its disclosed usable preparation.
 
@@ -350,10 +371,12 @@ class OptimizationRequest(BaseModel):
         return execution
 
     @model_serializer(mode="wrap")
-    def serialize_optional_objectives(self, handler: Any) -> dict[str, Any]:
+    def serialize_optional_policies(self, handler: Any) -> dict[str, Any]:
         result: dict[str, Any] = handler(self)
         return {
-            key: value for key, value in result.items() if key != "objectives" or value is not None
+            key: value
+            for key, value in result.items()
+            if key not in {"objectives", "wilderness"} or value is not None
         }
 
     @field_serializer("locks", "skill_overrides", "quest_overrides")
@@ -434,6 +457,7 @@ class _Search:
         prepared_eligible: Mapping[int, EquipmentDefinition] | None = None,
         *,
         reporter: StageReporter = NULL_REPORTER,
+        wilderness: WildernessRisk | None = None,
     ) -> None:
         # Telemetry only; shared by frontier copies so their work is reported too.
         self.reporter = reporter
@@ -448,6 +472,40 @@ class _Search:
             }
         )
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
+        self.wilderness = wilderness
+        self.rune_limits_active = (
+            wilderness is not None
+            and wilderness.policy.spell_casts is not None
+            and any(role.style == "magic" for role in request.roles)
+        )
+        if self.rune_limits_active:
+            from tracker.gear.wilderness_runes import wilderness_spell_runes
+
+            assert wilderness is not None
+
+            @lru_cache(maxsize=2048)
+            def rune_bundle(weapon: int, shield: int, spell: str | None) -> dict[int, int] | None:
+                return wilderness_spell_runes(
+                    {
+                        "spell": {
+                            slot: item
+                            for slot, item in (("weapon", weapon), ("shield", shield))
+                            if item
+                        }
+                    },
+                    {"spell": {"attack_type": "magic", "spell": spell}},
+                    items,
+                    wilderness.policy.spell_casts,
+                )
+
+            @lru_cache(maxsize=16_384)
+            def rune_bound(
+                weapon: int, shield: int, spell: str | None, ids: frozenset[int]
+            ) -> bool:
+                bundle = rune_bundle(weapon, shield, spell)
+                return bundle == {} or wilderness.rune_partial_feasible(ids, bundle)
+
+            self._rune_bound = rune_bound
         from tracker.gear.execution_profile import factored_evaluation_active
 
         self.factored_evaluation = factored_evaluation_active()
@@ -566,12 +624,25 @@ class _Search:
             if prepared_eligible is not None
             else {i: item for i, item in items.items() if self.allowed(i)}
         )
-        # Purchases are distinct, nonnegative costs. An item costing more than
-        # the entire budget cannot appear in any feasible shared loadout. Prune
-        # before building attack scaffolds and scoring expensive marginals;
-        # keep the full catalog/facts for request validation and diagnostics.
+        # A singleton lower bound can prune before scoring expensive marginals.
+        # In the Wilderness the item can be kept, so its purchase price is irrelevant.
         self.eligible = {
-            i: item for i, item in eligible.items() if self.cost({i}) <= request.budget_gp
+            i: item
+            for i, item in eligible.items()
+            if (wilderness is None or i in wilderness.rules) and self.within_budget({i})
+        }
+        self.guarded_ammunition = (
+            frozenset(i for i, item in self.eligible.items() if only_ranged_ammunition(item))
+            if wilderness is not None
+            and request.secondary_priority != "ranged_strength_bonus"
+            and not any(o.kind == "ranged_strength_bonus" for o in request.objectives or ())
+            else frozenset()
+        )
+        self.ammunition_keepers = frozenset(
+            role.id for role in request.roles if "ammunition" in {**request.locks, **role.locks}
+        )
+        self.ammunition_users = self.ammunition_keepers | {
+            role.id for role in request.roles if role.style in {"ranged", "special"}
         }
         self.marginals: dict[tuple[str, int], float] = {}
         self.secondary_marginals: dict[tuple[str, int], float] = {}
@@ -626,6 +697,49 @@ class _Search:
         if self.compact_states:
             return self._acquisition(frozenset(ids))[0]
         return purchase_cost(ids if isinstance(ids, set) else set(ids), self.facts, self.request)
+
+    def within_budget(self, ids: set[int] | frozenset[int], *, complete: bool = False) -> bool:
+        purchase_budget = self.request.purchase_budget
+        if purchase_budget is not None and self.cost(ids) > purchase_budget:
+            return False
+        if self.wilderness is None:
+            return True
+        if complete and not self.rune_limits_active:
+            return self.wilderness.feasible(ids)
+        return self.wilderness.partial_feasible(ids)
+
+    def feasible_purchase_cost(self, ids: set[int] | frozenset[int]) -> int | None:
+        cost = self.cost(ids)
+        purchase_budget = self.request.purchase_budget
+        if purchase_budget is not None and cost > purchase_budget:
+            return None
+        if self.wilderness is not None:
+            fits = (
+                self.wilderness.partial_feasible
+                if self.rune_limits_active
+                else self.wilderness.feasible
+            )
+            if not fits(ids):
+                return None
+        return cost
+
+    def slot_budget(
+        self,
+        rows: tuple[Mapping[str, int], ...],
+        ids: set[int] | frozenset[int],
+        slot: str,
+        *,
+        complete: bool,
+    ) -> bool:
+        if self.wilderness is not None and slot in {"weapon", "shield", "ammunition"}:
+            # A synergy seed can contain a head item before its slot is settled.
+            ids = {item for row in rows for name, item in row.items() if name != "head"}
+        return self.within_budget(ids, complete=complete)
+
+    def budget_item_rank(self, item: int) -> tuple[Any, ...]:
+        if self.wilderness is not None:
+            return (*self.wilderness.rank_key(item), *self.acquisition_tie({item}), item)
+        return (*self.acquisition_tie({item}), item)
 
     def untradeable_acquisitions(self, ids: set[int] | frozenset[int]) -> int:
         """Break otherwise equal choices by acquisitions, without pricing effort."""
@@ -847,6 +961,7 @@ class _Search:
                         matched,
                         applied_spell_bonus(neck, option.spell),
                         bool(applied_tome(shield, option.spell)),
+                        option.spell if self.rune_limits_active else None,
                         prayer_key,
                     )
                 previous = representatives.get(identity)
@@ -990,6 +1105,10 @@ class _Search:
         if isinstance(prepared, PreparedEquipment):
             for batch in self.scoring_batches(prepared, options):
                 for configured, option in batch:
+                    if self.rune_limits_active and not self.rune_option_allowed(
+                        equipment, configured, option
+                    ):
+                        continue
                     score = evaluate_prepared_score(
                         prepared, configured, self.levels, include_defence=include_defence
                     )
@@ -1072,6 +1191,8 @@ class _Search:
                     cached = cached._replace(supported=False, dps=None)
             self.compact_cache[key] = cached
         assert isinstance(cached, CombatScore)
+        if self.rune_limits_active and not self.rune_option_allowed(equipment, role, None):
+            cached = cached._replace(supported=False, dps=None)
         return {
             "supported": cached.supported,
             "dps": cached.dps,
@@ -1162,11 +1283,13 @@ class _Search:
                 self.compact_cache[score_key] = cached
             assert isinstance(cached, CombatScore)
             score = cached
+            if self.rune_limits_active and not self.rune_option_allowed(equipment, role, None):
+                score = score._replace(supported=False, dps=None)
             public_option = {
                 "attack_type": role.style,
                 "stance": role.stance,
                 "spell": role.spell if role.style == "magic" else None,
-                "powered_attack": None,
+                "powered_attack": role.powered_attack,
             }
         rolls = score.player_defence_rolls
         if rolls is None and self.request.secondary_priority.endswith("_defence_roll"):
@@ -1276,6 +1399,8 @@ class _Search:
                     if role.style == "magic" and role.powered_attack is None
                     else None
                 )
+                if self.rune_limits_active and not self.rune_option_allowed(equipment, role, None):
+                    problem = "The configured spell runes cannot fit the Wilderness risk limit."
                 if problem:
                     result = {
                         **result,
@@ -1287,7 +1412,7 @@ class _Search:
                     "attack_type": role.style,
                     "stance": role.stance,
                     "spell": role.spell if role.style == "magic" else None,
-                    "powered_attack": None,
+                    "powered_attack": role.powered_attack,
                 }
             self.performance_cache[key] = result
         return self.performance_cache[key]
@@ -1319,6 +1444,100 @@ class _Search:
     def compatible(self, equipment: Mapping[str, int]) -> bool:
         weapon = self.items.get(equipment.get("weapon", -1))
         return not (weapon and weapon.two_handed and "shield" in equipment)
+
+    def may_equip_ammunition(
+        self, equipment: Mapping[str, int], roles: tuple[RoleConfig, ...]
+    ) -> bool:
+        if (
+            not self.guarded_ammunition
+            or equipment.get("ammunition", 0) not in self.guarded_ammunition
+        ):
+            return True
+        if self.ammunition_users.difference(role.id for role in roles):
+            return True  # A different loadout may need this stack.
+        return any(
+            role.id in self.ammunition_keepers
+            or consumes_ammunition(equipment, role.style, self.items)
+            for role in roles
+        )
+
+    def complete_ammunition_allowed(self, loadouts: Mapping[str, Mapping[str, int]]) -> bool:
+        if not self.guarded_ammunition:
+            return True
+        needed: set[int] = set()
+        carried: set[int] = set()
+        for role in self.request.roles:
+            equipment = loadouts[role.id]
+            ammo = equipment.get("ammunition", 0)
+            if ammo not in self.guarded_ammunition:
+                continue
+            carried.add(ammo)
+            if role.id in self.ammunition_keepers or consumes_ammunition(
+                equipment, role.style, self.items
+            ):
+                needed.add(ammo)
+        return needed >= carried
+
+    def wilderness_report(
+        self, loadouts: Mapping[str, Mapping[str, int]], base: str, runes: Mapping[int, int]
+    ) -> dict[str, Any]:
+        assert self.wilderness is not None
+        ordered = {role.id: loadouts[role.id] for role in self.request.roles}
+        idle = idle_ammunition(
+            ((ordered[role.id], role.style) for role in self.request.roles), self.items
+        )
+        return self.wilderness.report(ordered, base_role=base, idle_ammunition=idle, runes=runes)
+
+    def rune_option_allowed(
+        self, equipment: Mapping[str, int], role: RoleConfig, option: CombatOption | None
+    ) -> bool:
+        if not self.rune_limits_active or role.style != "magic":
+            return True
+        powered = option.powered_attack if option is not None else role.powered_attack
+        if powered:
+            return True
+        return self._rune_bound(
+            equipment.get("weapon", 0),
+            equipment.get("shield", 0),
+            option.spell if option is not None else role.spell,
+            frozenset(equipment.values()),
+        )
+
+    def runes_for_loadouts(
+        self,
+        loadouts: Mapping[str, Mapping[str, int]],
+        options: Mapping[str, Mapping[str, Any] | None],
+    ) -> dict[int, int] | None:
+        if not self.rune_limits_active:
+            return {}
+        from tracker.gear.wilderness_runes import wilderness_spell_runes
+
+        assert self.wilderness is not None
+        return wilderness_spell_runes(
+            loadouts, options, self.items, self.wilderness.policy.spell_casts
+        )
+
+    def complete_runes_fit(
+        self, ids: set[int] | frozenset[int], runes: Mapping[int, int] | None
+    ) -> bool:
+        return not self.rune_limits_active or (
+            self.wilderness is not None and self.wilderness.rune_feasible(ids, runes)
+        )
+
+    def rune_alternative_solution(
+        self, loadouts: Mapping[str, Mapping[str, int]], limit: int | None
+    ) -> dict[str, Any] | None:
+        from collections import ChainMap
+
+        if (
+            type(self) is not _Search
+            or getattr(self, "_rune_options_fixed", False)
+            or isinstance(self.option_cache, ChainMap)
+        ):
+            return None  # A separately scored frontier/refinement must keep its exact attack.
+        from tracker.gear.wilderness_spell_selection import wilderness_spell_solution
+
+        return wilderness_spell_solution(self, loadouts, limit)
 
     def candidate_pools(self) -> dict[str, list[int | None]]:
         numeric = self.factored_evaluation and type(self) is _Search
@@ -1367,12 +1586,14 @@ class _Search:
                         ),
                     )
                 )
-            cheap = sorted(
-                candidates, key=lambda i: (self.cost({i}), self.untradeable_acquisitions({i}), i)
-            )
+            budget_lanes = [sorted(candidates, key=self.budget_item_rank)]
+            if self.wilderness is not None and self.request.purchase_budget is not None:
+                budget_lanes.append(
+                    sorted(candidates, key=lambda i: (*self.acquisition_tie({i}), i))
+                )
             ordered = sorted(locked & set(candidates))
             for row in zip(
-                *[lst + [None] * (len(candidates) - len(lst)) for lst in [cheap, *by_role]],
+                *[lst + [None] * (len(candidates) - len(lst)) for lst in [*budget_lanes, *by_role]],
                 strict=False,
             ):
                 ordered.extend(i for i in row if i is not None and i not in ordered)
@@ -1499,9 +1720,8 @@ class _Search:
             return seeds
         for weapon in HALBERD_FORMS:
             pair = {"weapon": weapon, "head": 12931}
-            if (
-                weapon not in self.eligible
-                or self.cost(set(pair.values())) > self.request.budget_gp
+            if weapon not in self.eligible or not self.within_budget(
+                {weapon} if self.wilderness is not None else set(pair.values())
             ):
                 continue
             if any(
@@ -1545,7 +1765,9 @@ class _Search:
         ]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
+            final_slot = index == len(SLOTS) - 1
             candidates = [i for i in self.pools[slot] if i is not None]
+            low_risk = sorted(candidates, key=self.budget_item_rank)[:1] if self.wilderness else []
             common = sorted(
                 candidates,
                 key=lambda i: (
@@ -1580,6 +1802,7 @@ class _Search:
                                 None,
                                 *ranked[:2],
                                 *common,
+                                *low_risk,
                                 *(
                                     sorted(
                                         candidates,
@@ -1631,7 +1854,9 @@ class _Search:
                             continue
                         if any(not self.compatible(e) for e in equipment_rows):
                             continue
-                        if self.cost(carried_ids) > self.request.budget_gp:
+                        if not self.slot_budget(
+                            equipment_rows, carried_ids, slot, complete=final_slot
+                        ):
                             continue
                         if any(
                             len(carried_ids - e.physical_ids)
@@ -1650,16 +1875,18 @@ class _Search:
                             for r, e in zip(roles, equipment_rows, strict=True)
                         ):
                             continue
-                        expanded.append(
-                            AssignmentState.from_roles(
-                                tuple((r.id, e) for r, e in zip(roles, equipment_rows, strict=True))
-                            )
+                        candidate = AssignmentState.from_roles(
+                            tuple((r.id, e) for r, e in zip(roles, equipment_rows, strict=True))
                         )
+                        if slot != "ammunition" or self.complete_ammunition_allowed(candidate):
+                            expanded.append(candidate)
                         continue
                     candidate = {
                         r.id: {**state[r.id], **({slot: i} if i is not None else {})}
                         for r, i in zip(roles, assigned, strict=True)
                     }
+                    if slot == "ammunition" and not self.complete_ammunition_allowed(candidate):
+                        continue
                     carried = (
                         candidate.carried
                         if self.compact_states
@@ -1669,7 +1896,9 @@ class _Search:
                         continue
                     if any(not self.compatible(e) for e in candidate.values()):
                         continue
-                    if self.cost(carried) > self.request.budget_gp:
+                    if not self.slot_budget(
+                        tuple(candidate.values()), carried, slot, complete=final_slot
+                    ):
                         continue
                     if any(
                         inventory_slots(e, carried, self.items)
@@ -1736,6 +1965,7 @@ class _Search:
         states = [_equipment_state(seed) for seed in self.synergy_seeds(roles)]
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
+            complete = index == len(SLOTS) - 1 and len(roles) == len(self.request.roles)
             choices = [locks[slot]] if slot in locks else self.pools[slot]
             if self.native_context is not None:
                 from tracker.gear.native.adapter import expand
@@ -1773,18 +2003,21 @@ class _Search:
                     physical_ids = (
                         state.physical_ids if item_id is None else state.physical_ids | {item_id}
                     )
-                    if self.cost(physical_ids) > self.request.budget_gp:
-                        continue
                     candidate = state.with_slot(slot, item_id) if item_id is not None else state
+                    if self.wilderness is not None:
+                        physical_ids = candidate.physical_ids
+                    if not self.slot_budget((candidate,), physical_ids, slot, complete=complete):
+                        continue
                 else:
                     addition: dict[str, int] = {slot: item_id} if item_id is not None else {}
                     candidate = {**state, **addition}
-                    if (
-                        not self.compatible(candidate)
-                        or self.cost(set(candidate.values())) > self.request.budget_gp
+                    if not self.compatible(candidate) or not self.slot_budget(
+                        (candidate,), set(candidate.values()), slot, complete=complete
                     ):
                         continue
                 # Weapon/ammo legality can be checked once both slots have been assigned.
+                if slot == "ammunition" and not self.may_equip_ammunition(candidate, roles):
+                    continue
                 if slot not in ("weapon", "shield") and any(
                     not self.search_performance(candidate, r)["supported"] for r in roles
                 ):
@@ -1828,6 +2061,8 @@ class _Search:
             from tracker.gear.compact_solutions import compact_solution
 
             return compact_solution(self, loadouts, limit)
+        if not self.complete_ammunition_allowed(loadouts):
+            return None
         if any(not self.performance(loadouts[r.id], r)["supported"] for r in self.request.roles):
             return None
         for role in self.request.roles:
@@ -1835,14 +2070,25 @@ class _Search:
             if loadout_problems(equipment, self.items, self.facts, self.request, role):
                 return None
         carried = {i for equipment in loadouts.values() for i in equipment.values()}
-        cost = self.cost(carried)
-        if cost > self.request.budget_gp:
+        cost = self.feasible_purchase_cost(carried)
+        if cost is None:
             return None
-        capacity = 28 - self.request.reserved_supply_slots
+        options = {
+            role.id: self.combat_option(loadouts[role.id], role) for role in self.request.roles
+        }
+        runes = self.runes_for_loadouts(loadouts, options)
+        if not self.complete_runes_fit(carried, runes):
+            return self.rune_alternative_solution(loadouts, limit)
+        runes = runes or {}
+        reserved = max(self.request.reserved_supply_slots, len(runes))
+        capacity = 28 - reserved
+        runes_use_extra_slots = reserved > self.request.reserved_supply_slots
         base = self.request.base_role or self.request.roles[0].id
         occupancies = [inventory_slots(e, carried, self.items) for e in loadouts.values()]
         if max(occupancies, default=0) > capacity:
-            return None
+            return (
+                self.rune_alternative_solution(loadouts, limit) if runes_use_extra_slots else None
+            )
         transitions: list[dict[str, Any]] = []
         for a, b in self.edges:
             transition = self._transition(
@@ -1852,7 +2098,11 @@ class _Search:
                 capacity,
             )
             if transition is None or (limit is not None and transition["action_count"] > limit):
-                return None
+                return (
+                    self.rune_alternative_solution(loadouts, limit)
+                    if runes_use_extra_slots
+                    else None
+                )
             transitions.append({"from_role": a, "to_role": b, **deepcopy(transition)})
         weight = sum(r.weight for r in self.request.roles if r.style != "special")
         score = sum(
@@ -1883,7 +2133,7 @@ class _Search:
                         else r.style
                     ),
                     "performance": self.performance(loadouts[r.id], r),
-                    "combat_option": self.combat_option(loadouts[r.id], r),
+                    "combat_option": options[r.id],
                     "selected_prayer_ids": self.selected_prayers(loadouts[r.id], r),
                 }
                 for r in self.request.roles
@@ -1897,11 +2147,13 @@ class _Search:
             "gear_inventory_slots": inventory_slots(loadouts[base], carried, self.items),
             "max_gear_inventory_slots": peak,
             "remaining_supply_slots": 28 - peak,
-            "remaining_inventory_slots": 28 - peak - self.request.reserved_supply_slots,
+            "remaining_inventory_slots": 28 - peak - reserved,
             "reserved_supply_slots": self.request.reserved_supply_slots,
             "maximum_actions": max((t["action_count"] for t in transitions), default=0),
             "potions": None,
         }
+        if self.wilderness is not None:
+            result["wilderness_risk"] = self.wilderness_report(loadouts, base, runes)
         if hasattr(self, "running_prices"):
             from tracker.gear.running_frontier import add_solution_costs
 
@@ -1976,6 +2228,8 @@ def _action_lower_bound(
 
 def _slot_alternatives(search: _Search, solution: dict[str, Any] | None) -> dict[str, Any]:
     """Evaluate substitutions in the selected surrounding setup, without a new search."""
+    from tracker.gear.variant_reporting import materialize
+
     if solution is None or len(search.request.roles) != 1:
         return {}
     role = search.request.roles[0]
@@ -1991,6 +2245,11 @@ def _slot_alternatives(search: _Search, solution: dict[str, Any] | None) -> dict
                 replacement[slot] = item_id
             candidate = search.solution({role.id: replacement}, search.request.max_swaps)
             if candidate is not None:
+                risk = (
+                    {"wilderness_loss_gp": materialize(candidate)["wilderness_risk"]["loss_gp"]}
+                    if search.wilderness is not None
+                    else {}
+                )
                 rows.append(
                     {
                         "item_id": item_id,
@@ -1998,6 +2257,7 @@ def _slot_alternatives(search: _Search, solution: dict[str, Any] | None) -> dict
                         "score_delta": candidate["score"] - solution["score"],
                         "secondary_value": candidate["secondary_value"],
                         "purchase_cost_gp": candidate["purchase_cost_gp"],
+                        **risk,
                     }
                 )
         alternatives[slot] = sorted(
@@ -2020,6 +2280,7 @@ class PreparedOptimization:
     snapshot: AccountSnapshot
     facts: Mapping[int, dict[str, Any]]
     eligible: Mapping[int, EquipmentDefinition]
+    wilderness: WildernessRisk | None = None
 
 
 def prepare_optimization(
@@ -2050,8 +2311,17 @@ def prepare_optimization(
     eligible = {
         i: item for i, item in catalog.items.items() if not item_problems(i, facts[i], request)
     }
+    risk_limit = request.wilderness_risk_limit
     return PreparedOptimization(
-        catalog, projected, MappingProxyType(facts), MappingProxyType(eligible)
+        catalog,
+        projected,
+        MappingProxyType(facts),
+        MappingProxyType(eligible),
+        WildernessRisk.build(
+            request.wilderness, risk_limit, catalog.items, facts, price_records, now
+        )
+        if request.wilderness is not None and risk_limit is not None
+        else None,
     )
 
 
@@ -2184,7 +2454,14 @@ def optimize(
     prepared_at = perf_counter()
     reporter.stage("candidate_ranking", elapsed_seconds=prepared_at - started)
     search = _Search(
-        projected, request, catalog.items, facts, cancelled, prepared.eligible, reporter=reporter
+        projected,
+        request,
+        catalog.items,
+        facts,
+        cancelled,
+        prepared.eligible,
+        reporter=reporter,
+        wilderness=prepared.wilderness,
     )
     request = search.request
     candidates_at = perf_counter()
@@ -2286,12 +2563,13 @@ def optimize(
                     break
                 continue
             expanded = []
+            complete = role_index == len(request.roles) - 1
             for partial, equipment in product(beam, individual[role.id]):
                 if not search.tick():
                     break
                 if search.compact_states:
                     carried = partial.carried | equipment.physical_ids
-                    if search.cost(carried) > request.budget_gp:
+                    if not search.within_budget(carried, complete=complete):
                         continue
                     if swap_limit is not None and any(
                         _action_lower_bound(
@@ -2308,7 +2586,7 @@ def optimize(
                 else:
                     candidate = {**partial, role.id: equipment}
                     carried = {i for e in candidate.values() for i in e.values()}
-                    if search.cost(carried) > request.budget_gp:
+                    if not search.within_budget(carried, complete=complete):
                         continue
                     if swap_limit is not None and any(
                         _action_lower_bound(candidate[a], candidate[b], catalog.items) > swap_limit
@@ -2316,6 +2594,8 @@ def optimize(
                         if a in candidate and b in candidate
                     ):
                         continue
+                if complete and not search.complete_ammunition_allowed(candidate):
+                    continue
                 expanded.append(candidate)
             if role_index == len(request.roles) - 1 and vector_search is not None:
                 for candidate in expanded:
@@ -2476,6 +2756,7 @@ def optimize(
 
     assumptions = {
         **policy_context(request),
+        **wilderness_provenance(request),
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
@@ -2660,7 +2941,30 @@ def optimize(
             "tradeoffs, without a global optimality guarantee.",
             "Active-time weighted DPS excludes movement, survival, supply endurance "
             "and special utility.",
-            "Budget uses cached quoted acquisition prices, not guaranteed market fills.",
+            *(
+                ["Budget uses cached quoted acquisition prices, not guaranteed market fills."]
+                if request.wilderness is None
+                else [
+                    "Wilderness risk assumes standard worlds and standard account death rules.",
+                    "Extra inventory can increase loss or change which gear is kept.",
+                    "Ammo quantities use the more conservative of unit and stack protection.",
+                    *(
+                        ["Loose spell runes cover the chosen cast count for each Magic setup."]
+                        if request.wilderness.spell_casts is not None
+                        and any(role.style == "magic" for role in request.roles)
+                        else []
+                    ),
+                    *(
+                        [
+                            "No reviewed loadout was found within the Wilderness risk cap."
+                            if request.purchase_budget is None
+                            else "No reviewed loadout met the purchase and Wilderness risk caps."
+                        ]
+                        if winners[-1] is None
+                        else []
+                    ),
+                ]
+            ),
             *(
                 ["Unrestricted score is zero; relative normalization is undefined."]
                 if unrestricted and not baseline

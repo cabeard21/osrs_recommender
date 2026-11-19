@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
 import { ObjectiveScatter } from "./ObjectiveScatter";
 import { useRetainedObjectivePoints } from "./useRetainedObjectivePoints";
+import { riskWithinBudget, wildernessRiskCap } from "../api/wilderness";
 import {
   createLabSnapshot,
   selectedLabSolution,
@@ -18,6 +19,7 @@ interface Point {
   score: number;
   objective_values: Record<string, number>;
   purchase_cost_gp: number;
+  wilderness_loss_gp?: number | null;
   maximum_actions: number;
 }
 interface Page {
@@ -60,6 +62,8 @@ export function ObjectiveFrontier({
   onSelect: (id: string, raw: JointSolutionDTO) => void;
 }) {
   const definitions = result.live?.result.objective_definitions ?? [];
+  const lossCap = wildernessRiskCap(result.scenario.request);
+  const wilderness = lossCap !== undefined;
   const group = result.live?.result.objective_frontiers?.find(
     (g) => g.swap_limit === swapLimit,
   );
@@ -69,8 +73,12 @@ export function ObjectiveFrontier({
   useEffect(() => {
     selectionVersion.current += 1;
   }, [result, groupId]);
-  const [sort, setSort] = useState("dps"),
+  const [preferredSort, setSort] = useState("dps"),
     [direction, setDirection] = useState("desc");
+  const sort =
+    !wilderness && preferredSort === "wilderness_loss_gp"
+      ? "dps"
+      : preferredSort;
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const cursor = cursors[cursors.length - 1];
   const [page, setPage] = useState<Page | null>(null),
@@ -84,6 +92,7 @@ export function ObjectiveFrontier({
         score: p.solution.score,
         objective_values: p.solution.objective_values ?? {},
         purchase_cost_gp: p.solution.purchase_cost_gp,
+        wilderness_loss_gp: p.solution.wilderness_risk?.loss_gp,
         maximum_actions: p.solution.maximum_actions,
       })),
     [group],
@@ -106,6 +115,7 @@ export function ObjectiveFrontier({
           score: selected.score,
           objective_values: selected.objective_values ?? {},
           purchase_cost_gp: selected.purchase_cost_gp,
+          wilderness_loss_gp: selected.wilderness_risk?.loss_gp,
           maximum_actions: selected.maximum_actions,
         }
       : undefined,
@@ -140,6 +150,11 @@ export function ObjectiveFrontier({
         for (const point of data.points) {
           if (typeof point.id !== "string" || !Number.isFinite(point.score))
             throw new Error("Invalid objective result point.");
+          if (
+            lossCap !== undefined &&
+            !riskWithinBudget(point.wilderness_loss_gp, lossCap)
+          )
+            throw new Error("Invalid Wilderness risk in objective result.");
           objectiveValues(
             point.objective_values,
             canonicalObjectives(result.scenario.request.objectives ?? []),
@@ -154,7 +169,7 @@ export function ObjectiveFrontier({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [runId, groupId, sort, direction, cursor, result]);
+  }, [runId, groupId, sort, direction, cursor, result, lossCap]);
   const choose = async (id: string) => {
     const version = ++selectionVersion.current;
     setSelecting(true);
@@ -287,6 +302,9 @@ export function ObjectiveFrontier({
               </option>
             ))}
             <option value="purchase_cost_gp">Purchase cost</option>
+            {wilderness && (
+              <option value="wilderness_loss_gp">Wilderness risk</option>
+            )}
             <option value="maximum_actions">Maximum actions</option>
           </select>
         </label>
@@ -321,6 +339,7 @@ export function ObjectiveFrontier({
                 </th>
               ))}
               <th>Cost (GP)</th>
+              {wilderness && <th>Risk (GP)</th>}
               <th>Actions</th>
             </tr>
           </thead>
@@ -344,6 +363,12 @@ export function ObjectiveFrontier({
                   </td>
                 ))}
                 <td>{point.purchase_cost_gp.toLocaleString()}</td>
+                {wilderness && (
+                  <td>
+                    {point.wilderness_loss_gp?.toLocaleString() ??
+                      "Unavailable"}
+                  </td>
+                )}
                 <td>{point.maximum_actions}</td>
               </tr>
             ))}

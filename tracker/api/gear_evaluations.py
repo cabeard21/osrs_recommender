@@ -17,6 +17,7 @@ from tracker.api.gear_optimizations import (
     ObjectiveProjection,
     Purchase,
     RunningCost,
+    WildernessRiskReport,
     consume,
     error,
     same_origin,
@@ -37,6 +38,7 @@ from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.running_frontier import running_cost_assumptions
+from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, support_context
 from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
@@ -133,6 +135,7 @@ class FixedEvaluation(ObjectiveProjection):
     performance: CombatPerformance | None
     reasons: list[EvaluationReason]
     purchase_cost_gp: int | None
+    wilderness_risk: WildernessRiskReport | None = None
     purchases: list[Purchase]
     assumed_item_ids: list[int]
     discipline: Literal["melee", "ranged", "magic"] | None = None
@@ -255,7 +258,7 @@ def calculate_evaluation(
     referenced.update(
         p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
     )
-    from tracker.gear.evaluation import resolve_bolt_context
+    from tracker.gear.evaluation import resolve_bolt_context, wilderness_provenance
     from tracker.gear.potions import potion_summary
 
     bolt_context = resolve_bolt_context(scenario.roles[0], snapshot)
@@ -263,6 +266,7 @@ def calculate_evaluation(
 
     assumptions = {
         **policy_context(scenario),
+        **wilderness_provenance(scenario),
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": scenario.fire_tome_pages,
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
@@ -270,6 +274,7 @@ def calculate_evaluation(
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
+        "size_damage_model_version": SIZE_DAMAGE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in scenario.roles},
         "marks_of_darkness": {role.id: role.mark_of_darkness for role in scenario.roles},
         "bolt_model_version": "enchanted-bolts-v1",

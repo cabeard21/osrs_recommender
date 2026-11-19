@@ -134,6 +134,45 @@ it("rejects malformed joint identity and inventory facts", () => {
   reply.result.selected_solution.remaining_inventory_slots = 17;
   expect(() => parseOptimization(reply, scenario)).toThrow(/inventory/);
 });
+it.each([0, 5])(
+  "accounts for three loose rune stacks with %i requested supply slots",
+  (reserve) => {
+    const { scenario, reply } = example();
+    scenario.request.reserved_supply_slots = reserve;
+    scenario.request.wilderness = {
+      depth: "level_21_plus",
+      skulled: false,
+      protect_item: false,
+      max_loss_gp: 0,
+      spell_casts: 100,
+    };
+    reply.scenario = optimizationRequest(scenario);
+    const selected = reply.result.selected_solution;
+    const remaining = 28 - Math.max(reserve, 3);
+    Object.assign(selected, {
+      reserved_supply_slots: reserve,
+      remaining_inventory_slots: remaining,
+      wilderness_risk: {
+        loss_gp: 0,
+        without_protect_item_gp: null,
+        rules_revision: "rune-fixture",
+        items: [],
+        quantities: [554, 556, 558, 554].map((id) => ({
+          item_id: id,
+          resource_id: id,
+          kind: "rune",
+          quantity: 100,
+        })),
+      },
+    });
+    expect(
+      parseOptimization(reply, scenario).solutions[0].live
+        ?.remaining_inventory_slots,
+    ).toBe(remaining);
+    selected.remaining_inventory_slots = remaining + 1;
+    expect(() => parseOptimization(reply, scenario)).toThrow(/inventory/);
+  },
+);
 it("accepts a DPS-only joint response whose empty objective fields are omitted", () => {
   const { scenario: legacy, reply } = example();
   const scenario = {

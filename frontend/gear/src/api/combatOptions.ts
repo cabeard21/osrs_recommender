@@ -113,7 +113,7 @@ type OptionPatch = Pick<
   "combatOptionDisabled" | "combatOptionExplicitlyEmpty"
 >;
 
-const disciplinesOf = (
+export const disciplinesOf = (
   role: Pick<Role, "style" | "autoDiscipline" | "allowedDisciplines">,
 ): Style[] =>
   role.autoDiscipline

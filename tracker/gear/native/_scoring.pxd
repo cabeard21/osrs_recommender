@@ -1,3 +1,5 @@
+from libcpp.vector cimport vector
+
 cdef int required_defence_mask(int priority) noexcept nogil
 
 cdef struct Score:
@@ -33,6 +35,14 @@ cdef class ScoringContext:
     cdef readonly object objective_ids
     cdef int[::1] objective_kinds, objective_masks, objective_means
     cdef void project_objectives(self, Score* result, double* values) except *
-    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum) except -1
+    cdef void build_option_mask(self, const int* slots, int role_index, int start, int length,
+                                object option_allowed, object equipment,
+                                int settled_slot, vector[unsigned char]& mask) except *
+    cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum,
+                            object option_allowed=*, object equipment=*, int settled_slot=*) except -1
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil
-    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output, const int* order=*, int specific_option=*) noexcept nogil
+    cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
+                       const int* order=*, int specific_option=*, const unsigned char* allowed=*) noexcept nogil
+    cdef void evaluate_filtered(self, const int* slots, int role_index, bint metric, Score* output,
+                                const int* order, object option_allowed, object equipment=*,
+                                int settled_slot=*) except *

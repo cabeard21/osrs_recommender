@@ -27,6 +27,61 @@ function setup() {
   fireEvent.click(screen.getByRole("button", { name: "Enter Multi" }));
 }
 
+it("sets the Wilderness death assumptions in the Multi draft", () => {
+  setup();
+  fireEvent.change(screen.getByLabelText("Additional purchase budget (GP)"), {
+    target: { value: "25k" },
+  });
+  fireEvent.click(screen.getByLabelText("Wilderness"));
+  expect(screen.getByLabelText("Max gear loss if PK’d (GP)")).toHaveValue("0");
+  fireEvent.change(screen.getByLabelText("Wilderness risk slider"), {
+    target: { value: "1" },
+  });
+  expect(screen.getByLabelText("Max gear loss if PK’d (GP)")).toHaveValue("10");
+  expect(screen.getByLabelText("Additional purchase budget (GP)")).toHaveValue(
+    "25k",
+  );
+  expect(screen.getByLabelText("Wilderness depth")).toHaveValue(
+    "level_21_plus",
+  );
+  fireEvent.change(screen.getByLabelText("Wilderness depth"), {
+    target: { value: "level_1_20" },
+  });
+  fireEvent.click(screen.getByLabelText("Skulled at death"));
+  fireEvent.click(
+    screen.getByLabelText("Assume Protect Item is active at death"),
+  );
+  expect(
+    JSON.parse(screen.getByTestId("draft").textContent ?? ""),
+  ).toMatchObject({
+    wilderness: { depth: "level_1_20", skulled: true, protect_item: true },
+    wildernessRiskBudget: "10",
+    budget: "25k",
+  });
+  fireEvent.click(screen.getByLabelText("Wilderness"));
+  expect(
+    screen.getByLabelText("Additional purchase budget (GP)"),
+  ).toBeVisible();
+  expect(
+    screen.queryByLabelText("Max gear loss if PK’d (GP)"),
+  ).not.toBeInTheDocument();
+});
+
+it("keeps the Wilderness cast count for roles that can resolve to Magic", () => {
+  setup();
+  fireEvent.click(screen.getByLabelText("Wilderness"));
+  const label = "Casts to pack per Magic setup";
+  expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+  const first = within(screen.getByRole("group", { name: "Configuration 1" }));
+  fireEvent.click(first.getByRole("button", { name: "Auto" }));
+  expect(screen.getByLabelText(label)).toHaveValue("100");
+  fireEvent.change(screen.getByLabelText(label), { target: { value: "56" } });
+  fireEvent.click(first.getByRole("checkbox", { name: "magic" }));
+  expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+  fireEvent.click(first.getByRole("checkbox", { name: "magic" }));
+  expect(screen.getByLabelText(label)).toHaveValue("56");
+});
+
 it("edits independent Multi targets and preserves repeated disciplines", () => {
   setup();
   const first = screen.getByRole("group", { name: "Configuration 1" });

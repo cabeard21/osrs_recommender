@@ -173,6 +173,8 @@ export class FixtureGearClient implements GearClient {
     return structuredClone(items.filter((i) => i.slot === slot));
   }
   async optimize(scenario: Scenario, signal: AbortSignal) {
+    if (scenario.request.wilderness)
+      throw new Error("Wilderness risk estimates require the live optimizer.");
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(resolve, this.delay);
       signal.addEventListener(

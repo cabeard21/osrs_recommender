@@ -25,6 +25,7 @@ import { ResultVerdict } from "./ResultVerdict";
 import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 import { matchesOptimizationPolicy } from "../api/optimizationModes";
+import { budgetSummary, WildernessRiskDetails } from "./WildernessRiskDetails";
 
 export function isDisciplineSolution(id: string, discipline: string): boolean {
   return (
@@ -106,6 +107,7 @@ export function LiveResultWorkspace() {
       ? branch.selected_solution
       : result?.live?.result.selected_solution);
   const loadout = solution?.loadouts[0];
+  const wildernessRisk = solution?.wildernessRisk;
   const previous = current.previous;
   const select = (slot: keyof ReturnType<typeof emptyEquipment>) =>
     dispatch({
@@ -317,6 +319,22 @@ export function LiveResultWorkspace() {
               run again. Bounded search does not prove that no legal
               configuration exists.
             </p>
+            {request.wilderness && (
+              <p>
+                Gear with an unknown loss is excluded from Wilderness
+                recommendations.
+              </p>
+            )}
+          </section>
+        )}
+        {request.wilderness && wildernessRisk && (
+          <section className="panel" aria-label="Wilderness risk">
+            <h2>Wilderness risk</h2>
+            <WildernessRiskDetails
+              risk={wildernessRisk}
+              policy={request.wilderness}
+              itemName={itemName}
+            />
           </section>
         )}
         {solution && (
@@ -454,8 +472,7 @@ export function LiveResultWorkspace() {
           <span className="eyebrow gold">This result used</span>
           <strong>{request.target.name}</strong>
           <p>
-            {request.target.defence} defence ·{" "}
-            {request.budget_gp.toLocaleString()} GP additional budget ·{" "}
+            {request.target.defence} defence · {budgetSummary(request)} ·{" "}
             {EQUIPMENT_ACCESS_LABELS[request.mode]} ·{" "}
             {request.roles[0].autoDiscipline
               ? `Auto selected ${Object.values(result.live?.result.selected_solution?.loadouts ?? {})[0]?.discipline ?? "no discipline"}`
@@ -478,8 +495,8 @@ export function LiveResultWorkspace() {
             <h2>Previous configuration comparison</h2>
             <p>
               Previous accepted result · {previous.scenario.request.target.name}{" "}
-              · budget {previous.scenario.request.budget_gp.toLocaleString()} GP
-              · {previous.modelVersion}
+              · {budgetSummary(previous.scenario.request)} ·{" "}
+              {previous.modelVersion}
             </p>
             <details>
               <summary>Previous result provenance</summary>

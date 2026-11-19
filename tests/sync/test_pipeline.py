@@ -15,6 +15,7 @@ from tracker.content.loader import load_content
 from tracker.db.models import ItemPrice, Player, QuestState
 from tracker.domain.types import Source
 from tracker.gear.running_costs import resource_item_ids
+from tracker.gear.wilderness_data import wilderness_price_item_ids
 from tracker.integrations.prices.client import PriceDTO, PricesClient, PriceSource
 from tracker.sync.pipeline import _price_scope, run_pipeline
 
@@ -62,12 +63,16 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
         and not item.unsupported_effects
         and (item.requirements_complete or item.id in catalog.community_assumptions)
     )
-    assert _price_scope(content) == expected | supported | resource_item_ids()
+    assert (
+        _price_scope(content)
+        == expected | supported | resource_item_ids() | wilderness_price_item_ids()
+    )
     assert {556, 558, 21880, 12934} <= _price_scope(content)
     assert {2436, 2440, 2444, 3040} <= _price_scope(content)  # Combat potion prices.
     # Preparation purchases need market-form quotes even when the uncharged
     # physical row itself remains blocked from combat.
     assert {22552, 28583, 31115, 27662} <= _price_scope(content)
+    assert {20143, 21820, 23227, 22550, 27652} <= _price_scope(content)
     assert 1207 in _price_scope(content)  # Community Steel dagger, absent from authored scope.
 
 

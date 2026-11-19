@@ -66,6 +66,7 @@ def _json(value: Any) -> str:
 
 
 def _summary(identity: str, solution: Mapping[str, Any]) -> dict[str, Any]:
+    wilderness = solution.get("wilderness_risk")
     return {
         "id": identity,
         "score": solution["score"],
@@ -73,6 +74,7 @@ def _summary(identity: str, solution: Mapping[str, Any]) -> dict[str, Any]:
         "purchase_cost_gp": solution.get("purchase_cost_gp", 0),
         "maximum_actions": solution.get("maximum_actions", 0),
         "max_gear_inventory_slots": solution.get("max_gear_inventory_slots", 0),
+        **({"wilderness_loss_gp": wilderness["loss_gp"]} if wilderness is not None else {}),
     }
 
 
@@ -464,6 +466,8 @@ class ObjectiveRunStore:
                 "maximum_actions": "maximum_actions",
                 "max_gear_inventory_slots": "max_gear_inventory_slots",
             }
+            if (metadata.get("scenario") or {}).get("wilderness") is not None:
+                fields["wilderness_loss_gp"] = "wilderness_loss_gp"
             if (
                 sort not in kinds | fields.keys()
                 or direction not in {"asc", "desc"}

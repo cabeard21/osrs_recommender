@@ -4,6 +4,7 @@ import { purchaseItemIds } from "./preparedPurchases";
 import { validateUntradeables } from "./untradeables";
 import { slots } from "./contracts";
 import { validateSecondaryPriority } from "./secondaryPriorities";
+import { parseWildernessRisk } from "./wilderness";
 import type {
   Item,
   JointSolutionDTO,
@@ -32,6 +33,10 @@ export function parseJointSolution(
     score: "number",
     purchase_cost_gp: "number",
   });
+  const wildernessRisk = parseWildernessRisk(
+    row.wilderness_risk,
+    scenario.request,
+  );
   validateRunningCost(row.running_cost);
   if (scenario.request.objectives !== undefined)
     objectiveValues(
@@ -207,10 +212,19 @@ export function parseJointSolution(
       peak: t.max_gear_inventory_slots as number,
     };
   });
+  const runeStacks = new Set(
+    wildernessRisk?.quantities
+      .filter((row) => row.kind === "rune")
+      .map((row) => row.resource_id),
+  ).size;
+  const effectiveReserve = Math.max(
+    scenario.request.reserved_supply_slots,
+    runeStacks,
+  );
   if (
     row.reserved_supply_slots !== scenario.request.reserved_supply_slots ||
     Number(row.max_gear_inventory_slots) +
-      Number(row.reserved_supply_slots) +
+      effectiveReserve +
       Number(row.remaining_inventory_slots) !==
       28 ||
     Number(row.max_gear_inventory_slots) +
@@ -227,6 +241,7 @@ export function parseJointSolution(
     weightedDps: row.score as number,
     purchases: [...purchaseIds],
     cost: row.purchase_cost_gp as number,
+    ...(wildernessRisk ? { wildernessRisk } : {}),
     shared: required.filter(
       (itemId) =>
         loadouts.filter((l) => Object.values(l.equipment).includes(itemId))

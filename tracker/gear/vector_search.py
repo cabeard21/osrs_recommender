@@ -260,6 +260,8 @@ class VectorSearch:
                 [item for item in self.search.pools[slot] if item is not None],
                 sorted(candidates, key=lambda item: (self.search.cost({item}), item)),
             ]
+            if self.search.wilderness is not None:
+                lanes.append(sorted(candidates, key=self.search.budget_item_rank))
             for objective in self.objectives:
                 components = ["defence_" + style for style in objective.styles]
                 if objective.kind == "defence_roll":
@@ -390,8 +392,14 @@ class VectorSearch:
             candidate = {**state, **({slot: item} if item is not None else {})}
             if (
                 not self.search.compatible(candidate)
+                or (slot == "ammunition" and not self.search.may_equip_ammunition(candidate, roles))
                 or any(item_id not in self.search.eligible for item_id in candidate.values())
-                or self.search.cost(set(candidate.values())) > self.search.request.budget_gp
+                or not self.search.slot_budget(
+                    (candidate,),
+                    set(candidate.values()),
+                    slot,
+                    complete=slot == SLOTS[-1] and len(roles) == len(self.search.request.roles),
+                )
             ):
                 continue
             projection = self.options.projection(
@@ -457,14 +465,17 @@ class VectorSearch:
         for cap in caps:
             self.phase_limit = min(self.limit, self.nodes + per_cap)
             states: list[dict[str, dict[str, int]]] = [{}]
-            for role in roles:
+            for role_index, role in enumerate(roles):
+                complete = role_index == len(roles) - 1
                 expanded: list[tuple[dict[str, dict[str, int]], tuple[float, ...]]] = []
                 for state, equipment in product(states, individual[role.id]):
                     if not self.tick():
                         break
                     assignment = {**state, role.id: equipment}
                     carried = {item for row in assignment.values() for item in row.values()}
-                    if self.search.cost(carried) > self.search.request.budget_gp:
+                    if not self.search.within_budget(carried, complete=complete):
+                        continue
+                    if complete and not self.search.complete_ammunition_allowed(assignment):
                         continue
                     if cap is not None and any(
                         _action_lower_bound(assignment[a], assignment[b], self.search.items) > cap

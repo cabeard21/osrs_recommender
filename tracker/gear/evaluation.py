@@ -15,6 +15,9 @@ from tracker.gear.compact_states import EquipmentState
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
+from tracker.gear.wilderness import RULES_REVISION, WildernessRisk
+from tracker.gear.wilderness_ammo import idle_ammunition
+from tracker.gear.wilderness_runes import wilderness_spell_runes
 
 
 def resolve_bolt_context(role: Any, snapshot: AccountSnapshot) -> Any:
@@ -65,6 +68,27 @@ def evaluate_equipment(
     return evaluate_loadout({slot: items[i] for slot, i in equipment.items()}, role, levels)
 
 
+def wilderness_prayer_problem(request: Any, snapshot: AccountSnapshot) -> str | None:
+    policy = getattr(request, "wilderness", None)
+    if policy is None or not policy.protect_item:
+        return None
+    observed = snapshot.skills.get("prayer")
+    level = request.skill_overrides.get("prayer", observed.level if observed else 0)
+    if level < 25:
+        return "Protect Item requires level 25 Prayer. The effective level is unknown or too low."
+    return None
+
+
+def wilderness_provenance(request: Any) -> dict[str, Any]:
+    policy = getattr(request, "wilderness", None)
+    if policy is None:
+        return {}
+    return {
+        "wilderness": policy.model_dump(mode="json"),
+        "wilderness_rules_revision": RULES_REVISION,
+    }
+
+
 def validate_request_context(
     request: Any,
     snapshot: AccountSnapshot,
@@ -85,6 +109,8 @@ def validate_request_context(
         **{key: value.level for key, value in snapshot.skills.items()},
         **request.skill_overrides,
     }
+    if prayer_problem := wilderness_prayer_problem(request, snapshot):
+        raise ValueError(prayer_problem)
     missing = sorted(skill for skill in required if levels.get(skill, 0) < 1)
     if missing:
         raise ValueError(
@@ -245,6 +271,15 @@ def loadout_problems(
     return tuple(problems)
 
 
+def _configured_attack(role: Any) -> dict[str, Any]:
+    return {
+        "attack_type": role.style,
+        "stance": role.stance,
+        "spell": role.spell if role.style == "magic" else None,
+        "powered_attack": role.powered_attack,
+    }
+
+
 def evaluate_configuration(
     equipment: Mapping[str, int],
     items: Mapping[int, EquipmentDefinition],
@@ -252,6 +287,9 @@ def evaluate_configuration(
     request: Any,
     role: Any,
     levels: Mapping[str, int],
+    *,
+    wilderness: WildernessRisk | None = None,
+    combat_resolved: bool = True,
 ) -> dict[str, Any]:
     """Evaluate one fixed ordinary loadout without generating or repairing candidates."""
     reasons = list(loadout_problems(equipment, items, facts, request, role))
@@ -260,11 +298,43 @@ def evaluate_configuration(
     cost = (
         None if any(p["cost_gp"] is None for p in required) else purchase_cost(ids, facts, request)
     )
-    if cost is not None and cost > request.budget_gp:
+    risk = None
+    runes: dict[int, int] | None = {}
+    if wilderness is not None:
+        loadouts = {role.id: equipment}
+        casts = wilderness.policy.spell_casts
+        if casts is not None:
+            runes = (
+                wilderness_spell_runes(loadouts, {role.id: _configured_attack(role)}, items, casts)
+                if combat_resolved
+                else None
+            )
+        risk = wilderness.report(
+            loadouts,
+            base_role=role.id,
+            idle_ammunition=idle_ammunition(((equipment, role.style),), items),
+            runes=runes,
+        )
+    purchase_budget = request.purchase_budget
+    if purchase_budget is not None and cost is not None and cost > purchase_budget:
         reasons.append(
             {
                 "path": "budget_gp",
                 "message": "Additional purchase cost exceeds the scenario budget.",
+            }
+        )
+    if wilderness is not None and risk is not None and not wilderness.rune_feasible(ids, runes):
+        loss = risk["loss_gp"]
+        if loss is not None and loss > wilderness.budget_gp:
+            reason = "Wilderness gear loss exceeds the risk budget."
+        elif runes and loss is not None:
+            reason = "Carried runes or ammunition can displace protected gear."
+        else:
+            reason = "Wilderness risk cannot be verified for this equipment and budget."
+        reasons.append(
+            {
+                "path": "budget_gp" if purchase_budget is None else "wilderness.max_loss_gp",
+                "message": reason,
             }
         )
     performance = evaluate_equipment(equipment, items, role, levels) if not reasons else None
@@ -287,6 +357,7 @@ def evaluate_configuration(
         "purchases": required,
         "assumed_item_ids": sorted(ids.intersection(request.assumed_item_ids)),
         "unowned_untradeable_item_ids": unowned_untradeables(ids, facts, request),
+        **({"wilderness_risk": risk} if risk is not None else {}),
     }
 
 
@@ -343,6 +414,19 @@ def evaluate_configurations(
         )
         for i in referenced
     }
+    risk_limit = request.wilderness_risk_limit
+    wilderness = (
+        WildernessRisk.build(
+            request.wilderness,
+            risk_limit,
+            {i: catalog.items[i] for i in referenced},
+            facts,
+            price_records,
+            now,
+        )
+        if request.wilderness is not None and risk_limit is not None
+        else None
+    )
     from tracker.gear.potions import boosted_levels, potion_summary
 
     base_levels = {k: v.level for k, v in projected.skills.items()}
@@ -360,12 +444,7 @@ def evaluate_configurations(
 
         if result["status"] != "valid":
             return result
-        selected_option = option or {
-            "attack_type": configured.style,
-            "stance": configured.stance,
-            "spell": configured.spell if configured.style == "magic" else None,
-            "powered_attack": configured.powered_attack,
-        }
+        selected_option = option or _configured_attack(configured)
         return {
             **result,
             "selected_prayer_ids": list(configured.active_prayer_ids),
@@ -391,12 +470,36 @@ def evaluate_configurations(
         if role.allowed_disciplines is not None:
             from tracker.gear.auto import resolve_auto_role
 
+            def within_rune_budget(option: Mapping[str, Any]) -> bool:
+                if wilderness is None or wilderness.policy.spell_casts is None:
+                    return True
+                runes = wilderness_spell_runes(
+                    {role.id: equipment},
+                    {role.id: option},
+                    catalog.items,
+                    wilderness.policy.spell_casts,
+                )
+                return wilderness.rune_feasible(set(equipment.values()), runes)
+
             resolved = resolve_auto_role(
-                role, equipment, catalog.items, projected, levels, selected
+                role,
+                equipment,
+                catalog.items,
+                projected,
+                levels,
+                selected,
+                prefer=within_rune_budget if selected is None else None,
             )
             if resolved is None:
                 result = evaluate_configuration(
-                    equipment, catalog.items, facts, request, role, levels
+                    equipment,
+                    catalog.items,
+                    facts,
+                    request,
+                    role,
+                    levels,
+                    wilderness=wilderness,
+                    combat_resolved=False,
                 )
                 return {
                     **result,
@@ -415,7 +518,7 @@ def evaluate_configurations(
                 }
             configured, chosen_option = resolved
             result = evaluate_configuration(
-                equipment, catalog.items, facts, request, configured, levels
+                equipment, catalog.items, facts, request, configured, levels, wilderness=wilderness
             )
             return {
                 **priced(result, equipment, configured, chosen_option),
@@ -462,7 +565,14 @@ def evaluate_configurations(
                     legal = []
             if not legal:
                 result = evaluate_configuration(
-                    equipment, catalog.items, facts, request, role, levels
+                    equipment,
+                    catalog.items,
+                    facts,
+                    request,
+                    role,
+                    levels,
+                    wilderness=wilderness,
+                    combat_resolved=False,
                 )
                 return {
                     **result,
@@ -490,7 +600,7 @@ def evaluate_configurations(
                 }
             )
         result = evaluate_configuration(
-            equipment, catalog.items, facts, request, configured, levels
+            equipment, catalog.items, facts, request, configured, levels, wilderness=wilderness
         )
         if configured.style == "magic" and configured.powered_attack is None:
             from tracker.gear.combat_options import ancient_spell_problem

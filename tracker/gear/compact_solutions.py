@@ -11,7 +11,7 @@ from contextvars import ContextVar
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, cast
 
 from tracker.gear.compact_states import AssignmentState
 from tracker.gear.variant_reporting import CompactVariant, _ReportTie, materialize
@@ -238,8 +238,16 @@ def compact_solution(
             prayers[role.id] = list(winner.role.active_prayer_ids) if winner else []
         else:
             prayers[role.id] = []
-    values = _numeric_values(search, assignment, numeric, options, prayers, limit)
+    runes = search.runes_for_loadouts(assignment, options)
+    if not search.complete_runes_fit(assignment.carried, runes):
+        return cast(dict[str, Any] | None, search.rune_alternative_solution(assignment, limit))
+    runes = runes or {}
+    values = _numeric_values(search, assignment, numeric, options, prayers, limit, len(runes))
     if values is None:
+        if len(runes) > search.request.reserved_supply_slots:
+            alternative = search.rune_alternative_solution(assignment, limit)
+            if alternative is not None:
+                return cast(dict[str, Any], alternative)
         # A cap rejection does not imply unrestricted infeasibility.
         if limit is not None:
             return None
@@ -266,7 +274,7 @@ def compact_solution(
                 for (rid, equipment), overrides in zip(assignment.roles, identity[2], strict=True)
             }
             return _expand_report(
-                report_search, assignment, values, _role_report_pool(search), report_keys
+                report_search, assignment, values, _role_report_pool(search), report_keys, runes
             )
 
         result = CompactSolution(values, report)
@@ -281,6 +289,7 @@ def _numeric_values(
     options: dict[str, Any],
     prayers: dict[str, Any],
     limit: int | None,
+    rune_slots: int,
 ) -> dict[str, Any] | None:
     from tracker.gear.evaluation import loadout_problems, unowned_untradeables
     from tracker.gear.potions import potion_summary
@@ -289,7 +298,9 @@ def _numeric_values(
     from tracker.gear.transitions import inventory_slots
 
     roles = search.request.roles
-    if any(not numeric[r.id]["supported"] for r in roles):
+    if not search.complete_ammunition_allowed(assignment) or any(
+        not numeric[r.id]["supported"] for r in roles
+    ):
         return None
     if any(
         loadout_problems(assignment[r.id], search.items, search.facts, search.request, r)
@@ -297,10 +308,10 @@ def _numeric_values(
     ):
         return None
     carried = assignment.carried
-    cost = search.cost(carried)
-    if cost > search.request.budget_gp:
+    cost = search.feasible_purchase_cost(carried)
+    if cost is None:
         return None
-    capacity = 28 - search.request.reserved_supply_slots
+    capacity = 28 - max(search.request.reserved_supply_slots, rune_slots)
     occupancies = [inventory_slots(e, carried, search.items) for e in assignment.values()]
     if max(occupancies, default=0) > capacity:
         return None
@@ -367,7 +378,7 @@ def _numeric_values(
         "gear_inventory_slots": inventory_slots(assignment[base], carried, search.items),
         "max_gear_inventory_slots": peak,
         "remaining_supply_slots": 28 - peak,
-        "remaining_inventory_slots": 28 - peak - search.request.reserved_supply_slots,
+        "remaining_inventory_slots": capacity - peak,
         "reserved_supply_slots": search.request.reserved_supply_slots,
         "maximum_actions": max((t["action_count"] for t in transitions), default=0),
         "potions": None,
@@ -390,6 +401,7 @@ def _expand_report(
     values: dict[str, Any],
     role_reports: _RoleReportPool,
     report_keys: Mapping[str, tuple[Any, ...]],
+    runes: Mapping[int, int],
 ) -> dict[str, Any]:
     """Expand a validated record without repeating feasibility or weighted sums."""
     from tracker.gear.evaluation import purchases
@@ -419,7 +431,7 @@ def _expand_report(
             assignment[a].identity,
             assignment[b].identity,
             assignment.carried,
-            28 - search.request.reserved_supply_slots,
+            28 - max(search.request.reserved_supply_slots, len(runes)),
         )
         assert transition is not None
         transitions.append({"from_role": a, "to_role": b, **deepcopy(transition)})
@@ -429,6 +441,10 @@ def _expand_report(
         "transitions": transitions,
         "purchases": purchases(set(assignment.carried), search.facts, search.request),
     }
+    if search.wilderness is not None:
+        result["wilderness_risk"] = search.wilderness_report(
+            assignment, search.request.base_role or search.request.roles[0].id, runes
+        )
     return (
         add_solution_costs(result, search, _defer=False)
         if hasattr(search, "running_prices")

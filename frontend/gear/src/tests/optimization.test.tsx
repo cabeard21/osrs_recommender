@@ -8,7 +8,7 @@ import {
   parseOptimization,
 } from "../api/httpClient";
 import { GearProvider } from "../state/GearProvider";
-import { newDraft, normalize } from "../state/scenario";
+import { newDraft, normalize, upgradeStoredDraft } from "../state/scenario";
 import context from "./live-context.json";
 import { dpsObjectiveResponse } from "./dps-objective-response";
 
@@ -55,6 +55,67 @@ const response = () => ({
       purchase_cost_gp: 0,
     },
   },
+});
+
+it("round-trips saved Wilderness settings and requires a matching capped risk estimate", () => {
+  const wilderness = {
+    depth: "level_1_20",
+    skulled: true,
+    protect_item: true,
+  } as const;
+  const draft = {
+    ...newDraft(),
+    budget: "75",
+    wildernessRiskBudget: "100",
+    wilderness,
+  };
+  expect(
+    upgradeStoredDraft(JSON.parse(JSON.stringify(draft)))?.wilderness,
+  ).toEqual(wilderness);
+  expect(upgradeStoredDraft(newDraft())?.wilderness).toBeUndefined();
+  const scenario = normalize(draft, context.account.snapshot_id);
+  expect(optimizationRequest(scenario)).toMatchObject({
+    budget_gp: 75,
+    wilderness: { ...wilderness, max_loss_gp: 100 },
+  });
+  const base = response();
+  const risk = {
+    loss_gp: 100,
+    without_protect_item_gp: 250,
+    items: [{ item_id: 4151, outcome: "kept", loss_gp: 100, quantity: 1 }],
+    quantities: [],
+    rules_revision: "reviewed-fixture",
+  };
+  const reply = {
+    ...base,
+    scenario: optimizationRequest(scenario),
+    result: {
+      ...base.result,
+      alternatives: {
+        weapon: [
+          {
+            item_id: 4151,
+            score: performance.dps,
+            score_delta: 0,
+            purchase_cost_gp: 0,
+            wilderness_loss_gp: 100,
+          },
+        ],
+      },
+      selected_solution: {
+        ...base.result.selected_solution,
+        wilderness_risk: risk,
+      },
+    },
+  };
+  expect(
+    parseOptimization(reply, scenario).solutions[0].wildernessRisk,
+  ).toEqual(risk);
+  expect(() =>
+    parseOptimization({ ...reply, result: base.result }, scenario),
+  ).toThrow(/Wilderness risk/i);
+  risk.loss_gp = 101;
+  expect(() => parseOptimization(reply, scenario)).toThrow(/Wilderness risk/i);
 });
 it("accepts the backend DPS-only objective policy and rejects a nonzero objective budget", () => {
   const scenario = normalize(newDraft(), context.account.snapshot_id, true);
@@ -168,6 +229,7 @@ it("validates single-role secondary priority provenance and measurements", () =>
 function setup(
   reply = response(),
   optimize?: (init?: RequestInit) => Promise<Response>,
+  accountContext = context,
 ) {
   const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
     if (String(url).includes("/optimizations/progress?"))
@@ -181,7 +243,7 @@ function setup(
         }),
       );
     if (String(url).endsWith("/context"))
-      return new Response(JSON.stringify(context));
+      return new Response(JSON.stringify(accountContext));
     if (
       new URL(String(url), "http://localhost").pathname.endsWith(
         "/optimizations",
@@ -206,6 +268,104 @@ function setup(
   );
   return fetcher;
 }
+it("shows Wilderness risk, the loss without Protect Item, and packing quantities beside purchases", async () => {
+  const user = userEvent.setup();
+  const base = response();
+  const weaponId = 27652;
+  setup(
+    base,
+    async (init) =>
+      new Response(
+        JSON.stringify(
+          dpsObjectiveResponse({
+            ...base,
+            items: [
+              ...base.items,
+              {
+                ...base.items[0],
+                item_id: weaponId,
+                numeric_item_id: weaponId,
+                name: "Webweaver bow",
+                equipment: {
+                  ...base.items[0].equipment,
+                  id: weaponId,
+                  name: "Webweaver bow",
+                },
+              },
+            ],
+            scenario: JSON.parse(String(init?.body)),
+            result: {
+              ...base.result,
+              selected_solution: {
+                ...base.result.selected_solution,
+                loadouts: {
+                  "role-1": { equipment: { weapon: weaponId }, performance },
+                },
+                wilderness_risk: {
+                  loss_gp: 100,
+                  without_protect_item_gp: 500,
+                  items: [
+                    {
+                      item_id: weaponId,
+                      quantity: 1,
+                      outcome: "kept",
+                      loss_gp: 0,
+                    },
+                    {
+                      item_id: 21820,
+                      quantity: 1_001,
+                      outcome: "dropped",
+                      loss_gp: 100,
+                    },
+                  ],
+                  quantities: [
+                    {
+                      item_id: weaponId,
+                      resource_id: 21820,
+                      kind: "charge",
+                      quantity: 1_001,
+                    },
+                  ],
+                  rules_revision: "browser-fixture",
+                },
+              },
+            },
+          }),
+        ),
+      ),
+    {
+      ...context,
+      account: {
+        ...context.account,
+        skills: {
+          prayer: {
+            level: 25,
+            source: "runelite",
+            observed_at: context.account.last_sync_at,
+          },
+        },
+      },
+    },
+  );
+  await screen.findByText("Synchronized ranger", { exact: true });
+  await user.click(screen.getByLabelText("Wilderness"));
+  await user.click(
+    screen.getByLabelText("Assume Protect Item is active at death"),
+  );
+  const cap = screen.getByLabelText("Max gear loss if PK’d (GP)");
+  await user.clear(cap);
+  await user.type(cap, "100");
+  await user.click(screen.getByRole("button", { name: "Run optimization" }));
+  await screen.findByRole("heading", { name: "Wilderness risk" });
+  expect(
+    screen.getByText("Same setup without Protect Item · 500 GP"),
+  ).toBeVisible();
+  expect(
+    screen.getByText("1,001 × Revenant ether for Webweaver bow"),
+  ).toBeVisible();
+  expect(screen.getByText("0 GP additional purchases")).toBeVisible();
+  expect(screen.getByText(/100 GP max gear loss if PK’d/)).toBeVisible();
+});
 it("submits a single domain role with physical locks and exact budget, without fixture-only fields", async () => {
   const fetcher = vi.fn(
     async (_url, init) =>

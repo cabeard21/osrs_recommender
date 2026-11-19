@@ -21,6 +21,13 @@ import {
   potionCombatContext,
 } from "../api/combatOptions";
 import type { SavedResult, SavedResults } from "./resultStorage";
+import {
+  DEFAULT_WILDERNESS_SPELL_CASTS,
+  MAX_WILDERNESS_SPELL_CASTS,
+  isWildernessDeathSettings,
+  wildernessMayUseMagic,
+} from "../api/wilderness";
+import { MAX_BUDGET_GP } from "./budget";
 const EMPTY_GROUP_NOUNS = {
   attack_types: "attack type",
   stances: "stance",
@@ -49,6 +56,8 @@ export const newDraft = (): Draft => ({
   target: "Custom ordinary-attack target",
   defence: "1",
   budget: "0",
+  wildernessRiskBudget: "0",
+  wildernessSpellCasts: String(DEFAULT_WILDERNESS_SPELL_CASTS),
   mode: "usable",
   roles: [newRole(1)],
   maxActions: "8",
@@ -78,6 +87,16 @@ function integer(value: string, name: string, min: number, max: number) {
     throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
   return n;
 }
+function plannedWildernessCasts(draft: Draft) {
+  if (!wildernessMayUseMagic(draft.roles))
+    return DEFAULT_WILDERNESS_SPELL_CASTS;
+  return integer(
+    draft.wildernessSpellCasts ?? String(DEFAULT_WILDERNESS_SPELL_CASTS),
+    "Casts to pack per Magic setup",
+    1,
+    MAX_WILDERNESS_SPELL_CASTS,
+  );
+}
 function parseAcquiredIds(acquired: string) {
   return acquired.trim()
     ? acquired
@@ -97,7 +116,14 @@ function parseSkillLevels(skillLevels: string | undefined) {
 }
 export type DraftFieldErrors = Partial<
   Record<
-    "budget" | "defence" | "supplies" | "attack" | "skillLevels" | "acquired",
+    | "budget"
+    | "wildernessRiskBudget"
+    | "wildernessSpellCasts"
+    | "defence"
+    | "supplies"
+    | "attack"
+    | "skillLevels"
+    | "acquired",
     string
   >
 >;
@@ -112,7 +138,17 @@ function errorOf(check: () => unknown): string | undefined {
 /** Per-field messages for inline display. `normalize` still blocks submission. */
 export function draftFieldErrors(draft: Draft): DraftFieldErrors {
   const checks: Record<keyof DraftFieldErrors, () => unknown> = {
-    budget: () => integer(parseGp(draft.budget), "Budget", 0, 2147483647),
+    budget: () => integer(parseGp(draft.budget), "Budget", 0, MAX_BUDGET_GP),
+    wildernessRiskBudget: () =>
+      draft.wilderness &&
+      integer(
+        parseGp(draft.wildernessRiskBudget ?? "0"),
+        "Max Wilderness gear loss",
+        0,
+        MAX_BUDGET_GP,
+      ),
+    wildernessSpellCasts: () =>
+      draft.wilderness && plannedWildernessCasts(draft),
     defence: () => integer(draft.defence, "Target defence", 0, 10000),
     supplies: () => integer(draft.supplies, "Supply slots", 0, 28),
     attack: () =>
@@ -169,6 +205,11 @@ export function normalize(
   live = false,
   context: GearContext | null = null,
 ): Scenario {
+  if (
+    draft.wilderness !== undefined &&
+    !isWildernessDeathSettings(draft.wilderness)
+  )
+    throw new Error("Choose valid Wilderness death settings.");
   if (!["burnt", "searing"].includes(draft.fireTomePages ?? "burnt"))
     throw new Error("Choose valid Tome of Fire pages.");
   if (
@@ -457,6 +498,12 @@ export function normalize(
   if ((Object.keys(skills).length || quests.length) && draft.mode !== "future")
     throw new Error("Select hypothetical access to submit assumptions.");
   if (
+    draft.wilderness?.protect_item &&
+    context?.live &&
+    (skills.prayer ?? context.live.account?.skills.prayer?.level ?? 0) < 25
+  )
+    throw new Error("Protect Item requires level 25 Prayer.");
+  if (
     draft.exclusions.length > 500 ||
     draft.exclusions.some((id) => !Number.isSafeInteger(id) || id <= 0)
   )
@@ -532,7 +579,21 @@ export function normalize(
           ? { definition: structuredClone(globalTarget!) }
           : {}),
       },
-      budget_gp: integer(parseGp(draft.budget), "Budget", 0, 2147483647),
+      budget_gp: integer(parseGp(draft.budget), "Budget", 0, MAX_BUDGET_GP),
+      ...(draft.wilderness
+        ? {
+            wilderness: {
+              ...draft.wilderness,
+              max_loss_gp: integer(
+                parseGp(draft.wildernessRiskBudget ?? "0"),
+                "Max Wilderness gear loss",
+                0,
+                MAX_BUDGET_GP,
+              ),
+              spell_casts: plannedWildernessCasts(draft),
+            },
+          }
+        : {}),
       mode: draft.mode,
       include_untradeables: draft.includeUntradeables ?? false,
       max_swaps: integer(draft.maxActions, "Equipment actions", 0, 12),
@@ -697,9 +758,13 @@ function resultIsStale(
   context: GearContext | null,
 ): boolean {
   if (!context) return true;
+  // Historical Wilderness runs may lack a separate cap or loose-rune risk.
+  const wilderness = result.scenario.request.wilderness;
   return (
     (!!result.live &&
       result.live.scenario.include_untradeables === undefined) ||
+    (wilderness != null &&
+      (wilderness.max_loss_gp == null || wilderness.spell_casts == null)) ||
     result.snapshotId !== context.snapshotId ||
     (!!context.live &&
       (result.catalogVersion !== context.live.catalog_version ||
@@ -1324,6 +1389,12 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
     !["verified_only", "community_best_effort"].includes(draft.supportPolicy) ||
     typeof draft.target !== "string" ||
     typeof draft.budget !== "string" ||
+    (draft.wilderness !== undefined &&
+      !isWildernessDeathSettings(draft.wilderness)) ||
+    (draft.wildernessRiskBudget !== undefined &&
+      typeof draft.wildernessRiskBudget !== "string") ||
+    (draft.wildernessSpellCasts !== undefined &&
+      typeof draft.wildernessSpellCasts !== "string") ||
     typeof draft.defence !== "string" ||
     !["owned", "usable", "future"].includes(draft.mode) ||
     !draft.assumptions ||
@@ -1372,9 +1443,19 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
         r.locks !== null,
     )
   );
+  const legacyWilderness =
+    draft.wilderness && draft.wildernessRiskBudget === undefined;
   return isValid
     ? ({
         ...draft,
+        wildernessSpellCasts:
+          draft.wildernessSpellCasts ?? String(DEFAULT_WILDERNESS_SPELL_CASTS),
+        ...(legacyWilderness
+          ? {
+              budget: String(MAX_BUDGET_GP),
+              wildernessRiskBudget: draft.budget,
+            }
+          : { wildernessRiskBudget: draft.wildernessRiskBudget ?? "0" }),
         roles: draft.roles.map((role: Draft["roles"][number]) => ({
           ...role,
           onSlayerTask: role.onSlayerTask ?? false,

@@ -82,7 +82,11 @@ class VectorOptions:
         if role.style == "special":
             result: tuple[float, ...] | None = (0.0,) * (len(self.objectives) + 1)
         elif native is not None and hasattr(native, "score_projection"):
-            result = native.score_projection(equipment, self.role_indices[role.id])
+            result = native.score_projection(
+                equipment,
+                self.role_indices[role.id],
+                **self.native_rune_filter(role),
+            )
         else:
             alternatives = self.variants(equipment, role)
             result = (
@@ -116,7 +120,9 @@ class VectorOptions:
                 i for i, current in enumerate(self.search.request.roles) if current.id == role.id
             )
             result = []
-            for performance in native.score_variants(equipment, index):
+            for performance in native.score_variants(
+                equipment, index, **self.native_rune_filter(role)
+            ):
                 configured, option = native.option_records[performance["option_index"]]
                 public = {
                     **performance,
@@ -170,6 +176,10 @@ class VectorOptions:
             )
         result = []
         for selected, option in configured:
+            if self.native_rune_filter(role) and not self.search.rune_option_allowed(
+                equipment, selected, option
+            ):
+                continue
             score = evaluate_prepared_score(
                 prepared, selected, self.search.levels, include_defence=True
             )
@@ -196,6 +206,11 @@ class VectorOptions:
             )
         return tuple(result)
 
+    def native_rune_filter(self, role: Any) -> dict[str, Any]:
+        if role.style == "magic" and getattr(self.search, "rune_limits_active", False):
+            return {"option_allowed": self.search.rune_option_allowed}
+        return {}
+
     def numeric_feasibility(
         self,
         assignment: Mapping[str, Mapping[str, int]],
@@ -209,6 +224,8 @@ class VectorOptions:
             not alternative.performance["supported"] for alternative in selected
         ):
             return None
+        if not self.search.complete_ammunition_allowed(assignment):
+            return None
         if not physical_checked and any(
             loadout_problems(
                 assignment[role.id], self.search.items, self.search.facts, request, role
@@ -217,8 +234,8 @@ class VectorOptions:
         ):
             return None
         carried = {item for equipment in assignment.values() for item in equipment.values()}
-        cost = self.search.cost(carried)
-        if cost > request.budget_gp:
+        cost = self.search.feasible_purchase_cost(carried)
+        if cost is None:
             return None
         capacity = 28 - request.reserved_supply_slots
         occupancies = [
@@ -257,6 +274,7 @@ class VectorOptions:
 
         variant = copy(self.search)
         variant.compact_states = False
+        variant._rune_options_fixed = True
         variant.performance_cache = ChainMap({}, self.search.performance_cache)
         variant.option_cache = ChainMap({}, self.search.option_cache)
         for role, alternative in zip(self.search.request.roles, selected, strict=True):

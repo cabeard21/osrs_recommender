@@ -17,6 +17,7 @@ import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
 import { contextPrayers } from "./PrayerFields";
 import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
+import { budgetSummary, WildernessRiskDetails } from "./WildernessRiskDetails";
 import {
   JointInventory,
   JointPurchases,
@@ -47,7 +48,8 @@ export function LiveMultiResultWorkspace() {
       </section>
     );
   const raw = result.live.result;
-  const roles = result.scenario.request.roles;
+  const request = result.scenario.request;
+  const roles = request.roles;
   const roleIds = roles.map((role) => role.id);
   const roleName = (id: string) =>
     roles.find((role) => role.id === id)?.name ?? id;
@@ -58,7 +60,9 @@ export function LiveMultiResultWorkspace() {
   );
   const solution = point
     ? point.solution
-    : result.solutions.find((s) => s.id === current.solutionId)?.live;
+    : current.solutionId === "unrestricted"
+      ? raw.unrestricted
+      : result.solutions.find((s) => s.id === current.solutionId)?.live;
   const selectedFrontierGroup =
     [
       ...(raw.secondary_frontiers ?? []),
@@ -318,6 +322,16 @@ export function LiveMultiResultWorkspace() {
               {solution.maximum_actions}.
             </p>
           </section>
+          {request.wilderness && solution.wilderness_risk && (
+            <section className="panel" aria-label="Wilderness risk">
+              <h2>Wilderness risk</h2>
+              <WildernessRiskDetails
+                risk={solution.wilderness_risk}
+                policy={request.wilderness}
+                itemName={itemName}
+              />
+            </section>
+          )}
           <div className="comparison-grid">{roleIds.map(equipmentCard)}</div>
           <JointPurchases
             solution={solution}
@@ -343,6 +357,12 @@ export function LiveMultiResultWorkspace() {
               constraints and rerun. Bounded search does not prove mathematical
               infeasibility.
             </p>
+            {request.wilderness && (
+              <p>
+                Gear with an unknown loss is excluded from Wilderness
+                recommendations.
+              </p>
+            )}
           </section>
           {curvePanel}
         </>
@@ -414,9 +434,8 @@ export function LiveMultiResultWorkspace() {
       <section className="panel result-context">
         <span className="eyebrow gold">This result used</span>
         <p>
-          {roles.length} configurations ·{" "}
-          {result.scenario.request.budget_gp.toLocaleString()} GP additional
-          budget · {EQUIPMENT_ACCESS_LABELS[result.scenario.request.mode]}
+          {roles.length} configurations · {budgetSummary(request)} ·{" "}
+          {EQUIPMENT_ACCESS_LABELS[request.mode]}
         </p>
         <details>
           <summary>Result provenance and submitted scenario</summary>

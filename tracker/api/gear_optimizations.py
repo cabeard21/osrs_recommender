@@ -8,7 +8,7 @@ import json
 from datetime import UTC, datetime
 from math import prod
 from threading import Event
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -30,7 +30,7 @@ from tracker.gear.combat import SPELLS
 from tracker.gear.evaluation import equipment_problems, evaluate_equipment
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
-from tracker.gear.optimizer import OptimizationRequest, RoleConfig
+from tracker.gear.optimizer import ItemId, OptimizationRequest, RoleConfig
 from tracker.gear.potions import boosted_levels
 from tracker.gear.potions import catalog as potion_catalog
 from tracker.gear.priorities import SecondaryPriority
@@ -129,6 +129,7 @@ def frontier_policy(body: BrowserOptimizationRequest) -> dict[str, Any] | None:
 
 def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
     """Identify both requested inputs and the effective, server-owned search policy."""
+    from tracker.gear.evaluation import wilderness_provenance
     from tracker.gear.running_frontier import running_cost_policy
 
     return hashlib.sha256(
@@ -141,6 +142,7 @@ def scenario_fingerprint(body: BrowserOptimizationRequest) -> str:
                 "running_cost_policy": running_cost_policy(
                     body, thorough=body.optimization_mode == "thorough"
                 ),
+                **wilderness_provenance(body),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -203,6 +205,32 @@ class Purchase(DTO):
     conditional: bool
 
 
+NonnegativeGp = Annotated[int, Field(strict=True, ge=0)]
+PositiveQuantity = Annotated[int, Field(strict=True, gt=0)]
+
+
+class WildernessRiskItem(DTO):
+    item_id: ItemId
+    outcome: Literal["kept", "dropped", "broken", "mangled", "destroyed", "converted", "unknown"]
+    loss_gp: NonnegativeGp | None
+    quantity: PositiveQuantity
+
+
+class WildernessGearQuantity(DTO):
+    item_id: ItemId
+    resource_id: ItemId
+    kind: Literal["ammo", "charge", "rune"]
+    quantity: PositiveQuantity
+
+
+class WildernessRiskReport(DTO):
+    loss_gp: NonnegativeGp | None
+    without_protect_item_gp: NonnegativeGp | None
+    items: list[WildernessRiskItem]
+    quantities: list[WildernessGearQuantity]
+    rules_revision: str
+
+
 class EquipmentAction(DTO):
     operation: Literal["equip", "unequip"]
     slot: ItemSlot
@@ -221,7 +249,7 @@ class EquipmentTransition(DTO):
 
 
 class ObjectiveProjection(DTO):
-    """Add vector fields without changing historical scalar payloads."""
+    """Omit unused vector and Wilderness projections from the wire response."""
 
     @model_serializer(mode="wrap")
     def serialize_objectives(self, handler):
@@ -236,6 +264,7 @@ class ObjectiveProjection(DTO):
                 "objective_frontiers",
                 "objective_run",
                 "run_id",
+                "wilderness_risk",
             }
             or value
         }
@@ -252,6 +281,7 @@ class Solution(ObjectiveProjection):
     loadouts: dict[str, Loadout]
     transitions: list[EquipmentTransition]
     purchase_cost_gp: int
+    wilderness_risk: WildernessRiskReport | None = None
     purchases: list[Purchase]
     carried_item_ids: list[int]
     distinct_items: int
@@ -397,8 +427,11 @@ def same_origin(request: Request) -> None:
 
 
 def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any) -> None:
+    from tracker.gear.evaluation import wilderness_prayer_problem
     from tracker.gear.npcs import resolve_target
 
+    if problem := wilderness_prayer_problem(body, snapshot):
+        raise error("invalid_request", problem, field="wilderness.protect_item")
     if body.objectives is not None:
         from tracker.gear.objectives import required_objective_skills
 

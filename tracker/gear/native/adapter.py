@@ -19,7 +19,12 @@ def winner(search: Any, equipment: Any, role: Any, prepared: Any = None) -> _Win
     if not isinstance(prepared, PreparedEquipment):
         return None
     index = next(index for index, row in enumerate(search.request.roles) if row.id == role.id)
-    result = search.native_context.score(equipment, index, getattr(search, "metric_first", False))
+    score = search.native_context.score
+    metric = getattr(search, "metric_first", False)
+    if role.style == "magic" and getattr(search, "rune_limits_active", False):
+        result = score(equipment, index, metric, option_allowed=search.rune_option_allowed)
+    else:
+        result = score(equipment, index, metric)
     if not result["supported"]:
         return None
     configured, option = search.native_context.option_records[result["option_index"]]

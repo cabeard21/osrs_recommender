@@ -106,9 +106,16 @@ cdef class StageContext:
     cdef vector[string] role_names, slot_names
     cdef int role_order[4]
     cdef int slot_order[11]
-    cdef long long budget
+    cdef long long purchase_budget, risk_budget
     cdef int capacity
     cdef bint acquisition_ties
+    cdef long long[::1] risk_unavoidable, risk_recoverable
+    cdef int[::1] risk_priorities, risk_unpriced
+    cdef int risk_kept_slots
+    cdef object risk_feasible
+    cdef int[::1] guarded_ammunition
+    cdef int ammunition_users, ammunition_keepers, ammunition_attack_roles
+    cdef object rune_option_allowed
 
     def __init__(self, ScoringContext scoring, search):
         cdef bytes encoded
@@ -139,9 +146,25 @@ cdef class StageContext:
             self.recovery = self.data.cost_data.recovery
         self.weights = self.data.weights
         self.marginals = self.data.marginals
-        self.budget = self.data.budget
+        self.purchase_budget = -1 if self.data.purchase_budget is None else self.data.purchase_budget
         self.capacity = self.data.capacity
         self.acquisition_ties = self.data.acquisition_ties
+        self.rune_option_allowed = (
+            search.rune_option_allowed if getattr(search, "rune_limits_active", False) else None
+        )
+        self.risk_feasible = None
+        if self.data.risk is not None:
+            self.risk_budget = self.data.risk.limit
+            self.guarded_ammunition = self.data.risk.guarded_ammunition
+            self.ammunition_users = self.data.risk.ammunition_users
+            self.ammunition_keepers = self.data.risk.ammunition_keepers
+            self.ammunition_attack_roles = self.data.risk.ammunition_attack_roles
+            self.risk_unavoidable = self.data.risk.unavoidable
+            self.risk_recoverable = self.data.risk.recoverable
+            self.risk_priorities = self.data.risk.priorities
+            self.risk_unpriced = self.data.risk.unpriced
+            self.risk_kept_slots = self.data.risk.kept_slots
+            self.risk_feasible = self.data.risk.feasible
         for encoded in self.data.role_json:
             self.role_names.push_back(encoded)
         for encoded in self.data.slot_json:
@@ -160,6 +183,133 @@ cdef class StageContext:
             raise ValueError("Native projection requires a partial equipment slot")
         return Expansion(self, "loadout", states, choices, slot, roles, None, False, False, None)
 
+    cdef bint may_equip_ammunition(self, const int* slots, int* roles, int nroles) noexcept:
+        cdef int index, mask = 0
+        if not self.guarded_ammunition[slots[2]]:
+            return True
+        for index in range(nroles):
+            mask |= 1 << roles[index]
+        return (self.ammunition_users & ~mask) or self.uses_ammunition(slots, mask)
+
+    cdef bint uses_ammunition(self, const int* slots, int mask) noexcept:
+        cdef int ammo = slots[2], weapon = slots[0], index
+        if self.ammunition_keepers & mask:
+            return True
+        if self.ammunition_attack_roles & mask:
+            for index in range(self.scoring.ammo_offsets[weapon], self.scoring.ammo_offsets[weapon + 1]):
+                if self.scoring.ammo_types[ammo] == self.scoring.ammo_codes[index]:
+                    return True
+        return False
+
+    cdef bint complete_ammunition_allowed(self, const Candidate* row) noexcept:
+        cdef int r, other, ammo
+        for r in range(self.scoring.role_count):
+            ammo = row.slots[r * 11 + 2]
+            if not self.guarded_ammunition[ammo]:
+                continue
+            for other in range(self.scoring.role_count):
+                if row.slots[other * 11 + 2] == ammo and self.uses_ammunition(&row.slots[other * 11], 1 << other):
+                    break
+            else:
+                return False
+        return True
+
+    cdef bint wilderness_bound(self, const Candidate* row, int slot) noexcept:
+        """Deduct unavoidable costs plus losses outside the best possible protection."""
+        cdef int distinct[44]
+        cdef int count = 0, r, s, item, j
+        cdef int nroles = 1 if row.kind == 0 else self.scoring.role_count
+        cdef int nslots = 11 if row.kind == 2 else slot + 1
+        cdef bint duplicate, needs_protection = False
+        cdef long long saved[4]
+        cdef long long amount, remaining = self.risk_budget
+        memset(saved, 0, sizeof(saved))
+        for r in range(nroles):
+            if row.kind != 0 and not row.present & (1 << r):
+                continue
+            # Items in later slots may be provisional synergy seed equipment.
+            for s in range(nslots):
+                item = row.slots[r * 11 + s]
+                if not item:
+                    continue
+                duplicate = False
+                for j in range(count):
+                    if distinct[j] == item:
+                        duplicate = True
+                        break
+                if duplicate:
+                    continue
+                if self.risk_unpriced[item] == 2:
+                    return False
+                needs_protection |= self.risk_unpriced[item] == 1
+                distinct[count] = item
+                count += 1
+                amount = self.risk_unavoidable[item]
+                if amount > remaining:
+                    return False
+                remaining -= amount
+                amount = self.risk_recoverable[item]
+                for j in range(self.risk_kept_slots):
+                    if amount > saved[j]:
+                        amount, saved[j] = saved[j], amount
+                if amount > remaining:
+                    return False
+                remaining -= amount
+        if needs_protection:
+            for j in range(count):
+                if self.risk_unpriced[distinct[j]] == 1 and self.wilderness_could_expose(distinct, count, j):
+                    return False
+        return True
+
+    cdef bint wilderness_could_expose(self, const int* physical, int count, int target) noexcept:
+        cdef int remaining = self.risk_kept_slots
+        cdef int target_priority = self.risk_priorities[physical[target]]
+        cdef int other_priority, j
+        if not remaining:
+            return True
+        # An unknown priority can precede any known priority. An equal
+        # priority might also win a slot because inventory order is unknown.
+        for j in range(count):
+            if j == target:
+                continue
+            other_priority = self.risk_priorities[physical[j]]
+            if other_priority == -2:
+                continue
+            if target_priority == -1 or other_priority == -1 or other_priority >= target_priority:
+                remaining -= 1
+                if not remaining:
+                    return True
+        return False
+
+    cdef bint wilderness_complete(self, const int* physical, int count) except -1:
+        # Share the item-specific minimum quantity and death rules with Python.
+        cdef int j
+        ids = {self.scoring.original_ids[physical[j]] for j in range(count)}
+        return self.risk_feasible(ids)
+
+    cdef bint purchase_fits(self, const int* physical, int count, long long cost,
+                            bint head_pending) noexcept:
+        if self.purchase_budget < 0:
+            return True
+        if self.risk_feasible is None or not head_pending:
+            return cost <= self.purchase_budget
+        # A Wilderness synergy seed may still replace its provisional head.
+        # Market aliases use the highest physical ID among settled items.
+        cdef int j, k, item, later
+        cdef long long market, settled_cost = 0
+        for j in range(count):
+            item = physical[j]
+            market = self.markets[item]
+            if not market or self.scoring.item_slots[item] == 3:
+                continue
+            for k in range(j + 1, count):
+                later = physical[k]
+                if self.scoring.item_slots[later] != 3 and self.markets[later] == market:
+                    break
+            else:
+                settled_cost += self.costs[item]
+        return settled_cost <= self.purchase_budget
+
     cdef bint project_partial(self, Candidate* row, int* roles, int nroles, int slot, double* output) except -1:
         """Only the Python partial beam's compatibility, eligibility and cost filters."""
         cdef int physical[11]
@@ -172,6 +322,8 @@ cdef class StageContext:
         cdef double denominator
         cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
         if row.slots[0] and row.slots[1] and self.scoring.two_handed[row.slots[0]]:
+            return False
+        if slot == 2 and self.risk_feasible is not None and not self.may_equip_ammunition(row.slots, roles, nroles):
             return False
         for s in range(11):
             item = row.slots[s]
@@ -206,7 +358,9 @@ cdef class StageContext:
                     break
             if not later:
                 cost += self.costs[item]
-        if cost > self.budget:
+        if not self.purchase_fits(physical, count, cost, slot < 3):
+            return False
+        if self.risk_feasible is not None and not self.wilderness_bound(row, slot):
             return False
         memset(totals, 0, sizeof(totals))
         for j in range(nroles):
@@ -214,7 +368,12 @@ cdef class StageContext:
             if not self.scored[role]:
                 continue
             memset(maximum, 0, sizeof(maximum))
-            supported = self.scoring.project_slots(row.slots, role, row.order, maximum)
+            if self.rune_option_allowed is not None and slot >= 2:
+                supported = self.scoring.project_slots(
+                    row.slots, role, row.order, maximum, self.rune_option_allowed, None, slot
+                )
+            else:
+                supported = self.scoring.project_slots(row.slots, role, row.order, maximum)
             if not supported and slot > 1:
                 return False
             add(&weight, self.weights[role])
@@ -327,9 +486,10 @@ cdef class StageContext:
         cdef int physical[44]
         cdef int count = 0
         cdef int index, item, previous, r, s, j, k, d, outside
+        cdef int equipment_offset
         cdef long long cost = 0
         cdef long long amount, market, untradeable = 0, strength = 0
-        cdef bint duplicate, later, all_melee = True
+        cdef bint duplicate, later, complete, all_melee = True
         cdef bint costs_known = True, active_cost = False
         cdef double attack_cost, hourly
         cdef Score score
@@ -339,6 +499,12 @@ cdef class StageContext:
         cdef Sum spend = Sum(0.0, 0.0)
         cdef Sum damage = Sum(0.0, 0.0)
         cdef int row_roles = 1 if row.kind == 0 else self.scoring.role_count
+        if self.risk_feasible is not None:
+            if row.kind == 0 and slot == 2 and not self.may_equip_ammunition(row.slots, roles, nroles):
+                return False
+            if row.kind != 0 and (slot == 2 or row.kind == 2) and row.present == (1 << row_roles) - 1:
+                if not self.complete_ammunition_allowed(row):
+                    return False
         for r in range(row_roles):
             if row.kind != 0 and not row.present & (1 << r):
                 continue
@@ -379,7 +545,9 @@ cdef class StageContext:
                     break
             if not later:
                 cost += self.costs[item]
-        if cost > self.budget:
+        if not self.purchase_fits(physical, count, cost, row.kind != 2 and slot < 3):
+            return False
+        if self.risk_feasible is not None and not self.wilderness_bound(row, slot):
             return False
         if row.kind == 1:
             for r in range(row_roles):
@@ -397,6 +565,13 @@ cdef class StageContext:
                 if row.present & (1 << r) and row.present & (1 << d):
                     if self.lower_bound(&row.slots[r * 11], &row.slots[d * 11]) > cap:
                         return False
+        if self.risk_feasible is not None and (slot == 10 or row.kind == 2):
+            if row.kind == 0:
+                complete = nroles == self.scoring.role_count
+            else:
+                complete = row.present == (1 << self.scoring.role_count) - 1
+            if complete and not self.wilderness_complete(physical, count):
+                return False
         for index in range(nroles):
             r = roles[index]
             if row.kind != 0 and not row.present & (1 << r):
@@ -404,8 +579,17 @@ cdef class StageContext:
             all_melee = all_melee and self.melee[r]
             if not self.scored[r]:
                 continue
-            self.scoring.evaluate(&row.slots[0 if row.kind == 0 else r * 11], r, metric, &score,
-                                  &row.order[0 if row.kind == 0 else r * 11])
+            equipment_offset = 0 if row.kind == 0 else r * 11
+            if self.rune_option_allowed is not None and self.scoring.role_styles[r] == 4 and (row.kind == 2 or slot >= 2):
+                self.scoring.evaluate_filtered(
+                    &row.slots[equipment_offset], r, metric, &score, &row.order[equipment_offset],
+                    self.rune_option_allowed, None, 10 if row.kind == 2 else slot,
+                )
+                if not score.supported:
+                    return False
+            else:
+                self.scoring.evaluate(&row.slots[equipment_offset], r, metric, &score,
+                                      &row.order[equipment_offset])
             if score.supported and self.scoring.priority >= 20:
                 for j in range(5):
                     if required_defence_mask(self.scoring.priority) & (1 << j) and score.defence_rolls[j] < 0:

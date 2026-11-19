@@ -192,7 +192,45 @@ export interface PotionDefinition {
   name: string;
 }
 export type FireTomePages = "burnt" | "searing";
+export interface WildernessPolicy {
+  depth: "level_1_20" | "level_21_plus";
+  skulled: boolean;
+  protect_item: boolean;
+  max_loss_gp?: number | null;
+  spell_casts?: number | null;
+}
+export type WildernessDeathSettings = Omit<
+  WildernessPolicy,
+  "max_loss_gp" | "spell_casts"
+>;
+export interface WildernessRisk {
+  loss_gp: number | null;
+  without_protect_item_gp: number | null;
+  items: {
+    item_id: number;
+    outcome:
+      | "kept"
+      | "dropped"
+      | "broken"
+      | "mangled"
+      | "destroyed"
+      | "converted"
+      | "unknown";
+    loss_gp: number | null;
+    quantity: number;
+  }[];
+  quantities: {
+    item_id: number;
+    resource_id: number;
+    kind: "ammo" | "charge" | "rune";
+    quantity: number;
+  }[];
+  rules_revision: string;
+}
 export interface Draft {
+  wilderness?: WildernessDeathSettings;
+  wildernessRiskBudget?: string;
+  wildernessSpellCasts?: string;
   objectives?: Objective[];
   crystalHalberdCharging?: CrystalHalberdCharging;
   fireTomePages?: FireTomePages;
@@ -241,6 +279,7 @@ export interface Scenario {
       selection?: TargetSelection;
     };
     budget_gp: number;
+    wilderness?: WildernessPolicy;
     mode: Draft["mode"];
     max_swaps: number;
     reserved_supply_slots: number;
@@ -307,6 +346,7 @@ export interface Solution {
   weightedDps: number;
   purchases: number[];
   cost: number;
+  wildernessRisk?: WildernessRisk;
   shared: number[];
   transitions: Transition[];
   live?: JointSolutionDTO;
@@ -375,6 +415,7 @@ export interface RunningCostFrontierGroup {
   }[];
 }
 export interface JointSolutionDTO {
+  wilderness_risk?: WildernessRisk | null;
   objective_values?: Record<string, number>;
   unowned_untradeable_item_ids?: number[];
   potions?: PotionSummary;
@@ -632,6 +673,7 @@ export interface OptimizationDTO {
         score: number;
         score_delta: number;
         purchase_cost_gp: number;
+        wilderness_loss_gp?: number;
       }[]
     >;
     frontier_policy?: Record<string, unknown> | null;
@@ -656,6 +698,7 @@ interface TrialIdentity {
   equipment: Equipment;
 }
 export interface FixedEvaluation {
+  wilderness_risk?: WildernessRisk | null;
   preparations?: Preparation[];
   unowned_untradeable_item_ids?: number[];
   status: "valid" | "invalid" | "unsupported";

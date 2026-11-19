@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from array import array
+from collections.abc import Callable, Set
 from dataclasses import dataclass
 from math import isfinite
 from typing import Any
@@ -12,6 +13,22 @@ from tracker.gear.compact_acquisition import AcquisitionFacts
 from tracker.gear.compact_states import SLOT_NAMES
 
 MAX_NATIVE_ITEM_COST = (2**53 - 1) // (4 * len(SLOT_NAMES))
+MAX_NATIVE_RISK = 2**63 - 1
+
+
+@dataclass(frozen=True)
+class RiskStageData:
+    limit: int
+    guarded_ammunition: array[int]
+    ammunition_users: int
+    ammunition_keepers: int
+    ammunition_attack_roles: int
+    unavoidable: array[int]
+    recoverable: array[int]
+    priorities: array[int]
+    unpriced: array[int]
+    kept_slots: int
+    feasible: Callable[[Set[int]], bool]
 
 
 @dataclass(frozen=True)
@@ -28,9 +45,10 @@ class StageData:
     role_names: tuple[str, ...]
     role_json: tuple[bytes, ...]
     slot_json: tuple[bytes, ...]
-    budget: int
+    purchase_budget: int | None
     capacity: int
     acquisition_ties: bool
+    risk: RiskStageData | None = None
 
 
 def preflight(search: Any, acquisition: AcquisitionFacts | None = None) -> str | None:
@@ -50,9 +68,12 @@ def preflight(search: Any, acquisition: AcquisitionFacts | None = None) -> str |
         for role in roles
     ):
         return "Native role weights exceed the finite supported range"
-    budget = search.request.budget_gp
-    if type(budget) is not int or not 0 <= budget < 2**63:
-        return "Native budget exceeds the supported range"
+    for label, limit in (
+        ("purchase budget", search.request.purchase_budget),
+        ("Wilderness risk budget", search.request.wilderness_risk_limit),
+    ):
+        if limit is not None and (type(limit) is not int or not 0 <= limit <= MAX_NATIVE_RISK):
+            return f"Native {label} exceeds the supported range"
     reserved = search.request.reserved_supply_slots
     if type(reserved) is not int or not 0 <= reserved <= 28:
         return "Native supply reservation exceeds inventory capacity"
@@ -119,9 +140,68 @@ def pack_stage(search: Any, scoring: Any) -> StageData:
         role_names=role_names,
         role_json=tuple(json.dumps(name).encode("ascii") for name in role_names),
         slot_json=tuple(json.dumps(name).encode("ascii") for name in SLOT_NAMES),
-        budget=search.request.budget_gp,
+        purchase_budget=search.request.purchase_budget,
         capacity=28 - search.request.reserved_supply_slots,
         acquisition_ties=True,
+        risk=_risk_data(search, scoring.dense_ids),
+    )
+
+
+def _risk_data(search: Any, dense_ids: tuple[int, ...]) -> RiskStageData | None:
+    risk = getattr(search, "wilderness", None)
+    if risk is None:
+        return None
+    limit = search.request.wilderness_risk_limit
+    if limit is None:
+        raise ValueError("Native Wilderness stages require a risk budget")
+    if type(risk.kept_slots) is not int or not 0 <= risk.kept_slots <= 4:
+        raise ValueError("Native Wilderness protection requires zero to four kept items")
+    priorities = risk.minimum_priorities
+    known = sorted({priority for priority in priorities.values() if priority is not None})
+    order = {priority: rank for rank, priority in enumerate(known)}
+    items = dense_ids[1:]
+    guarded = search.guarded_ammunition
+    roles = search.request.roles
+    # Clamping preserves the lower-bound property. Complete unions are still
+    # checked with the exact Python integers and the shared death rules.
+    return RiskStageData(
+        limit=limit,
+        guarded_ammunition=array("i", [0, *(int(i in guarded) for i in items)]),
+        ammunition_users=sum(
+            1 << r for r, role in enumerate(roles) if role.id in search.ammunition_users
+        ),
+        ammunition_keepers=sum(
+            1 << r for r, role in enumerate(roles) if role.id in search.ammunition_keepers
+        ),
+        ammunition_attack_roles=sum(
+            1 << r for r, role in enumerate(roles) if role.style in {"ranged", "special"}
+        ),
+        unavoidable=array(
+            "q", [0, *(min(risk.minimum_unavoidable.get(i, 0), MAX_NATIVE_RISK) for i in items)]
+        ),
+        recoverable=array(
+            "q", [0, *(min(risk.recoverable_loss.get(i, 0), MAX_NATIVE_RISK) for i in items)]
+        ),
+        # Negative ranks encode non-participants (-2) and arbitrary priorities (-1).
+        priorities=array(
+            "i", [-2, *(order.get(priorities[i], -1) if i in priorities else -2 for i in items)]
+        ),
+        unpriced=array(
+            "i",
+            [
+                0,
+                *(
+                    2 if i in risk.unpriced_always else int(i in risk.requires_protection)
+                    for i in items
+                ),
+            ],
+        ),
+        kept_slots=risk.kept_slots,
+        # The final loose-rune bundle can shift the protection cutoff. Gear-only
+        # checks must remain admissible until the selected spells are known.
+        feasible=risk.partial_feasible
+        if getattr(search, "rune_limits_active", False)
+        else risk.feasible,
     )
 
 

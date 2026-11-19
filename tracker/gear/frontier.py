@@ -637,8 +637,10 @@ def _combat_variants(search: Any, seed: Solution, tick: Callable[[], bool]) -> I
             for configured, option in search.configured_options(role, weapon):
                 if not tick():
                     return
-                if lazy_variants_active() and (
-                    type(search) is _Search or hasattr(search, "variant_secondary")
+                if (
+                    lazy_variants_active()
+                    and not getattr(search, "rune_limits_active", False)
+                    and (type(search) is _Search or hasattr(search, "variant_secondary"))
                 ):
                     solution = compact_variant(search, state, role, configured, option)
                     if solution is not None:

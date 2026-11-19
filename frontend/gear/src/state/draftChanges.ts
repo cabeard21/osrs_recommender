@@ -1,11 +1,19 @@
-import type { Draft } from "../api/contracts";
+import type { Draft, WildernessPolicy } from "../api/contracts";
+import {
+  DEFAULT_WILDERNESS_SPELL_CASTS,
+  MAX_WILDERNESS_SPELL_CASTS,
+  wildernessMayUseMagic,
+  wildernessRiskCap,
+} from "../api/wilderness";
 import { EQUIPMENT_ACCESS_LABELS } from "../components/resultFormat";
+import { MAX_BUDGET_GP } from "./budget";
 import { parseGp } from "./scenario";
 
 export interface SubmittedSummary {
   fire_tome_pages?: Draft["fireTomePages"];
   include_untradeables?: boolean;
   budget_gp: number;
+  wilderness?: WildernessPolicy;
   mode: Draft["mode"];
   optimization_mode?: string;
   target: { name: string; defence: number };
@@ -77,10 +85,49 @@ export function describeDraftChanges(
       `Unowned untradeables: ${submitted.include_untradeables ? "considered" : "excluded"} → ${draft.includeUntradeables ? "considered" : "excluded"}`,
     );
   const budget = Number(parseGp(draft.budget));
-  if (Number.isFinite(budget) && budget !== submitted.budget_gp)
+  const submittedBudget =
+    submitted.wilderness && submitted.wilderness.max_loss_gp == null
+      ? MAX_BUDGET_GP
+      : submitted.budget_gp;
+  if (Number.isFinite(budget) && budget !== submittedBudget)
     changes.push(
-      `Budget: ${submitted.budget_gp.toLocaleString("en-US")} → ${budget.toLocaleString("en-US")} GP`,
+      `Budget: ${submittedBudget.toLocaleString("en-US")} → ${budget.toLocaleString("en-US")} GP`,
     );
+  const maxLoss = Number(parseGp(draft.wildernessRiskBudget ?? "0"));
+  const submittedLossCap = wildernessRiskCap(submitted);
+  if (
+    draft.wilderness &&
+    submittedLossCap !== undefined &&
+    Number.isFinite(maxLoss) &&
+    maxLoss !== submittedLossCap
+  )
+    changes.push(
+      `Max gear loss: ${submittedLossCap.toLocaleString("en-US")} → ${maxLoss.toLocaleString("en-US")} GP`,
+    );
+  const casts = Number(
+    draft.wildernessSpellCasts ?? DEFAULT_WILDERNESS_SPELL_CASTS,
+  );
+  const submittedCasts = submitted.wilderness?.spell_casts;
+  if (
+    draft.wilderness &&
+    wildernessMayUseMagic(draft.roles) &&
+    submittedCasts != null &&
+    Number.isSafeInteger(casts) &&
+    casts >= 1 &&
+    casts <= MAX_WILDERNESS_SPELL_CASTS &&
+    casts !== submittedCasts
+  )
+    changes.push(
+      `Casts per Magic setup changed from ${submittedCasts.toLocaleString("en-US")} to ${casts.toLocaleString("en-US")}`,
+    );
+  if (Boolean(draft.wilderness) !== Boolean(submitted.wilderness))
+    changes.push(`Wilderness ${draft.wilderness ? "enabled" : "disabled"}`);
+  else if (
+    draft.wilderness?.depth !== submitted.wilderness?.depth ||
+    draft.wilderness?.skulled !== submitted.wilderness?.skulled ||
+    draft.wilderness?.protect_item !== submitted.wilderness?.protect_item
+  )
+    changes.push("Wilderness death settings changed");
   const isSingleTarget = submitted.roles.length === 1;
   if (isSingleTarget && draft.target !== submitted.target.name)
     changes.push(`Target: ${submitted.target.name} → ${draft.target}`);

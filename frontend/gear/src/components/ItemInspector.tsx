@@ -636,6 +636,7 @@ function LiveItemInspector() {
         {current.trial?.source === "live" && (
           <TrialComparison
             trial={current.trial}
+            wilderness={current.result?.scenario.request.wilderness}
             onRevert={() => {
               retainInspectorFocus();
               setSelected(undefined);
@@ -668,6 +669,11 @@ function LiveItemInspector() {
                 <article className="alternative" key={row.item_id ?? "empty"}>
                   <ItemSprite id={row.item_id} />
                   <span>{name}</span>
+                  {row.wilderness_loss_gp !== undefined && (
+                    <span>
+                      {row.wilderness_loss_gp.toLocaleString()} GP risk
+                    </span>
+                  )}
                   <button onClick={() => chooseCandidate(row.item_id)}>
                     Try {name}
                   </button>
