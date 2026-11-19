@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from tracker.gear.combat_options import CombatOption
-from tracker.gear.compact_costs import CostEvaluator, aggregate_numeric_cost
+from tracker.gear.compact_costs import CostEvaluator
 from tracker.gear.models import EquipmentDefinition, TomeEffect
 from tracker.gear.native.cost_context import pack_costs
 
@@ -27,10 +27,47 @@ def prices(*ids):
     }
 
 
+def cost_scorer(search):
+    from tracker.gear.native._scoring import ScoringContext
+
+    from tracker.gear.objectives import ObjectiveDescriptor
+
+    search.request = search.request.model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
+    return ScoringContext(search)
+
+
+def assert_cost_projection(search, scoring, equipment):
+    from tracker.gear.halberd_charging import cost_context
+
+    engine = CostEvaluator(search.running_prices, search.running_at)
+    rows = scoring.score_variants(equipment, 0)
+    assert rows
+    expected = []
+    for row in rows:
+        configured, option = scoring.option_records[row["option_index"]]
+        recipe = engine.prepare(
+            {slot: search.items[item] for slot, item in equipment.items()},
+            option.model_dump(),
+            **cost_context(search.request, configured),
+        )
+        cost = recipe.score(row["interval"], row["dps"], row["accuracy"]).gp_per_damage
+        assert row["objective_values"]["gp_per_damage"] == cost
+        expected.append(-cost if cost is not None else -1e100)
+    assert scoring.score_projection(equipment, 0) == (
+        max(row["dps"] for row in rows),
+        max(expected),
+    )
+
+
 @pytest.mark.parametrize("weapon_id", [23987, 29796])
 @pytest.mark.parametrize("duration", [30, 54, 60, 180])
 def test_native_halberd_head_costs_match_python(weapon_id, duration):
-    from tests.gear.test_native_stages import ScoringContext, StageContext, drain, stage_search
+    from tests.gear.test_native_stages import stage_search
     from tracker.gear.halberd_charging import CrystalChargingPolicy
     from tracker.gear.models import EquipmentBonuses
     from tracker.gear.optimizer import RoleConfig
@@ -66,35 +103,9 @@ def test_native_halberd_head_costs_match_python(weapon_id, duration):
             }
         )
         search.running_at, search.running_prices = NOW, prices(12934)
-        search.native_cost_objective = True
-        scorer = ScoringContext(search)
-        engine = CostEvaluator(search.running_prices, NOW)
-        base = {"weapon": weapon.id}
-
-        def rank(equipment):
-            performance = scorer.score(equipment, 0, True)
-            recipe = engine.prepare(
-                {slot: search.items[item] for slot, item in equipment.items()},
-                {"attack_type": "slash"},
-                fight_duration_seconds=duration,
-                crystal_halberd_charging=policy,
-            )
-            numeric = recipe.score(performance["interval"], performance["dps"])
-            return (numeric.gp_per_damage, -performance["dps"])
-
-        expected = sorted([base, {**base, "head": head.id}], key=rank)
-        actual, _ = drain(
-            StageContext(scorer, search).begin(
-                kind="loadout",
-                states=[base],
-                choices=[None, head.id],
-                slot="head",
-                roles=("z",),
-                metric=True,
-            ),
-            8,
-        )
-        assert actual == expected
+        scoring = cost_scorer(search)
+        for equipment in ({"weapon": weapon.id}, {"weapon": weapon.id, "head": head.id}):
+            assert_cost_projection(search, scoring, equipment)
 
 
 @pytest.mark.parametrize("spell", ["fire_strike", "earth_wave", "iban_blast", "ice_barrage"])
@@ -148,7 +159,7 @@ def test_tome_cost_table_uses_actual_supply_classes(spell, missing):
     "interference,missing_price", [(False, False), (True, False), (False, True)]
 )
 def test_native_hopper_cost_stage_matches_python_recovery(cape, interference, missing_price):
-    from tests.gear.test_native_stages import ScoringContext, StageContext, drain, stage_search
+    from tests.gear.test_native_stages import stage_search
     from tracker.gear.models import CombatTarget, EquipmentBonuses
     from tracker.gear.optimizer import RoleConfig
 
@@ -188,8 +199,7 @@ def test_native_hopper_cost_stage_matches_python_recovery(cape, interference, mi
             }
         )
         search.running_at, search.running_prices = NOW, prices(*(() if missing_price else (9144,)))
-        search.native_cost_objective = True
-        scorer = ScoringContext(search)
+        scoring = cost_scorer(search)
         base = {
             "weapon": 9185,
             "ammunition": 9144,
@@ -197,34 +207,7 @@ def test_native_hopper_cost_stage_matches_python_recovery(cape, interference, mi
             **({"body": 1127} if interference else {}),
         }
         choices = [None, 300, 32879]
-        engine = CostEvaluator(search.running_prices, NOW)
-
-        def rank(equipment):
-            performance = scorer.score(equipment, 0, True)
-            recipe = engine.prepare(
-                {slot: search.items[item] for slot, item in equipment.items()},
-                {"attack_type": "ranged"},
+        for shield in choices:
+            assert_cost_projection(
+                search, scoring, {**base, **({"shield": shield} if shield else {})}
             )
-            numeric = recipe.score(performance["interval"], performance["dps"])
-            cost = aggregate_numeric_cost([(1, numeric, performance["dps"])])
-            return (
-                cost.gp_per_damage if cost.gp_per_damage is not None else 1e100,
-                -performance["dps"],
-                tuple(sorted(equipment.items())),
-            )
-
-        expected = sorted(
-            [{**base, **({"shield": shield} if shield else {})} for shield in choices], key=rank
-        )
-        actual, _ = drain(
-            StageContext(scorer, search).begin(
-                kind="loadout",
-                states=[base],
-                choices=choices,
-                slot="shield",
-                roles=("z",),
-                metric=True,
-            ),
-            8,
-        )
-        assert actual == expected

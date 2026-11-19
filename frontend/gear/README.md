@@ -69,8 +69,8 @@ on focus, every 30 seconds while visible, and on manual refresh.
 
 A Single result can be copied as a fully locked Multi role, including empty slots.
 Subsequent runs retain the previous accepted result for an equipment/metric/context
-comparison. The handoff dialog provides selectable JSON and a clipboard action with
-success/failure feedback; it does not fabricate chat responses.
+comparison. **Download ChatGPT handoff** saves the scenario and result context to
+`gear-chatgpt-handoff.json`.
 
 Use **Demo outcome** for success, busy, no-solution, and error cases. Use **Demo
 equipment observations** for complete, partial, or missing scans. Missing or partial
@@ -260,7 +260,7 @@ As required by the plan, generic targets and backend-aligned defaults replace
 hardcoded Vorkath/account claims; local numeric-ID sprites replace Material Symbols
 for equipment; fixture labels replace live connection claims; unsupported objectives,
 degradable filtering and tag export are unavailable; the Space shortcut is removed;
-and a copyable handoff replaces the scripted chatbot. Repeated screens share components
+and a downloadable handoff replaces the scripted chatbot. Repeated screens share components
 and reducer state. Motion is omitted because these state changes do not need animation.
 The prototype's font families are bundled locally for offline rendering. Outline
 Lucide icons replace the shell's Material Symbols to avoid a runtime icon-font

@@ -38,8 +38,11 @@ router = APIRouter(
 )
 
 
-class TimelineLoadout(DTO):
+class UtilityTimelineLoadout(DTO):
     equipment: dict[ItemSlot, ItemId]
+
+
+class TimelineLoadout(UtilityTimelineLoadout):
     combat_option: FixedCombatOption
     selected_prayer_ids: tuple[str, ...] = ()
 
@@ -47,7 +50,7 @@ class TimelineLoadout(DTO):
 class PotionTimelineRequest(DTO):
     scenario: BrowserOptimizationRequest
     selected_potion_ids: tuple[str, ...] = Field(max_length=16)
-    loadouts: dict[str, TimelineLoadout]
+    loadouts: dict[str, TimelineLoadout | UtilityTimelineLoadout]
     expected_catalog_version: str = Field(min_length=1, max_length=128)
     expected_model_version: str = Field(min_length=1, max_length=128)
 
@@ -61,12 +64,20 @@ class PotionTimelineRequest(DTO):
         elif set(self.selected_potion_ids) != set(policy.selected_ids):
             raise ValueError("Selected potions must match the scenario setup")
         ordinary = {r.id for r in self.scenario.roles if r.style != "special"}
-        if set(self.loadouts) != ordinary:
+        risk = any(o.kind == "wilderness_loss_gp" for o in self.scenario.objectives or ())
+        if risk and set(self.loadouts) != {r.id for r in self.scenario.roles}:
+            raise ValueError("Risk previews require every loadout, including utility switches")
+        if not risk and set(self.loadouts) != ordinary:
             raise ValueError("Loadouts must contain exactly the scored ordinary roles")
         for role in self.scenario.roles:
             if role.id not in ordinary:
+                if role.id in self.loadouts and isinstance(self.loadouts[role.id], TimelineLoadout):
+                    raise ValueError("Provide only equipment for utility switches")
                 continue
-            ids = self.loadouts[role.id].selected_prayer_ids
+            row = self.loadouts[role.id]
+            if not isinstance(row, TimelineLoadout):
+                raise ValueError("Provide a concrete combat option for each scored role")
+            ids = row.selected_prayer_ids
             PrayerPolicy(mode="fixed", selected_ids=ids)
             if role.prayers.mode == "optimize":
                 if not set(ids) <= set(role.prayers.allowed_ids):
@@ -98,17 +109,21 @@ def frozen_timeline_inputs(body: FrozenPotionTimelineRequest, snapshot, gear):
     if not context:
         raise error("run_expired", "Results expired; rerun optimization", 410)
     scenario = BrowserOptimizationRequest.model_validate(metadata["scenario"])
+    special = {role.id for role in scenario.roles if role.style == "special"}
+    include_risk = any(o.kind == "wilderness_loss_gp" for o in scenario.objectives or ())
     fixed = PotionTimelineRequest(
         scenario=scenario,
         selected_potion_ids=(solution.get("potions") or {}).get("selected_ids", ()),
         loadouts={
-            key: {
+            key: {"equipment": row["equipment"]}
+            if key in special
+            else {
                 "equipment": row["equipment"],
                 "combat_option": row["combat_option"],
                 "selected_prayer_ids": row.get("selected_prayer_ids", ()),
             }
             for key, row in solution["loadouts"].items()
-            if scenario.roles[[r.id for r in scenario.roles].index(key)].style != "special"
+            if include_risk or key not in special
         },
         expected_catalog_version=metadata["catalog_version"]
         if "catalog_version" in metadata
@@ -120,18 +135,25 @@ def frozen_timeline_inputs(body: FrozenPotionTimelineRequest, snapshot, gear):
         equipment_catalog=lambda: context["catalog"],
         content=context["content"],
     )
-    return context["snapshot"], frozen_gear, context["prices"], fixed, context["evaluated_at"]
+    return (
+        context["snapshot"],
+        frozen_gear,
+        context["prices"],
+        fixed,
+        context["evaluated_at"],
+        (solution.get("wilderness_risk") or {}).get("loss_gp"),
+    )
 
 
 class RoleMeasurement(ObjectiveProjection):
-    objective_values: dict[str, float | None] = Field(default_factory=dict)
+    objective_values: dict[str, int | float | None] = Field(default_factory=dict)
     dps: float | None
     secondary_value: float | None
     reasons: list[str]
 
 
 class TimelineMeasurement(ObjectiveProjection):
-    objective_values: dict[str, float | None] = Field(default_factory=dict)
+    objective_values: dict[str, int | float | None] = Field(default_factory=dict)
     time_seconds: int
     levels: dict[str, int]
     dps: float | None
@@ -151,16 +173,87 @@ class PotionTimelineResponse(ObjectiveProjection):
     samples: list[TimelineMeasurement]
 
 
+def direct_departure_loss(request, selections, projected, catalog, content, prices, now) -> int:
+    """Validate the carried union, including utility switches, before sampling decay."""
+    from tracker.gear.evaluation import loadout_problems, purchase_cost
+    from tracker.gear.facts import equipment_fact
+    from tracker.gear.optimizer import required_transitions
+    from tracker.gear.transitions import inventory_slots, plan_transition
+    from tracker.gear.wilderness import WildernessRisk
+
+    request = request.prepared_weapon_locks()
+    loadouts = {key: row.equipment for key, row in selections.items()}
+    carried = {item for equipment in loadouts.values() for item in equipment.values()}
+    if not carried <= catalog.items.keys():
+        raise ValueError("Unknown item in the selected trip")
+    facts = {
+        i: equipment_fact(
+            projected,
+            catalog.items[i],
+            content,
+            prices,
+            now,
+            support_assumptions=catalog.community_assumptions.get(i, ()),
+        )
+        for i in carried
+    }
+    for role in request.roles:
+        problems = loadout_problems(loadouts[role.id], catalog.items, facts, request, role)
+        if problems:
+            raise ValueError(problems[0]["message"])
+    if purchase_cost(carried, facts, request) > request.budget_gp:
+        raise ValueError("Additional purchases exceed the scenario budget")
+    options = {
+        key: row.combat_option.model_dump()
+        for key, row in selections.items()
+        if isinstance(row, TimelineLoadout)
+    }
+    risk = WildernessRisk.build(
+        request.wilderness,
+        request.wilderness_risk_limit,
+        {i: catalog.items[i] for i in carried},
+        facts,
+        prices,
+        now,
+    )
+    report = risk.trip_report(
+        loadouts, options, catalog.items, styles={r.id: r.style for r in request.roles}
+    )
+    loss = report["loss_gp"]
+    if type(loss) is not int or (risk.budget_gp is not None and loss > risk.budget_gp):
+        raise ValueError("The selected trip requires a known Wilderness loss within the risk cap")
+    runes = sum(row["kind"] == "rune" for row in report["quantities"])
+    capacity = 28 - max(request.reserved_supply_slots, runes)
+    if any(inventory_slots(e, carried, catalog.items) > capacity for e in loadouts.values()):
+        raise ValueError("The selected trip exceeds inventory capacity")
+    for source, dest in required_transitions(request):
+        transition = plan_transition(
+            loadouts[source], loadouts[dest], catalog.items, carried=carried, capacity=capacity
+        )
+        if transition is None:
+            raise ValueError("The selected trip has an infeasible transition")
+    return loss
+
+
 def calculate_timeline(
-    snapshot, gear, prices, body: PotionTimelineRequest, stopped: Event, *, frozen_at=None
+    snapshot,
+    gear,
+    prices,
+    body: PotionTimelineRequest,
+    stopped: Event,
+    *,
+    frozen_at=None,
+    departure_loss_gp=None,
 ):
     from tracker.gear.combat_options import CombatOption
+    from tracker.gear.compact_costs import CostEvaluator
     from tracker.gear.evaluation import (
         evaluate_configurations,
         resolve_bolt_context,
         resolve_tome_context,
     )
     from tracker.gear.facts import hypothetical_snapshot
+    from tracker.gear.halberd_charging import cost_context
     from tracker.gear.npcs import resolve_request
     from tracker.gear.potion_timeline import decay_levels, event_times, measure
     from tracker.gear.scoring import prepare_equipment
@@ -188,12 +281,22 @@ def calculate_timeline(
             snapshot, request.skill_overrides, request.quest_overrides, now
         )
         base = {k: v.level for k, v in projected.skills.items()}
-        items = project_catalog(catalog, request.support_policy).items
+        catalog = project_catalog(catalog, request.support_policy)
+        items = catalog.items
         roles, prepared = [], {}
+        include_cost = any(o.kind == "gp_per_damage" for o in request.objectives or ())
+        include_risk = any(o.kind == "wilderness_loss_gp" for o in request.objectives or ())
+        if include_risk and departure_loss_gp is None:
+            departure_loss_gp = direct_departure_loss(
+                request, body.loadouts, projected, catalog, gear.content, prices, now
+            )
+        cost_evaluator = CostEvaluator(prices, now) if include_cost else None
+        costs = {}
         for role in request.roles:
             if role.style == "special":
                 continue
             row = body.loadouts[role.id]
+            assert isinstance(row, TimelineLoadout)
             role = role.model_copy(
                 update={
                     "prayers": PrayerPolicy(mode="fixed", selected_ids=row.selected_prayer_ids),
@@ -202,6 +305,19 @@ def calculate_timeline(
             )
             single = request.model_copy(
                 update={
+                    # Departure risk and caps are validated once on the whole trip.
+                    **(
+                        {
+                            "wilderness": None,
+                            "objectives": tuple(
+                                o
+                                for o in request.objectives or ()
+                                if o.kind != "wilderness_loss_gp"
+                            ),
+                        }
+                        if include_risk
+                        else {}
+                    ),
                     "roles": (role,),
                     "transitions": (),
                     "ordered_roles": (),
@@ -242,9 +358,17 @@ def calculate_timeline(
                 }
             )
             roles.append(configured)
-            prepared[role.id] = prepare_equipment(
-                {slot: items[i] for slot, i in row.equipment.items()}
-            )
+            equipment_items = {slot: items[i] for slot, i in equipment.items()}
+            prepared[role.id] = prepare_equipment(equipment_items)
+            if cost_evaluator is not None:
+                costs[role.id] = cost_evaluator.prepare(
+                    equipment_items,
+                    selected,
+                    on_slayer_task=configured.on_slayer_task,
+                    mark_of_darkness=configured.mark_of_darkness,
+                    base_magic=base.get("magic"),
+                    **cost_context(request, configured),
+                )
 
         measurements = {}
 
@@ -259,7 +383,14 @@ def calculate_timeline(
             key = tuple(sorted(effective.items()))
             if key not in measurements:
                 measurements[key] = measure(
-                    0, effective, roles, prepared, request.secondary_priority, request.objectives
+                    0,
+                    effective,
+                    roles,
+                    prepared,
+                    request.secondary_priority,
+                    request.objectives,
+                    costs or None,
+                    departure_loss_gp,
                 )
             return {**measurements[key], "time_seconds": seconds}
 
@@ -271,7 +402,13 @@ def calculate_timeline(
             catalog_version=catalog.revision,
             model_version=MODEL_VERSION,
             configuration_fingerprint=hashlib.sha256(
-                json.dumps(body.model_dump(mode="json"), sort_keys=True).encode()
+                json.dumps(
+                    {
+                        **body.model_dump(mode="json"),
+                        **({"departure_loss_gp": departure_loss_gp} if include_risk else {}),
+                    },
+                    sort_keys=True,
+                ).encode()
             ).hexdigest(),
             secondary_priority=request.secondary_priority,
             baseline=at(0, base),
@@ -291,12 +428,13 @@ async def potion_timelines(
     same_origin(request)
     snapshot, gear, prices = await asyncio.to_thread(resources, request)
     frozen_at = None
+    departure_loss_gp = None
     frozen = isinstance(body, FrozenPotionTimelineRequest)
     if isinstance(body, FrozenPotionTimelineRequest):
         if snapshot is None:
             raise error("account_unavailable", "Account is unavailable", 409)
-        snapshot, gear, prices, timeline_body, frozen_at = frozen_timeline_inputs(
-            body, snapshot, gear
+        snapshot, gear, prices, timeline_body, frozen_at, departure_loss_gp = (
+            frozen_timeline_inputs(body, snapshot, gear)
         )
     else:
         timeline_body = body
@@ -311,7 +449,11 @@ async def potion_timelines(
             prices,
             timeline_body,
             stopped,
-            **({"frozen_at": frozen_at} if frozen_at is not None else {}),
+            **(
+                {"frozen_at": frozen_at, "departure_loss_gp": departure_loss_gp}
+                if frozen_at is not None
+                else {}
+            ),
         )
     )
     try:

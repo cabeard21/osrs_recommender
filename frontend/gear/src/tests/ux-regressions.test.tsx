@@ -99,7 +99,10 @@ function setup(
   return fetcher;
 }
 const ready = () => screen.findByText("Synchronized ranger", { exact: true });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 it("announces optimization progress in a status region while a run is pending", async () => {
   const user = userEvent.setup();
@@ -252,24 +255,52 @@ it("uses one product name and no milestone labels in the shell", async () => {
   expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument();
 });
 
-it("names the handoff actions for what they do and resets copy feedback", async () => {
+it("downloads the submitted scenario and current draft as a ChatGPT handoff", async () => {
+  const objectUrl = "blob:handoff";
+  const createObjectURL = vi.fn((_file: Blob) => objectUrl);
+  const revokeObjectURL = vi.fn();
+  vi.stubGlobal(
+    "URL",
+    class extends URL {
+      static createObjectURL = createObjectURL;
+      static revokeObjectURL = revokeObjectURL;
+    },
+  );
+  const download = vi
+    .spyOn(HTMLAnchorElement.prototype, "click")
+    .mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.download).toBe("gear-chatgpt-handoff.json");
+      expect(this.href).toBe(objectUrl);
+    });
   const user = userEvent.setup();
   setup();
   await ready();
-  await user.click(screen.getByRole("button", { name: "ChatGPT handoff" }));
-  const dialog = within(
-    await screen.findByRole("dialog", { name: "ChatGPT handoff" }),
-  );
-  await user.click(dialog.getByRole("button", { name: "Copy handoff text" }));
-  await dialog.findByText("Copied handoff text");
+  await user.click(screen.getByRole("button", { name: "Run optimization" }));
+  await screen.findByRole("heading", { name: /Best configuration found/ });
   await user.click(
-    dialog.getByRole("button", { name: "Close ChatGPT handoff" }),
+    screen.getByRole("button", { name: "Download ChatGPT handoff" }),
   );
-  await user.click(screen.getByRole("button", { name: "ChatGPT handoff" }));
-  const reopened = within(
-    await screen.findByRole("dialog", { name: "ChatGPT handoff" }),
-  );
-  expect(reopened.queryByText("Copied handoff text")).not.toBeInTheDocument();
+  expect(download).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(createObjectURL).toHaveBeenCalledOnce();
+  const file = createObjectURL.mock.calls[0][0];
+  expect(file.type).toBe("application/json");
+  const text = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+  const handoff = JSON.parse(text);
+  expect(handoff).toEqual({
+    source: expect.stringMatching(/^LIVE PYTHON OPTIMIZER/),
+    submitted: expect.any(Object),
+    draft: expect.any(Object),
+    result: expect.any(Object),
+    trial: null,
+  });
+  expect(handoff.submitted).toEqual(handoff.result.scenario);
+  await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith(objectUrl));
 });
 
 it("explains that editing settings cancelled a run", async () => {

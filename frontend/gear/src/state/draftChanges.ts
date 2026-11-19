@@ -3,6 +3,8 @@ import {
   DEFAULT_WILDERNESS_SPELL_CASTS,
   MAX_WILDERNESS_SPELL_CASTS,
   wildernessMayUseMagic,
+  fixedTrip,
+  limitTripLoss,
   wildernessRiskCap,
 } from "../api/wilderness";
 import { EQUIPMENT_ACCESS_LABELS } from "../components/resultFormat";
@@ -10,6 +12,7 @@ import { MAX_BUDGET_GP } from "./budget";
 import { parseGp } from "./scenario";
 
 export interface SubmittedSummary {
+  objectives?: Draft["objectives"];
   fire_tome_pages?: Draft["fireTomePages"];
   include_untradeables?: boolean;
   budget_gp: number;
@@ -86,31 +89,39 @@ export function describeDraftChanges(
     );
   const budget = Number(parseGp(draft.budget));
   const submittedBudget =
-    submitted.wilderness && submitted.wilderness.max_loss_gp == null
+    submitted.wilderness &&
+    !fixedTrip(submitted) &&
+    submitted.wilderness.attacks_per_setup == null &&
+    submitted.wilderness.max_loss_gp == null
       ? MAX_BUDGET_GP
       : submitted.budget_gp;
   if (Number.isFinite(budget) && budget !== submittedBudget)
     changes.push(
       `Budget: ${submittedBudget.toLocaleString("en-US")} → ${budget.toLocaleString("en-US")} GP`,
     );
-  const maxLoss = Number(parseGp(draft.wildernessRiskBudget ?? "0"));
+  const maxLoss =
+    fixedTrip(draft) && !limitTripLoss(draft)
+      ? null
+      : Number(parseGp(draft.wildernessRiskBudget ?? "0"));
   const submittedLossCap = wildernessRiskCap(submitted);
   if (
     draft.wilderness &&
     submittedLossCap !== undefined &&
-    Number.isFinite(maxLoss) &&
+    (maxLoss === null || Number.isFinite(maxLoss)) &&
     maxLoss !== submittedLossCap
   )
     changes.push(
-      `Max gear loss: ${submittedLossCap.toLocaleString("en-US")} → ${maxLoss.toLocaleString("en-US")} GP`,
+      `Max gear loss: ${submittedLossCap?.toLocaleString("en-US") ?? "No cap"} → ${maxLoss?.toLocaleString("en-US") ?? "No cap"} GP`,
     );
   const casts = Number(
     draft.wildernessSpellCasts ?? DEFAULT_WILDERNESS_SPELL_CASTS,
   );
-  const submittedCasts = submitted.wilderness?.spell_casts;
+  const submittedCasts =
+    submitted.wilderness?.attacks_per_setup ??
+    submitted.wilderness?.spell_casts;
   if (
     draft.wilderness &&
-    wildernessMayUseMagic(draft.roles) &&
+    (fixedTrip(draft) || wildernessMayUseMagic(draft.roles)) &&
     submittedCasts != null &&
     Number.isSafeInteger(casts) &&
     casts >= 1 &&
@@ -118,7 +129,7 @@ export function describeDraftChanges(
     casts !== submittedCasts
   )
     changes.push(
-      `Casts per Magic setup changed from ${submittedCasts.toLocaleString("en-US")} to ${casts.toLocaleString("en-US")}`,
+      `${fixedTrip(draft) ? "Attacks per combat setup" : "Casts per Magic setup"} changed from ${submittedCasts.toLocaleString("en-US")} to ${casts.toLocaleString("en-US")}`,
     );
   if (Boolean(draft.wilderness) !== Boolean(submitted.wilderness))
     changes.push(`Wilderness ${draft.wilderness ? "enabled" : "disabled"}`);

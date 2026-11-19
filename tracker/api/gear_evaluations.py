@@ -37,7 +37,7 @@ from tracker.gear.models import CombatPerformance
 from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
-from tracker.gear.running_frontier import running_cost_assumptions
+from tracker.gear.running_frontier import aggregate_cost, running_cost_assumptions
 from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, support_context
@@ -125,7 +125,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(ObjectiveProjection):
-    objective_values: dict[str, float] = Field(default_factory=dict)
+    objective_values: dict[str, int | float | None] = Field(default_factory=dict)
     preparations: list[Preparation] = Field(default_factory=list)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     selected_prayer_ids: list[str] = Field(default_factory=list)
@@ -150,7 +150,7 @@ class EquipmentChange(DTO):
 
 
 class EvaluationDeltas(ObjectiveProjection):
-    objective_values: dict[str, float] = Field(default_factory=dict)
+    objective_values: dict[str, int | float | None] = Field(default_factory=dict)
     dps: float
     max_hit: int
     accuracy: float
@@ -309,32 +309,36 @@ def calculate_evaluation(
     if scenario.objectives is not None:
         from tracker.gear.objectives import objective_definitions, objective_values
 
+        definitions = objective_definitions(scenario.objectives)
+
+        def measurements(side: dict[str, Any]) -> dict[str, float | None]:
+            if side["status"] != "valid":
+                return {}
+            objectives = scenario.objectives or ()
+            cost = None
+            if any(objective.kind == "gp_per_damage" for objective in objectives):
+                # Match the optimizer's active-time arithmetic even for one role.
+                cost = aggregate_cost(
+                    [(scenario.roles[0].weight, side["running_cost"], side["performance"]["dps"])]
+                )
+            measured = objective_values(
+                objectives, side["performance"], cost, side.get("wilderness_risk")
+            )
+            return {definition["id"]: measured.get(definition["id"]) for definition in definitions}
+
+        baseline = measurements(result["baseline"])
+        proposed = measurements(result["proposed"])
         result = {
             **result,
-            **{
-                side: {
-                    **result[side],
-                    "objective_values": objective_values(
-                        scenario.objectives, result[side]["performance"]
-                    )
-                    if result[side]["status"] == "valid"
-                    else {},
-                }
-                for side in ("baseline", "proposed")
-            },
+            "baseline": {**result["baseline"], "objective_values": baseline},
+            "proposed": {**result["proposed"], "objective_values": proposed},
         }
-        definitions = objective_definitions(scenario.objectives)
         if result["deltas"] is not None:
-            result = {
-                **result,
-                "deltas": {
-                    **result["deltas"],
-                    "objective_values": {
-                        key: result["proposed"]["objective_values"][key] - value
-                        for key, value in result["baseline"]["objective_values"].items()
-                    },
-                },
-            }
+            differences = {}
+            for key, old in baseline.items():
+                new = proposed.get(key)
+                differences[key] = new - old if old is not None and new is not None else None
+            result = {**result, "deltas": {**result["deltas"], "objective_values": differences}}
     else:
         definitions = []
     return EquipmentEvaluationResponse(

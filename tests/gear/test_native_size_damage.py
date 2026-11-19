@@ -154,7 +154,6 @@ def test_complete_size_damage_search_matches_python_without_fallback(size):
         "_factored_evaluation": True,
         "_compact_states": True,
         "_complete_frontiers": True,
-        "_running_frontier": True,
     }
     reference = optimize(*args, **flags)
     with capture() as evidence:

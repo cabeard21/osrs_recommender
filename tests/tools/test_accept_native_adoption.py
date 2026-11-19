@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from tools import accept_native_adoption as adoption
+from tools.gear_search_quality_fixture import load_case
 
 
 @pytest.fixture
@@ -45,7 +46,7 @@ def comparison(tmp_path, monkeypatch):
 
     def run(phase="archives", workers=1):
         return adoption.compare(
-            SimpleNamespace(),
+            load_case("melee_1m"),
             {"case_name": "multi"},
             tmp_path,
             phase=phase,
@@ -61,7 +62,7 @@ def test_archives_are_one_complete_request_per_engine_without_warmup(comparison)
     assert report["accepted"] is True
     executions = [row for row in calls if row[0] == "execute"]
     assert len(executions) == 2
-    assert all(row[3] == {"archives": True, "force_cost": True} for row in executions)
+    assert all(row[3] == {"archives": True} for row in executions)
     assert adoption.validate_report(directory) == report
     assert "timings_seconds" in json.loads((directory / "candidate.json").read_text())
     assert not {"speedup", "memory", "threshold", "pairs"} & report.keys()
@@ -77,7 +78,7 @@ def test_service_also_proves_native_serial_six_worker_parity(comparison):
     ]
     executions = [row for row in calls if row[0] == "execute"]
     assert len(executions) == 3
-    assert all(row[3] == {"archives": False, "force_cost": False} for row in executions)
+    assert all(row[3] == {"archives": False} for row in executions)
 
 
 @pytest.mark.parametrize("field", ["different", "fallback", "native"])
@@ -257,27 +258,14 @@ def test_cli_effects_selects_declared_cases(cli, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "missing", ["magic", "ranged", "dps", "secondary", "cost", "metric", "attempts"]
+    "missing", ["magic", "ranged", "stage", "vector_projection", "cost", "attempts"]
 )
 def test_effect_evidence_requires_each_discipline_and_lane(missing):
     metadata = {"effect_case": "effect_auto", "required_effect_styles": ["magic", "ranged"]}
     events = [
-        {
-            "event": "stage",
-            "roles": [style],
-            "frontier": lane != "dps",
-            "cost": lane == "cost",
-            "metric": metric,
-            "attempts": 1,
-        }
+        {"event": event, "roles": [style], "cost": True, "attempts": 1}
         for style in ("magic", "ranged")
-        for lane, metric in (
-            ("dps", False),
-            ("secondary", False),
-            ("secondary", True),
-            ("cost", False),
-            ("cost", True),
-        )
+        for event in ("stage", "vector_projection")
     ]
     diagnostics = {"native_requests": 2, "fallback_requests": 0, "events": events}
     assert adoption.required_native_executed(diagnostics, metadata)
@@ -285,12 +273,8 @@ def test_effect_evidence_requires_each_discipline_and_lane(missing):
         events[:] = [row for row in events if row["roles"] != [missing]]
     elif missing == "attempts":
         events[0]["attempts"] = 0
-    elif missing == "metric":
-        events[:] = [row for row in events if not row["metric"]]
     elif missing == "cost":
-        events[:] = [row for row in events if not row["cost"]]
-    elif missing == "secondary":
-        events[:] = [row for row in events if not row["frontier"] or row["cost"]]
+        events[0]["cost"] = False
     else:
-        events[:] = [row for row in events if row["frontier"]]
+        events[:] = [row for row in events if row["event"] != missing]
     assert not adoption.required_native_executed(diagnostics, metadata)

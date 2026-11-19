@@ -34,7 +34,14 @@ cdef class ScoringContext:
     cdef int priority
     cdef readonly object objective_ids
     cdef int[::1] objective_kinds, objective_masks, objective_means
-    cdef void project_objectives(self, Score* result, double* values) except *
+    cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
+    cdef int[::1] supply_class
+    cdef int[::1] serp_head
+    cdef double[::1] serp_cost
+    cdef int supply_count
+    cdef double[::1] option_cost, option_on_hit_cost, option_per_second_cost, unit_prices, recovery
+    cdef double attack_cost(self, const int* slots, Score* score) noexcept
+    cdef void project_objectives(self, const int* slots, Score* result, double* values) except *
     cdef void build_option_mask(self, const int* slots, int role_index, int start, int length,
                                 object option_allowed, object equipment,
                                 int settled_slot, vector[unsigned char]& mask) except *

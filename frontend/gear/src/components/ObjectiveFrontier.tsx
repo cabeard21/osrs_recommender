@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
 import { ObjectiveScatter } from "./ObjectiveScatter";
 import { useRetainedObjectivePoints } from "./useRetainedObjectivePoints";
-import { riskWithinBudget, wildernessRiskCap } from "../api/wilderness";
+import {
+  parseWildernessRisk,
+  riskWithinBudget,
+  wildernessRiskCap,
+} from "../api/wilderness";
 import {
   createLabSnapshot,
   selectedLabSolution,
@@ -17,7 +21,7 @@ import {
 interface Point {
   id: string;
   score: number;
-  objective_values: Record<string, number>;
+  objective_values: Record<string, number | null>;
   purchase_cost_gp: number;
   wilderness_loss_gp?: number | null;
   maximum_actions: number;
@@ -27,11 +31,16 @@ interface Page {
   total: number;
   next_cursor: string | null;
 }
-function format(value: number | undefined, definition?: ObjectiveDefinition) {
-  if (value === undefined || !Number.isFinite(value)) return "Unavailable";
+function format(
+  value: number | null | undefined,
+  definition?: ObjectiveDefinition,
+) {
+  if (value == null || !Number.isFinite(value)) return "Unavailable";
   if (definition?.unit === "probability") return (value * 100).toFixed(2) + "%";
+  if (definition?.unit === "GP") return value.toLocaleString();
   if (definition?.unit === "percent") return value.toFixed(2) + "%";
   if (definition?.unit === "roll") return (value / 1000).toFixed(2) + "k";
+  if (definition?.unit === "GP/damage") return value.toFixed(4);
   return value.toFixed(3);
 }
 async function get(path: string, signal?: AbortSignal) {
@@ -64,6 +73,8 @@ export function ObjectiveFrontier({
   const definitions = result.live?.result.objective_definitions ?? [];
   const lossCap = wildernessRiskCap(result.scenario.request);
   const wilderness = lossCap !== undefined;
+  const separateRisk =
+    wilderness && !definitions.some((d) => d.kind === "wilderness_loss_gp");
   const group = result.live?.result.objective_frontiers?.find(
     (g) => g.swap_limit === swapLimit,
   );
@@ -152,7 +163,10 @@ export function ObjectiveFrontier({
             throw new Error("Invalid objective result point.");
           if (
             lossCap !== undefined &&
-            !riskWithinBudget(point.wilderness_loss_gp, lossCap)
+            (!riskWithinBudget(point.wilderness_loss_gp, lossCap) ||
+              (point.objective_values.wilderness_loss_gp !== undefined &&
+                point.objective_values.wilderness_loss_gp !==
+                  point.wilderness_loss_gp))
           )
             throw new Error("Invalid Wilderness risk in objective result.");
           objectiveValues(
@@ -176,9 +190,15 @@ export function ObjectiveFrontier({
     setError("");
     try {
       const existing = group?.points.find((point) => point.id === id);
+      const baseline =
+        group?.baseline_solution_id === id
+          ? group.baseline_solution
+          : undefined;
+      const known = selectedLabSolution(result, id);
       const raw =
         existing?.solution ??
-        selectedLabSolution(result, id) ??
+        baseline ??
+        known ??
         (
           await get(
             encodeURIComponent(runId!) + "/solutions/" + encodeURIComponent(id),
@@ -187,6 +207,13 @@ export function ObjectiveFrontier({
       objectiveValues(
         raw.objective_values,
         canonicalObjectives(result.scenario.request.objectives ?? []),
+        id === group?.baseline_solution_id || !!known,
+      );
+      parseWildernessRisk(
+        raw.wilderness_risk,
+        result.scenario.request,
+        true,
+        raw.objective_values,
       );
       if (version === selectionVersion.current) onSelect(id, raw);
     } catch (e) {
@@ -210,7 +237,7 @@ export function ObjectiveFrontier({
     })),
   ];
   const value = (point: Point, id: string) =>
-    id === "dps" ? point.score : point.objective_values[id];
+    id === "dps" ? point.score : (point.objective_values[id] ?? NaN);
   const openLab = (event: React.MouseEvent<HTMLAnchorElement>) => {
     try {
       const token = storeLabSnapshot(
@@ -233,27 +260,46 @@ export function ObjectiveFrontier({
       <h2>Best-found objective tradeoffs</h2>
       <p>
         {page?.total ?? group.total_count ?? samples.length} distinct tradeoffs.
-        All objectives are maximized together; each row is one complete
-        configuration.
+        Each row is one complete configuration.
       </p>
+      {definitions.some((d) => d.kind === "gp_per_damage") &&
+        !samples.length && (
+          <p>
+            No priced setup with known GP/damage was found within this DPS
+            range.
+          </p>
+        )}
       <div className="objective-shortcuts" aria-label="Objective endpoints">
         {axes.map((axis) => {
+          const minimize =
+            definitions.find((d) => d.id === axis.id)?.direction === "minimize";
           const best = samples.reduce<Point | undefined>(
             (previous, point) =>
-              !previous || value(point, axis.id) > value(previous, axis.id)
+              !previous ||
+              (minimize
+                ? value(point, axis.id) < value(previous, axis.id)
+                : value(point, axis.id) > value(previous, axis.id))
                 ? point
                 : previous,
             undefined,
           );
+          const id =
+            axis.id === "dps"
+              ? (group.baseline_solution_id ?? best?.id)
+              : best?.id;
           return (
-            best && (
+            id && (
               <button
                 key={axis.id}
                 type="button"
                 disabled={selecting}
-                onClick={() => void choose(best.id)}
+                onClick={() => void choose(id)}
               >
-                Highest {axis.label}
+                {minimize
+                  ? axis.id === "gp_per_damage"
+                    ? "Lowest GP/damage"
+                    : "Lowest Wilderness loss"
+                  : "Highest " + axis.label}
               </button>
             )
           );
@@ -295,14 +341,25 @@ export function ObjectiveFrontier({
       <div className="objective-shortcuts">
         <label>
           Sort tradeoffs
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setDirection(
+                definitions.find((d) => d.id === e.target.value)?.direction ===
+                  "minimize"
+                  ? "asc"
+                  : "desc",
+              );
+            }}
+          >
             {axes.map((axis) => (
               <option key={axis.id} value={axis.id}>
                 {axis.label}
               </option>
             ))}
             <option value="purchase_cost_gp">Purchase cost</option>
-            {wilderness && (
+            {separateRisk && (
               <option value="wilderness_loss_gp">Wilderness risk</option>
             )}
             <option value="maximum_actions">Maximum actions</option>
@@ -335,11 +392,15 @@ export function ObjectiveFrontier({
                       ? " (%)"
                       : def.kind === "magic_damage_bonus"
                         ? " (%)"
-                        : ""}
+                        : def.unit === "GP"
+                          ? " (GP)"
+                          : def.unit === "GP/damage"
+                            ? " (GP/damage)"
+                            : ""}
                 </th>
               ))}
               <th>Cost (GP)</th>
-              {wilderness && <th>Risk (GP)</th>}
+              {separateRisk && <th>Risk (GP)</th>}
               <th>Actions</th>
             </tr>
           </thead>
@@ -363,7 +424,7 @@ export function ObjectiveFrontier({
                   </td>
                 ))}
                 <td>{point.purchase_cost_gp.toLocaleString()}</td>
-                {wilderness && (
+                {separateRisk && (
                   <td>
                     {point.wilderness_loss_gp?.toLocaleString() ??
                       "Unavailable"}

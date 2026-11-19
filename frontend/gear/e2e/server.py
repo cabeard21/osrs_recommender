@@ -427,7 +427,7 @@ if __name__ == "__main__":
             return {"status": "seeded", "catalog_items": len(item_ids)}
 
         @app.post("/test/seed-ammo")
-        def seed_ammo():
+        def seed_ammo(trip_prices: bool = False):
             seed_joint()
             app.state.gear_service._equipment = EquipmentCatalog(
                 {
@@ -450,18 +450,22 @@ if __name__ == "__main__":
                             observed_at=now,
                         )
                     )
-                session.merge(
-                    ItemPrice(
-                        item_id=892,
-                        high_price_gp=100,
-                        low_price_gp=95,
-                        high_trade_at=now,
-                        low_trade_at=now,
-                        fetched_at=now,
-                        provider="deterministic-browser-fixture",
-                        source=PriceSourceLayer.CACHED,
+                quotes = [(892, 100, 95)]
+                if trip_prices:
+                    quotes.extend([(861, 1200, 1100), (882, 4, 3)])
+                for item_id, high, low in quotes:
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=high,
+                            low_price_gp=low,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
                     )
-                )
                 session.commit()
             return {"status": "seeded"}
 

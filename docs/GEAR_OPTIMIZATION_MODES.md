@@ -24,10 +24,9 @@ A frozen-account replay reconstructed from the Blood Moon draft (Fast, community
 
 Auto and potion optimization report enclosing wall time in
 `search.timings_seconds`, with child timings retained per discipline and under
-`search.potion_selection.profiles`. Secondary and running-cost frontiers report
-separate phase timings, including equipment lanes, combat variants and finalist
-refinement. Running-cost diagnostics also account for preparation and publication
-outside the shared frontier explorer.
+`search.potion_selection.profiles`. Running cost uses the shared objective search when
+GP/damage is selected. Legacy scalar secondary priorities retain their frontier
+phase timings.
 
 Equipment-bonus priorities reuse option winners between DPS and metric equipment
 lanes. The bonus is constant across attacks and prayers for fixed equipment and

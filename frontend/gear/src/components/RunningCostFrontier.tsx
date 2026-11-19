@@ -65,6 +65,24 @@ export function RunningCostFrontier({
   itemName: (id: number) => string;
 }) {
   if (!group && !selected?.running_cost) return null;
+  const details = selected && (
+    <div>
+      <h3>Selected setup resource costs</h3>
+      <CostDetails cost={selected.running_cost} />
+      {Object.entries(selected.loadouts).map(([role, l]) => (
+        <details key={role} open>
+          <summary>{roleName?.(role) ?? "Loadout"} resources</summary>
+          <CostDetails cost={l.running_cost} />
+        </details>
+      ))}
+    </div>
+  );
+  if (!group)
+    return (
+      <section className="panel" aria-label="Selected setup resource costs">
+        {details}
+      </section>
+    );
   const points = group?.points ?? [];
   const numeric = points.filter(
     (p) => p.solution.running_cost?.gp_per_damage != null,
@@ -244,18 +262,7 @@ export function RunningCostFrontier({
           </table>
         </div>
       )}
-      {selected && (
-        <div>
-          <h3>Selected setup resource costs</h3>
-          <CostDetails cost={selected.running_cost} />
-          {Object.entries(selected.loadouts).map(([role, l]) => (
-            <details key={role} open>
-              <summary>{roleName?.(role) ?? "Loadout"} resources</summary>
-              <CostDetails cost={l.running_cost} />
-            </details>
-          ))}
-        </div>
-      )}
+      {details}
     </section>
   );
 }

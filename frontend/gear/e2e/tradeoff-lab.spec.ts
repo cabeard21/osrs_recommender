@@ -1,8 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-test("colored default opens a full lab for the actual optimization result", async ({
+test("colored default opens a full lab for the actual result without randomUUID", async ({
   page,
 }, testInfo) => {
+  await page.addInitScript(() => {
+    // Private HTTP lacks randomUUID, while Playwright's loopback origin has it.
+    Object.defineProperty(crypto, "randomUUID", { value: undefined });
+  });
   await page.request.post("/test/seed-optimization");
   await page.goto("/gear");
   await page

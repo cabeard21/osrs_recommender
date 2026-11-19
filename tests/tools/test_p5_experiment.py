@@ -384,20 +384,19 @@ def test_execute_service_preserves_mode_and_sidecar(native):
 
 
 @pytest.mark.parametrize("native", [False, True])
-def test_archive_execution_preserves_complete_and_forced_cost_flags(monkeypatch, native):
+def test_archive_execution_preserves_complete_and_forced_cost_objective(monkeypatch, native):
+    from tools.gear_search_quality_fixture import load_case
     from tracker.gear import optimizer
 
     seen = {}
-    case = SimpleNamespace(
-        snapshot="snapshot",
-        request="request",
-        prices="prices",
-        at="time",
-        catalog="catalog",
-        content="content",
-    )
+    original = load_case("melee_1m")
+    case, meta = p5.cost_objective_case(original, {})
+    assert meta["source_secondary_priority"] == original.request.secondary_priority
+    assert meta["diagnostic_objectives"] == ["gp_per_damage"]
+    assert case.request.secondary_priority == "default"
 
     def optimize(*args, **kwargs):
+        assert args[1].objectives[0].kind == "gp_per_damage"
         seen.update(kwargs)
         return {"archive": [1, 2, 3]}
 
@@ -407,12 +406,9 @@ def test_archive_execution_preserves_complete_and_forced_cost_flags(monkeypatch,
 
     monkeypatch.setattr(optimizer, "optimize", optimize)
     monkeypatch.setitem(p5.sys.modules, "tracker.gear.native", SimpleNamespace(capture=capture))
-    result, evidence = p5.execute(
-        case, {}, p5.RunSpec(1, native), None, archives=True, force_cost=True
-    )
+    result, evidence = p5.execute(case, {}, p5.RunSpec(1, native), None, archives=True)
     assert result == {"archive": [1, 2, 3]}
     assert seen["_complete_frontiers"] is True
-    assert seen["_running_frontier"] is True
     assert seen.get("_native_search", False) is native
     assert bool(evidence) is native
 

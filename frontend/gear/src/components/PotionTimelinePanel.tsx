@@ -255,7 +255,9 @@ export function PotionTimelinePanel({
       </div>
     );
   const data = state.data!;
-  const definitions = data.objective_definitions ?? [];
+  const definitions = (data.objective_definitions ?? []).filter(
+    (d) => !role || d.kind !== "wilderness_loss_gp",
+  );
   const objective =
     definitions.find((entry) => entry.id === objectiveId) ?? definitions[0];
   const project = (s: PotionTimelineMeasurement) => ({
@@ -298,13 +300,17 @@ export function PotionTimelinePanel({
     solution.potions?.selected_ids.some((id) => id.startsWith("divine_")) ??
     false;
   const unit =
-    priority === "magic_damage_bonus"
-      ? "%"
-      : priority.endsWith("_defence_roll") || priority === "defence_roll"
-        ? " roll"
-        : priority === "accuracy"
-          ? ""
-          : " bonus";
+    priority === "wilderness_loss_gp"
+      ? " GP"
+      : priority === "gp_per_damage"
+        ? " GP/damage"
+        : priority === "magic_damage_bonus"
+          ? "%"
+          : priority.endsWith("_defence_roll") || priority === "defence_roll"
+            ? " roll"
+            : priority === "accuracy"
+              ? ""
+              : " bonus";
   const reasons = (s: PotionTimelineMeasurement) =>
     Object.entries(s.roles)
       .filter(([id]) => !role || role === id)

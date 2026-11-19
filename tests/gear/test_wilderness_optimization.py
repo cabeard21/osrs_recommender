@@ -190,3 +190,52 @@ def test_protect_item_requires_level_25_prayer(make_content):
     request = request_for(skulled=True, protect_item=True)
     with pytest.raises(ValueError, match="Protect Item requires level 25 Prayer"):
         optimize(snapshot, request, catalog, make_content(), prices, NOW)
+
+
+def test_fixed_trip_keeps_purchase_cap_and_reports_uncapped_loss(make_content):
+    snapshot, catalog, prices = scenario(owned=(4151,))
+    legacy = request_for(skulled=True, protect_item=False)
+    payload = legacy.model_dump()
+    payload["wilderness"]["attacks_per_setup"] = 100
+    request = OptimizationRequest.model_validate(payload)
+    assert request.purchase_budget == 0
+    assert request.wilderness_risk_limit is None
+    content = make_content()
+    gear = {"weapon": 4151}
+    fixed = evaluate_configurations(snapshot, request, gear, gear, catalog, content, prices, NOW)
+    assert fixed["proposed"]["status"] == "valid"
+    solution = optimize(snapshot, request, catalog, content, prices, NOW)["selected_solution"]
+    assert fixed["proposed"]["wilderness_risk"] == solution["wilderness_risk"]
+    assert solution["wilderness_risk"]["loss_gp"] == 1_000_000
+
+
+@pytest.mark.parametrize(
+    ("loss_cap", "priced", "feasible"),
+    [(1_000_000, True, True), (999_999, True, False), (0, True, False), (None, False, False)],
+)
+def test_fixed_trip_qualifies_only_known_loss_within_cap(make_content, loss_cap, priced, feasible):
+    snapshot, catalog, prices = scenario(owned=(4151,))
+    request = OptimizationRequest.model_validate(
+        {
+            **request_for(skulled=True, protect_item=False).model_dump(),
+            "objectives": [{"kind": "wilderness_loss_gp"}],
+            "wilderness": {"skulled": True, "max_loss_gp": loss_cap},
+        }
+    )
+    assert request.wilderness.attacks_per_setup == 100
+    prices = prices if priced else {}
+    gear = {"weapon": 4151}
+    content = make_content()
+    fixed = evaluate_configurations(snapshot, request, gear, gear, catalog, content, prices, NOW)
+    proposed = fixed["proposed"]
+    assert (proposed["status"] == "valid") == feasible
+    assert proposed["wilderness_risk"]["loss_gp"] == (1_000_000 if priced else None)
+    from tracker.gear.objective_store import close_result_archives
+
+    result = optimize(snapshot, request, catalog, content, prices, NOW)
+    try:
+        assert (result["selected_solution"] is not None) == feasible
+        if not feasible:
+            assert any("known departure loss" in note for note in result["limitations"])
+    finally:
+        close_result_archives(result)

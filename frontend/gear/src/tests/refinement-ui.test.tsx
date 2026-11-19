@@ -355,3 +355,58 @@ it("copies real purchase IDs and reports clipboard failure", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent(/Could not copy/);
   expect(screen.getByText(/Rune scimitar \(#1333\)/)).toBeVisible();
 });
+
+it.each([null, 1.25])(
+  "shows a running cost change for a baseline costing %s",
+  (original) => {
+    const previous = trialExample();
+    const trial = {
+      ...previous,
+      live: {
+        ...previous.live,
+        objective_definitions: [
+          {
+            id: "gp_per_damage",
+            kind: "gp_per_damage" as const,
+            label: "Running cost",
+            unit: "GP/damage" as const,
+            direction: "minimize" as const,
+          },
+        ],
+        baseline: {
+          ...previous.live.baseline,
+          objective_values: { gp_per_damage: original },
+        },
+        proposed: {
+          ...previous.live.proposed,
+          objective_values: { gp_per_damage: 0 },
+        },
+        deltas: {
+          ...previous.live.deltas!,
+          objective_values: {
+            gp_per_damage: original === null ? null : -original,
+          },
+        },
+      },
+    };
+    render(
+      <TrialComparison
+        trial={trial}
+        onRevert={vi.fn()}
+        onLock={vi.fn()}
+        itemName={String}
+      />,
+    );
+    const [before, after, change] = within(
+      screen.getByRole("row", { name: /GP\/damage/ }),
+    ).getAllByRole("cell");
+    expect(before).toHaveTextContent(
+      original === null ? "Unavailable" : "1.2500",
+    );
+    expect(after).toHaveTextContent("0.0000");
+    expect(change).toHaveTextContent(
+      original === null ? "Unavailable" : "-1.2500",
+    );
+    expect(change).toHaveClass(original === null ? "muted" : "green");
+  },
+);

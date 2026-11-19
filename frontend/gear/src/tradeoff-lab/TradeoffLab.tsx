@@ -64,9 +64,13 @@ function Metrics({
           <dd
             className={
               metricValue(point, m.key) > metricValue(baseline, m.key)
-                ? "lab-gain"
-                : metricValue(point, m.key) < metricValue(baseline, m.key)
+                ? m.direction === "minimize"
                   ? "lab-loss"
+                  : "lab-gain"
+                : metricValue(point, m.key) < metricValue(baseline, m.key)
+                  ? m.direction === "minimize"
+                    ? "lab-gain"
+                    : "lab-loss"
                   : "lab-muted"
             }
           >
@@ -326,7 +330,7 @@ export default function TradeoffLab({ data = example }: { data?: LabExample }) {
                               <div className="lab-bar-track">
                                 <span
                                   style={{
-                                    width: `${normalizeMetric(metricValue(point, m.key), metricBounds(data.points, m.key)) * 100}%`,
+                                    width: `${!Number.isFinite(metricValue(point, m.key)) ? 0 : normalizeMetric(metricValue(point, m.key), metricBounds(data.points, m.key)) * 100}%`,
                                   }}
                                 />
                               </div>
@@ -428,14 +432,21 @@ export default function TradeoffLab({ data = example }: { data?: LabExample }) {
           <div className="lab-endpoints">
             <span>Jump to an objective leader</span>
             {metrics.map((metric) => {
-              const leader = metricLeader(data.points, metric.key)!;
+              const leader = metricLeader(
+                data.points,
+                metric.key,
+                metric.direction,
+              );
+              if (!leader) return null;
               return (
                 <button
                   type="button"
                   key={metric.key}
                   onClick={() => setSelectedId(leader.id)}
                 >
-                  Highest {metric.shortLabel}
+                  {metric.direction === "minimize"
+                    ? "Lowest " + metric.shortLabel
+                    : "Highest " + metric.shortLabel}
                 </button>
               );
             })}

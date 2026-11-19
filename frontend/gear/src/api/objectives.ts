@@ -13,6 +13,8 @@ export const atomicObjectives = [
   ["melee_strength_bonus", "Melee strength"],
   ["ranged_strength_bonus", "Ranged strength"],
   ["magic_damage_bonus", "Magic damage"],
+  ["gp_per_damage", "Running cost (GP per damage)"],
+  ["wilderness_loss_gp", "Wilderness loss if PK’d (GP)"],
   ["accuracy", "Accuracy"],
 ] as const;
 export type AtomicObjective = (typeof atomicObjectives)[number][0];
@@ -27,7 +29,8 @@ export interface ObjectiveDefinition {
   id: string;
   kind: Objective["kind"];
   label: string;
-  unit: "roll" | "bonus" | "probability" | "percent";
+  unit: "roll" | "bonus" | "probability" | "percent" | "GP/damage" | "GP";
+  direction?: "maximize" | "minimize";
   styles?: DefenceStyle[];
   aggregation?: "minimum" | "mean";
 }
@@ -38,7 +41,7 @@ export function objectiveId(goal: Objective): string {
 }
 export function canonicalObjectives(value: unknown): Objective[] {
   if (!Array.isArray(value))
-    throw new Error("Choose up to 62 distinct objectives.");
+    throw new Error("Choose up to 64 distinct objectives.");
   const goals = value.map((entry: unknown): Objective => {
     if (!entry || typeof entry !== "object")
       throw new Error("Invalid objective.");
@@ -152,22 +155,37 @@ export function quickSelection(goals: Objective[]) {
 export function objectiveValues(
   value: unknown,
   expected: Objective[],
-): Record<string, number> {
+  allowUnavailableCost = false,
+): Record<string, number | null> {
   if (value === undefined && expected.length === 0) return {};
-  if (!value || typeof value !== "object")
+  if (
+    value === undefined &&
+    allowUnavailableCost &&
+    expected.every((goal) => goal.kind === "gp_per_damage")
+  )
+    return { gp_per_damage: null };
+  if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Missing objective measurements.");
   const measurements = value as Record<string, unknown>,
     ids = expected.map(objectiveId);
   if (
-    Object.keys(measurements).length !== ids.length ||
-    ids.some(
-      (id) =>
-        typeof measurements[id] !== "number" ||
-        !Number.isFinite(measurements[id]),
-    )
+    Object.keys(measurements).some((key) => !ids.includes(key)) ||
+    ids.some((id) => {
+      const v = measurements[id];
+      if (id === "gp_per_damage" && allowUnavailableCost && v == null)
+        return false;
+      return (
+        typeof v !== "number" ||
+        !Number.isFinite(v) ||
+        (id === "gp_per_damage" && v < 0) ||
+        (id === "wilderness_loss_gp" && (!Number.isSafeInteger(v) || v < 0))
+      );
+    })
   )
     throw new Error(
       "Objective measurements do not match the submitted objectives.",
     );
-  return measurements as Record<string, number>;
+  return Object.fromEntries(
+    ids.map((id) => [id, (measurements[id] as number | null) ?? null]),
+  );
 }

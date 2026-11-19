@@ -1,4 +1,5 @@
 import type {
+  Draft,
   Role,
   Scenario,
   WildernessDeathSettings,
@@ -34,9 +35,26 @@ export function isWildernessDeathSettings(
   );
 }
 
+export function fixedTrip(draft: Pick<Draft, "objectives">): boolean {
+  return !!draft.objectives?.some(
+    (objective) => objective.kind === "wilderness_loss_gp",
+  );
+}
+export function limitTripLoss(draft: Draft): boolean {
+  return (
+    draft.wildernessLimitLoss ??
+    (!!draft.wildernessRiskBudget && draft.wildernessRiskBudget !== "0")
+  );
+}
+
 export function wildernessRiskCap(
-  request: Pick<Scenario["request"], "wilderness" | "budget_gp">,
-): number | undefined {
+  request: Pick<Scenario["request"], "wilderness" | "budget_gp" | "objectives">,
+): number | null | undefined {
+  if (
+    request.wilderness &&
+    (request.wilderness.attacks_per_setup != null || fixedTrip(request))
+  )
+    return request.wilderness.max_loss_gp ?? null;
   return request.wilderness
     ? (request.wilderness.max_loss_gp ?? request.budget_gp)
     : undefined;
@@ -45,11 +63,21 @@ export function wildernessRiskCap(
 /** Historical API responses omitted the separate risk cap or spell casts. */
 export function normalizedWilderness(
   value: unknown,
+  objectives?: unknown,
 ): Record<string, unknown> | null {
   if (value == null) return null;
   const policy = object(value);
   return {
     ...policy,
+    ...(Array.isArray(objectives) &&
+    objectives.some((o) => o?.kind === "wilderness_loss_gp")
+      ? {
+          attacks_per_setup:
+            policy.attacks_per_setup ??
+            policy.spell_casts ??
+            DEFAULT_WILDERNESS_SPELL_CASTS,
+        }
+      : {}),
     max_loss_gp: policy.max_loss_gp ?? null,
     spell_casts: policy.spell_casts ?? null,
   };
@@ -71,13 +99,13 @@ const outcomes = new Set([
 
 export function riskWithinBudget(
   value: unknown,
-  maxRisk: number,
+  maxRisk: number | null,
 ): value is number {
   return (
     typeof value === "number" &&
     Number.isSafeInteger(value) &&
     value >= 0 &&
-    value <= maxRisk
+    (maxRisk === null || value <= maxRisk)
   );
 }
 
@@ -85,6 +113,7 @@ export function parseWildernessRisk(
   value: unknown,
   request: Scenario["request"],
   feasible = true,
+  objectiveValues?: unknown,
 ): WildernessRisk | undefined {
   const cap = wildernessRiskCap(request);
   if (value == null) {
@@ -103,6 +132,12 @@ export function parseWildernessRisk(
     !Array.isArray(row.quantities)
   )
     throw new Error("Invalid Wilderness risk estimate");
+  if (
+    feasible &&
+    request.objectives?.some((o) => o.kind === "wilderness_loss_gp") &&
+    object(objectiveValues ?? {}).wilderness_loss_gp !== row.loss_gp
+  )
+    throw new Error("Wilderness objective does not match the estimated loss");
   for (const value of row.items) {
     const item = requireFields(value, { outcome: "string" });
     if (

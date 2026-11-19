@@ -23,10 +23,14 @@ from typing import Any
 
 from tools.gear_search_quality_fixture import load_case
 from tools.profile_gear_frontiers import load_profile_case
+from tracker.gear.objective_store import materialize_result_archives
+from tracker.gear.objectives import BONUSES
 from tracker.gear.optimizer import CombatOptionFilters, OptimizationRequest, optimize
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.potions import PotionPolicy
 from tracker.gear.prayers import PrayerPolicy
+from tracker.gear.priorities import ROLL_METRICS
+from tracker.gear.vector_publish import FrontierPoints
 
 CASES = (
     "single_melee",
@@ -65,7 +69,7 @@ def without_observations(value: Any, path: tuple[str, ...] = ()) -> Any:
                 and "search" in path
             )
         }
-    if isinstance(value, (tuple, list)):
+    if isinstance(value, (tuple, list, FrontierPoints)):
         return [without_observations(row, path) for row in value]
     return value
 
@@ -92,6 +96,28 @@ def case_provenance(case: Any, **extra: Any) -> dict[str, Any]:
         "evaluated_at": case.at.isoformat(),
         "inputs_sha256": _hash(frozen_inputs(case)),
     }
+
+
+def cost_objective_case(case: Any, provenance: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+    """Describe the effective diagnostic request, including the legacy scalar it replaces."""
+    request = case.request.model_dump()
+    descriptors = [*(request.get("objectives") or ()), {"kind": "gp_per_damage"}]
+    priority = case.request.secondary_priority
+    if priority in BONUSES or priority == "accuracy":
+        descriptors.append({"kind": priority})
+    elif priority in ROLL_METRICS:
+        styles, aggregation = ROLL_METRICS[priority]
+        descriptors.append({"kind": "defence_roll", "styles": styles, "aggregation": aggregation})
+    cost_request = OptimizationRequest.model_validate(
+        {**request, "secondary_priority": "default", "objectives": descriptors}
+    )
+    variant = replace(case, request=cost_request)
+    metadata = {
+        **provenance,
+        "source_secondary_priority": case.request.secondary_priority,
+        "diagnostic_objectives": [obj.id for obj in cost_request.objectives or ()],
+    }
+    return variant, case_provenance(variant, **metadata)
 
 
 def load_benchmark_case(name: str) -> tuple[Any, dict[str, Any]]:
@@ -134,12 +160,16 @@ def load_benchmark_case(name: str) -> tuple[Any, dict[str, Any]]:
         case = replace(
             case, name=name, request=OptimizationRequest.model_validate(request.model_dump())
         )
-    return case, case_provenance(
+    provenance = case_provenance(
         case,
         account_source=f"fixture:{fixture}",
         original_account_replayed=False,
         optimization_mode="thorough" if name == "defence_roll" else "fast",
         diagnostic=name == "ranged_diagnostic",
+    )
+
+    return (
+        cost_objective_case(case, provenance) if name == "ranged_diagnostic" else (case, provenance)
     )
 
 
@@ -179,7 +209,7 @@ def benchmark(
     output.mkdir(parents=True, exist_ok=True)
     options = {"local_refinement": provenance.get("optimization_mode") == "thorough"}
     if provenance.get("diagnostic"):
-        options = {**options, "_complete_frontiers": True, "_running_frontier": True}
+        options = {**options, "_complete_frontiers": True}
     args = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
     pool = None
     if workers:
@@ -205,6 +235,7 @@ def benchmark(
             with ranged_experiment(ranged_cache) if ranged_cache is not None else nullcontext():
                 result = runner(*args, **options)
             seconds = perf_counter() - started
+            result = materialize_result_archives(result)
             digest = result_digest(result)
             if expected is not None and expected != digest:
                 raise ValueError(f"Result parity failed on iteration {index}")
@@ -225,6 +256,7 @@ def benchmark(
                 with ranged_experiment(ranged_cache) if ranged_cache is not None else nullcontext():
                     result = runner(*args, **options)
                 _, peak = tracemalloc.get_traced_memory()
+                result = materialize_result_archives(result)
                 if result_digest(result) != expected:
                     raise ValueError("Result parity failed during memory pass")
                 memory_report = {

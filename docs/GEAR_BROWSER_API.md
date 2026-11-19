@@ -25,9 +25,22 @@ access, and results report `purchase_cost_gp` alongside estimated loss.
 }
 ```
 
-Omit `wilderness` or send `null` for purchase-only planning. Older Wilderness
-requests omit `max_loss_gp` and use `budget_gp` as the risk cap with uncapped
-purchases. An explicit `max_loss_gp: null` is the same legacy form.
+Omit `wilderness` or send `null` for purchase-only planning. In legacy
+cap-based packing, an omitted or null `max_loss_gp` uses `budget_gp` as the
+risk cap with uncapped purchases.
+
+Selecting `{"kind":"wilderness_loss_gp"}` or setting `wilderness.attacks_per_setup`
+enables fixed-trip packing. In this mode `budget_gp` caps purchases and an omitted
+or null `max_loss_gp` permits any known loss. Zero enforces zero loss. The objective
+requires Wilderness settings and minimizes the reported `wilderness_risk.loss_gp`
+for all carried gear and supplies at departure, including utility switches.
+
+Set `attacks_per_setup` to 1–10,000 attacks per ordinary setup. When selecting
+the objective, it defaults to the supplied `spell_casts` or 100. If both counts
+are present they must agree. Shared supplies are combined and expected ammo
+consumption rounds up after recovery. Actual ammunition may run out early.
+The trip size stays fixed under a loss cap. Only setups with a known loss
+qualify for selection, the DPS reference, and the risk frontier.
 
 `depth` accepts `level_1_20` or `level_21_plus`. `skulled` and `protect_item` are
 strict booleans. Standard unskulled and skulled deaths protect up to three and zero
@@ -43,7 +56,7 @@ An unknown loss cannot qualify a loadout under the cap. Item outcomes include
 known drop, repair and conversion rules for the exact physical form. [Jagex's Trouver update](https://secure.runescape.com/m=news/bank-tags-trouver-system-rework--more?oldschool=1)
 
 The risk calculation covers the union of worn gear and modeled switches, counting
-shared equipment once. Ammo and charge quantities are selected within the loss
+shared equipment once. In legacy cap-based packing, ammo and charge quantities are selected within the loss
 cap and reviewed item limits while preserving protection for durable gear. The
 base role gets first priority for shared risk, followed by configured role order.
 Ammo-slot stacks get a quantity recommendation when a configured attack uses them.
@@ -897,31 +910,24 @@ Single Auto results open on **Auto overall**. Tabs for each searched discipline 
 
 The additive `result.discipline_results` list retains each searched discipline's status, reasons, selected solution, secondary frontiers, search diagnostics, limitations, and contextual alternatives. Existing overall fields retain their meaning. Switching tabs does not run another search or change the overall Auto winner.
 
-## Ranged and Magic running-cost trade-offs
+## Running cost objective
 
-`POST /ui-api/gear/optimizations` automatically returns `running_cost_frontiers`
-for ranged or Magic scenarios, using the existing complete-solution DTOs. No new
-request flag is required. Fixed Single, Single Auto, potion branches and mixed
-fixed-discipline Multi share the same cost search and recovery model. The
-frontier compares expected DPS with GP/damage; GP/hour and per-resource consumption
-remain available for inspection. Selecting a point selects the complete equipment
-and combat options, including weapon, ammunition and cape.
+Include `{"kind":"gp_per_damage"}` in the optimization request's `objectives` list
+to minimize expected GP per damage alongside DPS and the other selected metrics.
+Single, Multi, Auto and potion searches publish alternatives in `objective_frontiers`.
+Omitting the objective skips cost exploration. New runs return an empty
+`running_cost_frontiers` list. Selected setups still report aggregate and per-role
+running costs, including GP/hour, GP/attack and resource or charging details.
 
-All supported ranged weapons participate under the selected support policy.
-Reviewed expendable thrown weapons are recurring ammunition costs and are exempt
-from the equipment budget, just like arrows, bolts and darts. Reusable equipment
-still spends that budget. The cost model is `ordinary-resource-cost-v4` and the
-effective policy is `running-cost-frontier-v2`, with
-`activation: ranged-or-magic-v1` and
-`consumable_budget_policy: reviewed-expendable-ranged-v1`. Optimization and exact
-evaluation share these assumptions in their fingerprints. Historical results
-require a new optimization for comparison with the revised policy.
+For Multi, divide total weighted spend per second by total weighted damage per
+second across active ordinary roles. Missing resource prices or unknown recovery
+make GP/damage unavailable. The highest-DPS feasible setup remains selectable
+and sets the DPS-loss baseline even when its cost is unknown. Numeric frontier
+points require a known cost. Known zero cost is valid.
 
-Unknown costs do not become free or numerically dominate known costs. An
-unknown-cost highest-DPS baseline remains visible with the reason. Body interference
-uses the same reviewed physical-ID rules in every evaluation path. Continuous
-ordinary attacks and no ground pickup remain the assumptions; combat support,
-charge availability and community approximations are not expanded by cost recipes.
+Reviewed expendable ammunition incurs recurring costs. Reusable equipment uses
+the equipment purchase budget. All evaluations use the same frozen cost inputs
+and assume continuous ordinary attacks with no ground pickup.
 
 ### Legacy fixed-bow arrow endpoint
 
@@ -992,7 +998,10 @@ change reserved supply slots.
 searching again. Submit the original `scenario`, exact `selected_potion_ids`,
 `expected_catalog_version`, `expected_model_version`, and `loadouts` keyed by
 ordinary role ID. Each loadout contains physical `equipment`, a fixed
-`combat_option`, and `selected_prayer_ids`; special utility roles are excluded.
+`combat_option`, and `selected_prayer_ids`. When Wilderness loss is selected,
+also supply each special utility role as an equipment-only loadout so its items
+count toward trip risk. Aggregate timeline samples retain the whole trip’s loss
+at departure as boosts decay. Other requests use ordinary roles alone.
 Selected potions and prayers must match their fixed policies or optimize allowlists.
 
 The response includes snapshot/catalog/combat/decay model identity, a configuration

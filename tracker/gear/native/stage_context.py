@@ -41,7 +41,6 @@ class StageData:
     edges: array[int]
     melee: array[int]
     scored: array[int]
-    cost_data: Any
     role_names: tuple[str, ...]
     role_json: tuple[bytes, ...]
     slot_json: tuple[bytes, ...]
@@ -136,7 +135,6 @@ def pack_stage(search: Any, scoring: Any) -> StageData:
         edges=array("i", [role_indices[name] for edge in search.edges for name in edge]),
         melee=array("i", [int(role.style in {"stab", "slash", "crush"}) for role in roles]),
         scored=array("i", [int(role.style != "special") for role in roles]),
-        cost_data=_cost_data(search, scoring),
         role_names=role_names,
         role_json=tuple(json.dumps(name).encode("ascii") for name in role_names),
         slot_json=tuple(json.dumps(name).encode("ascii") for name in SLOT_NAMES),
@@ -152,8 +150,6 @@ def _risk_data(search: Any, dense_ids: tuple[int, ...]) -> RiskStageData | None:
     if risk is None:
         return None
     limit = search.request.wilderness_risk_limit
-    if limit is None:
-        raise ValueError("Native Wilderness stages require a risk budget")
     if type(risk.kept_slots) is not int or not 0 <= risk.kept_slots <= 4:
         raise ValueError("Native Wilderness protection requires zero to four kept items")
     priorities = risk.minimum_priorities
@@ -165,7 +161,7 @@ def _risk_data(search: Any, dense_ids: tuple[int, ...]) -> RiskStageData | None:
     # Clamping preserves the lower-bound property. Complete unions are still
     # checked with the exact Python integers and the shared death rules.
     return RiskStageData(
-        limit=limit,
+        limit=-1 if limit is None else limit,
         guarded_ammunition=array("i", [0, *(int(i in guarded) for i in items)]),
         ammunition_users=sum(
             1 << r for r, role in enumerate(roles) if role.id in search.ammunition_users
@@ -201,13 +197,6 @@ def _risk_data(search: Any, dense_ids: tuple[int, ...]) -> RiskStageData | None:
         # checks must remain admissible until the selected spells are known.
         feasible=risk.partial_feasible
         if getattr(search, "rune_limits_active", False)
+        or getattr(getattr(risk, "policy", None), "attacks_per_setup", None)
         else risk.feasible,
     )
-
-
-def _cost_data(search: Any, scoring: Any) -> Any:
-    if not getattr(search, "native_cost_objective", False):
-        return None
-    from tracker.gear.native.cost_context import pack_costs
-
-    return pack_costs(search, scoring)

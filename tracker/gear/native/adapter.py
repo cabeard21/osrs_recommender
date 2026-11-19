@@ -111,7 +111,7 @@ def expand(
         roles=tuple(role.style for role in (roles or search.request.roles)),
         frontier=getattr(search, "frontier_search", False),
         metric=getattr(search, "metric_first", False),
-        cost=getattr(search, "native_cost_objective", False),
+        cost="gp_per_damage" in getattr(search.native_context, "objective_ids", ()),
     )
     convert = _equipment_state if kind == "loadout" else _assignment_state
     return [convert(row) for row in result]

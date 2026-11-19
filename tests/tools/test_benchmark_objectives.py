@@ -5,7 +5,7 @@ import pytest
 from tools.benchmark_objectives import benchmark_case, objective_set, result_summary
 
 
-@pytest.mark.parametrize("count", [1, 3, 8, 62])
+@pytest.mark.parametrize("count", [1, 3, 8, 62, 63, 64])
 def test_frozen_cohort_has_requested_canonical_dimensions(count):
     case = benchmark_case(count)
     assert len(case.catalog.items) == 119

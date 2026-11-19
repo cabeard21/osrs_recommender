@@ -158,7 +158,11 @@ export function SecondaryPrioritySummary({
                     ? `${formatDefenceRoll(value)} roll`
                     : objective.kind === "accuracy"
                       ? `${(value * 100).toFixed(2)}% hit chance`
-                      : `${value.toFixed(2)}${objective.kind === "magic_damage_bonus" ? "%" : " bonus"}`}
+                      : objective.kind === "wilderness_loss_gp"
+                        ? `${value.toLocaleString()} GP`
+                        : objective.kind === "gp_per_damage"
+                          ? `${value.toFixed(4)} GP/damage`
+                          : `${value.toFixed(2)}${objective.kind === "magic_damage_bonus" ? "%" : " bonus"}`}
               </p>
             );
           })}

@@ -13,6 +13,8 @@ from collections import OrderedDict
 from pathlib import Path
 from time import perf_counter
 
+from tracker.gear.objective_store import materialize_result_archives
+
 
 def summarize_accesses(accesses, capacities=(4096, 16384, 65536)):
     """Check equal-key equivalence and simulate bounded chronological LRU reuse."""
@@ -77,7 +79,7 @@ def main():
     inputs = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
     options = {"local_refinement": provenance["optimization_mode"] == "thorough"}
     if args.force_frontiers or provenance.get("diagnostic"):
-        options.update(_complete_frontiers=True, _running_frontier=True)
+        options.update(_complete_frontiers=True)
     reference = optimize(*inputs, **options)
     tracemalloc.start()
     started = perf_counter()
@@ -91,6 +93,8 @@ def main():
         _, peak = tracemalloc.get_traced_memory()
     finally:
         tracemalloc.stop()
+    reference = materialize_result_archives(reference)
+    observed = materialize_result_archives(observed)
     if result_digest(reference) != result_digest(observed):
         raise ValueError("Observation changed complete optimizer results")
     report = {

@@ -91,7 +91,6 @@ from tracker.gear.prayers import (
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.progress import NULL_REPORTER, StageReporter
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
-from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
@@ -230,6 +229,17 @@ class OptimizationRequest(BaseModel):
             if self.secondary_priority != "default":
                 raise ValueError("objectives cannot be combined with nondefault secondary_priority")
             object.__setattr__(self, "objectives", canonical_objectives(self.objectives))
+        if any(goal.kind == "wilderness_loss_gp" for goal in self.objectives or ()):
+            if self.wilderness is None:
+                raise ValueError("Wilderness loss requires a wilderness policy")
+            if self.wilderness.attacks_per_setup is None:
+                object.__setattr__(
+                    self,
+                    "wilderness",
+                    self.wilderness.model_copy(
+                        update={"attacks_per_setup": self.wilderness.spell_casts or 100}
+                    ),
+                )
         ids = {r.id for r in self.roles}
         if len(ids) != len(self.roles):
             raise ValueError("role IDs must be unique")
@@ -293,7 +303,11 @@ class OptimizationRequest(BaseModel):
 
     @property
     def purchase_budget(self) -> int | None:
-        if self.wilderness is not None and self.wilderness.max_loss_gp is None:
+        if (
+            self.wilderness is not None
+            and self.wilderness.max_loss_gp is None
+            and self.wilderness.attacks_per_setup is None
+        ):
             return None
         return self.budget_gp
 
@@ -302,7 +316,9 @@ class OptimizationRequest(BaseModel):
         if self.wilderness is None:
             return None
         limit = self.wilderness.max_loss_gp
-        return self.budget_gp if limit is None else limit
+        return (
+            self.budget_gp if limit is None and self.wilderness.attacks_per_setup is None else limit
+        )
 
     def prepared_weapon_locks(self) -> OptimizationRequest:
         """A locked uncharged edition requests its disclosed usable preparation.
@@ -443,7 +459,6 @@ def _assignment_state(loadouts: Any) -> Any:
 
 class _Search:
     vector_search: Any
-    native_cost_objective: bool = False
     running_prices: Mapping[int, PriceRecord]
     running_at: datetime
 
@@ -458,9 +473,12 @@ class _Search:
         *,
         reporter: StageReporter = NULL_REPORTER,
         wilderness: WildernessRisk | None = None,
+        running_cost_inputs: tuple[Mapping[int, PriceRecord], datetime] | None = None,
     ) -> None:
         # Telemetry only; shared by frontier copies so their work is reported too.
         self.reporter = reporter
+        if running_cost_inputs is not None:
+            self.running_prices, self.running_at = running_cost_inputs
         request = request.model_copy(
             update={
                 "roles": tuple(
@@ -475,7 +493,7 @@ class _Search:
         self.wilderness = wilderness
         self.rune_limits_active = (
             wilderness is not None
-            and wilderness.policy.spell_casts is not None
+            and (wilderness.policy.attacks_per_setup or wilderness.policy.spell_casts) is not None
             and any(role.style == "magic" for role in request.roles)
         )
         if self.rune_limits_active:
@@ -495,7 +513,7 @@ class _Search:
                     },
                     {"spell": {"attack_type": "magic", "spell": spell}},
                     items,
-                    wilderness.policy.spell_casts,
+                    wilderness.policy.attacks_per_setup or wilderness.policy.spell_casts,
                 )
 
             @lru_cache(maxsize=16_384)
@@ -1478,6 +1496,23 @@ class _Search:
                 needed.add(ammo)
         return needed >= carried
 
+    def trip_report(
+        self,
+        loadouts: Mapping[str, Mapping[str, int]],
+        options: Mapping[str, Mapping[str, Any] | None],
+    ) -> dict[str, Any] | None:
+        if self.wilderness is None or self.wilderness.policy.attacks_per_setup is None:
+            return None
+        return self.wilderness.trip_report(
+            loadouts, options, self.items, styles={r.id: r.style for r in self.request.roles}
+        )
+
+    def trip_fits(self, report: Mapping[str, Any] | None) -> bool:
+        if report is None:
+            return True
+        assert self.wilderness is not None
+        return self.wilderness.trip_fits(report)
+
     def wilderness_report(
         self, loadouts: Mapping[str, Mapping[str, int]], base: str, runes: Mapping[int, int]
     ) -> dict[str, Any]:
@@ -1514,7 +1549,10 @@ class _Search:
 
         assert self.wilderness is not None
         return wilderness_spell_runes(
-            loadouts, options, self.items, self.wilderness.policy.spell_casts
+            loadouts,
+            options,
+            self.items,
+            self.wilderness.policy.attacks_per_setup or self.wilderness.policy.spell_casts,
         )
 
     def complete_runes_fit(
@@ -2077,7 +2115,8 @@ class _Search:
             role.id: self.combat_option(loadouts[role.id], role) for role in self.request.roles
         }
         runes = self.runes_for_loadouts(loadouts, options)
-        if not self.complete_runes_fit(carried, runes):
+        trip = self.trip_report(loadouts, options)
+        if not self.trip_fits(trip) or not self.complete_runes_fit(carried, runes):
             return self.rune_alternative_solution(loadouts, limit)
         runes = runes or {}
         reserved = max(self.request.reserved_supply_slots, len(runes))
@@ -2153,7 +2192,7 @@ class _Search:
             "potions": None,
         }
         if self.wilderness is not None:
-            result["wilderness_risk"] = self.wilderness_report(loadouts, base, runes)
+            result["wilderness_risk"] = trip or self.wilderness_report(loadouts, base, runes)
         if hasattr(self, "running_prices"):
             from tracker.gear.running_frontier import add_solution_costs
 
@@ -2189,6 +2228,36 @@ def _solution_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         len((solution.get("potions") or {}).get("selected_ids", ())),
         loadout_tie(solution),
     )
+
+
+def _objective_winner_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    """Rank DPS baselines consistently across vector search and branch merges."""
+    values = solution.get("objective_values", {})
+    if (
+        "wilderness_loss_gp" in values
+        or "gp_per_damage" in values
+        or any(
+            definition["id"] == "gp_per_damage"
+            for definition in solution.get("objective_definitions", ())
+        )
+    ):
+        from tracker.gear.vector_archive import resource_tie
+
+        cost = values.get("gp_per_damage")
+        remaining = tuple(
+            -values[key]
+            for key in sorted(values)
+            if key not in {"gp_per_damage", "wilderness_loss_gp"}
+        )
+        return (
+            -solution["score"],
+            cost is None,
+            cost or 0,
+            values.get("wilderness_loss_gp", 0),
+            remaining,
+            resource_tie(solution),
+        )
+    return _solution_key(solution)
 
 
 def _action_lower_bound(
@@ -2320,7 +2389,7 @@ def prepare_optimization(
         WildernessRisk.build(
             request.wilderness, risk_limit, catalog.items, facts, price_records, now
         )
-        if request.wilderness is not None and risk_limit is not None
+        if request.wilderness is not None
         else None,
     )
 
@@ -2395,7 +2464,6 @@ def optimize(
             targeted_head_refinement=targeted_head_refinement,
             local_refinement=local_refinement,
             _complete_frontiers=_complete_frontiers,
-            _running_frontier=_running_frontier,
             _prepared=_prepared,
             progress=progress,
             branch_runner=potion_branch_runner,
@@ -2416,7 +2484,6 @@ def optimize(
             local_refinement=local_refinement,
             _prepared=_prepared,
             _complete_frontiers=_complete_frontiers,
-            _running_frontier=_running_frontier,
             progress=progress,
             **execution,
         )
@@ -2440,7 +2507,6 @@ def optimize(
                 targeted_head_refinement=targeted_head_refinement,
                 local_refinement=local_refinement,
                 _complete_frontiers=_complete_frontiers,
-                _running_frontier=_running_frontier,
                 _prepared=_prepared,
                 progress=progress,
                 potion_branch_runner=potion_branch_runner,
@@ -2462,12 +2528,11 @@ def optimize(
         prepared.eligible,
         reporter=reporter,
         wilderness=prepared.wilderness,
+        running_cost_inputs=(price_records, now),
     )
     request = search.request
     candidates_at = perf_counter()
     reporter.stage("gear_search", elapsed_seconds=candidates_at - started)
-    search.running_prices = price_records
-    search.running_at = now
     search.complete_frontiers = _complete_frontiers
     vector_search = None
     if request.objectives is not None:
@@ -2693,21 +2758,30 @@ def optimize(
     refined_at = perf_counter()
     reporter.stage("frontiers", elapsed_seconds=refined_at - started)
     run_secondary = request.secondary_priority != "default"
-    run_running = _running_frontier or needs_running_cost_frontier(request, search.eligible)
-    frontier_units = int(vector_search is not None) + int(run_secondary) + int(run_running)
+    from tracker.gear.running_frontier import (
+        needs_running_cost_frontier,
+        running_cost_assumptions,
+        running_cost_policy,
+    )
+
+    frontier_units = int(vector_search is not None) + int(run_secondary)
     if vector_search is not None:
         reporter.segment(0, frontier_units)
         vector_result = vector_search.explore([*winners, unrestricted])
         objective_frontiers = vector_result["groups"]
         objective_diagnostics = vector_result["diagnostics"]
-        archive_winners = {
-            archive: min(archive.iter_solutions(), key=_solution_key, default=None)
-            for archive in dict.fromkeys(vector_search.archives.values())
-        }
-        winners = [
-            archive_winners[vector_search.archives[cap]] for cap in range(request.max_swaps + 1)
-        ]
-        unrestricted = archive_winners[vector_search.archives[None]]
+        if needs_running_cost_frontier(request):
+            winners = [vector_search.baselines[cap] for cap in range(request.max_swaps + 1)]
+            unrestricted = vector_search.baselines[None]
+        else:
+            archive_winners = {
+                archive: min(archive.iter_solutions(), key=_objective_winner_key, default=None)
+                for archive in dict.fromkeys(vector_search.archives.values())
+            }
+            winners = [
+                archive_winners[vector_search.archives[cap]] for cap in range(request.max_swaps + 1)
+            ]
+            unrestricted = archive_winners[vector_search.archives[None]]
     secondary_frontiers: list[dict[str, Any]] = []
     frontier_diagnostics = None
     if run_secondary:
@@ -2717,26 +2791,7 @@ def optimize(
         secondary_frontiers, frontier_diagnostics, winners, unrestricted = explore(
             search, winners, unrestricted, local_refinement
         )
-    from tracker.gear.running_frontier import (
-        explore_running_costs,
-        running_cost_assumptions,
-        running_cost_policy,
-    )
 
-    running_frontiers: list[dict[str, Any]] = []
-    running_diagnostics = None
-    if run_running:
-        reporter.segment(frontier_units - 1, frontier_units)
-        running_frontiers, running_diagnostics = explore_running_costs(
-            search, winners, unrestricted, local_refinement
-        )
-        if vector_search is not None:
-            for group in running_frontiers:
-                for point in group["points"]:
-                    vector_search.offer(point["solution"])
-            vector_result = vector_search.publish()
-            objective_frontiers = vector_result["groups"]
-            objective_diagnostics = vector_result["diagnostics"]
     frontiers_at = perf_counter()
     reporter.finish()
     winners = [materialize(row) if row is not None else None for row in winners]
@@ -2806,7 +2861,7 @@ def optimize(
     }
     referenced |= {
         i
-        for group in [*secondary_frontiers, *running_frontiers, *objective_frontiers]
+        for group in [*secondary_frontiers, *objective_frontiers]
         for point in group["points"]
         for loadout in point["solution"]["loadouts"].values()
         for i in loadout["equipment"].values()
@@ -2877,7 +2932,7 @@ def optimize(
             if request.objectives is not None
             else {}
         ),
-        "running_cost_frontiers": running_frontiers,
+        "running_cost_frontiers": [],
         "running_cost_policy": running_cost_policy(request, local_refinement),
         "alternatives": alternatives,
         "suggested_swap_limit": next(
@@ -2907,7 +2962,6 @@ def optimize(
             ),
             **({"secondary_frontier": frontier_diagnostics} if frontier_diagnostics else {}),
             **({"objective_frontier": objective_diagnostics} if objective_diagnostics else {}),
-            **({"running_cost_frontier": running_diagnostics} if running_diagnostics else {}),
             **({"local_refinement": local_diagnostics} if local_diagnostics is not None else {}),
             **(
                 {"targeted_head_refinement": targeted_diagnostics}
@@ -2950,13 +3004,16 @@ def optimize(
                     "Ammo quantities use the more conservative of unit and stack protection.",
                     *(
                         ["Loose spell runes cover the chosen cast count for each Magic setup."]
-                        if request.wilderness.spell_casts is not None
+                        if (request.wilderness.attacks_per_setup or request.wilderness.spell_casts)
+                        is not None
                         and any(role.style == "magic" for role in request.roles)
                         else []
                     ),
                     *(
                         [
-                            "No reviewed loadout was found within the Wilderness risk cap."
+                            "No feasible setup with a known departure loss was found for this trip."
+                            if request.wilderness.attacks_per_setup is not None
+                            else "No reviewed loadout was found within the Wilderness risk cap."
                             if request.purchase_budget is None
                             else "No reviewed loadout met the purchase and Wilderness risk caps."
                         ]

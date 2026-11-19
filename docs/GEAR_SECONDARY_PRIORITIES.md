@@ -4,7 +4,8 @@
 
 New browser runs use an `objectives` list. DPS is always included. Quick select
 offers five defence rolls, Prayer bonus, Melee/Ranged strength, Magic damage,
-and Accuracy. Defence selections can improve their minimum or mean together,
+Accuracy, Running cost (GP per damage), and Wilderness loss if PK’d (GP) for
+Wilderness scenarios. Defence selections can improve their minimum or mean together,
 or remain independent. The expanded editor supports multiple defence groups.
 Browser-local objective presets are separate from saved gear setups.
 
@@ -12,13 +13,16 @@ A defence descriptor looks like
 `{"kind":"defence_roll","styles":["stab","ranged"],"aggregation":"minimum"}`.
 Other descriptors contain only their kind, such as `{"kind":"prayer_bonus"}`.
 Style order, duplicates, and singleton minimum/mean equivalence are canonicalized.
-There are 62 distinct secondary functions. Empty objectives means DPS only.
+There are 64 distinct secondary functions. Empty objectives means DPS only.
 Explicit objectives conflict with a nondefault `secondary_priority`. Historical
 scalar requests and results retain their original meanings.
 
 Each group is reduced within each role before Multi applies normalized active-time
-weights. Utility roles do not contribute. Dominance compares unrounded DPS and
-every objective: all components must be at least as high, with one strictly higher.
+weights. Wilderness loss counts the whole carried setup, including utility switches.
+Dominance compares unrounded DPS and every objective. A point dominates another
+when it is at least as good on every dimension and strictly better on one.
+Lower GP/damage and lower Wilderness loss are better. Combat objectives favor higher values.
+Multi divides weighted spend per second by weighted DPS to calculate GP/damage.
 Equal vectors keep one representative using existing resource and identity ties.
 Objective order is not an importance ranking. Search normalization only spreads
 candidates; it does not change objective values or dominance.
@@ -37,6 +41,14 @@ does not change the objective configuration or selected setup.
 Archives are session-only, separate from the account database, and may spill to
 temporary local SQLite files. Restart expires result references; the UI offers
 rerunning. The scalar metrics below remain supported for compatibility.
+
+### Running cost fixture
+
+On Windows, the frozen two-staff, two-spell Magic regression fixture took a median
+7.8 ms with an empty objective list and 13.4 ms with GP/damage selected. Each
+measurement used one warmup followed by five serial Python runs. Both selected
+2.519969 DPS. The cost run retained two alternatives, using Fire Blast and Wind
+Strike. These timings cover this small fixture only.
 
 ### Desktop single-roll regression check, 2026-11-16
 

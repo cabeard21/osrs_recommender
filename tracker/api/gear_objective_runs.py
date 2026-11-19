@@ -39,7 +39,7 @@ def points(
     run_id: UUID,
     group_id: Annotated[str, Path(max_length=128)],
     sort: str = Query(default="dps", max_length=256),
-    direction: Literal["asc", "desc"] = "desc",
+    direction: Literal["asc", "desc"] | None = None,
     limit: int = Query(default=50, ge=1, le=100),
     cursor: str | None = Query(default=None, max_length=2048),
 ):

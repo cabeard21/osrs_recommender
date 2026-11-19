@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { metricLeader } from "./model";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
 import {
   createLabSnapshot,
@@ -408,6 +409,26 @@ describe("live tradeoff lab snapshots", () => {
     expect(localStorage.getItem("unrelated")).toBe("keep");
   });
 
+  it("round-trips distinct sessions when randomUUID is unavailable on HTTP", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+    });
+    try {
+      const { result, group } = setup();
+      const snapshot = createLabSnapshot(result, group, "best-found");
+      const token = storeLabSnapshot(snapshot);
+      const second = storeLabSnapshot(snapshot);
+      expect(token).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+      expect(second).not.toBe(token);
+      expect(loadLabSnapshot(token)).toEqual(snapshot);
+      expect(loadLabSnapshot(second)).toEqual(snapshot);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("retains only the three newest handoffs and removes expired handoffs", () => {
     const { result, group } = setup();
     const snapshot = createLabSnapshot(result, group, "best-found");
@@ -470,4 +491,28 @@ describe("live tradeoff lab snapshots", () => {
       }),
     ).toThrow(/browser storage/i);
   });
+});
+
+it("retains an unpriced starting setup without claiming it leads running cost", () => {
+  const { result, group } = setup();
+  result.live!.result.objective_definitions = [
+    {
+      kind: "gp_per_damage",
+      id: "gp_per_damage",
+      label: "Running cost",
+      unit: "GP/damage",
+      direction: "minimize",
+    },
+  ];
+  group.points[0].solution.objective_values = { gp_per_damage: 0 };
+  const saved = loadLabSnapshot(
+    storeLabSnapshot(createLabSnapshot(result, group, "best-found")),
+  );
+  expect(
+    saved.points.find((p) => p.id === "best-found")?.values?.gp_per_damage,
+  ).toBeNull();
+  expect(
+    metricLeader(saved.points, "gp_per_damage", saved.metrics?.[1].direction)
+      ?.id,
+  ).toBe("cap8-sample");
 });

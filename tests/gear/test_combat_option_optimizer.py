@@ -229,8 +229,14 @@ def test_weakness_metadata_survives_exact_and_frontier_evaluation(auto):
     selected = result["selected_solution"]["loadouts"]["mage"]
     assert selected["combat_option"]["spell"] == "water_bolt"
     assert selected["performance"]["elemental_weakness"]["applied"]
-    assert result["secondary_frontiers"] and result["running_cost_frontiers"]
-    for groups in (result["secondary_frontiers"], result["running_cost_frontiers"]):
+    from tracker.gear.objectives import canonical_objectives
+
+    objectives = canonical_objectives([{"kind": "accuracy"}, {"kind": "gp_per_damage"}])
+    vector_request = request.model_copy(
+        update={"secondary_priority": "default", "objectives": objectives}
+    )
+    vector_result = optimize(snapshot, vector_request, catalog, content, prices, now)
+    for groups in (result["secondary_frontiers"], vector_result["objective_frontiers"]):
         points = [point for group in groups for point in group["points"]]
         assert points
         for point in points:

@@ -95,13 +95,6 @@ cdef class StageContext:
     cdef object data
     cdef long long[::1] markets, costs
     cdef int[::1] untradeable, edges, melee, scored
-    cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
-    cdef int[::1] supply_class
-    cdef int[::1] serp_head
-    cdef double[::1] serp_rate
-    cdef int supply_count
-    cdef double[::1] option_cost, option_on_hit_cost, option_per_second_cost, unit_prices, recovery
-    cdef bint cost_objective
     cdef double[::1] weights, marginals
     cdef vector[string] role_names, slot_names
     cdef int role_order[4]
@@ -111,7 +104,7 @@ cdef class StageContext:
     cdef bint acquisition_ties
     cdef long long[::1] risk_unavoidable, risk_recoverable
     cdef int[::1] risk_priorities, risk_unpriced
-    cdef int risk_kept_slots
+    cdef int risk_kept_slots, risk_dimension
     cdef object risk_feasible
     cdef int[::1] guarded_ammunition
     cdef int ammunition_users, ammunition_keepers, ammunition_attack_roles
@@ -128,22 +121,6 @@ cdef class StageContext:
         self.edges = self.data.edges
         self.melee = self.data.melee
         self.scored = self.data.scored
-        self.cost_objective = self.data.cost_data is not None
-        if self.cost_objective:
-            self.serp_head = self.data.cost_data.serp_head
-            self.serp_rate = self.data.cost_data.serp_rate
-            self.option_kind = self.data.cost_data.option_kind
-            self.option_cost = self.data.cost_data.option_cost
-            self.option_on_hit_cost = self.data.cost_data.option_on_hit_cost
-            self.option_per_second_cost = self.data.cost_data.option_per_second_cost
-            self.supply_class = self.data.cost_data.supply_class
-            self.supply_count = self.data.cost_data.supply_count
-            self.ranged_kind = self.data.cost_data.ranged_kind
-            self.ammo_valid = self.data.cost_data.ammo_valid
-            self.body_recovery = self.data.cost_data.body_recovery
-            self.torag = self.data.cost_data.torag
-            self.unit_prices = self.data.cost_data.unit_prices
-            self.recovery = self.data.cost_data.recovery
         self.weights = self.data.weights
         self.marginals = self.data.marginals
         self.purchase_budget = -1 if self.data.purchase_budget is None else self.data.purchase_budget
@@ -152,6 +129,8 @@ cdef class StageContext:
         self.rune_option_allowed = (
             search.rune_option_allowed if getattr(search, "rune_limits_active", False) else None
         )
+        self.risk_dimension = (scoring.objective_ids.index("wilderness_loss_gp") + 1
+                               if "wilderness_loss_gp" in scoring.objective_ids else -1)
         self.risk_feasible = None
         if self.data.risk is not None:
             self.risk_budget = self.data.risk.limit
@@ -214,7 +193,7 @@ cdef class StageContext:
                 return False
         return True
 
-    cdef bint wilderness_bound(self, const Candidate* row, int slot) noexcept:
+    cdef bint wilderness_bound(self, const Candidate* row, int slot, double* bound=NULL) noexcept:
         """Deduct unavoidable costs plus losses outside the best possible protection."""
         cdef int distinct[44]
         cdef int count = 0, r, s, item, j
@@ -245,16 +224,22 @@ cdef class StageContext:
                 distinct[count] = item
                 count += 1
                 amount = self.risk_unavoidable[item]
-                if amount > remaining:
-                    return False
-                remaining -= amount
+                if bound != NULL:
+                    bound[0] += amount
+                if self.risk_budget >= 0:
+                    if amount > remaining:
+                        return False
+                    remaining -= amount
                 amount = self.risk_recoverable[item]
                 for j in range(self.risk_kept_slots):
                     if amount > saved[j]:
                         amount, saved[j] = saved[j], amount
-                if amount > remaining:
-                    return False
-                remaining -= amount
+                if bound != NULL:
+                    bound[0] += amount
+                if self.risk_budget >= 0:
+                    if amount > remaining:
+                        return False
+                    remaining -= amount
         if needs_protection:
             for j in range(count):
                 if self.risk_unpriced[distinct[j]] == 1 and self.wilderness_could_expose(distinct, count, j):
@@ -316,10 +301,10 @@ cdef class StageContext:
         cdef int count = 0, s, j, k, item, role, dimension
         cdef long long cost = 0
         cdef bint duplicate, later, supported
-        cdef double maximum[63]
-        cdef Sum totals[63]
+        cdef double maximum[65]
+        cdef Sum totals[65]
         cdef Sum weight = Sum(0.0, 0.0)
-        cdef double denominator
+        cdef double denominator, risk_bound = 0.0
         cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
         if row.slots[0] and row.slots[1] and self.scoring.two_handed[row.slots[0]]:
             return False
@@ -360,7 +345,7 @@ cdef class StageContext:
                 cost += self.costs[item]
         if not self.purchase_fits(physical, count, cost, slot < 3):
             return False
-        if self.risk_feasible is not None and not self.wilderness_bound(row, slot):
+        if self.risk_feasible is not None and not self.wilderness_bound(row, slot, &risk_bound):
             return False
         memset(totals, 0, sizeof(totals))
         for j in range(nroles):
@@ -383,6 +368,8 @@ cdef class StageContext:
         denominator = value(&weight) or 1.0
         for dimension in range(dimensions):
             output[dimension] = value(&totals[dimension]) / denominator
+        if self.risk_dimension >= 0:
+            output[self.risk_dimension] = -risk_bound
         return True
 
     cdef void identity(self, Candidate* row) except *:
@@ -436,51 +423,6 @@ cdef class StageContext:
             result -= old[0] != 0 and new[0] == 0
         return result
 
-    cdef double attack_cost(self, const int* slots, Score* score) noexcept:
-        cdef int option = score.option_index
-        cdef int cost_index
-        cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
-        cdef double rate, head_cost = 0.0, quantity = 1.0
-        if not score.supported or option < 0:
-            return -1
-        if self.serp_head[slots[3]]:
-            if self.serp_rate[option] < 0:
-                return -1
-            head_cost = self.serp_rate[option] * score.interval
-        for slot in range(11):
-            if self.torag[slots[slot]]:
-                return -1
-        if not self.option_kind[option]:
-            cost_index = option * self.supply_count + self.supply_class[shield]
-            if self.option_cost[cost_index] < 0 or self.option_on_hit_cost[cost_index] < 0 or self.option_per_second_cost[cost_index] < 0:
-                return -1
-            return self.option_cost[cost_index] + score.accuracy * self.option_on_hit_cost[cost_index] + self.option_per_second_cost[cost_index] * score.interval + head_cost
-        if self.ranged_kind[weapon] == 3:
-            return self.unit_prices[weapon]
-        if self.ranged_kind[weapon] == 1:
-            if not ammo or not self.ammo_valid[ammo]:
-                return -1
-            source = ammo
-        elif self.ranged_kind[weapon] == 2:
-            source = weapon
-        else:
-            return -1
-        rate = self.recovery[cape]
-        if rate < 0:
-            return -1
-        if rate > 0:
-            if self.body_recovery[slots[6]] == 2:
-                rate = 0
-            elif self.body_recovery[slots[6]] == 3:
-                # This affects only the cost objective. DPS remains supported.
-                return -1
-        if self.unit_prices[source] < 0:
-            return -1
-        if self.ranged_kind[weapon] == 1 and self.scoring.reviewed_crossbow[weapon] and self.scoring.hopper_shield[shield] and ammo:
-            # evaluate() already checked physical ammunition compatibility.
-            quantity = 1.11
-        return (quantity - quantity * rate) * self.unit_prices[source] + head_cost
-
     cdef bint evaluate(self, Candidate* row, int* roles, int nroles, int slot,
                        int cap, bint metric) except -1:
         cdef int physical[44]
@@ -490,14 +432,10 @@ cdef class StageContext:
         cdef long long cost = 0
         cdef long long amount, market, untradeable = 0, strength = 0
         cdef bint duplicate, later, complete, all_melee = True
-        cdef bint costs_known = True, active_cost = False
-        cdef double attack_cost, hourly
         cdef Score score
         cdef Sum primary = Sum(0.0, 0.0)
         cdef Sum secondary = Sum(0.0, 0.0)
         cdef Sum weight = Sum(0.0, 0.0)
-        cdef Sum spend = Sum(0.0, 0.0)
-        cdef Sum damage = Sum(0.0, 0.0)
         cdef int row_roles = 1 if row.kind == 0 else self.scoring.role_count
         if self.risk_feasible is not None:
             if row.kind == 0 and slot == 2 and not self.may_equip_ammunition(row.slots, roles, nroles):
@@ -598,21 +536,6 @@ cdef class StageContext:
                 return False
             add(&weight, self.weights[r])
             add(&secondary, score.secondary * self.weights[r])
-            if self.cost_objective:
-                # CostSearch rejects unsupported included roles even at zero weight.
-                if not score.supported:
-                    costs_known = False
-                if self.weights[r] > 0:
-                    active_cost = True
-                    attack_cost = self.attack_cost(&row.slots[0 if row.kind == 0 else r * 11], &score)
-                    if attack_cost < 0 or score.interval <= 0:
-                        costs_known = False
-                    else:
-                        hourly = (attack_cost / score.interval) * 3600
-                        if not isfinite(hourly) or hourly < 0:
-                            costs_known = False
-                        add(&spend, self.weights[r] * hourly / 3600)
-                    add(&damage, self.weights[r] * score.dps)
             if row.kind == 1:
                 for j in range(row.order_count[r]):
                     s = row.order[r * 11 + j]
@@ -623,8 +546,6 @@ cdef class StageContext:
                 add(&primary, score.dps * self.weights[r] if score.supported else 0.0)
         row.key[0] = -value(&primary)
         row.key[1] = -value(&secondary) / (value(&weight) or 1.0)
-        if self.cost_objective:
-            row.key[1] = value(&spend) / value(&damage) if costs_known and active_cost and value(&damage) > 0 else 1e100
         if row.kind == 0:
             if all_melee:
                 for s in range(11):
@@ -777,7 +698,7 @@ cdef class Expansion:
         cdef long long end, combination, consumed = 0
         cdef Candidate row
         cdef int assigned, s, dimension
-        cdef double projection[63]
+        cdef double projection[65]
         if self.kind != 0 or self.slot < 0 or self.slot >= 10:
             raise ValueError("Native projection requires a partial loadout stage")
         if type(max_attempts) is not int or not 1 <= max_attempts <= 1024:

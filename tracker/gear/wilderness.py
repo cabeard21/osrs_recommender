@@ -13,7 +13,7 @@ from math import inf
 from types import MappingProxyType
 from typing import Any, Literal
 
-from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer, model_validator
 
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.models import EquipmentDefinition, GearModel
@@ -43,6 +43,16 @@ class WildernessPolicy(GearModel):
     protect_item: bool = Field(default=False, strict=True)
     max_loss_gp: int | None = Field(default=None, ge=0, le=2**31 - 1, strict=True)
     spell_casts: int | None = Field(default=None, ge=1, le=10_000, strict=True)
+    attacks_per_setup: int | None = Field(default=None, ge=1, le=10_000, strict=True)
+
+    @model_validator(mode="after")
+    def validate_trip(self) -> WildernessPolicy:
+        if self.attacks_per_setup is not None and self.spell_casts not in (
+            None,
+            self.attacks_per_setup,
+        ):
+            raise ValueError("spell_casts and attacks_per_setup must match")
+        return self
 
     @model_serializer(mode="wrap")
     def serialize_optional_fields(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
@@ -50,8 +60,14 @@ class WildernessPolicy(GearModel):
         return {
             key: value
             for key, value in serialized.items()
-            if key not in {"max_loss_gp", "spell_casts"} or value is not None
+            if key not in {"max_loss_gp", "spell_casts", "attacks_per_setup"} or value is not None
         }
+
+    @property
+    def rules_revision(self) -> str:
+        return (
+            RULES_REVISION if self.attacks_per_setup is None else f"{RULES_REVISION}:fixed-trip-v1"
+        )
 
     @property
     def kept_slots(self) -> int:
@@ -216,7 +232,7 @@ def _physical_death_rule(
 @dataclass(frozen=True, eq=False, slots=True)
 class WildernessRisk:
     policy: WildernessPolicy
-    budget_gp: int
+    budget_gp: int | None
     rules: Mapping[int, DeathItem]
     rune_rules: Mapping[int, DeathItem] = field(default_factory=dict)
     minimum_unavoidable: Mapping[int, int] = field(init=False)
@@ -280,7 +296,7 @@ class WildernessRisk:
     def build(
         cls,
         policy: WildernessPolicy,
-        budget_gp: int,
+        budget_gp: int | None,
         items: Mapping[int, EquipmentDefinition],
         facts: Mapping[int, Mapping[str, Any]],
         prices: Mapping[int, PriceRecord],
@@ -298,7 +314,7 @@ class WildernessRisk:
             rune_rules={
                 item_id: DeathItem(GE_GUIDE[item_id], _price({}, item_id, prices, now), ammo=True)
                 for item_id in RUNE_IDS
-                if policy.spell_casts is not None and item_id in GE_GUIDE
+                if (policy.attacks_per_setup or policy.spell_casts) and item_id in GE_GUIDE
             },
         )
 
@@ -339,11 +355,13 @@ class WildernessRisk:
             rune_savings.extend([unit_gp or 0] * min(qty, self.kept_slots))
         exposed = fixed + sum(gear_savings) + rune_exposed
         savings = sum(nlargest(self.kept_slots, (*gear_savings, *rune_savings)))
-        return exposed - savings <= self.budget_gp
+        return self.budget_gp is None or exposed - savings <= self.budget_gp
 
     def rune_feasible(self, ids: Set[int], runes: Mapping[int, int] | None) -> bool:
         if runes is None:
             return False
+        if self.policy.attacks_per_setup is not None:
+            return self.rune_partial_feasible(ids, runes)
         if not runes:
             return self.feasible(ids)
         return self._minimum_runes_feasible(frozenset(ids), tuple(sorted(runes.items())))
@@ -359,7 +377,7 @@ class WildernessRisk:
     def partial_feasible(self, ids: Set[int]) -> bool:
         if not self.rules.keys() >= ids or not self.unpriced_always.isdisjoint(ids):
             return False
-        if self.lower_bound(ids) > self.budget_gp:
+        if self.budget_gp is not None and self.lower_bound(ids) > self.budget_gp:
             return False
         requiring_protection = self.requires_protection & ids
         if not requiring_protection:
@@ -384,13 +402,15 @@ class WildernessRisk:
     def _check_minimum(self, ids: frozenset[int]) -> bool:
         if not self.partial_feasible(ids):
             return False
+        if self.policy.attacks_per_setup is not None:
+            return True
         loss = self._worst(self._minimum(ids), self.kept_slots)
         return self._fits(loss)
 
     def _fits(self, result: _Loss) -> bool:
         return (
             result.loss_gp is not None
-            and result.loss_gp <= self.budget_gp
+            and (self.budget_gp is None or result.loss_gp <= self.budget_gp)
             and not result.displaces_durable_gear
         )
 
@@ -535,6 +555,43 @@ class WildernessRisk:
             for item_id in resources:
                 quantities[item_id] = self._maximize(item_id, quantities)
             result = self._worst(quantities, self.kept_slots)
+        return self._report(result, quantities, resources, runes)
+
+    def trip_fits(self, report: Mapping[str, Any]) -> bool:
+        loss = report["loss_gp"]
+        return loss is not None and (self.budget_gp is None or loss <= self.budget_gp)
+
+    def trip_report(
+        self,
+        loadouts: Mapping[str, Mapping[str, int]],
+        combat_options: Mapping[str, Mapping[str, Any] | None],
+        items: Mapping[int, EquipmentDefinition],
+        *,
+        styles: Mapping[str, str],
+    ) -> dict[str, Any]:
+        from tracker.gear.wilderness_runes import wilderness_spell_runes
+        from tracker.gear.wilderness_trip import trip_resources
+
+        attacks = self.policy.attacks_per_setup
+        if attacks is None:
+            raise ValueError("Fixed trip requires attacks_per_setup")
+        ordinary = {role: gear for role, gear in loadouts.items() if styles[role] != "special"}
+        runes = wilderness_spell_runes(ordinary, combat_options, items, attacks)
+        quantities = self._minimum({i for gear in loadouts.values() for i in gear.values()})
+        resources = trip_resources(loadouts, combat_options, styles, items, self.rules, attacks)
+        known = resources is not None and runes is not None
+        quantities.update(resources or {})
+        quantities.update(runes or {})
+        result = self._worst(quantities, self.kept_slots)
+        return self._report(result, quantities, sorted(resources or {}), runes if known else None)
+
+    def _report(
+        self,
+        result: _Loss,
+        quantities: Mapping[int, int],
+        resources: list[int],
+        runes: Mapping[int, int] | None,
+    ) -> dict[str, Any]:
         return {
             "loss_gp": result.loss_gp if runes is not None else None,
             "without_protect_item_gp": (
@@ -556,7 +613,7 @@ class WildernessRisk:
                     )
                 ),
             ],
-            "rules_revision": RULES_REVISION,
+            "rules_revision": self.policy.rules_revision,
         }
 
 

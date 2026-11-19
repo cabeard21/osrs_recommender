@@ -292,3 +292,32 @@ def test_no_account_evaluation_is_unavailable(client):
     response = client.post("/ui-api/gear/evaluations", json=body)
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "account_unavailable"
+
+
+def test_fixed_cost_objective_and_delta(client, session_factory):
+    body = evaluation_body(client, session_factory, objectives=[{"kind": "gp_per_damage"}])
+    reply = client.post("/ui-api/gear/evaluations", json=body)
+    assert reply.status_code == 200, reply.text
+    result = reply.json()
+    for side in ("baseline", "proposed"):
+        assert result[side]["objective_values"]["gp_per_damage"] == 0
+        assert result[side]["running_cost"]["gp_per_damage"] == 0
+    assert result["deltas"]["objective_values"]["gp_per_damage"] == 0
+
+
+def test_unpriced_spell_keeps_dps_and_other_objectives(client, session_factory):
+    body = evaluation_body(
+        client,
+        session_factory,
+        roles=[{"id": "single", "style": "magic", "spell": "fire_strike"}],
+        objectives=[{"kind": "gp_per_damage"}, {"kind": "accuracy"}],
+    )
+    body["baseline_loadouts"] = body["proposed_loadouts"] = {"single": {}}
+    reply = client.post("/ui-api/gear/evaluations", json=body)
+    assert reply.status_code == 200, reply.text
+    result = reply.json()
+    for side in ("baseline", "proposed"):
+        assert result[side]["performance"]["dps"] > 0
+        assert result[side]["objective_values"]["gp_per_damage"] is None
+        assert result[side]["objective_values"]["accuracy"] > 0
+    assert result["deltas"]["objective_values"] == {"accuracy": 0, "gp_per_damage": None}

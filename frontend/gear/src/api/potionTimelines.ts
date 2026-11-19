@@ -41,16 +41,27 @@ export function parsePotionTimeline(
   const objectives = result.scenario.request.objectives;
   const goals =
     objectives === undefined ? undefined : canonicalObjectives(objectives);
-  const validateObjectives = (point: Record<string, unknown>) => {
+  const validateObjectives = (
+    point: Record<string, unknown>,
+    aggregate = true,
+  ) => {
     if (!goals) return;
-    const ids = goals.map(objectiveId);
+    const ids = goals
+      .map(objectiveId)
+      .filter((id) => aggregate || id !== "wilderness_loss_gp");
     const values = object(point.objective_values ?? {});
     if (
       Object.keys(values).some((id) => !ids.includes(id)) ||
       ids.some((id) =>
-        point.dps === null
-          ? values[id] !== undefined && !nullableNumber(values[id])
-          : typeof values[id] !== "number" || !Number.isFinite(values[id]),
+        id === "wilderness_loss_gp"
+          ? !Number.isSafeInteger(values[id]) ||
+            Number(values[id]) < 0 ||
+            values[id] !== solution.wilderness_risk?.loss_gp
+          : id === "gp_per_damage"
+            ? values[id] != null && !nullableNumber(values[id], true)
+            : point.dps === null
+              ? values[id] !== undefined && !nullableNumber(values[id])
+              : typeof values[id] !== "number" || !Number.isFinite(values[id]),
       )
     )
       throw new Error("Invalid potion timeline objective measurements");
@@ -75,7 +86,7 @@ export function parsePotionTimeline(
       throw new Error("Invalid potion timeline measurement");
     for (const value of Object.values(roles)) {
       const role = object(value);
-      validateObjectives(role);
+      validateObjectives(role, false);
       if (
         !nullableNumber(role.dps, true) ||
         !nullableNumber(role.secondary_value) ||
@@ -114,9 +125,17 @@ export function parsePotionTimeline(
       "Fresh potion timeline measurements do not match the selected result",
     );
   if (goals) {
-    const expected = objectiveValues(solution.objective_values ?? {}, goals);
+    const expected = objectiveValues(
+      solution.objective_values ?? {},
+      goals,
+      true,
+    );
     for (const [id, value] of Object.entries(expected))
-      if (!close(samples[0].objective_values?.[id] ?? null, value))
+      if (
+        value === null
+          ? samples[0].objective_values?.[id] != null
+          : !close(samples[0].objective_values?.[id] ?? null, value)
+      )
         throw new Error(
           "Fresh objective timeline does not match the selected result",
         );

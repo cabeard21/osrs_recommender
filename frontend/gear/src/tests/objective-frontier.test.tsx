@@ -671,3 +671,62 @@ it("reports failed detail requests without selecting a different configuration",
   expect(await screen.findByRole("alert")).toHaveTextContent("Unable to load");
   expect(onSelect).not.toHaveBeenCalled();
 });
+
+it("selects the cheapest point and the unpriced cap DPS winner independently", async () => {
+  const cost = (dps: number, gp: number | null) => ({
+    ...solution,
+    score: dps,
+    objective_values: { gp_per_damage: gp },
+  });
+  const [baseline, pricey, cheap] = [cost(12, null), cost(11, 3), cost(9, 0)];
+  const scoped = {
+    ...result,
+    scenario: { request: { objectives: [{ kind: "gp_per_damage" }] } },
+    live: {
+      result: {
+        objective_definitions: [
+          {
+            kind: "gp_per_damage",
+            id: "gp_per_damage",
+            label: "Running cost",
+            unit: "GP/damage",
+            direction: "minimize",
+          },
+        ],
+        objective_frontiers: [
+          {
+            swap_limit: 0,
+            baseline_dps: 12,
+            baseline_solution: baseline,
+            baseline_solution_id: "unpriced",
+            points: [
+              { id: "priced", solution: pricey },
+              { id: "free", solution: cheap },
+            ],
+          },
+        ],
+      },
+    },
+    solutions: [{ id: "unpriced", live: baseline }],
+  } as unknown as OptimizationReply;
+  const onSelect = vi.fn();
+  render(
+    <ObjectiveFrontier
+      result={scoped}
+      swapLimit={0}
+      selectedId="unpriced"
+      onSelect={onSelect}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Lowest GP/damage" }));
+  expect(onSelect).toHaveBeenLastCalledWith("free", cheap);
+  await user.click(screen.getByRole("button", { name: "Highest DPS" }));
+  expect(onSelect).toHaveBeenLastCalledWith("unpriced", baseline);
+  await user.selectOptions(
+    screen.getByLabelText("Sort tradeoffs"),
+    "gp_per_damage",
+  );
+  expect(screen.getByLabelText("Sort direction")).toHaveValue("asc");
+  expect(screen.getByRole("cell", { name: "Unavailable" })).toBeVisible();
+});

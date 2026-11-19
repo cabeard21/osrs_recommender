@@ -68,3 +68,53 @@ def test_magic_damage_metadata_reports_percentage_points():
         objective_definitions((ObjectiveDescriptor(kind="magic_damage_bonus"),))[0]["unit"]
         == "percent"
     )
+
+
+def test_cost_is_minimized_without_exposing_negative_or_unknown_values():
+    from tracker.gear.objectives import objective_definitions, objective_values
+    from tracker.gear.vector_archive import VectorArchive
+
+    cost = ObjectiveDescriptor(kind="gp_per_damage")
+    assert objective_definitions([cost])[0]["direction"] == "minimize"
+    assert objective_values([cost], {}, {"gp_per_damage": 0}) == {cost.id: 0}
+    assert objective_values([cost], {}, {"gp_per_damage": None}) == {}
+    archive = VectorArchive((cost.id,))
+    try:
+        for value in (3.0, 1.0, None):
+            archive.add(
+                {
+                    "score": 9,
+                    "loadouts": {},
+                    "objective_values": {cost.id: value} if value is not None else {},
+                }
+            )
+        assert [row["objective_values"][cost.id] for row in archive.iter_solutions()] == [1.0]
+    finally:
+        archive.close()
+
+
+def test_wilderness_objective_uses_exact_trip_loss_and_minimizes_it():
+    from tracker.gear.objectives import objective_definitions, objective_values
+    from tracker.gear.vector_archive import VectorArchive
+
+    risk = ObjectiveDescriptor(kind="wilderness_loss_gp")
+    (definition,) = objective_definitions((risk,))
+    assert (definition["unit"], definition["direction"]) == ("GP", "minimize")
+    assert objective_values((risk,), {}, wilderness_risk={"loss_gp": None}) == {}
+    archive = VectorArchive((risk.id,))
+    try:
+        for score, loss in ((8, 0), (10, 100), (9, 150), (12, None)):
+            values = objective_values((risk,), {}, wilderness_risk={"loss_gp": loss})
+            archive.add(
+                {
+                    "score": score,
+                    "loadouts": {"a": {"equipment": {"head": score}}},
+                    "objective_values": values,
+                }
+            )
+        assert [(r["score"], r["objective_values"][risk.id]) for r in archive.iter_solutions()] == [
+            (10, 100),
+            (8, 0),
+        ]
+    finally:
+        archive.close()

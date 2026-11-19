@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime
+from itertools import chain
 from math import prod
 from threading import Event
 from typing import Annotated, Any, Literal
@@ -272,7 +273,7 @@ class ObjectiveProjection(DTO):
 
 class Solution(ObjectiveProjection):
     objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
-    objective_values: dict[str, float] = Field(default_factory=dict)
+    objective_values: dict[str, int | float] = Field(default_factory=dict)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
     potions: dict[str, Any] | None = None
     score: float
@@ -325,6 +326,8 @@ class ObjectiveFrontierPoint(DTO):
 
 
 class ObjectiveFrontier(DTO):
+    baseline_solution: Solution | None = None
+    baseline_solution_id: str | None = None
     view: str | None = None
     id: str | None = None
     group_id: str | None = None
@@ -644,8 +647,11 @@ def calculate(
     referenced = {r["item_id"] for r in result["items"]} | set(projection.equipment.values())
     for branch in [result, *result.get("discipline_results", [])]:
         for group in branch.get("objective_frontiers", []):
-            for point in group["points"]:
-                solution = point["solution"]
+            for solution in chain(
+                (group.get("baseline_solution"),), (point["solution"] for point in group["points"])
+            ):
+                if solution is None:
+                    continue
                 referenced.update(solution["carried_item_ids"])
                 referenced.update(p["item_id"] for p in solution["purchases"])
                 for loadout in solution["loadouts"].values():

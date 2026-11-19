@@ -52,9 +52,7 @@ export default function App() {
     equipmentStatus,
     changeEquipmentStatus,
   } = useGear();
-  const [menu, setMenu] = useState(false),
-    [handoff, setHandoff] = useState(false),
-    [copyStatus, setCopyStatus] = useState("");
+  const [menu, setMenu] = useState(false);
   const protocolRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const bar = protocolRef.current;
@@ -89,10 +87,6 @@ export default function App() {
   const navigate = (mode: "single" | "multi") => {
     location.hash = mode;
     dispatch({ type: "navigate", mode });
-  };
-  const openHandoff = () => {
-    setCopyStatus("");
-    setHandoff(true);
   };
   const handleRun = () => {
     void run();
@@ -162,34 +156,38 @@ export default function App() {
     current.draft.assumptions.acquired ||
     current.draft.assumptions.skillLevels ||
     current.draft.assumptions.completedQuests;
-  const handoffText = handoff
-    ? JSON.stringify(
-        {
-          source: liveMode
-            ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
-            : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
-          submitted: current.result?.scenario ?? null,
-          draft: current.draft,
-          result: current.result,
-          trial: current.trial,
-        },
-        null,
-        2,
-      )
-    : "";
+  const downloadHandoff = () => {
+    const handoffText = JSON.stringify(
+      {
+        source: liveMode
+          ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
+          : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
+        submitted: current.result?.scenario ?? null,
+        draft: current.draft,
+        result: current.result,
+        trial: current.trial,
+      },
+      null,
+      2,
+    );
+    const file = new Blob([handoffText], { type: "application/json" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "gear-chatgpt-handoff.json";
+    document.body.append(link);
+    try {
+      link.click();
+    } finally {
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+  };
   const pendingMessage = liveMode
     ? current.draft.optimizationMode === "thorough"
       ? "Searching supported configurations and additional complete combinations… Thorough can take substantially longer. Settings are locked until it finishes or you cancel."
       : "Searching supported configurations…"
     : "Running deterministic fixture…";
-  async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyStatus("Copied handoff text");
-    } catch {
-      setCopyStatus("Clipboard unavailable. Select and copy the text below.");
-    }
-  }
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -237,7 +235,7 @@ export default function App() {
             </strong>
             {!liveMode && <small>Account fixture</small>}
           </span>
-          <button onClick={openHandoff}>ChatGPT handoff</button>
+          <button onClick={downloadHandoff}>Download ChatGPT handoff</button>
         </header>
         <main id="main" tabIndex={-1}>
           {!liveMode && (
@@ -486,8 +484,8 @@ export default function App() {
                             ? "No additional purchases required"
                             : "No additional purchases in this fixture")}
                       </p>
-                      <button onClick={openHandoff}>
-                        Open handoff with purchases
+                      <button onClick={downloadHandoff}>
+                        Download handoff with purchases
                       </button>
                     </>
                   )}
@@ -495,11 +493,7 @@ export default function App() {
               )}
               <section className="panel">
                 <h3 className="eyebrow gold">ChatGPT // MCP handoff</h3>
-                <p>
-                  Copy a labeled scenario for discussion. No simulated assistant
-                  responses.
-                </p>
-                <button onClick={openHandoff}>Open handoff</button>
+                <button onClick={downloadHandoff}>Download handoff</button>
               </section>
             </details>
           </div>
@@ -524,25 +518,6 @@ export default function App() {
         <ErrorBoundary>
           <ItemInspector />
         </ErrorBoundary>
-      )}
-      {handoff && (
-        <Dialog title="ChatGPT handoff" onClose={() => setHandoff(false)}>
-          <p>
-            {liveMode
-              ? "Submitted Python result and separate current draft for discussion. Account observations describe the last synchronization."
-              : "Fixture-only context for your existing ChatGPT MCP workflow. No chat connection is created."}
-          </p>
-          <textarea
-            aria-label="Scenario handoff text"
-            readOnly
-            rows={14}
-            value={handoffText}
-          />
-          <button onClick={() => void copy(handoffText)}>
-            Copy handoff text
-          </button>
-          <p role="status">{copyStatus}</p>
-        </Dialog>
       )}
     </div>
   );

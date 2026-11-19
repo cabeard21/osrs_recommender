@@ -30,6 +30,7 @@ from tools.benchmark_gear_desktop import (
 )
 from tools.compare_gear_desktop import decision
 from tools.gear_process_memory import measure_process_tree
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import optimize
 
 EXTRA_CASES = (("configured_melee", 1), ("configured_magic", 1), ("configured_diagnostic", 1))
@@ -132,7 +133,6 @@ def _run(case: Any, provenance: dict[str, Any], enabled: bool, service: Any) -> 
             _fixed_reporting=True,
             _factored_evaluation=enabled,
             _complete_frontiers=True,
-            _running_frontier=True,
             **options,
         )
     return service.optimize(
@@ -186,6 +186,7 @@ def compare(
             start = perf_counter()
             result = _run(case, provenance, mode == "candidate", services[mode])
             elapsed = perf_counter() - start
+            result = materialize_result_archives(result)
             digest = result_digest(result)
             row = {
                 "profile": mode,
@@ -370,6 +371,7 @@ def compare_workers(
                     else factored_service(case, mode == "candidate", pool if workers == 3 else None)
                 )
                 result = _run(case, provenance, mode == "candidate", service)
+                result = materialize_result_archives(result)
                 digest = result_digest(result)
                 if expected is not None and expected != digest:
                     raise ValueError(f"Complete serial/worker parity failed: {mode}/{workers}")
@@ -473,6 +475,7 @@ def memory_once(
         )
         with measure_process_tree(interval=interval) as stats:
             result = _run(case, provenance, mode == "candidate", service)
+        result = materialize_result_archives(result)
         row = {
             **stats.report(),
             "case_name": provenance["case_name"],

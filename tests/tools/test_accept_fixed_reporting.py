@@ -218,12 +218,7 @@ def test_pool_cleanup_and_diagnostic_flags(tmp_path, monkeypatch):
     report = compare(base, {**p, "diagnostic": True}, tmp_path / "diagnostic")
     assert report["execution"] == "direct_diagnostic"
     assert [r["_fixed_reporting"] for r in called[:6]] == [False, True, False, True, True, False]
-    assert all(
-        r["_execution_profile"] == "combined"
-        and r["_complete_frontiers"]
-        and r["_running_frontier"]
-        for r in called
-    )
+    assert all(r["_execution_profile"] == "combined" and r["_complete_frontiers"] for r in called)
     with pytest.raises(ValueError, match="serial"):
         compare(base, {**p, "diagnostic": True}, tmp_path / "invalid", workers=3)
 

@@ -4,8 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tests.gear.test_native_effect_costs import NOW, prices
-from tracker.gear.compact_costs import CostEvaluator, aggregate_numeric_cost
+from tests.gear.test_native_effect_costs import NOW, assert_cost_projection, cost_scorer, prices
 from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 from tracker.gear.native.cost_context import pack_costs
 from tracker.gear.native.packing import support_reason
@@ -82,9 +81,8 @@ def test_mixed_body_catalog_does_not_disable_native_ranged_search():
 @pytest.mark.parametrize("weapon", [9185, 806])
 @pytest.mark.parametrize("cape", [None, 999998, 10499, 9756])
 @pytest.mark.parametrize("hopper", [False, True])
-@pytest.mark.parametrize("metric", [False, True])
-def test_unknown_recovery_affects_cost_ranking_without_rejecting_dps(weapon, cape, hopper, metric):
-    from tests.gear.test_native_stages import ScoringContext, StageContext, drain, stage_search
+def test_unknown_recovery_affects_cost_ranking_without_rejecting_dps(weapon, cape, hopper):
+    from tests.gear.test_native_stages import stage_search
 
     with stage_search() as search:
         search.items = recovery_items()
@@ -100,8 +98,7 @@ def test_unknown_recovery_affects_cost_ranking_without_rejecting_dps(weapon, cap
             }
         )
         search.running_at, search.running_prices = NOW, prices(9144, 806)
-        search.native_cost_objective = True
-        scorer = ScoringContext(search)
+        scorer = cost_scorer(search)
         base = {
             "weapon": weapon,
             **({"ammunition": 9144} if weapon == 9185 else {}),
@@ -109,43 +106,5 @@ def test_unknown_recovery_affects_cost_ranking_without_rejecting_dps(weapon, cap
             **({"shield": 32879} if hopper else {}),
         }
         choices = [None, 1127, 2503, 999999]
-        engine = CostEvaluator(search.running_prices, NOW)
-
-        def rank(equipment):
-            performance = scorer.score(equipment, 0, True)
-            recipe = engine.prepare(
-                {s: search.items[i] for s, i in equipment.items()}, {"attack_type": "ranged"}
-            )
-            numeric = recipe.score(performance["interval"], performance["dps"])
-            cost = aggregate_numeric_cost([(1, numeric, performance["dps"])])
-            return (
-                cost.gp_per_damage if cost.gp_per_damage is not None else 1e100,
-                -performance["dps"],
-                tuple(sorted(equipment.items())),
-            )
-
-        candidates = [{**base, **({"body": body} if body else {})} for body in choices]
-        actual, _ = drain(
-            StageContext(scorer, search).begin(
-                kind="loadout",
-                states=[base],
-                choices=choices,
-                slot="body",
-                roles=("z",),
-                metric=metric,
-            ),
-            8,
-        )
-        if metric:
-            assert actual == sorted(candidates, key=rank)
-        else:
-            # The unreviewed body has the best DPS even when its cost is unavailable.
-            assert actual[0]["body"] == 999999
-            assert len(actual) == len(candidates)
-        unknown = engine.prepare(
-            {s: search.items[i] for s, i in candidates[-1].items()}, {"attack_type": "ranged"}
-        )
-        if cape in {10499, 9756}:
-            assert unknown.gp_per_attack is None
-        else:
-            assert unknown.gp_per_attack is not None
+        for body in choices:
+            assert_cost_projection(search, scorer, {**base, **({"body": body} if body else {})})

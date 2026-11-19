@@ -19,6 +19,7 @@ from starlette.routing import Mount, Route
 
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.estimation.prices import PriceRecord
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.mcp.accounts import SnapshotProvider
 from tracker.mcp.settings import MCPSettings
@@ -265,17 +266,24 @@ def build_server(
             Future assumptions are request-local. Combat filters and selected attack type,
             stance, and spell (where applicable) travel through this existing operation.
             Inspect limitations and search quality.
-            Mage scenarios also include best-found running-cost frontiers. GP per damage
+            Include {"kind":"gp_per_damage"} in objectives to minimize running cost
+            alongside DPS and other selected metrics. GP per damage
             uses expected attack consumption, including staff-provided runes; unavailable
             prices or unreviewed consumption are explicitly unknown, never free.
+            Include {"kind":"wilderness_loss_gp"} with a wilderness policy to
+            minimize estimated GP lost on death. attacks_per_setup defaults to
+            100. max_loss_gp is optional for fixed trips, and budget_gp caps purchases.
             """
             account = accounts.get_snapshot()
             records = prices.get_prices()
             evaluated_at = datetime.now(UTC)
+
+            def calculate() -> dict[str, Any]:
+                result = gear.optimize(account, request, price_records=records, now=evaluated_at)
+                return materialize_result_archives(result)
+
             try:
-                return await asyncio.to_thread(
-                    gear.optimize, account, request, price_records=records, now=evaluated_at
-                )
+                return await asyncio.to_thread(calculate)
             except ValueError as exc:
                 raise ToolError(str(exc)) from exc
 

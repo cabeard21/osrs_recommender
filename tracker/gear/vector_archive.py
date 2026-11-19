@@ -12,6 +12,7 @@ from contextvars import ContextVar
 from functools import wraps
 from typing import Any
 
+from tracker.gear.objectives import MINIMIZED_OBJECTIVES
 from tracker.gear.vector_session import archive_directory, receive_archive
 
 _OWNERS: ContextVar[list[VectorArchive] | None] = ContextVar("vector_archive_owners", default=None)
@@ -89,7 +90,10 @@ def solution_vector(
 ) -> tuple[float, ...]:
     return (
         float(solution["score"]),
-        *(float(solution["objective_values"][key]) for key in objective_ids),
+        *(
+            (-1 if key in MINIMIZED_OBJECTIVES else 1) * float(solution["objective_values"][key])
+            for key in objective_ids
+        ),
     )
 
 
@@ -171,6 +175,8 @@ class VectorArchive:
         self.__dict__.update({**state, "path": receive_archive(state["path"])})
 
     def add(self, solution: Mapping[str, Any]) -> bool:
+        if any(solution["objective_values"].get(key) is None for key in self.objective_ids):
+            return False
         identity = solution_identity(solution)
         vector = solution_vector(solution, self.objective_ids)
         names = tuple(f"v{index}" for index in range(len(vector)))
@@ -261,6 +267,9 @@ def resource_tie(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         potions.get("cost_per_application_gp") is None,
         potions.get("cost_per_application_gp") or 0,
         len(potions.get("selected_ids", ())),
+        solution.get("distinct_items", 0)
+        if "gp_per_damage" in solution.get("objective_values", {})
+        else 0,
         json.dumps(solution["loadouts"], sort_keys=True),
         solution_identity(solution),
     )

@@ -587,6 +587,7 @@ def test_ranged_only_auto_cost_frontier_matches_serial_worker():
     from tests.gear.test_optimizer import weapon
     from tracker.accounts.snapshot import ObservedItemFact
     from tracker.domain.types import Container
+    from tracker.gear.objectives import ObjectiveDescriptor
     from tracker.gear.optimizer import RoleConfig
 
     snapshot, request, _, content, _, now = inputs()
@@ -616,6 +617,8 @@ def test_ranged_only_auto_cost_frontier_matches_serial_worker():
     }
     request = request.model_copy(
         update={
+            "secondary_priority": "default",
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
             "roles": (
                 RoleConfig(
                     id="a", style="ranged", allowed_disciplines=("ranged",), combat_options=OPTIONS
@@ -632,9 +635,17 @@ def test_ranged_only_auto_cost_frontier_matches_serial_worker():
         expected = optimize(
             snapshot, concrete, catalog, content, prices, now, _complete_frontiers=True
         )
+        for result in (rows[0][1], expected):
+            archives = []
+            for group in result["objective_frontiers"]:
+                points = group["points"]
+                group["points"] = list(points)
+                archives.append(points.archive)
+            for archive in set(archives):
+                archive.close()
         assert without_timings(rows[0][1]) == without_timings(expected)
         auto = optimize(snapshot, request, catalog, content, prices, now)
-        assert len(auto["running_cost_frontiers"][0]["points"]) == 2
-        assert len(rows[0][1]["running_cost_frontiers"][0]["points"]) == 2
+        assert len(auto["objective_frontiers"][0]["points"]) == 2
+        assert len(rows[0][1]["objective_frontiers"][0]["points"]) == 2
     finally:
         pool.close()

@@ -36,6 +36,8 @@ def _seeds(engine: Any, supplied: Iterable[Mapping[str, Any]], limit: int) -> li
             continue
         if "objective_values" not in row:
             row = annotate_solution(row, engine.objectives, engine.search.request.roles)
+        if any(row["objective_values"].get(key) is None for key in engine.ids):
+            continue
         identity = solution_identity(row)
         if len(first) < limit:
             first.setdefault(identity, row)
@@ -162,7 +164,8 @@ def _safe_improvement(
     candidate: Mapping[str, Any], seed: Mapping[str, Any], ids: tuple[str, ...]
 ) -> bool:
     return (
-        dominates(solution_vector(candidate, ids), solution_vector(seed, ids))
+        all(candidate["objective_values"].get(key) is not None for key in ids)
+        and dominates(solution_vector(candidate, ids), solution_vector(seed, ids))
         and all(
             candidate[key] <= seed[key]
             for key in (

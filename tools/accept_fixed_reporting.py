@@ -32,6 +32,7 @@ from tools.benchmark_gear_desktop import (
     result_digest,
 )
 from tools.compare_gear_desktop import decision
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import OptimizationRequest, optimize
 from tracker.gear.prayers import PrayerPolicy
 
@@ -158,7 +159,6 @@ def compare(
                     _execution_profile="combined",
                     _fixed_reporting=profile == "candidate",
                     _complete_frontiers=True,
-                    _running_frontier=True,
                     local_refinement=provenance.get("optimization_mode") == "thorough",
                 )
             else:
@@ -170,6 +170,7 @@ def compare(
                     local_refinement=provenance.get("optimization_mode") == "thorough",
                 )
             seconds = perf_counter() - start
+            result = materialize_result_archives(result)
             digest = result_digest(result)
             if expected is not None and expected != digest:
                 raise ValueError(f"Complete result parity failed: {label}")
