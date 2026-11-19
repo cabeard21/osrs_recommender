@@ -239,7 +239,8 @@ def compact_solution(
         else:
             prayers[role.id] = []
     runes = search.runes_for_loadouts(assignment, options)
-    if not search.complete_runes_fit(assignment.carried, runes):
+    trip = search.trip_report(assignment, options)
+    if not search.trip_fits(trip) or not search.complete_runes_fit(assignment.carried, runes):
         return cast(dict[str, Any] | None, search.rune_alternative_solution(assignment, limit))
     runes = runes or {}
     values = _numeric_values(search, assignment, numeric, options, prayers, limit, len(runes))
@@ -253,6 +254,8 @@ def compact_solution(
             return None
         result = None
     else:
+        if trip is not None:
+            values = {**values, "wilderness_risk": trip}
 
         def report() -> dict[str, Any]:
             # One shared execution owner, rather than a copy per candidate.
@@ -441,7 +444,7 @@ def _expand_report(
         "transitions": transitions,
         "purchases": purchases(set(assignment.carried), search.facts, search.request),
     }
-    if search.wilderness is not None:
+    if search.wilderness is not None and "wilderness_risk" not in result:
         result["wilderness_risk"] = search.wilderness_report(
             assignment, search.request.base_role or search.request.roles[0].id, runes
         )

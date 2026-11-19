@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { metricLeader } from "./model";
 import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
 import {
   createLabSnapshot,
@@ -470,4 +471,28 @@ describe("live tradeoff lab snapshots", () => {
       }),
     ).toThrow(/browser storage/i);
   });
+});
+
+it("retains an unpriced starting setup without claiming it leads running cost", () => {
+  const { result, group } = setup();
+  result.live!.result.objective_definitions = [
+    {
+      kind: "gp_per_damage",
+      id: "gp_per_damage",
+      label: "Running cost",
+      unit: "GP/damage",
+      direction: "minimize",
+    },
+  ];
+  group.points[0].solution.objective_values = { gp_per_damage: 0 };
+  const saved = loadLabSnapshot(
+    storeLabSnapshot(createLabSnapshot(result, group, "best-found")),
+  );
+  expect(
+    saved.points.find((p) => p.id === "best-found")?.values?.gp_per_damage,
+  ).toBeNull();
+  expect(
+    metricLeader(saved.points, "gp_per_damage", saved.metrics?.[1].direction)
+      ?.id,
+  ).toBe("cap8-sample");
 });

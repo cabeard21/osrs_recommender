@@ -201,10 +201,7 @@ def test_merge_preserves_losing_assignment_tradeoffs_and_cap_specific_winners():
                 {"swap_limit": cap, "points": [{"solution": row}]}
                 for cap, row in ((0, caps[0]), (1, caps[1]), (None, unrestricted))
             ],
-            "running_cost_frontiers": [
-                {"swap_limit": cap, "baseline_solution": row, "points": [{"solution": row}]}
-                for cap, row in ((0, caps[0]), (1, caps[1]), (None, unrestricted))
-            ],
+            "running_cost_frontiers": [],
         }
 
     branches = [
@@ -214,27 +211,34 @@ def test_merge_preserves_losing_assignment_tradeoffs_and_cap_specific_winners():
     request = args[1].model_copy(update={"max_dps_loss_pct": 15})
     result = merge_assignment_results(request, branches)
     assert [p["solution"]["score"] for p in result["curve"]] == [90, 100]
-    for field in ("secondary_frontiers", "running_cost_frontiers"):
-        group = next(g for g in result[field] if g["swap_limit"] == 1)
-        assert [p["solution"]["score"] for p in group["points"]] == [100, 90]
-        assert [p["dps_loss_pct"] for p in group["points"]] == [0, 10]
+    assert not result["running_cost_frontiers"]
+    group = next(g for g in result["secondary_frontiers"] if g["swap_limit"] == 1)
+    assert [p["solution"]["score"] for p in group["points"]] == [100, 90]
+    assert [p["dps_loss_pct"] for p in group["points"]] == [0, 10]
     filtered = merge_assignment_results(
         request.model_copy(update={"max_dps_loss_pct": 5}), branches
     )
-    for field in ("secondary_frontiers", "running_cost_frontiers"):
-        group = next(g for g in filtered[field] if g["swap_limit"] == 1)
-        assert [p["solution"]["score"] for p in group["points"]] == [100]
+    group = next(g for g in filtered["secondary_frontiers"] if g["swap_limit"] == 1)
+    assert [p["solution"]["score"] for p in group["points"]] == [100]
     complete = merge_assignment_results(
         request.model_copy(update={"max_dps_loss_pct": 5}), branches, complete_frontiers=True
     )
-    assert len(complete["running_cost_frontiers"][1]["points"]) == 2
+    assert len(complete["secondary_frontiers"][1]["points"]) == 2
 
 
 def test_all_melee_assignment_contributes_free_running_cost_frontier():
-    args = inputs()
-    # Powered magic wins DPS, while all-melee needs no charge resources.
+    from tracker.gear.objectives import ObjectiveDescriptor
+
+    args = list(inputs())
+    args[1] = args[1].model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+            "max_dps_loss_pct": 100,
+        }
+    )
     result = optimize(*args)
-    points = result["running_cost_frontiers"][-1]["points"]
+    points = result["objective_frontiers"][-1]["points"]
     assert any(
         all(loadout["discipline"] == "melee" for loadout in p["solution"]["loadouts"].values())
         and p["solution"]["running_cost"]["gp_per_damage"] == 0

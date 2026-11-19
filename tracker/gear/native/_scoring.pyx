@@ -35,7 +35,7 @@ def farthest_indices(vectors, int limit):
     if not count:
         return []
     dimensions = len(vectors[0])
-    if not 1 <= dimensions <= 63:
+    if not 1 <= dimensions <= 65:
         raise ValueError("Unsupported native retention dimensions")
     values.resize(count * dimensions)
     ranges.resize(dimensions)
@@ -252,6 +252,69 @@ cdef class ScoringContext:
         self.objective_kinds = packed["objective_kinds"]
         self.objective_masks = packed["objective_masks"]
         self.objective_means = packed["objective_means"]
+
+        if "gp_per_damage" in self.objective_ids:
+            from tracker.gear.native.cost_context import pack_costs
+            costs = pack_costs(search, self)
+            self.serp_head = costs.serp_head
+            self.serp_cost = costs.serp_cost
+            self.option_kind = costs.option_kind
+            self.option_cost = costs.option_cost
+            self.option_on_hit_cost = costs.option_on_hit_cost
+            self.option_per_second_cost = costs.option_per_second_cost
+            self.supply_class = costs.supply_class
+            self.supply_count = costs.supply_count
+            self.ranged_kind = costs.ranged_kind
+            self.ammo_valid = costs.ammo_valid
+            self.body_recovery = costs.body_recovery
+            self.torag = costs.torag
+            self.unit_prices = costs.unit_prices
+            self.recovery = costs.recovery
+
+    cdef double attack_cost(self, const int* slots, Score* score) noexcept:
+        cdef int option = score.option_index
+        cdef int cost_index
+        cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
+        cdef double rate, head_cost = 0.0, quantity = 1.0
+        if not score.supported or option < 0:
+            return -1
+        if self.serp_head[slots[3]]:
+            if self.serp_cost[option] < 0:
+                return -1
+            head_cost = self.serp_cost[option]
+        for slot in range(11):
+            if self.torag[slots[slot]]:
+                return -1
+        if not self.option_kind[option]:
+            cost_index = option * self.supply_count + self.supply_class[shield]
+            if self.option_cost[cost_index] < 0 or self.option_on_hit_cost[cost_index] < 0 or self.option_per_second_cost[cost_index] < 0:
+                return -1
+            return (self.option_cost[cost_index] + head_cost) + score.accuracy * self.option_on_hit_cost[cost_index] + self.option_per_second_cost[cost_index] * score.interval
+        if self.ranged_kind[weapon] == 3:
+            return self.unit_prices[weapon] + head_cost if self.unit_prices[weapon] >= 0 else -1
+        if self.ranged_kind[weapon] == 1:
+            if not ammo or not self.ammo_valid[ammo]:
+                return -1
+            source = ammo
+        elif self.ranged_kind[weapon] == 2:
+            source = weapon
+        else:
+            return -1
+        rate = self.recovery[cape]
+        if rate < 0:
+            return -1
+        if rate > 0:
+            if self.body_recovery[slots[6]] == 2:
+                rate = 0
+            elif self.body_recovery[slots[6]] == 3:
+                # This affects only the cost objective. DPS remains supported.
+                return -1
+        if self.unit_prices[source] < 0:
+            return -1
+        if self.ranged_kind[weapon] == 1 and self.reviewed_crossbow[weapon] and self.hopper_shield[shield] and ammo:
+            # evaluate() already checked physical ammunition compatibility.
+            quantity = 1.11
+        return (quantity - quantity * rate) * self.unit_prices[source] + head_cost
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
         cdef double rolls[5]
@@ -561,7 +624,7 @@ cdef class ScoringContext:
                                option_allowed, equipment, settled_slot, mask)
         self.evaluate(slots, role_index, metric, output, order, -1, &mask[0] if mask.size() else NULL)
 
-    cdef void project_objectives(self, Score* result, double* values) except *:
+    cdef void project_objectives(self, const int* slots, Score* result, double* values) except *:
         cdef int index, style, count, mask, kind
         cdef double value, roll
         for index in range(self.objective_kinds.shape[0]):
@@ -588,13 +651,19 @@ cdef class ScoringContext:
                 values[index] = result.bonuses[6]
             elif kind == 4:
                 values[index] = result.bonuses[7]
-            else:
+            elif kind == 5:
                 values[index] = result.accuracy
+            elif kind == 7:
+                # Whole-trip loss is filled after combining the physical loadouts.
+                values[index] = 0.0
+            else:
+                value = self.attack_cost(slots, result)
+                values[index] = -(value / result.interval) / result.dps if value >= 0 and result.interval > 0 and result.dps > 0 else -1e100
 
     cdef bint project_slots(self, const int* slots, int role_index, const int* order, double* maximum,
                             object option_allowed=None, object equipment=None, int settled_slot=10) except -1:
         cdef Score result
-        cdef double values[62]
+        cdef double values[64]
         cdef int index, dimension
         cdef int offset = role_index * self.item_count + slots[0]
         cdef int start = self.offsets[offset], length = self.lengths[offset]
@@ -607,7 +676,7 @@ cdef class ScoringContext:
             self.evaluate(slots, role_index, False, &result, order, index)
             if not result.supported:
                 continue
-            self.project_objectives(&result, values)
+            self.project_objectives(slots, &result, values)
             if not supported or result.dps > maximum[0]:
                 maximum[0] = result.dps
             for dimension in range(self.objective_kinds.shape[0]):
@@ -625,8 +694,8 @@ cdef class ScoringContext:
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
-        cdef double values[62]
-        cdef double maximum[63]
+        cdef double values[64]
+        cdef double maximum[65]
         cdef int index, position = 0, start, length, offset, dimension
         cdef bint supported = False
         if role_index < 0 or role_index >= self.role_count:
@@ -647,7 +716,7 @@ cdef class ScoringContext:
         cdef int slots[11]
         cdef int order[11]
         cdef Score result
-        cdef double values[62]
+        cdef double values[64]
         cdef int index, position = 0, start, length, offset
         cdef vector[unsigned char] mask
         if role_index < 0 or role_index >= self.role_count:
@@ -670,7 +739,7 @@ cdef class ScoringContext:
             self.evaluate(slots, role_index, False, &result, order, index)
             if not result.supported:
                 continue
-            self.project_objectives(&result, values)
+            self.project_objectives(slots, &result, values)
             rows.append({
                 "supported": True,
                 "dps": result.dps,
@@ -680,7 +749,11 @@ cdef class ScoringContext:
                 "player_defence_rolls": {name: result.defence_rolls[position] if result.defence_rolls[position] >= 0 else None for position, name in enumerate(("stab", "slash", "crush", "ranged", "magic"))},
                 "option_index": result.option_index,
                 "bonuses": tuple(result.bonuses[position] for position in range(14)),
-                "objective_values": {name: values[position] for position, name in enumerate(self.objective_ids)},
+                "objective_values": {
+                    name: ((None if values[position] == -1e100 else -values[position])
+                           if self.objective_kinds[position] == 6 else values[position])
+                    for position, name in enumerate(self.objective_ids)
+                },
             })
         return rows
 

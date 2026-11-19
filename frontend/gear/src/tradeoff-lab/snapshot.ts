@@ -46,7 +46,7 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
     !text(value.sourceDescription) ||
     !Array.isArray(value.metrics) ||
     value.metrics.length < 1 ||
-    value.metrics.length > 63 ||
+    value.metrics.length > 65 ||
     !Array.isArray(value.points) ||
     !value.points.length ||
     value.points.length > 2048
@@ -63,11 +63,19 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
     if (
       !record(metric) ||
       !text(metric.key) ||
+      (metric.direction !== undefined &&
+        !["minimize", "maximize"].includes(String(metric.direction))) ||
       !text(metric.label) ||
       !text(metric.shortLabel) ||
-      !["dps", "roll", "bonus", "probability", "percent"].includes(
-        String(metric.unit),
-      )
+      ![
+        "dps",
+        "roll",
+        "bonus",
+        "probability",
+        "percent",
+        "GP/damage",
+        "GP",
+      ].includes(String(metric.unit))
     )
       throw new Error(INVALID);
     return metric.key;
@@ -87,9 +95,14 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
       !finite(point.costGp) ||
       point.costGp < 0 ||
       !record(point.values) ||
-      keys.some(
-        (key) => !finite((point.values as Record<string, unknown>)[key]),
-      ) ||
+      keys.some((key) => {
+        const number = (point.values as Record<string, unknown>)[key];
+        return key === "wilderness_loss_gp"
+          ? !Number.isSafeInteger(number) || Number(number) < 0
+          : key === "gp_per_damage"
+            ? number !== null && (!finite(number) || number < 0)
+            : !finite(number);
+      }) ||
       point.values.dps !== point.dps ||
       !Array.isArray(point.equipment) ||
       point.equipment.length > 1000 ||
@@ -167,8 +180,10 @@ export function createLabSnapshot(
     ...definitions.map((definition) => ({
       key: definition.id,
       label: definition.label,
-      shortLabel: definition.label,
+      shortLabel:
+        definition.unit === "GP/damage" ? "GP/damage" : definition.label,
       unit: definition.unit,
+      ...(definition.direction && { direction: definition.direction }),
     })),
   ];
   const names = new Map(
@@ -184,9 +199,14 @@ export function createLabSnapshot(
     label: string,
     raw: JointSolutionDTO,
   ): LabPoint => {
-    const values = { dps: raw.score, ...raw.objective_values };
+    const values: Record<string, number | null> = {
+      dps: raw.score,
+      ...raw.objective_values,
+    };
     for (const metric of metrics)
-      if (!finite(values[metric.key as keyof typeof values]))
+      if (metric.key === "gp_per_damage" && values[metric.key] == null)
+        values[metric.key] = null;
+      else if (!finite(values[metric.key]))
         throw new Error(
           "A saved objective value is unavailable. Run optimization again before opening the lab.",
         );
@@ -243,6 +263,22 @@ export function createLabSnapshot(
     (group.swap_limit === null || selected.maximum_actions <= group.swap_limit)
   )
     points.push(toPoint(selectedId, "Current selection", selected));
+  // The absolute DPS leader can sit outside the priced Pareto sample.
+  const baseline = group.baseline_solution;
+  const capId = group.baseline_solution_id;
+  if (
+    baseline &&
+    capId &&
+    metrics.some((m) => m.key === "gp_per_damage") &&
+    baseline.objective_values?.gp_per_damage == null &&
+    !points.some((point) => point.id === capId) &&
+    !(
+      selected &&
+      selected.score === baseline.score &&
+      selected.objective_values?.gp_per_damage == null
+    )
+  )
+    points.push(toPoint(capId, "Highest DPS setup", baseline));
   if (!points.length)
     throw new Error(
       "There are no saved configurations available for this tradeoff lab.",

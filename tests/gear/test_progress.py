@@ -157,7 +157,7 @@ def test_finalist_reports_work_within_a_long_refinement(monkeypatch):
     assert fractions == [1 / 64, 0.5, 1.0, 1.0]
 
 
-def test_progress_preserves_secondary_and_running_cost_frontiers():
+def test_progress_preserves_secondary_frontier_and_skips_unselected_cost():
     from tests.gear.test_auto_disciplines import without_timings
 
     snapshot, request, *rest = single(context("ranged"))
@@ -166,7 +166,7 @@ def test_progress_preserves_secondary_and_running_cost_frontiers():
     events = []
     measured = optimize(snapshot, request, *rest, progress=events.append)
     plain = optimize(snapshot, request, *rest)
-    assert measured["secondary_frontiers"] and measured["running_cost_frontiers"]
+    assert measured["secondary_frontiers"] and not measured["running_cost_frontiers"]
     assert without_timings(measured) == without_timings(plain)
 
 

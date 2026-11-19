@@ -13,6 +13,7 @@ from tracker.domain.types import Container
 from tracker.gear.catalog import EquipmentCatalog, load_catalog
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 from tracker.gear.native import capture
+from tracker.gear.objectives import ObjectiveDescriptor
 from tracker.gear.optimizer import optimize
 from tracker.gear.prayers import PrayerPolicy
 
@@ -78,14 +79,19 @@ def test_auto_unknown_recovery_body_retains_native_ranged_branch(recovery_base):
 
 def _assert_recovery_parity(case, thorough):
     pytest.importorskip("tracker.gear.native._stages")
-    args = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
+    request = case.request.model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
+    args = (case.snapshot, request, case.catalog, case.content, case.prices, case.at)
     flags = {
         "_execution_profile": "combined",
         "_fixed_reporting": True,
         "_factored_evaluation": True,
         "_compact_states": True,
         "_complete_frontiers": True,
-        "_running_frontier": True,
         "local_refinement": thorough,
     }
     reference = optimize(*args, **flags)
@@ -96,7 +102,7 @@ def _assert_recovery_parity(case, thorough):
     assert selected is not None
     assert selected["loadouts"]["effect"]["equipment"]["body"] == UNKNOWN_BODY
     assert selected["running_cost"]["status"] == "unavailable"
-    points = [p for group in actual["running_cost_frontiers"] for p in group["points"]]
+    points = [p for group in actual["objective_frontiers"] for p in group["points"]]
     assert points
     assert any(p["solution"]["loadouts"]["effect"]["equipment"].get("body") == 2503 for p in points)
     assert all(

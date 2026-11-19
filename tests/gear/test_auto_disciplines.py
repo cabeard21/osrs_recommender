@@ -210,12 +210,7 @@ def test_auto_retains_each_discipline_result(priority):
         manual = optimize(args[0], request, *args[2:])
         assert branch["selected_solution"] == manual["selected_solution"]
         assert branch["alternatives"] == manual["alternatives"]
-        # Auto also explores resource-cost alternatives in non-magic branches.
-        assert without_timings(
-            {k: v for k, v in branch["search"].items() if k != "running_cost_frontier"}
-        ) == without_timings(
-            {k: v for k, v in manual["search"].items() if k != "running_cost_frontier"}
-        )
+        assert without_timings(branch["search"]) == without_timings(manual["search"])
         for group in branch["secondary_frontiers"]:
             assert len(group["points"]) <= 64
             assert group["baseline_dps"] == branch["selected_solution"]["score"]

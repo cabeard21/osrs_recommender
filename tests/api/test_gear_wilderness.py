@@ -114,7 +114,10 @@ def test_wilderness_is_optional_and_fixed_results_use_same_frozen_context(client
     assert rejected["proposed"]["wilderness_risk"]["loss_gp"] == 2_000_000
 
 
-def test_arrow_comparisons_return_reviewed_quantities_within_risk_cap(client, session_factory):
+@pytest.mark.parametrize("fixed_trip", [False, True])
+def test_arrow_comparisons_return_reviewed_quantities_within_risk_cap(
+    client, session_factory, fixed_trip
+):
     body = ammo_body(client, session_factory)
     body["loadout"].pop("cape")
     body["scenario"].update(
@@ -126,12 +129,17 @@ def test_arrow_comparisons_return_reviewed_quantities_within_risk_cap(client, se
             "max_loss_gp": 100,
         },
     )
+    if fixed_trip:
+        body["scenario"]["objectives"] = [{"kind": "wilderness_loss_gp"}]
+        body["scenario"]["wilderness"]["attacks_per_setup"] = 5
     reply = client.post("/ui-api/gear/ammo-comparisons", json=body)
     assert reply.status_code == 200, reply.text
     points = reply.json()["points"]
     current = next(point for point in points if point["current"])
     assert all(point["wilderness_risk"]["loss_gp"] <= 100 for point in points)
     assert current["wilderness_risk"]["quantities"][0]["resource_id"] == 882
+    if fixed_trip:
+        assert current["wilderness_risk"]["quantities"][0]["quantity"] == 5
 
 
 def magic_wilderness_scenario(client, session_factory, *, air_quote=True):
@@ -411,3 +419,88 @@ def test_wilderness_vector_run_replays_the_separate_caps(client, session_factory
     selected = client.get(f"{archive}/solutions/{run['selected_solution_id']}")
     assert selected.status_code == 200, selected.text
     assert selected.json()["solution"]["wilderness_risk"]["loss_gp"] == 0
+
+
+def test_risk_objective_agrees_across_fixed_archived_and_timeline(client, session_factory):
+    body = evaluation_body(client, session_factory, locks={"weapon": 4151})
+    body["scenario"].update(
+        wilderness={"skulled": False},
+        objectives=[{"kind": "wilderness_loss_gp"}],
+    )
+    evaluated = client.post("/ui-api/gear/evaluations", json=body)
+    assert evaluated.status_code == 200, evaluated.text
+    for side in ("baseline", "proposed"):
+        row = evaluated.json()[side]
+        assert type(row["objective_values"]["wilderness_loss_gp"]) is int
+        assert (
+            row["objective_values"]["wilderness_loss_gp"] == row["wilderness_risk"]["loss_gp"] == 0
+        )
+    assert evaluated.json()["deltas"]["objective_values"] == {"wilderness_loss_gp": 0}
+    optimized = client.post("/ui-api/gear/optimizations", json=body["scenario"])
+    assert optimized.status_code == 200, optimized.text
+    run = optimized.json()["objective_run"]
+    timeline = client.post(
+        "/ui-api/gear/potion-timelines",
+        json={"run_id": run["run_id"], "solution_id": run["selected_solution_id"]},
+    )
+    assert timeline.status_code == 200, timeline.text
+    for sample in [timeline.json()["baseline"], *timeline.json()["samples"]]:
+        assert type(sample["objective_values"]["wilderness_loss_gp"]) is int
+        assert sample["objective_values"] == {"wilderness_loss_gp": 0}
+        assert all(
+            "wilderness_loss_gp" not in role.get("objective_values", {})
+            for role in sample["roles"].values()
+        )
+
+
+def test_direct_risk_timeline_values_one_trip_including_utility_switch(
+    client, app, session_factory
+):
+    from tracker.gear.combat import MODEL_VERSION
+
+    submitted = scenario(client, session_factory, ids=(4151, 1333))
+    submitted.update(
+        roles=[
+            {"id": "main", "style": "slash"},
+            {"id": "other", "style": "slash"},
+            {"id": "spec", "style": "special", "parent_role": "main", "locks": {"weapon": 1333}},
+        ],
+        wilderness={"skulled": True, "max_loss_gp": 800},
+        objectives=[{"kind": "wilderness_loss_gp"}],
+    )
+    now = datetime.now(UTC)
+    with session_factory() as session:
+        for item, cost in ((4151, 600), (1333, 200)):
+            session.merge(
+                ItemPrice(
+                    item_id=item,
+                    high_price_gp=cost,
+                    high_trade_at=now,
+                    fetched_at=now,
+                    source=PriceSourceLayer.CACHED,
+                    provider="test",
+                )
+            )
+        session.commit()
+    setup = {
+        "equipment": {"weapon": 4151},
+        "combat_option": {"attack_type": "slash", "stance": "accurate"},
+    }
+    body = {
+        "scenario": submitted,
+        "selected_potion_ids": [],
+        "expected_catalog_version": app.state.gear_service.equipment_catalog().revision,
+        "expected_model_version": MODEL_VERSION,
+        "loadouts": {"main": setup, "other": setup, "spec": {"equipment": {"weapon": 1333}}},
+    }
+    route = "/ui-api/gear/potion-timelines"
+    response = client.post(route, json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()["baseline"]["objective_values"] == {"wilderness_loss_gp": 800}
+    assert set(response.json()["baseline"]["roles"]) == {"main", "other"}
+    assert (
+        client.post(route, json={**body, "loadouts": {"main": setup, "other": setup}}).status_code
+        == 422
+    )
+    submitted["wilderness"]["max_loss_gp"] = 799
+    assert client.post(route, json=body).status_code == 422

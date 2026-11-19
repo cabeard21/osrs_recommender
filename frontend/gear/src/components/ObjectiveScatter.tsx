@@ -9,17 +9,19 @@ interface Axis {
 interface Point {
   id: string;
   score: number;
-  objective_values: Record<string, number>;
+  objective_values: Record<string, number | null>;
   purchase_cost_gp: number;
 }
 type Slot = "x" | "y" | "color";
 const color = (value: number) =>
   `hsl(${205 - value * 165} 78% ${58 + value * 8}%)`;
 const value = (point: Point, id: string): number =>
-  id === "dps" ? point.score : point.objective_values[id];
+  id === "dps" ? point.score : (point.objective_values[id] ?? NaN);
 const format = (number: number, axis: Axis) => {
   if (!Number.isFinite(number)) return "Unavailable";
   if (axis.unit === "probability") return `${(number * 100).toFixed(2)}%`;
+  if (axis.unit === "GP") return `${number.toLocaleString()} GP`;
+  if (axis.unit === "GP/damage") return `${number.toFixed(4)} GP/damage`;
   if (axis.unit === "percent") return `${number.toFixed(2)}%`;
   return number.toLocaleString("en-US", {
     minimumFractionDigits: axis.id === "dps" ? 3 : 0,

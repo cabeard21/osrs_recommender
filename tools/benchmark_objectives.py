@@ -25,12 +25,13 @@ from tracker.gear.native import capture
 from tracker.gear.objectives import STYLES, canonical_objectives, objective_policy
 from tracker.gear.optimizer import OptimizationRequest, optimize
 
-COUNTS = (1, 3, 8, 62)
+COUNTS = (1, 3, 8, 62, 63, 64)
 
 
 def objective_set(count: int) -> tuple[Any, ...]:
     if count not in COUNTS:
-        raise ValueError("Objective count must be one of 1, 3, 8, or 62")
+        raise ValueError(f"Objective count must be one of {COUNTS}")
+    values: list[dict[str, Any]]
     if count <= 3:
         values = [
             {"kind": "defence_roll", "styles": [style], "aggregation": "minimum"}
@@ -57,6 +58,10 @@ def objective_set(count: int) -> tuple[Any, ...]:
                 "accuracy",
             )
         ]
+    if count >= 63:
+        values.append({"kind": "gp_per_damage"})
+    if count == 64:
+        values.append({"kind": "wilderness_loss_gp"})
     result = canonical_objectives(values)
     if len(result) != count:
         raise ValueError("Canonical objective count changed")
@@ -73,6 +78,7 @@ def benchmark_case(count: int) -> Any:
             "secondary_priority": "default",
             "objectives": [value.model_dump(mode="json") for value in objective_set(count)],
             "max_dps_loss_pct": 100,
+            **({"wilderness": {"skulled": True, "attacks_per_setup": 100}} if count == 64 else {}),
         }
     )
     return replace(case, request=request)
@@ -87,6 +93,7 @@ def source_hashes() -> dict[str, str]:
     root = Path(__file__).resolve().parents[1]
     files = {
         *root.glob("tracker/gear/vector_*.py"),
+        *root.glob("tracker/gear/wilderness*.py"),
         *root.glob("tracker/gear/native/*.py"),
         *root.glob("tracker/gear/native/*.pyx"),
         *root.glob("tracker/gear/native/*.pxd"),
@@ -217,7 +224,7 @@ def main() -> None:
         )
         args.output.write_text(json.dumps(value, indent=2), encoding="utf-8")
         return
-    rows = []
+    rows: list[dict[str, Any]] = []
     report = {"environment": environment(), "runs": rows}
     for count in args.counts:
         path = args.output.with_name(f"{args.output.stem}-{count}{args.output.suffix}")

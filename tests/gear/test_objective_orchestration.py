@@ -222,7 +222,8 @@ def test_branch_requests_keep_shared_typed_objective_configuration():
 
 @pytest.mark.parametrize("mode", ["single", "multi", "auto"])
 @pytest.mark.parametrize("potions", [False, True])
-def test_real_vector_branches_match_native_without_fallback(mode, potions):
+@pytest.mark.parametrize("include_cost", [False, True])
+def test_real_vector_branches_match_native_without_fallback(mode, potions, include_cost):
     pytest.importorskip("tracker.gear.native._stages")
     from tests.gear.test_auto_disciplines import context
     from tests.gear.test_factored_multi import multi_case
@@ -241,6 +242,7 @@ def test_real_vector_branches_match_native_without_fallback(mode, potions):
                 {"kind": "defence_roll", "styles": ["stab", "magic"], "aggregation": "minimum"},
                 {"kind": "prayer_bonus"},
                 {"kind": "accuracy"},
+                *([{"kind": "gp_per_damage"}] if include_cost else []),
             ],
             "potions": {"mode": "optimize", "allowed_ids": ["super_defence", "magic"]}
             if potions
@@ -265,3 +267,82 @@ def test_real_vector_branches_match_native_without_fallback(mode, potions):
     finally:
         _close_result(reference)
         _close_result(actual)
+
+
+@pytest.mark.parametrize("unpriced_dps", [9, 10])
+def test_unpriced_dps_winner_survives_merge_and_defines_cap(unpriced_dps):
+    from tracker.gear.objectives import ObjectiveDescriptor, objective_definitions
+    from tracker.gear.potion_search import merge_results
+
+    configured = request().model_copy(
+        update={"objectives": (ObjectiveDescriptor(kind="gp_per_damage"),)}
+    )
+    definitions = objective_definitions(configured.objectives)
+    numeric = {**solution(configured, 1, 9, (3,)), "objective_definitions": definitions}
+    baseline = {
+        **solution(configured, 2, unpriced_dps, (0,)),
+        "objective_definitions": definitions,
+        "objective_values": {},
+    }
+    children = [branch(baseline, baseline, []), branch(numeric, numeric, [numeric])]
+    for child in children:
+        for group in child["objective_frontiers"]:
+            row = child["selected_solution"]
+            group.update(baseline_dps=row["score"], baseline_solution=row)
+    expected = baseline if unpriced_dps > 9 else numeric
+    result = merge_results(configured, children)
+    try:
+        assert result["selected_solution"] == expected
+        for group in result["objective_frontiers"]:
+            assert group["baseline_solution"] == expected
+            assert group["baseline_dps"] == expected["score"]
+            assert [p["solution"] for p in group["points"]] == (
+                [] if unpriced_dps > 9 else [numeric]
+            )
+    finally:
+        for group in result["objective_frontiers"]:
+            group["points"].close()
+
+
+@pytest.mark.parametrize("mode", ["auto", "potion", "assignment"])
+def test_lower_wilderness_loss_survives_branch_merge_with_running_cost(mode):
+    from tracker.gear.auto import merge_auto_results
+    from tracker.gear.discipline_assignments import merge_assignment_results
+    from tracker.gear.objective_store import close_result_archives
+    from tracker.gear.potion_search import merge_results
+
+    configured = OptimizationRequest.model_validate(
+        {
+            **request(multi=mode == "assignment").model_dump(),
+            "wilderness": {"skulled": True},
+            "objectives": [{"kind": "gp_per_damage"}, {"kind": "wilderness_loss_gp"}],
+            "max_dps_loss_pct": 100,
+        }
+    )
+    fastest = solution(configured, 1, 10, (2, 100))
+    safe = solution(configured, 2, 8, (2, 0))
+    efficient = solution(configured, 3, 9, (1, 150))
+    dominated = solution(configured, 4, 8, (3, 90))
+    branches = [
+        branch(fastest, fastest, [fastest, dominated]),
+        branch(efficient, efficient, [efficient, safe]),
+    ]
+    if mode == "auto":
+        result = merge_auto_results(
+            configured, list(zip(("melee", "magic"), branches, strict=True))
+        )
+    elif mode == "assignment":
+        result = merge_assignment_results(
+            configured, list(zip(("a=melee", "a=magic"), branches, strict=True))
+        )
+    else:
+        result = merge_results(configured, branches)
+    try:
+        for g in result["objective_frontiers"]:
+            assert g["baseline_dps"] == 10
+            assert {
+                (p["solution"]["score"], p["solution"]["objective_values"]["wilderness_loss_gp"])
+                for p in g["points"]
+            } == {(10, 100), (8, 0), (9, 150)}
+    finally:
+        close_result_archives(result)

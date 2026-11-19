@@ -36,12 +36,15 @@ export function parseJointSolution(
   const wildernessRisk = parseWildernessRisk(
     row.wilderness_risk,
     scenario.request,
+    true,
+    row.objective_values,
   );
   validateRunningCost(row.running_cost);
   if (scenario.request.objectives !== undefined)
     objectiveValues(
       row.objective_values,
       canonicalObjectives(scenario.request.objectives),
+      true,
     );
   validateSecondaryPriority(
     row,

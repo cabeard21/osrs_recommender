@@ -31,6 +31,7 @@ from tools.benchmark_gear_desktop import (
     result_digest,
 )
 from tools.gear_process_memory import measure_process_tree
+from tracker.gear.objective_store import materialize_result_archives
 
 POLICY = "p3-staged-v1"
 ORACLE_POLICY = "p3-staged-v2"
@@ -159,7 +160,6 @@ def run(case: Any, metadata: dict[str, Any], enabled: bool, svc: Any) -> dict[st
             _factored_evaluation=True,
             _compact_states=enabled,
             _complete_frontiers=True,
-            _running_frontier=True,
             local_refinement=metadata.get("optimization_mode") == "thorough",
         )
     return svc.optimize(
@@ -288,6 +288,7 @@ def compare(
             start = perf_counter()
             result = run(case, meta, mode == "candidate", services[mode])
             elapsed = perf_counter() - start
+            result = materialize_result_archives(result)
             if evidence_binding(output) != binding:
                 raise ValueError("Manifest changed during run")
             digest = result_digest(result)
@@ -351,6 +352,7 @@ def memory_child(frozen: Path, output: Path, name: str, workers: int, mode: str)
     with ExitStack() as stack, measure_process_tree() as memory:
         pool = p1._pool(stack, case, workers)
         result = run(case, metadata, mode == "candidate", service(case, mode == "candidate", pool))
+    result = materialize_result_archives(result)
     if evidence_binding(output) != binding:
         raise ValueError("Manifest changed during memory run")
     _write(output / "result.json", result)

@@ -13,9 +13,10 @@ from tracker.gear.service import GearService
     [("baseline", False), ("combined", False), ("combined", True)],
     ids=["baseline", "compact", "native"],
 )
+@pytest.mark.parametrize("trip", [False, True], ids=["legacy", "fixed-trip"])
 @pytest.mark.parametrize("fixed_second", [False, True], ids=["two-adjustable", "one-fixed"])
 def test_shared_trip_reselects_one_spell_when_individual_winners_do_not_fit(
-    make_content, profile, native, fixed_second
+    make_content, profile, native, fixed_second, trip
 ):
     if native:
         pytest.importorskip("tracker.gear.native._stages")
@@ -37,7 +38,12 @@ def test_shared_trip_reselects_one_spell_when_individual_winners_do_not_fit(
     request = OptimizationRequest(
         roles=(magic, second),
         max_swaps=0,
-        wilderness={"skulled": True, "protect_item": True, "max_loss_gp": 2800, "spell_casts": 10},
+        wilderness={
+            "skulled": True,
+            "protect_item": True,
+            "max_loss_gp": 2800,
+            ("attacks_per_setup" if trip else "spell_casts"): 10,
+        },
     )
     service = GearService(
         make_content(),

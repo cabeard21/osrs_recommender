@@ -56,18 +56,19 @@ def test_dump_cannot_supply_missing_account_facts(tmp_path):
         load_profile_case(path)
 
 
-def test_solution_digest_ignores_diagnostics_but_preserves_every_tradeoff():
+@pytest.mark.parametrize("frontier", ["secondary_frontiers", "objective_frontiers"])
+def test_solution_digest_ignores_diagnostics_but_preserves_every_tradeoff(frontier):
     result = {
         "selected_solution": {"score": 3},
         "curve": [],
         "unrestricted": None,
-        "secondary_frontiers": [{"points": [{"solution": {"score": 2}}]}],
+        frontier: [{"points": [{"solution": {"score": 2}}]}],
         "running_cost_frontiers": [],
         "search": {"timings_seconds": {"total": 1}},
     }
     changed_timing = {**result, "search": {"timings_seconds": {"total": 100}}}
     assert solution_digest(result) == solution_digest(changed_timing)
-    changed_point = {**result, "secondary_frontiers": [{"points": [{"solution": {"score": 1}}]}]}
+    changed_point = {**result, frontier: [{"points": [{"solution": {"score": 1}}]}]}
     assert solution_digest(result) != solution_digest(changed_point)
 
 
@@ -112,9 +113,7 @@ def test_profile_writes_complete_archives_and_optional_call_profile(
     report = profile_case(case, {"optimization_mode": "fast"}, tmp_path, cprofile=cprofile)
     assert json.loads((tmp_path / "result.json").read_text()) == result
     assert json.loads((tmp_path / "report.json").read_text()) == report
-    assert options == [
-        {"_complete_frontiers": True, "_running_frontier": True, "local_refinement": False}
-    ]
+    assert options == [{"_complete_frontiers": True, "local_refinement": False}]
     assert (tmp_path / "calls.prof").exists() == cprofile
     assert (tmp_path / "calls.txt").exists() == cprofile
 

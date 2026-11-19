@@ -91,3 +91,61 @@ def test_wilderness_objective_archives_match_native_without_fallback(
             assert any(event["event"] == "stage" for event in diagnostics["events"])
         outcomes.append(result_digest({**result, "objective_frontiers": groups}))
     assert outcomes[0] == outcomes[1]
+
+
+@pytest.mark.parametrize("thorough", [False, True], ids=["fast", "thorough"])
+@pytest.mark.parametrize("cap", [None, 60_000], ids=["uncapped", "capped"])
+def test_fixed_trip_loss_frontier_matches_python_at_every_swap_limit(make_content, thorough, cap):
+    from tracker.gear.optimizer import OptimizationRequest
+
+    pytest.importorskip("tracker.gear.native._stages")
+    snapshot, catalog, prices = scenario()
+    request = OptimizationRequest.model_validate(
+        {
+            "budget_gp": 1_060_000,
+            "wilderness": {"skulled": True, "attacks_per_setup": 100, "max_loss_gp": cap},
+            "roles": [{"id": "melee", "style": "slash"}],
+            "max_dps_loss_pct": 100,
+            "objectives": [{"kind": "wilderness_loss_gp"}, {"kind": "gp_per_damage"}],
+        }
+    )
+    outcomes = []
+    for native in (False, True):
+        service = GearService(
+            make_content(),
+            optimization_profile="combined",
+            fixed_reporting=True,
+            factored_evaluation=True,
+            compact_states=True,
+            native_search=native,
+        )
+        service._equipment = catalog
+        result = service.optimize(
+            snapshot, request, price_records=prices, now=NOW, local_refinement=thorough
+        )
+        try:
+            groups = [
+                {**group, "points": list(group["points"])}
+                for group in result["objective_frontiers"]
+            ]
+            unrestricted = next(group for group in groups if group["swap_limit"] is None)
+            losses = {
+                point["solution"]["objective_values"]["wilderness_loss_gp"]
+                for point in unrestricted["points"]
+            }
+            assert 60_000 in losses
+            assert (1_000_000 in losses) == (cap is None)
+            for group in groups:
+                for point in group["points"]:
+                    solution = point["solution"]
+                    assert (
+                        solution["objective_values"]["wilderness_loss_gp"]
+                        == solution["wilderness_risk"]["loss_gp"]
+                    )
+            outcomes.append(result_digest({**result, "objective_frontiers": groups}))
+            if native:
+                assert service.native_diagnostics["native_requests"] >= 1
+                assert service.native_diagnostics["fallback_requests"] == 0
+        finally:
+            close_result_archives(result)
+    assert outcomes[0] == outcomes[1]

@@ -35,25 +35,21 @@ def test_mage_browser_publishes_staff_rune_savings(client, session_factory):
     assert air["consumed_quantity"] == 0
     assert air["supplied_quantity"] > 0
     assert air["supplied_by"] == "Staff of air"
-    assert result["running_cost_frontiers"]
-    assert data["running_cost_policy"]["policy"] == "running-cost-frontier-v2"
-    items = {item["item_id"] for item in data["items"]}
-    for group in result["running_cost_frontiers"]:
-        for point in group["points"]:
-            assert set(point["solution"]["carried_item_ids"]) <= items
+    assert result["running_cost_frontiers"] == []
 
 
-def test_ranged_browser_automatically_publishes_complete_cost_solutions(client, session_factory):
+def test_ranged_browser_publishes_opt_in_objective_cost_solutions(client, session_factory):
     from tests.api.test_gear_ammo import ammo_body
 
     body = ammo_body(client, session_factory)["scenario"]
+    body["objectives"] = [{"kind": "gp_per_damage"}]
     response = client.post("/ui-api/gear/optimizations", json=body)
     assert response.status_code == 200, response.text
     data = response.json()
     result = data["result"]
-    assert result["running_cost_frontiers"]
-    assert data["running_cost_policy"]["policy"] == "running-cost-frontier-v2"
-    points = result["running_cost_frontiers"][0]["points"]
+    assert result["running_cost_frontiers"] == []
+    assert result["objective_definitions"][0]["direction"] == "minimize"
+    points = result["objective_frontiers"][0]["points"]
     assert points
     referenced = {item["item_id"] for item in data["items"]}
     for point in points:
@@ -62,5 +58,36 @@ def test_ranged_browser_automatically_publishes_complete_cost_solutions(client, 
         assert solution["running_cost"]["gp_per_damage"] >= 0
         assert set(solution["carried_item_ids"]) <= referenced
         loadout = solution["loadouts"]["single"]
-        assert loadout["running_cost"]["model_version"] == "ordinary-resource-cost-v4"
+        assert (
+            solution["objective_values"]["gp_per_damage"]
+            == solution["running_cost"]["gp_per_damage"]
+        )
         assert loadout["equipment"]["weapon"] == 861
+
+
+def test_unpriced_cost_objective_keeps_inspectable_dps_winner(client, session_factory):
+    from tests.api.test_gear_optimizations import scenario
+
+    body = {
+        **scenario(client, session_factory, ids=(1381,)),
+        "objectives": [{"kind": "gp_per_damage"}],
+        "roles": [{"id": "single", "style": "magic", "stance": "accurate", "spell": "fire_strike"}],
+        "locks": {"weapon": 1381},
+    }
+    response = client.post("/ui-api/gear/optimizations", json=body)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    result = data["result"]
+    selected = result["selected_solution"]
+    assert selected["score"] > 0
+    assert selected["running_cost"]["status"] == "unavailable"
+    assert selected.get("objective_values", {}).get("gp_per_damage") is None
+    group = result["objective_frontiers"][0]
+    assert group["baseline_dps"] == selected["score"]
+    assert group["points"] == []
+    run_id = data["objective_run"]["run_id"]
+    detail = client.get(
+        f"/ui-api/gear/optimization-runs/{run_id}/solutions/{group['baseline_solution_id']}"
+    )
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["solution"]["running_cost"]["gp_per_damage"] is None

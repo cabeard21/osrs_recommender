@@ -87,6 +87,34 @@ def _point_summary(summary: Mapping[str, Any], group_id: str) -> dict[str, Any]:
     }
 
 
+def materialize_result_archives(result: dict[str, Any]) -> dict[str, Any]:
+    """Build a portable result for consumers without a paginated session store."""
+
+    def materialize(branch: dict[str, Any]) -> dict[str, Any]:
+        if "objective_frontiers" not in branch:
+            return branch
+        return {
+            **branch,
+            "objective_frontiers": [
+                {**group, "points": list(group["points"])}
+                for group in branch["objective_frontiers"]
+            ],
+        }
+
+    try:
+        value = materialize(result)
+        if "discipline_results" in result:
+            value = {
+                **value,
+                "discipline_results": [
+                    materialize(branch) for branch in result["discipline_results"]
+                ],
+            }
+        return value
+    finally:
+        close_result_archives(result)
+
+
 def close_result_archives(result: Any) -> None:
     """Release completed raw results even when a stale/disconnected route abandons them."""
     from tracker.gear.vector_publish import FrontierPoints
@@ -291,7 +319,16 @@ class ObjectiveRunStore:
                         else None,
                     }
                 )
+            baseline_solution = group.get("baseline_solution")
+            baseline_id = (
+                self._put_solution(run_id, baseline_solution) if baseline_solution else None
+            )
             info = {
+                **(
+                    {"baseline_solution_id": f"{group_id}-{baseline_id}"}
+                    if baseline_id is not None
+                    else {}
+                ),
                 "id": group_id,
                 "group_id": group_id,
                 "view": view,
@@ -364,7 +401,7 @@ class ObjectiveRunStore:
         definitions: list[dict[str, Any]],
         check: Callable[[], None],
     ) -> list[str]:
-        """Disk-backed normalized farthest-point selection; RAM is O(axes * 128)."""
+        """Keep both extrema of each axis before filling the chart sample."""
         db = self._connection
         db.execute("DROP TABLE IF EXISTS temp.sample_points")
         db.execute(
@@ -377,7 +414,8 @@ class ObjectiveRunStore:
                 (run_id, group_id),
             )
             count = db.execute("SELECT count(*) FROM sample_points").fetchone()[0]
-            if count <= 128:
+            sample_size = max(128, 2 * (1 + len(definitions)))
+            if count <= sample_size:
                 return [row[0] for row in db.execute("SELECT id FROM sample_points ORDER BY id")]
             paths = [
                 "$.score",
@@ -404,7 +442,7 @@ class ObjectiveRunStore:
                         selected.append(identity)
             pending = list(selected)
             keys = [d["id"] for d in definitions]
-            while len(selected) < 128:
+            while len(selected) < sample_size:
                 for identity in pending:
                     check()
                     reference = json.loads(
@@ -452,13 +490,16 @@ class ObjectiveRunStore:
         *,
         player_id: str | int,
         sort: str = "dps",
-        direction: str = "desc",
+        direction: str | None = None,
         limit: int = 50,
         cursor: str | None = None,
     ) -> dict[str, Any]:
         with self._lock:
             metadata = self._run(run_id, player_id)
-            kinds = {row["id"] for row in metadata["objective_definitions"]}
+            definitions = {row["id"]: row for row in metadata["objective_definitions"]}
+            if direction is None:
+                minimize = definitions.get(sort, {}).get("direction") == "minimize"
+                direction = "asc" if minimize else "desc"
             fields = {
                 "dps": "score",
                 "score": "score",
@@ -469,7 +510,7 @@ class ObjectiveRunStore:
             if (metadata.get("scenario") or {}).get("wilderness") is not None:
                 fields["wilderness_loss_gp"] = "wilderness_loss_gp"
             if (
-                sort not in kinds | fields.keys()
+                sort not in definitions.keys() | fields.keys()
                 or direction not in {"asc", "desc"}
                 or not 1 <= limit <= 100
             ):
@@ -535,8 +576,17 @@ class ObjectiveRunStore:
                     (run_id, solution_id),
                 ).fetchone()
                 if member is None:
-                    raise RunUnavailable("Optimization solution is no longer available")
-                solution_id = member[0]
+                    group, marker, digest = solution_id.rpartition("-objective-")
+                    baseline = self._connection.execute(
+                        "SELECT json_extract(metadata,'$.baseline_solution_id') "
+                        "FROM groups WHERE run=? AND id=?",
+                        (run_id, group),
+                    ).fetchone()
+                    if not marker or baseline is None or baseline[0] != solution_id:
+                        raise RunUnavailable("Optimization solution is no longer available")
+                    solution_id = f"objective-{digest}"
+                else:
+                    solution_id = member[0]
             key = (run_id, solution_id)
             report = self._cache.get(key)
             if report is None:

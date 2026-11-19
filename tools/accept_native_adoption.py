@@ -18,7 +18,7 @@ from typing import Any
 
 from tools.accept_compact_states import PARITY, derive_case
 from tools.accept_gear_desktop_profiles import _write
-from tools.benchmark_gear_desktop import load_frozen_case, result_digest
+from tools.benchmark_gear_desktop import cost_objective_case, load_frozen_case, result_digest
 from tools.native_effect_cases import EFFECT_CASES, derive_effect_case
 from tools.p5_experiment import (
     RunSpec,
@@ -27,6 +27,7 @@ from tools.p5_experiment import (
     native_target_executed,
     source_hashes,
 )
+from tracker.gear.objective_store import materialize_result_archives
 
 POLICY = "native-adoption-correctness-v1"
 SERVICE_CASES = tuple(dict.fromkeys((name, 6 if n == 3 else n) for name, n in PARITY))
@@ -117,26 +118,18 @@ def required_native_executed(diagnostics: dict[str, Any], metadata: dict[str, An
     if not metadata.get("effect_case"):
         return True
     events = diagnostics.get("events", [])
-    stages = {
-        (
-            style,
-            "cost" if row.get("cost") else "secondary" if row.get("frontier") else "dps",
-            bool(row.get("metric")),
-        )
+    work = {
+        (style, row["event"])
         for row in events
-        if row.get("event") == "stage" and row.get("attempts", 0) > 0
+        if row.get("event") in {"stage", "vector_projection"}
+        and row.get("attempts", 0) > 0
+        and row.get("cost")
         for style in row.get("roles", ())
     }
     return all(
-        (style, lane, metric) in stages
-        for style in metadata.get("required_effect_styles", ())
-        for lane, metric in (
-            ("dps", False),
-            ("secondary", False),
-            ("secondary", True),
-            ("cost", False),
-            ("cost", True),
-        )
+        (style, event) in work
+        for style in metadata["required_effect_styles"]
+        for event in ("stage", "vector_projection")
     )
 
 
@@ -149,6 +142,8 @@ def compare(
     workers: int,
 ) -> dict[str, Any]:
     specs = _specifications(phase, workers)
+    if phase == "archives":
+        case, meta = cost_objective_case(case, meta)
     if output.exists() and any(output.iterdir()):
         raise ValueError("Evidence directory already contains observations; use a new revision")
     binding = verify_binding(output)
@@ -172,8 +167,8 @@ def compare(
                 spec,
                 service,
                 archives=phase == "archives",
-                force_cost=phase == "archives",
             )
+        result = materialize_result_archives(result)
         path = output / f"{label}.json"
         _write(path, result)
         report["observations"].append(

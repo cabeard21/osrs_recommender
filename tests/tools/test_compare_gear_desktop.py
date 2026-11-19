@@ -27,7 +27,6 @@ def test_interleaves_warmups_and_pairs_preserving_complete_results(tmp_path, mon
         assert kwargs == {
             "local_refinement": False,
             "_complete_frontiers": True,
-            "_running_frontier": True,
         }
         return {"curve": [1], "search": {"nodes": 2, "timings_seconds": len(modes)}}
 
@@ -231,7 +230,6 @@ def test_ranged_finalization_context_is_candidate_only_with_combined_fixed_execu
             "_execution_profile": "combined",
             "_fixed_reporting": True,
             "_complete_frontiers": True,
-            "_running_frontier": True,
         }
         observed.append(active())
         return {"curve": [1]}

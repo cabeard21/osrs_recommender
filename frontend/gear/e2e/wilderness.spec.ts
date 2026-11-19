@@ -153,3 +153,52 @@ test("reports the ammo quantity to pack on a ranged loadout", async ({
     expect(diagnostics.fallback_requests).toBe(0);
   }
 });
+
+test("explores fixed-trip loss and selects the archived lowest risk setup", async ({
+  page,
+}) => {
+  expect(
+    (await page.request.post("/test/seed-ammo?trip_prices=true")).ok(),
+  ).toBe(true);
+  await page.goto("/gear-next/");
+  await page.getByRole("button", { name: "ranged", exact: true }).click();
+  await page.getByLabel("Wilderness", { exact: true }).check();
+  await page.getByLabel("Skulled at death").check();
+  await page.getByLabel("Assume Protect Item is active at death").check();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Advanced settings/ })
+    .click();
+  await page
+    .getByRole("checkbox", {
+      name: "Wilderness loss if PK’d (GP)",
+      exact: true,
+    })
+    .check();
+  await expect(page.getByLabel("No loss cap")).toBeChecked();
+  await page.getByLabel("Attacks per combat setup").fill("25");
+  const pending = page.waitForResponse(
+    (r) =>
+      new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
+      r.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Run optimization", exact: true })
+    .click();
+  const response = await pending;
+  expect(response.status(), await response.text()).toBe(200);
+  const body = await response.json();
+  expect(body.scenario.wilderness.attacks_per_setup).toBe(25);
+  const solution = body.result.selected_solution;
+  expect(solution.objective_values.wilderness_loss_gp).toBe(
+    solution.wilderness_risk.loss_gp,
+  );
+  const region = page.getByRole("region", { name: "Objective tradeoffs" });
+  await region.getByRole("button", { name: "Lowest Wilderness loss" }).click();
+  await region.getByLabel("Sort tradeoffs").selectOption("wilderness_loss_gp");
+  await expect(region.getByLabel("Sort direction")).toHaveValue("asc");
+  await expect(region.getByRole("row", { selected: true })).toBeVisible();
+  await expect(
+    region.getByRole("columnheader", { name: /Wilderness|Risk/i }),
+  ).toHaveCount(1);
+});

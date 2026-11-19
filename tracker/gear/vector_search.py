@@ -8,6 +8,7 @@ from collections.abc import Iterable, Mapping
 from itertools import product
 from typing import Any
 
+from tracker.gear.compact_costs import aggregate_numeric_cost
 from tracker.gear.evaluation import loadout_problems, planning_owned
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.objectives import annotate_solution, objective_policy
@@ -16,6 +17,7 @@ from tracker.gear.vector_options import OptionVariant, VectorOptions
 from tracker.gear.vector_publish import FrontierPoints
 from tracker.gear.vector_refinement import _safe_improvement
 from tracker.gear.vector_retention import retain
+from tracker.gear.vector_wilderness import supply_saving_lanes, trip_loss_lookup
 
 
 class VectorSearch:
@@ -42,6 +44,7 @@ class VectorSearch:
                 )
             )
         caps = [*range(search.request.max_swaps + 1), None]
+        self.baselines: dict[int | None, dict[str, Any] | None] = dict.fromkeys(caps)
         common = VectorArchive(self.ids) if len(search.request.roles) == 1 else None
         self.archives = {
             cap: common if common is not None else VectorArchive(self.ids) for cap in caps
@@ -84,16 +87,73 @@ class VectorSearch:
 
         solution = materialize(solution if isinstance(solution, dict) else dict(solution))
         annotated = annotate_solution(solution, self.objectives, self.search.request.roles)
+        if (
+            self.options.risk_index is not None
+            and annotated["objective_values"].get("wilderness_loss_gp") is None
+        ):
+            return
+        if self.options.cost_index is not None:
+            from tracker.gear.optimizer import _objective_winner_key
+
+            for cap, previous in self.baselines.items():
+                if cap is not None and annotated["maximum_actions"] > cap:
+                    continue
+                if (
+                    previous is None
+                    or annotated["score"] > previous["score"]
+                    or (
+                        annotated["score"] == previous["score"]
+                        and _objective_winner_key(annotated) < _objective_winner_key(previous)
+                    )
+                ):
+                    self.baselines[cap] = annotated
         updated = set()
+        cleaned = None
         for cap, archive in self.archives.items():
             if (cap is None or annotated["maximum_actions"] <= cap) and id(archive) not in updated:
                 updated.add(id(archive))
                 if archive.add(annotated):
                     self.accepted += 1
+                    if self.options.cost_index is not None:
+                        if cleaned is None:
+                            cleaned = self.clean_ammunition(annotated)
+                        if cleaned is not annotated:
+                            self.accepted += int(archive.add(cleaned))
                     if self.prayer_ammunition:
                         upgrade = self._prayer_ammunition_upgrade(annotated)
                         if upgrade is not None:
                             self.accepted += int(archive.add(upgrade))
+
+    def clean_ammunition(self, row: dict[str, Any]) -> dict[str, Any]:
+        from tracker.gear.optimizer import _solution_key
+        from tracker.gear.refinement import refine_ammunition
+        from tracker.gear.variant_reporting import materialize
+        from tracker.gear.wilderness_ammo import consumes_ammunition
+
+        for role in self.search.request.roles:
+            equipment = row["loadouts"][role.id]["equipment"]
+            if role.style == "special" or "ammunition" not in equipment:
+                continue
+            if not consumes_ammunition(equipment, role.style, self.search.items):
+                cleaned = refine_ammunition(
+                    self.search,
+                    row,
+                    _solution_key,
+                    {"evaluated_assignments": 0, "improved_finalists": 0},
+                )
+                if cleaned is not row:
+                    cleaned = annotate_solution(
+                        materialize(cleaned), self.objectives, self.search.request.roles
+                    )
+                    if cleaned["objective_values"] == row["objective_values"] and all(
+                        candidate["combat_option"] == row["loadouts"][rid]["combat_option"]
+                        and candidate["selected_prayer_ids"]
+                        == row["loadouts"][rid]["selected_prayer_ids"]
+                        for rid, candidate in cleaned["loadouts"].items()
+                    ):
+                        return cleaned
+                break
+        return row
 
     def _prayer_ammunition_upgrade(self, solution: dict[str, Any]) -> dict[str, Any] | None:
         """Check idle melee ammunition on admission, including rows outside the seed pool."""
@@ -189,6 +249,9 @@ class VectorSearch:
                 if cap is None or feasibility.maximum_actions <= cap
             )
         )
+
+        risk_index = self.options.risk_index
+        trip_loss = trip_loss_lookup(self.search, assignment) if risk_index is not None else None
         for position, selected in enumerate(product(*alternatives)):
             if position < cursor:
                 continue
@@ -202,15 +265,50 @@ class VectorSearch:
             self.option_attempts += 1
             self.complete_attempts += 1
             vector = self.weighted(selected, roles)
-            if all(archive.strictly_dominated(vector) for archive in applicable):
+            if trip_loss is not None and risk_index is not None:
+                loss = trip_loss(selected)
+                if loss is None:
+                    continue
+                if vector is not None:
+                    vector = (*vector[:risk_index], -loss, *vector[risk_index + 1 :])
+            if vector is None:
+                # A feasible unpriced option may still be a cap's highest-DPS baseline.
+                score = self.weighted_values(selected, roles)[0]
+                if all(
+                    row is not None and row["score"] > score
+                    for cap, row in self.baselines.items()
+                    if cap is None or feasibility.maximum_actions <= cap
+                ):
+                    continue
+            elif all(archive.strictly_dominated(vector) for archive in applicable):
                 continue
             solution = self.options.solution(assignment, selected)
             if solution is not None:
                 self.offer(solution)
         self.seen.execute("UPDATE seen_assignments SET complete=1 WHERE identity=?", (identity,))
 
+    def weighted(
+        self, selected: tuple[OptionVariant, ...], roles: tuple[Any, ...]
+    ) -> tuple[float, ...] | None:
+        weighted = self.weighted_values(selected, roles)
+        cost_index = self.options.cost_index
+        if cost_index is None:
+            return weighted
+        cost = aggregate_numeric_cost(
+            [
+                (role.weight, option.cost, option.values[0])
+                for role, option in zip(roles, selected, strict=True)
+                if role.style != "special" and option.cost is not None
+            ]
+        ).gp_per_damage
+        return (
+            None if cost is None else (*weighted[:cost_index], -cost, *weighted[cost_index + 1 :])
+        )
+
     @staticmethod
-    def weighted(selected: tuple[OptionVariant, ...], roles: Iterable[Any]) -> tuple[float, ...]:
+    def weighted_values(
+        selected: tuple[OptionVariant, ...], roles: Iterable[Any]
+    ) -> tuple[float, ...]:
         included = [
             (option, role)
             for option, role in zip(selected, roles, strict=True)
@@ -236,11 +334,50 @@ class VectorSearch:
                 self.options.envelope(assignment[role.id], role)
                 or (0.0,) * (len(self.objectives) + 1)
             )
-        return tuple(
+        projection = tuple(
             sum(value[index] * role.weight for value, role in zip(values, roles, strict=True))
             / weight
             for index in range(len(self.objectives) + 1)
         )
+
+        return self.risk_projection(
+            projection, {item for gear in assignment.values() for item in gear.values()}
+        )
+
+    def risk_projection(
+        self, projection: tuple[float, ...], carried: set[int]
+    ) -> tuple[float, ...]:
+        index = self.options.risk_index
+        if index is None:
+            return projection
+        bound = self.search.wilderness.lower_bound(carried)
+        return (*projection[:index], -bound, *projection[index + 1 :])
+
+    def cost_lanes(
+        self, slot: str, candidates: list[int], scaffolds: dict[str, list[dict[str, int]]]
+    ) -> list[list[int]]:
+        cost_index = self.options.cost_index
+        if cost_index is None or slot not in {"weapon", "ammunition", "cape", "shield"}:
+            return []
+        lanes = []
+        for role in self.search.request.roles:
+            if role.style == "special":
+                continue
+            grades: dict[int, float] = {}
+            for base in scaffolds[role.id]:
+                if self.search.cancelled and self.search.cancelled():
+                    raise ValueError("optimization_cancelled")
+                choices = candidates
+                if slot in {"weapon", "ammunition"}:
+                    choices = [base[slot]] if slot in base else []
+                for item in choices:
+                    trial = {**base, slot: item}
+                    if self.search.compatible(trial):
+                        projection = self.options.envelope(trial, role)
+                        if projection is not None:
+                            grades[item] = max(grades.get(item, -1e100), projection[cost_index])
+            lanes.append(sorted(grades, key=lambda item: (-grades[item], item)))
+        return lanes
 
     def candidate_pools(self) -> dict[str, list[int | None]]:
         from tracker.gear.optimizer import SLOTS
@@ -252,6 +389,11 @@ class VectorSearch:
             "magic_damage_bonus": "magic_damage",
         }
         pools: dict[str, list[int | None]] = {}
+        scaffolds = {
+            role.id: self.search.baselines(role)
+            for role in self.search.request.roles
+            if self.options.cost_index is not None and role.style != "special"
+        }
         for slot in SLOTS:
             candidates = [
                 item_id for item_id, item in self.search.eligible.items() if item.slot == slot
@@ -260,8 +402,19 @@ class VectorSearch:
                 [item for item in self.search.pools[slot] if item is not None],
                 sorted(candidates, key=lambda item: (self.search.cost({item}), item)),
             ]
+            if self.options.cost_index is not None:
+                lanes.extend(self.cost_lanes(slot, candidates, scaffolds))
+                # Rune supply and task-specific spell access can be invisible on bare gear.
+                protected = [
+                    item
+                    for item in candidates
+                    if self.search.items[item].tome_effect or item in {4170, 21255}
+                ]
+                lanes.extend([item] for item in protected)
             if self.search.wilderness is not None:
                 lanes.append(sorted(candidates, key=self.search.budget_item_rank))
+            if self.options.risk_index is not None:
+                lanes.extend(supply_saving_lanes(self.search, slot, candidates))
             for objective in self.objectives:
                 components = ["defence_" + style for style in objective.styles]
                 if objective.kind == "defence_roll":
@@ -385,6 +538,9 @@ class VectorSearch:
     ) -> list[tuple[dict[str, int], tuple[float, ...]]]:
         from tracker.gear.optimizer import SLOTS
 
+        settled_slots = (
+            SLOTS[: SLOTS.index(slot) + 1] if self.options.risk_index is not None else ()
+        )
         expanded: list[tuple[dict[str, int], tuple[float, ...]]] = []
         for state, item in product(states, choices):
             if not self.tick():
@@ -410,6 +566,10 @@ class VectorSearch:
             assignment = {role.id: candidate for role in roles}
             if slot == SLOTS[-1]:
                 self.capture(assignment)
+            if self.options.risk_index is not None:
+                projection = self.risk_projection(
+                    projection, {candidate[s] for s in settled_slots if s in candidate}
+                )
             expanded.append((candidate, projection))
 
         return expanded
@@ -454,6 +614,16 @@ class VectorSearch:
                 raise ValueError("optimization_cancelled")
             if not self.nodes & 1023:
                 self.search.reporter.fraction(0.65 * self.nodes / self.limit)
+        if expansion.consumed:
+            from tracker.gear.native import record
+
+            record(
+                "vector_projection",
+                attempts=expansion.consumed,
+                cost=self.options.cost_evaluator is not None,
+                slot=slot,
+                roles=tuple(role.style for role in roles),
+            )
         return expanded
 
     def combine(self, individual: Mapping[str, list[dict[str, int]]], allowance: int) -> None:
@@ -563,12 +733,31 @@ class VectorSearch:
         return result
 
     def publish(self) -> dict[str, Any]:
+        if self.options.cost_index is not None:
+            from tracker.gear.optimizer import _objective_winner_key
+
+            chosen = {}
+            for cap, archive in self.archives.items():
+                incumbent = self.baselines[cap]
+                if incumbent is None:
+                    continue
+                if archive not in chosen:
+                    candidates = archive.iter_solutions(minimum_dps=incumbent["score"])
+                    chosen[archive] = min(candidates, key=_objective_winner_key, default=None)
+                self.baselines[cap] = chosen[archive] or self.clean_ammunition(incumbent)
         groups = [
             {
                 "swap_limit": cap,
-                "baseline_dps": archive.baseline_dps(),
+                "baseline_dps": (self.baselines[cap] or {}).get("score", archive.baseline_dps()),
+                **(
+                    {"baseline_solution": self.baselines[cap]}
+                    if self.options.cost_index is not None
+                    else {}
+                ),
                 "sampled": False,
-                "points": FrontierPoints(archive, cap),
+                "points": FrontierPoints(
+                    archive, cap, baseline_dps=(self.baselines[cap] or {}).get("score")
+                ),
             }
             for cap, archive in self.archives.items()
         ]

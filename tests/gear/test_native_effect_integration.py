@@ -10,6 +10,7 @@ from tools.native_effect_cases import EFFECT_CASES, derive_effect_case
 from tracker.content.loader import load_content
 from tracker.gear.catalog import load_catalog
 from tracker.gear.native import capture
+from tracker.gear.objectives import ObjectiveDescriptor
 from tracker.gear.optimizer import optimize
 
 
@@ -36,14 +37,19 @@ def test_effect_cases_are_frozen_deterministic_and_detached(effect_base, name):
 def test_effect_complete_archives_match_python_and_use_native(effect_base, name, thorough):
     pytest.importorskip("tracker.gear.native._stages")
     case, _ = derive_effect_case(effect_base, case_provenance(effect_base), name)
-    args = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
+    request = case.request.model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
+    args = (case.snapshot, request, case.catalog, case.content, case.prices, case.at)
     flags = {
         "_execution_profile": "combined",
         "_fixed_reporting": True,
         "_factored_evaluation": True,
         "_compact_states": True,
         "_complete_frontiers": True,
-        "_running_frontier": True,
         "local_refinement": thorough,
     }
     reference = optimize(*args, **flags)

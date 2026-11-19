@@ -8,7 +8,7 @@ export function parseAlternatives(
   value: unknown,
   items: Item[],
   excluded: number[],
-  maxRisk?: number,
+  maxRisk?: number | null,
 ): Alternatives {
   if (value === undefined) return {};
   if (!value || typeof value !== "object" || Array.isArray(value))

@@ -17,21 +17,23 @@ class FrontierPoints(Sequence[dict[str, Any]]):
         limit: int | None,
         id_prefix: str = "",
         maximum_loss_pct: float | None = None,
+        baseline_dps: float | None = None,
     ) -> None:
         self.archive, self.limit, self.id_prefix = archive, limit, id_prefix
         self.maximum_loss_pct = maximum_loss_pct
+        self.baseline_dps = archive.baseline_dps() if baseline_dps is None else baseline_dps
 
     @property
     def minimum_dps(self) -> float | None:
         if self.maximum_loss_pct is None:
             return None
-        return self.archive.baseline_dps() * (1 - self.maximum_loss_pct / 100)
+        return self.baseline_dps * (1 - self.maximum_loss_pct / 100)
 
     def __len__(self) -> int:
         return self.archive.count(self.minimum_dps)
 
     def __iter__(self) -> Iterator[dict[str, Any]]:
-        baseline = self.archive.baseline_dps()
+        baseline = self.baseline_dps
         for row in self.archive.iter_solutions(self.minimum_dps):
             yield {
                 "id": f"{self.id_prefix}objective-{self.limit}-{solution_identity(row)[:24]}",
@@ -63,7 +65,11 @@ def filter_groups(
         points = group["points"]
         if isinstance(points, FrontierPoints):
             filtered: Any = FrontierPoints(
-                points.archive, points.limit, points.id_prefix, maximum_loss_pct
+                points.archive,
+                points.limit,
+                points.id_prefix,
+                maximum_loss_pct,
+                group.get("baseline_dps"),
             )
         else:
             baseline = group.get("baseline_dps") or 0
@@ -74,7 +80,11 @@ def filter_groups(
 
 
 def publish_groups(
-    archives: Mapping[int | None, Iterable[dict[str, Any]]], request: Any, *, id_prefix: str = ""
+    archives: Mapping[int | None, Iterable[dict[str, Any]]],
+    request: Any,
+    *,
+    id_prefix: str = "",
+    baselines: Mapping[int | None, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Publish every discovered nondominated point; presentation filtering happens later."""
     objective_ids = tuple(objective.id for objective in request.objectives or ())
@@ -84,13 +94,15 @@ def publish_groups(
         for candidate in candidates:
             if limit is None or candidate["maximum_actions"] <= limit:
                 archive.add(candidate)
-        baseline = archive.baseline_dps()
+        winner = (baselines or {}).get(limit)
+        baseline = winner["score"] if winner is not None else archive.baseline_dps()
         result.append(
             {
                 "swap_limit": limit,
                 "baseline_dps": baseline,
+                **({"baseline_solution": winner} if winner is not None else {}),
                 "sampled": False,
-                "points": FrontierPoints(archive, limit, id_prefix),
+                "points": FrontierPoints(archive, limit, id_prefix, baseline_dps=baseline),
             }
         )
     return result

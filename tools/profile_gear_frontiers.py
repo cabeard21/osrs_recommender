@@ -25,6 +25,7 @@ from typing import Any
 
 from tools.gear_retention_oracle import Case
 from tools.gear_search_quality_fixture import load_case
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import OptimizationRequest, optimize
 from tracker.gear.potions import PotionPolicy
 
@@ -114,9 +115,14 @@ def solution_digest(result: dict[str, Any]) -> str:
         "unrestricted",
         "curve",
         "secondary_frontiers",
+        "objective_frontiers",
         "running_cost_frontiers",
     )
     payload = {key: result.get(key) for key in fields}
+    if children := result.get("discipline_results"):
+        payload["disciplines"] = [
+            (child["discipline"], solution_digest(child)) for child in children
+        ]
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
@@ -129,7 +135,6 @@ def profile_case(
     started = perf_counter()
     options = {
         "_complete_frontiers": True,
-        "_running_frontier": True,
         "local_refinement": provenance["optimization_mode"] == "thorough",
     }
     args = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
@@ -137,6 +142,7 @@ def profile_case(
         profiler.runcall(optimize, *args, **options) if profiler else optimize(*args, **options)
     )
     seconds = perf_counter() - started
+    result = materialize_result_archives(result)
     if profiler:
         profiler.dump_stats(output / "calls.prof")
         with (output / "calls.txt").open("w", encoding="utf-8") as stream:
@@ -148,7 +154,9 @@ def profile_case(
         "wall_seconds": seconds,
         "cprofile_enabled": cprofile,
         "complete_frontiers": True,
-        "running_cost_frontier_forced": True,
+        "running_cost_objective": any(
+            o.kind == "gp_per_damage" for o in case.request.objectives or ()
+        ),
         "solution_digest": solution_digest(result),
         "search": result["search"],
     }

@@ -199,8 +199,10 @@ def pack(search: Any) -> dict[str, Any]:
         "ranged_strength_bonus": 3,
         "magic_damage_bonus": 4,
         "accuracy": 5,
+        "gp_per_damage": 6,
+        "wilderness_loss_gp": 7,
     }
-    if len(objectives) > 62:
+    if len(objectives) > 64:
         raise ValueError("Too many native objectives")
     for objective in objectives:
         objective_kinds.append(kinds[objective.kind])

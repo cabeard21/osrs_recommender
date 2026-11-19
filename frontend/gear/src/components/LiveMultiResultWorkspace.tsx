@@ -367,24 +367,14 @@ export function LiveMultiResultWorkspace() {
           {curvePanel}
         </>
       )}
-      {(raw.running_cost_frontiers?.length ||
-        roles.some((role) =>
-          role.autoDiscipline
-            ? (role.allowedDisciplines ?? ["melee", "ranged", "magic"]).some(
-                (discipline) =>
-                  discipline === "magic" || discipline === "ranged",
-              )
-            : role.style === "magic" || role.style === "ranged",
-        )) && (
-        <RunningCostFrontier
-          group={runningCostGroup}
-          selectedId={current.solutionId}
-          selected={solution}
-          itemName={itemName}
-          roleName={roleName}
-          onSelect={(solutionId) => ui({ solutionId })}
-        />
-      )}
+      <RunningCostFrontier
+        group={runningCostGroup}
+        selectedId={current.solutionId}
+        selected={solution}
+        itemName={itemName}
+        roleName={roleName}
+        onSelect={(solutionId) => ui({ solutionId })}
+      />
       {result.scenario.request.objectives !== undefined && (
         <ObjectiveFrontier
           result={result}

@@ -495,28 +495,24 @@ def test_final_frontiers_remove_unused_arrows_without_changing_combat_options():
             roles=roles,
             mode="owned",
             max_swaps=0,
-            secondary_priority="accuracy",
+            objectives=[{"kind": "accuracy"}, {"kind": "gp_per_damage"}],
             max_dps_loss_pct=100,
         ),
         SimpleNamespace(items={i.id: i for i in items}),
         Content(),
         {806: price},
         NOW,
-        _running_frontier=True,
     )
-    points = result["secondary_frontiers"][0]["points"]
+    points = result["objective_frontiers"][0]["points"]
     assert {p["solution"]["loadouts"]["dart"]["combat_option"]["stance"] for p in points} == {
         "accurate",
         "rapid",
     }
-    running = result["running_cost_frontiers"][0]
-    assert running["points"]
-    assert all(p["solution"]["running_cost"]["status"] == "known" for p in running["points"])
+    assert all(p["solution"]["running_cost"]["status"] == "known" for p in points)
     solutions = [
         result["selected_solution"],
         result["unrestricted"],
-        running["baseline_solution"],
-        *(p["solution"] for p in [*points, *running["points"]]),
+        *(p["solution"] for p in points),
     ]
     for solution in solutions:
         assert "ammunition" not in solution["loadouts"]["dart"]["equipment"]

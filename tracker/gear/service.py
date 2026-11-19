@@ -25,7 +25,6 @@ from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.progress_tracker import RunProgress, TimingModel
-from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
@@ -44,13 +43,9 @@ _LIMITATIONS = (
 )
 
 
-def _has_frontiers(request: OptimizationRequest, catalog: Any = None) -> bool:
-    """Whether any lane runs the secondary or running-cost frontier stage."""
-    return (
-        bool(getattr(request, "objectives", None))
-        or request.secondary_priority != "default"
-        or needs_running_cost_frontier(request, catalog)
-    )
+def _has_frontiers(request: OptimizationRequest) -> bool:
+    """Whether any lane runs secondary objective exploration."""
+    return bool(request.objectives) or request.secondary_priority != "default"
 
 
 def _timing_key(
@@ -88,6 +83,8 @@ def _timing_key(
             request.wilderness.protect_item,
             request.purchase_budget is None,
             (request.wilderness_risk_limit or 0) > 0,
+            request.wilderness.attacks_per_setup is not None,
+            request.wilderness_risk_limit is None,
         )
     objectives = getattr(request, "objectives", None)
     return key if objectives is None else (*key, tuple(objective.id for objective in objectives))
@@ -220,7 +217,7 @@ class GearService:
                 parallel = True
             if progress_identity is not None:
                 tracker = RunProgress(
-                    has_frontiers=_has_frontiers(request, self.equipment_catalog()),
+                    has_frontiers=_has_frontiers(request),
                     parallelism=getattr(pool, "workers", 1) if parallel else 1,
                     timing_key=_timing_key(
                         request,

@@ -290,20 +290,27 @@ def test_complete_potion_merge_defers_loss_cap_until_outer_merge():
 
 
 def test_running_frontier_breaks_equivalent_rows_by_potion_cost():
-    from tracker.gear.running_frontier import cost_pareto
+    from tracker.gear.vector_archive import VectorArchive
 
     result = run([weapon(1, "slash", 40)], (RoleConfig(id="a", style="slash"),), max_swaps=0)
     row = result["selected_solution"]
     expensive = {
         **row,
+        "objective_values": {"gp_per_damage": 1},
         "running_cost": {"gp_per_damage": 1},
         "potions": {"selected_ids": ["strength"], "cost_per_application_gp": 100},
     }
     cheap = {**expensive, "potions": {"selected_ids": ["strength"], "cost_per_application_gp": 10}}
-    assert cost_pareto([expensive, cheap]) == [cheap]
+    archive = VectorArchive(("gp_per_damage",))
+    try:
+        archive.add(expensive)
+        archive.add(cheap)
+        assert [r["potions"] for r in archive.iter_solutions()] == [cheap["potions"]]
+    finally:
+        archive.close()
 
 
-def test_potion_secondary_and_running_frontiers_preserve_selected_setup():
+def test_potion_secondary_frontier_preserves_selected_setup_and_skips_unselected_cost():
     result = run(
         [],
         (RoleConfig(id="a", style="magic"),),
@@ -313,7 +320,7 @@ def test_potion_secondary_and_running_frontiers_preserve_selected_setup():
         potions={"mode": "optimize", "allowed_ids": ("magic",)},
     )
     assert result["secondary_frontiers"]
-    assert result["running_cost_frontiers"]
+    assert not result["running_cost_frontiers"]
     for group in result["secondary_frontiers"]:
         for point in group["points"]:
             assert "potions" in point["solution"]

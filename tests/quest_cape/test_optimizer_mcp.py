@@ -20,6 +20,8 @@ def test_optimizer_tool_delegates_and_rejects_invalid_requests(service, snapshot
     class Gear:
         def optimize(self, account, request, **kwargs):
             calls.append((account, request, kwargs))
+            if request.objectives:
+                return {"objective_frontiers": [{"points": iter([{"id": "cost-point"}])}]}
             if request.expected_snapshot_id == "old":
                 raise ValueError("snapshot_changed: refresh account facts")
             return {
@@ -69,6 +71,15 @@ def test_optimizer_tool_delegates_and_rejects_invalid_requests(service, snapshot
             "spell": None,
             "powered_attack": None,
         }
+        cost = call(
+            {
+                "roles": [{"id": "melee", "style": "slash"}],
+                "objectives": [{"kind": "gp_per_damage"}],
+            }
+        )
+        assert cost["structuredContent"]["objective_frontiers"][0]["points"] == [
+            {"id": "cost-point"}
+        ]
         assert calls[0][0] is snapshot
         assert calls[0][1].budget_gp == 100
         assert calls[0][2]["price_records"] == {}

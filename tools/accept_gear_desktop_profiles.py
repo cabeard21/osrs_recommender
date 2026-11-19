@@ -19,12 +19,14 @@ from typing import Any
 
 from tools.benchmark_gear_desktop import (
     case_provenance,
+    cost_objective_case,
     environment,
     frozen_inputs,
     load_frozen_case,
     result_digest,
 )
 from tools.compare_gear_desktop import decision
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import CombatOptionFilters, OptimizationRequest, optimize
 from tracker.gear.potions import PotionPolicy
 
@@ -145,6 +147,8 @@ def derive_case(case: Any, provenance: dict[str, Any], name: str) -> tuple[Any, 
         "request_variant": True,
         "cohort_sha256": cohort_hash(case),
     }
+    if name == "diagnostic":
+        return cost_objective_case(case, metadata)
     return case, case_provenance(case, **metadata)
 
 
@@ -227,7 +231,6 @@ def compare_profiles(
                     case.at,
                     _execution_profile=profile,
                     _complete_frontiers=True,
-                    _running_frontier=True,
                     local_refinement=provenance.get("optimization_mode") == "thorough",
                 )
             else:
@@ -239,6 +242,7 @@ def compare_profiles(
                     local_refinement=provenance.get("optimization_mode") == "thorough",
                 )
             seconds = perf_counter() - start
+            result = materialize_result_archives(result)
             digest = result_digest(result)
             if expected is not None and expected != digest:
                 raise ValueError(f"Complete result parity failed: {label}")

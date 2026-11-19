@@ -104,7 +104,6 @@ def test_diagnostic_and_cache_are_explicit(tmp_path):
         assert kwargs == {
             "local_refinement": False,
             "_complete_frontiers": True,
-            "_running_frontier": True,
         }
         return {"id": "unchanged"}
 

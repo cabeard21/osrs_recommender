@@ -25,7 +25,6 @@ from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
-from tracker.gear.running_frontier import needs_running_cost_frontier
 from tracker.gear.vector_archive import adopt_vector_archives, own_vector_archives
 
 logger = logging.getLogger(__name__)
@@ -409,7 +408,6 @@ class AutoProcessPool:
                 "local_refinement",
                 "targeted_head_refinement",
                 "_complete_frontiers",
-                "_running_frontier",
                 "_fixed_reporting",
                 "_factored_evaluation",
                 "_compact_states",
@@ -512,8 +510,7 @@ class AutoProcessPool:
         jobs = [
             job_payload(snapshot, concrete, prices, now, self._identity) for _, concrete in branches
         ]
-        selected = {**options, "_running_frontier": needs_running_cost_frontier(request, catalog)}
-        results = self._dispatch(jobs, selected, cancelled, progress)
+        results = self._dispatch(jobs, options, cancelled, progress)
         return [
             (discipline, result) for (discipline, _), result in zip(branches, results, strict=True)
         ]

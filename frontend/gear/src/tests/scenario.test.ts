@@ -11,6 +11,7 @@ import {
   upgradeStoredDraft,
 } from "../state/scenario";
 import { contextFixture, FixtureGearClient } from "../fixtures/client";
+import { wildernessRiskCap, normalizedWilderness } from "../api/wilderness";
 import { MAX_BUDGET_GP } from "../state/budget";
 const reply = () =>
   new FixtureGearClient("none", 0).optimize(
@@ -18,6 +19,48 @@ const reply = () =>
     new AbortController().signal,
   );
 describe("scenario normalization", () => {
+  it("interprets an implicit trip size as uncapped risk and keeps legacy caps", () => {
+    const wilderness = {
+      depth: "level_21_plus",
+      skulled: true,
+      protect_item: false,
+      spell_casts: 17,
+    } as const;
+    const objectives = [{ kind: "wilderness_loss_gp" as const }];
+    expect(
+      wildernessRiskCap({ budget_gp: 5, wilderness, objectives }),
+    ).toBeNull();
+    expect(wildernessRiskCap({ budget_gp: 5, wilderness })).toBe(5);
+    expect(normalizedWilderness(wilderness, objectives)).toMatchObject({
+      attacks_per_setup: 17,
+    });
+    expect(
+      normalizedWilderness({ ...wilderness, spell_casts: null }, objectives),
+    ).toMatchObject({ attacks_per_setup: 100 });
+  });
+  it("preserves the trip length and distinguishes zero loss from an uncapped trip", () => {
+    const draft = {
+      ...newDraft(),
+      wilderness: {
+        depth: "level_21_plus",
+        skulled: false,
+        protect_item: false,
+      } as const,
+      objectives: [{ kind: "wilderness_loss_gp" as const }],
+      wildernessSpellCasts: "27",
+    };
+    expect(normalize(draft, "snapshot").request.wilderness).toEqual({
+      ...draft.wilderness,
+      attacks_per_setup: 27,
+    });
+    expect(
+      normalize({ ...draft, wildernessLimitLoss: true }, "snapshot").request
+        .wilderness?.max_loss_gp,
+    ).toBe(0);
+    expect(() =>
+      normalize({ ...draft, wilderness: undefined }, "snapshot"),
+    ).toThrow(/Wilderness/);
+  });
   it("migrates legacy Wilderness drafts without converting their risk amount into a purchase cap", () => {
     const wilderness = {
       depth: "level_21_plus",
@@ -43,6 +86,24 @@ describe("scenario normalization", () => {
       budget: String(MAX_BUDGET_GP),
       wildernessRiskBudget: "100k",
     });
+  });
+  it("retains a historical explicit zero loss cap when selecting the objective", () => {
+    const draft = upgradeStoredDraft({
+      ...newDraft(),
+      wildernessLimitLoss: undefined,
+      wildernessRiskBudget: "0",
+      wilderness: {
+        depth: "level_21_plus",
+        skulled: true,
+        protect_item: false,
+      },
+    })!;
+    expect(
+      normalize(
+        { ...draft, objectives: [{ kind: "wilderness_loss_gp" }] },
+        "snapshot",
+      ).request.wilderness?.max_loss_gp,
+    ).toBe(0);
   });
   it("validates the Wilderness cast count for Magic and ignores hidden invalid values", () => {
     const draft = {

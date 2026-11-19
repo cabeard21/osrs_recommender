@@ -63,7 +63,7 @@ def test_interior_tradeoff_survives_every_pairwise_projection_and_native_executi
         mode="owned",
         max_swaps=0,
         max_dps_loss_pct=100,
-        objectives=objective_set(62)
+        objectives=objective_set(63)
         if all_objectives
         else [{"kind": "defence_roll", "styles": [style]} for style in styles],
     )

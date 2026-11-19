@@ -53,9 +53,13 @@ function Scatter({
   const cb = colorBy
     ? metricBounds(points, colorBy)
     : ([0, 1] as [number, number]);
-  const sorted = [...points].sort(
-    (a, b) => Number(a.id === selectedId) - Number(b.id === selectedId),
-  );
+  const sorted = points
+    .filter((p) =>
+      [x, y, ...(colorBy ? [colorBy] : [])].every((key) =>
+        Number.isFinite(metricValue(p, key)),
+      ),
+    )
+    .sort((a, b) => Number(a.id === selectedId) - Number(b.id === selectedId));
   const ticks = [0, 0.5, 1];
   return (
     <svg
@@ -274,7 +278,10 @@ export function ParallelChart({
             ))}
           </g>
         ))}
-        {[...points]
+        {points
+          .filter((p) =>
+            metrics.every((m) => Number.isFinite(metricValue(p, m.key))),
+          )
           .sort(
             (a, b) => Number(a.id === selectedId) - Number(b.id === selectedId),
           )
@@ -299,8 +306,9 @@ export function ParallelChart({
           ))}
       </svg>
       <p className="lab-note">
-        Each line is one loadout. Higher is better on every axis; each axis uses
-        its own observed range.
+        Each line is one loadout. Each axis uses its own observed range.
+        {metrics.some((m) => m.key === "gp_per_damage") &&
+          " Lower GP/damage is more efficient."}
       </p>
     </>
   );

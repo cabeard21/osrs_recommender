@@ -38,8 +38,11 @@ def magic_case():
     )
 
 
+@pytest.mark.parametrize("fixed_trip", [False, True])
 @pytest.mark.parametrize("native", [False, True])
-def test_unaffordable_spell_falls_back_to_the_allowed_cheaper_spell(make_content, native):
+def test_unaffordable_spell_falls_back_to_the_allowed_cheaper_spell(
+    make_content, native, fixed_trip
+):
     if native:
         pytest.importorskip("tracker.gear.native._stages")
     snapshot, catalog, prices = magic_case()
@@ -58,7 +61,7 @@ def test_unaffordable_spell_falls_back_to_the_allowed_cheaper_spell(make_content
                 ),
             ),
         ),
-        objectives=(ObjectiveDescriptor(kind="accuracy"),),
+        objectives=(ObjectiveDescriptor(kind="wilderness_loss_gp" if fixed_trip else "accuracy"),),
         max_swaps=0,
         wilderness={"skulled": True, "protect_item": True, "max_loss_gp": 200, "spell_casts": 10},
     )

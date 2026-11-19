@@ -7,10 +7,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.gear.test_native_effect_costs import assert_cost_projection, cost_scorer
 from tracker.accounts.snapshot import AccountSnapshot, ObservedItemFact
 from tracker.content.loader import Content
 from tracker.domain.types import Container, SkillState, Source
-from tracker.gear.compact_costs import CostEvaluator, aggregate_numeric_cost
 from tracker.gear.execution_profile import execution_context
 from tracker.gear.models import EquipmentBonuses, EquipmentDefinition
 from tracker.gear.optimizer import (
@@ -165,10 +165,9 @@ def test_native_expansion_preserves_original_equipment_insertion_order():
 
 def test_native_cost_lane_unavailable_recipe_does_not_change_dps_retention():
     with stage_search() as search:
-        search.native_cost_objective = True
         search.running_prices = {}
         search.running_at = datetime(2026, 11, 12, tzinfo=UTC)
-        context = StageContext(ScoringContext(search), search)
+        context = StageContext(cost_scorer(search), search)
         actual, _ = drain(
             context.begin(
                 kind="loadout", states=[{}], choices=[2, 10, 100], slot="weapon", roles=("z",)
@@ -199,8 +198,7 @@ def test_special_roles_do_not_reject_otherwise_legal_native_joint_states():
         assert len(actual) == 1
 
 
-@pytest.mark.parametrize("metric", [False, True])
-def test_native_running_cost_rank_matches_python_hourly_aggregation(metric):
+def test_native_running_cost_projection_matches_python_dart_consumption():
     with stage_search() as search:
         now = datetime(2026, 11, 12, tzinfo=UTC)
         original = search.items[2]
@@ -231,34 +229,9 @@ def test_native_running_cost_rank_matches_python_hourly_aggregation(metric):
             )
             for item_id, price in ((806, 3), (807, 100))
         }
-        search.native_cost_objective = True
-        scorer = ScoringContext(search)
-        engine = CostEvaluator(search.running_prices, now)
-
-        def key(equipment):
-            performance = scorer.score(equipment, 0, metric)
-            recipe = engine.prepare(
-                {slot: search.items[item] for slot, item in equipment.items()},
-                {"attack_type": "ranged"},
-            )
-            numeric = recipe.score(performance["interval"], performance["dps"])
-            aggregate = aggregate_numeric_cost([(role.weight, numeric, performance["dps"])])
-            rank = (-performance["dps"], aggregate.gp_per_damage)
-            return (rank[1], rank[0]) if metric else rank
-
-        expected = sorted([{"weapon": 806}, {"weapon": 807}], key=key)
-        actual, _ = drain(
-            StageContext(scorer, search).begin(
-                kind="loadout",
-                states=[{}],
-                choices=[806, 807],
-                slot="weapon",
-                roles=("z",),
-                metric=metric,
-            ),
-            8,
-        )
-        assert actual == expected
+        scorer = cost_scorer(search)
+        for weapon in (806, 807):
+            assert_cost_projection(search, scorer, {"weapon": weapon})
 
 
 @pytest.mark.parametrize("interference,repair", [(False, False), (True, False), (False, True)])
@@ -299,42 +272,15 @@ def test_native_ranged_recovery_and_unavailable_cost_ranking(interference, repai
                 source="live",
             ),
         }
-        search.native_cost_objective = True
         base = {
             "weapon": 2,
             "ammunition": 3,
             **({"body": 1127} if interference else {}),
             **({"head": 4747} if repair else {}),
         }
-        scorer = ScoringContext(search)
-        actual, _ = drain(
-            StageContext(scorer, search).begin(
-                kind="loadout",
-                states=[base],
-                choices=[9756, 10498],
-                slot="cape",
-                roles=("z",),
-                metric=True,
-            ),
-            8,
-        )
-        engine = CostEvaluator(search.running_prices, now)
-
-        def rank(equipment):
-            performance = scorer.score(equipment, 0, True)
-            recipe = engine.prepare(
-                {slot: search.items[item] for slot, item in equipment.items()},
-                {"attack_type": "ranged"},
-            )
-            numeric = recipe.score(performance["interval"], performance["dps"])
-            aggregate = aggregate_numeric_cost([(1, numeric, performance["dps"])])
-            return (
-                aggregate.gp_per_damage if aggregate.gp_per_damage is not None else 1e100,
-                -performance["dps"],
-                tuple(sorted(equipment.items())),
-            )
-
-        assert actual == sorted([{**base, "cape": 9756}, {**base, "cape": 10498}], key=rank)
+        scorer = cost_scorer(search)
+        for cape in (9756, 10498):
+            assert_cost_projection(search, scorer, {**base, "cape": cape})
 
 
 def test_stage_expansion_counts_rejected_candidates_and_chunks():
@@ -730,3 +676,31 @@ def test_preflight_preserves_exact_integer_cost_ranking_boundary():
         unsafe = AcquisitionFacts({2: (999, MAX_NATIVE_ITEM_COST + 1)}, frozenset())
         assert preflight(search, safe) is None
         assert "acquisition integers" in preflight(search, unsafe)
+
+
+def test_fixed_trip_projection_includes_only_settled_gear_loss():
+    from tracker.gear.objectives import ObjectiveDescriptor
+
+    with stage_search() as search:
+        search.request = search.request.model_copy(
+            update={
+                "budget_gp": 100_000,
+                "wilderness": WildernessPolicy(attacks_per_setup=100),
+                "objectives": (ObjectiveDescriptor(kind="wilderness_loss_gp"),),
+            }
+        )
+        search.wilderness = stage_risk(
+            minimum_unavoidable={2: 1, 201: 20},
+            recoverable_loss={2: 100, 201: 10},
+            kept_slots=1,
+            feasible=lambda ids: True,
+        )
+        context = StageContext(ScoringContext(search), search)
+        early = context.begin_projection(
+            states=[{"head": 201}], choices=[2], slot="weapon", roles=("z",)
+        )
+        settled = context.begin_projection(
+            states=[{"weapon": 2}], choices=[201], slot="head", roles=("z",)
+        )
+        assert [projection[-1] for _, projection in early.advance_projection()] == [-1]
+        assert [projection[-1] for _, projection in settled.advance_projection()] == [-31]

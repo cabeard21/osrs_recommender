@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
+MINIMIZED_OBJECTIVES = frozenset({"gp_per_damage", "wilderness_loss_gp"})
 STYLES = ("stab", "slash", "crush", "ranged", "magic")
 BONUSES = {
     "prayer_bonus": "prayer",
@@ -18,7 +19,7 @@ BONUSES = {
 
 
 class ObjectiveDescriptor(BaseModel):
-    """A defence group or one independent, maximized ordinary-combat metric."""
+    """A defence group or one independent, ordinary-combat metric."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
     kind: Literal[
@@ -28,6 +29,8 @@ class ObjectiveDescriptor(BaseModel):
         "ranged_strength_bonus",
         "magic_damage_bonus",
         "accuracy",
+        "gp_per_damage",
+        "wilderness_loss_gp",
     ]
     styles: tuple[Literal["stab", "slash", "crush", "ranged", "magic"], ...] = ()
     aggregation: Literal["minimum", "mean"] | None = None
@@ -59,13 +62,13 @@ class ObjectiveDescriptor(BaseModel):
 def canonical_objectives(values: Iterable[Any]) -> tuple[ObjectiveDescriptor, ...]:
     descriptors = [ObjectiveDescriptor.model_validate(value) for value in values]
     by_id = {descriptor.id: descriptor for descriptor in descriptors}
-    if len(by_id) > 62:
-        raise ValueError("At most 62 distinct objective functions are supported")
+    if len(by_id) > 64:
+        raise ValueError("At most 64 distinct objective functions are supported")
     return tuple(by_id[key] for key in sorted(by_id))
 
 
 def objective_definitions(objectives: Iterable[ObjectiveDescriptor]) -> list[dict[str, Any]]:
-    result = []
+    result: list[dict[str, Any]] = []
     for objective in objectives:
         defence = objective.kind == "defence_roll"
         label = (
@@ -74,6 +77,18 @@ def objective_definitions(objectives: Iterable[ObjectiveDescriptor]) -> list[dic
             if defence
             else objective.kind.replace("_", " ").capitalize()
         )
+        if objective.kind in MINIMIZED_OBJECTIVES:
+            risk = objective.kind == "wilderness_loss_gp"
+            result.append(
+                {
+                    "id": objective.id,
+                    "kind": objective.kind,
+                    "label": "Wilderness loss if PK’d" if risk else "Running cost",
+                    "unit": "GP" if risk else "GP/damage",
+                    "direction": "minimize",
+                }
+            )
+            continue
         result.append(
             {
                 "id": objective.id,
@@ -96,7 +111,22 @@ def objective_definitions(objectives: Iterable[ObjectiveDescriptor]) -> list[dic
     return result
 
 
-def objective_value(objective: ObjectiveDescriptor, performance: Mapping[str, Any]) -> float:
+def objective_value(
+    objective: ObjectiveDescriptor,
+    performance: Mapping[str, Any],
+    running_cost: Mapping[str, Any] | None = None,
+    wilderness_risk: Mapping[str, Any] | None = None,
+) -> float:
+    if objective.kind == "wilderness_loss_gp":
+        loss = (wilderness_risk or {}).get("loss_gp")
+        if type(loss) is not int or loss < 0:
+            raise ValueError("Wilderness loss is unavailable")
+        return loss
+    if objective.kind == "gp_per_damage":
+        cost = (running_cost or {}).get("gp_per_damage")
+        if cost is None or not isfinite(cost) or cost < 0:
+            raise ValueError("Running cost per damage is unavailable")
+        return float(cost)
     if performance.get("supported") is False:
         return 0.0
     if objective.kind == "defence_roll":
@@ -117,9 +147,24 @@ def objective_value(objective: ObjectiveDescriptor, performance: Mapping[str, An
 
 
 def objective_values(
-    objectives: Iterable[ObjectiveDescriptor], performance: Mapping[str, Any]
+    objectives: Iterable[ObjectiveDescriptor],
+    performance: Mapping[str, Any],
+    running_cost: Mapping[str, Any] | None = None,
+    wilderness_risk: Mapping[str, Any] | None = None,
 ) -> dict[str, float]:
-    return {objective.id: objective_value(objective, performance) for objective in objectives}
+    values = {}
+    for objective in objectives:
+        if objective.kind == "gp_per_damage" and (running_cost or {}).get(objective.id) is None:
+            continue
+        if (
+            objective.kind == "wilderness_loss_gp"
+            and (wilderness_risk or {}).get("loss_gp") is None
+        ):
+            continue
+        values[objective.id] = objective_value(
+            objective, performance, running_cost, wilderness_risk
+        )
+    return values
 
 
 def required_objective_skills(objectives: Iterable[ObjectiveDescriptor]) -> frozenset[str]:
@@ -145,7 +190,14 @@ def annotate_solution(
             )
             / weight
             for objective in objectives
-        },
+            if objective.kind not in MINIMIZED_OBJECTIVES
+        }
+        | objective_values(
+            (objective for objective in objectives if objective.kind in MINIMIZED_OBJECTIVES),
+            {},
+            solution.get("running_cost"),
+            solution.get("wilderness_risk"),
+        ),
     }
 
 
@@ -158,7 +210,7 @@ def objective_policy(
     expansion_limit = (1_500_000 if thorough else 500_000) * count
     combat_reserve = 25000 * count
     return {
-        "policy": "vector-pareto-v1",
+        "policy": "vector-pareto-v2",
         "objective_count": len(objectives),
         "expansion_limit": expansion_limit,
         "combat_reserve": combat_reserve,

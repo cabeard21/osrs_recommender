@@ -137,8 +137,8 @@ def test_reuse_preserves_prayer_potion_and_running_cost_archives(
             "potions": PotionPolicy(mode="optimize", allowed_ids=("super_defence",)),
         }
     )
-    reused = optimizer.optimize(*args, _complete_frontiers=True, _running_frontier=True)
+    reused = optimizer.optimize(*args, _complete_frontiers=True)
     monkeypatch.setattr(frontier, "EQUIPMENT_BONUS_PRIORITIES", frozenset())
-    isolated = optimizer.optimize(*args, _complete_frontiers=True, _running_frontier=True)
-    assert reused["secondary_frontiers"] and reused["running_cost_frontiers"]
+    isolated = optimizer.optimize(*args, _complete_frontiers=True)
+    assert reused["secondary_frontiers"] and not reused["running_cost_frontiers"]
     assert without_timings(reused) == without_timings(isolated)

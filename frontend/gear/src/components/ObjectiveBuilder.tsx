@@ -23,8 +23,10 @@ export function ObjectiveBuilder({
   objectives,
   legacyPriority,
   onChange,
+  wilderness = false,
   mode = "fast",
 }: {
+  wilderness?: boolean;
   objectives?: Objective[];
   legacyPriority?: SecondaryPriority;
   onChange: (goals: Objective[]) => void;
@@ -38,6 +40,10 @@ export function ObjectiveBuilder({
   const [name, setName] = useState("");
   const [presets, setPresets] = useState<ObjectivePreset[]>([]);
   const change = (next: Objective[]) => {
+    if (!wilderness && next.some((o) => o.kind === "wilderness_loss_gp")) {
+      setError("Enable Wilderness to use this objective.");
+      return;
+    }
     setError("");
     onChange(next);
   };
@@ -134,16 +140,18 @@ export function ObjectiveBuilder({
           <fieldset>
             <legend>Other objectives</legend>
             <div className="objective-checks">
-              {atomicObjectives.map(([id, label]) => (
-                <label key={id}>
-                  <input
-                    type="checkbox"
-                    checked={quick.others.includes(id)}
-                    onChange={() => toggleOther(id)}
-                  />
-                  {label}
-                </label>
-              ))}
+              {atomicObjectives
+                .filter(([id]) => wilderness || id !== "wilderness_loss_gp")
+                .map(([id, label]) => (
+                  <label key={id}>
+                    <input
+                      type="checkbox"
+                      checked={quick.others.includes(id)}
+                      onChange={() => toggleOther(id)}
+                    />
+                    {label}
+                  </label>
+                ))}
             </div>
           </fieldset>
         </>
@@ -255,16 +263,18 @@ export function ObjectiveBuilder({
             >
               + Defence group
             </button>
-            {atomicObjectives.map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                disabled={goals.some((g) => g.kind === id)}
-                onClick={() => change([...goals, { kind: id }])}
-              >
-                + {label}
-              </button>
-            ))}
+            {atomicObjectives
+              .filter(([id]) => wilderness || id !== "wilderness_loss_gp")
+              .map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={goals.some((g) => g.kind === id)}
+                  onClick={() => change([...goals, { kind: id }])}
+                >
+                  + {label}
+                </button>
+              ))}
           </div>
           {!quick.representable && (
             <button type="button" onClick={() => setReplacement(true)}>

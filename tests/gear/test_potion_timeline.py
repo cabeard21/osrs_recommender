@@ -61,3 +61,44 @@ def test_equipment_metric_is_flat_and_zero_weight_role_does_not_block():
     prepared = {role.id: prepare_equipment({}) for role in roles}
     assert measure(60, {"magic": 80}, roles, prepared, "prayer_bonus")["secondary_value"] == 0
     assert measure(120, {"magic": 79}, roles, prepared, "prayer_bonus")["dps"] > 0
+
+
+def test_cost_uses_weighted_spend_and_damage_and_preserves_unpriced_dps():
+    from types import SimpleNamespace
+
+    from tracker.gear.compact_costs import NumericCost
+    from tracker.gear.objectives import ObjectiveDescriptor
+    from tracker.gear.optimizer import RoleConfig
+    from tracker.gear.potion_timeline import measure
+    from tracker.gear.scoring import prepare_equipment
+
+    roles = (
+        RoleConfig(id="low", style="magic", spell="fire_strike"),
+        RoleConfig(id="high", style="magic", spell="fire_surge", weight=3),
+    )
+    prepared = {role.id: prepare_equipment({}) for role in roles}
+    objectives = (ObjectiveDescriptor(kind="gp_per_damage"), ObjectiveDescriptor(kind="accuracy"))
+
+    def cost(per_second):
+        def score(interval, dps, accuracy):
+            return NumericCost("known", None, per_second, per_second * 3600, per_second / dps)
+
+        return SimpleNamespace(score=score)
+
+    costs = {"high": cost(2), "low": cost(1)}
+
+    def sample(selected_costs):
+        return measure(0, {"magic": 95}, roles, prepared, "default", objectives, selected_costs)
+
+    row = sample(costs)
+    by_role = row["roles"]
+    assert row["objective_values"]["gp_per_damage"] == pytest.approx(
+        7 / (by_role["low"]["dps"] + 3 * by_role["high"]["dps"])
+    )
+    missing = SimpleNamespace(
+        score=lambda *args: NumericCost("unavailable", None, None, None, None)
+    )
+    unknown = sample({**costs, "high": missing})
+    assert unknown["objective_values"]["gp_per_damage"] is None
+    assert unknown["objective_values"]["accuracy"] == row["objective_values"]["accuracy"]
+    assert unknown["dps"] == row["dps"]

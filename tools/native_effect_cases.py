@@ -13,6 +13,7 @@ from tracker.accounts.snapshot import ObservedItemFact
 from tracker.domain.types import Container, QuestStatus, SkillState, Source, UnlockState
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.models import CombatTarget
+from tracker.gear.objectives import ObjectiveDescriptor
 from tracker.gear.optimizer import CombatOptionFilters, OptimizationRequest, RoleConfig
 from tracker.gear.potions import PotionPolicy
 from tracker.gear.prayers import PrayerPolicy
@@ -136,7 +137,10 @@ def derive_effect_case(
         mode="owned",
         budget_gp=1_000_000,
         max_swaps=1,
-        secondary_priority="prayer_bonus",
+        objectives=(
+            ObjectiveDescriptor(kind="prayer_bonus"),
+            ObjectiveDescriptor(kind="gp_per_damage"),
+        ),
         max_dps_loss_pct=100,
         fire_tome_pages="searing",
         potions=PotionPolicy(mode="optimize", allowed_ids=("magic", "ranging"))

@@ -22,6 +22,8 @@ import {
 } from "../api/combatOptions";
 import type { SavedResult, SavedResults } from "./resultStorage";
 import {
+  fixedTrip,
+  limitTripLoss,
   DEFAULT_WILDERNESS_SPELL_CASTS,
   MAX_WILDERNESS_SPELL_CASTS,
   isWildernessDeathSettings,
@@ -57,6 +59,7 @@ export const newDraft = (): Draft => ({
   defence: "1",
   budget: "0",
   wildernessRiskBudget: "0",
+  wildernessLimitLoss: false,
   wildernessSpellCasts: String(DEFAULT_WILDERNESS_SPELL_CASTS),
   mode: "usable",
   roles: [newRole(1)],
@@ -88,11 +91,13 @@ function integer(value: string, name: string, min: number, max: number) {
   return n;
 }
 function plannedWildernessCasts(draft: Draft) {
-  if (!wildernessMayUseMagic(draft.roles))
+  if (!fixedTrip(draft) && !wildernessMayUseMagic(draft.roles))
     return DEFAULT_WILDERNESS_SPELL_CASTS;
   return integer(
     draft.wildernessSpellCasts ?? String(DEFAULT_WILDERNESS_SPELL_CASTS),
-    "Casts to pack per Magic setup",
+    fixedTrip(draft)
+      ? "Attacks per combat setup"
+      : "Casts to pack per Magic setup",
     1,
     MAX_WILDERNESS_SPELL_CASTS,
   );
@@ -141,6 +146,7 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
     budget: () => integer(parseGp(draft.budget), "Budget", 0, MAX_BUDGET_GP),
     wildernessRiskBudget: () =>
       draft.wilderness &&
+      (!fixedTrip(draft) || limitTripLoss(draft)) &&
       integer(
         parseGp(draft.wildernessRiskBudget ?? "0"),
         "Max Wilderness gear loss",
@@ -224,6 +230,8 @@ export function normalize(
     )
   )
     throw new Error("Choose a valid tradeoff metric.");
+  if (fixedTrip(draft) && !draft.wilderness)
+    throw new Error("Enable Wilderness to optimize loss if PK’d.");
   if (draft.objectives !== undefined) canonicalObjectives(draft.objectives);
   if (!["fast", "thorough"].includes(draft.optimizationMode ?? "fast"))
     throw new Error("Choose Fast or Thorough optimization.");
@@ -584,13 +592,19 @@ export function normalize(
         ? {
             wilderness: {
               ...draft.wilderness,
-              max_loss_gp: integer(
-                parseGp(draft.wildernessRiskBudget ?? "0"),
-                "Max Wilderness gear loss",
-                0,
-                MAX_BUDGET_GP,
-              ),
-              spell_casts: plannedWildernessCasts(draft),
+              ...(!fixedTrip(draft) || limitTripLoss(draft)
+                ? {
+                    max_loss_gp: integer(
+                      parseGp(draft.wildernessRiskBudget ?? "0"),
+                      "Max Wilderness gear loss",
+                      0,
+                      MAX_BUDGET_GP,
+                    ),
+                  }
+                : {}),
+              ...(fixedTrip(draft)
+                ? { attacks_per_setup: plannedWildernessCasts(draft) }
+                : { spell_casts: plannedWildernessCasts(draft) }),
             },
           }
         : {}),
@@ -764,6 +778,8 @@ function resultIsStale(
     (!!result.live &&
       result.live.scenario.include_untradeables === undefined) ||
     (wilderness != null &&
+      !fixedTrip(result.scenario.request) &&
+      wilderness.attacks_per_setup == null &&
       (wilderness.max_loss_gp == null || wilderness.spell_casts == null)) ||
     result.snapshotId !== context.snapshotId ||
     (!!context.live &&
@@ -1391,6 +1407,8 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
     typeof draft.budget !== "string" ||
     (draft.wilderness !== undefined &&
       !isWildernessDeathSettings(draft.wilderness)) ||
+    (draft.wildernessLimitLoss !== undefined &&
+      typeof draft.wildernessLimitLoss !== "boolean") ||
     (draft.wildernessRiskBudget !== undefined &&
       typeof draft.wildernessRiskBudget !== "string") ||
     (draft.wildernessSpellCasts !== undefined &&
@@ -1448,6 +1466,9 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
   return isValid
     ? ({
         ...draft,
+        wildernessLimitLoss: legacyWilderness
+          ? true
+          : (draft.wildernessLimitLoss ?? Boolean(draft.wilderness)),
         wildernessSpellCasts:
           draft.wildernessSpellCasts ?? String(DEFAULT_WILDERNESS_SPELL_CASTS),
         ...(legacyWilderness

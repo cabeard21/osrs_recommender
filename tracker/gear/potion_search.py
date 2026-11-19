@@ -9,7 +9,6 @@ from typing import Any
 
 from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_skills
-from tracker.gear.running_frontier import needs_running_cost_frontier
 
 
 def merge_objective_frontiers(
@@ -24,11 +23,14 @@ def merge_objective_frontiers(
     if objectives is None:
         return {}
     from tracker.gear.objectives import objective_definitions
+    from tracker.gear.optimizer import _objective_winner_key
     from tracker.gear.vector_publish import filter_groups, publish_groups
 
     sources: dict[int | None, list[Any]] = {
         cap: [] for cap in [*range(request.max_swaps + 1), None]
     }
+    baselines: dict[int | None, dict[str, Any]] = {}
+
     for branch in branches:
         groups = branch.get("objective_frontiers")
         if groups is None:
@@ -36,12 +38,19 @@ def merge_objective_frontiers(
         for group in groups:
             if group.get("sampled", False):
                 raise ValueError("Objective branch results require complete vector archives")
-            sources[group["swap_limit"]].append(group["points"])
+            cap = group["swap_limit"]
+            sources[cap].append(group["points"])
+            row = group.get("baseline_solution")
+            if row is not None and (
+                cap not in baselines
+                or _objective_winner_key(row) < _objective_winner_key(baselines[cap])
+            ):
+                baselines[cap] = row
     archives = {
         cap: (point["solution"] for points in groups for point in points)
         for cap, groups in sources.items()
     }
-    groups = publish_groups(archives, request, id_prefix=id_prefix)
+    groups = publish_groups(archives, request, id_prefix=id_prefix, baselines=baselines)
     if not complete_frontiers:
         groups = filter_groups(groups, request.max_dps_loss_pct)
     return {
@@ -55,11 +64,10 @@ def merge_results(
 ) -> dict[str, Any]:
     """Merge the independent objective archives, preserving each selected setup."""
     from tracker.gear.frontier import pareto
-    from tracker.gear.optimizer import _solution_key
-    from tracker.gear.running_frontier import publish_groups
+    from tracker.gear.optimizer import _objective_winner_key
 
     def best(rows: Any) -> Any:
-        return min((r for r in rows if r is not None), key=_solution_key, default=None)
+        return min((r for r in rows if r is not None), key=_objective_winner_key, default=None)
 
     unrestricted = best(r["unrestricted"] for r in branches)
     winners = [
@@ -117,30 +125,6 @@ def merge_results(
                 ],
             }
         )
-    archives = {
-        limit: [
-            p["solution"]
-            for r in branches
-            for g in r.get("running_cost_frontiers", [])
-            if g["swap_limit"] == limit
-            for p in g["points"]
-        ]
-        for limit in [*range(request.max_swaps + 1), None]
-    }
-    baselines = {
-        limit: best(
-            g.get("baseline_solution")
-            for r in branches
-            for g in r.get("running_cost_frontiers", [])
-            if g["swap_limit"] == limit
-        )
-        for limit in archives
-    }
-    running = (
-        publish_groups(archives, baselines, request.max_dps_loss_pct, complete_frontiers)
-        if any(r.get("running_cost_frontiers") for r in branches)
-        else []
-    )
     disciplines = []
     for discipline in dict.fromkeys(
         d["discipline"] for r in branches for d in r.get("discipline_results", [])
@@ -154,7 +138,9 @@ def merge_results(
         winner = min(
             parts,
             key=lambda d: (
-                _solution_key(d["selected_solution"]) if d["selected_solution"] else (float("inf"),)
+                _objective_winner_key(d["selected_solution"])
+                if d["selected_solution"]
+                else (float("inf"),)
             ),
         )
         # Discipline detail has no per-cap curve; only publish its selected row
@@ -197,7 +183,7 @@ def merge_results(
         "selected_solution": selected,
         "curve": curve,
         "secondary_frontiers": secondary,
-        "running_cost_frontiers": running,
+        "running_cost_frontiers": [],
         **merge_objective_frontiers(request, branches, complete_frontiers=complete_frontiers),
         **(
             {
@@ -318,8 +304,6 @@ def optimize_potions(
     branch_options = {
         **options,
         "_complete_frontiers": True,
-        "_running_frontier": options.get("_running_frontier", False)
-        or needs_running_cost_frontier(request, catalog),
     }
     if branch_runner is not None:
         branches = branch_runner(

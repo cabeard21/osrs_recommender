@@ -4,7 +4,11 @@ import { useState } from "react";
 import { expect, it } from "vitest";
 import { ObjectiveBuilder } from "../components/ObjectiveBuilder";
 import type { Objective } from "../api/objectives";
-import { canonicalObjectives, objectiveId } from "../api/objectives";
+import {
+  canonicalObjectives,
+  objectiveId,
+  objectiveValues,
+} from "../api/objectives";
 import {
   deleteObjectivePreset,
   readObjectivePresets,
@@ -79,14 +83,18 @@ it("requires explicit replacement of complex custom groups", async () => {
   ).toBeVisible();
 });
 it("saves, replaces and deletes independent objective presets", () => {
-  const goals: Objective[] = [{ kind: "accuracy" }];
+  const goals: Objective[] = [
+    { kind: "gp_per_damage" },
+    { kind: "prayer_bonus" },
+  ];
   expect(saveObjectivePreset("Hybrid", goals, sessionStorage)).toHaveLength(1);
+  expect(readObjectivePresets(sessionStorage)[0].objectives).toEqual(goals);
   expect(saveObjectivePreset("HYBRID", [], sessionStorage)).toHaveLength(1);
   expect(readObjectivePresets(sessionStorage)[0].objectives).toEqual([]);
   expect(deleteObjectivePreset("HYBRID", sessionStorage)).toEqual([]);
   expect(() => saveObjectivePreset(" ", goals, sessionStorage)).toThrow();
 });
-it("supports all 62 functions with no smaller selection cap", () => {
+it("supports all 64 functions with no smaller selection cap", () => {
   const styles = ["stab", "slash", "crush", "ranged", "magic"] as const;
   const groups: Objective[] = [];
   for (let mask = 1; mask < 32; mask++)
@@ -96,7 +104,7 @@ it("supports all 62 functions with no smaller selection cap", () => {
         styles: styles.filter((_, i) => mask & (1 << i)),
         aggregation,
       });
-  // Canonicalize each group before deduplication, then add the five other objectives.
+  // Canonicalize each group before deduplication, then add the seven other objectives.
   const unique = [
     ...new Map(
       groups.map((g) => {
@@ -111,6 +119,8 @@ it("supports all 62 functions with no smaller selection cap", () => {
       ...(
         [
           "accuracy",
+          "gp_per_damage",
+          "wilderness_loss_gp",
           "prayer_bonus",
           "melee_strength_bonus",
           "ranged_strength_bonus",
@@ -118,7 +128,7 @@ it("supports all 62 functions with no smaller selection cap", () => {
         ] as const
       ).map((kind) => ({ kind })),
     ]),
-  ).toHaveLength(62);
+  ).toHaveLength(64);
 });
 it("edits reductions, removes groups, and applies preset shortcuts", async () => {
   const user = userEvent.setup();
@@ -207,4 +217,22 @@ it("reports invalid stored presets and bounded preset storage", () => {
   expect(() => saveObjectivePreset("Overflow", [], sessionStorage)).toThrow(
     /20/,
   );
+});
+
+it("admits an unpriced DPS winner while requiring priced frontier points", () => {
+  const goals = canonicalObjectives([{ kind: "gp_per_damage" }]);
+  expect(objectiveValues(undefined, goals, true)).toEqual({
+    gp_per_damage: null,
+  });
+  expect(objectiveValues({ gp_per_damage: null }, goals, true)).toEqual({
+    gp_per_damage: null,
+  });
+  expect(objectiveValues({ gp_per_damage: 0 }, goals)).toEqual({
+    gp_per_damage: 0,
+  });
+  expect(() => objectiveValues({ gp_per_damage: null }, goals)).toThrow();
+  expect(() => objectiveValues({ gp_per_damage: -1 }, goals, true)).toThrow();
+  expect(() =>
+    objectiveValues({}, [...goals, { kind: "accuracy" }], true),
+  ).toThrow();
 });

@@ -124,8 +124,14 @@ export function parseOptimization(
   if (
     !sameValue(serverScenario.locks ?? {}, submitted.locks ?? {}) ||
     !sameValue(
-      normalizedWilderness(serverScenario.wilderness),
-      normalizedWilderness(submitted.wilderness),
+      normalizedWilderness(
+        serverScenario.wilderness,
+        serverScenario.objectives,
+      ),
+      normalizedWilderness(
+        submitted.wilderness,
+        submittedConstraints.objectives,
+      ),
     ) ||
     !sameValue(
       serverScenario.transitions ?? [],
@@ -214,7 +220,9 @@ export function parseOptimization(
       const policy = object(row.frontier_policy);
       const count = canonicalObjectives(scenario.request.objectives).length;
       if (
-        policy.policy !== "vector-pareto-v1" ||
+        !["vector-pareto-v1", "vector-pareto-v2"].includes(
+          String(policy.policy),
+        ) ||
         policy.objective_count !== count ||
         policy.expansion_limit !==
           (scenario.request.optimization_mode === "thorough"
@@ -379,6 +387,8 @@ export function parseOptimization(
     const wildernessRisk = parseWildernessRisk(
       selected.wilderness_risk,
       scenario.request,
+      true,
+      selected.objective_values,
     );
     validateRunningCost(selected.running_cost);
     validateSecondaryPriority(selected, priority, true);
@@ -540,16 +550,29 @@ export function parseOptimization(
       }
     }
   }
-  if (scenario.request.objectives !== undefined) {
+  function parseObjectiveFrontiers(
+    source: Record<string, unknown>,
+    discipline?: string,
+  ) {
+    if (scenario.request.objectives === undefined) return;
     const objectives = canonicalObjectives(scenario.request.objectives);
     // The API omits empty objective fields when serializing a DPS-only run.
     const emptyObjectiveList = objectives.length === 0 ? [] : undefined;
     const {
       objective_definitions: definitions = emptyObjectiveList,
       objective_frontiers: frontiers = emptyObjectiveList,
-    } = result;
+    } = source;
     if (
       !Array.isArray(definitions) ||
+      definitions.some((v) => {
+        const d = object(v);
+        return (
+          (d.id === "gp_per_damage" || d.id === "wilderness_loss_gp") &&
+          (d.kind !== d.id ||
+            d.unit !== (d.id === "wilderness_loss_gp" ? "GP" : "GP/damage") ||
+            d.direction !== "minimize")
+        );
+      }) ||
       !sameValue(
         definitions.map((value) => object(value).id).sort(),
         objectives.map(objectiveId).sort(),
@@ -564,7 +587,7 @@ export function parseOptimization(
       const group = object(raw);
       if (
         !Array.isArray(group.points) ||
-        group.points.length > 128 ||
+        group.points.length > Math.max(128, 2 * (objectives.length + 1)) ||
         typeof group.sampled !== "boolean"
       )
         throw new Error("Invalid objective frontier sample");
@@ -572,6 +595,13 @@ export function parseOptimization(
         const point = object(entry);
         if (typeof point.id !== "string" || frontierIds.has(point.id))
           throw new Error("Invalid objective frontier identity");
+        if (
+          discipline &&
+          Object.values(object(object(point.solution).loadouts)).some(
+            (loadout) => object(loadout).discipline !== discipline,
+          )
+        )
+          throw new Error("Mismatched objective frontier discipline");
         objectiveValues(object(point.solution).objective_values, objectives);
         frontierIds.add(point.id);
         solutions.push(
@@ -586,6 +616,7 @@ export function parseOptimization(
       }
     }
   }
+  parseObjectiveFrontiers(result);
   if (result.secondary_frontiers !== undefined)
     parseFrontiers(result.secondary_frontiers);
   if (result.running_cost_frontiers !== undefined)
@@ -658,6 +689,8 @@ export function parseOptimization(
           throw new Error("Mismatched selected discipline");
         solutions.push(parsed);
       }
+      if (branch.objective_frontiers !== undefined)
+        parseObjectiveFrontiers(branch, discipline);
       parseFrontiers(branch.secondary_frontiers, discipline);
       if (branch.running_cost_frontiers !== undefined)
         parseFrontiers(branch.running_cost_frontiers, discipline, true);
@@ -850,6 +883,17 @@ function parseFixedEvaluation(
     !Array.isArray(row.assumed_item_ids)
   )
     throw new Error("Invalid fixed-equipment evaluation");
+  if (
+    row.status === "valid" &&
+    request.objectives?.some(
+      (o) => o.kind === "gp_per_damage" || o.kind === "wilderness_loss_gp",
+    )
+  )
+    objectiveValues(
+      row.objective_values,
+      canonicalObjectives(request.objectives),
+      true,
+    );
   const equipment = equipmentMap(row.equipment);
   if (!sameValue(equipment, expected))
     throw new Error(
@@ -908,7 +952,12 @@ function parseFixedEvaluation(
     throw new Error("Invalid evaluation assumed acquisitions");
   if (row.status === "valid" && row.purchase_cost_gp === null)
     throw new Error("Valid evaluation requires acquisition total");
-  parseWildernessRisk(row.wilderness_risk, request, row.status === "valid");
+  parseWildernessRisk(
+    row.wilderness_risk,
+    request,
+    row.status === "valid",
+    row.objective_values,
+  );
   validateUntradeables(
     row.unowned_untradeable_item_ids,
     Object.values(equipment).filter((id): id is number => id !== null),
@@ -946,7 +995,10 @@ export function parseEvaluation(
   });
   const comparableScenario = (value: unknown) => {
     const row = object(value);
-    return { ...row, wilderness: normalizedWilderness(row.wilderness) };
+    return {
+      ...row,
+      wilderness: normalizedWilderness(row.wilderness, row.objectives),
+    };
   };
   if (
     envelope.api_version !== "gear-ui-v1" ||
@@ -1031,6 +1083,32 @@ export function parseEvaluation(
       !Array.isArray(deltas.removed_purchase_ids)
     )
       throw new Error("Invalid evaluation comparison");
+    if (
+      result.scenario.request.objectives?.some(
+        (o) => o.kind === "gp_per_damage",
+      )
+    ) {
+      const costChange = object(deltas.objective_values ?? {}).gp_per_damage;
+      const original = baseline.objective_values?.gp_per_damage;
+      const updated = proposed.objective_values?.gp_per_damage;
+      if (
+        original == null || updated == null
+          ? costChange != null
+          : costChange !== updated - original
+      )
+        throw new Error("Invalid running cost comparison");
+    }
+    if (
+      result.scenario.request.objectives?.some(
+        (o) => o.kind === "wilderness_loss_gp",
+      ) &&
+      baseline.status === "valid" &&
+      proposed.status === "valid" &&
+      object(deltas.objective_values ?? {}).wilderness_loss_gp !==
+        Number(proposed.wilderness_risk?.loss_gp) -
+          Number(baseline.wilderness_risk?.loss_gp)
+    )
+      throw new Error("Invalid Wilderness loss comparison");
     for (const change of deltas.equipment_changes) {
       const row = requireFields(change, { slot: "string" }),
         slot = uiSlot(row.slot) as Slot;

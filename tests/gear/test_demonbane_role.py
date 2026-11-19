@@ -53,7 +53,7 @@ def test_fixed_auto_cannot_bypass_mark_quest_access():
     )
 
 
-def test_melee_only_auto_demon_keeps_cost_frontier():
+def test_melee_only_auto_demon_requires_explicit_cost_objective():
     from types import SimpleNamespace
 
     from tracker.gear.models import CombatTarget
@@ -64,4 +64,9 @@ def test_melee_only_auto_demon_keeps_cost_frontier():
         allowed_disciplines=("melee",),
         target=CombatTarget(traits=("demon",)),
     )
-    assert needs_running_cost_frontier(SimpleNamespace(roles=(role,)))
+    assert not needs_running_cost_frontier(SimpleNamespace(roles=(role,)))
+    from tracker.gear.objectives import ObjectiveDescriptor
+
+    assert needs_running_cost_frontier(
+        SimpleNamespace(roles=(role,), objectives=(ObjectiveDescriptor(kind="gp_per_damage"),))
+    )

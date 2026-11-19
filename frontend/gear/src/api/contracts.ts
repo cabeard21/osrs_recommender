@@ -197,11 +197,12 @@ export interface WildernessPolicy {
   skulled: boolean;
   protect_item: boolean;
   max_loss_gp?: number | null;
+  attacks_per_setup?: number;
   spell_casts?: number | null;
 }
 export type WildernessDeathSettings = Omit<
   WildernessPolicy,
-  "max_loss_gp" | "spell_casts"
+  "max_loss_gp" | "spell_casts" | "attacks_per_setup"
 >;
 export interface WildernessRisk {
   loss_gp: number | null;
@@ -229,6 +230,7 @@ export interface WildernessRisk {
 }
 export interface Draft {
   wilderness?: WildernessDeathSettings;
+  wildernessLimitLoss?: boolean;
   wildernessRiskBudget?: string;
   wildernessSpellCasts?: string;
   objectives?: Objective[];
@@ -416,7 +418,7 @@ export interface RunningCostFrontierGroup {
 }
 export interface JointSolutionDTO {
   wilderness_risk?: WildernessRisk | null;
-  objective_values?: Record<string, number>;
+  objective_values?: Record<string, number | null>;
   unowned_untradeable_item_ids?: number[];
   potions?: PotionSummary;
   running_cost?: RunningCost;
@@ -448,6 +450,8 @@ export interface JointSolutionDTO {
   maximum_actions: number;
 }
 export interface ObjectiveFrontierGroup {
+  baseline_solution_id?: string;
+  baseline_solution?: JointSolutionDTO | null;
   id?: string;
   group_id?: string;
   swap_limit: number | null;
@@ -698,6 +702,7 @@ interface TrialIdentity {
   equipment: Equipment;
 }
 export interface FixedEvaluation {
+  objective_values?: Record<string, number | null>;
   wilderness_risk?: WildernessRisk | null;
   preparations?: Preparation[];
   unowned_untradeable_item_ids?: number[];
@@ -714,6 +719,7 @@ export interface FixedEvaluation {
   assumed_item_ids: number[];
 }
 export interface EvaluationDTO {
+  objective_definitions?: ObjectiveDefinition[];
   api_version: "gear-ui-v1";
   evaluated_at: string;
   scenario: Record<string, unknown>;
@@ -727,6 +733,7 @@ export interface EvaluationDTO {
   baseline: FixedEvaluation;
   proposed: FixedEvaluation;
   deltas: {
+    objective_values?: Record<string, number | null>;
     dps: number;
     max_hit: number;
     accuracy: number;

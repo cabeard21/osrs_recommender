@@ -25,6 +25,7 @@ from tools.gear_retention_oracle import Case
 from tracker.gear.fixed_reporting import active as fixed_reporting_active
 from tracker.gear.fixed_reporting import fixed_reporting
 from tracker.gear.lazy_reporting import active as lazy_reporting_active
+from tracker.gear.objective_store import materialize_result_archives
 from tracker.gear.optimizer import optimize
 from tracker.gear.ranged_numerics import active as numerical_experiment_active
 from tracker.gear.ranged_numerics import ranged_experiment
@@ -114,7 +115,7 @@ def compare(
     if experiment == "ranged-score-finalization":
         options["_fixed_reporting"] = True
     if provenance.get("diagnostic"):
-        options.update(_complete_frontiers=True, _running_frontier=True)
+        options.update(_complete_frontiers=True)
     inputs = (case.snapshot, case.request, case.catalog, case.content, case.prices, case.at)
     expected = None
     runs: list[dict[str, Any]] = []
@@ -137,6 +138,7 @@ def compare(
         with context as observation:
             result = runner(*inputs, **options)
         elapsed = perf_counter() - started
+        result = materialize_result_archives(result)
         digest = result_digest(result)
         if expected is not None and expected != digest:
             raise ValueError(f"Complete result parity failed for {label}")

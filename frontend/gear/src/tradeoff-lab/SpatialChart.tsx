@@ -67,6 +67,7 @@ export function SpatialChart({
   };
   const origin = project({ x: -1, y: -1, z: -1 });
   const plotted = (axes.length === 3 ? points : [])
+    .filter((p) => axes.every((m) => Number.isFinite(metricValue(p, m.key))))
     .map((point) => ({
       point,
       ...project({

@@ -29,7 +29,7 @@ class CostData:
     supply_class: array[int]
     supply_count: int
     serp_head: array[int]
-    serp_rate: array[float]
+    serp_cost: array[float]
 
 
 def pack_costs(search: Any, scoring: Any) -> CostData:
@@ -51,7 +51,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
             if item.slot == "shield" and item.tome_effect
             else 0
         )
-    serp_rate = array("d")
+    serp_cost = array("d")
     scale_price = evaluator.resource(12934, "Zulrah's scales", 1).unit_price
     option_kind, option_cost, option_on_hit_cost = array("i"), array("d"), array("d")
     option_per_second_cost = array("d")
@@ -60,10 +60,15 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
     ):
         duration = getattr(configured, "fight_duration_seconds", 60)
         batches = 1 + (duration * 5 - 1) // 270
-        serp_rate.append(10 * batches * scale_price / duration if scale_price is not None else -1)
         ranged = option.attack_type in {"ranged", "light", "standard", "heavy"}
         option_kind.append(int(ranged))
         weapon = search.items.get(weapon_id)
+        base_interval = weapon.attack_speed * 0.6 if weapon else 2.4
+        serp_cost.append(
+            (10 * batches * base_interval / duration) * scale_price
+            if scale_price is not None
+            else -1
+        )
         for rune in supply_ids:
             equipment = {
                 **({"weapon": weapon} if weapon else {}),
@@ -126,5 +131,5 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         supply_class,
         len(supply_ids),
         array("i", [0, *(int(i == 12931) for i in scoring.dense_ids[1:])]),
-        serp_rate,
+        serp_cost,
     )

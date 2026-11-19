@@ -234,3 +234,22 @@ def test_adapter_captures_all_final_assignments_before_retention():
             {"z": row} for row in states
         ]
         assert all(call.kwargs == {} for call in search.vector_search.capture_base.call_args_list)
+
+
+def test_native_full_vector_accepts_64_objectives_including_free_melee():
+    from datetime import UTC, datetime
+
+    from tools.benchmark_objectives import objective_set
+    from tracker.gear.objectives import canonical_objectives
+
+    native = pytest.importorskip("tracker.gear.native._scoring")
+    search = vector_context()
+    search.request.objectives = canonical_objectives(objective_set(64))
+    search.running_at = datetime(2026, 1, 1, tzinfo=UTC)
+    search.running_prices = {}
+    scoring = native.ScoringContext(search)
+    rows = scoring.score_variants({"weapon": 1}, 0)
+    assert rows and all(row["objective_values"]["gp_per_damage"] == 0 for row in rows)
+    projection = scoring.score_projection({"weapon": 1}, 0)
+    assert len(projection) == 65
+    assert len(native.farthest_indices([projection], 1)) == 1

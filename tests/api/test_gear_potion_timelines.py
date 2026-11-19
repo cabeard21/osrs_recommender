@@ -453,3 +453,68 @@ def test_displayed_objective_configurations_have_frozen_timelines_without_fronti
         fresh = reply.json()["samples"][0]
         assert fresh["dps"] == selected["score"]
         assert fresh["objective_values"] == selected["objective_values"]
+
+
+def test_timeline_reprices_damage_at_each_boost_level(client, app, session_factory):
+    from datetime import UTC, datetime
+
+    from tracker.db.models import ItemPrice
+    from tracker.domain.types import PriceSourceLayer
+    from tracker.gear.combat import MODEL_VERSION
+
+    submitted = {
+        **scenario(client, session_factory, ids=(11907,)),
+        "roles": [
+            {
+                "id": "single",
+                "style": "magic",
+                "combat_options": {
+                    "attack_types": ["magic"],
+                    "stances": ["accurate"],
+                    "spells": ["powered:11907"],
+                },
+            }
+        ],
+        "potions": {"mode": "fixed", "selected_ids": ["magic"]},
+        "objectives": [{"kind": "gp_per_damage"}, {"kind": "accuracy"}],
+    }
+    now = datetime.now(UTC)
+    with session_factory() as session:
+        for item_id in (554, 560, 562):
+            session.merge(
+                ItemPrice(
+                    item_id=item_id,
+                    high_price_gp=10,
+                    high_trade_at=now,
+                    fetched_at=now,
+                    source=PriceSourceLayer.CACHED,
+                    provider="test",
+                )
+            )
+        session.commit()
+    setup = {
+        "equipment": {"weapon": 11907},
+        "combat_option": {"attack_type": "magic", "stance": "accurate", "powered_attack": "seas"},
+    }
+    reply = client.post(
+        "/ui-api/gear/potion-timelines",
+        json={
+            "scenario": submitted,
+            "loadouts": {"single": setup},
+            "selected_potion_ids": ["magic"],
+            "expected_catalog_version": app.state.gear_service.equipment_catalog().revision,
+            "expected_model_version": MODEL_VERSION,
+        },
+    )
+    assert reply.status_code == 200, reply.text
+    row = reply.json()
+    fresh, baseline = row["samples"][0], row["baseline"]
+    assert (
+        0
+        < fresh["objective_values"]["gp_per_damage"]
+        < baseline["objective_values"]["gp_per_damage"]
+    )
+    for sample in (fresh, baseline):
+        assert sample["objective_values"]["gp_per_damage"] == pytest.approx(
+            sample["roles"]["single"]["objective_values"]["gp_per_damage"]
+        )

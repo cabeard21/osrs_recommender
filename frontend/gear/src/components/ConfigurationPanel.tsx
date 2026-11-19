@@ -23,6 +23,8 @@ import {
 import { RoleFields } from "./RoleFields";
 import { SavedSetups } from "./SavedSetups";
 import {
+  fixedTrip,
+  limitTripLoss,
   DEFAULT_WILDERNESS_SPELL_CASTS,
   defaultWilderness,
   wildernessMayUseMagic,
@@ -106,6 +108,13 @@ export function ConfigurationPanel() {
             checked={!!wilderness}
             onChange={(e) =>
               change({
+                ...(!e.target.checked && fixedTrip(draft)
+                  ? {
+                      objectives: draft.objectives?.filter(
+                        (o) => o.kind !== "wilderness_loss_gp",
+                      ),
+                    }
+                  : {}),
                 wilderness: e.target.checked
                   ? { ...defaultWilderness }
                   : undefined,
@@ -116,17 +125,31 @@ export function ConfigurationPanel() {
         </label>
         {wilderness && (
           <>
-            <GpBudgetInputs
-              name="wildernessRiskBudget"
-              label="Max gear loss if PK’d (GP)"
-              sliderLabel="Wilderness risk slider"
-              value={draft.wildernessRiskBudget ?? "0"}
-              error={errors.wildernessRiskBudget}
-              onChange={(wildernessRiskBudget) =>
-                change({ wildernessRiskBudget })
-              }
-              minimum={10}
-            />
+            {fixedTrip(draft) && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={!limitTripLoss(draft)}
+                  onChange={(e) =>
+                    change({ wildernessLimitLoss: !e.target.checked })
+                  }
+                />{" "}
+                No loss cap
+              </label>
+            )}
+            {(!fixedTrip(draft) || limitTripLoss(draft)) && (
+              <GpBudgetInputs
+                name="wildernessRiskBudget"
+                label="Max gear loss if PK’d (GP)"
+                sliderLabel="Wilderness risk slider"
+                value={draft.wildernessRiskBudget ?? "0"}
+                error={errors.wildernessRiskBudget}
+                onChange={(wildernessRiskBudget) =>
+                  change({ wildernessRiskBudget, wildernessLimitLoss: true })
+                }
+                minimum={10}
+              />
+            )}
             <label>
               Wilderness depth
               <select
@@ -175,10 +198,12 @@ export function ConfigurationPanel() {
               Assume Protect Item is active at death
             </label>
             <p>Protect Item requires level 25 Prayer.</p>
-            {wildernessMayUseMagic(draft.roles) && (
+            {(fixedTrip(draft) || wildernessMayUseMagic(draft.roles)) && (
               <>
                 <label>
-                  Casts to pack per Magic setup
+                  {fixedTrip(draft)
+                    ? "Attacks per combat setup"
+                    : "Casts to pack per Magic setup"}
                   <input
                     inputMode="numeric"
                     data-run-on-enter
@@ -200,8 +225,9 @@ export function ConfigurationPanel() {
                   message={errors.wildernessSpellCasts}
                 />
                 <p>
-                  The optimizer packs loose runes after accounting for runes
-                  supplied by your staff.
+                  {fixedTrip(draft)
+                    ? "Ammo quantities use expected recovery. Your stack can run out earlier."
+                    : "The optimizer packs loose runes after accounting for runes supplied by your staff."}
                 </p>
               </>
             )}
@@ -462,6 +488,7 @@ export function ConfigurationPanel() {
           </p>
         </details>
         <ObjectiveBuilder
+          wilderness={!!wilderness}
           objectives={draft.objectives}
           legacyPriority={draft.secondaryPriority}
           mode={draft.optimizationMode}

@@ -15,7 +15,7 @@ from tracker.gear.compact_states import EquipmentState
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
-from tracker.gear.wilderness import RULES_REVISION, WildernessRisk
+from tracker.gear.wilderness import WildernessRisk
 from tracker.gear.wilderness_ammo import idle_ammunition
 from tracker.gear.wilderness_runes import wilderness_spell_runes
 
@@ -85,7 +85,7 @@ def wilderness_provenance(request: Any) -> dict[str, Any]:
         return {}
     return {
         "wilderness": policy.model_dump(mode="json"),
-        "wilderness_rules_revision": RULES_REVISION,
+        "wilderness_rules_revision": policy.rules_revision,
     }
 
 
@@ -300,7 +300,15 @@ def evaluate_configuration(
     )
     risk = None
     runes: dict[int, int] | None = {}
-    if wilderness is not None:
+    trip = wilderness is not None and wilderness.policy.attacks_per_setup is not None
+    if wilderness is not None and trip and combat_resolved:
+        risk = wilderness.trip_report(
+            {role.id: equipment},
+            {role.id: _configured_attack(role)},
+            items,
+            styles={role.id: role.style},
+        )
+    elif wilderness is not None and not trip:
         loadouts = {role.id: equipment}
         casts = wilderness.policy.spell_casts
         if casts is not None:
@@ -323,17 +331,31 @@ def evaluate_configuration(
                 "message": "Additional purchase cost exceeds the scenario budget.",
             }
         )
-    if wilderness is not None and risk is not None and not wilderness.rune_feasible(ids, runes):
+    if (
+        wilderness is not None
+        and risk is not None
+        and (not wilderness.trip_fits(risk) if trip else not wilderness.rune_feasible(ids, runes))
+    ):
         loss = risk["loss_gp"]
-        if loss is not None and loss > wilderness.budget_gp:
+        if loss is not None and wilderness.budget_gp is not None and loss > wilderness.budget_gp:
             reason = "Wilderness gear loss exceeds the risk budget."
+        elif trip:
+            reason = (
+                "A loss could not be verified for the required starting equipment and supplies."
+            )
         elif runes and loss is not None:
             reason = "Carried runes or ammunition can displace protected gear."
         else:
             reason = "Wilderness risk cannot be verified for this equipment and budget."
         reasons.append(
             {
-                "path": "budget_gp" if purchase_budget is None else "wilderness.max_loss_gp",
+                "path": (
+                    "wilderness.attacks_per_setup"
+                    if trip and loss is None
+                    else "budget_gp"
+                    if purchase_budget is None
+                    else "wilderness.max_loss_gp"
+                ),
                 "message": reason,
             }
         )
@@ -424,7 +446,7 @@ def evaluate_configurations(
             price_records,
             now,
         )
-        if request.wilderness is not None and risk_limit is not None
+        if request.wilderness is not None
         else None
     )
     from tracker.gear.potions import boosted_levels, potion_summary
@@ -471,6 +493,14 @@ def evaluate_configurations(
             from tracker.gear.auto import resolve_auto_role
 
             def within_rune_budget(option: Mapping[str, Any]) -> bool:
+                if wilderness is not None and wilderness.policy.attacks_per_setup is not None:
+                    report = wilderness.trip_report(
+                        {role.id: equipment},
+                        {role.id: option},
+                        catalog.items,
+                        styles={role.id: str(option["attack_type"])},
+                    )
+                    return wilderness.trip_fits(report)
                 if wilderness is None or wilderness.policy.spell_casts is None:
                     return True
                 runes = wilderness_spell_runes(

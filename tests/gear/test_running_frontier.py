@@ -1,31 +1,6 @@
-"""Running-resource objective stays independent from secondary priorities."""
+"""Running cost composes with other objectives and uses known resource prices."""
 
-from tracker.gear.running_frontier import aggregate_cost, cost_pareto, publish_groups
-
-
-def row(dps, gp, name="a"):
-    return {
-        "score": dps,
-        "maximum_actions": 0,
-        "purchase_cost_gp": 0,
-        "loadouts": {name: {}},
-        "running_cost": {
-            "status": "known" if gp is not None else "unavailable",
-            "gp_per_damage": gp,
-        },
-    }
-
-
-def test_dominance_minimizes_cost_and_excludes_unknown():
-    rows = [row(10, 4), row(9, 2), row(8, 3), row(11, None)]
-    assert cost_pareto(rows) == rows[:2]
-
-
-def test_unknown_baseline_sets_loss_cap_without_becoming_free():
-    baseline = row(10, None)
-    groups = publish_groups({0: [row(9, 2), row(8, 1)]}, {0: baseline}, 10)
-    assert groups[0]["baseline_solution"] == baseline
-    assert [p["dps_loss_pct"] for p in groups[0]["points"]] == [10]
+from tracker.gear.running_frontier import aggregate_cost
 
 
 def test_weighted_cost_is_ratio_of_weighted_rates():
@@ -50,7 +25,7 @@ def test_zero_damage_and_unknown_active_role_are_unavailable():
     )
 
 
-def mage_result(**updates):
+def mage_result(*, missing_price_ids=(), **updates):
     from types import SimpleNamespace
 
     from tests.gear.test_optimizer import NOW
@@ -98,6 +73,7 @@ def mage_result(**updates):
             source="live",
         )
         for i, p in [(556, 2), (554, 5), (558, 2), (560, 100)]
+        if i not in missing_price_ids
     }
     role = RoleConfig(
         id="mage",
@@ -115,8 +91,8 @@ def mage_result(**updates):
 
 
 def test_real_mage_frontier_retains_cheaper_spell_and_staff_savings():
-    result = mage_result()
-    points = result["running_cost_frontiers"][0]["points"]
+    result = mage_result(objectives=[{"kind": "gp_per_damage"}])
+    points = result["objective_frontiers"][0]["points"]
     assert {p["solution"]["loadouts"]["mage"]["combat_option"]["spell"] for p in points} == {
         "wind_strike",
         "fire_blast",
@@ -132,56 +108,65 @@ def test_real_mage_frontier_retains_cheaper_spell_and_staff_savings():
         assert point["solution"]["secondary_value"] is None
 
 
-def test_cost_cap_and_existing_secondary_are_independent():
-    result = mage_result(secondary_priority="prayer_bonus", max_dps_loss_pct=0)
-    assert result["secondary_frontiers"]
-    assert all(p["dps_loss_pct"] == 0 for p in result["running_cost_frontiers"][0]["points"])
-    assert all(
-        p["solution"]["secondary_priority"] == "prayer_bonus"
-        for p in result["running_cost_frontiers"][0]["points"]
-    )
+def test_unpriced_fire_blast_remains_the_selected_dps_baseline():
+    from tracker.gear.objective_store import close_result_archives
 
-
-def test_running_cost_activation_covers_ranged_magic_auto_and_multi():
-    from tracker.gear.optimizer import OptimizationRequest, RoleConfig
-    from tracker.gear.running_frontier import needs_running_cost_frontier
-
-    for style in ("ranged", "magic"):
-        assert needs_running_cost_frontier(
-            OptimizationRequest(roles=(RoleConfig(id="a", style=style),))
+    for missing, cap, expect_points in [
+        ((560,), 100, True),
+        ((560,), 0, False),
+        ((558, 560), 100, False),
+    ]:
+        result = mage_result(
+            missing_price_ids=missing, objectives=[{"kind": "gp_per_damage"}], max_dps_loss_pct=cap
         )
-    assert not needs_running_cost_frontier(
-        OptimizationRequest(roles=(RoleConfig(id="a", style="slash"),))
+        try:
+            winner = result["selected_solution"]
+            assert winner["loadouts"]["mage"]["combat_option"]["spell"] == "fire_blast"
+            assert winner["running_cost"]["status"] == "unavailable"
+            assert "gp_per_damage" not in winner["objective_values"]
+            for group in result["objective_frontiers"]:
+                assert group["baseline_solution"] == winner
+                assert group["baseline_dps"] == winner["score"]
+                assert bool(group["points"]) == expect_points
+                for point in group["points"]:
+                    assert (
+                        point["solution"]["loadouts"]["mage"]["combat_option"]["spell"]
+                        == "wind_strike"
+                    )
+                    assert point["dps_loss"] == winner["score"] - point["solution"]["score"]
+        finally:
+            close_result_archives({"result": result})
+
+
+def test_only_selected_objectives_receive_search_work():
+    for settings in (
+        {},
+        {"objectives": []},
+        {"objectives": [{"kind": "prayer_bonus"}]},
+        {"secondary_priority": "prayer_bonus"},
+    ):
+        result = mage_result(**settings)
+        assert result["running_cost_frontiers"] == []
+        assert not result["search"].get("running_cost_frontier")
+        assert result["selected_solution"]["running_cost"]["gp_per_damage"] > 0
+
+
+def test_cost_cap_applies_to_combined_objective_search():
+    result = mage_result(
+        objectives=[{"kind": "prayer_bonus"}, {"kind": "gp_per_damage"}], max_dps_loss_pct=0
     )
-    assert needs_running_cost_frontier(
-        OptimizationRequest(
-            roles=(RoleConfig(id="a", style="slash"), RoleConfig(id="b", style="ranged"))
+    points = result["objective_frontiers"][0]["points"]
+    assert points and all(p["dps_loss_pct"] == 0 for p in points)
+    for point in points:
+        solution = point["solution"]
+        assert (
+            solution["objective_values"]["gp_per_damage"]
+            == solution["running_cost"]["gp_per_damage"]
         )
-    )
-    from types import SimpleNamespace
-
-    assert needs_running_cost_frontier(
-        SimpleNamespace(
-            roles=(SimpleNamespace(style="slash", allowed_disciplines=("melee", "ranged")),)
-        )
-    )
-
-    assert not needs_running_cost_frontier(
-        SimpleNamespace(roles=(SimpleNamespace(style="magic", allowed_disciplines=("melee",)),))
-    )
+        assert "prayer_bonus" in solution["objective_values"]
 
 
-def test_cost_scaffolds_keep_every_context_after_first_eight():
-    from types import SimpleNamespace
-
-    from tracker.gear.running_frontier import cost_scaffolds
-
-    bases = [{"weapon": i, "ammunition": 100 + i} for i in range(12)]
-    original = SimpleNamespace(baselines=lambda role: [*bases, bases[0]])
-    assert cost_scaffolds(original, object()) == bases
-
-
-def test_real_ranged_frontier_is_automatic_and_retains_cheaper_ammunition():
+def test_ranged_cost_objective_retains_cheaper_ammunition():
     from types import SimpleNamespace
 
     from tests.gear.test_optimizer import NOW, weapon
@@ -218,13 +203,14 @@ def test_real_ranged_frontier_is_automatic_and_retains_cheaper_ammunition():
             mode="owned",
             max_swaps=0,
             max_dps_loss_pct=100,
+            objectives=[{"kind": "gp_per_damage"}],
         ),
         SimpleNamespace(items={i.id: i for i in items}),
         Content(),
         prices,
         NOW,
     )
-    group = result["running_cost_frontiers"][0]
+    group = result["objective_frontiers"][0]
     assert {
         p["solution"]["loadouts"]["ranged"]["equipment"]["weapon"] for p in group["points"]
     } == {806, 811}
@@ -283,13 +269,14 @@ def test_cost_search_retains_cheap_compatible_context_beyond_first_eight():
             mode="owned",
             max_swaps=0,
             max_dps_loss_pct=100,
+            objectives=[{"kind": "gp_per_damage"}],
         ),
         SimpleNamespace(items={i.id: i for i in items}),
         Content(),
         prices,
         NOW,
     )
-    group = result["running_cost_frontiers"][0]
+    group = result["objective_frontiers"][0]
     cheapest = min(group["points"], key=lambda p: p["solution"]["running_cost"]["gp_per_damage"])
     assert cheapest["solution"]["loadouts"]["r"]["equipment"] == {
         "weapon": 10011,

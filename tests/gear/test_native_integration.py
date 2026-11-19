@@ -6,6 +6,7 @@ from tools.accept_compact_states import derive_case
 from tools.benchmark_gear_desktop import case_provenance, result_digest
 from tools.gear_search_quality_fixture import load_case
 from tracker.gear.native import capture
+from tracker.gear.objectives import ObjectiveDescriptor
 from tracker.gear.optimizer import optimize
 
 
@@ -85,7 +86,7 @@ def test_native_complete_results_match_python(name):
 
 
 @pytest.mark.parametrize("name", ["multi", "multi_auto", "multi_auto_mixed", "multi_auto_fixed"])
-def test_native_running_frontiers_match_python_and_execute(name):
+def test_native_cost_objective_frontiers_match_python_and_execute(name):
     pytest.importorskip("tracker.gear.native._stages")
     # Mechanism fixture stays small; the frozen full-catalog adoption cohort
     # separately verifies these modes without reducing search budgets.
@@ -102,9 +103,15 @@ def test_native_running_frontiers_match_python_and_execute(name):
             }
         )
         args[1] = args[1].model_copy(update={"roles": (first, second)})
-    reference = optimize(*args, **FLAGS, _running_frontier=True)
+    args[1] = args[1].model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
+    reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        result = optimize(*args, **FLAGS, _native_search=True, _running_frontier=True)
+        result = optimize(*args, **FLAGS, _native_search=True)
     assert result_digest(result) == result_digest(reference)
     diagnostics = evidence.snapshot()
     assert diagnostics["native_requests"] >= 1
@@ -117,11 +124,16 @@ def test_spawned_workers_preserve_native_results_and_merge_evidence():
     from tests.gear.test_parallel import inputs as worker_inputs
     from tracker.gear.auto import branch_requests
     from tracker.gear.parallel import AutoProcessPool
-    from tracker.gear.running_frontier import needs_running_cost_frontier
 
     snapshot, request, catalog, content, prices, now = worker_inputs()
     role = request.roles[0].model_copy(update={"allowed_disciplines": ("melee", "ranged")})
-    request = request.model_copy(update={"roles": (role,)})
+    request = request.model_copy(
+        update={
+            "roles": (role,),
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
     expected = [
         (
             name,
@@ -133,7 +145,6 @@ def test_spawned_workers_preserve_native_results_and_merge_evidence():
                 prices,
                 now,
                 **FLAGS,
-                _running_frontier=needs_running_cost_frontier(request),
             ),
         )
         for name, branch in branch_requests(request)
@@ -158,7 +169,6 @@ def test_spawned_workers_preserve_native_results_and_merge_evidence():
     assert [(name, result_digest(row)) for name, row in actual] == [
         (name, result_digest(row)) for name, row in expected
     ]
-    # Resource-frontier lanes may create additional native contexts per branch.
     assert evidence.snapshot()["native_requests"] >= len(expected)
     assert evidence.snapshot()["fallback_requests"] == 0
 
@@ -168,10 +178,16 @@ def test_native_preserves_special_role_inheritance_without_damage(configured):
     pytest.importorskip("tracker.gear.native._stages")
     from tests.gear.test_factored_multi import multi_case
 
-    args = multi_case(configured, True)
-    reference = optimize(*args, **FLAGS, _running_frontier=True)
+    args = list(multi_case(configured, True))
+    args[1] = args[1].model_copy(
+        update={
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+            "secondary_priority": "default",
+        }
+    )
+    reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        actual = optimize(*args, **FLAGS, _native_search=True, _running_frontier=True)
+        actual = optimize(*args, **FLAGS, _native_search=True)
     assert result_digest(actual) == result_digest(reference)
     assert evidence.snapshot()["fallback_requests"] == 0
     assert evidence.snapshot()["native_requests"] >= 1

@@ -221,3 +221,53 @@ def test_abandoned_raw_envelope_releases_disk_archives_idempotently():
     close_result_archives(envelope)
     assert not path.exists()
     close_result_archives(envelope)
+
+
+def test_cost_frontier_keeps_unpriced_baseline_out_of_page_but_retrievable():
+    baseline = {"score": 12.0, "objective_values": {}, "running_cost": {"gp_per_damage": None}}
+    priced = [
+        {"score": 10.0, "objective_values": {"gp_per_damage": 2.5}},
+        {"score": 8.0, "objective_values": {"gp_per_damage": 0.0}},
+    ]
+    source = {
+        "objective_definitions": [{"id": "gp_per_damage", "direction": "minimize"}],
+        "objective_frontiers": [
+            {
+                "swap_limit": 0,
+                "baseline_dps": 12.0,
+                "baseline_solution": baseline,
+                "points": [{"solution": row} for row in priced],
+            }
+        ],
+    }
+    with ObjectiveRunStore() as store:
+        result = store.publish_result(source, metadata={}, player_id=1)
+        run_id = result["run_id"]
+        group = result["objective_frontiers"][0]
+        assert group["baseline_solution_id"].startswith(group["id"] + "-objective-")
+        page = store.page(run_id, group["id"], player_id=1, sort="gp_per_damage")
+        assert [p["objective_values"]["gp_per_damage"] for p in page["points"]] == [0.0, 2.5]
+        assert (
+            store.solution(run_id, group["baseline_solution_id"], player_id=1)["solution"]
+            == baseline
+        )
+        assert (
+            result["objective_run"]["groups"][0]["baseline_solution_id"]
+            == group["baseline_solution_id"]
+        )
+
+
+def test_chart_sampling_preserves_extremes_of_all_65_dimensions():
+    data = result(131)
+    keys = [f"dimension_{index}" for index in range(64)]
+    data["objective_definitions"] = [{"id": key} for key in keys]
+    for i, row in enumerate(data["objective_frontiers"][0]["points"]):
+        solution = row["solution"]
+        solution["score"] = {128: 0, 129: 2}.get(i, 1)
+        solution["objective_values"] = {
+            key: 0 if i == 2 * j else 2 if i == 2 * j + 1 else 1 for j, key in enumerate(keys)
+        }
+    with ObjectiveRunStore() as store:
+        group = store.publish_result(data, metadata={}, player_id=1)["objective_frontiers"][0]
+    assert group["total_count"] == 131
+    assert {row["solution"]["purchase_cost_gp"] for row in group["points"]} == set(range(130))

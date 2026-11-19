@@ -10,7 +10,6 @@ from typing import Any
 
 from tracker.gear.discipline_assignments import branch_requests as branch_requests
 from tracker.gear.discipline_assignments import merge_assignment_results
-from tracker.gear.running_frontier import needs_running_cost_frontier
 
 
 def optimize_auto(
@@ -30,9 +29,6 @@ def optimize_auto(
     started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
     progress = options.pop("progress", None)
-    running_frontier = options.pop("_running_frontier", False) or needs_running_cost_frontier(
-        request, catalog
-    )
     branches = []
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
@@ -77,7 +73,6 @@ def optimize_auto(
                 price_records,
                 now,
                 _complete_frontiers=True,
-                _running_frontier=running_frontier,
                 progress=for_lane(progress, lane),
                 **options,
             )
@@ -110,11 +105,11 @@ def merge_auto_results(
     if len(request.roles) > 1:
         return merge_assignment_results(request, branches, complete_frontiers=complete_frontiers)
     from tracker.gear.frontier import pareto
-    from tracker.gear.optimizer import _solution_key
+    from tracker.gear.optimizer import _objective_winner_key
     from tracker.gear.potion_search import merge_objective_frontiers
 
     def best(rows: Any) -> dict[str, Any] | None:
-        return min((r for r in rows if r is not None), key=_solution_key, default=None)
+        return min((r for r in rows if r is not None), key=_objective_winner_key, default=None)
 
     unrestricted = best(r["unrestricted"] for _, r in branches)
     winners = [
@@ -168,27 +163,6 @@ def merge_auto_results(
                 {"swap_limit": limit, "baseline_dps": dps, "points": points, "sampled": sampled}
             )
     comparison = []
-    from tracker.gear.running_frontier import publish_groups
-
-    running_archives: dict[int | None, list[dict[str, Any]]] = {
-        limit: [] for limit in [*range(request.max_swaps + 1), None]
-    }
-    running_baselines = {}
-    for limit in running_archives:
-        baselines = []
-        for _, result in branches:
-            for group in result.get("running_cost_frontiers", []):
-                if group["swap_limit"] != limit:
-                    continue
-                running_archives[limit].extend(p["solution"] for p in group["points"])
-                if group.get("baseline_solution"):
-                    baselines.append(group["baseline_solution"])
-        running_baselines[limit] = max(baselines, key=lambda r: r["score"], default=None)
-    running_groups = publish_groups(
-        running_archives, running_baselines, request.max_dps_loss_pct, complete_frontiers
-    )
-    if not any(r.get("running_cost_frontiers") for _, r in branches):
-        running_groups = []
     for discipline, result in branches:
         row = result["selected_solution"]
         comparison.append(
@@ -240,27 +214,7 @@ def merge_auto_results(
                     id_prefix=f"discipline-{discipline}-",
                     complete_frontiers=complete_frontiers,
                 ),
-                "running_cost_frontiers": [
-                    {
-                        **group,
-                        "points": [
-                            {**p, "id": f"discipline-{discipline}-{p['id']}"}
-                            for p in group["points"]
-                        ],
-                    }
-                    for group in publish_groups(
-                        {
-                            g["swap_limit"]: [p["solution"] for p in g["points"]]
-                            for g in result.get("running_cost_frontiers", [])
-                        },
-                        {
-                            g["swap_limit"]: g.get("baseline_solution")
-                            for g in result.get("running_cost_frontiers", [])
-                        },
-                        request.max_dps_loss_pct,
-                        complete_frontiers,
-                    )
-                ],
+                "running_cost_frontiers": [],
                 "search": result["search"],
                 "alternatives": result["alternatives"],
                 "limitations": result["limitations"],
@@ -272,7 +226,7 @@ def merge_auto_results(
         "selected_solution": selected,
         "unrestricted": unrestricted,
         "secondary_frontiers": frontiers,
-        "running_cost_frontiers": running_groups,
+        "running_cost_frontiers": [],
         **merge_objective_frontiers(
             request, [result for _, result in branches], complete_frontiers=complete_frontiers
         ),

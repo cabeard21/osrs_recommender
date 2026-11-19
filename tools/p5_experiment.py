@@ -28,8 +28,14 @@ from typing import Any
 
 from tools.accept_compact_states import derive_case, timing_decision
 from tools.accept_gear_desktop_profiles import _write
-from tools.benchmark_gear_desktop import environment, load_frozen_case, result_digest
+from tools.benchmark_gear_desktop import (
+    cost_objective_case,
+    environment,
+    load_frozen_case,
+    result_digest,
+)
 from tools.gear_process_memory import measure_process_tree, windows_tree_rss
+from tracker.gear.objective_store import materialize_result_archives
 
 POLICY = "p5-pilot-v1"
 MEMORY_CEILING = 4 * 1024**3
@@ -232,7 +238,6 @@ def execute(
     service: Any,
     *,
     archives: bool = False,
-    force_cost: bool = False,
     cancelled: Any = None,
 ) -> tuple[dict, dict]:
     if archives:
@@ -259,7 +264,6 @@ def execute(
                 _factored_evaluation=True,
                 _compact_states=True,
                 _complete_frontiers=True,
-                _running_frontier=force_cost,
                 cancelled=cancelled,
                 **native_options,
                 local_refinement=meta.get("optimization_mode") == "thorough",
@@ -301,6 +305,8 @@ def compare(
         raise ValueError("Forced-cost diagnostics require complete archives")
     if output.exists() and any(output.iterdir()):
         raise ValueError("Observation directory must be empty")
+    if force_cost:
+        case, meta = cost_objective_case(case, meta)
     binding = verify_binding(output)
     output.mkdir(parents=True, exist_ok=True)
     expected = None
@@ -312,10 +318,9 @@ def compare(
         if verify_binding(output) != binding:
             raise ValueError("Manifest changed")
         started = perf_counter()
-        result, diagnostics = execute(
-            case, meta, specs[mode], service, archives=archives, force_cost=force_cost
-        )
+        result, diagnostics = execute(case, meta, specs[mode], service, archives=archives)
         elapsed = perf_counter() - started
+        result = materialize_result_archives(result)
         if verify_binding(output) != binding:
             raise ValueError("Manifest changed")
         _write(output / f"{label}-{mode}.json", result)
@@ -491,6 +496,8 @@ def memory_child(frozen: Path, output: Path, case_name: str, spec: RunSpec) -> d
         result, diagnostics = execute(
             case, meta, spec, services["candidate"], cancelled=exceeded.is_set
         )
+    warmup = materialize_result_archives(warmup)
+    result = materialize_result_archives(result)
     if verify_binding(output) != binding:
         raise ValueError("Manifest changed during memory run")
     _write(output / "result.json", result)

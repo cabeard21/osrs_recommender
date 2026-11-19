@@ -204,7 +204,6 @@ def test_complete_task_archives_execute_natively(catalog, case_name, task):
         "_factored_evaluation": True,
         "_compact_states": True,
         "_complete_frontiers": True,
-        "_running_frontier": True,
     }
     expected = optimize(*args, **flags)
     with capture() as evidence:
@@ -226,6 +225,7 @@ def test_native_enchantment_cost_frontier_matches_python(catalog, priced):
     from tracker.domain.types import Container
     from tracker.gear.catalog import EquipmentCatalog
     from tracker.gear.native import capture
+    from tracker.gear.objectives import ObjectiveDescriptor
     from tracker.gear.optimizer import optimize
     from tracker.integrations.prices.client import PriceDTO, PriceSource
 
@@ -242,7 +242,13 @@ def test_native_enchantment_cost_frontier_matches_python(catalog, priced):
         },
     )
     role = RoleConfig(id="dart", style="magic", spell="magic_dart", on_slayer_task=True)
-    request = case.request.model_copy(update={"roles": (role,)})
+    request = case.request.model_copy(
+        update={
+            "roles": (role,),
+            "secondary_priority": "default",
+            "objectives": (ObjectiveDescriptor(kind="gp_per_damage"),),
+        }
+    )
     prices = {**case.prices}
     if priced:
         prices[21257] = PriceDTO(
@@ -271,7 +277,6 @@ def test_native_enchantment_cost_frontier_matches_python(catalog, priced):
         "_factored_evaluation": True,
         "_compact_states": True,
         "_complete_frontiers": True,
-        "_running_frontier": True,
     }
     expected = optimize(*args, **flags)
     with capture() as evidence:

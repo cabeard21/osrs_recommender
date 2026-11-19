@@ -40,6 +40,8 @@ export function budgetSummary(request: Scenario["request"]): string {
   const lossCap = wildernessRiskCap(request);
   if (lossCap === undefined)
     return `${riskAmount(request.budget_gp)} additional budget`;
+  if (lossCap === null)
+    return `${riskAmount(request.budget_gp)} purchase budget · No loss cap`;
   const purchase =
     request.wilderness?.max_loss_gp == null
       ? "No purchase cap"
@@ -74,6 +76,12 @@ export function WildernessRiskDetails({
         <p>
           Same setup without Protect Item ·{" "}
           {riskAmount(risk.without_protect_item_gp)}
+        </p>
+      )}
+      {policy.attacks_per_setup != null && (
+        <p>
+          Departure supplies for {policy.attacks_per_setup.toLocaleString()}{" "}
+          attacks per combat setup.
         </p>
       )}
       {gearSupplies.length > 0 && (

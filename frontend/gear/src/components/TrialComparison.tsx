@@ -61,6 +61,22 @@ export function TrialComparison({
           gp(proposed.purchase_cost_gp!),
           `${deltas.purchase_cost_gp > 0 ? "+" : ""}${gp(deltas.purchase_cost_gp)}`,
         ],
+        ...(trial.live.objective_definitions?.some(
+          (d) => d.kind === "gp_per_damage",
+        )
+          ? [
+              [
+                "GP/damage",
+                baseline.objective_values?.gp_per_damage?.toFixed(4) ??
+                  "Unavailable",
+                proposed.objective_values?.gp_per_damage?.toFixed(4) ??
+                  "Unavailable",
+                deltas.objective_values?.gp_per_damage == null
+                  ? "Unavailable"
+                  : signed(deltas.objective_values.gp_per_damage, 4),
+              ],
+            ]
+          : []),
         ...(baseline.wilderness_risk && proposed.wilderness_risk
           ? [
               [
@@ -110,10 +126,12 @@ export function TrialComparison({
                   <td>{b}</td>
                   <td
                     className={
+                      !Number.isFinite(Number.parseFloat(delta)) ||
                       Number.parseFloat(delta) === 0
                         ? "muted"
                         : Number.parseFloat(delta) > 0 ===
-                            (label !== "Attack interval" &&
+                            (label !== "GP/damage" &&
+                              label !== "Attack interval" &&
                               label !== "Additional GP required")
                           ? "green"
                           : "negative"

@@ -415,31 +415,19 @@ export function LiveResultWorkspace() {
             </table>
           </section>
         )}
-        {(branch
-          ? !!branch.running_cost_frontiers?.length
-          : request.roles.some(
-              (role) =>
-                role.style === "magic" ||
-                role.style === "ranged" ||
-                (role.autoDiscipline &&
-                  (
-                    role.allowedDisciplines ?? ["melee", "ranged", "magic"]
-                  ).some((style) => style === "ranged" || style === "magic")),
-            )) && (
-          <RunningCostFrontier
-            group={(
-              branch?.running_cost_frontiers ??
-              result.live?.result.running_cost_frontiers
-            )?.find((g) => g.swap_limit === selectedSwapLimit)}
-            selectedId={current.solutionId}
-            selected={selected}
-            itemName={itemName}
-            roleName={roleName}
-            onSelect={(solutionId) =>
-              dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
-            }
-          />
-        )}
+        <RunningCostFrontier
+          group={(
+            branch?.running_cost_frontiers ??
+            result.live?.result.running_cost_frontiers
+          )?.find((g) => g.swap_limit === selectedSwapLimit)}
+          selectedId={current.solutionId}
+          selected={selected}
+          itemName={itemName}
+          roleName={roleName}
+          onSelect={(solutionId) =>
+            dispatch({ type: "ui", mode: state.mode, patch: { solutionId } })
+          }
+        />
         {request.objectives !== undefined && (
           <ObjectiveFrontier
             result={viewResult!}

@@ -102,7 +102,7 @@ def test_pool_lifecycle_and_diagnostic(tmp_path, monkeypatch):
         service_factory=lambda p: Service(),
     )
     assert report["execution"] == "direct_diagnostic"
-    assert all(row["_complete_frontiers"] and row["_running_frontier"] for row in called)
+    assert all(row["_complete_frontiers"] for row in called)
     with pytest.raises(ValueError, match="serial"):
         compare_profiles(case, {"diagnostic": True}, tmp_path / "invalid", workers=3)
 

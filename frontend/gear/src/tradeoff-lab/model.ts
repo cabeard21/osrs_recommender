@@ -6,6 +6,7 @@ export interface LabMetric {
   label: string;
   shortLabel: string;
   unit?: string;
+  direction?: "maximize" | "minimize";
 }
 
 export interface LabPoint {
@@ -14,7 +15,7 @@ export interface LabPoint {
   dps: number;
   defence: number;
   prayer: number;
-  values?: Record<string, number>;
+  values?: Record<string, number | null>;
   costGp: number;
   equipment: { slot: string; itemId: number; name: string }[];
   potions: string[];
@@ -65,6 +66,7 @@ export function formatMetric(
 ): string {
   if (!Number.isFinite(value)) return "Unavailable";
   if (metric?.unit === "probability") return `${(value * 100).toFixed(2)}%`;
+  if (metric?.unit === "GP") return `${value.toLocaleString()} GP`;
   if (metric?.unit === "percent") return `${value.toFixed(2)}%`;
   return value.toLocaleString("en-US", {
     minimumFractionDigits: key === "dps" ? 3 : 0,
@@ -105,24 +107,31 @@ export function metricDelta(
 export function metricLeader(
   points: LabPoint[],
   key: MetricKey,
+  direction: LabMetric["direction"] = "maximize",
 ): LabPoint | undefined {
-  return points.reduce<LabPoint | undefined>(
-    (best, candidate) =>
-      !best ||
-      metricValue(candidate, key) > metricValue(best, key) ||
-      (metricValue(candidate, key) === metricValue(best, key) &&
-        candidate.id.localeCompare(best.id) < 0)
-        ? candidate
-        : best,
-    undefined,
-  );
+  return points
+    .filter((point) => Number.isFinite(metricValue(point, key)))
+    .reduce<LabPoint | undefined>(
+      (best, candidate) =>
+        !best ||
+        (direction === "minimize"
+          ? metricValue(candidate, key) < metricValue(best, key)
+          : metricValue(candidate, key) > metricValue(best, key)) ||
+        (metricValue(candidate, key) === metricValue(best, key) &&
+          candidate.id.localeCompare(best.id) < 0)
+          ? candidate
+          : best,
+      undefined,
+    );
 }
 
 export function leaders(
   points: LabPoint[],
   metrics: LabMetric[] = METRICS,
 ): LabPoint[] {
-  const selected = metrics.map(({ key }) => metricLeader(points, key));
+  const selected = metrics.map(({ key, direction }) =>
+    metricLeader(points, key, direction),
+  );
   return selected.filter(
     (point, i): point is LabPoint =>
       point !== undefined &&
