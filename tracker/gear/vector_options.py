@@ -120,6 +120,11 @@ class VectorOptions:
                 **self.native_rune_filter(role),
             )
         else:
+            if native is not None:
+                from tracker.gear.native import NativeSearchUnavailable, required
+
+                if required():
+                    raise NativeSearchUnavailable("Native vector scoring is unavailable")
             alternatives = self.variants(equipment, role)
             result = (
                 tuple(

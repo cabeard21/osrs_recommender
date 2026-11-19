@@ -31,6 +31,7 @@ from tracker.gear.combat import SPELLS
 from tracker.gear.evaluation import equipment_problems, evaluate_equipment
 from tracker.gear.facts import hypothetical_snapshot
 from tracker.gear.models import CombatPerformance
+from tracker.gear.native import NativeSearchUnavailable, NativeSearchUnsupported
 from tracker.gear.optimizer import ItemId, OptimizationRequest, RoleConfig
 from tracker.gear.potions import boosted_levels
 from tracker.gear.potions import catalog as potion_catalog
@@ -843,6 +844,15 @@ async def optimizations(
         stopped.set()
         worker.add_done_callback(consume)
         raise
+    except NativeSearchUnsupported as exc:
+        raise error("native_search_unsupported", str(exc)) from exc
+    except NativeSearchUnavailable as exc:
+        raise error(
+            "native_search_unavailable",
+            "The desktop native optimizer is unavailable. "
+            "Rebuild the native release and restart Gear.",
+            503,
+        ) from exc
     except ValueError as exc:
         message = str(exc)
         if message.startswith("optimizer_busy"):

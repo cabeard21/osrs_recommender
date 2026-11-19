@@ -35,6 +35,7 @@ def execution_context(
     factored_evaluation: bool = False,
     compact_states: bool = False,
     native_search: bool = False,
+    native_required: bool = False,
 ) -> Iterator[None]:
     """Create fresh per-leaf caches, never attached to worker preparation state."""
     validate_profile(profile)
@@ -49,7 +50,7 @@ def execution_context(
     with ExitStack() as stack:
         from tracker.gear.native import execution
 
-        stack.enter_context(execution(native_search))
+        stack.enter_context(execution(native_search, required=native_required))
         roles = request.roles
         token = _factored_evaluation.set(profile == "combined" and factored_evaluation)
         stack.callback(_factored_evaluation.reset, token)

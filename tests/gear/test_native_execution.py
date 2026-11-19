@@ -38,11 +38,13 @@ def test_native_service_passes_flag_and_collects_sidecar(monkeypatch):
         factored_evaluation=True,
         compact_states=True,
         native_search=True,
+        native_required=True,
     )
     service._equipment = case.catalog
 
     def run(*args, **kwargs):
         assert kwargs["_native_search"] is True
+        assert kwargs["_native_required"] is True
         record("stage", stage="loadout", attempts=10)
         return {"ok": True}
 
@@ -61,6 +63,41 @@ def test_native_scope_resets_on_failure():
         assert active()
         raise RuntimeError("test")
     assert not active()
+
+
+def test_required_native_rejects_preflight_without_fallback(monkeypatch):
+    from types import SimpleNamespace
+
+    from tracker.gear import native
+
+    search = SimpleNamespace(compact_states=True, factored_evaluation=True, request=None)
+    monkeypatch.setattr(native, "support_reason", lambda request: "unsupported_discipline")
+    with native.capture() as evidence, native.execution(True):
+        assert native.create_context(search) is None
+        assert evidence.snapshot()["fallback_requests"] == 1
+    with native.capture() as evidence, native.execution(True, required=True):
+        with pytest.raises(native.NativeSearchUnsupported, match="discipline"):
+            native.create_context(search)
+        assert evidence.snapshot()["fallback_requests"] == 0
+    assert not native.required()
+
+
+def test_required_native_rejects_incompatible_execution_options():
+    from tracker.gear import native
+    from tracker.gear.optimizer import optimize
+
+    case = load_case("melee_1m")
+    with pytest.raises(native.NativeSearchUnavailable, match="combined"):
+        optimize(
+            case.snapshot,
+            case.request,
+            case.catalog,
+            case.content,
+            case.prices,
+            case.at,
+            _native_search=True,
+            _native_required=True,
+        )
 
 
 @pytest.mark.parametrize("style", ["stab", "slash", "crush", "ranged", "magic", "special"])

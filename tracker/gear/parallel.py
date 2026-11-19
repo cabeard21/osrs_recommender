@@ -22,6 +22,7 @@ from tracker.estimation.prices import PriceRecord
 from tracker.gear.auto import branch_requests
 from tracker.gear.catalog import EquipmentCatalog
 from tracker.gear.discipline_assignments import has_auto
+from tracker.gear.native import NativeSearchUnavailable, NativeSearchUnsupported
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.parallel_payload import context_payload, decode_context, decode_job, job_payload
 from tracker.gear.progress import SlotReader, SlotWriter, WorkerSlots
@@ -208,7 +209,7 @@ class AutoProcessPool:
                 raise ValueError(_UNAVAILABLE)
             if self._identity is not None and self._identity != identity:
                 raise ValueError("optimizer_worker_context_mismatch")
-            if self._executor is not None and self._native_required != native_required:
+            if self._identity is not None and self._native_required != native_required:
                 raise ValueError("optimizer_worker_native_context_mismatch")
             self._native_required = native_required
             self._payload, self._identity = payload, identity
@@ -314,6 +315,10 @@ class AutoProcessPool:
         cancelled: Any,
         progress: Any = None,
     ) -> list[dict[str, Any]]:
+        if self._native_required:
+            if options.get("_native_search") is not True:
+                raise NativeSearchUnavailable("The desktop worker pool requires native search.")
+            options = {**options, "_native_required": True}
         futures: list[Future[dict[str, Any]]] = []
         try:
             assert self._executor is not None
@@ -369,7 +374,10 @@ class AutoProcessPool:
                     adopt_vector_archives(future.result())
             if broken:
                 self._dispose()
-            if isinstance(error, (KeyboardInterrupt, SystemExit)):
+            if isinstance(
+                error,
+                (KeyboardInterrupt, SystemExit, NativeSearchUnsupported, NativeSearchUnavailable),
+            ):
                 raise
             if str(error) == "optimization_cancelled":
                 raise ValueError("optimization_cancelled") from error
@@ -412,6 +420,7 @@ class AutoProcessPool:
                 "_factored_evaluation",
                 "_compact_states",
                 "_native_search",
+                "_native_required",
             }
             from tracker.gear.execution_profile import validate_worker_options
 
@@ -498,6 +507,7 @@ class AutoProcessPool:
                 "_factored_evaluation",
                 "_compact_states",
                 "_native_search",
+                "_native_required",
             },
         )
         if not has_auto(request):

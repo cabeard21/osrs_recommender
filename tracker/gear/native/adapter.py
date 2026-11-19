@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from tracker.gear.native import record
+from tracker.gear.native import NativeSearchUnavailable, record
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import _Winner
@@ -78,7 +78,7 @@ def expand(
             break
         count = stage.advance(min(1024 - (search.nodes & 1023), remaining))
         if count <= 0:
-            raise RuntimeError("Native stage made no progress")
+            raise NativeSearchUnavailable("Native stage made no progress")
         search.nodes += count
         attempted += count
         if not search.nodes & 1023 and hasattr(search, "native_report"):

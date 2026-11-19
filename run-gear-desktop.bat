@@ -23,7 +23,7 @@ rem Validate configuration before downloading or building anything. Never print 
 if errorlevel 1 goto :fail
 
 rem Native builds belong to provisioning, never to routine startup.
-"%PY%" -c "from tracker.gear_desktop import load_desktop_settings; from tracker.gear.native.readiness import require_native; s=load_desktop_settings(); require_native() if s.optimization_engine == 'native' and s.optimization_profile == 'combined' else None"
+"%PY%" -c "from tracker.gear.native.readiness import require_native; require_native()"
 if errorlevel 1 goto :fail
 
 pushd "frontend\gear"

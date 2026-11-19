@@ -104,6 +104,7 @@ class GearService:
         factored_evaluation: bool = False,
         compact_states: bool = False,
         native_search: bool = False,
+        native_required: bool = False,
     ) -> None:
         self.optimization_profile = validate_profile(optimization_profile)
         if not isinstance(fixed_reporting, bool):
@@ -118,6 +119,9 @@ class GearService:
         if not isinstance(native_search, bool):
             raise ValueError("Invalid native search option")
         self.native_search = native_search
+        if not isinstance(native_required, bool) or (native_required and not native_search):
+            raise ValueError("Invalid required native search option")
+        self.native_required = native_required
         self.native_diagnostics: dict[str, Any] = {
             "native_requests": 0,
             "fallback_requests": 0,
@@ -201,6 +205,8 @@ class GearService:
                 execution["_compact_states"] = True
             if self.native_search:
                 execution["_native_search"] = True
+            if self.native_required:
+                execution["_native_required"] = True
             pool = self.auto_pool
             parallel = False
             if request.potions.mode == "optimize":

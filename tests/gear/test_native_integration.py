@@ -55,7 +55,7 @@ def test_melee_roll_complete_frontiers_match_python_without_fallback(mode, prior
     )
     reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        actual = optimize(*args, **FLAGS, _native_search=True)
+        actual = optimize(*args, **FLAGS, _native_search=True, _native_required=True)
     assert result_digest(actual) == result_digest(reference)
     assert evidence.snapshot()["native_requests"] >= 1
     assert evidence.snapshot()["fallback_requests"] == 0
@@ -78,7 +78,7 @@ def test_native_complete_results_match_python(name):
     args = inputs(name)
     reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        result = optimize(*args, **FLAGS, _native_search=True)
+        result = optimize(*args, **FLAGS, _native_search=True, _native_required=True)
     assert result_digest(result) == result_digest(reference)
     assert evidence.snapshot()["native_requests"] >= 1
     assert evidence.snapshot()["fallback_requests"] == 0
@@ -111,7 +111,7 @@ def test_native_cost_objective_frontiers_match_python_and_execute(name):
     )
     reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        result = optimize(*args, **FLAGS, _native_search=True)
+        result = optimize(*args, **FLAGS, _native_search=True, _native_required=True)
     assert result_digest(result) == result_digest(reference)
     diagnostics = evidence.snapshot()
     assert diagnostics["native_requests"] >= 1
@@ -187,7 +187,7 @@ def test_native_preserves_special_role_inheritance_without_damage(configured):
     )
     reference = optimize(*args, **FLAGS)
     with capture() as evidence:
-        actual = optimize(*args, **FLAGS, _native_search=True)
+        actual = optimize(*args, **FLAGS, _native_search=True, _native_required=True)
     assert result_digest(actual) == result_digest(reference)
     assert evidence.snapshot()["fallback_requests"] == 0
     assert evidence.snapshot()["native_requests"] >= 1
@@ -215,6 +215,7 @@ def test_six_native_workers_cancel_crash_and_recover():
     request = case.request.model_copy(update={"roles": (role,)})
     args = (case.snapshot, request, case.catalog, case.content, case.prices, case.at)
     flags = {key: value for key, value in FLAGS.items() if key != "_complete_frontiers"}
+    flags["_native_required"] = True
     pool = AutoProcessPool(6)
     progress = []
     try:

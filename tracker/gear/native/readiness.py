@@ -58,8 +58,7 @@ def release_manifest(directory: Path, *, coverage: bool) -> dict[str, Any]:
 def require_native(directory: Path | None = None) -> dict[str, Any]:
     """Validate release identity before importing either compiled module.
 
-    No build or dependency installation is performed here. Explicit Python
-    rollback never invokes this function.
+    No build or dependency installation is performed here.
     """
     directory = directory or Path(__file__).resolve().parent
     try:
@@ -87,6 +86,5 @@ def require_native(directory: Path | None = None) -> dict[str, Any]:
         raise NativeReadinessError(
             "native_extension_unavailable: "
             f"{exc}. Install optional tools with python -m pip install -e .[native-build], "
-            "then run python -m tools.build_gear_native and restart desktop Gear. "
-            "For explicit rollback set TRACKER_DESKTOP_OPTIMIZATION_ENGINE=python."
+            "then run python -m tools.build_gear_native and restart desktop Gear."
         ) from exc
