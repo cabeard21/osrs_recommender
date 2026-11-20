@@ -14,6 +14,10 @@ from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
 from tracker.gear.ranged_resources import CONSUMABLE_WEAPON_IDS
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
+from tracker.gear.revenant_acquisition import form_preparation, market_form, preferred_sources
+from tracker.gear.salve import FORMS as SALVE_FORMS
+from tracker.gear.salve import acquisition_requirement
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import review as tome_review
 
@@ -90,6 +94,7 @@ def equipment_fact(
     now: datetime,
     *,
     support_assumptions: tuple[str, ...] = (),
+    excluded_item_ids: tuple[int, ...] = (),
 ) -> dict[str, Any]:
     """No progression order or score is involved in eligibility/acquisition facts."""
     requirement = (
@@ -112,7 +117,25 @@ def equipment_fact(
     preparation = None
     staff = review(item.id)
     market_id = item.id if item.tradeable else None
-    if staff is not None and (item.id != staff.uncharged_id or item.id == staff.charged_id):
+    if item.id in REVENANT_FORMS:
+        market_id = market_form(item.id, content, prices, now, excluded_item_ids)
+        source_id = None
+        for candidate in preferred_sources(item.id):
+            if candidate in excluded_item_ids:
+                continue
+            observed = (
+                ownership if candidate == item.id else observed_ownership(snapshot, candidate)
+            )
+            if observed["status"] == "owned":
+                source_id = candidate
+                if candidate != item.id:
+                    planning_ownership = {
+                        **observed,
+                        "meaning": "Owned equivalent weapon form; preparation required",
+                    }
+                break
+        preparation = form_preparation(item.id, source_id, market_id)
+    elif staff is not None and (item.id != staff.uncharged_id or item.id == staff.charged_id):
         observed_sources = [
             (i, observed_ownership(snapshot, i)) for i, record in REVIEWS.items() if record == staff
         ]
@@ -238,6 +261,15 @@ def equipment_fact(
     )
     return {
         "item_id": item.id,
+        **(
+            {
+                "acquisition_requirement": evaluate_requirement(
+                    snapshot, acquisition_requirement(item.id)
+                ).model_dump(mode="json")
+            }
+            if item.id in SALVE_FORMS and ownership["status"] != "owned"
+            else {}
+        ),
         "name": item.name,
         "slot": item.slot,
         "budget_exempt": budget_exempt(item),

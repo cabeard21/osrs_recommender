@@ -434,6 +434,7 @@ export function parseOptimization(
         Number(row.item_id) <= 0 ||
         !allowedPurchases.has(Number(row.item_id)) ||
         purchased.has(Number(row.item_id)) ||
+        (row.quantity !== undefined && row.quantity !== 1) ||
         (row.cost_gp !== null &&
           (!Number.isSafeInteger(row.cost_gp) || Number(row.cost_gp) < 0))
       )
@@ -824,6 +825,7 @@ function parseFixedEvaluation(
       !Number.isSafeInteger(purchase.item_id) ||
       !allowedPurchases.has(Number(purchase.item_id)) ||
       purchased.has(Number(purchase.item_id)) ||
+      (purchase.quantity !== undefined && purchase.quantity !== 1) ||
       (purchase.cost_gp !== null &&
         (!Number.isSafeInteger(purchase.cost_gp) ||
           Number(purchase.cost_gp) < 0))

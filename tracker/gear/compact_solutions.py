@@ -408,20 +408,20 @@ def _expand_report(
 ) -> dict[str, Any]:
     """Expand a validated record without repeating feasibility or weighted sums."""
     from tracker.gear.evaluation import purchases
+    from tracker.gear.revenant_acquisition import loadout_preparations
     from tracker.gear.running_frontier import add_solution_costs
 
     if search.cancelled and search.cancelled():
         raise ValueError("optimization_cancelled")
     loadouts = {}
+    preparations = loadout_preparations(assignment.carried, search.facts, search.request)
     for role in search.request.roles:
         equipment = assignment[role.id]
         loadouts[role.id] = {
             **values["loadouts"][role.id],
             "equipment": equipment.to_dict(),
             "preparations": [
-                search.facts[i]["preparation"]
-                for i in sorted(equipment.values())
-                if search.facts[i].get("preparation")
+                preparations[i] for i in sorted(equipment.values()) if i in preparations
             ],
             "performance": role_reports.report(
                 report_keys[role.id],

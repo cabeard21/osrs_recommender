@@ -27,23 +27,24 @@ function acquisitionStatus(
   if (!id) return "Empty";
   if (obtainIds.includes(id)) return "Obtain";
   const preparation = preparations.find((row) => row.usable_item_id === id);
-  if (preparation?.charging_required) {
+  if (preparation?.source_item_id != null) {
+    if (preparation.source_item_id !== id) return "Owned source · Prepare";
+    return preparation.charging_required ? "Prepare" : "Owned";
+  }
+  if (
+    preparation &&
+    (preparation.charging_required ||
+      (preparation.source_item_id ?? preparation.market_item_id) !== id)
+  ) {
     if (purchaseIds.includes(id)) return "Buy · Prepare";
     if (
       preparation.market_item_id !== null &&
       purchaseIds.includes(preparation.market_item_id)
     )
       return "Buy base · Prepare";
-    if (
-      preparation.source_item_id !== null &&
-      preparation.source_item_id !== id
-    )
-      return "Owned source · Prepare";
     return "Prepare";
   }
   if (purchaseIds.includes(id)) return "Buy";
-  if (preparation?.source_item_id != null && preparation.source_item_id !== id)
-    return "Owned source · Check charges";
   return item?.owned ? "Owned" : "Unconfirmed";
 }
 const statusColor: Record<string, string> = {

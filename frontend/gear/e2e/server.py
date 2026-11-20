@@ -143,6 +143,78 @@ if __name__ == "__main__":
                 session.commit()
             return {"status": "seeded"}
 
+        @app.post("/test/seed-salve")
+        def seed_salve(owned: bool = True):
+            seed_optimization()
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {item_id: original_catalog.items[item_id] for item_id in (1333, 10588)},
+                revision="browser-acceptance-salve-v1",
+            )
+            now = datetime.now(UTC)
+            with factory() as session:
+                player = session.query(Player).first()
+                player.members = True
+                if owned:
+                    session.add(
+                        ObservedItem(
+                            player_id=player.id,
+                            item_id=10588,
+                            quantity=1,
+                            container=Container.BANK,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                for quest_id in ("haunted_mine", "lair_of_tarn_razorlor"):
+                    session.merge(
+                        QuestState(
+                            player_id=player.id,
+                            quest_id=quest_id,
+                            status=QuestStatus.COMPLETE,
+                            source=Source.RUNELITE,
+                            observed_at=now,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
+        @app.post("/test/seed-chainmace")
+        def seed_chainmace():
+            seed_optimization()
+            now = datetime.now(UTC)
+            app.state.gear_service._equipment = EquipmentCatalog(
+                {i: original_catalog.items[i] for i in (22542, 22545)},
+                revision="browser-acceptance-viggora-v1",
+            )
+            with factory() as session:
+                player = session.query(Player).first()
+                player.members = True
+                session.add(
+                    ObservedItem(
+                        player_id=player.id,
+                        item_id=22542,
+                        quantity=1,
+                        container=Container.BANK,
+                        source=Source.RUNELITE,
+                        observed_at=now,
+                    )
+                )
+                for item_id, price in ((22542, 500_000), (21820, 10)):
+                    session.merge(
+                        ItemPrice(
+                            item_id=item_id,
+                            high_price_gp=price,
+                            low_price_gp=price,
+                            high_trade_at=now,
+                            low_trade_at=now,
+                            fetched_at=now,
+                            provider="deterministic-browser-fixture",
+                            source=PriceSourceLayer.CACHED,
+                        )
+                    )
+                session.commit()
+            return {"status": "seeded"}
+
         @app.post("/test/seed-wilderness-magic")
         def seed_wilderness_magic():
             seed_optimization()

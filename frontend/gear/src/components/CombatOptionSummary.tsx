@@ -6,6 +6,18 @@ import type {
 } from "../api/contracts";
 import { prayerDisplayName, prayerEffectText } from "./prayerFormat";
 
+function attackBonusText(accuracy: number, damage: number) {
+  const percent = (value: number) => `+${Number(value.toFixed(2))}%`;
+  if (accuracy > 0 && accuracy === damage)
+    return `${percent(accuracy)} accuracy and damage`;
+  return [
+    accuracy > 0 && `${percent(accuracy)} accuracy`,
+    damage > 0 && `${percent(damage)} damage`,
+  ]
+    .filter(Boolean)
+    .join(" and ");
+}
+
 function PrayerSummary({
   ids,
   catalog,
@@ -66,6 +78,7 @@ export function CombatOptionSummary({
     (role.style === "magic" ? role.spell : null);
   const weakness = performance?.elemental_weakness;
   const hopper = performance?.aquanite_hopper;
+  const salve = performance?.salve_bonus;
   return (
     <>
       <p aria-label="Selected combat configuration">
@@ -73,6 +86,13 @@ export function CombatOptionSummary({
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
+      {performance?.wilderness_weapon_passive != null && (
+        <p aria-label="Wilderness weapon passive">
+          {performance.wilderness_weapon_passive
+            ? "Wilderness passive active · +50% attack roll and +50% damage"
+            : "Wilderness passive inactive"}
+        </p>
+      )}
       {performance?.status_damage && (
         <div aria-label="Status damage estimate">
           <p>
@@ -147,6 +167,17 @@ export function CombatOptionSummary({
           misses remain 0
         </p>
       )}
+      {salve && (
+        <p aria-label="Salve amulet effect">
+          {itemName?.(salve.item_id) ?? `Salve amulet (#${salve.item_id})`} ·{" "}
+          {attackBonusText(salve.accuracy_percent, salve.damage_percent)}{" "}
+          against undead
+          {salve.suppresses_slayer &&
+            (salve.accuracy_percent === 0
+              ? " · Takes precedence over the Slayer bonus for damage"
+              : " · Takes precedence over the Slayer bonus")}
+        </p>
+      )}
       {performance?.slayer_effects?.map((effect) => (
         <p
           aria-label="Slayer task effect"
@@ -156,7 +187,12 @@ export function CombatOptionSummary({
           {itemName?.(effect.item_id) ?? `item #${effect.item_id}`}:{" "}
           {effect.kind === "magic_dart"
             ? `Magic Dart base max hit ${effect.base_max_hit}`
-            : `+${Number(((effect.accuracy_numerator / effect.denominator - 1) * 100).toFixed(2))}% accuracy and damage`}
+            : attackBonusText(
+                ((effect.accuracy_numerator - effect.denominator) * 100) /
+                  effect.denominator,
+                ((effect.damage_numerator - effect.denominator) * 100) /
+                  effect.denominator,
+              )}
         </p>
       ))}
       {performance?.hitsplats && performance.hitsplats.length > 1 && (

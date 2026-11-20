@@ -208,6 +208,7 @@ class ItemResponse(DTO):
     preparation: Preparation | None = None
     wear: Wear
     acquisition: Literal["tradeable", "untradeable", "unknown"]
+    acquisition_requirement: RequirementResult | None = None
     acquisition_descriptions: list[str]
     price: Price
     limitations: list[str]

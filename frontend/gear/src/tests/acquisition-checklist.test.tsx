@@ -57,6 +57,7 @@ const selected: JointSolutionDTO = {
 const names: Record<number, string> = {
   28583: "Warped sceptre",
   28585: "Warped sceptre (charged)",
+  27662: "Accursed sceptre (uncharged)",
   6570: "Fire cape",
 };
 function itemById(id: number): Item | undefined {
@@ -199,6 +200,93 @@ it("shows activation reserves while keeping unavailable upkeep explicit", () => 
   expect(screen.getByText("Estimated upkeep").parentElement).toHaveTextContent(
     "Estimated upkeepUnavailable",
   );
+});
+
+it("lists two purchases and two activation reserves for independently prepared sceptres", () => {
+  const powered = {
+    ...preparation,
+    usable_item_id: 27665,
+    market_item_id: 27662,
+    activation_reserve: [{ item_id: 21820, quantity: 1000 }],
+    message: "Charge the sceptre.",
+  };
+  const autocast = {
+    ...powered,
+    usable_item_id: 27679,
+    message: "Swap to autocast.",
+  };
+  render(
+    <AcquisitionChecklist
+      solution={{
+        ...selected,
+        loadouts: {
+          boss: {
+            ...loadout,
+            equipment: { weapon: 27665 },
+            preparations: [powered],
+          },
+          adds: {
+            ...loadout,
+            equipment: { weapon: 27679 },
+            preparations: [autocast],
+          },
+        },
+        purchases: [
+          { item_id: 27662, quantity: 2, cost_gp: 1000, conditional: false },
+        ],
+        carried_item_ids: [27665, 27679],
+      }}
+      roles={roles}
+      itemById={itemById}
+      selectionKey="sceptre"
+    />,
+  );
+  const prepare = screen.getByRole("region", { name: "Prepare" });
+  expect(prepare).toHaveTextContent("Charge the sceptre.");
+  expect(prepare).toHaveTextContent("Swap to autocast.");
+  expect(within(prepare).getAllByText(/Activation reserve/)).toHaveLength(2);
+  expect(prepare).toHaveTextContent("1,000 × Revenant ether");
+  const buy = screen.getByRole("region", { name: "Buy" });
+  expect(buy).toHaveTextContent("2 × Accursed sceptre (uncharged) · 1,000 GP");
+  expect(buy).toHaveTextContent(
+    "2 × Accursed sceptre (uncharged) (#27662) · 1,000 GP",
+  );
+});
+
+it("attributes an additional copy only to the role using that purchase", () => {
+  const owned = {
+    ...preparation,
+    usable_item_id: 27665,
+    source_item_id: 27662,
+    market_item_id: 27662,
+  };
+  const purchased = { ...owned, usable_item_id: 27679, source_item_id: null };
+  render(
+    <AcquisitionChecklist
+      solution={{
+        ...selected,
+        loadouts: {
+          boss: {
+            ...loadout,
+            equipment: { weapon: 27665 },
+            preparations: [owned],
+          },
+          adds: {
+            ...loadout,
+            equipment: { weapon: 27679 },
+            preparations: [purchased],
+          },
+        },
+        purchases: [{ item_id: 27662, cost_gp: 1000, conditional: false }],
+      }}
+      roles={roles}
+      itemById={itemById}
+      selectionKey="additional"
+    />,
+  );
+  const buy = screen.getByRole("region", { name: "Buy" });
+  expect(buy).toHaveTextContent("Used by Adds");
+  expect(buy).not.toHaveTextContent("Boss");
 });
 
 it("replaces acquisition steps and closes the old export when the selection changes", async () => {

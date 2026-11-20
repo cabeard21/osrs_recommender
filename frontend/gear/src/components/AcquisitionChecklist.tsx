@@ -3,7 +3,7 @@ import { BankTagExport } from "./BankTagExport";
 import { PurchaseListCopy } from "./PurchaseListCopy";
 import { PurchaseRows } from "./PurchaseRows";
 import { UntradeablesToObtain } from "./UntradeablesToObtain";
-import { riskAmount } from "./WildernessRiskDetails";
+import { resourceNames, riskAmount } from "./WildernessRiskDetails";
 import { equipmentFor } from "./resultFormat";
 import "../styles/acquisition-checklist.css";
 
@@ -59,17 +59,24 @@ export function AcquisitionChecklist({
   };
   const resourceName = (id: number) =>
     solution.running_cost?.resources.find((resource) => resource.item_id === id)
-      ?.name ?? itemName(id);
+      ?.name ??
+    resourceNames[id] ??
+    itemName(id);
   const rolesUsing = (id: number, includeMarketForms = false) =>
     joint
       ? roleLoadouts
-          .filter(
-            ({ loadout }) =>
-              Object.values(loadout.equipment).includes(id) ||
-              (includeMarketForms &&
-                loadout.preparations?.some(
-                  (preparation) => preparation.market_item_id === id,
-                )),
+          .filter(({ loadout }) =>
+            Object.values(loadout.equipment).some((usableId) => {
+              const route =
+                includeMarketForms &&
+                loadout.preparations?.find(
+                  (p) => p.usable_item_id === usableId,
+                );
+              return route
+                ? route.source_item_id === null &&
+                    (route.market_item_id ?? usableId) === id
+                : usableId === id;
+            }),
           )
           .map((role) => role.name)
       : [];

@@ -19,6 +19,7 @@ from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import review
 from tracker.gear.ranged_resources import THROWN_IDS
+from tracker.gear.revenant import CHARGED_AUTOCAST, CHARGED_BOWS, CHARGED_MACES, ETHER_ID
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.running_costs import (
     _CHARGES,
@@ -335,8 +336,13 @@ class CostEvaluator:
                     )
                     for i, q in recipe.items()
                 )
-                if weapon and weapon.id in {27788, 27679}:
-                    resources += (self.resource(21820, "Revenant ether", 1),)
+                if weapon and weapon.id in CHARGED_AUTOCAST:
+                    resources += (self.resource(ETHER_ID, "Revenant ether", 1),)
+        elif weapon and (
+            (weapon.id in CHARGED_MACES and style in {"crush", "stab"})
+            or (weapon.id in CHARGED_BOWS and style in {"ranged", "light", "standard", "heavy"})
+        ):
+            resources = (self.resource(ETHER_ID, "Revenant ether", 1),)
         elif style in {"ranged", "light", "standard", "heavy"}:
             resources, limitations = self._ranged(equipment)
         elif style not in {"stab", "slash", "crush"}:

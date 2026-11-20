@@ -37,6 +37,7 @@ from tracker.gear.potions import boosted_levels
 from tracker.gear.potions import catalog as potion_catalog
 from tracker.gear.priorities import SecondaryPriority
 from tracker.gear.support import SupportPolicy
+from tracker.gear.wilderness import Outcome
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -205,6 +206,7 @@ class Purchase(DTO):
     item_id: int
     cost_gp: int | None
     conditional: bool
+    quantity: int = Field(default=1, ge=1, strict=True, exclude_if=lambda v: v == 1)
 
 
 NonnegativeGp = Annotated[int, Field(strict=True, ge=0)]
@@ -213,7 +215,7 @@ PositiveQuantity = Annotated[int, Field(strict=True, gt=0)]
 
 class WildernessRiskItem(DTO):
     item_id: ItemId
-    outcome: Literal["kept", "dropped", "broken", "mangled", "destroyed", "converted", "unknown"]
+    outcome: Outcome
     loss_gp: NonnegativeGp | None
     quantity: PositiveQuantity
 
@@ -630,12 +632,12 @@ def calculate(
         else:
             reasons.extend(reason["message"] for reason in evaluated["reasons"])
     elif not reasons:
-        from tracker.gear.evaluation import resolve_tome_context
+        from tracker.gear.evaluation import resolve_scenario_combat_context
 
         calculated = evaluate_equipment(
             projection.equipment,
             gear.supported_catalog(body.support_policy).items,
-            resolve_tome_context(baseline_body.roles[0], baseline_body.fire_tome_pages),
+            resolve_scenario_combat_context(baseline_body.roles[0], baseline_body),
             boosted_levels(
                 {k: v.level for k, v in projected.skills.items()},
                 baseline_body.potions.selected_ids,
@@ -706,7 +708,12 @@ def calculate(
         ),
         "items": [
             gear.physical_item(
-                projected, i, price_records=prices, now=now, support_policy=body.support_policy
+                projected,
+                i,
+                price_records=prices,
+                now=now,
+                support_policy=body.support_policy,
+                excluded_item_ids=body.excluded_item_ids,
             )
             for i in sorted(referenced)
         ],

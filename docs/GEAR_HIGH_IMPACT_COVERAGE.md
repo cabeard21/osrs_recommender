@@ -469,7 +469,8 @@ The reviewed physical forms are dragon hunter lance `22978`, crossbow `21012`,
 black/turquoise crossbows `25918`/`25916`, and wand `30070`. They receive their
 passives only against canonical targets with the `dragon` trait. Existing
 unsupported encounters remain blocked; Elvarg and revenant dragons have no such
-trait. Salve and Void effects remain unreviewed.
+trait. See [Salve amulets](GEAR_SLAYER_TASKS.md#salve-amulets) for undead bonuses.
+Void effects remain unreviewed.
 
 The lance requires 78 Attack and confirmed `barbarian_hasta_training`. Its legal
 profiles are controlled stab/slash/crush and defensive stab. Crossbows require

@@ -80,10 +80,14 @@ def wilderness_prayer_problem(request: Any, snapshot: AccountSnapshot) -> str | 
 
 
 def wilderness_provenance(request: Any) -> dict[str, Any]:
+    from tracker.gear.revenant import MODEL_VERSION
+
     policy = getattr(request, "wilderness", None)
+    context = {"revenant_weapon_model_version": MODEL_VERSION}
     if policy is None:
-        return {}
+        return context
     return {
+        **context,
         "wilderness": policy.model_dump(mode="json"),
         "wilderness_rules_revision": policy.rules_revision,
     }
@@ -155,9 +159,11 @@ def validate_request_context(
                 raise ValueError(f"locked item {item_id} is excluded")
 
 
-def resolve_tome_context(role: Any, fire_tome_pages: str) -> Any:
-    """Resolve the scenario-wide page choice at every scoring entry point."""
-    return role.model_copy(update={"fire_tome_pages": fire_tome_pages})
+def resolve_scenario_combat_context(role: Any, request: Any) -> Any:
+    """Carry scenario-wide combat settings into immutable per-attack role copies."""
+    configured = role.model_copy(update={"fire_tome_pages": request.fire_tome_pages})
+    configured._in_wilderness = request.wilderness is not None
+    return configured
 
 
 def planning_owned(fact: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -187,6 +193,11 @@ def item_problems(item_id: int, fact: Mapping[str, Any], request: Any) -> tuple[
     if item_id in request.assumed_item_ids:
         return ()
     if getattr(request, "include_untradeables", False) and fact["acquisition"] == "untradeable":
+        prerequisite = fact.get("acquisition_requirement")
+        if prerequisite and prerequisite["status"] != "satisfied":
+            return (
+                f"Physical item {item_id}: acquisition requirements are {prerequisite['status']}.",
+            )
         return ()
     if fact["acquisition"] != "tradeable":
         return (f"Physical item {item_id} cannot be acquired through a supported purchase.",)
@@ -218,11 +229,14 @@ def purchases(
     ids: set[int], facts: Mapping[int, dict[str, Any]], request: Any
 ) -> list[dict[str, Any]]:
     untradeables = set(unowned_untradeables(ids, facts, request))
-    result = {}
+    from tracker.gear.revenant_acquisition import joint_sources
+
+    planned = joint_sources(ids, facts, request)
+    result: dict[int, dict[str, Any]] = {}
     for i in sorted(ids):
         fact = facts[i]
         if (
-            planning_owned(fact)["status"] == "owned"
+            (planned[i] is not None if i in planned else planning_owned(fact)["status"] == "owned")
             or i in request.assumed_item_ids
             or i in untradeables
             or fact.get("budget_exempt", False)
@@ -230,10 +244,20 @@ def purchases(
             continue
         preparation = fact.get("preparation") or {}
         market_id = preparation.get("market_item_id") or i
+        if i in planned and market_id in result:
+            row = result[market_id]
+            quantity = row.get("quantity", 1) + 1
+            unit_price = fact["price"]["amount_gp"]
+            row.update(
+                quantity=quantity, cost_gp=None if unit_price is None else quantity * unit_price
+            )
+            continue
         result[market_id] = {
             "item_id": market_id,
             "cost_gp": fact["price"]["amount_gp"],
-            "conditional": planning_owned(fact)["status"] == "unknown",
+            "conditional": fact["ownership"]["status"] == "unknown"
+            if i in planned
+            else planning_owned(fact)["status"] == "unknown",
         }
     return [result[i] for i in sorted(result)]
 
@@ -410,8 +434,8 @@ def evaluate_configurations(
         raise ValueError("Exact evaluation supports one ordinary-attack role without transitions")
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
-    role = resolve_tome_context(
-        resolve_bolt_context(request.roles[0], snapshot), request.fire_tome_pages
+    role = resolve_scenario_combat_context(
+        resolve_bolt_context(request.roles[0], snapshot), request
     )
     if role.prayers.mode == "optimize":
         raise ValueError("Fixed evaluation requires an explicit fixed prayer setup")
@@ -432,6 +456,7 @@ def evaluate_configurations(
             content,
             price_records,
             now,
+            excluded_item_ids=request.excluded_item_ids,
             support_assumptions=getattr(catalog, "community_assumptions", {}).get(i, ()),
         )
         for i in referenced

@@ -222,8 +222,10 @@ cdef class ScoringContext:
         self.target_hp = packed["target_hp"]
         self.target_traits = packed["target_traits"]
         self.slayer_bonus = packed["slayer_bonus"]
+        self.salve_bonus = packed["salve_bonus"]
         self.slayer_staff = packed["slayer_staff"]
         self.on_slayer_task = packed["on_slayer_task"]
+        self.wilderness_weapon = packed["wilderness_weapon"]
         self.magic_dart = packed["magic_dart"]
         self.magic_level = packed["magic_level"]
         self.leafy_weapon = packed["leafy_weapon"]
@@ -400,8 +402,10 @@ cdef class ScoringContext:
         cdef PreparedGear local
         cdef int weapon = slots[0], ammo = slots[2], field
         cdef int start, length, index, base, style, pattern, best_tie = -1, tie
-        cdef bint ranged, tome, hopper
+        cdef bint ranged, tome, hopper, wilderness_weapon
+        cdef bint strength_ranged, ranged_task_damage
         cdef int element, family, task_bonus, hit_floor, demon_accuracy, demon_damage, vulnerability
+        cdef int salve, salve_num, salve_den, salve_magic
         cdef int dragon_accuracy, dragon_damage
         cdef bint demon_spell, holy
         cdef BoltResult proc, extra
@@ -438,6 +442,16 @@ cdef class ScoringContext:
                 continue
             style = <int>self.options[base]
             ranged = style == 3
+            strength_ranged = ranged and self.original_ids[weapon] == 29305
+            task_bonus = self.slayer_bonus[slots[3]] if self.on_slayer_task[index] else 0
+            salve = self.salve_bonus[slots[5]] if self.target_traits[index] & 4 else 0
+            if salve == 2 or salve == 4:
+                salve_num, salve_den = 6, 5
+            else:
+                salve_num, salve_den = 7, 6
+            salve_magic = (15 if salve == 3 else 20 if salve == 4 else 0) if style == 4 else 0
+            ranged_task_damage = ranged and not strength_ranged and task_bonus == 2 and salve < 3
+            wilderness_weapon = self.wilderness_weapon[index] != 0
             if self.serpentine[slots[3]] and (not self.halberd[weapon] or style >= 3):
                 continue
             if ranged and not prepared.ammo_ok:
@@ -464,10 +478,11 @@ cdef class ScoringContext:
                     demon_accuracy = 0 if holy else self.demonbane_weapon[weapon]
                     demon_damage = self.demonbane_weapon[weapon]
             hit_floor = 3 if ranged and self.ammo_required[weapon] and self.seeking_ammo[ammo] else 1
-            strength = <long long>bonuses[6 if ranged else 5]
+            strength = <long long>bonuses[6 if ranged and not strength_ranged else 5]
             attack = <long long>bonuses[style]
             if ranged and ammo and not self.ammo_required[weapon]:
-                strength -= self.item_bonuses[ammo * 14 + 6]
+                if not strength_ranged:
+                    strength -= self.item_bonuses[ammo * 14 + 6]
                 attack -= self.item_bonuses[ammo * 14 + 3]
             minimum = 0
             element = self.spell_element[index]
@@ -479,11 +494,13 @@ cdef class ScoringContext:
                     spell_base = 13 + self.magic_level[index] // 6 if self.on_slayer_task[index] and self.slayer_staff[weapon] else 10 + self.magic_level[index] // 10
                 if element and self.amulet_mask[slots[5]] & (1 << element):
                     spell_base += self.amulet_bonus[slots[5]]
-                maximum = <long long>floor(spell_base * (100 + magic_bonus + self.options[base + 11]) / 100.0)
-                if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
+                maximum = <long long>floor(spell_base * (100 + magic_bonus + self.options[base + 11] + salve_magic) / 100.0)
+                if task_bonus == 2 and not salve_magic:
                     maximum = floor_div(maximum * 23, 20)
                 if dragon_damage:
                     maximum = floor_div(maximum * (100 + dragon_damage), 100)
+                if wilderness_weapon:
+                    maximum = floor_div(maximum * 3, 2)
                 maximum += floor_div(spell_base * self.options[base + 13], 100)
                 if self.options[base + 12]:
                     attack *= 3
@@ -494,10 +511,14 @@ cdef class ScoringContext:
             attack = self.options[base + 1] * (attack + 64)
             if style == 4:
                 weakness_roll = floor_div(attack * self.options[base + 13], 100)
+                if salve_magic:
+                    attack = floor_div(attack * (100 + salve_magic), 100)
                 if dragon_accuracy:
                     attack = floor_div(attack * (100 + dragon_accuracy), 100)
-                if self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2:
+                if task_bonus == 2 and not salve_magic:
                     attack = floor_div(attack * 23, 20)
+                if wilderness_weapon:
+                    attack = floor_div(attack * 3, 2)
                 if tome and element == 2:
                     attack = floor_div(attack * 120, 100)
                 attack += weakness_roll
@@ -505,27 +526,43 @@ cdef class ScoringContext:
                     if element == 4 and self.searing[index]:
                         minimum = floor_div(maximum, 10)
                     maximum = floor_div(maximum * 110, 100)
-            elif self.on_slayer_task[index]:
-                task_bonus = self.slayer_bonus[slots[3]]
-                if style < 3 and task_bonus:
+            elif not ranged:
+                if salve:
+                    maximum = floor_div(maximum * salve_num, salve_den)
+                    attack = floor_div(attack * salve_num, salve_den)
+                elif task_bonus:
                     maximum = floor_div(maximum * 7, 6)
                     attack = floor_div(attack * 7, 6)
-                elif ranged and task_bonus == 2:
-                    if not holy:
-                        if dragon_damage == 25:
+            else:
+                if salve >= 3:
+                    attack = floor_div(attack * salve_num, salve_den)
+                elif task_bonus == 2:
+                    attack = floor_div(attack * 23, 20)
+                if not holy:
+                    if salve >= 3 or (salve and strength_ranged):
+                        maximum = floor_div(maximum * salve_num, salve_den)
+                    elif strength_ranged and task_bonus:
+                        maximum = floor_div(maximum * 7, 6)
+                    elif ranged_task_damage:
+                        if wilderness_weapon:
+                            maximum = floor_div(maximum * 33, 20)
+                        elif dragon_damage == 25:
                             maximum = floor_div(maximum * 140, 100)
                         elif self.scorching_bow[weapon] and self.target_demon[index]:
                             maximum = floor_div(maximum * (115 + floor_div(demon_damage * vulnerability, 100)), 100)
                         else:
                             maximum = floor_div(maximum * 23, 20)
-                    attack = floor_div(attack * 23, 20)
+            if style != 4 and wilderness_weapon:
+                attack = floor_div(attack * 3, 2)
+                if not ranged_task_damage:
+                    maximum = floor_div(maximum * 3, 2)
             if style != 4 and dragon_accuracy:
                 attack = floor_div(attack * (100 + dragon_accuracy), 100)
-            if style != 4 and dragon_damage and not (ranged and self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2):
+            if style != 4 and dragon_damage and not ranged_task_damage:
                 maximum = floor_div(maximum * (100 + dragon_damage), 100)
             if demon_accuracy:
                 attack += floor_div(attack * floor_div(demon_accuracy * vulnerability, 100), 100)
-            if demon_damage and not demon_spell and not (self.scorching_bow[weapon] and self.on_slayer_task[index] and self.slayer_bonus[slots[3]] == 2):
+            if demon_damage and not demon_spell and not (self.scorching_bow[weapon] and ranged_task_damage):
                 maximum += floor_div(maximum * floor_div(demon_damage * vulnerability, 100), 100)
             if style < 3 and self.target_leafy[index] and self.leafy_weapon[weapon] == 2:
                 maximum = floor_div(maximum * 47, 40)

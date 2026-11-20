@@ -1,14 +1,12 @@
 import { useState } from "react";
+import type { PurchaseDTO } from "../api/contracts";
+import { purchaseName } from "./PurchaseRows";
 
 export function PurchaseListCopy({
   purchases,
   itemName,
 }: {
-  purchases: {
-    item_id: number;
-    cost_gp: number | null;
-    conditional: boolean;
-  }[];
+  purchases: PurchaseDTO[];
   itemName: (id: number) => string;
 }) {
   const [status, setStatus] = useState<"copied" | "error" | null>(null);
@@ -16,7 +14,7 @@ export function PurchaseListCopy({
     ? purchases
         .map(
           (p) =>
-            `${itemName(p.item_id)} (#${p.item_id}) · ${p.cost_gp === null ? "Price unavailable" : `${p.cost_gp.toLocaleString()} GP`}${p.conditional ? " · conditional purchase: ownership uncertain" : ""}`,
+            `${purchaseName(p, itemName(p.item_id))} (#${p.item_id}) · ${p.cost_gp === null ? "Price unavailable" : `${p.cost_gp.toLocaleString()} GP`}${p.conditional ? " · conditional purchase: ownership uncertain" : ""}`,
         )
         .join("\n")
     : "No additional purchases required.";

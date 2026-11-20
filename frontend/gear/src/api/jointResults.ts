@@ -155,16 +155,28 @@ export function parseJointSolution(
     required,
     roles.flatMap((role) => object(byRole[role.id]).preparations ?? []),
     items,
+    true,
   );
+  const formCount = (market: number) =>
+    required.filter(
+      (id) =>
+        (items.find((item) => item.id === id)?.facts?.preparation
+          ?.market_item_id ?? id) === market,
+    ).length;
   for (const purchase of row.purchases) {
     const p = requireFields(purchase, {
       item_id: "number",
       conditional: "boolean",
     });
+    const quantity = p.quantity === undefined ? 1 : p.quantity;
     if (
       !Number.isSafeInteger(p.item_id) ||
       !allowedPurchases.has(Number(p.item_id)) ||
       purchaseIds.has(Number(p.item_id)) ||
+      !integer(quantity) ||
+      Number(quantity) < 1 ||
+      (Number(quantity) > 1 &&
+        Number(quantity) > formCount(Number(p.item_id))) ||
       (p.cost_gp !== null && !integer(p.cost_gp))
     )
       throw new Error("Invalid shared purchase union");

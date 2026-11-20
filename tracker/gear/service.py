@@ -25,6 +25,8 @@ from tracker.gear.facts import equipment_fact
 from tracker.gear.ladders import build_ladders
 from tracker.gear.optimizer import OptimizationRequest
 from tracker.gear.progress_tracker import RunProgress, TimingModel
+from tracker.gear.salve import FORMS as SALVE_FORMS
+from tracker.gear.salve import acquisition_description
 from tracker.gear.support import SupportPolicy, project_catalog
 
 if TYPE_CHECKING:
@@ -399,6 +401,7 @@ class GearService:
         price_records: Mapping[int, PriceRecord] | None = None,
         now: datetime | None = None,
         support_policy: SupportPolicy = "verified_only",
+        excluded_item_ids: tuple[int, ...] = (),
     ) -> dict[str, Any]:
         """Concrete physical identity; never resolve through curated ownership aliases."""
         catalog = self.supported_catalog(support_policy)
@@ -411,6 +414,7 @@ class GearService:
             self.content,
             records,
             evaluated_at,
+            excluded_item_ids=excluded_item_ids,
             support_assumptions=getattr(catalog, "community_assumptions", {}).get(item.id, ()),
         )
         market_id = (fact.get("preparation") or {}).get("market_item_id", item_id)
@@ -444,7 +448,8 @@ class GearService:
             "price": price,
             "catalog_version": catalog.revision,
             "acquisition_descriptions": [
-                entry.acquired_from for entry in authored if entry.acquired_from
+                *(entry.acquired_from for entry in authored if entry.acquired_from),
+                *([acquisition_description(item.id)] if item.id in SALVE_FORMS else []),
             ],
         }
 

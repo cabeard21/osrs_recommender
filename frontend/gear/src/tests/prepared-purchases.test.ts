@@ -57,3 +57,45 @@ test("loadout metadata alone cannot authorize a new purchase identity", () => {
     purchaseItemIds([28585], [preparation], [{ ...item, facts: undefined }]),
   ).toThrow(/preparation/i);
 });
+
+test("joint preparation can allocate an owned sibling or buy another copy", () => {
+  const purchase = {
+    ...preparation,
+    usable_item_id: 27679,
+    market_item_id: 27662,
+  };
+  const preferred = { ...purchase, source_item_id: 27676 };
+  const usable = {
+    ...item,
+    id: 27679,
+    facts: { ...item.facts!, item_id: 27679, preparation: preferred },
+  };
+  const sibling = {
+    ...item,
+    id: 27665,
+    owned: true,
+    facts: {
+      ...item.facts!,
+      item_id: 27665,
+      preparation: { ...preferred, usable_item_id: 27665 },
+    },
+  };
+  expect([...purchaseItemIds([27679], [purchase], [usable], true)]).toEqual([
+    27662,
+  ]);
+  const swap = { ...purchase, source_item_id: sibling.id };
+  expect(
+    purchaseItemIds([27679], [swap], [usable, sibling], true).has(27662),
+  ).toBe(true);
+  expect(() => purchaseItemIds([27679], [swap], [usable], true)).toThrow(
+    /preparation/,
+  );
+  expect(() =>
+    purchaseItemIds(
+      [27679],
+      [swap],
+      [usable, { ...sibling, owned: false }],
+      true,
+    ),
+  ).toThrow(/preparation/);
+});

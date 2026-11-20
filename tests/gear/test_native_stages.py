@@ -454,6 +454,114 @@ def test_market_alias_cost_uses_highest_physical_id_quote(monkeypatch):
         assert rows == [{"z": {"weapon": 2}, "a": {"weapon": 10}}]
 
 
+def revenant_stage(search, monkeypatch, adjustments, *, budget, head_pending=False):
+    from tracker.gear.compact_acquisition import AcquisitionFacts
+
+    forms = (22552, 22555, 27785, 27788)
+    search.items = {
+        **search.items,
+        **{item: search.items[2].model_copy(update={"id": item}) for item in forms},
+    }
+    search.eligible = search.items
+    search.facts = {**search.facts, **dict.fromkeys(forms, search.facts[2])}
+    quotes = {**dict.fromkeys(search.facts), **dict.fromkeys(forms, (22552, 40)), 201: (201, 5)}
+    monkeypatch.setattr(
+        AcquisitionFacts,
+        "from_facts",
+        classmethod(lambda cls, facts, request: cls(quotes, frozenset(), adjustments)),
+    )
+    search.request = search.request.model_copy(
+        update={
+            "budget_gp": budget or 0,
+            "wilderness": WildernessPolicy()
+            if budget is None
+            else WildernessPolicy(max_loss_gp=20)
+            if head_pending
+            else None,
+        }
+    )
+    if head_pending:
+        search.wilderness = stage_risk(feasible=lambda ids: True)
+    return StageContext(ScoringContext(search), search)
+
+
+@pytest.mark.parametrize(
+    "adjustment,budget,dual_fits",
+    [
+        (40, 40, False),
+        (40, 80, True),
+        (-10, 30, True),
+        (None, None, False),
+    ],
+)
+def test_native_multi_form_purchase_adjustments(monkeypatch, adjustment, budget, dual_fits):
+    with stage_search(multiple=True) as search:
+        context = revenant_stage(
+            search,
+            monkeypatch,
+            {frozenset((22552, 22555)): adjustment},
+            budget=budget,
+        )
+        rows, _ = drain(
+            context.begin(
+                kind="joint",
+                states=[{"z": {}, "a": {}}],
+                choices=[[22552], [22552, 22555]],
+                slot="weapon",
+                roles=("z", "a"),
+            ),
+            16,
+        )
+        pairs = {tuple(r[k]["weapon"] for k in ("z", "a")) for r in rows}
+        assert ((22552, 22555) in pairs) is dual_fits
+        assert ((22552, 22552) in pairs) == (budget is None or budget >= 40)
+
+
+def test_native_tuple_tie_uses_adjusted_family_cost(monkeypatch):
+    with stage_search(multiple=True) as search:
+        context = revenant_stage(
+            search,
+            monkeypatch,
+            {frozenset((22552, 22555)): 40},
+            budget=100,
+        )
+        rows, _ = drain(
+            context.begin(
+                kind="tuple",
+                states=[{"z": {"weapon": 22552}}],
+                choices=[{"weapon": 22555}, {"weapon": 27785}],
+                roles=("z", "a"),
+                tuple_role="a",
+            ),
+            1,
+        )
+        assert rows == [{"z": {"weapon": 22552}, "a": {"weapon": 27785}}]
+
+
+def test_native_projection_applies_weapon_adjustment_before_head_settles(monkeypatch):
+    with stage_search() as search:
+        context = revenant_stage(
+            search,
+            monkeypatch,
+            {
+                frozenset((22552,)): -10,
+                frozenset((22555,)): -9,
+            },
+            budget=30,
+            head_pending=True,
+        )
+        early = context.begin_projection(
+            states=[{"head": 201}], choices=[22552, 22555], slot="weapon", roles=("z",)
+        )
+        assert [equipment for equipment, _ in early.advance_projection()] == [
+            {"head": 201, "weapon": 22552}
+        ]
+        settled = context.begin_projection(
+            states=[{"weapon": 22552}], choices=[201], slot="head", roles=("z",)
+        )
+        assert settled.advance_projection() == []
+
+
 def stage_risk(**fields):
     return SimpleNamespace(
         **{

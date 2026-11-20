@@ -235,7 +235,7 @@ def test_all_supported_ranged_consumption_is_reviewed(policy):
                 {"weapon": weapon, **({"ammunition": ammo} if ammo else {})},
                 {"attack_type": "ranged"},
                 {"dps": 2, "attack_interval": 2.4},
-                prices(**{str(resource.id): 10}),
+                prices(**{str(resource.id): 10, "21820": 10}),
                 NOW,
             )
             assert result["status"] == "known", (weapon.name, result["reasons"])

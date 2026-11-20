@@ -30,6 +30,8 @@ cdef class ScoringContext:
     cdef int[::1] amulet_mask, amulet_bonus, tome_element, bolt_family, reviewed_crossbow, zaryte, hopper_shield
     cdef int[::1] spell_element, searing, ranged_level, diary, target_hp, target_traits
     cdef int[::1] slayer_bonus, slayer_staff, on_slayer_task, magic_dart, magic_level
+    cdef int[::1] salve_bonus
+    cdef int[::1] wilderness_weapon
     cdef int[::1] leafy_weapon, broad_ammo, seeking_ammo, target_leafy
     cdef int[::1] size_damage_per_size, size_damage_max_size, target_size
     cdef int[::1] status_kind, status_duration, halberd, serpentine

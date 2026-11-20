@@ -29,9 +29,9 @@ def test_shared_trip_charge_capacity_and_activation():
     risk = WildernessRisk(
         WildernessPolicy(attacks_per_setup=4, skulled=True),
         0,
-        {22542: DeathItem(10, 12, charge=Charge(((21820, 1, 2),), 1001, 1006))},
+        {22545: DeathItem(10, 12, charge=Charge(((21820, 1, 2),), 1001, 1006))},
     )
-    gear = {"weapon": 22542}
+    gear = {"weapon": 22545}
     single = risk.trip_report({"a": gear}, {}, {}, styles={"a": "crush"})
     assert single["loss_gp"] == 12 + 2 * 1004
     assert (

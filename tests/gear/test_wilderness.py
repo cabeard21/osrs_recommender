@@ -76,6 +76,48 @@ def test_unknown_loss_is_allowed_only_when_definitely_protected():
     assert risk.report({"base": {"cape": 1, "body": 2}})["loss_gp"] is None
 
 
+@pytest.mark.parametrize("amulet_id", [4081, 10588, 12017, 25250, 26763, 12018, 25278, 26782])
+@pytest.mark.parametrize("depth", ["level_1_20", "level_21_plus"])
+@pytest.mark.parametrize(("protect_item", "outcome"), [(False, "gravestone"), (True, "kept")])
+def test_salve_survives_pvp_death_with_its_imbue_and_zero_loss(
+    amulet_id, depth, protect_item, outcome
+):
+    item = EquipmentDefinition(id=amulet_id, name="Salve amulet", slot="neck", tradeable=False)
+    risk = WildernessRisk.build(
+        WildernessPolicy(depth=depth, skulled=True, protect_item=protect_item),
+        0,
+        {amulet_id: item},
+        {},
+        {},
+        datetime(2026, 11, 20, tzinfo=UTC),
+    )
+    assert risk.feasible({amulet_id})
+    result = risk.report({"base": {"neck": amulet_id}})
+    assert result["loss_gp"] == 0
+    assert result["items"] == [
+        {"item_id": amulet_id, "quantity": 1, "loss_gp": 0, "outcome": outcome}
+    ]
+
+
+def test_unverified_salve_priority_preserves_the_loss_bound_for_other_gear():
+    items = {
+        12018: EquipmentDefinition(id=12018, name="Salve amulet(ei)", slot="neck", tradeable=False),
+        4151: EquipmentDefinition(id=4151, name="Abyssal whip", slot="weapon", tradeable=True),
+    }
+    risk = WildernessRisk.build(
+        WildernessPolicy(skulled=True, protect_item=True),
+        0,
+        items,
+        {4151: {"price": {"amount_gp": 700_000}}},
+        {},
+        datetime(2026, 11, 20, tzinfo=UTC),
+    )
+    assert not risk.feasible(set(items))
+    report = risk.report({"base": {"neck": 12018, "weapon": 4151}})
+    assert report["loss_gp"] == 700_000
+    assert report["without_protect_item_gp"] == 700_000
+
+
 def test_ammo_quantity_leaves_protected_durable_gear_ahead_and_fits_the_cap():
     rules = {1: DeathItem(100, 500), 2: DeathItem(10, 5, ammo=True)}
     policy = WildernessPolicy(skulled=True, protect_item=True)

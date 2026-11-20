@@ -297,7 +297,10 @@ export function LiveMultiResultWorkspace() {
             </strong>
             <p className="result-cost">
               {purchaseSummary(
-                solution.purchases.length,
+                solution.purchases.reduce(
+                  (count, row) => count + (row.quantity ?? 1),
+                  0,
+                ),
                 solution.purchase_cost_gp,
               )}
             </p>

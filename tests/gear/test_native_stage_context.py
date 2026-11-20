@@ -51,6 +51,12 @@ def test_quote_boundary_guarantees_exact_union_rank_costs():
     assert "acquisition" in preflight(search_context(), unsafe)
 
 
+@pytest.mark.parametrize("amount", [2**53, -(2**63)])
+def test_revenant_adjustments_must_fit_native_ranking_precision(amount):
+    facts = AcquisitionFacts({}, frozenset(), {frozenset((22552, 22555)): amount})
+    assert "adjustments" in preflight(search_context(), facts)
+
+
 def test_transition_edges_must_refer_to_packed_roles():
     search = search_context()
     search.edges = (("a", "missing"),)

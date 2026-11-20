@@ -10,7 +10,7 @@ Individual pages: /w/Warped_sceptre, /w/Bone_staff, /w/Trident_of_the_seas,
 Physical charged/uncharged identities cross-checked 2026-11-06 against
 https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/gameval/ItemID.java
 Warped: WARPED_SCEPTRE_UNCHARGED=28583, WARPED_SCEPTRE=28585.
-No Wilderness, raid bonuses, specials, healing or venom are simulated.
+The Wilderness attack modifier is reviewed separately in tracker.gear.revenant.
 """
 
 from dataclasses import dataclass

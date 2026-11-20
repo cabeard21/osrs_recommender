@@ -34,6 +34,7 @@ export function WildernessSettings({
         <input
           type="checkbox"
           checked={!!wilderness}
+          aria-describedby="wilderness-combat-help"
           onChange={(event) =>
             change(
               event.target.checked
@@ -51,6 +52,10 @@ export function WildernessSettings({
         />
         Wilderness
       </label>
+      <p id="wilderness-combat-help">
+        Treat every NPC fight in this scenario as a Wilderness fight. Charged
+        revenant weapons gain their accuracy and damage bonus here.
+      </p>
       {wilderness && (
         <>
           <label className="check">

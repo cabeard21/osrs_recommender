@@ -7,7 +7,7 @@ Accurate zero-damage rolls become one; target magic defence uses Magic level.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from math import floor
+from math import floor, lcm
 from time import perf_counter
 from typing import Any, Literal, NamedTuple
 
@@ -34,6 +34,7 @@ from tracker.gear.models import (
     HitsplatPerformance,
     HopperPerformance,
     LeafyBonus,
+    SalveBonus,
     SeekingArrowBonus,
     SizeDamagePerformance,
     SlayerEffect,
@@ -46,7 +47,10 @@ from tracker.gear.prepared_combat import current as prepared_combat_context
 from tracker.gear.ranged_numerics import active as ranged_experiment_active
 from tracker.gear.ranged_numerics import evaluate as evaluate_ranged
 from tracker.gear.ranged_numerics import observer as ranged_observer
+from tracker.gear.ranged_resources import HUNTER_SPEAR, ranged_damage_type
 from tracker.gear.ranged_score_finalization import active as score_finalization_active
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
+from tracker.gear.revenant import passive_applies
 from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 from tracker.gear.slayer import MAGIC_DART_STAVES, dart_base, mask_factor
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
@@ -107,7 +111,7 @@ SPELLS = {
 }
 
 
-MODEL_VERSION = "normal-attacks-v12-target-size"
+MODEL_VERSION = "normal-attacks-v14-salve"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -292,6 +296,8 @@ def _evaluate_prepared(
     if style in {"stab", "slash", "crush"} and stance in {"rapid", "longrange"}:
         problems.append("Illegal melee stance.")
     needed = ("attack", "strength") if style in {"stab", "slash", "crush"} else (style,)
+    if style == "ranged" and weapon and weapon.id == HUNTER_SPEAR:
+        needed = ("ranged", "strength")
     if any(levels.get(key, 0) < 1 for key in needed):
         problems.append("Required combat levels are unknown.")
     if (
@@ -404,6 +410,11 @@ def _evaluate_prepared(
         bolt_diary_known=bool(getattr(role, "bolt_diary_known", False)),
         mark_of_darkness=bool(getattr(role, "mark_of_darkness", False)),
         on_slayer_task=bool(getattr(role, "on_slayer_task", False)),
+        wilderness_weapon_passive=(
+            bool(getattr(role, "_in_wilderness", False)) and passive_applies(weapon.id, style)
+            if weapon and weapon.id in REVENANT_FORMS
+            else None
+        ),
         status_duration=getattr(role, "fight_duration_seconds", 60),
         head=next((item for item in equipment if item.slot == "head"), None),
         seeking=bool(
@@ -503,6 +514,7 @@ def _calculate(
     bolt_diary_known: bool = False,
     mark_of_darkness: bool = False,
     on_slayer_task: bool = False,
+    wilderness_weapon_passive: bool | None = None,
     head: EquipmentDefinition | None = None,
     seeking: bool = False,
     status_duration: int = 60,
@@ -563,16 +575,47 @@ def _calculate(
     tome_report = None
     minimum_hit = 0
     outgoing = None
-    numerator, denominator = mask_factor(head.slayer_bonus if head else None, style, on_slayer_task)
-    task_mask = numerator != denominator
+    strength_ranged = style == "ranged" and weapon is not None and weapon.id == HUNTER_SPEAR
+    mask = head.slayer_bonus if head else None
+    mask_accuracy = mask_factor(mask, style, on_slayer_task)
+    mask_damage = mask_factor(mask, "crush" if strength_ranged else style, on_slayer_task)
+    variant = amulet.salve_bonus if amulet and "undead" in target.traits else 0
+    salve_accuracy = (
+        (((23, 20) if style == "magic" else (7, 6)) if variant in (1, 3) else (6, 5))
+        if variant and (variant >= 3 or style in {"stab", "slash", "crush"})
+        else (1, 1)
+    )
+    salve_damage = (
+        ((7, 6) if variant == 1 else (6, 5))
+        if strength_ranged and variant in (1, 2)
+        else salve_accuracy
+    )
+    if holy_water:
+        mask_damage = salve_damage = (1, 1)
+    accuracy_factor = salve_accuracy if salve_accuracy != (1, 1) else mask_accuracy
+    damage_factor = salve_damage if salve_damage != (1, 1) else mask_damage
+    task_accuracy = mask_accuracy if salve_accuracy == (1, 1) else (1, 1)
+    task_damage = mask_damage if salve_damage == (1, 1) else (1, 1)
+    salve_active = salve_accuracy != (1, 1) or salve_damage != (1, 1)
+    salve_report = (
+        SalveBonus(
+            item_id=amulet.id,
+            accuracy_percent=100 * (salve_accuracy[0] - salve_accuracy[1]) / salve_accuracy[1],
+            damage_percent=100 * (salve_damage[0] - salve_damage[1]) / salve_damage[1],
+            suppresses_slayer=(task_accuracy, task_damage) != (mask_accuracy, mask_damage),
+        )
+        if salve_active and amulet and not score_only
+        else None
+    )
     slayer_reports: tuple[SlayerEffect, ...] = ()
-    if not score_only and task_mask and head is not None:
+    if not score_only and (task_accuracy != (1, 1) or task_damage != (1, 1)) and head is not None:
+        denominator = lcm(task_accuracy[1], task_damage[1])
         slayer_reports = (
             SlayerEffect(
                 item_id=head.id,
                 kind="mask",
-                accuracy_numerator=numerator,
-                damage_numerator=numerator,
+                accuracy_numerator=task_accuracy[0] * (denominator // task_accuracy[1]),
+                damage_numerator=task_damage[0] * (denominator // task_damage[1]),
                 denominator=denominator,
             ),
         )
@@ -584,12 +627,14 @@ def _calculate(
     )
     spell_effect = (
         spell_effect
-        or task_mask
+        or accuracy_factor != (1, 1)
+        or damage_factor != (1, 1)
         or leafy_axe
         or weapon_percent
         or demon_spell
         or holy_water
         or dragon_damage
+        or (style == "magic" and wilderness_weapon_passive)
         or (style == "magic" and spell == "magic_dart")
     )
     constants = None if spell_effect else _constants
@@ -607,21 +652,15 @@ def _calculate(
     if cached_ranged:
         observer = ranged_observer()
         key_started = perf_counter() if observer is not None else 0.0
-        kind = (
-            "heavy"
-            if weapon and weapon.ammo_for and weapon.ammo_for[0].startswith("bolt:")
-            else "standard"
-            if weapon and weapon.ammo_for
-            else "light"
-        )
+        kind = ranged_damage_type(weapon)
         subtype = getattr(target, "ranged_" + kind)
         ranged_key = (
             weapon.id if weapon else None,
-            levels["ranged"],
+            levels["strength" if strength_ranged else "ranged"],
             prayers.ranged_strength,
             prayers.ranged_accuracy,
             stance,
-            bonuses.ranged_strength,
+            bonuses.melee_strength if strength_ranged else bonuses.ranged_strength,
             bonuses.ranged,
             speed,
             weapon.attack_pattern if weapon else "single",
@@ -629,9 +668,10 @@ def _calculate(
             target.bonuses.ranged if subtype is None else subtype,
             target.flat_armour,
             target.damage_cap,
-            numerator,
-            denominator,
+            *accuracy_factor,
             accurate_floor,
+            bool(wilderness_weapon_passive),
+            (*damage_factor, task_damage == (23, 20), levels["ranged"]),
         )
         if observer is not None:
             observer.key_seconds += perf_counter() - key_started
@@ -719,7 +759,10 @@ def _calculate(
         )
         damage_bonus = min(100, bonuses.magic_damage * 3) if shadow else bonuses.magic_damage
         magic_bonus = bonuses.magic * 3 if shadow else bonuses.magic
-        max_hit = floor(base * (100 + damage_bonus + prayers.magic_damage) / 100)
+        salve_magic_damage = (salve_damage[0] - salve_damage[1]) * 100 // salve_damage[1]
+        max_hit = floor(
+            base * (100 + damage_bonus + prayers.magic_damage + salve_magic_damage) / 100
+        )
         attack = (
             levels["magic"] * prayers.magic_accuracy // 100 + 9 + (2 if stance == "accurate" else 0)
         ) * (magic_bonus + 64)
@@ -753,13 +796,16 @@ def _calculate(
                 attack_roll_bonus=roll_bonus,
             )
         tome_effect = applied_tome(tome, spell, powered_attack)
+        attack = attack * salve_accuracy[0] // salve_accuracy[1]
         if dragon_accuracy:
             attack = attack * (100 + dragon_accuracy) // 100
-        if task_mask:
-            max_hit = max_hit * numerator // denominator
-            attack = attack * numerator // denominator
+        max_hit = max_hit * task_damage[0] // task_damage[1]
+        attack = attack * task_accuracy[0] // task_accuracy[1]
         if dragon_damage:
             max_hit = max_hit * (100 + dragon_damage) // 100
+        if wilderness_weapon_passive:
+            max_hit = max_hit * 3 // 2
+            attack = attack * 3 // 2
         if tome_effect and tome_effect.element == "water":
             attack = attack * 120 // 100
         if applied:
@@ -795,13 +841,15 @@ def _calculate(
         if is_ranged and stance == "accurate":
             strength_stance = 3
         effective_strength = (
-            levels["ranged" if is_ranged else "strength"]
+            levels["ranged" if is_ranged and not strength_ranged else "strength"]
             * (prayers.ranged_strength if is_ranged else prayers.strength)
             // 100
             + 8
             + strength_stance
         )
-        strength_bonus = bonuses.ranged_strength if is_ranged else bonuses.melee_strength
+        strength_bonus = (
+            bonuses.ranged_strength if is_ranged and not strength_ranged else bonuses.melee_strength
+        )
         max_hit = floor(0.5 + effective_strength * (strength_bonus + 64) / 640)
         attack = (
             levels[skill] * (prayers.ranged_accuracy if is_ranged else prayers.attack) // 100
@@ -812,13 +860,7 @@ def _calculate(
         if is_ranged:
             # Ordinary bows use standard defence; ordinary crossbows heavy,
             # thrown weapons light. Generic zero bonuses apply to every subtype.
-            kind = (
-                "heavy"
-                if weapon and weapon.ammo_for and weapon.ammo_for[0].startswith("bolt:")
-                else "standard"
-                if weapon and weapon.ammo_for
-                else "light"
-            )
+            kind = ranged_damage_type(weapon)
             value = getattr(target, "ranged_" + kind)
             if value is not None:
                 defence = (target.defence_level + 9) * (value + 64)
@@ -827,21 +869,28 @@ def _calculate(
     if holy_water:
         assert weapon is not None
         max_hit = floor(0.5 + (levels["ranged"] + 10) * (weapon.bonuses.ranged_strength + 64) / 640)
-    if style != "magic" and not cached_ranged and task_mask:
+    additive_task_damage = task_damage == (23, 20)
+    if style != "magic" and not cached_ranged:
         if not holy_water:
             max_hit = (
                 max_hit * (100 + 15 + effective_damage) // 100
-                if weapon and weapon.id == 29591 and demon
+                if additive_task_damage and weapon and weapon.id == 29591 and demon
                 else max_hit * 140 // 100
-                if dragon_crossbow
-                else max_hit * numerator // denominator
+                if additive_task_damage and dragon_crossbow
+                else max_hit * 33 // 20
+                if additive_task_damage and wilderness_weapon_passive and style == "ranged"
+                else max_hit * damage_factor[0] // damage_factor[1]
             )
-        attack = attack * numerator // denominator
+        attack = attack * accuracy_factor[0] // accuracy_factor[1]
+    if style != "magic" and wilderness_weapon_passive and not cached_ranged:
+        attack = attack * 3 // 2
+        if not (style == "ranged" and additive_task_damage):
+            max_hit = max_hit * 3 // 2
     if style != "magic" and dragon_damage:
-        if not (dragon_crossbow and task_mask):
+        if not (dragon_crossbow and additive_task_damage):
             max_hit = max_hit * (100 + dragon_damage) // 100
         attack = attack * (100 + dragon_accuracy) // 100
-    if weapon_percent and not (weapon and weapon.id == 29591 and task_mask):
+    if weapon_percent and not (weapon and weapon.id == 29591 and additive_task_damage):
         max_hit += max_hit * effective_damage // 100
     if effective_accuracy:
         attack += attack * effective_accuracy // 100
@@ -1054,6 +1103,7 @@ def _calculate(
     )
     return CombatPerformance(
         supported=True,
+        wilderness_weapon_passive=wilderness_weapon_passive,
         size_damage_bonus=SizeDamagePerformance(
             item_id=weapon.id,
             target_size=target.size,
@@ -1066,11 +1116,12 @@ def _calculate(
             item_id=weapon.id,
             accuracy_percent=dragon_accuracy,
             damage_percent=dragon_damage,
-            slayer_damage_additive=bool(dragon_crossbow and task_mask),
+            slayer_damage_additive=bool(dragon_crossbow and additive_task_damage),
         )
         if weapon and dragon_damage
         else None,
         slayer_effects=slayer_reports,
+        salve_bonus=salve_report,
         leafy_bonus=LeafyBonus(item_id=20727) if leafy_axe else None,
         seeking_arrow_bonus=SeekingArrowBonus(item_id=33601) if seeking else None,
         aquanite_hopper=hopper_report,
@@ -1131,12 +1182,14 @@ def _calculate(
                 "Ordinary generic PvM only; healing, venom, special attacks and location "
                 "bonuses are not modeled. Charge availability is unknown.",
             )
-            if powered_attack is not None
+            if powered_attack is not None and wilderness_weapon_passive is None
             else ()
         )
         + (
-            ("Generic PvM only; sceptre Wilderness bonuses and special attacks are not modeled.",)
-            if weapon is not None and weapon.id in {27785, 27788, 27676, 27679}
+            ("Ordinary attacks only. Current revenant ether balance is unknown.",)
+            if weapon
+            and wilderness_weapon_passive is not None
+            and weapon.id == REVENANT_FORMS[weapon.id].charged_id
             else ()
         )
         + (
