@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import type {
   Draft,
   Equipment,
@@ -19,6 +20,12 @@ import type {
 import { FixtureGearClient } from "../fixtures/client";
 import { GearApiError } from "../api/httpClient";
 import { parseJointSolution } from "../api/jointResults";
+import { archiveGroups, archiveRunId } from "./resultSelection";
+import { createBrowserUuid } from "../browserUuid";
+import {
+  listenForLabReturn,
+  resolveLabReturn,
+} from "../tradeoff-lab/returnSelection";
 import {
   initialState,
   normalize,
@@ -31,6 +38,7 @@ import {
 import { readResults, saveResults } from "./resultStorage";
 function useGearState(client: GearClient) {
   const [state, rawDispatch] = useReducer(reducer, undefined, initialState);
+  const [labOriginId] = useState(createBrowserUuid);
   const stateRef = useRef(state);
   stateRef.current = state;
   const [contextError, setContextError] = useState<string | null>(null);
@@ -114,8 +122,7 @@ function useGearState(client: GearClient) {
         const savedResults = readResults(context.playerId, sessionStorage);
         const restoredResults = await Promise.all(
           Object.entries(savedResults).map(async ([mode, saved]) => {
-            const runId =
-              saved.result.live?.run_id ?? saved.result.live?.result.run_id;
+            const runId = archiveRunId(saved.result);
             if (!runId)
               return { mode: mode as Workspace, saved, expired: false };
             try {
@@ -189,10 +196,27 @@ function useGearState(client: GearClient) {
     const { playerId, snapshotId: currentSnapshot } = state.context;
     const saved = Object.fromEntries(
       (["single", "multi"] as const).flatMap((mode) => {
-        const { result, solutionId, outdated } = state[mode];
+        const {
+          result,
+          solutionId,
+          outdated,
+          acceptedDraft,
+          objectiveGroupId,
+        } = state[mode];
         // A result from another snapshot may belong to another account.
         return result?.snapshotId === currentSnapshot
-          ? [[mode, { result, solutionId, outdated }]]
+          ? [
+              [
+                mode,
+                {
+                  result,
+                  solutionId,
+                  outdated,
+                  acceptedDraft,
+                  objectiveGroupId,
+                },
+              ],
+            ]
           : [];
       }),
     );
@@ -203,9 +227,13 @@ function useGearState(client: GearClient) {
     state.single.result,
     state.single.solutionId,
     state.single.outdated,
+    state.single.acceptedDraft,
+    state.single.objectiveGroupId,
     state.multi.result,
     state.multi.solutionId,
     state.multi.outdated,
+    state.multi.acceptedDraft,
+    state.multi.objectiveGroupId,
   ]);
   useEffect(() => {
     const navigate = () =>
@@ -227,9 +255,11 @@ function useGearState(client: GearClient) {
     controllers.current[state.mode]?.abort();
     dispatch({ type: "edit", mode: state.mode, draft });
   }
-  async function run() {
+  async function run({ fromInspector = false } = {}) {
     const mode = state.mode,
       generation = current.generation + 1;
+    const inspectorSlot = fromInspector ? current.slot : null;
+    const submittedDraft = current.draft;
     let started = false;
     let isValidating = true;
     try {
@@ -238,7 +268,7 @@ function useGearState(client: GearClient) {
       if (!state.context?.snapshotId)
         throw new Error("Synchronize an account before optimizing.");
       const scenario = normalize(
-        current.draft,
+        submittedDraft,
         state.context.snapshotId,
         live,
         state.context,
@@ -263,7 +293,15 @@ function useGearState(client: GearClient) {
         },
       );
       if (controller.signal.aborted) return;
-      dispatch({ type: "success", mode, generation, result });
+      dispatch({
+        type: "success",
+        mode,
+        generation,
+        result,
+        submittedDraft,
+        inspectorSlot:
+          stateRef.current[mode].slot === inspectorSlot ? inspectorSlot : null,
+      });
     } catch (error) {
       if (
         error instanceof GearApiError &&
@@ -346,9 +384,27 @@ function useGearState(client: GearClient) {
     raw: JointSolutionDTO,
     swapLimit: number | null,
     expectedFingerprint: string,
+    runId?: string,
+    groupId?: string,
+    selectionRevision?: number,
   ) {
-    const result = stateRef.current[mode].result;
-    if (!result || result.fingerprint !== expectedFingerprint) return;
+    const workspace = stateRef.current[mode];
+    const result = workspace.result;
+    if (
+      !result ||
+      workspace.pending ||
+      result.fingerprint !== expectedFingerprint ||
+      archiveRunId(result) !== runId ||
+      (selectionRevision !== undefined &&
+        selectionRevision !== workspace.selectionRevision) ||
+      (groupId &&
+        !archiveGroups(result).some(
+          (group) =>
+            (group.id ?? group.group_id) === groupId &&
+            group.swap_limit === swapLimit,
+        ))
+    )
+      return false;
     const solution = parseJointSolution(
       raw,
       result.scenario,
@@ -361,9 +417,53 @@ function useGearState(client: GearClient) {
       mode,
       solution,
       fingerprint: expectedFingerprint,
+      runId,
+      groupId,
+      selectionRevision,
       swapLimit,
     });
+    return true;
   }
+  useEffect(() => {
+    if (!labOriginId) return;
+    return listenForLabReturn(labOriginId, (target, pointId) => {
+      const latest = stateRef.current;
+      const workspace = latest[target.workspace];
+      const result = workspace.result;
+      if (!result || latest.context?.snapshotId !== result.snapshotId)
+        throw new Error(
+          "Return to Gear and open the lab from the current result.",
+        );
+      if (workspace.pending)
+        throw new Error(
+          "Wait for optimization to finish, then open its Tradeoff Lab.",
+        );
+      const raw = resolveLabReturn(result, target, pointId);
+      // Commit the explicit Lab choice before replying, even if React has
+      // earlier interactions queued in the originating tab.
+      const accepted = flushSync(() =>
+        selectObjective(
+          target.workspace,
+          pointId,
+          raw,
+          target.swapLimit,
+          result.fingerprint,
+          target.runId,
+          target.groupId,
+        ),
+      );
+      const committed = stateRef.current[target.workspace];
+      if (
+        !accepted ||
+        committed.pending ||
+        archiveRunId(committed.result) !== target.runId ||
+        committed.solutionId !== pointId
+      )
+        throw new Error(
+          "The originating result has changed. Open its Tradeoff Lab again.",
+        );
+    });
+  }, [labOriginId]);
   return {
     state,
     liveMode: !(client instanceof FixtureGearClient),
@@ -381,6 +481,7 @@ function useGearState(client: GearClient) {
     revertTrial,
     cancelTrial,
     selectObjective,
+    labOriginId,
     contextError,
     loadContext,
     failure,

@@ -1,4 +1,5 @@
 import { canonicalObjectives, legacyObjectives } from "../api/objectives";
+import { optimizationRequest } from "../api/optimizationRequest";
 import type {
   Draft,
   GearContext,
@@ -8,7 +9,6 @@ import type {
   Trial,
   Equipment,
   Workspace,
-  CombatTarget,
   Solution,
 } from "../api/contracts";
 import {
@@ -30,6 +30,18 @@ import {
   wildernessMayUseMagic,
 } from "../api/wilderness";
 import { MAX_BUDGET_GP } from "./budget";
+import { archiveRunId } from "./resultSelection";
+import {
+  activeTimeWeight,
+  fightDuration,
+  integer,
+  maxEquipmentActions,
+  normalizeTargetHitpoints,
+  reservedSupplySlots,
+  roleTargetNumber,
+  validateTargetFlatArmour,
+  validationMessage,
+} from "./setupValidation";
 const EMPTY_GROUP_NOUNS = {
   attack_types: "attack type",
   stances: "stance",
@@ -84,12 +96,6 @@ export function parseGp(value: string): string {
   if (!suffix) return Number.isInteger(amount) ? String(amount) : value;
   return String(Math.round(amount * GP_MULTIPLIERS[suffix]));
 }
-function integer(value: string, name: string, min: number, max: number) {
-  const n = Number(value);
-  if (!value.trim() || !Number.isSafeInteger(n) || n < min || n > max)
-    throw new Error(`${name} must be a whole number from ${min} to ${max}.`);
-  return n;
-}
 function plannedWildernessCasts(draft: Draft) {
   if (!fixedTrip(draft) && !wildernessMayUseMagic(draft.roles))
     return DEFAULT_WILDERNESS_SPELL_CASTS;
@@ -132,14 +138,6 @@ export type DraftFieldErrors = Partial<
     string
   >
 >;
-function errorOf(check: () => unknown): string | undefined {
-  try {
-    check();
-    return undefined;
-  } catch (error) {
-    return (error as Error).message;
-  }
-}
 /** Per-field messages for inline display. `normalize` still blocks submission. */
 export function draftFieldErrors(draft: Draft): DraftFieldErrors {
   const checks: Record<keyof DraftFieldErrors, () => unknown> = {
@@ -156,7 +154,7 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
     wildernessSpellCasts: () =>
       draft.wilderness && plannedWildernessCasts(draft),
     defence: () => integer(draft.defence, "Target defence", 0, 10000),
-    supplies: () => integer(draft.supplies, "Supply slots", 0, 28),
+    supplies: () => reservedSupplySlots(draft.supplies),
     attack: () =>
       draft.assumptions.attack &&
       integer(draft.assumptions.attack, "Assumed Attack", 1, 99),
@@ -165,45 +163,10 @@ export function draftFieldErrors(draft: Draft): DraftFieldErrors {
   };
   return Object.fromEntries(
     Object.entries(checks).flatMap(([field, check]) => {
-      const message = errorOf(check);
+      const message = validationMessage(check);
       return message ? [[field, message]] : [];
     }),
   );
-}
-function normalizeHitpoints(
-  target: CombatTarget | undefined,
-  inputs: Record<string, string> = {},
-): CombatTarget | undefined {
-  if (!target) return target;
-  const result = { ...target };
-  const sizeInput = inputs.size;
-  if (sizeInput !== undefined) {
-    if (!sizeInput.trim())
-      throw new Error("Target size requires a whole number between 0 and 64.");
-    result.size = Number(sizeInput);
-  }
-  const size = result.size ?? 1;
-  if (!Number.isSafeInteger(size) || size < 0 || size > 64)
-    throw new Error("Target size requires a whole number between 0 and 64.");
-  for (const key of ["hitpoints", "current_hitpoints"] as const) {
-    const raw = inputs[key];
-    if (raw !== undefined) result[key] = raw.trim() ? Number(raw) : null;
-    const value = result[key];
-    if (
-      value != null &&
-      (!Number.isSafeInteger(value) || value < 1 || value > 1000000)
-    )
-      throw new Error(
-        `Target ${key} requires a positive whole number up to 1000000.`,
-      );
-  }
-  if (
-    result.hitpoints != null &&
-    result.current_hitpoints != null &&
-    result.current_hitpoints > result.hitpoints
-  )
-    throw new Error("Target current_hitpoints cannot exceed base hitpoints.");
-  return result;
 }
 export function normalize(
   draft: Draft,
@@ -268,7 +231,7 @@ export function normalize(
       typeof role.safeSpotting !== "boolean"
     )
       throw new Error("Choose a valid safe spotting setting.");
-    integer(role.fightDurationSeconds ?? "60", "Fight duration", 1, 3600);
+    fightDuration(role.fightDurationSeconds);
     if (role.utility && role.safeSpotting)
       throw new Error("Safe spotting requires a scored combat configuration.");
     if (
@@ -294,20 +257,11 @@ export function normalize(
     if (role.combatOptionOptimization === false)
       throw new Error("Auto requires combat option optimization.");
   }
-  const globalTarget = normalizeHitpoints(
+  const globalTarget = normalizeTargetHitpoints(
     draft.combatTarget,
     draft.targetInputs,
   );
-  const globalArmour = draft.combatTarget?.flat_armour ?? 0;
-  if (
-    (draft.targetInputs?.flat_armour !== undefined &&
-      !draft.targetInputs.flat_armour.trim()) ||
-    !Number.isSafeInteger(globalArmour) ||
-    Math.abs(globalArmour) > 10000
-  )
-    throw new Error(
-      "Target flat armour requires a whole number between -10000 and 10000.",
-    );
+  validateTargetFlatArmour(draft.combatTarget, draft.targetInputs);
   const roles = draft.roles.map((r) => {
     const role = {
       ...structuredClone(r),
@@ -315,7 +269,7 @@ export function normalize(
       safeSpotting: r.safeSpotting ?? false,
       fightDurationSeconds: r.fightDurationSeconds ?? "60",
       markOfDarkness: r.markOfDarkness ?? false,
-      weight: Number(r.weight),
+      weight: activeTimeWeight(r.weight),
     };
     if (draft.roles.length === 1 && draft.targetSelection && !r.combatTarget) {
       role.combatTarget = draft.combatTarget
@@ -357,47 +311,17 @@ export function normalize(
       delete role.combatOptions;
     }
     if (role.combatTarget) {
-      role.combatTarget = normalizeHitpoints(
+      role.combatTarget = normalizeTargetHitpoints(
         role.combatTarget,
         role.targetInputs,
       )!;
       for (const [key, value] of Object.entries(role.targetInputs ?? {})) {
         if (key === "hitpoints" || key === "current_hitpoints") continue;
-        const optional = [
-          "ranged_light",
-          "ranged_standard",
-          "ranged_heavy",
-          "damage_cap",
-        ].includes(key);
-        if (optional && !value.trim()) {
+        const n = roleTargetNumber(key, value, role.name);
+        if (n === null) {
           delete role.combatTarget[key];
           continue;
         }
-        const n = Number(value);
-        const min =
-          key === "flat_armour"
-            ? -10000
-            : key.startsWith("bonuses.") || key.startsWith("ranged_")
-              ? -64
-              : key === "damage_cap"
-                ? 1
-                : 0;
-        if (
-          !value.trim() ||
-          !Number.isSafeInteger(n) ||
-          n < min ||
-          n >
-            (key === "size"
-              ? 64
-              : key === "weakness_percent"
-                ? 1000
-                : key === "damage_cap"
-                  ? Number.MAX_SAFE_INTEGER
-                  : 10000)
-        )
-          throw new Error(
-            `${role.name} target ${key} requires a valid whole number.`,
-          );
         if (key.startsWith("bonuses."))
           role.combatTarget.bonuses[key.slice(8)] = n;
         else role.combatTarget[key] = n;
@@ -417,15 +341,9 @@ export function normalize(
     new Set(roles.map((r) => r.id)).size !== roles.length
   )
     throw new Error("Configure one through four roles with unique IDs.");
-  if (
-    draft.roles.some((r) => !r.weight.trim()) ||
-    roles.some(
-      (r) => !Number.isFinite(r.weight) || r.weight < 0 || r.weight > 1000000,
-    ) ||
-    !roles.some((r) => !r.utility && r.weight > 0)
-  )
+  if (!roles.some((r) => !r.utility && r.weight > 0))
     throw new Error(
-      "Active-time weights must be finite numbers from 0 to 1000000, with a positive scored role.",
+      "At least one scored configuration needs a positive active-time weight.",
     );
   const ids = new Set(roles.map((r) => r.id));
   if (!ids.has(draft.baseRole))
@@ -610,8 +528,8 @@ export function normalize(
         : {}),
       mode: draft.mode,
       include_untradeables: draft.includeUntradeables ?? false,
-      max_swaps: integer(draft.maxActions, "Equipment actions", 0, 12),
-      reserved_supply_slots: integer(draft.supplies, "Supply slots", 0, 28),
+      max_swaps: maxEquipmentActions(draft.maxActions),
+      reserved_supply_slots: reservedSupplySlots(draft.supplies),
       transitions: edges,
       base_role: draft.baseRole,
       locks: structuredClone(draft.globalLocks ?? {}),
@@ -634,7 +552,9 @@ export function normalize(
 }
 export interface WorkspaceState {
   objectiveSwapLimit?: number | null;
+  objectiveGroupId?: string;
   draft: Draft;
+  acceptedDraft?: Draft;
   revision: number;
   submitted: Scenario | null;
   result: OptimizationReply | null;
@@ -652,10 +572,13 @@ export interface WorkspaceState {
     revision: number;
   } | null;
   generation: number;
+  selectionRevision: number;
   pending: boolean;
   error: string | null;
   errorIsValidation: boolean;
   runNotice: string | null;
+  draftChanged: boolean;
+  contextStale: boolean;
   outdated: boolean;
   activeRole: string;
   slot: Slot | null;
@@ -674,10 +597,13 @@ const workspace = (): WorkspaceState => ({
   trialError: null,
   trialRequest: null,
   generation: 0,
+  selectionRevision: 0,
   pending: false,
   error: null,
   errorIsValidation: false,
   runNotice: null,
+  draftChanged: false,
+  contextStale: false,
   outdated: false,
   activeRole: "role-1",
   slot: null,
@@ -703,6 +629,9 @@ export type Action =
       type: "objective-select";
       mode: Workspace;
       fingerprint: string;
+      runId?: string;
+      groupId?: string;
+      selectionRevision?: number;
       solution: Solution;
       swapLimit: number | null;
     }
@@ -721,6 +650,8 @@ export type Action =
       mode: Workspace;
       generation: number;
       result: OptimizationReply;
+      submittedDraft?: Draft;
+      inspectorSlot?: Slot | null;
     }
   | {
       type: "error";
@@ -788,6 +719,52 @@ function resultIsStale(
         result.priceRevision !== context.live.price_revision))
   );
 }
+
+function orderedJson(value: unknown): string {
+  return JSON.stringify(value, (_key, entry: unknown) =>
+    entry && typeof entry === "object" && !Array.isArray(entry)
+      ? Object.fromEntries(
+          Object.entries(entry).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : entry,
+  );
+}
+
+function comparableRequest(scenario: Scenario): string {
+  const { expected_snapshot_id: _snapshotId, ...request } =
+    optimizationRequest(scenario);
+  return orderedJson({
+    ...request,
+    excluded_item_ids: request.excluded_item_ids?.slice().sort((a, b) => a - b),
+    assumed_item_ids: request.assumed_item_ids.slice().sort((a, b) => a - b),
+    roleNames: scenario.request.roles.map((role) => role.name),
+  });
+}
+
+function resultStatus(
+  { result, draft, acceptedDraft }: WorkspaceState,
+  context: GearContext | null,
+) {
+  if (!result)
+    return { draftChanged: false, contextStale: false, outdated: false };
+  const contextStale = !!context && resultIsStale(result, context);
+  let draftChanged = false;
+  if (!acceptedDraft || orderedJson(draft) !== orderedJson(acceptedDraft)) {
+    const normalizeForComparison = (input: Draft) =>
+      normalize(input, result.snapshotId, result.source === "live", context);
+    try {
+      const accepted = acceptedDraft
+        ? normalizeForComparison(acceptedDraft)
+        : result.scenario;
+      draftChanged =
+        comparableRequest(normalizeForComparison(draft)) !==
+        comparableRequest(accepted);
+    } catch {
+      draftChanged = true;
+    }
+  }
+  return { draftChanged, contextStale, outdated: draftChanged || contextStale };
+}
 export function reducer(state: State, action: Action): State {
   if (action.type === "restore-results")
     return {
@@ -799,26 +776,22 @@ export function reducer(state: State, action: Action): State {
               !state[mode].result &&
               saved.result.snapshotId === state.context?.snapshotId,
           )
-          .map(([mode, saved]) => [
-            mode,
-            {
+          .map(([mode, saved]) => {
+            const restored = {
               ...state[mode],
               result: saved.result,
               submitted: saved.result.scenario,
+              acceptedDraft: saved.acceptedDraft,
               solutionId: saved.solutionId,
+              objectiveGroupId: saved.objectiveGroupId,
+              selectionRevision: state[mode].selectionRevision + 1,
               activeRole: saved.result.scenario.request.roles[0].id,
-              outdated:
-                saved.outdated ||
-                resultIsStale(saved.result, state.context) ||
-                JSON.stringify(state[mode].draft.objectives ?? null) !==
-                  JSON.stringify(
-                    saved.result.scenario.request.objectives ?? null,
-                  ) ||
-                (state[mode].draft.secondaryPriority ?? "default") !==
-                  (saved.result.scenario.request.secondary_priority ??
-                    "default"),
-            },
-          ]),
+            };
+            return [
+              mode,
+              { ...restored, ...resultStatus(restored, state.context) },
+            ];
+          }),
       ),
     };
   if (action.type === "context")
@@ -844,10 +817,7 @@ export function reducer(state: State, action: Action): State {
                     : state[mode].error,
                 }
               : {}),
-            outdated:
-              state[mode].outdated ||
-              (!!state[mode].result &&
-                resultIsStale(state[mode].result, action.context)),
+            ...resultStatus(state[mode], action.context),
           },
         ]),
       ),
@@ -896,7 +866,7 @@ export function reducer(state: State, action: Action): State {
         revision: state.multi.revision + 1,
         generation: state.multi.generation + 1,
         pending: false,
-        outdated: !!state.multi.result,
+        ...resultStatus({ ...state.multi, draft }, state.context),
         ...clearedTrial(state.multi),
       },
     };
@@ -965,7 +935,6 @@ export function reducer(state: State, action: Action): State {
         runNotice: current.pending
           ? "Run cancelled because settings changed. Run again when you're ready."
           : current.runNotice,
-        outdated: !!current.result,
         ...clearedTrial(current),
       };
       break;
@@ -1147,21 +1116,20 @@ export function reducer(state: State, action: Action): State {
       next = {
         ...current,
         pending: false,
+        acceptedDraft: structuredClone(action.submittedDraft ?? current.draft),
         previous: current.result,
         result: structuredClone(action.result),
         submitted: structuredClone(action.result.scenario),
-        outdated:
-          !!state.context?.live &&
-          (action.result.catalogVersion !==
-            state.context.live.catalog_version ||
-            action.result.modelVersion !== state.context.live.model_version ||
-            action.result.priceRevision !== state.context.live.price_revision),
         ...clearedTrial(current),
         solutionId:
           action.result.selectedSolutionId ??
           action.result.solutions[0]?.id ??
           "best-found",
         activeRole: action.result.scenario.request.roles[0].id,
+        slot: action.inspectorSlot ?? null,
+        objectiveSwapLimit: undefined,
+        objectiveGroupId: undefined,
+        selectionRevision: current.selectionRevision + 1,
         selectedTransition: "",
       };
       break;
@@ -1186,6 +1154,9 @@ export function reducer(state: State, action: Action): State {
       if (
         !current.result ||
         current.result.fingerprint !== action.fingerprint ||
+        archiveRunId(current.result) !== action.runId ||
+        (action.selectionRevision !== undefined &&
+          action.selectionRevision !== current.selectionRevision) ||
         current.pending
       )
         return state;
@@ -1193,7 +1164,10 @@ export function reducer(state: State, action: Action): State {
         ...current,
         ...clearedTrial(current),
         slot: null,
+        selectedTransition: "",
         objectiveSwapLimit: action.swapLimit,
+        objectiveGroupId: action.groupId,
+        selectionRevision: current.selectionRevision + 1,
         solutionId: action.solution.id,
         result: {
           ...current.result,
@@ -1210,7 +1184,11 @@ export function reducer(state: State, action: Action): State {
       next = {
         ...current,
         ...(action.patch.solutionId !== undefined
-          ? { objectiveSwapLimit: undefined }
+          ? {
+              objectiveSwapLimit: undefined,
+              objectiveGroupId: undefined,
+              selectionRevision: current.selectionRevision + 1,
+            }
           : {}),
         ...action.patch,
         ...((action.patch.solutionId !== undefined &&
@@ -1307,6 +1285,8 @@ export function reducer(state: State, action: Action): State {
       next = { ...current, ...clearedTrial(current) };
       break;
   }
+  if (action.type === "edit" || action.type === "success")
+    next = { ...next, ...resultStatus(next, state.context) };
   return { ...state, [action.mode]: next };
 }
 const version = 3;
@@ -1445,7 +1425,7 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
         (r.safeSpotting === undefined || typeof r.safeSpotting === "boolean") &&
         (r.fightDurationSeconds === undefined ||
           (typeof r.fightDurationSeconds === "string" &&
-            !errorOf(() =>
+            !validationMessage(() =>
               integer(
                 r.fightDurationSeconds as string,
                 "Fight duration",
@@ -1462,7 +1442,13 @@ export function upgradeStoredDraft(value: unknown): Draft | null {
     )
   );
   const legacyWilderness =
-    draft.wilderness && draft.wildernessRiskBudget === undefined;
+    draft.wilderness &&
+    draft.wildernessRiskBudget === undefined &&
+    !(
+      draft.wildernessLimitLoss === false &&
+      Array.isArray(draft.objectives) &&
+      fixedTrip(draft)
+    );
   return isValid
     ? ({
         ...draft,

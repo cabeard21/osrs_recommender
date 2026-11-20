@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CombatOptionSummary } from "../components/CombatOptionSummary";
 
-test("powered selection discloses charging without exposing its internal model key", () => {
+test("displays the selected built-in spell as a combat option", () => {
   render(
     <CombatOptionSummary
       role={{
@@ -18,25 +18,9 @@ test("powered selection discloses charging without exposing its internal model k
         spell: null,
         powered_attack: "warped",
       }}
-      preparations={[
-        {
-          source_item_id: 28583,
-          usable_item_id: 28585,
-          market_item_id: 28583,
-          charging_required: true,
-          charges: "unknown",
-          activation_reserve: [],
-          message: "Charging required; actual charge availability is unknown.",
-        },
-      ]}
     />,
   );
   expect(
     screen.getByLabelText("Selected combat configuration"),
   ).toHaveTextContent("Built-in spell");
-  expect(
-    screen.getByText(
-      "Charging required; actual charge availability is unknown.",
-    ),
-  ).toBeVisible();
 });

@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -90,7 +91,13 @@ it("lists the default defence-roll setup separately from a tradeoff with the sam
   expect(within(row).getByRole("cell", { name: "4.093" })).toBeVisible();
   expect(within(table).getByRole("cell", { name: "27.10k" })).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Highest DPS" }));
-  expect(onSelect).toHaveBeenCalledWith("sample", tradeoff);
+  expect(onSelect).toHaveBeenCalledWith(
+    "sample",
+    tradeoff,
+    undefined,
+    "group",
+    undefined,
+  );
 });
 
 it("highlights the starting setup and preserves chart points and bounds when selecting tradeoffs", async () => {
@@ -211,8 +218,8 @@ it("keeps a selected chart configuration visible while browsing and sorting othe
   );
   expect(within(table).getAllByRole("row", { selected: true })).toHaveLength(1);
   expect(
-    screen.queryByRole("button", { name: "Starting setup" }),
-  ).not.toBeInTheDocument();
+    screen.getByRole("button", { name: "Starting setup" }),
+  ).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   await screen.findByRole("button", { name: "Select setup 51" });
   const pinned = await screen.findByRole("button", {
@@ -315,8 +322,8 @@ it.each(["run", "group", "swap limit"])(
       screen.queryByRole("button", { name: /Select tradeoff unsampled,/ }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Starting setup" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Starting setup" }),
+    ).toHaveAttribute("aria-pressed", "true");
   },
 );
 
@@ -339,7 +346,7 @@ it("opens the full lab with the current scoped result and selected point", async
       onSelect={() => {}}
     />,
   );
-  const link = screen.getByRole("link", { name: /Open full tradeoff lab/ });
+  const link = screen.getByRole("link", { name: "Explore this run" });
   fireEvent.contextMenu(link);
   const url = new URL(link.getAttribute("href")!, location.href);
   expect(url.searchParams.get("view")).toBe("tradeoff-lab");
@@ -373,9 +380,7 @@ it("keeps the result visible and explains blocked browser storage", async () => 
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
     throw new Error("Storage blocked");
   });
-  fireEvent.contextMenu(
-    screen.getByRole("link", { name: /Open full tradeoff lab/ }),
-  );
+  fireEvent.contextMenu(screen.getByRole("link", { name: "Explore this run" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
     /storage|save|store/i,
   );
@@ -515,6 +520,7 @@ it("paginates all results and selects a complete unsampled solution", async () =
       result={result}
       swapLimit={0}
       selectedId="sample"
+      selectionRevision={3}
       onSelect={onSelect}
     />,
   );
@@ -522,7 +528,13 @@ it("paginates all results and selects a complete unsampled solution", async () =
     expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled(),
   );
   await user.click(screen.getByRole("button", { name: "Select setup 1" }));
-  expect(onSelect).toHaveBeenCalledWith("unsampled", solution);
+  expect(onSelect).toHaveBeenCalledWith(
+    "unsampled",
+    solution,
+    "test-run",
+    "group",
+    3,
+  );
   await user.click(screen.getByRole("button", { name: "Next page" }));
   await screen.findByRole("button", { name: "Select setup 51" });
   expect(fetcher.mock.calls.some(([url]) => url.includes("cursor=next"))).toBe(
@@ -599,7 +611,13 @@ it("selects chart points by keyboard and sorts the full table", async () => {
     screen.getByRole("button", { name: /Select tradeoff sample/ }),
     { key: "Enter" },
   );
-  expect(onSelect).toHaveBeenCalledWith("sample", solution);
+  expect(onSelect).toHaveBeenCalledWith(
+    "sample",
+    solution,
+    "test-run",
+    "group",
+    undefined,
+  );
   await user.selectOptions(
     screen.getByRole("combobox", { name: "Sort tradeoffs" }),
     "prayer_bonus",
@@ -720,13 +738,224 @@ it("selects the cheapest point and the unpriced cap DPS winner independently", a
   );
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Lowest GP/damage" }));
-  expect(onSelect).toHaveBeenLastCalledWith("free", cheap);
+  expect(onSelect).toHaveBeenLastCalledWith(
+    "free",
+    cheap,
+    undefined,
+    undefined,
+    undefined,
+  );
   await user.click(screen.getByRole("button", { name: "Highest DPS" }));
-  expect(onSelect).toHaveBeenLastCalledWith("unpriced", baseline);
+  expect(onSelect).toHaveBeenLastCalledWith(
+    "unpriced",
+    baseline,
+    undefined,
+    undefined,
+    undefined,
+  );
   await user.selectOptions(
     screen.getByLabelText("Sort tradeoffs"),
     "gp_per_damage",
   );
   expect(screen.getByLabelText("Sort direction")).toHaveValue("asc");
   expect(screen.getByRole("cell", { name: "Unavailable" })).toBeVisible();
+});
+
+it("starts a replacement run with the default sort and the first page", async () => {
+  const fetcher = vi.fn(async (input: string) => {
+    const url = new URL(input, location.href);
+    return Response.json({
+      points: [],
+      total: 51,
+      next_cursor: url.searchParams.has("cursor") ? null : "old-cursor",
+    });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const props = { swapLimit: 0, selectedId: "sample", onSelect: vi.fn() };
+  const { rerender } = render(<ObjectiveFrontier {...props} result={result} />);
+  const sort = screen.getByLabelText("Sort tradeoffs");
+  fireEvent.change(sort, { target: { value: "prayer_bonus" } });
+  fireEvent.change(screen.getByLabelText("Sort direction"), {
+    target: { value: "asc" },
+  });
+  const next = screen.getByRole("button", { name: "Next page" });
+  await waitFor(() => expect(next).toBeEnabled());
+  fireEvent.click(next);
+  await waitFor(() =>
+    expect(fetcher.mock.calls.at(-1)?.[0]).toContain("cursor=old-cursor"),
+  );
+  const replacement = {
+    ...result,
+    scenario: {
+      ...result.scenario,
+      request: { ...result.scenario.request, objectives: [] },
+    },
+    live: {
+      ...result.live!,
+      run_id: "replacement",
+      result: { ...result.live!.result, objective_definitions: [] },
+    },
+  };
+  rerender(<ObjectiveFrontier {...props} result={replacement} />);
+  await waitFor(() =>
+    expect(fetcher.mock.calls.at(-1)?.[0]).toContain("/replacement/"),
+  );
+  expect(
+    fetcher.mock.calls
+      .map(([url]) => url)
+      .filter((url) => url.includes("/replacement/")),
+  ).toEqual([
+    "/ui-api/gear/optimization-runs/replacement/frontiers/group/points?sort=dps&direction=desc&limit=50",
+  ]);
+  expect(screen.getByLabelText("Sort tradeoffs")).toHaveValue("dps");
+  expect(screen.getByLabelText("Sort direction")).toHaveValue("desc");
+});
+
+it("retains the archive page when only the selected solution changes", async () => {
+  const fetcher = vi.fn(async (_input: string) =>
+    Response.json({
+      points: [{ id: "sample", ...solution }],
+      total: 1,
+      next_cursor: null,
+    }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const props = { swapLimit: 0, selectedId: "sample", onSelect: vi.fn() };
+  const { rerender } = render(<ObjectiveFrontier {...props} result={result} />);
+  const table = screen.getByRole("table", { name: "All objective tradeoffs" });
+  await waitFor(() => expect(table).toHaveAttribute("aria-busy", "false"));
+  rerender(
+    <ObjectiveFrontier
+      {...props}
+      result={{ ...result, solutions: [...result.solutions] }}
+    />,
+  );
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it.each(["a new run", "a newer selection in the same run"])(
+  "cancels a pending selection after %s",
+  async (change) => {
+    const onSelect = vi.fn();
+    let resolveSelection!: (response: Response) => void;
+    let selectionSignal: AbortSignal | null | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, options?: RequestInit) => {
+        if (url.includes("/solutions/")) {
+          selectionSignal = options?.signal;
+          return new Promise<Response>(
+            (resolve) => (resolveSelection = resolve),
+          );
+        }
+        return Response.json({
+          points: [{ id: "unsampled", ...solution }],
+          total: 1,
+          next_cursor: null,
+        });
+      }),
+    );
+    const props = { swapLimit: 0, selectedId: "sample", onSelect };
+    const { rerender } = render(
+      <ObjectiveFrontier {...props} result={result} selectionRevision={0} />,
+    );
+    const select = await screen.findByRole("button", {
+      name: "Select setup 1",
+    });
+    fireEvent.click(select);
+    expect(screen.getByRole("button", { name: "Highest DPS" })).toBeDisabled();
+    const newRun = change === "a new run";
+    rerender(
+      <ObjectiveFrontier
+        {...props}
+        result={
+          newRun
+            ? {
+                ...result,
+                live: { ...result.live!, run_id: "replacement" },
+              }
+            : result
+        }
+        selectionRevision={newRun ? 0 : 1}
+        selectedId={newRun ? "sample" : "lab-selection"}
+        selectedSolution={
+          newRun
+            ? undefined
+            : {
+                ...result.live!.result.objective_frontiers![0].points[0]
+                  .solution,
+                score: 11,
+              }
+        }
+      />,
+    );
+    expect(selectionSignal?.aborted).toBe(true);
+    expect(screen.getByRole("button", { name: "Highest DPS" })).toBeEnabled();
+    await act(async () => resolveSelection(Response.json({ solution })));
+    expect(onSelect).not.toHaveBeenCalled();
+    if (!newRun)
+      expect(
+        screen.getByRole("button", { name: /Select tradeoff lab-selection/ }),
+      ).toHaveAttribute("aria-pressed", "true");
+  },
+);
+
+it("compares the selection against its stable starting setup", async () => {
+  const alternative = {
+    ...solution,
+    score: 9,
+    purchase_cost_gp: 25,
+    objective_values: { prayer_bonus: 8 },
+    loadouts: {
+      "role-1": {
+        equipment: { weapon: 4151 },
+        discipline: "melee",
+        combat_option: { attack_type: "stab", stance: "accurate" },
+      },
+    },
+  };
+  const initial = {
+    ...result,
+    live: {
+      ...result.live!,
+      run_id: undefined,
+      result: {
+        ...result.live!.result,
+        objective_frontiers: [
+          {
+            ...result.live!.result.objective_frontiers![0],
+            points: [
+              { id: "sample", solution },
+              { id: "alternative", solution: alternative },
+            ],
+          },
+        ],
+      },
+    },
+  } as unknown as OptimizationReply;
+  const props = { result: initial, swapLimit: 0, onSelect: vi.fn() };
+  const { rerender } = render(
+    <ObjectiveFrontier {...props} selectedId="sample" />,
+  );
+  const withinSummary = within(
+    screen.getByRole("region", { name: "Selected setup comparison" }),
+  );
+  expect(withinSummary.getByText(/starting setup/i)).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Starting setup" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  rerender(<ObjectiveFrontier {...props} selectedId="alternative" />);
+  expect(withinSummary.getByText("9.000")).toBeVisible();
+  expect(withinSummary.getByText("−1.000")).toBeVisible();
+  expect(withinSummary.getByText("25 GP")).toBeVisible();
+  expect(withinSummary.getByText("Melee")).toBeVisible();
+  const changes = withinSummary.getByText("Gear and combat changes · 2");
+  fireEvent.click(changes);
+  expect(withinSummary.getByText(/Empty → Item #4151/)).toBeVisible();
+  expect(
+    withinSummary.getByText(/slash · accurate → stab · accurate/),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Starting setup" }),
+  ).toHaveAttribute("aria-pressed", "false");
 });

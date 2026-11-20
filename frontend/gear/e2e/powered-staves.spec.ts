@@ -73,6 +73,9 @@ test("owned uncharged staff selection persists and discloses preparation", async
   await expect(page.getByLabel("Selected combat configuration")).toContainText(
     "Built-in spell",
   );
+  await expect(
+    page.getByRole("button", { name: /^weapon Owned source · Prepare/ }),
+  ).toBeVisible();
 });
 
 test("unowned powered staff purchases its market form and renders charging preparation", async ({
@@ -113,8 +116,26 @@ test("unowned powered staff purchases its market form and renders charging prepa
   );
   await expect(page.locator(".purchase-rows")).not.toContainText("Item #28583");
   await expect(
+    page.getByRole("button", { name: /^weapon Buy base · Prepare/ }),
+  ).toBeVisible();
+  await expect(
     page
       .getByText("Charging required; actual charge availability is unknown.")
       .first(),
   ).toBeVisible();
+  const checklist = page.getByRole("region", { name: "Acquisition checklist" });
+  await expect(
+    checklist.getByRole("region", { name: "Prepare" }),
+  ).toContainText("Charging required; actual charge availability is unknown.");
+  expect(
+    await checklist.evaluate(
+      (section) => section.scrollWidth <= section.clientWidth,
+    ),
+  ).toBe(true);
+  await checklist
+    .getByRole("button", { name: "Export mobile bank tag" })
+    .click();
+  const code = await page.getByLabel("Bank tag code").inputValue();
+  expect(code.split(",")).toContain("28585");
+  expect(code.split(",")).not.toContain("28583");
 });

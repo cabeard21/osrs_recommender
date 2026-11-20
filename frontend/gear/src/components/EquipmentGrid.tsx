@@ -14,19 +14,47 @@ import {
   Sword,
   type LucideIcon,
 } from "lucide-react";
-import type { Equipment, Item, Slot } from "../api/contracts";
+import type { Equipment, Item, Preparation, Slot } from "../api/contracts";
 import { slots } from "../api/contracts";
 import { useGear } from "../state/GearProvider";
 function acquisitionStatus(
   id: number | null,
   item: Item | undefined,
   purchaseIds: number[],
+  obtainIds: readonly number[],
+  preparations: readonly Preparation[],
 ) {
   if (!id) return "Empty";
+  if (obtainIds.includes(id)) return "Obtain";
+  const preparation = preparations.find((row) => row.usable_item_id === id);
+  if (preparation?.charging_required) {
+    if (purchaseIds.includes(id)) return "Buy · Prepare";
+    if (
+      preparation.market_item_id !== null &&
+      purchaseIds.includes(preparation.market_item_id)
+    )
+      return "Buy base · Prepare";
+    if (
+      preparation.source_item_id !== null &&
+      preparation.source_item_id !== id
+    )
+      return "Owned source · Prepare";
+    return "Prepare";
+  }
   if (purchaseIds.includes(id)) return "Buy";
+  if (preparation?.source_item_id != null && preparation.source_item_id !== id)
+    return "Owned source · Check charges";
   return item?.owned ? "Owned" : "Unconfirmed";
 }
-const statusColor: Record<string, string> = { Buy: "gold", Owned: "green" };
+const statusColor: Record<string, string> = {
+  Buy: "gold",
+  "Buy · Prepare": "gold",
+  "Buy base · Prepare": "gold",
+  Obtain: "gold",
+  Prepare: "gold",
+  "Owned source · Prepare": "gold",
+  Owned: "green",
+};
 const SLOT_ICONS: Record<Slot, LucideIcon> = {
   head: HardHat,
   cape: Flag,
@@ -67,6 +95,8 @@ export function EquipmentGrid({
   prefix = "",
   optimized = false,
   purchaseIds = [],
+  obtainIds = [],
+  preparations = [],
   roleId,
 }: {
   equipment: Equipment;
@@ -78,6 +108,8 @@ export function EquipmentGrid({
   prefix?: string;
   optimized?: boolean;
   purchaseIds?: number[];
+  obtainIds?: readonly number[];
+  preparations?: readonly Preparation[];
   roleId?: string;
 }) {
   const { itemById, state, liveMode, current } = useGear();
@@ -99,7 +131,13 @@ export function EquipmentGrid({
           liveMode && !optimized
             ? state.context?.live?.current_equipment.slots[slot]
             : undefined;
-        const status = acquisitionStatus(equipment[slot], item, purchaseIds);
+        const status = acquisitionStatus(
+          equipment[slot],
+          item,
+          purchaseIds,
+          obtainIds,
+          preparations,
+        );
         const label =
           liveMode && optimized
             ? [status, isShared && "Shared", isLocked(slot) && "Locked"]

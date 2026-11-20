@@ -12,6 +12,10 @@ test("prepares an owned tome and preserves the Searing setting", async ({
     page.getByRole("button", { name: "Run optimization", exact: true }),
   ).toBeEnabled();
   await page.getByRole("button", { name: "magic", exact: true }).click();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Combat resources/ })
+    .click();
   await page.getByLabel("Tome of Fire pages").selectOption("searing");
   await expect
     .poll(() =>
@@ -26,6 +30,9 @@ test("prepares an owned tome and preserves the Searing setting", async ({
     )
     .toBe(true);
   await page.reload();
+  await expect(
+    page.locator("summary").filter({ hasText: /^Combat resources/ }),
+  ).toContainText("Tome searing");
   await expect(page.getByLabel("Tome of Fire pages")).toHaveValue("searing");
   const pending = page.waitForResponse(
     (response) =>
@@ -50,8 +57,8 @@ test("prepares an owned tome and preserves the Searing setting", async ({
   );
   await expect(
     page
-      .getByText(/page availability, consumption, and costs are excluded/i)
-      .first(),
+      .getByRole("region", { name: "Prepare", exact: true })
+      .getByText(/page availability, consumption, and costs are excluded/i),
   ).toBeVisible();
   await expect(
     page.getByLabel("Elemental amulet effect").first(),

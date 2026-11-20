@@ -99,6 +99,9 @@ it("runs the configured potion scenario and marks results outdated on changes", 
     </GearProvider>,
   );
   await screen.findByText("Demo adventurer", { exact: true });
+  await user.click(
+    screen.getByText(/^Combat resources/, { selector: "summary" }),
+  );
   const toggle = screen.getByLabelText("Optimize potions");
   expect(toggle).not.toBeChecked();
   await user.click(toggle);

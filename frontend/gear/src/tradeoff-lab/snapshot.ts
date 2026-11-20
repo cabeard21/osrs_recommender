@@ -2,6 +2,7 @@ import type {
   JointSolutionDTO,
   ObjectiveFrontierGroup,
   OptimizationReply,
+  Workspace,
 } from "../api/contracts";
 import { createBrowserUuid } from "../browserUuid";
 import type { LabExample, LabPoint } from "./model";
@@ -16,11 +17,20 @@ const INVALID =
 const STORAGE_ERROR =
   "Unable to open the Tradeoff Lab using browser storage. Allow local storage or free some browser storage and try again.";
 
+export type LabReturnTarget = {
+  originId: string;
+  workspace: Workspace;
+  runId: string;
+  groupId: string;
+  swapLimit: number | null;
+};
+
 type Envelope = {
   version: number;
   createdAt: number;
   expiresAt: number;
   snapshot: LabExample;
+  returnTarget?: LabReturnTarget;
 };
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
@@ -30,6 +40,23 @@ const text = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0 && value.length <= 512;
 const strings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(text);
+
+function assertReturnTarget(value: unknown): asserts value is LabReturnTarget {
+  if (
+    !record(value) ||
+    typeof value.originId !== "string" ||
+    !TOKEN.test(value.originId) ||
+    (value.workspace !== "single" && value.workspace !== "multi") ||
+    typeof value.runId !== "string" ||
+    !TOKEN.test(value.runId) ||
+    !text(value.groupId) ||
+    (value.swapLimit !== null &&
+      (!Number.isSafeInteger(value.swapLimit) ||
+        Number(value.swapLimit) < 0 ||
+        Number(value.swapLimit) > 12))
+  )
+    throw new Error(INVALID);
+}
 
 function assertSnapshot(value: unknown): asserts value is LabExample {
   if (
@@ -322,6 +349,7 @@ function parseEnvelope(encoded: string): Envelope {
   )
     throw new Error(INVALID);
   assertSnapshot(value.snapshot);
+  if (value.returnTarget !== undefined) assertReturnTarget(value.returnTarget);
   return value as Envelope;
 }
 
@@ -345,8 +373,10 @@ function savedSessions(storage: Storage): { key: string; createdAt: number }[] {
 export function storeLabSnapshot(
   snapshot: LabExample,
   storage?: Storage,
+  returnTarget?: LabReturnTarget,
 ): string {
   assertSnapshot(snapshot);
+  if (returnTarget !== undefined) assertReturnTarget(returnTarget);
   const token = createBrowserUuid();
   if (token === null)
     throw new Error(
@@ -358,6 +388,7 @@ export function storeLabSnapshot(
     createdAt,
     expiresAt: createdAt + LIFETIME_MS,
     snapshot,
+    returnTarget,
   });
   try {
     const target = storage ?? localStorage;
@@ -373,7 +404,10 @@ export function storeLabSnapshot(
   return token;
 }
 
-export function loadLabSnapshot(token: string, storage?: Storage): LabExample {
+export function loadLabSession(
+  token: string,
+  storage?: Storage,
+): Pick<Envelope, "snapshot" | "returnTarget"> {
   if (!TOKEN.test(token)) throw new Error(INVALID);
   let encoded: string | null;
   try {
@@ -395,5 +429,9 @@ export function loadLabSnapshot(token: string, storage?: Storage): LabExample {
     throw new Error(
       "This Tradeoff Lab snapshot has expired. Open the lab again from the optimizer result.",
     );
-  return envelope.snapshot;
+  return { snapshot: envelope.snapshot, returnTarget: envelope.returnTarget };
+}
+
+export function loadLabSnapshot(token: string, storage?: Storage): LabExample {
+  return loadLabSession(token, storage).snapshot;
 }

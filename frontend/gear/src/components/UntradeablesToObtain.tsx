@@ -1,9 +1,13 @@
 export function UntradeablesToObtain({
   ids = [],
   itemName,
+  acquisitionNotes,
+  usedBy,
 }: {
   ids?: number[];
   itemName: (id: number) => string;
+  acquisitionNotes?: (id: number) => string[];
+  usedBy?: (id: number) => string[];
 }) {
   if (!ids.length) return null;
   return (
@@ -14,9 +18,18 @@ export function UntradeablesToObtain({
         budget. Ownership is unchanged.
       </p>
       <ul>
-        {ids.map((id) => (
-          <li key={id}>{itemName(id)}</li>
-        ))}
+        {ids.map((id) => {
+          const roles = usedBy?.(id) ?? [];
+          return (
+            <li key={id}>
+              <span>{itemName(id)}</span>
+              {roles.length > 0 && <small>Used by {roles.join(", ")}</small>}
+              {acquisitionNotes?.(id).map((note) => (
+                <p key={note}>{note}</p>
+              ))}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

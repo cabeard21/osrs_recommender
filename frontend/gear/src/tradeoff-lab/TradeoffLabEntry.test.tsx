@@ -44,8 +44,11 @@ it("explains a missing session and offers a return link without showing another 
     /expired|unavailable|missing|found|invalid/i,
   );
   expect(
-    screen.getByRole("link", { name: "Return to Gear optimizer" }),
+    screen.getByRole("link", { name: "Open Gear optimizer" }),
   ).toHaveAttribute("href", "/gear");
+  expect(
+    screen.getByText(/Switch to the original Gear optimizer tab/),
+  ).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Saved example" }),
   ).not.toBeInTheDocument();

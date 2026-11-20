@@ -1,4 +1,10 @@
 import type { Draft } from "../api/contracts";
+import {
+  maxEquipmentActions,
+  reservedSupplySlots,
+  validationMessage,
+} from "../state/setupValidation";
+import { FieldError, fieldProps } from "./FieldError";
 
 export function MultiTransitions({
   draft,
@@ -9,9 +15,22 @@ export function MultiTransitions({
 }) {
   const phases = draft.orderedRoles ?? draft.roles.map((role) => role.id);
   const edges = draft.transitions ?? [];
+  const actionError = validationMessage(() =>
+    maxEquipmentActions(draft.maxActions),
+  );
+  const supplyError = validationMessage(() =>
+    reservedSupplySlots(draft.supplies),
+  );
   return (
     <details>
-      <summary>Transitions &amp; inventory</summary>
+      <summary>
+        <span>Transitions &amp; inventory</span>
+        <small>
+          {" "}
+          · {draft.maxActions || "—"} actions · {draft.supplies || "—"} reserved
+          supply slots
+        </small>
+      </summary>
       <label>
         Base configuration
         <select
@@ -148,20 +167,26 @@ export function MultiTransitions({
           type="number"
           min="0"
           max="12"
+          data-run-on-enter
           value={draft.maxActions}
+          {...fieldProps("multi-actions", actionError)}
           onChange={(event) => change({ maxActions: event.target.value })}
         />
       </label>
+      <FieldError id="multi-actions" message={actionError} />
       <label>
         Reserved supply slots
         <input
           type="number"
           min="0"
           max="28"
+          data-run-on-enter
           value={draft.supplies}
+          {...fieldProps("multi-supplies", supplyError)}
           onChange={(event) => change({ supplies: event.target.value })}
         />
       </label>
+      <FieldError id="multi-supplies" message={supplyError} />
       <p>
         Equipment actions count directed equips and unequips, rather than
         changed slots. Supplies reserve capacity; consumption is not simulated.

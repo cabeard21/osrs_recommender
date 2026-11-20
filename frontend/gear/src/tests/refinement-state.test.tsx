@@ -110,7 +110,10 @@ it.each([
 ])(
   "checks Wilderness settings when restoring a result ($cap GP, $casts casts)",
   ({ cap, casts }) => {
-    const saved = result();
+    const liveContext = parseContext(context);
+    const saved = result(
+      normalize(newDraft(), liveContext.snapshotId, true, liveContext),
+    );
     const settings = {
       depth: "level_21_plus",
       skulled: false,
@@ -132,7 +135,7 @@ it.each([
     const state = reducer(
       {
         ...initial,
-        context: parseContext(context),
+        context: liveContext,
         single: { ...initial.single, draft },
       },
       {

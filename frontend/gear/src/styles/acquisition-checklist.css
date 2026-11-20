@@ -1,0 +1,28 @@
+.acquisition-checklist > section {
+  padding-block: 12px;
+  border-top: 1px solid #262d3b;
+}
+
+.acquisition-checklist :is(li small, li p) {
+  display: block;
+  margin-block: 3px;
+}
+
+.acquisition-checklist li small {
+  color: #94a3b8;
+}
+
+.acquisition-checklist .acquisition-estimates,
+.acquisition-checklist .acquisition-exports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.acquisition-estimates {
+  padding-block: 8px 12px;
+}
+
+.acquisition-estimates dd {
+  margin-block-start: 4px;
+}

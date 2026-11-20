@@ -1,7 +1,4 @@
 import type { JointSolutionDTO, JointTransitionDTO } from "../api/contracts";
-import { PurchaseListCopy } from "./PurchaseListCopy";
-import { PurchaseRows } from "./PurchaseRows";
-import { UntradeablesToObtain } from "./UntradeablesToObtain";
 
 export function JointInventory({
   solution,
@@ -144,39 +141,6 @@ export function JointTransition({
       ) : (
         <p>No directed transitions are required by the submitted topology.</p>
       )}
-    </section>
-  );
-}
-
-export function JointPurchases({
-  solution,
-  identity,
-  itemName,
-}: {
-  solution: JointSolutionDTO;
-  identity: string;
-  itemName: (id: number) => string;
-}) {
-  return (
-    <section className="panel">
-      <h2>Joint acquisition requirements</h2>
-      <strong className="gold numeric">
-        {solution.purchase_cost_gp.toLocaleString()} GP additional purchases
-      </strong>
-      <p>
-        Shared purchases are counted once across all configurations. Cached
-        acquisition estimates are not guaranteed market prices.
-      </p>
-      <PurchaseRows purchases={solution.purchases} itemName={itemName} />
-      <UntradeablesToObtain
-        ids={solution.unowned_untradeable_item_ids}
-        itemName={itemName}
-      />
-      <PurchaseListCopy
-        key={identity}
-        purchases={solution.purchases}
-        itemName={itemName}
-      />
     </section>
   );
 }

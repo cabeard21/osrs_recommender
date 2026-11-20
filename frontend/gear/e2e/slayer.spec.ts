@@ -8,6 +8,10 @@ test("Slayer task survives reload, reaches optimization and explains the applied
   await expect(
     page.getByRole("button", { name: "Run optimization", exact: true }),
   ).toBeEnabled();
+  const modifiers = page
+    .locator("summary")
+    .filter({ hasText: /^Combat modifiers/ });
+  await modifiers.click();
   const checkbox = page.getByRole("checkbox", {
     name: "On a Slayer task",
     exact: true,
@@ -15,6 +19,8 @@ test("Slayer task survives reload, reaches optimization and explains the applied
   await expect(checkbox).not.toBeChecked();
   await checkbox.check();
   await page.reload();
+  await expect(modifiers).toContainText("Slayer task");
+  await modifiers.click();
   await expect(checkbox).toBeChecked();
   const pending = page.waitForResponse(
     (response) =>

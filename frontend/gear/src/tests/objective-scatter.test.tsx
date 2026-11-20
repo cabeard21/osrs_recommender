@@ -316,3 +316,27 @@ it("renders readable log ticks for small and all-zero running costs", () => {
     screen.getByRole("button", { name: /Select tradeoff free,/ }),
   ).toHaveAttribute("cy", "250");
 });
+
+it("uses one point tab stop and moves focus with the arrow keys", () => {
+  const onSelect = vi.fn();
+  render(
+    <ObjectiveScatter
+      axes={axes}
+      points={points}
+      selectedId="a"
+      onSelect={onSelect}
+    />,
+  );
+  const a = screen.getByRole("button", { name: /Select tradeoff a,/ });
+  const b = screen.getByRole("button", { name: /Select tradeoff b,/ });
+  expect(a).toHaveAttribute("tabindex", "0");
+  expect(b).toHaveAttribute("tabindex", "-1");
+  a.focus();
+  fireEvent.keyDown(a, { key: "ArrowRight" });
+  expect(b).toHaveFocus();
+  expect(b).toHaveAttribute("tabindex", "0");
+  expect(a).toHaveAttribute("tabindex", "-1");
+  expect(onSelect).not.toHaveBeenCalled();
+  fireEvent.keyDown(b, { key: " " });
+  expect(onSelect).toHaveBeenCalledWith("b");
+});

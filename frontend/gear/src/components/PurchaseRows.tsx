@@ -14,14 +14,17 @@ export function purchaseSummary(count: number, costGp: number): string {
 export function PurchaseRows({
   purchases,
   itemName,
+  usedBy,
 }: {
   purchases: Purchase[];
   itemName: (id: number) => string;
+  usedBy?: (id: number) => string[];
 }) {
   if (!purchases.length) return null;
   return (
     <ul className="purchase-rows">
       {purchases.map((purchase) => {
+        const roles = usedBy?.(purchase.item_id) ?? [];
         const price =
           purchase.cost_gp === null
             ? "Price unavailable"
@@ -32,7 +35,10 @@ export function PurchaseRows({
         return (
           <li key={purchase.item_id}>
             <ItemSprite id={purchase.item_id} />
-            <span>{`${itemName(purchase.item_id)} · ${price}${note}`}</span>
+            <div>
+              <span>{`${itemName(purchase.item_id)} · ${price}${note}`}</span>
+              {roles.length > 0 && <small>Used by {roles.join(", ")}</small>}
+            </div>
           </li>
         );
       })}

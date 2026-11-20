@@ -11,6 +11,7 @@ import {
 import { useGear } from "./state/GearProvider";
 import { describeDraftChanges } from "./state/draftChanges";
 import { ConfigurationPanel } from "./components/ConfigurationPanel";
+import { RunReadback } from "./components/RunReadback";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ResultWorkspace } from "./components/ResultWorkspace";
 import { ItemInspector } from "./components/ItemInspector";
@@ -25,7 +26,7 @@ function focusFirstInvalidField() {
   const field = document.querySelector<HTMLElement>(
     '.configuration [aria-invalid="true"]',
   );
-  if (!field) return;
+  if (!field) return false;
   for (
     let section = field.closest("details");
     section;
@@ -33,6 +34,7 @@ function focusFirstInvalidField() {
   )
     section.open = true;
   field.focus();
+  return true;
 }
 
 export default function App() {
@@ -43,6 +45,7 @@ export default function App() {
     progress,
     itemById,
     dispatch,
+    edit,
     run,
     cancel,
     contextError,
@@ -54,6 +57,12 @@ export default function App() {
   } = useGear();
   const [menu, setMenu] = useState(false);
   const protocolRef = useRef<HTMLElement>(null);
+  const validationRef = useRef<HTMLParagraphElement>(null);
+  const [runAttempt, setRunAttempt] = useState(0);
+  useEffect(() => {
+    if (current.error && current.errorIsValidation && !focusFirstInvalidField())
+      validationRef.current?.focus();
+  }, [current.error, current.errorIsValidation, runAttempt]);
   useEffect(() => {
     const bar = protocolRef.current;
     if (!bar || typeof ResizeObserver === "undefined") return;
@@ -89,8 +98,8 @@ export default function App() {
     dispatch({ type: "navigate", mode });
   };
   const handleRun = () => {
+    setRunAttempt((previous) => previous + 1);
     void run();
-    focusFirstInvalidField();
   };
   const runOnEnter = (event: KeyboardEvent<HTMLFieldSetElement>) => {
     const field = event.target;
@@ -129,9 +138,11 @@ export default function App() {
           <History size={18} />
           Legacy gear view
         </a>
-        <a href="/gear?view=tradeoff-lab">
+        <a
+          href={`/gear?view=tradeoff-lab${state.mode === "multi" ? "#multi" : ""}`}
+        >
           <SlidersHorizontal size={18} />
-          Tradeoff lab
+          Explore example
         </a>
       </nav>
       <div className="sidebar-footer">
@@ -144,7 +155,7 @@ export default function App() {
     </>
   );
   const outdatedChanges =
-    current.outdated && current.result
+    current.draftChanged && current.result
       ? describeDraftChanges(current.draft, current.result.scenario.request)
       : [];
   const isRunEmphasized =
@@ -265,7 +276,8 @@ export default function App() {
                   progress={progress}
                 />
               )}
-              {current.outdated && !current.pending && (
+              {!current.pending && <RunReadback />}
+              {current.draftChanged && !current.pending && (
                 <span className="badge">
                   Settings changed since this result
                   {outdatedChanges.length > 0 &&
@@ -273,7 +285,12 @@ export default function App() {
                 </span>
               )}
               {current.error && current.errorIsValidation && (
-                <p role="alert" className="field-error">
+                <p
+                  role="alert"
+                  className="field-error"
+                  tabIndex={-1}
+                  ref={validationRef}
+                >
                   {current.error}
                 </p>
               )}
@@ -287,14 +304,18 @@ export default function App() {
                   >
                     Edit settings
                   </button>
-                  <button
-                    className="stacked-only"
-                    onClick={() => scrollToSection(".result-column")}
-                  >
+                  <button onClick={() => scrollToSection(".result-column")}>
                     View results
                   </button>
                 </>
               )}
+              {current.draftChanged &&
+                current.acceptedDraft &&
+                !current.pending && (
+                  <button onClick={() => edit(current.acceptedDraft!)}>
+                    Restore run settings
+                  </button>
+                )}
               <button
                 className={isRunEmphasized ? "primary" : undefined}
                 disabled={!state.context?.snapshotId || current.pending}
@@ -390,7 +411,7 @@ export default function App() {
                 <h3 className="eyebrow">What this does not model</h3>
                 <p>
                   {liveMode
-                    ? "Fresh-boost potions supported; no prayers, scored specials, survivability or encounter completion estimates. Multi manual trials remain unavailable."
+                    ? "Ordinary attacks can include selected combat prayers and fresh potion boosts. Scored specials, survivability, encounter completion estimates, and Multi manual trials are outside this model."
                     : "Fixture locks, exclusions, and manual trials demonstrate state changes. Use live account mode for full validation."}
                 </p>
                 {!liveMode && (

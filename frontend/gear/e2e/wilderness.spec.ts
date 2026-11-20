@@ -166,18 +166,15 @@ test("explores fixed-trip loss and selects the archived lowest risk setup", asyn
   await page.getByLabel("Skulled at death").check();
   await page.getByLabel("Assume Protect Item is active at death").check();
   await page
-    .locator("summary")
-    .filter({ hasText: /^Advanced settings/ })
-    .click();
-  await page
     .getByRole("checkbox", {
       name: "Wilderness loss if PK’d (GP)",
       exact: true,
     })
     .check();
-  await expect(page.getByLabel("No loss cap")).toBeChecked();
+  await expect(page.getByLabel("No loss cap")).not.toBeChecked();
+  await expect(page.getByLabel("Max gear loss if PK’d (GP)")).toHaveValue("0");
   await page.getByLabel("Attacks per combat setup").fill("25");
-  const pending = page.waitForResponse(
+  const cappedPending = page.waitForResponse(
     (r) =>
       new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
       r.request().method() === "POST",
@@ -185,6 +182,19 @@ test("explores fixed-trip loss and selects the archived lowest risk setup", asyn
   await page
     .getByRole("button", { name: "Run optimization", exact: true })
     .click();
+  const capped = await cappedPending;
+  expect(capped.status(), await capped.text()).toBe(200);
+  expect((await capped.json()).scenario.wilderness).toMatchObject({
+    max_loss_gp: 0,
+    attacks_per_setup: 25,
+  });
+  await page.getByLabel("No loss cap").check();
+  const pending = page.waitForResponse(
+    (r) =>
+      new URL(r.url()).pathname === "/ui-api/gear/optimizations" &&
+      r.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Reoptimize", exact: true }).click();
   const response = await pending;
   expect(response.status(), await response.text()).toBe(200);
   const body = await response.json();

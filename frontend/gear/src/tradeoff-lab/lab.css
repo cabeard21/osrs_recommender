@@ -67,6 +67,13 @@
   font-size: 12px;
   margin-bottom: 34px;
 }
+.lab-back-action {
+  margin-bottom: 24px;
+}
+.lab-back-action p {
+  color: var(--lab-muted);
+  font-size: 12px;
+}
 .lab-eyebrow {
   color: var(--lab-gold);
   display: flex;
@@ -360,6 +367,23 @@ text.lab-axis {
   color: #e6d2a7;
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
+}
+.lab-return {
+  margin-bottom: 10px;
+}
+.tradeoff-lab .lab-use-setup {
+  width: 100%;
+  min-height: 44px;
+  background: var(--lab-gold);
+  border-color: var(--lab-gold);
+  color: var(--lab-bg);
+  font-weight: 700;
+}
+.tradeoff-lab .lab-use-setup:hover:not(:disabled) {
+  background: #ffcf71;
+}
+.lab-return .lab-note {
+  margin: 8px 0 0;
 }
 .lab-pin {
   width: 100%;
