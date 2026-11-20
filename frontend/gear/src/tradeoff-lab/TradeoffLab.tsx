@@ -121,7 +121,106 @@ function EquipmentDiff({
   );
 }
 
-export default function TradeoffLab({ data = example }: { data?: LabExample }) {
+function ApplyLabSetup({
+  point,
+  apply,
+}: {
+  point: LabPoint;
+  apply: (pointId: string) => Promise<void>;
+}) {
+  const [status, setStatus] = useState<{
+    kind: "sending" | "applied" | "failed";
+    message: string;
+  } | null>(null);
+  async function useSetup() {
+    setStatus({ kind: "sending", message: `Sending ${point.label}…` });
+    try {
+      await apply(point.id);
+      setStatus({
+        kind: "applied",
+        message: `${point.label} selected in the original Gear optimizer tab.`,
+      });
+    } catch (cause) {
+      setStatus({
+        kind: "failed",
+        message:
+          cause instanceof Error
+            ? cause.message
+            : "The optimizer could not select this setup. Reopen the Lab and try again.",
+      });
+    }
+  }
+  return (
+    <div className="lab-return">
+      <button
+        type="button"
+        className="lab-use-setup"
+        disabled={status?.kind === "sending"}
+        onClick={() => void useSetup()}
+      >
+        Use this setup in Gear optimizer
+      </button>
+      {status && (
+        <p
+          className={
+            status.kind === "failed" ? "lab-note lab-loss" : "lab-note"
+          }
+          role={status.kind === "failed" ? "alert" : "status"}
+        >
+          {status.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LabBack({ checkOrigin }: { checkOrigin: () => Promise<void> }) {
+  const [checking, setChecking] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function backToResults() {
+    setChecking(true);
+    setMessage("");
+    try {
+      await checkOrigin();
+      window.close();
+      // This guidance stays visible if the browser refuses to close the tab.
+      setMessage(
+        "Switch to the original Gear optimizer tab to see your results.",
+      );
+    } catch (error) {
+      setMessage((error as Error).message);
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <div className="lab-back-action">
+      <button
+        type="button"
+        disabled={checking}
+        onClick={() => void backToResults()}
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+        Back to Gear results
+      </button>
+      {message && <p role="status">{message}</p>}
+    </div>
+  );
+}
+
+export default function TradeoffLab({
+  data = example,
+  gearHref = "/gear",
+  onBackToResults,
+  onUseSetup,
+}: {
+  data?: LabExample;
+  gearHref?: string;
+  onBackToResults?: () => Promise<void>;
+  onUseSetup?: (pointId: string) => Promise<void>;
+}) {
   const metrics = data.metrics ?? METRICS;
   const baselineLabel = data.sourceDescription
     ? "original selection"
@@ -159,9 +258,20 @@ export default function TradeoffLab({ data = example }: { data?: LabExample }) {
   return (
     <main className="tradeoff-lab">
       <header className="lab-header">
-        <a className="lab-back" href="/gear">
-          <ArrowLeft size={16} /> Gear optimizer
-        </a>
+        {onBackToResults ? (
+          <LabBack checkOrigin={onBackToResults} />
+        ) : data.sourceDescription ? (
+          <div className="lab-back-action">
+            <p>
+              Switch to the original Gear optimizer tab to see your results.
+            </p>
+            <a href={gearHref}>Open Gear optimizer</a>
+          </div>
+        ) : (
+          <a className="lab-back" href={gearHref}>
+            <ArrowLeft size={16} /> Gear optimizer
+          </a>
+        )}
         <div className="lab-eyebrow">
           <FlaskConical size={15} />{" "}
           {data.sourceDescription ? "Optimization explorer" : "Example setup"}
@@ -365,7 +475,13 @@ export default function TradeoffLab({ data = example }: { data?: LabExample }) {
                 : "This view contains the complete saved frontier."}
             </p>
             <div className="lab-table-scroll">
-              <table aria-label="Saved example configurations">
+              <table
+                aria-label={
+                  data.sourceDescription
+                    ? "Saved configurations"
+                    : "Saved example configurations"
+                }
+              >
                 <thead>
                   <tr>
                     <th>Configuration</th>
@@ -415,6 +531,7 @@ export default function TradeoffLab({ data = example }: { data?: LabExample }) {
           <p className="lab-cost">
             Purchase cost <strong>{gp(selected.costGp)}</strong>
           </p>
+          {onUseSetup && <ApplyLabSetup point={selected} apply={onUseSetup} />}
           <button
             type="button"
             className="lab-pin"

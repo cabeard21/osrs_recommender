@@ -35,6 +35,10 @@ for (const style of ["melee", "ranged", "magic"] as const) {
           exact: true,
         })
         .click();
+      const modifiers = page
+        .locator("summary")
+        .filter({ hasText: /^Combat modifiers/ });
+      await modifiers.click();
       await page
         .getByRole("checkbox", {
           name: "Maintain Mark of Darkness",
@@ -42,6 +46,8 @@ for (const style of ["melee", "ranged", "magic"] as const) {
         })
         .check();
       await page.reload();
+      await expect(modifiers).toContainText("Mark of Darkness");
+      await modifiers.click();
       await expect(
         page.getByRole("checkbox", {
           name: "Maintain Mark of Darkness",

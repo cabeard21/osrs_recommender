@@ -1,5 +1,5 @@
 import { EquipmentBonuses } from "./EquipmentBonuses";
-import { BankTagExport } from "./BankTagExport";
+import { AcquisitionChecklist } from "./AcquisitionChecklist";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
 import { ObjectiveFrontier } from "./ObjectiveFrontier";
@@ -9,6 +9,8 @@ import { slots } from "../api/contracts";
 import type { JointSolutionDTO, Slot } from "../api/contracts";
 import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
+import { archiveRunId, resolveResultSelection } from "../state/resultSelection";
+import { ResultFreshness } from "./ResultFreshness";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { purchaseSummary } from "./PurchaseRows";
@@ -18,11 +20,7 @@ import { CombatOptionSummary } from "./CombatOptionSummary";
 import { contextPrayers } from "./PrayerFields";
 import { EQUIPMENT_ACCESS_LABELS, equipmentFor } from "./resultFormat";
 import { budgetSummary, WildernessRiskDetails } from "./WildernessRiskDetails";
-import {
-  JointInventory,
-  JointPurchases,
-  JointTransition,
-} from "./JointSolutionDetails";
+import { JointInventory, JointTransition } from "./JointSolutionDetails";
 
 function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
   const counts = new Map<number, number>();
@@ -34,8 +32,15 @@ function sharedIds(solution: JointSolutionDTO, roles: string[]): number[] {
 }
 
 export function LiveMultiResultWorkspace() {
-  const { state, current, dispatch, itemById, client, selectObjective } =
-    useGear();
+  const {
+    state,
+    current,
+    dispatch,
+    itemById,
+    client,
+    selectObjective,
+    labOriginId,
+  } = useGear();
   const result = current.result;
   if (!result?.live)
     return (
@@ -55,44 +60,19 @@ export function LiveMultiResultWorkspace() {
     roles.find((role) => role.id === id)?.name ?? id;
   const itemName = (id: number) => itemById(id)?.name ?? `Item #${id}`;
   const curve = raw.curve ?? [];
-  const point = curve.find(
-    (p) => `curve-${p.swap_limit}` === current.solutionId,
+  const {
+    curve: point,
+    selected: solution,
+    cap: selectedSwapLimit,
+  } = resolveResultSelection(
+    result,
+    current.solutionId,
+    current.objectiveGroupId,
+    current.objectiveSwapLimit,
   );
-  const solution = point
-    ? point.solution
-    : current.solutionId === "unrestricted"
-      ? raw.unrestricted
-      : result.solutions.find((s) => s.id === current.solutionId)?.live;
-  const selectedFrontierGroup =
-    [
-      ...(raw.secondary_frontiers ?? []),
-      ...(raw.running_cost_frontiers ?? []),
-    ].find((g) => g.points.some((p) => p.id === current.solutionId)) ??
-    raw.objective_frontiers?.find(
-      (g) =>
-        g.points.some((p) => p.id === current.solutionId) ||
-        (!!(g.id ?? g.group_id) &&
-          current.solutionId.startsWith(`${g.id ?? g.group_id}-`)),
-    );
-  // Both tradeoff panels describe the same action cap, even when the selected
-  // solution belongs to the other frontier. Null explicitly means unrestricted.
-  const objectiveCap = current.solutionId.match(/(?:^|-)objective-(None|\d+)-/);
-  const objectiveSwapLimit =
-    current.objectiveSwapLimit !== undefined
-      ? current.objectiveSwapLimit
-      : objectiveCap
-        ? objectiveCap[1] === "None"
-          ? null
-          : Number(objectiveCap[1])
-        : undefined;
-  const selectedSwapLimit =
-    objectiveSwapLimit !== undefined
-      ? objectiveSwapLimit
-      : current.solutionId === "unrestricted"
-        ? null
-        : selectedFrontierGroup
-          ? selectedFrontierGroup.swap_limit
-          : (point?.swap_limit ?? result.scenario.request.max_swaps);
+  const isDefault =
+    current.solutionId ===
+    (result.selectedSolutionId ?? `curve-${request.max_swaps}`);
   const frontierGroup = raw.secondary_frontiers?.find(
     (g) => g.swap_limit === selectedSwapLimit,
   );
@@ -147,7 +127,6 @@ export function LiveMultiResultWorkspace() {
             </p>
             <CombatOptionSummary
               itemName={itemName}
-              preparations={loadout.preparations}
               prayerIds={loadout.selected_prayer_ids}
               prayerCatalog={contextPrayers(state.context)}
               performance={loadout.performance}
@@ -180,13 +159,10 @@ export function LiveMultiResultWorkspace() {
           selected={current.activeRole === id ? current.slot : null}
           onSelect={(slot: Slot) => ui({ slot, activeRole: id })}
           optimized
-          purchaseIds={solution.purchases.map((p) => p.item_id)}
+          purchaseIds={solution.purchases.map((purchase) => purchase.item_id)}
+          obtainIds={solution.unowned_untradeable_item_ids}
+          preparations={loadout.preparations}
           roleId={id}
-        />
-        <BankTagExport
-          key={`${result!.fingerprint}:${current.solutionId}:${id}`}
-          equipment={equipment}
-          name={role.name}
         />
         {scored ? (
           <PerformanceSummary
@@ -229,7 +205,7 @@ export function LiveMultiResultWorkspace() {
     );
   }
   const curvePanel = (
-    <section className="panel">
+    <div className="curve-controls">
       <label>
         Swap-efficiency curve point
         <select
@@ -275,22 +251,30 @@ export function LiveMultiResultWorkspace() {
         curve.some(
           (p) => p.swap_limit === raw.suggested_swap_limit && p.solution,
         ) && (
-          <p>
-            Suggested: {raw.suggested_swap_limit} equipment actions for at least
-            95% of the best-found reference. This does not change the selected
-            point.
-          </p>
+          <div className="button-row">
+            <span>
+              Suggested: {raw.suggested_swap_limit} equipment actions for at
+              least 95% of the best-found reference.
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                ui({ solutionId: `curve-${raw.suggested_swap_limit}` })
+              }
+            >
+              View suggested cap
+            </button>
+          </div>
         )}
-    </section>
+    </div>
   );
   return (
     <div className="result-column">
-      {current.outdated && (
-        <p role="status" className="notice">
-          Result outdated — draft inputs, account, prices, catalog or model
-          changed. The original submitted result remains displayed.
-        </p>
-      )}
+      <ResultFreshness
+        outdated={current.outdated}
+        draftChanged={current.draftChanged}
+        contextStale={current.contextStale}
+      />
       {result.scenario.request.mode === "future" && (
         <p className="notice">
           Hypothetical submitted result · assumptions retained with this result.
@@ -299,7 +283,11 @@ export function LiveMultiResultWorkspace() {
       {solution ? (
         <>
           <section className={`panel ${current.outdated ? "is-stale" : ""}`}>
-            <h2>Best joint configuration found</h2>
+            <h2>
+              {isDefault
+                ? "Best joint configuration found"
+                : "Selected joint setup"}
+            </h2>
             <h3>Joint performance</h3>
             <strong
               className="verdict-dps gold numeric"
@@ -321,6 +309,21 @@ export function LiveMultiResultWorkspace() {
               Maximum equipment actions across required transitions:{" "}
               {solution.maximum_actions}.
             </p>
+            {curvePanel}
+            {solution.transitions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const section = document.getElementById(
+                    "selected-switch-sequence",
+                  );
+                  section?.focus({ preventScroll: true });
+                  section?.scrollIntoView?.();
+                }}
+              >
+                Jump to switch sequence
+              </button>
+            )}
           </section>
           {request.wilderness && solution.wilderness_risk && (
             <section className="panel" aria-label="Wilderness risk">
@@ -332,13 +335,15 @@ export function LiveMultiResultWorkspace() {
               />
             </section>
           )}
-          <div className="comparison-grid">{roleIds.map(equipmentCard)}</div>
-          <JointPurchases
+          <div className="comparison-grid" id="selected-outfit" tabIndex={-1}>
+            {roleIds.map(equipmentCard)}
+          </div>
+          <AcquisitionChecklist
             solution={solution}
-            identity={`${result.fingerprint}:${current.solutionId}:${result.priceRevision}`}
-            itemName={itemName}
+            roles={roles}
+            selectionKey={`${archiveRunId(result) ?? result.fingerprint}:${current.solutionId}`}
+            itemById={itemById}
           />
-          {curvePanel}
         </>
       ) : (
         <>
@@ -363,8 +368,8 @@ export function LiveMultiResultWorkspace() {
                 recommendations.
               </p>
             )}
+            {curvePanel}
           </section>
-          {curvePanel}
         </>
       )}
       <RunningCostFrontier
@@ -380,13 +385,19 @@ export function LiveMultiResultWorkspace() {
           result={result}
           swapLimit={selectedSwapLimit}
           selectedId={current.solutionId}
-          onSelect={(id, raw) =>
+          selectedSolution={solution}
+          labOriginId={labOriginId}
+          selectionRevision={current.selectionRevision}
+          onSelect={(id, raw, runId, groupId, selectionRevision) =>
             selectObjective(
               "multi",
               id,
               raw,
               selectedSwapLimit,
               result.fingerprint,
+              runId,
+              groupId,
+              selectionRevision,
             )
           }
         />
@@ -407,13 +418,15 @@ export function LiveMultiResultWorkspace() {
               {shared.map(itemName).join(" · ") || "None"}.
             </p>
           </section>
-          <JointTransition
-            solution={solution}
-            selected={current.selectedTransition}
-            onSelect={(selectedTransition) => ui({ selectedTransition })}
-            roleName={roleName}
-            itemName={itemName}
-          />
+          <div id="selected-switch-sequence" tabIndex={-1}>
+            <JointTransition
+              solution={solution}
+              selected={current.selectedTransition}
+              onSelect={(selectedTransition) => ui({ selectedTransition })}
+              roleName={roleName}
+              itemName={itemName}
+            />
+          </div>
           <JointInventory
             solution={solution}
             roles={roles}
@@ -491,13 +504,8 @@ export function LiveMultiResultWorkspace() {
       <OptimizationModeSummary
         result={result}
         solution={solution}
-        actionLimit={
-          point?.swap_limit ?? frontierGroup?.swap_limit ?? undefined
-        }
-        unrestricted={
-          current.solutionId === "unrestricted" ||
-          frontierGroup?.swap_limit === null
-        }
+        actionLimit={selectedSwapLimit ?? undefined}
+        unrestricted={selectedSwapLimit === null}
       />
     </div>
   );

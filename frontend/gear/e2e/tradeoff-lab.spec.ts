@@ -1,4 +1,34 @@
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import type { OptimizationDTO } from "../src/api/contracts";
+
+const isOptimization = (url: string, method: string) =>
+  new URL(url).pathname === "/ui-api/gear/optimizations" && method === "POST";
+
+async function optimize(page: Page, name = "Run optimization") {
+  const pending = page.waitForResponse((response) =>
+    isOptimization(response.url(), response.request().method()),
+  );
+  await page.getByRole("button", { name, exact: true }).click();
+  const response = await pending;
+  expect(response.status(), await response.text()).toBe(200);
+  return (await response.json()) as OptimizationDTO;
+}
+
+async function openLab(page: Page) {
+  const link = page.getByRole("link", { name: /Explore this run/ });
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  const popup = page.waitForEvent("popup");
+  await link.click();
+  return popup;
+}
+
+async function showObjectives(page: Page) {
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Tradeoff objectives/ })
+    .click();
+}
 
 test("colored default opens a full lab for the actual result without randomUUID", async ({
   page,
@@ -9,35 +39,37 @@ test("colored default opens a full lab for the actual result without randomUUID"
   });
   await page.request.post("/test/seed-optimization");
   await page.goto("/gear");
-  await page
-    .locator("summary")
-    .filter({ hasText: /^Advanced settings/ })
-    .click();
+  await showObjectives(page);
   await page.getByRole("checkbox", { name: "Accuracy", exact: true }).check();
   await page
     .getByRole("checkbox", { name: "Prayer bonus", exact: true })
     .check();
-  const pending = page.waitForResponse(
-    (response) =>
-      new URL(response.url()).pathname === "/ui-api/gear/optimizations" &&
-      response.request().method() === "POST",
-  );
-  await page
-    .getByRole("button", { name: "Run optimization", exact: true })
-    .click();
-  const response = await pending;
-  expect(response.status(), await response.text()).toBe(200);
-  const body = await response.json();
+  const body = await optimize(page);
   const region = page.getByRole("region", {
     name: "Objective tradeoffs",
     exact: true,
   });
+  const phone = testInfo.project.name === "mobile";
+  const chartToggle = region.getByRole("button", {
+    name: "Chart",
+    exact: true,
+  });
+  const setupsToggle = region.getByRole("button", {
+    name: "Setups",
+    exact: true,
+  });
+  if (phone) {
+    await expect(setupsToggle).toHaveAttribute("aria-pressed", "true");
+    await chartToggle.click();
+  }
   await expect(region.getByLabel("Color represents")).toBeVisible();
   await expect(region.getByLabel("Color represents")).not.toHaveValue("");
   await expect(region.getByRole("img", { name: /color scale/ })).toBeVisible();
   const chart = region.locator(".objective-scatter-plot");
   const initialSelection = chart.locator('circle[aria-pressed="true"]');
   await expect(initialSelection).toHaveCount(1);
+  const initialLabel = (await initialSelection.getAttribute("aria-label"))!;
+  if (phone) await setupsToggle.click();
   const selectedRow = region
     .getByRole("table", { name: "All objective tradeoffs" })
     .getByRole("row", { selected: true });
@@ -47,11 +79,10 @@ test("colored default opens a full lab for the actual result without randomUUID"
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     selectedRow.getByRole("cell", {
-      name: body.result.selected_solution.score.toFixed(3),
+      name: body.result.selected_solution!.score.toFixed(3),
       exact: true,
     }),
   ).toBeVisible();
-  const initialLabel = (await initialSelection.getAttribute("aria-label"))!;
   const positions = () =>
     chart.locator("circle").evaluateAll((circles) =>
       Object.fromEntries(
@@ -82,7 +113,8 @@ test("colored default opens a full lab for the actual result without randomUUID"
   const layout = async () => ({
     chart: await chart.boundingBox(),
     table: await frontierTable.boundingBox(),
-    scrollY: await page.evaluate(() => window.scrollY),
+    activeRow: await alternative.boundingBox(),
+    startingRow: await starting.boundingBox(),
     rows: await frontierTable.locator("tbody button").allTextContents(),
   });
   const beforeLayout = await layout();
@@ -98,13 +130,12 @@ test("colored default opens a full lab for the actual result without randomUUID"
     exact: true,
   });
   await starting.click();
-  await expect(original).toHaveAttribute("aria-pressed", "true");
   await expect(
     selectedRow.getByRole("button", { name: "Starting setup" }),
   ).toHaveAttribute("aria-pressed", "true");
-  const popupEvent = page.waitForEvent("popup");
-  await region.getByRole("link", { name: /Open full tradeoff lab/ }).click();
-  const lab = await popupEvent;
+  if (phone) await chartToggle.click();
+  await expect(original).toHaveAttribute("aria-pressed", "true");
+  const lab = await openLab(page);
   const requests: string[] = [];
   lab.on("request", (request) => {
     if (request.url().includes("/ui-api/")) requests.push(request.url());
@@ -113,9 +144,8 @@ test("colored default opens a full lab for the actual result without randomUUID"
     "Tradeoff lab",
   );
   expect(new URL(lab.url()).searchParams.get("session")).toBeTruthy();
-  await expect(
-    lab.getByText(body.scenario.roles[0].target.name, { exact: true }),
-  ).toBeVisible();
+  const [{ target }] = body.scenario.roles as { target: { name: string } }[];
+  await expect(lab.getByText(target.name, { exact: true })).toBeVisible();
   await expect(
     lab.getByText(/Saved from the current optimization result/),
   ).toBeVisible();
@@ -123,7 +153,7 @@ test("colored default opens a full lab for the actual result without randomUUID"
     lab.getByText("Animated Black Armour", { exact: true }),
   ).toHaveCount(0);
   const table = lab.getByRole("table", {
-    name: "Saved example configurations",
+    name: "Saved configurations",
     exact: true,
   });
   await lab.getByText("Browse saved configurations", { exact: true }).click();
@@ -137,7 +167,7 @@ test("colored default opens a full lab for the actual result without randomUUID"
     name: "Selected configuration",
   });
   await expect(inspector).toContainText(
-    body.result.selected_solution.score.toFixed(3),
+    body.result.selected_solution!.score.toFixed(3),
   );
   expect(requests).toEqual([]);
   expect(
@@ -152,8 +182,131 @@ test("colored default opens a full lab for the actual result without randomUUID"
     path: testInfo.outputPath("current-result-lab.png"),
     fullPage: true,
   });
-  await lab.close();
+  const closed = lab.waitForEvent("close");
+  await lab.getByRole("button", { name: "Back to Gear results" }).click();
+  await closed;
+  await expect(original).toHaveAttribute("aria-pressed", "true");
 });
+
+for (const workspace of ["single", "multi"] as const) {
+  test(`Lab applies an archived setup to its originating ${workspace} tab`, async ({
+    page,
+    context,
+  }, testInfo) => {
+    await page.request.post("/test/seed-joint");
+    await page.goto("/gear");
+    if (workspace === "single") {
+      await page.getByRole("button", { name: "Auto", exact: true }).click();
+    } else {
+      await page
+        .getByRole("button", { name: "Multi-style", exact: true })
+        .click();
+    }
+    await showObjectives(page);
+    await page.getByRole("checkbox", { name: "Accuracy", exact: true }).check();
+    const body = await optimize(page);
+    const otherOptimizer = await context.newPage();
+    await otherOptimizer.goto("/gear");
+    await expect(
+      otherOptimizer.getByRole("button", {
+        name: "Run optimization",
+        exact: true,
+      }),
+    ).toBeEnabled();
+
+    const frontier =
+      workspace === "single"
+        ? body.result.discipline_results
+            ?.find((branch) => branch.discipline === "ranged")
+            ?.objective_frontiers?.find(
+              (group) =>
+                group.points.length > 0 &&
+                group.swap_limit === body.scenario.max_swaps,
+            )
+        : body.result.objective_frontiers?.find(
+            (group) =>
+              group.points.length > 0 &&
+              group.swap_limit !== null &&
+              group.swap_limit !== body.scenario.max_swaps,
+          );
+    expect(frontier).toBeDefined();
+    if (workspace === "single") {
+      await page.getByRole("tab", { name: "Ranged", exact: true }).click();
+    } else {
+      await page
+        .getByRole("combobox", { name: "Swap-efficiency curve point" })
+        .selectOption(`curve-${frontier!.swap_limit}`);
+    }
+    const lab = await openLab(page);
+    await lab.getByText("Browse saved configurations", { exact: true }).click();
+    await lab
+      .getByRole("table", { name: "Saved configurations", exact: true })
+      .getByRole("button", { name: "Loadout 001", exact: true })
+      .click();
+
+    const optimizationPosts: string[] = [];
+    const track = (request: { url(): string; method(): string }) => {
+      if (isOptimization(request.url(), request.method()))
+        optimizationPosts.push(request.url());
+    };
+    context.on("request", track);
+    const apply = lab.getByRole("button", {
+      name: "Use this setup in Gear optimizer",
+    });
+    await apply.click();
+    await expect(
+      lab
+        .getByRole("complementary", { name: "Selected configuration" })
+        .getByRole("status"),
+    ).toContainText("Loadout 001 selected in the original Gear optimizer tab.");
+
+    const selectedId = (optimizer: Page) =>
+      optimizer.evaluate((mode) => {
+        const key = Object.keys(sessionStorage).find(
+          (key) => key.startsWith("gear-results:") && key.endsWith(`:${mode}`),
+        );
+        return key ? JSON.parse(sessionStorage.getItem(key)!).solutionId : null;
+      }, workspace);
+    await expect.poll(() => selectedId(page)).toBe(frontier!.points[0].id);
+    expect(await selectedId(otherOptimizer)).toBeNull();
+    expect(optimizationPosts).toEqual([]);
+    context.off("request", track);
+
+    if (workspace === "single") {
+      await expect(
+        page.getByRole("tab", { name: "Ranged", exact: true }),
+      ).toHaveAttribute("aria-selected", "true");
+      const rerun = await optimize(page, "Reoptimize");
+      expect(rerun.scenario_fingerprint).toBe(body.scenario_fingerprint);
+      expect(rerun.run_id ?? rerun.result.run_id).not.toBe(
+        body.run_id ?? body.result.run_id,
+      );
+      await expect.poll(() => selectedId(page)).toBe("best-found");
+      await apply.click();
+      await expect(lab.getByRole("alert")).toContainText("run has changed");
+      expect(await selectedId(page)).toBe("best-found");
+    } else {
+      await expect(
+        page.getByRole("combobox", { name: "Swap-efficiency curve point" }),
+      ).toHaveValue(`curve-${frontier!.swap_limit}`);
+    }
+    await lab.close();
+    await otherOptimizer.close();
+    if (workspace === "multi") {
+      if (testInfo.project.name === "mobile")
+        await page.getByRole("button", { name: "Open navigation" }).click();
+      await page.getByRole("link", { name: "Explore example" }).click();
+      await page
+        .getByRole("link", { name: "Gear optimizer", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/gear#multi$/);
+      await expect(
+        page.getByRole("combobox", { name: "Swap-efficiency curve point" }),
+      ).toHaveValue(`curve-${frontier!.swap_limit}`);
+      expect(await selectedId(page)).toBe(frontier!.points[0].id);
+    }
+  });
+}
 
 test("saved tradeoff lab links five views without optimizer requests", async ({
   page,

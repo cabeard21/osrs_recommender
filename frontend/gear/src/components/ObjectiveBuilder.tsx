@@ -24,9 +24,13 @@ export function ObjectiveBuilder({
   legacyPriority,
   onChange,
   wilderness = false,
+  wildernessControl = false,
+  showHeading = true,
   mode = "fast",
 }: {
   wilderness?: boolean;
+  wildernessControl?: boolean;
+  showHeading?: boolean;
   objectives?: Objective[];
   legacyPriority?: SecondaryPriority;
   onChange: (goals: Objective[]) => void;
@@ -80,7 +84,7 @@ export function ObjectiveBuilder({
   })();
   return (
     <section aria-label="Tradeoff objectives" className="objective-builder">
-      <h3>Tradeoff objectives</h3>
+      {showHeading && <h3>Tradeoff objectives</h3>}
       <p>
         DPS is always included. Choose the tradeoffs your gear should improve.
       </p>
@@ -141,7 +145,11 @@ export function ObjectiveBuilder({
             <legend>Other objectives</legend>
             <div className="objective-checks">
               {atomicObjectives
-                .filter(([id]) => wilderness || id !== "wilderness_loss_gp")
+                .filter(
+                  ([id]) =>
+                    id !== "wilderness_loss_gp" ||
+                    (wilderness && !wildernessControl),
+                )
                 .map(([id, label]) => (
                   <label key={id}>
                     <input
@@ -153,6 +161,9 @@ export function ObjectiveBuilder({
                   </label>
                 ))}
             </div>
+            {wilderness && wildernessControl && (
+              <p>Set the loss objective in Wilderness settings.</p>
+            )}
           </fieldset>
         </>
       )}

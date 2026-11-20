@@ -7,7 +7,13 @@ import type {
   Style,
   Workspace,
 } from "../api/contracts";
+import {
+  activeTimeWeight,
+  fightDuration,
+  validationMessage,
+} from "../state/setupValidation";
 import { CombatOptionsControls } from "./CombatOptionsControls";
+import { FieldError, fieldProps } from "./FieldError";
 import { ItemSearch } from "./ItemSearch";
 import { RoleTargetEditor } from "./RoleTargetEditor";
 import { PrayerFields, prayerCatalog } from "./PrayerFields";
@@ -186,9 +192,16 @@ export function RoleFields({
   const noDisciplines =
     !!role.autoDiscipline && role.allowedDisciplines?.length === 0;
   const isAtMinimumRoles = draft.roles.length <= 2;
+  const nameError = role.name.trim()
+    ? undefined
+    : "Configuration name is required.";
+  const weightError = validationMessage(() => activeTimeWeight(role.weight));
+  const durationError = validationMessage(() =>
+    fightDuration(role.fightDurationSeconds),
+  );
   return (
     <fieldset>
-      <legend>
+      <legend className={isMulti ? undefined : "sr-only"}>
         {isMulti ? `Configuration ${index + 1}` : "Combat discipline"}
       </legend>
       {isMulti && (
@@ -197,9 +210,11 @@ export function RoleFields({
             Name
             <input
               value={role.name}
+              {...fieldProps(`${role.id}-name`, nameError)}
               onChange={(e) => onChange({ name: e.target.value })}
             />
           </label>
+          <FieldError id={`${role.id}-name`} message={nameError} />
           <label className="check">
             <input
               type="checkbox"
@@ -245,87 +260,6 @@ export function RoleFields({
       )}
       {!role.utility && (
         <>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={role.safeSpotting ?? false}
-              aria-describedby={`${role.id}-safespot-help`}
-              onChange={(event) =>
-                onChange({ safeSpotting: event.target.checked })
-              }
-            />
-            Safe spotting
-          </label>
-          <p id={`${role.id}-safespot-help`}>
-            Require attacks with at least two-tile reach. Choose a suitable
-            obstacle or location; your selected combat options and locks still
-            apply.
-          </p>
-          <label>
-            Fight duration for status damage (seconds)
-            <input
-              type="number"
-              min="1"
-              max="3600"
-              step="1"
-              value={role.fightDurationSeconds ?? "60"}
-              onChange={(event) =>
-                onChange({ fightDurationSeconds: event.target.value })
-              }
-            />
-          </label>
-          <p>
-            Poison and venom are averaged over this window against a fresh
-            target. Configurations are scored independently.
-          </p>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={role.onSlayerTask ?? false}
-              aria-describedby={`${role.id}-slayer-help`}
-              onChange={(event) =>
-                onChange({ onSlayerTask: event.target.checked })
-              }
-            />
-            On a Slayer task
-          </label>
-          <p id={`${role.id}-slayer-help`}>
-            This target counts toward my current Slayer task.
-          </p>
-          {(role.style === "magic" || role.autoDiscipline) && (
-            <>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={role.markOfDarkness ?? false}
-                  aria-describedby={`${role.id}-mark-help`}
-                  onChange={(event) =>
-                    onChange({ markOfDarkness: event.target.checked })
-                  }
-                />
-                Maintain Mark of Darkness
-              </label>
-              <p id={`${role.id}-mark-help`}>
-                Applies to demonbane spells only; includes rune upkeep.
-                Refreshes use the selected weapon.
-              </p>
-              {!!context?.live?.capabilities.mark_of_darkness &&
-                (
-                  context.live.capabilities.mark_of_darkness as {
-                    available: boolean;
-                    reason?: string;
-                  }
-                ).available === false && (
-                  <p className="notice">
-                    {(
-                      context.live.capabilities.mark_of_darkness as {
-                        reason?: string;
-                      }
-                    ).reason ?? "Mark of Darkness access is not confirmed."}
-                  </p>
-                )}
-            </>
-          )}
           <div
             className="segmented"
             role="group"
@@ -439,6 +373,111 @@ export function RoleFields({
               onChange={onChange}
             />
           )}
+          <details className="role-modifiers">
+            <summary>
+              Combat modifiers
+              <small>
+                {" · "}
+                {[
+                  role.safeSpotting && "Safe spotting",
+                  role.onSlayerTask && "Slayer task",
+                  (role.style === "magic" || role.autoDiscipline) &&
+                    role.markOfDarkness &&
+                    "Mark of Darkness",
+                  `${role.fightDurationSeconds || "60"}s status damage`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </small>
+            </summary>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={role.safeSpotting ?? false}
+                aria-describedby={`${role.id}-safespot-help`}
+                onChange={(event) =>
+                  onChange({ safeSpotting: event.target.checked })
+                }
+              />
+              Safe spotting
+            </label>
+            <p id={`${role.id}-safespot-help`}>
+              Require attacks with at least two-tile reach. Choose a suitable
+              obstacle or location; your selected combat options and locks still
+              apply.
+            </p>
+            <label>
+              Fight duration for status damage (seconds)
+              <input
+                type="number"
+                min="1"
+                max="3600"
+                step="1"
+                data-run-on-enter
+                value={role.fightDurationSeconds ?? "60"}
+                {...fieldProps(`${role.id}-fight-duration`, durationError)}
+                onChange={(event) =>
+                  onChange({ fightDurationSeconds: event.target.value })
+                }
+              />
+            </label>
+            <FieldError
+              id={`${role.id}-fight-duration`}
+              message={durationError}
+            />
+            <p>
+              Poison and venom are averaged over this window against a fresh
+              target. Configurations are scored independently.
+            </p>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={role.onSlayerTask ?? false}
+                aria-describedby={`${role.id}-slayer-help`}
+                onChange={(event) =>
+                  onChange({ onSlayerTask: event.target.checked })
+                }
+              />
+              On a Slayer task
+            </label>
+            <p id={`${role.id}-slayer-help`}>
+              This target counts toward my current Slayer task.
+            </p>
+            {(role.style === "magic" || role.autoDiscipline) && (
+              <>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={role.markOfDarkness ?? false}
+                    aria-describedby={`${role.id}-mark-help`}
+                    onChange={(event) =>
+                      onChange({ markOfDarkness: event.target.checked })
+                    }
+                  />
+                  Maintain Mark of Darkness
+                </label>
+                <p id={`${role.id}-mark-help`}>
+                  Applies to demonbane spells only; includes rune upkeep.
+                  Refreshes use the selected weapon.
+                </p>
+                {!!context?.live?.capabilities.mark_of_darkness &&
+                  (
+                    context.live.capabilities.mark_of_darkness as {
+                      available: boolean;
+                      reason?: string;
+                    }
+                  ).available === false && (
+                    <p className="notice">
+                      {(
+                        context.live.capabilities.mark_of_darkness as {
+                          reason?: string;
+                        }
+                      ).reason ?? "Mark of Darkness access is not confirmed."}
+                    </p>
+                  )}
+              </>
+            )}
+          </details>
           <PrayerFields
             policy={role.prayers}
             catalog={prayerCatalog(context, draft)}
@@ -449,17 +488,22 @@ export function RoleFields({
       {isMulti && (
         <>
           {!role.utility && (
-            <label>
-              Active-time weight
-              <input
-                type="number"
-                min="0"
-                max="1000000"
-                step="any"
-                value={role.weight}
-                onChange={(e) => onChange({ weight: e.target.value })}
-              />
-            </label>
+            <>
+              <label>
+                Active-time weight
+                <input
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="any"
+                  data-run-on-enter
+                  value={role.weight}
+                  {...fieldProps(`${role.id}-weight`, weightError)}
+                  onChange={(e) => onChange({ weight: e.target.value })}
+                />
+              </label>
+              <FieldError id={`${role.id}-weight`} message={weightError} />
+            </>
           )}
           <button disabled={isAtMinimumRoles} onClick={onRemove}>
             <Trash2 size={14} /> Remove configuration

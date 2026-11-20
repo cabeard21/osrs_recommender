@@ -614,7 +614,10 @@ function LiveItemInspector() {
         {current.outdated && (
           <div className="notice">
             <p>Result outdated. Re-run before previewing alternatives.</p>
-            <button disabled={current.pending} onClick={() => void run()}>
+            <button
+              disabled={current.pending}
+              onClick={() => void run({ fromInspector: true })}
+            >
               Re-run optimization
             </button>
           </div>

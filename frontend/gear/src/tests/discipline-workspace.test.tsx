@@ -224,7 +224,7 @@ it("shows viewed discipline equipment while preserving the overall Auto winner",
   const dispatch = setup();
   expect(screen.getByText("Equipped weapon 50")).toBeVisible();
   expect(screen.queryByText("Equipped weapon 100")).toBeNull();
-  expect(screen.getByText(/Auto selected melee/)).toBeVisible();
+  expect(screen.getByText(/Auto selected ranged/)).toBeVisible();
   expect(screen.getByRole("tab", { name: "Ranged" })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -241,7 +241,8 @@ it("shows viewed discipline equipment while preserving the overall Auto winner",
 it("shows selected discipline frontier equipment", () => {
   setup("discipline-ranged-frontier-8-a");
   expect(screen.getByText("Equipped weapon 40")).toBeVisible();
-  expect(screen.getByText(/Auto selected melee/)).toBeVisible();
+  expect(screen.getByText(/Auto selected ranged/)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Selected setup" })).toBeVisible();
 });
 it.each([
   ["best-found", "100"],
@@ -322,7 +323,9 @@ it("shows manual context and hypothetical acquisition assumptions", () => {
   expect(screen.getByText(/Hypothetical submitted result/)).toBeVisible();
   expect(screen.getByText(/Hypothetically acquired IDs: 55/)).toBeVisible();
   expect(screen.getByText(/Result outdated/)).toBeVisible();
-  expect(screen.getByText(/Concrete purchases counted once/)).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Acquisition checklist" }),
+  ).toBeVisible();
   expect(screen.queryByText(/Auto selected/)).toBeNull();
 });
 it("compares previous results under matching assumptions", async () => {

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import TradeoffLab from "./TradeoffLab";
 import { example, type LabExample } from "./model";
 
@@ -43,6 +43,61 @@ const dynamic: LabExample = {
 };
 
 describe("temporary tradeoff lab", () => {
+  it("keeps the Lab open when the original tab is unavailable or the browser blocks closing", async () => {
+    const close = vi.spyOn(window, "close").mockImplementation(() => {});
+    const checkOrigin = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("The original Gear optimizer tab is unavailable."),
+      )
+      .mockResolvedValueOnce(undefined);
+    try {
+      render(<TradeoffLab data={dynamic} onBackToResults={checkOrigin} />);
+      const back = screen.getByRole("button", { name: "Back to Gear results" });
+      fireEvent.click(back);
+      expect(
+        await screen.findByText(
+          "The original Gear optimizer tab is unavailable.",
+        ),
+      ).toHaveAttribute("role", "status");
+      expect(close).not.toHaveBeenCalled();
+      fireEvent.click(back);
+      expect(
+        await screen.findByText(
+          "Switch to the original Gear optimizer tab to see your results.",
+        ),
+      ).toHaveAttribute("role", "status");
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      close.mockRestore();
+    }
+  });
+
+  it("offers the return action only for snapshots with an originating optimizer", async () => {
+    const action = "Use this setup in Gear optimizer";
+    const { rerender } = render(<TradeoffLab />);
+    expect(screen.queryByRole("button", { name: action })).toBeNull();
+    const apply = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("The optimization run has changed."))
+      .mockResolvedValueOnce(undefined);
+    rerender(<TradeoffLab key="current" data={dynamic} onUseSetup={apply} />);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Color select ${dynamic.points[1].label}`,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The optimization run has changed.",
+    );
+    expect(apply).toHaveBeenCalledExactlyOnceWith("other");
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    const sent = await screen.findByText(
+      /selected in the original Gear optimizer tab/,
+    );
+    expect(sent).toHaveAttribute("role", "status");
+  });
   it("retains fractional objective values and small deltas in the inspector and table", () => {
     const data: LabExample = {
       ...dynamic,
@@ -84,7 +139,7 @@ describe("temporary tradeoff lab", () => {
     expect(within(inspector).getAllByText("+0.25")).toHaveLength(2);
     fireEvent.click(screen.getByText("Browse saved configurations"));
     const table = screen.getByRole("table", {
-      name: "Saved example configurations",
+      name: "Saved configurations",
     });
     expect(within(table).getByText("17,390.25")).toBeVisible();
     expect(within(table).getByText("17,390.5")).toBeVisible();
@@ -109,7 +164,7 @@ describe("temporary tradeoff lab", () => {
     ).toBeVisible();
     fireEvent.click(screen.getByText("Browse saved configurations"));
     const table = screen.getByRole("table", {
-      name: "Saved example configurations",
+      name: "Saved configurations",
     });
     expect(
       within(table).getByRole("columnheader", { name: "Magic damage" }),

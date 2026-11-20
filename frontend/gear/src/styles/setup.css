@@ -1,0 +1,132 @@
+.configuration .setup-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 12px;
+}
+
+.setup-heading .saved-setups {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+.setup-heading .saved-setups[open] {
+  flex-basis: 100%;
+}
+
+.setup-core,
+.setup-disclosures {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+
+.setup-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border, #353d4a);
+  border-radius: 8px;
+}
+
+.setup-card h3 {
+  margin-bottom: 8px;
+}
+
+.setup-card > fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.setup-card select {
+  max-width: 100%;
+}
+
+.setup-card .segmented {
+  flex-wrap: wrap;
+}
+
+.setup-card .segmented > button {
+  flex: 1 1 auto;
+}
+
+.setup-card .role-card > summary {
+  text-transform: none;
+}
+
+.workspace.multi-workspace:not(.has-result) .role-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.setup-disclosures > details {
+  margin: 0;
+}
+
+.setup-objectives small,
+.setup-disclosures summary small,
+.role-modifiers summary small {
+  overflow-wrap: anywhere;
+}
+
+.configuration .wilderness-settings {
+  min-width: 0;
+  margin: 0;
+}
+
+.wilderness-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+}
+
+.protocol .run-readback {
+  margin-top: 3px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 901px) {
+  .workspace:not(.has-result) > .config-lock,
+  .workspace:not(.has-result) > .empty-result,
+  .workspace:not(.has-result) > .result-column {
+    grid-column: 1 / -1;
+  }
+
+  .workspace:not(.has-result) .setup-core,
+  .workspace:not(.has-result) .setup-disclosures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace:not(.has-result) .setup-combat-multi {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1440px) {
+  .workspace:not(.has-result):not(.multi-workspace) .setup-core {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .protocol.panel:has(.run-readback) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .protocol.panel > div:first-child:has(.run-readback) {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .protocol.panel:has(.run-readback) .button-row {
+    flex-wrap: wrap;
+  }
+}

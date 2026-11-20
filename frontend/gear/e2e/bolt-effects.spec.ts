@@ -18,6 +18,10 @@ test("NPC current HP survives reload and reaches optimization; result explains b
   await page
     .getByRole("button", { name: npcEntryLabel(entry), exact: true })
     .click();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Target hitpoints/ })
+    .click();
   await expect(page.getByLabel("Target base hitpoints")).toHaveAttribute(
     "readonly",
   );

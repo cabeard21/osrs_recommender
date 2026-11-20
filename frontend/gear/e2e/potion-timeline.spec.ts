@@ -8,12 +8,16 @@ for (const potion of ["Super strength", "Divine super strength"]) {
     await page.goto("/gear-next/");
     await page
       .locator("summary")
-      .filter({ hasText: /^Advanced settings/ })
+      .filter({ hasText: /^Tradeoff objectives/ })
       .click();
     await page
       .getByRole("region", { name: "Tradeoff objectives", exact: true })
       .getByLabel("Accuracy", { exact: true })
       .check();
+    await page
+      .locator("summary")
+      .filter({ hasText: /^Combat resources/ })
+      .click();
     await page.getByLabel("Optimize potions", { exact: true }).check();
     await page.getByLabel(potion, { exact: true }).check();
     const optimization = page.waitForResponse(

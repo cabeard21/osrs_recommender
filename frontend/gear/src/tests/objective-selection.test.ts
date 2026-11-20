@@ -3,7 +3,7 @@ import type { ObjectiveFrontierGroup } from "../api/contracts";
 import {
   isDisciplineSolution,
   selectedObjectiveGroup,
-} from "../components/LiveResultWorkspace";
+} from "../state/resultSelection";
 
 it("keeps a selected scoped objective point in its Auto discipline tab", () => {
   expect(

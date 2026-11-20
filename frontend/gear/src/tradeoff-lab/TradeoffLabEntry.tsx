@@ -1,14 +1,25 @@
 import { useState } from "react";
 import TradeoffLab from "./TradeoffLab";
-import { loadLabSnapshot } from "./snapshot";
+import { requestLabOrigin, requestLabReturn } from "./returnSelection";
+import { loadLabSession } from "./snapshot";
 
 export default function TradeoffLabEntry() {
+  const gearHref = location.hash === "#multi" ? "/gear#multi" : "/gear";
   const [loaded] = useState(() => {
     const params = new URLSearchParams(location.search);
     if (!params.has("session")) return {};
     const token = params.get("session")!;
     try {
-      return { data: loadLabSnapshot(token) };
+      const { snapshot, returnTarget } = loadLabSession(token);
+      return {
+        data: snapshot,
+        onBackToResults: returnTarget
+          ? () => requestLabOrigin(returnTarget.originId)
+          : undefined,
+        onUseSetup: returnTarget
+          ? (pointId: string) => requestLabReturn(token, pointId)
+          : undefined,
+      };
     } catch (error) {
       return { error: (error as Error).message };
     }
@@ -22,10 +33,18 @@ export default function TradeoffLabEntry() {
         <h1>Tradeoff lab unavailable</h1>
         <p role="alert">{loaded.error}</p>
         <p>
-          Open the lab again from the optimization result you want to explore.
+          Switch to the original Gear optimizer tab to see your results or
+          reopen the Lab.
         </p>
-        <a href="/gear">Return to Gear optimizer</a>
+        <a href={gearHref}>Open Gear optimizer</a>
       </main>
     );
-  return <TradeoffLab data={loaded.data} />;
+  return (
+    <TradeoffLab
+      data={loaded.data}
+      gearHref={gearHref}
+      onBackToResults={loaded.onBackToResults}
+      onUseSetup={loaded.onUseSetup}
+    />
+  );
 }

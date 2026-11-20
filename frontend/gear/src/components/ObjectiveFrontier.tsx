@@ -1,247 +1,237 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { JointSolutionDTO, OptimizationReply } from "../api/contracts";
-import { ObjectiveScatter } from "./ObjectiveScatter";
-import { useRetainedObjectivePoints } from "./useRetainedObjectivePoints";
-import {
-  parseWildernessRisk,
-  riskWithinBudget,
-  wildernessRiskCap,
-} from "../api/wilderness";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import type {
+  JointSolutionDTO,
+  ObjectiveFrontierGroup,
+  OptimizationReply,
+} from "../api/contracts";
+import { canonicalObjectives, objectiveValues } from "../api/objectives";
+import { parseWildernessRisk, wildernessRiskCap } from "../api/wilderness";
 import {
   createLabSnapshot,
   selectedLabSolution,
   storeLabSnapshot,
 } from "../tradeoff-lab/snapshot";
+import { ObjectiveScatter } from "./ObjectiveScatter";
+import { ObjectiveSelectionSummary } from "./ObjectiveSelectionSummary";
+import { ObjectiveTradeoffTable } from "./ObjectiveTradeoffTable";
+import { tradeoffPoint, type TradeoffPoint } from "./objectiveTradeoff";
 import {
-  canonicalObjectives,
-  objectiveValues,
-  type ObjectiveDefinition,
-} from "../api/objectives";
+  fetchObjectiveArchive,
+  useObjectiveArchive,
+} from "./useObjectiveArchive";
+import { useRetainedObjectivePoints } from "./useRetainedObjectivePoints";
 
-interface Point {
-  id: string;
-  score: number;
-  objective_values: Record<string, number | null>;
-  purchase_cost_gp: number;
-  wilderness_loss_gp?: number | null;
-  maximum_actions: number;
-}
-interface Page {
-  points: Point[];
-  total: number;
-  next_cursor: string | null;
-}
-function format(
-  value: number | null | undefined,
-  definition?: ObjectiveDefinition,
-) {
-  if (value == null || !Number.isFinite(value)) return "Unavailable";
-  if (definition?.unit === "probability") return (value * 100).toFixed(2) + "%";
-  if (definition?.unit === "GP") return value.toLocaleString();
-  if (definition?.unit === "percent") return value.toFixed(2) + "%";
-  if (definition?.unit === "roll") return (value / 1000).toFixed(2) + "k";
-  if (definition?.unit === "GP/damage") return value.toFixed(4);
-  return value.toFixed(3);
-}
-async function get(path: string, signal?: AbortSignal) {
-  const response = await fetch("/ui-api/gear/optimization-runs/" + path, {
-    credentials: "same-origin",
-    cache: "no-store",
-    signal,
-  });
-  if (response.status === 410)
-    throw new Error(
-      "This optimization session has expired. Run optimization again to browse its tradeoffs.",
-    );
-  if (!response.ok)
-    throw new Error(
-      "Unable to load objective results (" + response.status + ").",
-    );
-  return response.json();
-}
-export function ObjectiveFrontier({
-  result,
-  swapLimit,
-  selectedId,
-  onSelect,
-}: {
+interface FrontierProps {
   result: OptimizationReply;
   swapLimit: number | null;
   selectedId: string;
-  onSelect: (id: string, raw: JointSolutionDTO) => void;
-}) {
-  const definitions = result.live?.result.objective_definitions ?? [];
-  const lossCap = wildernessRiskCap(result.scenario.request);
-  const wilderness = lossCap !== undefined;
-  const separateRisk =
-    wilderness && !definitions.some((d) => d.kind === "wilderness_loss_gp");
+  selectedSolution?: JointSolutionDTO | null;
+  selectionRevision?: number;
+  labOriginId?: string | null;
+  onSelect: (
+    id: string,
+    raw: JointSolutionDTO,
+    runId?: string,
+    groupId?: string,
+    selectionRevision?: number,
+  ) => void;
+}
+
+interface ScopedFrontier extends FrontierProps {
+  group: ObjectiveFrontierGroup;
+  runId: string | undefined;
+}
+
+type Ordering = { sort: string; direction: "asc" | "desc" };
+const DEFAULT_ORDER: Ordering = { sort: "dps", direction: "desc" };
+
+export function ObjectiveFrontier(props: FrontierProps) {
+  const { result, swapLimit } = props;
   const group = result.live?.result.objective_frontiers?.find(
-    (g) => g.swap_limit === swapLimit,
+    (candidate) => candidate.swap_limit === swapLimit,
   );
+  if (!group || result.scenario.request.objectives === undefined) return null;
   const runId = result.live?.run_id ?? result.live?.result.run_id;
-  const groupId = group?.id ?? group?.group_id;
-  const selectionVersion = useRef(0);
-  useEffect(() => {
-    selectionVersion.current += 1;
-  }, [result, groupId]);
-  const [preferredSort, setSort] = useState("dps"),
-    [direction, setDirection] = useState("desc");
-  const sort =
-    !wilderness && preferredSort === "wilderness_loss_gp"
-      ? "dps"
-      : preferredSort;
-  const [cursors, setCursors] = useState<(string | null)[]>([null]);
-  const cursor = cursors[cursors.length - 1];
-  const [page, setPage] = useState<Page | null>(null),
-    [error, setError] = useState("");
-  const [loading, setLoading] = useState(false),
-    [selecting, setSelecting] = useState(false);
-  const samples = useMemo(
-    () =>
-      (group?.points ?? []).map((p) => ({
-        id: p.id,
-        score: p.solution.score,
-        objective_values: p.solution.objective_values ?? {},
-        purchase_cost_gp: p.solution.purchase_cost_gp,
-        wilderness_loss_gp: p.solution.wilderness_risk?.loss_gp,
-        maximum_actions: p.solution.maximum_actions,
-      })),
-    [group],
+  return (
+    <FrontierRun
+      key={runId ?? result.fingerprint}
+      {...props}
+      group={group}
+      runId={runId}
+    />
   );
-  const axes = [{ id: "dps", label: "DPS" }, ...definitions];
+}
+
+function FrontierRun(props: ScopedFrontier) {
+  const definitions = props.result.live?.result.objective_definitions ?? [];
+  const lossCap = wildernessRiskCap(props.result.scenario.request);
+  const separateRisk =
+    lossCap !== undefined &&
+    !definitions.some((d) => d.kind === "wilderness_loss_gp");
+  const sortOptions = [
+    { id: "dps", label: "DPS" },
+    ...definitions,
+    { id: "purchase_cost_gp", label: "Purchase cost" },
+    ...(separateRisk
+      ? [{ id: "wilderness_loss_gp", label: "Wilderness risk" }]
+      : []),
+    { id: "maximum_actions", label: "Maximum actions" },
+  ];
+  const [preferredOrder, setOrdering] = useState(DEFAULT_ORDER);
+  const ordering = sortOptions.some(
+    (option) => option.id === preferredOrder.sort,
+  )
+    ? preferredOrder
+    : DEFAULT_ORDER;
   const scope = JSON.stringify([
+    props.group.id ?? props.group.group_id,
+    props.swapLimit,
+    definitions.map((definition) => definition.id),
+  ]);
+  return (
+    <FrontierGroup
+      key={scope}
+      {...props}
+      scope={scope}
+      ordering={ordering}
+      setOrdering={setOrdering}
+      sortOptions={sortOptions}
+      lossCap={lossCap}
+      separateRisk={separateRisk}
+    />
+  );
+}
+
+function FrontierGroup({
+  result,
+  swapLimit,
+  selectedId,
+  selectedSolution,
+  selectionRevision,
+  labOriginId,
+  onSelect,
+  group,
+  runId,
+  scope,
+  ordering,
+  setOrdering,
+  sortOptions,
+  lossCap,
+  separateRisk,
+}: ScopedFrontier & {
+  scope: string;
+  ordering: Ordering;
+  setOrdering: (ordering: Ordering) => void;
+  sortOptions: { id: string; label: string }[];
+  lossCap: number | null | undefined;
+  separateRisk: boolean;
+}) {
+  const groupId = group.id ?? group.group_id;
+  const definitions = result.live?.result.objective_definitions ?? [];
+  const axes = [{ id: "dps", label: "DPS" }, ...definitions];
+  const goals = result.scenario.request.objectives ?? [];
+  const archive = useObjectiveArchive(
     runId,
     groupId,
-    swapLimit,
-    axes.map((axis) => axis.id),
-  ]);
+    ordering.sort,
+    ordering.direction,
+    JSON.stringify(goals),
+    lossCap,
+  );
+  const [phoneView, setPhoneView] = useState<"setups" | "chart">("setups");
+  const viewId = useId();
+  const [localError, setLocalError] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  useLayoutEffect(() => {
+    setSelecting(false);
+    return () => {
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+    };
+  }, [selectionRevision]);
+  const samples = group.points.map((point) =>
+    tradeoffPoint(point.id, point.solution),
+  );
   const selected =
+    selectedSolution ??
     selectedLabSolution(result, selectedId) ??
-    group?.points.find((point) => point.id === selectedId)?.solution;
-  const retained = useRetainedObjectivePoints<Point>(
+    group.points.find((point) => point.id === selectedId)?.solution ??
+    (selectedId === group.baseline_solution_id
+      ? group.baseline_solution
+      : null);
+  const retained = useRetainedObjectivePoints(
     scope,
     selected
-      ? {
-          id: selectedId,
-          score: selected.score,
-          objective_values: selected.objective_values ?? {},
-          purchase_cost_gp: selected.purchase_cost_gp,
-          wilderness_loss_gp: selected.wilderness_risk?.loss_gp,
-          maximum_actions: selected.maximum_actions,
-        }
+      ? { ...tradeoffPoint(selectedId, selected), solution: selected }
       : undefined,
   );
-  useEffect(() => {
-    setCursors([null]);
-    setPage(null);
-  }, [runId, groupId, sort, direction]);
-  useEffect(() => {
-    if (!runId || !groupId) return;
+
+  async function choose(id: string) {
+    controllerRef.current?.abort();
     const controller = new AbortController();
-    setLoading(true);
-    setError("");
-    const query = new URLSearchParams({ sort, direction, limit: "50" });
-    if (cursor) query.set("cursor", cursor);
-    get(
-      encodeURIComponent(runId) +
-        "/frontiers/" +
-        encodeURIComponent(groupId) +
-        "/points?" +
-        query,
-      controller.signal,
-    )
-      .then((data: Page) => {
-        if (
-          !Array.isArray(data.points) ||
-          !Number.isSafeInteger(data.total) ||
-          data.total < 0 ||
-          (data.next_cursor !== null && typeof data.next_cursor !== "string")
-        )
-          throw new Error("Invalid objective result page.");
-        for (const point of data.points) {
-          if (typeof point.id !== "string" || !Number.isFinite(point.score))
-            throw new Error("Invalid objective result point.");
-          if (
-            lossCap !== undefined &&
-            (!riskWithinBudget(point.wilderness_loss_gp, lossCap) ||
-              (point.objective_values.wilderness_loss_gp !== undefined &&
-                point.objective_values.wilderness_loss_gp !==
-                  point.wilderness_loss_gp))
-          )
-            throw new Error("Invalid Wilderness risk in objective result.");
-          objectiveValues(
-            point.objective_values,
-            canonicalObjectives(result.scenario.request.objectives ?? []),
-          );
-        }
-        if (!controller.signal.aborted) setPage(data);
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted) setError((e as Error).message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [runId, groupId, sort, direction, cursor, result, lossCap]);
-  const choose = async (id: string) => {
-    const version = ++selectionVersion.current;
+    controllerRef.current = controller;
     setSelecting(true);
-    setError("");
+    setLocalError("");
     try {
-      const existing = group?.points.find((point) => point.id === id);
+      const known =
+        selectedLabSolution(result, id) ??
+        retained.find((point) => point.id === id)?.solution;
       const baseline =
-        group?.baseline_solution_id === id
-          ? group.baseline_solution
-          : undefined;
-      const known = selectedLabSolution(result, id);
-      const raw =
-        existing?.solution ??
+        group.baseline_solution_id === id ? group.baseline_solution : null;
+      let solution =
+        group.points.find((point) => point.id === id)?.solution ??
         baseline ??
-        known ??
-        (
-          await get(
-            encodeURIComponent(runId!) + "/solutions/" + encodeURIComponent(id),
-          )
-        ).solution;
+        known;
+      if (!solution) {
+        if (!runId) throw new Error("This setup is unavailable.");
+        const detail = await fetchObjectiveArchive(
+          `${encodeURIComponent(runId)}/solutions/${encodeURIComponent(id)}`,
+          controller.signal,
+        );
+        solution = (detail as { solution?: JointSolutionDTO } | null)?.solution;
+      }
+      if (controller.signal.aborted) return;
+      if (!solution) throw new Error("This setup is unavailable.");
       objectiveValues(
-        raw.objective_values,
-        canonicalObjectives(result.scenario.request.objectives ?? []),
-        id === group?.baseline_solution_id || !!known,
+        solution.objective_values,
+        canonicalObjectives(goals),
+        id === group.baseline_solution_id || Boolean(known),
       );
       parseWildernessRisk(
-        raw.wilderness_risk,
+        solution.wilderness_risk,
         result.scenario.request,
         true,
-        raw.objective_values,
+        solution.objective_values,
       );
-      if (version === selectionVersion.current) onSelect(id, raw);
-    } catch (e) {
-      setError((e as Error).message);
+      onSelect(id, solution, runId, groupId, selectionRevision);
+    } catch (error) {
+      if (!controller.signal.aborted) setLocalError((error as Error).message);
     } finally {
-      setSelecting(false);
+      if (!controller.signal.aborted && controllerRef.current === controller) {
+        controllerRef.current = null;
+        setSelecting(false);
+      }
     }
-  };
-  if (!group || result.scenario.request.objectives === undefined) return null;
-  const rows = page?.points ?? samples;
-  const tableRows = [
-    ...retained
-      .map((point, index) => ({
-        point,
-        label: index === 0 ? "Starting setup" : `Viewed setup ${index}`,
-      }))
-      .filter(({ point }) => !rows.some((row) => row.id === point.id)),
-    ...rows.map((point, index) => ({
-      point,
-      label: `Select setup ${(cursors.length - 1) * 50 + index + 1}`,
-    })),
-  ];
-  const value = (point: Point, id: string) =>
-    id === "dps" ? point.score : (point.objective_values[id] ?? NaN);
-  const openLab = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  }
+
+  function openLab(event: React.MouseEvent<HTMLAnchorElement>) {
     try {
       const token = storeLabSnapshot(
         createLabSnapshot(result, group, selectedId),
+        undefined,
+        labOriginId && runId && groupId
+          ? {
+              originId: labOriginId,
+              workspace:
+                (result.scenario.request.roles?.length ?? 1) > 1
+                  ? "multi"
+                  : "single",
+              runId,
+              groupId,
+              swapLimit,
+            }
+          : undefined,
       );
       const url = new URL(location.href);
       url.search = new URLSearchParams({
@@ -250,213 +240,238 @@ export function ObjectiveFrontier({
       }).toString();
       url.hash = "";
       event.currentTarget.href = url.toString();
-    } catch (failure) {
+      setLocalError("");
+    } catch (error) {
       event.preventDefault();
-      setError((failure as Error).message);
+      setLocalError((error as Error).message);
     }
-  };
+  }
+
+  const pageRows = archive.page?.points ?? samples;
+  const starting = retained[0];
+  const rows = [
+    ...retained.flatMap((point, index) =>
+      index === 0 || !pageRows.some((row) => row.id === point.id)
+        ? [
+            {
+              point,
+              label: index === 0 ? "Starting setup" : `Viewed setup ${index}`,
+            },
+          ]
+        : [],
+    ),
+    ...pageRows.flatMap((point, index) =>
+      point.id === starting?.id
+        ? []
+        : [{ point, label: `Select setup ${archive.offset + index + 1}` }],
+    ),
+  ];
   return (
-    <section className="panel" aria-label="Objective tradeoffs">
+    <section
+      className="panel objective-frontier"
+      aria-label="Objective tradeoffs"
+    >
       <h2>Best-found objective tradeoffs</h2>
       <p>
-        {page?.total ?? group.total_count ?? samples.length} distinct tradeoffs.
-        Each row is one complete configuration.
+        {archive.page?.total ?? group.total_count ?? samples.length} distinct
+        tradeoffs. Each row is one complete configuration.
       </p>
-      {definitions.some((d) => d.kind === "gp_per_damage") &&
+      {definitions.some((definition) => definition.kind === "gp_per_damage") &&
         !samples.length && (
           <p>
             No priced setup with known GP/damage was found within this DPS
             range.
           </p>
         )}
+      {selected && starting && (
+        <ObjectiveSelectionSummary
+          result={result}
+          selected={selected}
+          starting={starting.solution}
+          definitions={definitions}
+        />
+      )}
       <div className="objective-shortcuts" aria-label="Objective endpoints">
         {axes.map((axis) => {
-          const minimize =
-            definitions.find((d) => d.id === axis.id)?.direction === "minimize";
-          const best = samples.reduce<Point | undefined>(
-            (previous, point) =>
-              !previous ||
-              (minimize
-                ? value(point, axis.id) < value(previous, axis.id)
-                : value(point, axis.id) > value(previous, axis.id))
-                ? point
-                : previous,
-            undefined,
-          );
+          const direction = "direction" in axis ? axis.direction : undefined;
+          const best = bestPoint(samples, axis.id, direction === "minimize");
           const id =
-            axis.id === "dps"
-              ? (group.baseline_solution_id ?? best?.id)
-              : best?.id;
+            axis.id === "dps" ? (group.baseline_solution_id ?? best) : best;
+          if (!id) return null;
+          const label = endpointLabel(
+            axis.id,
+            axis.label,
+            direction === "minimize",
+          );
           return (
-            id && (
-              <button
-                key={axis.id}
-                type="button"
-                disabled={selecting}
-                onClick={() => void choose(id)}
-              >
-                {minimize
-                  ? axis.id === "gp_per_damage"
-                    ? "Lowest GP/damage"
-                    : "Lowest Wilderness loss"
-                  : "Highest " + axis.label}
-              </button>
-            )
+            <button
+              key={axis.id}
+              type="button"
+              disabled={selecting}
+              onClick={() => void choose(id)}
+            >
+              {label}
+            </button>
           );
         })}
+        <a
+          className="objective-lab-link"
+          href="?view=tradeoff-lab"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={openLab}
+          onAuxClick={openLab}
+          onContextMenu={openLab}
+        >
+          Explore this run
+        </a>
       </div>
-      <a
-        className="objective-lab-link"
-        href="?view=tradeoff-lab"
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={openLab}
-        onAuxClick={openLab}
-        onContextMenu={openLab}
-      >
-        Open full tradeoff lab ↗
-      </a>
+      {(localError || archive.error) && (
+        <p role="alert">{localError || archive.error}</p>
+      )}
       {definitions.length > 0 && (
         <>
-          <p>
-            {group.sampled && "The chart uses a sample from the full table. "}A
-            point can appear worse on these axes while improving another
-            objective.
-          </p>
-          <ObjectiveScatter
-            key={scope}
-            axes={axes}
-            points={[
-              ...samples,
-              ...retained.filter(
-                (point) => !samples.some((p) => p.id === point.id),
-              ),
-            ]}
-            selectedId={selectedId}
-            disabled={selecting}
-            onSelect={(id) => void choose(id)}
-          />
+          <div
+            className="objective-phone-views"
+            role="group"
+            aria-label="Tradeoff view"
+          >
+            <button
+              type="button"
+              aria-controls={`${viewId}-setups`}
+              aria-pressed={phoneView === "setups"}
+              onClick={() => setPhoneView("setups")}
+            >
+              Setups
+            </button>
+            <button
+              type="button"
+              aria-controls={`${viewId}-chart`}
+              aria-pressed={phoneView === "chart"}
+              onClick={() => setPhoneView("chart")}
+            >
+              Chart
+            </button>
+          </div>
+          <div
+            id={`${viewId}-chart`}
+            className="objective-frontier-chart"
+            data-phone-active={phoneView === "chart"}
+          >
+            <p>
+              {group.sampled &&
+                "The chart uses a sample from the full setup list. "}
+              A point can appear worse on these axes while improving another
+              objective.
+            </p>
+            <ObjectiveScatter
+              axes={axes}
+              points={[
+                ...samples,
+                ...retained.filter(
+                  (point) => !samples.some((sample) => sample.id === point.id),
+                ),
+              ]}
+              selectedId={selectedId}
+              disabled={selecting}
+              onSelect={(id) => void choose(id)}
+            />
+          </div>
         </>
       )}
-      <div className="objective-shortcuts">
-        <label>
-          Sort tradeoffs
-          <select
-            value={sort}
-            onChange={(e) => {
-              setSort(e.target.value);
-              setDirection(
-                definitions.find((d) => d.id === e.target.value)?.direction ===
-                  "minimize"
-                  ? "asc"
-                  : "desc",
-              );
-            }}
-          >
-            {axes.map((axis) => (
-              <option key={axis.id} value={axis.id}>
-                {axis.label}
-              </option>
-            ))}
-            <option value="purchase_cost_gp">Purchase cost</option>
-            {separateRisk && (
-              <option value="wilderness_loss_gp">Wilderness risk</option>
-            )}
-            <option value="maximum_actions">Maximum actions</option>
-          </select>
-        </label>
-        <label>
-          Sort direction
-          <select
-            value={direction}
-            onChange={(e) => setDirection(e.target.value)}
-          >
-            <option value="desc">Highest first</option>
-            <option value="asc">Lowest first</option>
-          </select>
-        </label>
-      </div>
-      {error && <p role="alert">{error}</p>}
-      <div style={{ overflowX: "auto" }}>
-        <table aria-label="All objective tradeoffs" aria-busy={loading}>
-          <thead>
-            <tr>
-              <th>Configuration</th>
-              <th>DPS</th>
-              {definitions.map((def) => (
-                <th key={def.id}>
-                  {def.label}
-                  {def.unit === "roll"
-                    ? " (roll)"
-                    : def.unit === "probability"
-                      ? " (%)"
-                      : def.kind === "magic_damage_bonus"
-                        ? " (%)"
-                        : def.unit === "GP"
-                          ? " (GP)"
-                          : def.unit === "GP/damage"
-                            ? " (GP/damage)"
-                            : ""}
-                </th>
-              ))}
-              <th>Cost (GP)</th>
-              {separateRisk && <th>Risk (GP)</th>}
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.map(({ point, label }) => (
-              <tr key={point.id} aria-selected={selectedId === point.id}>
-                <td>
-                  <button
-                    type="button"
-                    disabled={selecting}
-                    aria-pressed={selectedId === point.id}
-                    onClick={() => void choose(point.id)}
-                  >
-                    {label}
-                  </button>
-                </td>
-                <td>{format(point.score)}</td>
-                {definitions.map((def) => (
-                  <td key={def.id}>
-                    {format(point.objective_values[def.id], def)}
-                  </td>
-                ))}
-                <td>{point.purchase_cost_gp.toLocaleString()}</td>
-                {separateRisk && (
-                  <td>
-                    {point.wilderness_loss_gp?.toLocaleString() ??
-                      "Unavailable"}
-                  </td>
-                )}
-                <td>{point.maximum_actions}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {runId && (
+      <div
+        id={`${viewId}-setups`}
+        className="objective-frontier-archive"
+        data-phone-active={phoneView === "setups" || definitions.length === 0}
+      >
         <div className="objective-shortcuts">
-          <button
-            type="button"
-            disabled={loading || cursors.length < 2}
-            onClick={() => setCursors(cursors.slice(0, -1))}
-          >
-            Previous page
-          </button>
-          <span aria-live="polite">Page {cursors.length}</span>
-          <button
-            type="button"
-            disabled={loading || !page?.next_cursor}
-            onClick={() =>
-              page?.next_cursor && setCursors([...cursors, page.next_cursor])
-            }
-          >
-            Next page
-          </button>
+          <label>
+            Sort tradeoffs
+            <select
+              value={ordering.sort}
+              onChange={(event) => {
+                const sort = event.target.value;
+                const minimize = definitions.some(
+                  (definition) =>
+                    definition.id === sort &&
+                    definition.direction === "minimize",
+                );
+                setOrdering({ sort, direction: minimize ? "asc" : "desc" });
+              }}
+            >
+              {sortOptions.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Sort direction
+            <select
+              value={ordering.direction}
+              onChange={(event) =>
+                setOrdering({
+                  sort: ordering.sort,
+                  direction: event.target.value === "asc" ? "asc" : "desc",
+                })
+              }
+            >
+              <option value="desc">Highest first</option>
+              <option value="asc">Lowest first</option>
+            </select>
+          </label>
         </div>
-      )}
+        <ObjectiveTradeoffTable
+          rows={rows}
+          definitions={definitions}
+          showRisk={separateRisk}
+          selectedId={selectedId}
+          loading={archive.loading}
+          selecting={selecting}
+          onSelect={(id) => void choose(id)}
+        />
+        {runId && groupId && (
+          <div className="objective-shortcuts">
+            <button
+              type="button"
+              disabled={archive.loading || archive.pageNumber < 2}
+              onClick={archive.previous}
+            >
+              Previous page
+            </button>
+            <span aria-live="polite">Page {archive.pageNumber}</span>
+            <button
+              type="button"
+              disabled={archive.loading || !archive.page?.next_cursor}
+              onClick={() => {
+                const next = archive.page?.next_cursor;
+                if (next) archive.next(next);
+              }}
+            >
+              Next page
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   );
+}
+
+function bestPoint(points: TradeoffPoint[], axis: string, minimize: boolean) {
+  let best: { id: string; value: number } | undefined;
+  for (const point of points) {
+    const value = axis === "dps" ? point.score : point.objective_values[axis];
+    if (value == null || !Number.isFinite(value)) continue;
+    if (!best || (minimize ? value < best.value : value > best.value))
+      best = { id: point.id, value };
+  }
+  return best?.id;
+}
+
+function endpointLabel(id: string, label: string, minimize: boolean) {
+  if (!minimize) return `Highest ${label}`;
+  if (id === "gp_per_damage") return "Lowest GP/damage";
+  if (id === "wilderness_loss_gp") return "Lowest Wilderness loss";
+  return `Lowest ${label}`;
 }

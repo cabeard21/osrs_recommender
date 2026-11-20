@@ -1,4 +1,5 @@
-import type { OptimizationReply, Workspace } from "../api/contracts";
+import type { Draft, OptimizationReply, Workspace } from "../api/contracts";
+import { upgradeStoredDraft } from "./scenario";
 
 const MODES: Workspace[] = ["single", "multi"];
 const keyFor = (player: string, mode: Workspace) =>
@@ -8,6 +9,8 @@ export interface SavedResult {
   result: OptimizationReply;
   solutionId: string;
   outdated: boolean;
+  acceptedDraft?: Draft;
+  objectiveGroupId?: string;
 }
 export type SavedResults = Partial<Record<Workspace, SavedResult>>;
 
@@ -50,7 +53,15 @@ function readResult(
     const parsed: unknown = JSON.parse(
       storage.getItem(keyFor(player, mode)) ?? "null",
     );
-    return isSavedResult(parsed) ? parsed : null;
+    if (!isSavedResult(parsed)) return null;
+    return {
+      ...parsed,
+      acceptedDraft: upgradeStoredDraft(parsed.acceptedDraft) ?? undefined,
+      objectiveGroupId:
+        typeof parsed.objectiveGroupId === "string"
+          ? parsed.objectiveGroupId
+          : undefined,
+    };
   } catch {
     return null;
   }

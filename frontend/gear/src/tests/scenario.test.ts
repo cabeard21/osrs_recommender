@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { OptimizationDTO } from "../api/contracts";
 import {
   initialState,
   newDraft,
@@ -162,6 +163,114 @@ describe("scenario normalization", () => {
     expect(normalize(d, "x").request.skill_overrides).toEqual({ attack: 99 });
     expect(contextFixture).not.toHaveProperty("skill_overrides");
   });
+});
+
+it("clears reverted draft changes while retaining account freshness", async () => {
+  const draft = { ...newDraft(), budget: "10k" };
+  const scenario = normalize(draft, contextFixture.snapshotId);
+  const result = await new FixtureGearClient("none", 0).optimize(
+    scenario,
+    new AbortController().signal,
+  );
+  let state = reducer(initialState(), {
+    type: "context",
+    context: contextFixture,
+  });
+  state = reducer(state, { type: "edit", mode: "single", draft });
+  state = reducer(state, {
+    type: "start",
+    mode: "single",
+    scenario,
+    generation: 2,
+  });
+  state = reducer(state, {
+    type: "success",
+    mode: "single",
+    generation: 2,
+    result,
+  });
+  state = reducer(state, {
+    type: "edit",
+    mode: "single",
+    draft: { ...draft, budget: "12k" },
+  });
+  expect(state.single.draftChanged).toBe(true);
+  state = reducer(state, {
+    type: "edit",
+    mode: "single",
+    draft: { ...draft, budget: "10000" },
+  });
+  expect(state.single.outdated).toBe(false);
+  expect(state.single.acceptedDraft).toEqual(draft);
+  state = reducer(state, {
+    type: "context",
+    context: { ...contextFixture, snapshotId: "updated" },
+  });
+  expect(state.single).toMatchObject({
+    outdated: true,
+    draftChanged: false,
+    contextStale: true,
+  });
+});
+
+it("resets archive selections and rejects late points of a same-scenario run", async () => {
+  const first = await reply();
+  const live = (runId: string) =>
+    ({
+      run_id: runId,
+      result: {},
+      scenario: { include_untradeables: false },
+    }) as unknown as OptimizationDTO;
+  const point = {
+    type: "objective-select" as const,
+    mode: "single" as const,
+    fingerprint: first.fingerprint,
+    runId: "first",
+    groupId: "frontier-global-1",
+    swapLimit: 1,
+    solution: {
+      ...first.solutions[0],
+      id: "frontier-global-1-objective-point",
+    },
+  };
+  let state = initialState();
+  state = reducer(state, {
+    type: "start",
+    mode: "single",
+    scenario: first.scenario,
+    generation: 1,
+  });
+  state = reducer(state, {
+    type: "success",
+    mode: "single",
+    generation: 1,
+    result: { ...first, live: live("first") },
+  });
+  state = reducer(state, point);
+  expect(state.single.objectiveSwapLimit).toBe(1);
+  const pendingPoint = {
+    ...point,
+    selectionRevision: state.single.selectionRevision,
+  };
+  state = reducer(state, {
+    ...point,
+    solution: { ...point.solution, id: "frontier-global-1-objective-newer" },
+  });
+  expect(reducer(state, pendingPoint)).toBe(state);
+  state = reducer(state, {
+    type: "start",
+    mode: "single",
+    scenario: first.scenario,
+    generation: 2,
+  });
+  state = reducer(state, {
+    type: "success",
+    mode: "single",
+    generation: 2,
+    result: { ...first, live: live("second") },
+  });
+  expect(state.single.objectiveSwapLimit).toBeUndefined();
+  expect(reducer(state, point)).toBe(state);
 });
 it("normalizes independent Auto configurations while rejecting Auto utility roles", () => {
   const draft = {

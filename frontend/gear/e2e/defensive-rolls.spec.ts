@@ -61,10 +61,14 @@ for (const [priority, , styles] of [
     await page.goto("/gear-next/");
     await page
       .locator("summary")
-      .filter({ hasText: /^Advanced settings/ })
+      .filter({ hasText: /^Tradeoff objectives/ })
       .click();
     for (const style of styles)
       await page.getByRole("checkbox", { name: style, exact: true }).check();
+    await page
+      .locator("summary")
+      .filter({ hasText: /^Combat resources/ })
+      .click();
     await page
       .getByRole("checkbox", { name: "Optimize potions", exact: true })
       .check();

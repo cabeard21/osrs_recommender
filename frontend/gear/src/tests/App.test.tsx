@@ -24,7 +24,7 @@ it("preserves configuration across Single/Multi navigation and reload", async ()
   expect(
     screen.getByRole("link", { name: "Legacy gear view" }),
   ).toHaveAttribute("href", "/gear-legacy");
-  expect(screen.getByRole("link", { name: "Tradeoff lab" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Explore example" })).toHaveAttribute(
     "href",
     "/gear?view=tradeoff-lab",
   );

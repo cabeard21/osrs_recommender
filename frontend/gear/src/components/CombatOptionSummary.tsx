@@ -2,7 +2,6 @@ import type {
   CombatOption,
   CombatPerformance,
   PrayerDefinition,
-  Preparation,
   Role,
 } from "../api/contracts";
 import { prayerDisplayName, prayerEffectText } from "./prayerFormat";
@@ -35,7 +34,6 @@ export function CombatOptionSummary({
   role,
   weapon,
   performance,
-  preparations = [],
   prayerIds,
   prayerCatalog = [],
   itemName,
@@ -47,7 +45,6 @@ export function CombatOptionSummary({
   >;
   weapon: string;
   performance?: CombatPerformance;
-  preparations?: readonly Preparation[];
   prayerIds?: string[];
   prayerCatalog?: readonly PrayerDefinition[];
   itemName?: (id: number) => string;
@@ -75,11 +72,6 @@ export function CombatOptionSummary({
         {weapon} · {attack} · {stance}
         {spell ? ` · ${spell.replaceAll("_", " ")}` : ""}
       </p>
-      {preparations.map((p) => (
-        <p className="notice" key={p.usable_item_id}>
-          {p.message}
-        </p>
-      ))}
       {prayerIds && <PrayerSummary ids={prayerIds} catalog={prayerCatalog} />}
       {performance?.status_damage && (
         <div aria-label="Status damage estimate">

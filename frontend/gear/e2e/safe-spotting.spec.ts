@@ -8,6 +8,10 @@ test("safe spotting persists and restricts optimization and exact weapon trials"
   await expect(
     page.getByRole("button", { name: "Run optimization", exact: true }),
   ).toBeEnabled();
+  const modifiers = page
+    .locator("summary")
+    .filter({ hasText: /^Combat modifiers/ });
+  await modifiers.click();
   const toggle = page.getByRole("checkbox", {
     name: "Safe spotting",
     exact: true,
@@ -17,6 +21,8 @@ test("safe spotting persists and restricts optimization and exact weapon trials"
     .poll(() => page.evaluate(() => JSON.stringify(sessionStorage)))
     .toContain('safeSpotting\\\":true');
   await page.reload();
+  await expect(modifiers).toContainText("Safe spotting");
+  await modifiers.click();
   await expect(toggle).toBeChecked();
   const pending = page.waitForResponse(
     (r) =>

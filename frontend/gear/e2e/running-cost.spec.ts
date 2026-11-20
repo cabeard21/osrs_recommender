@@ -53,7 +53,7 @@ for (const [discipline, fixture] of [
     await page.getByRole("button", { name: discipline, exact: true }).click();
     await page
       .locator("summary")
-      .filter({ hasText: /^Advanced settings/ })
+      .filter({ hasText: /^Tradeoff objectives/ })
       .click();
     const cost = page.getByRole("checkbox", {
       name: "Running cost (GP per damage)",
@@ -81,7 +81,7 @@ for (const [discipline, fixture] of [
     if (!(await cost.isVisible()))
       await page
         .locator("summary")
-        .filter({ hasText: /^Advanced settings/ })
+        .filter({ hasText: /^Tradeoff objectives/ })
         .click();
     await expect(cost).toBeChecked();
     if (discipline === "magic")
@@ -101,6 +101,27 @@ for (const [discipline, fixture] of [
     const body = await reply.json();
     expect(body.result.running_cost_frontiers ?? []).toHaveLength(0);
     const region = page.getByRole("region", { name: "Objective tradeoffs" });
+    const summary = region.getByRole("region", {
+      name: "Selected setup comparison",
+    });
+    const table = region.getByRole("table", {
+      name: "All objective tradeoffs",
+    });
+    const views = region.getByRole("group", { name: "Tradeoff view" });
+    const phone = await views.isVisible();
+    const chart = region.locator(".objective-scatter-plot");
+    if (phone) {
+      await expect(
+        views.getByRole("button", { name: "Setups" }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect(table).toBeVisible();
+      await expect(chart).toBeHidden();
+      expect(
+        await table.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      ).toBe(true);
+    }
     await region.getByRole("button", { name: "Lowest GP/damage" }).click();
     await expect(region.getByRole("row", { selected: true })).toBeVisible();
     await region.getByLabel("Sort tradeoffs").selectOption("gp_per_damage");
@@ -125,10 +146,17 @@ for (const [discipline, fixture] of [
     await expect(selectedRow).toContainText(cheapest.toFixed(4));
     await expect(details).toContainText(rawCost);
     await expect(details).toContainText("GP/hour");
+    await expect(summary).toContainText(`${cheapest.toFixed(4)} GP/damage`);
+    await expect(
+      table.getByRole("button", { name: "Starting setup" }),
+    ).toBeVisible();
 
     const scale = region.getByRole("combobox", { name: "Running cost scale" });
     const colorBy = region.getByLabel("Color represents");
-    const chart = region.locator(".objective-scatter-plot");
+    if (phone) {
+      await views.getByRole("button", { name: "Chart" }).click();
+      await expect(table).toBeHidden();
+    }
     const selectedPoint = chart.getByRole("button", { pressed: true });
     await region.getByLabel("Vertical axis").selectOption("gp_per_damage");
     await expect(scale).toHaveValue("log");
@@ -140,6 +168,12 @@ for (const [discipline, fixture] of [
       new RegExp(`${cheapest.toFixed(4).replace(".", "\\.")} GP/damage`),
     );
     const selectedLabel = await selectedPoint.getAttribute("aria-label");
+    await expect(chart.locator('circle[tabindex="0"]')).toHaveCount(1);
+    const tabStop = chart.locator('circle[tabindex="0"]');
+    await tabStop.focus();
+    await tabStop.press("ArrowRight");
+    await expect(tabStop).toBeFocused();
+    await expect(selectedPoint).toHaveAttribute("aria-label", selectedLabel!);
 
     await (
       discipline === "magic" ? colorBy : region.getByLabel("Vertical axis")
@@ -150,7 +184,7 @@ for (const [discipline, fixture] of [
     await expect(chart.getByText("Running cost (GP/damage) →")).toBeVisible();
     await expectAxisLabelsToFit(chart);
     expect(await selectedPoint.getAttribute("aria-label")).toBe(selectedLabel);
-    await expect(selectedRow).toContainText(cheapest.toFixed(4));
+    if (!phone) await expect(selectedRow).toContainText(cheapest.toFixed(4));
     await expect(details).toContainText(rawCost);
 
     await scale.selectOption("log");
@@ -181,6 +215,12 @@ for (const [discipline, fixture] of [
         selectedLabel,
       );
     }
+    if (phone) {
+      await views.getByRole("button", { name: "Setups" }).click();
+      await expect(selectedRow).toBeVisible();
+      await expect(selectedRow).toContainText(cheapest.toFixed(4));
+      await expect(chart).toBeHidden();
+    }
     expect(optimizationRequests).toHaveLength(1);
   });
 }
@@ -194,7 +234,7 @@ test("Auto keeps the selected cost setup in the ranged discipline", async ({
   await page.getByRole("checkbox", { name: "magic", exact: true }).uncheck();
   await page
     .locator("summary")
-    .filter({ hasText: /^Advanced settings/ })
+    .filter({ hasText: /^Tradeoff objectives/ })
     .click();
   await page
     .getByRole("checkbox", {

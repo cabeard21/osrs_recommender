@@ -20,7 +20,10 @@ test("Colossal blade uses the selected NPC size after reload and explains its bo
     .getByRole("button", { name: npcEntryLabel(entry), exact: true })
     .click();
   await expect(page.getByText("5 × 5", { exact: true })).toBeVisible();
-  await page.getByText("Advanced settings", { exact: true }).click();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Tradeoff objectives/ })
+    .click();
   await page
     .getByRole("button", { name: "Weakest melee defence", exact: true })
     .click();

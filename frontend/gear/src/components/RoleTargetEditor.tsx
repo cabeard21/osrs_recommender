@@ -2,6 +2,8 @@ import { TargetSusceptibilityFields } from "./TargetSusceptibilityFields";
 import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import { NpcTargetPicker } from "./NpcTargetPicker";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
+import { targetFieldErrors } from "../state/setupValidation";
+import { FieldError, fieldProps } from "./FieldError";
 
 /** The target a configuration uses, falling back to the draft-level target. */
 export function effectiveRoleTarget(role: Role, draft: Draft): CombatTarget {
@@ -32,6 +34,8 @@ export function RoleTargetEditor({
   isSharedByAll?: boolean;
 }) {
   const target = effectiveRoleTarget(role, draft);
+  const fieldPrefix = `${role.id}-target`;
+  const errors = targetFieldErrors(target, role.targetInputs, role.name);
   const update = (patch: Partial<CombatTarget>) =>
     onChange({ combatTarget: { ...target, ...patch } });
   const numeric = (key: string, value: string) => {
@@ -56,6 +60,7 @@ export function RoleTargetEditor({
         selection={role.targetSelection}
         inputs={role.targetInputs}
         target={target}
+        validationName={role.name}
         onChange={onChange}
       />
       <TargetHitpointsFields
@@ -118,9 +123,11 @@ export function RoleTargetEditor({
             Role target name
             <input
               value={target.name}
+              {...fieldProps(`${fieldPrefix}-name`, errors.name)}
               onChange={(event) => update({ name: event.target.value })}
             />
           </label>
+          <FieldError id={`${fieldPrefix}-name`} message={errors.name} />
           <label>
             Role target defence
             <input
@@ -128,9 +135,14 @@ export function RoleTargetEditor({
               min="0"
               max="10000"
               value={role.targetInputs?.defence_level ?? target.defence_level}
+              {...fieldProps(`${fieldPrefix}-defence`, errors.defence_level)}
               onChange={(event) => numeric("defence_level", event.target.value)}
             />
           </label>
+          <FieldError
+            id={`${fieldPrefix}-defence`}
+            message={errors.defence_level}
+          />
           <details>
             <summary>Target defence details</summary>
             <label>
@@ -140,9 +152,11 @@ export function RoleTargetEditor({
                 min="0"
                 max="64"
                 value={role.targetInputs?.size ?? target.size ?? 1}
+                {...fieldProps(`${fieldPrefix}-size`, errors.size)}
                 onChange={(event) => numeric("size", event.target.value)}
               />
             </label>
+            <FieldError id={`${fieldPrefix}-size`} message={errors.size} />
             <p>Side length in tiles; a size of 5 means a 5 × 5 target.</p>
             <label>
               Target Magic level
@@ -151,26 +165,41 @@ export function RoleTargetEditor({
                 min="0"
                 max="10000"
                 value={role.targetInputs?.magic_level ?? target.magic_level}
+                {...fieldProps(`${fieldPrefix}-magic`, errors.magic_level)}
                 onChange={(event) => numeric("magic_level", event.target.value)}
               />
             </label>
+            <FieldError
+              id={`${fieldPrefix}-magic`}
+              message={errors.magic_level}
+            />
             {["stab", "slash", "crush", "ranged", "magic"].map((bonus) => (
-              <label key={bonus}>
-                {bonus} defence bonus
-                <input
-                  type="number"
-                  min="-64"
-                  max="10000"
-                  value={
-                    role.targetInputs?.[`bonuses.${bonus}`] ??
-                    target.bonuses[bonus] ??
-                    0
-                  }
-                  onChange={(event) =>
-                    numeric(`bonuses.${bonus}`, event.target.value)
-                  }
+              <div key={bonus}>
+                <label>
+                  {bonus} defence bonus
+                  <input
+                    type="number"
+                    min="-64"
+                    max="10000"
+                    value={
+                      role.targetInputs?.[`bonuses.${bonus}`] ??
+                      target.bonuses[bonus] ??
+                      0
+                    }
+                    {...fieldProps(
+                      `${fieldPrefix}-${bonus}`,
+                      errors[`bonuses.${bonus}`],
+                    )}
+                    onChange={(event) =>
+                      numeric(`bonuses.${bonus}`, event.target.value)
+                    }
+                  />
+                </label>
+                <FieldError
+                  id={`${fieldPrefix}-${bonus}`}
+                  message={errors[`bonuses.${bonus}`]}
                 />
-              </label>
+              </div>
             ))}
             {(
               [
@@ -181,26 +210,35 @@ export function RoleTargetEditor({
                 "flat_armour",
               ] as const
             ).map((field) => (
-              <label key={field}>
-                {field.replaceAll("_", " ")}
-                <input
-                  type="number"
-                  min={
-                    field === "flat_armour"
-                      ? "-10000"
-                      : field === "damage_cap"
-                        ? "1"
-                        : "-64"
-                  }
-                  max="10000"
-                  value={
-                    role.targetInputs?.[field] ??
-                    (target[field] as number | undefined) ??
-                    (field === "flat_armour" ? 0 : "")
-                  }
-                  onChange={(event) => numeric(field, event.target.value)}
+              <div key={field}>
+                <label>
+                  {field.replaceAll("_", " ")}
+                  <input
+                    type="number"
+                    min={
+                      field === "flat_armour"
+                        ? "-10000"
+                        : field === "damage_cap"
+                          ? "1"
+                          : "-64"
+                    }
+                    max={
+                      field === "damage_cap" ? Number.MAX_SAFE_INTEGER : 10000
+                    }
+                    value={
+                      role.targetInputs?.[field] ??
+                      (target[field] as number | undefined) ??
+                      (field === "flat_armour" ? 0 : "")
+                    }
+                    {...fieldProps(`${fieldPrefix}-${field}`, errors[field])}
+                    onChange={(event) => numeric(field, event.target.value)}
+                  />
+                </label>
+                <FieldError
+                  id={`${fieldPrefix}-${field}`}
+                  message={errors[field]}
                 />
-              </label>
+              </div>
             ))}
             <label>
               Elemental weakness
@@ -227,11 +265,19 @@ export function RoleTargetEditor({
                   (target.weakness_percent as number | undefined) ??
                   0
                 }
+                {...fieldProps(
+                  `${fieldPrefix}-weakness`,
+                  errors.weakness_percent,
+                )}
                 onChange={(event) =>
                   numeric("weakness_percent", event.target.value)
                 }
               />
             </label>
+            <FieldError
+              id={`${fieldPrefix}-weakness`}
+              message={errors.weakness_percent}
+            />
             <p>
               Target values describe ordinary attacks. A name does not simulate
               encounter mechanics.

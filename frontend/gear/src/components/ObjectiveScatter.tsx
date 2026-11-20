@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import "../styles/objective-scatter.css";
 
 interface Axis {
@@ -105,7 +105,10 @@ export function ObjectiveScatter({
     color: axes[2]?.id ?? "",
   });
   const [costScale, setCostScale] = useState<CostScale>("log");
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const pointNodes = useRef(new Map<string, SVGCircleElement>());
   const gradientId = useId().replaceAll(":", "");
+  const instructionsId = useId();
   const x = axes.find((a) => a.id === chosen.x) ?? axes[0];
   const y =
     axes.find((a) => a.id === chosen.y && a.id !== x.id) ??
@@ -142,6 +145,26 @@ export function ObjectiveScatter({
   const plotted = available.filter(
     (point) => value(point, x.id) >= 0 && value(point, y.id) >= 0,
   );
+  const tabStop =
+    plotted.find((point) => point.id === focusedId) ??
+    plotted.find((point) => point.id === selectedId) ??
+    plotted[0];
+  function pointKeyDown(event: KeyboardEvent<SVGCircleElement>, id: string) {
+    if (disabled) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(id);
+      return;
+    }
+    const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[
+      event.key as "ArrowLeft" | "ArrowUp" | "ArrowRight" | "ArrowDown"
+    ];
+    if (!step) return;
+    event.preventDefault();
+    const index = plotted.findIndex((point) => point.id === id);
+    const next = plotted[(index + step + plotted.length) % plotted.length];
+    pointNodes.current.get(next.id)?.focus({ preventScroll: true });
+  }
   const scaleFor = (axis: Axis) =>
     plotScale(
       axis,
@@ -221,6 +244,11 @@ export function ObjectiveScatter({
         viewBox="0 0 620 320"
         role="group"
         aria-label={`${xs.label} vs ${ys.label}${colorAxis ? `, colored by ${colorAxis.label}` : ""}`}
+        aria-describedby={plotted.length > 0 ? instructionsId : undefined}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+            setFocusedId(null);
+        }}
       >
         {xs.ticks.map((tick) => (
           <g key={tick} className="objective-scatter-grid">
@@ -244,52 +272,47 @@ export function ObjectiveScatter({
         <text x="17" y="137" transform="rotate(-90 17 137)" textAnchor="middle">
           {ys.label} →
         </text>
-        {[...plotted]
-          .sort(
-            (a, b) => Number(a.id === selectedId) - Number(b.id === selectedId),
-          )
-          .map((point) => {
-            const selected = point.id === selectedId;
-            const details = axes
-              .map(
-                (axis) =>
-                  `${axis.label}: ${format(value(point, axis.id), axis)}`,
-              )
-              .join("; ");
-            return (
-              <circle
-                key={point.id}
-                cx={plotX(value(point, x.id))}
-                cy={plotY(value(point, y.id))}
-                r={selected ? 7 : 4.5}
-                fill={
-                  colorAxis && Number.isFinite(value(point, colorAxis.id))
-                    ? color(colorPosition(value(point, colorAxis.id)))
-                    : "#7bd0ff"
-                }
-                stroke={selected ? "#fff" : "#10131a"}
-                strokeWidth={selected ? 2.5 : 0.6}
-                opacity={selected ? 1 : 0.8}
-                role="button"
-                tabIndex={disabled ? -1 : 0}
-                aria-disabled={disabled}
-                aria-pressed={selected}
-                aria-label={`Select tradeoff ${point.id}, ${details}`}
-                onClick={() => !disabled && onSelect(point.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    if (!disabled) onSelect(point.id);
-                  }
-                }}
-              >
-                <title>
-                  {details}; Purchase cost:{" "}
-                  {point.purchase_cost_gp.toLocaleString("en-US")} GP
-                </title>
-              </circle>
-            );
-          })}
+        {plotted.map((point) => {
+          const selected = point.id === selectedId;
+          const details = axes
+            .map(
+              (axis) => `${axis.label}: ${format(value(point, axis.id), axis)}`,
+            )
+            .join("; ");
+          return (
+            <circle
+              key={point.id}
+              ref={(node) => {
+                if (node) pointNodes.current.set(point.id, node);
+                else pointNodes.current.delete(point.id);
+              }}
+              cx={plotX(value(point, x.id))}
+              cy={plotY(value(point, y.id))}
+              r={selected ? 7 : 4.5}
+              fill={
+                colorAxis && Number.isFinite(value(point, colorAxis.id))
+                  ? color(colorPosition(value(point, colorAxis.id)))
+                  : "#7bd0ff"
+              }
+              stroke={selected ? "#fff" : "#10131a"}
+              strokeWidth={selected ? 2.5 : 0.6}
+              opacity={selected ? 1 : 0.8}
+              role="button"
+              tabIndex={!disabled && point.id === tabStop?.id ? 0 : -1}
+              aria-disabled={disabled}
+              aria-pressed={selected}
+              aria-label={`Select tradeoff ${point.id}, ${details}`}
+              onFocus={() => setFocusedId(point.id)}
+              onClick={() => !disabled && onSelect(point.id)}
+              onKeyDown={(event) => pointKeyDown(event, point.id)}
+            >
+              <title>
+                {details}; Purchase cost:{" "}
+                {point.purchase_cost_gp.toLocaleString("en-US")} GP
+              </title>
+            </circle>
+          );
+        })}
       </svg>
       {colorAxis && plotted.length > 0 && (
         <div
@@ -355,14 +378,14 @@ export function ObjectiveScatter({
         </div>
       )}
       {plotted.length > 0 && (
-        <p className="objective-scatter-hint">
-          Select a point to inspect its configuration. The selected point has a
-          white outline.
+        <p className="objective-scatter-hint" id={instructionsId}>
+          Use arrow keys to move between points and Enter or Space to select.
+          The selected point has a white outline.
         </p>
       )}
       {plotted.length < available.length && (
         <p className="objective-scatter-hint">
-          Use the table below for configurations with a negative value on either
+          Open the setup list for configurations with a negative value on either
           axis.
         </p>
       )}

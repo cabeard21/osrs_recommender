@@ -11,6 +11,8 @@ import {
 import { sameValue } from "../api/runtime";
 import { getTarget, searchTargets } from "../api/targetCatalog";
 import type { CombatTarget, Role, TargetSelection } from "../api/contracts";
+import { targetFieldErrors } from "../state/setupValidation";
+import { FieldError, fieldProps } from "./FieldError";
 
 interface Entry {
   key: string;
@@ -30,11 +32,13 @@ export function NpcTargetPicker({
   selection,
   target,
   inputs = {},
+  validationName = "NPC",
   onChange,
 }: {
   selection?: TargetSelection;
   target?: CombatTarget;
   inputs?: Record<string, string>;
+  validationName?: string;
   onChange: (patch: Partial<Role>) => void;
 }) {
   const latestChange = useRef(onChange);
@@ -141,6 +145,22 @@ export function NpcTargetPicker({
   };
   const base = detail?.target;
   const modified = base && target && !sameValue(base, target);
+  const overrideFields = [
+    "defence_level",
+    "magic_level",
+    "ranged_light",
+    "ranged_standard",
+    "ranged_heavy",
+    "weakness_percent",
+    ...["stab", "slash", "crush", "ranged", "magic"].map(
+      (key) => `bonuses.${key}`,
+    ),
+  ];
+  const statErrors = target
+    ? targetFieldErrors(target, inputs, validationName)
+    : {};
+  const editingStats =
+    editing || overrideFields.some((key) => !!statErrors[key]);
   const results = sortNpcEntries(items);
   const recentTargets = recent.filter((row) => row.key !== selection?.key);
   const resultButtons = () =>
@@ -299,12 +319,12 @@ export function NpcTargetPicker({
               <div className="npc-actions">
                 <button
                   type="button"
-                  aria-expanded={editing}
+                  aria-expanded={editingStats}
                   onClick={() => setEditing(!editing)}
                 >
                   Edit stats
                 </button>
-                {(modified || editing) && (
+                {(modified || editingStats) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -323,57 +343,54 @@ export function NpcTargetPicker({
                   </button>
                 )}
               </div>
-              {editing && (
+              {editingStats && (
                 <fieldset className="npc-overrides">
                   <legend>NPC stat overrides</legend>
-                  {[
-                    "defence_level",
-                    "magic_level",
-                    "ranged_light",
-                    "ranged_standard",
-                    "ranged_heavy",
-                    "weakness_percent",
-                    ...["stab", "slash", "crush", "ranged", "magic"].map(
-                      (key) => `bonuses.${key}`,
-                    ),
-                  ].map((key) => (
-                    <label key={key}>
-                      {NPC_OVERRIDE_LABELS[key] ?? key.replaceAll("_", " ")}
-                      <input
-                        type="number"
-                        value={
-                          inputs[key] ??
-                          String(
-                            key.startsWith("bonuses.")
-                              ? (target.bonuses[key.slice(8)] ?? 0)
-                              : (target[key] ?? ""),
-                          )
-                        }
-                        onChange={(event) => {
-                          const n =
-                            event.target.value === ""
-                              ? NaN
-                              : Number(event.target.value);
-                          latestChange.current({
-                            targetInputs: {
-                              ...inputs,
-                              [key]: event.target.value,
-                            },
-                            combatTarget: !Number.isFinite(n)
-                              ? target
-                              : key.startsWith("bonuses.")
-                                ? {
-                                    ...target,
-                                    bonuses: {
-                                      ...target.bonuses,
-                                      [key.slice(8)]: n,
-                                    },
-                                  }
-                                : { ...target, [key]: n },
-                          });
-                        }}
+                  {overrideFields.map((key) => (
+                    <div key={key}>
+                      <label>
+                        {NPC_OVERRIDE_LABELS[key] ?? key.replaceAll("_", " ")}
+                        <input
+                          type="number"
+                          value={
+                            inputs[key] ??
+                            String(
+                              key.startsWith("bonuses.")
+                                ? (target.bonuses[key.slice(8)] ?? 0)
+                                : (target[key] ?? ""),
+                            )
+                          }
+                          {...fieldProps(`${id}-npc-${key}`, statErrors[key])}
+                          onChange={(event) => {
+                            const n =
+                              event.target.value === ""
+                                ? NaN
+                                : Number(event.target.value);
+                            latestChange.current({
+                              targetInputs: {
+                                ...inputs,
+                                [key]: event.target.value,
+                              },
+                              combatTarget: !Number.isFinite(n)
+                                ? target
+                                : key.startsWith("bonuses.")
+                                  ? {
+                                      ...target,
+                                      bonuses: {
+                                        ...target.bonuses,
+                                        [key.slice(8)]: n,
+                                      },
+                                    }
+                                  : { ...target, [key]: n },
+                            });
+                          }}
+                        />
+                      </label>
+                      <FieldError
+                        id={`${id}-npc-${key}`}
+                        message={statErrors[key]}
                       />
-                    </label>
+                    </div>
                   ))}
                   <label>
                     Elemental weakness

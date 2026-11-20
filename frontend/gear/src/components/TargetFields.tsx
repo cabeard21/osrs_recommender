@@ -3,6 +3,7 @@ import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import type { ReactNode } from "react";
 import type { CombatTarget, Draft } from "../api/contracts";
 import type { DraftFieldErrors } from "../state/scenario";
+import { targetFieldErrors } from "../state/setupValidation";
 import { FieldError, fieldProps } from "./FieldError";
 import { NpcTargetPicker } from "./NpcTargetPicker";
 
@@ -35,14 +36,21 @@ export function TargetFields({
   errors: DraftFieldErrors;
   change: (patch: Partial<Draft>) => void;
 }) {
+  const target = draft.combatTarget ?? {
+    name: draft.target,
+    defence_level: Number(draft.defence),
+    magic_level: 1,
+    bonuses: {},
+  };
+  const targetErrors = targetFieldErrors(target, draft.targetInputs);
   return (
-    <div className="raised">
-      <span className="eyebrow blue">Encounter target</span>
+    <div>
       {liveMode && (
         <NpcTargetPicker
           selection={draft.targetSelection}
           inputs={draft.targetInputs}
           target={draft.combatTarget}
+          validationName="Encounter"
           onChange={(patch) =>
             change({
               ...patch,
@@ -61,14 +69,7 @@ export function TargetFields({
         </p>
       )}
       <TargetHitpointsFields
-        target={
-          draft.combatTarget ?? {
-            name: draft.target,
-            defence_level: Number(draft.defence),
-            magic_level: 1,
-            bonuses: {},
-          }
-        }
+        target={target}
         inputs={draft.targetInputs}
         fixedBase={!!draft.targetSelection}
         onChange={change}
@@ -109,6 +110,7 @@ export function TargetFields({
             Custom target
             <input
               value={draft.target}
+              {...fieldProps("single-target-name", targetErrors.name)}
               onChange={(e) =>
                 change({
                   target: e.target.value,
@@ -119,12 +121,13 @@ export function TargetFields({
               }
             />
           </label>
+          <FieldError id="single-target-name" message={targetErrors.name} />
           <label>
             Target defence
             <input
               type="number"
               min="0"
-              max="1000"
+              max="10000"
               data-run-on-enter
               value={draft.defence}
               {...fieldProps("defence", errors.defence)}
@@ -149,6 +152,7 @@ export function TargetFields({
               min="0"
               max="64"
               value={draft.targetInputs?.size ?? draft.combatTarget?.size ?? 1}
+              {...fieldProps("single-target-size", targetErrors.size)}
               onChange={(event) =>
                 change({
                   targetInputs: {
@@ -167,6 +171,7 @@ export function TargetFields({
               }
             />
           </label>
+          <FieldError id="single-target-size" message={targetErrors.size} />
           <p>Side length in tiles; a size of 5 means a 5 × 5 target.</p>
           <label>
             Flat armour
@@ -179,6 +184,7 @@ export function TargetFields({
                 draft.combatTarget?.flat_armour ??
                 0
               }
+              {...fieldProps("single-target-armour", targetErrors.flat_armour)}
               onChange={(event) =>
                 change({
                   targetInputs: {
@@ -197,6 +203,10 @@ export function TargetFields({
               }
             />
           </label>
+          <FieldError
+            id="single-target-armour"
+            message={targetErrors.flat_armour}
+          />
           <p>
             Applied to each accurate melee or ranged hitsplat; negative values
             increase damage. Magic ignores flat armour.

@@ -86,82 +86,88 @@ export function SavedSetups({ draft, mode, edit }: Props) {
   const showStatus = last && (last.kind === "saved" || canUndo) ? last : null;
 
   return (
-    <div className="raised saved-setups">
-      {forMode.length > 0 && (
+    <details className="saved-setups">
+      <summary>Saved setups</summary>
+      <div className="raised">
+        {forMode.length > 0 && (
+          <div className="saved-setups-row">
+            <label htmlFor={`${id}-pick`}>Saved setups</label>
+            <select
+              id={`${id}-pick`}
+              value={chosen ? selected : ""}
+              onChange={(event) => setSelected(event.target.value)}
+            >
+              <option value="">Choose a setup</option>
+              {forMode.map((setup) => (
+                <option key={setup.name} value={setup.name}>
+                  {setup.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={!chosen}
+              onClick={() =>
+                chosen &&
+                replaceDraft(
+                  structuredClone(chosen.draft),
+                  `Loaded “${chosen.name}”.`,
+                )
+              }
+            >
+              Load setup
+            </button>
+            <button type="button" disabled={!chosen} onClick={remove}>
+              Delete setup
+            </button>
+          </div>
+        )}
         <div className="saved-setups-row">
-          <label htmlFor={`${id}-pick`}>Saved setups</label>
-          <select
-            id={`${id}-pick`}
-            value={chosen ? selected : ""}
-            onChange={(event) => setSelected(event.target.value)}
-          >
-            <option value="">Choose a setup</option>
-            {forMode.map((setup) => (
-              <option key={setup.name} value={setup.name}>
-                {setup.name}
-              </option>
-            ))}
-          </select>
+          <label htmlFor={`${id}-name`}>Save current setup as</label>
+          <input
+            id={`${id}-name`}
+            value={name}
+            maxLength={MAX_SETUP_NAME_LENGTH}
+            placeholder="e.g. Vorkath ranged"
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && name.trim()) {
+                event.preventDefault();
+                save();
+              }
+            }}
+          />
+          <button type="button" disabled={!name.trim()} onClick={save}>
+            Save setup
+          </button>
           <button
             type="button"
-            disabled={!chosen}
+            disabled={isDefault}
             onClick={() =>
-              chosen &&
               replaceDraft(
-                structuredClone(chosen.draft),
-                `Loaded “${chosen.name}”.`,
+                defaultDraft(mode),
+                "Reset every setting to default.",
               )
             }
           >
-            Load setup
-          </button>
-          <button type="button" disabled={!chosen} onClick={remove}>
-            Delete setup
+            Reset all
           </button>
         </div>
-      )}
-      <div className="saved-setups-row">
-        <label htmlFor={`${id}-name`}>Save current setup as</label>
-        <input
-          id={`${id}-name`}
-          value={name}
-          maxLength={MAX_SETUP_NAME_LENGTH}
-          placeholder="e.g. Vorkath ranged"
-          onChange={(event) => setName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && name.trim()) {
-              event.preventDefault();
-              save();
-            }
-          }}
-        />
-        <button type="button" disabled={!name.trim()} onClick={save}>
-          Save setup
-        </button>
-        <button
-          type="button"
-          disabled={isDefault}
-          onClick={() =>
-            replaceDraft(defaultDraft(mode), "Reset every setting to default.")
-          }
-        >
-          Reset all
-        </button>
+        {error && <p role="alert">{error}</p>}
+        {showStatus && (
+          <p role="status" className="notice">
+            {showStatus.message}
+            {showStatus.kind !== "saved" && (
+              <>
+                {" "}
+                <button type="button" onClick={undo}>
+                  Undo
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </div>
-      {error && <p role="alert">{error}</p>}
-      {showStatus && (
-        <p role="status" className="notice">
-          {showStatus.message}
-          {showStatus.kind !== "saved" && (
-            <>
-              {" "}
-              <button type="button" onClick={undo}>
-                Undo
-              </button>
-            </>
-          )}
-        </p>
-      )}
-    </div>
+    </details>
   );
 }

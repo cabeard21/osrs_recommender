@@ -254,7 +254,7 @@ it("exports each configuration and follows the selected curve without combining 
   const user = userEvent.setup();
   const { current, rerender } = setup({ roles: 2 });
   const exportRole = async (name: string, code: string) => {
-    const card = screen.getByRole("heading", { name }).closest("section")!;
+    const card = screen.getByRole("group", { name: `Bank tag for ${name}` });
     await user.click(
       within(card).getByRole("button", { name: "Export mobile bank tag" }),
     );

@@ -1,5 +1,5 @@
 import { DisciplineTabs } from "./DisciplineTabs";
-import { BankTagExport } from "./BankTagExport";
+import { AcquisitionChecklist } from "./AcquisitionChecklist";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import { RunningCostFrontier } from "./RunningCostFrontier";
 import { SecondaryFrontier } from "./SecondaryFrontier";
@@ -7,16 +7,13 @@ import { ObjectiveFrontier } from "./ObjectiveFrontier";
 import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment, slots } from "../api/contracts";
-import type {
-  ObjectiveFrontierGroup,
-  OptimizationReply,
-} from "../api/contracts";
+import type { OptimizationReply } from "../api/contracts";
+import { archiveRunId, resolveResultSelection } from "../state/resultSelection";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
-import { PurchaseListCopy } from "./PurchaseListCopy";
-import { PurchaseRows, purchaseSummary } from "./PurchaseRows";
-import { UntradeablesToObtain } from "./UntradeablesToObtain";
+import { purchaseSummary } from "./PurchaseRows";
+import { ResultFreshness } from "./ResultFreshness";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
@@ -27,23 +24,6 @@ import { matchesSecondaryPriority } from "../api/secondaryPriorities";
 import { matchesOptimizationPolicy } from "../api/optimizationModes";
 import { budgetSummary, WildernessRiskDetails } from "./WildernessRiskDetails";
 
-export function isDisciplineSolution(id: string, discipline: string): boolean {
-  return (
-    id.startsWith(`discipline-${discipline}-`) ||
-    id.startsWith(`frontier-discipline-${discipline}-`)
-  );
-}
-export function selectedObjectiveGroup(
-  groups: readonly ObjectiveFrontierGroup[],
-  id: string,
-) {
-  return groups.find(
-    (group) =>
-      group.points.some((point) => point.id === id) ||
-      (!!(group.id ?? group.group_id) &&
-        id.startsWith(`${group.id ?? group.group_id}-`)),
-  );
-}
 function comparable(a: OptimizationReply, b: OptimizationReply) {
   const combat = (r: OptimizationReply) => {
     const role = r.scenario.request.roles[0];
@@ -73,12 +53,36 @@ function comparable(a: OptimizationReply, b: OptimizationReply) {
   );
 }
 export function LiveResultWorkspace() {
-  const { state, current, dispatch, itemById, client, selectObjective } =
-    useGear();
+  const {
+    state,
+    current,
+    dispatch,
+    itemById,
+    client,
+    selectObjective,
+    labOriginId,
+  } = useGear();
   const result = current.result;
-  const branches = result?.live?.result.discipline_results ?? [];
-  const branch = branches.find((row) =>
-    isDisciplineSolution(current.solutionId, row.discipline),
+  if (!result)
+    return (
+      <section className="panel empty-result">
+        <h2>Find your best configuration</h2>
+        <p>
+          Choose your target, combat style and budget, then run optimization.
+        </p>
+      </section>
+    );
+  const branches = result.live?.result.discipline_results ?? [];
+  const {
+    branch,
+    cap: selectedSwapLimit,
+    parsed: solution,
+    selected,
+  } = resolveResultSelection(
+    result,
+    current.solutionId,
+    current.objectiveGroupId,
+    current.objectiveSwapLimit,
   );
   const active = branch?.discipline ?? "overall";
   const viewResult =
@@ -98,14 +102,6 @@ export function LiveResultWorkspace() {
           },
         }
       : result;
-  const solution =
-    result?.solutions.find((s) => s.id === current.solutionId) ??
-    (branch ? undefined : result?.solutions[0]);
-  const selected =
-    solution?.live ??
-    (branch
-      ? branch.selected_solution
-      : result?.live?.result.selected_solution);
   const loadout = solution?.loadouts[0];
   const wildernessRisk = solution?.wildernessRisk;
   const previous = current.previous;
@@ -115,15 +111,6 @@ export function LiveResultWorkspace() {
       mode: state.mode,
       patch: { slot, activeRole: loadout?.roleId ?? "role-1" },
     });
-  if (!result)
-    return (
-      <section className="panel empty-result">
-        <h2>Find your best configuration</h2>
-        <p>
-          Choose your target, combat style and budget, then run optimization.
-        </p>
-      </section>
-    );
   const baseline = result.live?.baseline;
   const baselineEquipment =
     baseline?.status === "available" ? equipmentFor(baseline.equipment) : null;
@@ -134,46 +121,15 @@ export function LiveResultWorkspace() {
         )
       : [];
   const request = result.scenario.request;
-  const secondaryGroups =
-    branch?.secondary_frontiers ??
-    result.live?.result.secondary_frontiers ??
-    [];
-  const costGroups =
-    branch?.running_cost_frontiers ??
-    result.live?.result.running_cost_frontiers ??
-    [];
-  const objectiveGroups =
-    branch?.objective_frontiers ??
-    result.live?.result.objective_frontiers ??
-    [];
-  const selectedGroup =
-    [...secondaryGroups, ...costGroups].find((group) =>
-      group.points.some((point) => point.id === current.solutionId),
-    ) ?? selectedObjectiveGroup(objectiveGroups, current.solutionId);
-  const curvePoint = result.live?.result.curve?.find(
-    (point) => `curve-${point.swap_limit}` === current.solutionId,
-  );
-  const objectiveCap = current.solutionId.match(/(?:^|-)objective-(None|\d+)-/);
-  const objectiveSwapLimit =
-    current.objectiveSwapLimit !== undefined
-      ? current.objectiveSwapLimit
-      : objectiveCap
-        ? objectiveCap[1] === "None"
-          ? null
-          : Number(objectiveCap[1])
-        : undefined;
-  const selectedSwapLimit =
-    objectiveSwapLimit !== undefined
-      ? objectiveSwapLimit
-      : current.solutionId === "unrestricted"
-        ? null
-        : selectedGroup
-          ? selectedGroup.swap_limit
-          : (curvePoint?.swap_limit ?? request.max_swaps);
+  const isDefault =
+    current.solutionId ===
+    (branch
+      ? `discipline-${branch.discipline}-best-found`
+      : (result.selectedSolutionId ?? "best-found"));
   const isComparableToPrevious = !!previous && comparable(previous, result);
   // The previous run only offers its overall best, so tabs and tradeoff points have no peer.
   const previousDps =
-    isComparableToPrevious && solution === result.solutions[0]
+    isComparableToPrevious && isDefault && !branch
       ? previous.solutions[0]?.loadouts[0]?.metrics?.dps
       : undefined;
   const isAttackStyleOptimized =
@@ -217,12 +173,11 @@ export function LiveResultWorkspace() {
             {branch.reasons.length ? `: ${branch.reasons.join(" ")}` : ""}
           </p>
         )}
-        {current.outdated && (
-          <p role="status" className="notice">
-            Result outdated — draft inputs, account, prices, catalog or model
-            changed. Re-run to use the draft and current context.
-          </p>
-        )}
+        <ResultFreshness
+          outdated={current.outdated}
+          draftChanged={current.draftChanged}
+          contextStale={current.contextStale}
+        />
         {request.mode === "future" && (
           <p className="notice">
             Hypothetical submitted result · assumptions retained with this
@@ -231,12 +186,14 @@ export function LiveResultWorkspace() {
         )}
         {loadout ? (
           <section
+            id="selected-outfit"
+            tabIndex={-1}
             className={`panel equipment-panel ${current.outdated ? "is-stale" : ""}`}
           >
             <div className="section-title">
               <h2>
                 <Shield size={19} />
-                Best configuration found
+                {isDefault ? "Best configuration found" : "Selected setup"}
               </h2>
               <span className="badge">
                 {previous ? "Reoptimized result" : "Optimized result"}
@@ -271,18 +228,14 @@ export function LiveResultWorkspace() {
               onSelect={select}
               optimized
               purchaseIds={solution?.purchases}
+              preparations={selected?.loadouts[loadout.roleId]?.preparations}
+              obtainIds={selected?.unowned_untradeable_item_ids}
               roleId={loadout.roleId}
               differences={changedSlots}
               differenceLabel="Changed"
             />
-            <BankTagExport
-              key={`${result.fingerprint}:${current.solutionId}:${loadout.roleId}`}
-              equipment={loadout.equipment}
-              name={loadout.name}
-            />
             <CombatOptionSummary
               itemName={(id) => itemById(id)?.name ?? `Item #${id}`}
-              preparations={selected?.loadouts[loadout.roleId]?.preparations}
               prayerIds={
                 selected?.loadouts[loadout.roleId]?.selected_prayer_ids
               }
@@ -337,49 +290,18 @@ export function LiveResultWorkspace() {
             />
           </section>
         )}
-        {solution && (
-          <section className="panel">
-            <h2>What to buy</h2>
-            <strong className="gold numeric">
-              {solution.cost.toLocaleString()} GP additional purchases
-            </strong>
-            <p>
-              {solution.purchases.length
-                ? "Concrete purchases counted once; cached estimates are not guaranteed execution prices."
-                : "No additional purchases required."}
-            </p>
-            <PurchaseRows
-              purchases={selected?.purchases ?? []}
-              itemName={itemName}
-            />
-            <UntradeablesToObtain
-              ids={selected?.unowned_untradeable_item_ids}
-              itemName={itemName}
-            />
-            <PurchaseListCopy
-              key={`${result.fingerprint}:${result.priceRevision}:${current.solutionId}`}
-              purchases={selected?.purchases ?? []}
-              itemName={itemName}
-            />
-            <h3 className="eyebrow">Gear you already own</h3>
-            <p>
-              {Object.values(loadout!.equipment)
-                .filter((id) => id !== null && itemById(id)?.owned)
-                .map((id) => itemById(id)?.name)
-                .join(" · ") || "None confirmed"}
-            </p>
-            {request.assumed_item_ids.length > 0 && (
-              <p className="notice">
-                Hypothetically acquired IDs:{" "}
-                {request.assumed_item_ids.join(", ")}. Acquisition is assumed;
-                no account ownership changes.
-              </p>
-            )}
-            <p>
-              Inspect each item for ownership observations, missing prices and
-              selected price provenance.
-            </p>
-          </section>
+        {selected && (
+          <AcquisitionChecklist
+            solution={selected}
+            roles={request.roles}
+            itemById={itemById}
+            selectionKey={`${archiveRunId(result) ?? result.fingerprint}:${current.solutionId}`}
+          />
+        )}
+        {request.assumed_item_ids.length > 0 && (
+          <p className="notice">
+            Hypothetically acquired IDs: {request.assumed_item_ids.join(", ")}.
+          </p>
         )}
         {!!result.live?.result.discipline_comparison?.length && (
           <section className="panel" aria-label="Combat discipline comparison">
@@ -433,13 +355,19 @@ export function LiveResultWorkspace() {
             result={viewResult!}
             swapLimit={selectedSwapLimit}
             selectedId={current.solutionId}
-            onSelect={(id, raw) =>
+            selectedSolution={selected}
+            labOriginId={labOriginId}
+            selectionRevision={current.selectionRevision}
+            onSelect={(id, raw, runId, groupId, selectionRevision) =>
               selectObjective(
                 state.mode,
                 id,
                 raw,
                 selectedSwapLimit,
                 result.fingerprint,
+                runId,
+                groupId,
+                selectionRevision,
               )
             }
           />
@@ -463,7 +391,7 @@ export function LiveResultWorkspace() {
             {request.target.defence} defence · {budgetSummary(request)} ·{" "}
             {EQUIPMENT_ACCESS_LABELS[request.mode]} ·{" "}
             {request.roles[0].autoDiscipline
-              ? `Auto selected ${Object.values(result.live?.result.selected_solution?.loadouts ?? {})[0]?.discipline ?? "no discipline"}`
+              ? `Auto selected ${selected?.loadouts[request.roles[0].id]?.discipline ?? loadout?.discipline ?? "no discipline"}`
               : `${request.roles[0].style} combat`}{" "}
             ·{" "}
             {request.roles[0].combatOptions
@@ -494,6 +422,8 @@ export function LiveResultWorkspace() {
               <p>Evaluated: {previous.evaluatedAt}</p>
             </details>
             {isComparableToPrevious &&
+            isDefault &&
+            !branch &&
             previous.solutions[0]?.loadouts[0]?.metrics &&
             solution?.loadouts[0]?.metrics ? (
               <p>

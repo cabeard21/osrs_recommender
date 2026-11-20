@@ -65,3 +65,152 @@
 .objective-lab-link:hover {
   background: #302b21;
 }
+.objective-frontier,
+.objective-frontier-archive {
+  min-width: 0;
+}
+.objective-phone-views,
+.objective-mobile-cell-label {
+  display: none;
+}
+.objective-table-wrap {
+  overflow-x: auto;
+}
+.objective-selection-summary {
+  min-width: 0;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--color-outline);
+  border-radius: 8px;
+  background: var(--color-surface-container);
+}
+.objective-selection-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.objective-selection-title p,
+.objective-selection-disciplines {
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+.objective-selection-disciplines {
+  min-height: 1.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.objective-selection-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+.objective-selection-metrics > div {
+  min-width: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--color-surface-container-low);
+  overflow-wrap: anywhere;
+}
+.objective-selection-metrics dt {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+.objective-selection-metrics dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.objective-selection-metrics dd > * {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.objective-selection-metrics dd span {
+  font-size: 12px;
+  color: var(--color-secondary);
+}
+.objective-selection-changes {
+  padding-inline-start: 18px;
+  list-style: disc;
+}
+.objective-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .objective-phone-views {
+    display: flex;
+    gap: 8px;
+    margin-block: 8px;
+  }
+  .objective-phone-views button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .objective-phone-views button[aria-pressed="true"] {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .objective-frontier [data-phone-active="false"] {
+    display: none;
+  }
+  .objective-table-wrap {
+    overflow: visible;
+  }
+  .objective-tradeoff-table,
+  .objective-tradeoff-table tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .objective-tradeoff-table .objective-table-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .objective-tradeoff-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+    margin-block: 8px;
+    padding: 8px;
+    border: 1px solid var(--color-outline);
+    border-radius: 6px;
+    background: var(--color-surface-container);
+  }
+  .objective-tradeoff-table tbody tr[aria-selected="true"] {
+    border-color: var(--color-primary);
+  }
+  .objective-frontier .objective-tradeoff-table td {
+    min-width: 0;
+    padding: 4px;
+    border: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .objective-tradeoff-table td:first-child {
+    grid-column: 1 / -1;
+  }
+  .objective-tradeoff-table td button {
+    width: 100%;
+    min-height: 44px;
+  }
+  .objective-mobile-cell-label {
+    display: block;
+    color: var(--color-on-surface-variant);
+    font-size: 12px;
+  }
+}
