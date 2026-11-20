@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 from tracker.content.loader import Content
-from tracker.content.requirements import AllOf, SkillLeaf
+from tracker.content.requirements import AllOf, MembersLeaf, SkillLeaf
 from tracker.gear.bolts_catalog import REQUIREMENTS as BOLT_REQUIREMENTS
 from tracker.gear.bolts_catalog import REVISION as BOLT_REVISION
 from tracker.gear.bolts_catalog import TRADEABLE as BOLT_TRADEABLE
@@ -51,7 +51,13 @@ from tracker.gear.obsidian import apply_review as obsidian_review
 from tracker.gear.powered import REVISION as POWERED_REVISION
 from tracker.gear.powered import review as powered_review
 from tracker.gear.requirements_source import requirement_from_levels
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
+from tracker.gear.revenant import REVISION as REVENANT_REVISION
+from tracker.gear.revenant import apply_review as revenant_review
 from tracker.gear.reviewed_attacks import DOUBLE_ATTACKS, DUAL_PROFILES
+from tracker.gear.salve import FORMS as SALVE_FORMS
+from tracker.gear.salve import REVISION as SALVE_REVISION
+from tracker.gear.salve import apply_review as salve_review
 from tracker.gear.size_damage import COLOSSAL_BLADE
 from tracker.gear.size_damage import REVISION as SIZE_DAMAGE_REVISION
 from tracker.gear.size_damage import apply_review as size_damage_review
@@ -107,7 +113,6 @@ REVIEWED_STANDARD_STAVES = frozenset(
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
 REVIEWED_ANCIENT_STAVES = frozenset({4675, 27785, 27788, 27676, 27679, 30070})
-REVIEWED_AUTOCAST_SCEPTRES = {27785: 60, 27788: 60, 27676: 70, 27679: 70}
 REVIEWED_POWERED_TRADEABLE = frozenset(
     {28585, 11905, 11908, 12900, 22481, 22552, 27662, 31115, 27277, 22290, 22294}
 )
@@ -192,6 +197,7 @@ def load_catalog(
         row = slayer_review(
             tome_review(hopper_review(elemental_amulet_review(obsidian_review(bolt_review(row)))))
         )
+        row = salve_review(row)
         review = DOUBLE_ATTACKS.get(row["id"])
         if review:
             if row["name"] != review[0] or row["slot"] != "weapon" or not row["two_handed"]:
@@ -232,16 +238,8 @@ def load_catalog(
                 **row,
                 "unsupported_effects": ["Dawnbringer requires its raid encounter context."],
             }
-        autocast_level = REVIEWED_AUTOCAST_SCEPTRES.get(row["id"])
-        if autocast_level is not None:
-            row = {
-                **row,
-                "unsupported_effects": [
-                    e
-                    for e in row["unsupported_effects"]
-                    if e != "Offensive effects have not been validated."
-                ],
-            }
+        revenant = REVENANT_FORMS.get(row["id"])
+        row = revenant_review(row)
         row = size_damage_review(
             dragonbane_review(demonbane_review(halberd_review(leafy_review(row))))
         )
@@ -292,14 +290,16 @@ def load_catalog(
         if powered is not None:
             # Equipment access is a wear gate; crafting/drop requirements are not.
             requirement = SkillLeaf(skill="magic", level=powered.level)
-        if autocast_level is not None:
-            requirement = SkillLeaf(skill="magic", level=autocast_level)
+        if revenant is not None:
+            requirement = SkillLeaf(skill=revenant.skill, level=revenant.level)
         if row["id"] == 32879:
             requirement = SkillLeaf(skill="ranged", level=60)
         if row["id"] == COLOSSAL_BLADE:
             requirement = SkillLeaf(skill="attack", level=60)
         if row["id"] in ELEMENTAL_AMULETS:
             requirement = SkillLeaf(skill="magic", level=59)
+        if row["id"] in SALVE_FORMS:
+            requirement = MembersLeaf(members=True)
         if row["id"] in BOLT_REQUIREMENTS:
             requirement = SkillLeaf(skill="ranged", level=BOLT_REQUIREMENTS[row["id"]])
         if row["id"] in TOME_FORMS:
@@ -345,9 +345,10 @@ def load_catalog(
                     or row["id"] in LEAFY_FORMS
                     or row["id"] in HALBERD_FORMS
                     or row["id"] in SLAYER_FORMS
+                    or row["id"] in SALVE_FORMS
                     or review
                     or powered
-                    or autocast_level
+                    or revenant
                     or row["id"] in BOLT_REQUIREMENTS
                     or row["id"] in ELEMENTAL_AMULETS
                     or row["id"] in TOME_FORMS
@@ -356,7 +357,7 @@ def load_catalog(
                 and not any(i.gate_unknown for i in entries),
                 "tradeable": (
                     False
-                    if row["id"] in {12931, COLOSSAL_BLADE}
+                    if row["id"] in {12931, COLOSSAL_BLADE} or row["id"] in SALVE_FORMS
                     else row["id"] in DRAGONBANE_TRADEABLE
                     if row["id"] in DRAGONBANE_FORMS
                     else row["id"] in HALBERD_TRADEABLE
@@ -373,10 +374,10 @@ def load_catalog(
                     if row["id"] in ELEMENTAL_AMULETS or row["id"] == 32879
                     else row["id"] in BOLT_TRADEABLE
                     if row["id"] in BOLT_REQUIREMENTS
+                    else row["id"] == revenant.uncharged_id
+                    if revenant is not None
                     else row["id"] in REVIEWED_POWERED_TRADEABLE
                     if powered is not None
-                    else row["id"] in {27785, 27676}
-                    if autocast_level is not None
                     else True
                     if acquisition == {"tradeable"}
                     else False
@@ -411,19 +412,20 @@ def load_catalog(
             + reviewed_spells
             + equivalent_reviews
             + POWERED_REVISION
+            + REVENANT_REVISION
             + OBSIDIAN_REVISION
             + TOME_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION
             + SLAYER_REVISION
+            + SALVE_REVISION
             + LEAFY_REVISION
             + b"halberd-status-v1-serp12931"
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
             + SIZE_DAMAGE_REVISION
-            + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
             + json.dumps(DUAL_PROFILES).encode()
@@ -434,19 +436,20 @@ def load_catalog(
             + reviewed_spells
             + equivalent_reviews
             + POWERED_REVISION
+            + REVENANT_REVISION
             + OBSIDIAN_REVISION
             + TOME_REVISION
             + ELEMENTAL_AMULET_REVISION
             + BOLT_REVISION
             + HOPPER_REVISION
             + SLAYER_REVISION
+            + SALVE_REVISION
             + LEAFY_REVISION
             + b"halberd-status-v1-serp12931"
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
             + SIZE_DAMAGE_REVISION
-            + json.dumps(REVIEWED_AUTOCAST_SCEPTRES, sort_keys=True).encode()
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
             + json.dumps(DUAL_PROFILES).encode()

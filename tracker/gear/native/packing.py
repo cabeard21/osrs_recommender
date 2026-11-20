@@ -18,6 +18,7 @@ from tracker.gear.dragonbane import BONUSES as DRAGONBANE_BONUSES
 from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinition
 from tracker.gear.prayers import effects
 from tracker.gear.prepared_combat import PreparedCombat
+from tracker.gear.revenant import passive_applies
 
 BONUS_FIELDS = tuple(EquipmentBonuses.model_fields)
 STYLE_CODES = {"stab": 0, "slash": 1, "crush": 2, "ranged": 3, "magic": 4, "special": 5}
@@ -236,6 +237,7 @@ def pack(search: Any) -> dict[str, Any]:
             ("zaryte", 0),
             ("hopper_shield", 0),
             ("slayer_bonus", 0),
+            ("salve_bonus", 0),
             ("slayer_staff", 0),
             ("dragonbane_accuracy", 0),
             ("dragonbane_damage", 0),
@@ -297,6 +299,7 @@ def pack(search: Any) -> dict[str, Any]:
             )
             if item.slot == "head"
             else 0,
+            "salve_bonus": item.salve_bonus if item.slot == "neck" else 0,
             "slayer_staff": int(
                 getattr(item, "slayer_staff_enchanted", False) and item.slot == "weapon"
             ),
@@ -326,6 +329,7 @@ def pack(search: Any) -> dict[str, Any]:
             "target_hp",
             "target_traits",
             "on_slayer_task",
+            "wilderness_weapon",
             "magic_dart",
             "target_leafy",
             "target_size",
@@ -410,6 +414,10 @@ def pack(search: Any) -> dict[str, Any]:
                         "spell_element": ELEMENT_CODES.get(element or "", 0),
                         "searing": int(configured.fire_tome_pages == "searing"),
                         "on_slayer_task": int(getattr(configured, "on_slayer_task", False)),
+                        "wilderness_weapon": int(
+                            getattr(configured, "_in_wilderness", False)
+                            and passive_applies(weapon_id, configured.style)
+                        ),
                         "magic_dart": int(
                             configured.style == "magic"
                             and configured.spell == "magic_dart"

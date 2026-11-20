@@ -13,30 +13,23 @@ from types import MappingProxyType
 from typing import Literal
 
 from tracker.gear.powered import review as powered_review
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
 
 _GUIDE_PATH = Path(__file__).with_name("wilderness-guide.json")
 _GUIDE_BYTES = _GUIDE_PATH.read_bytes()
 GE_GUIDE = MappingProxyType(
     {int(item_id): gp for item_id, gp in json.loads(_GUIDE_BYTES)["prices"].items()}
 )
-RULES_REVISION = f"wilderness-pvp-v1:{hashlib.sha256(_GUIDE_BYTES).hexdigest()[:16]}"
+RULES_REVISION = f"wilderness-pvp-v3:{hashlib.sha256(_GUIDE_BYTES).hexdigest()[:16]}"
 
 # https://oldschool.runescape.wiki/w/Items_Kept_on_Death#Items_that_are_always_kept
 ALWAYS_KEPT = frozenset({30637})
 
-# Exact current charged physical form to tradeable base IDs.
+# Exact uncharged drop preserves the sceptre's setting, even if the other
+# GE-listed setting is cheaper to purchase and swap during preparation.
 # https://oldschool.runescape.wiki/w/Wilderness_weapons
 CHARGED_ETHER = MappingProxyType(
-    {
-        22542: 22545,  # Viggora's chainmace
-        22547: 22550,  # Craw's bow
-        22555: 22552,  # Thammaron's sceptre
-        27788: 22552,  # Thammaron's sceptre (a)
-        27660: 27657,  # Ursine chainmace
-        27655: 27652,  # Webweaver bow
-        27665: 27662,  # Accursed sceptre
-        27679: 27662,  # Accursed sceptre (a)
-    }
+    {form.charged_id: form.uncharged_id for form in REVENANT_FORMS.values()}
 )
 
 # Reviewed charged forms that retain their charges when protected.

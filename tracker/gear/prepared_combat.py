@@ -26,6 +26,7 @@ from tracker.gear.models import (
 from tracker.gear.powered import base_hit
 from tracker.gear.prayers import PrayerEffects, effects
 from tracker.gear.ranged_numerics import CacheInfo
+from tracker.gear.ranged_resources import HUNTER_SPEAR, ranged_damage_type
 
 
 class AttackKey(NamedTuple):
@@ -48,6 +49,7 @@ class AttackKey(NamedTuple):
     weakness_percent: int
     armour: int
     damage_cap: int | None
+    strength_ranged: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,6 +97,7 @@ class PreparedAttack:
     sanguinesti: bool
     player_defence: DefensiveConstants
     prayers: PrayerEffects
+    strength_ranged: bool
 
     def rolls(self, bonuses: EquipmentBonuses) -> tuple[int, int, int]:
         """Return maximum, attack roll and separately truncated weakness roll."""
@@ -105,7 +108,11 @@ class PreparedAttack:
             attack = self.attack_level * (accuracy + 64)
             weakness_roll = attack * self.weakness_percent // 100 if self.weakness_applied else 0
             return maximum + self.weakness_hit, attack + weakness_roll, weakness_roll
-        strength = bonuses.ranged_strength if self.style == "ranged" else bonuses.melee_strength
+        strength = (
+            bonuses.ranged_strength
+            if self.style == "ranged" and not self.strength_ranged
+            else bonuses.melee_strength
+        )
         maximum = floor(0.5 + self.strength_level * (strength + 64) / 640)
         return maximum, self.attack_level * (getattr(bonuses, self.style) + 64), 0
 
@@ -170,6 +177,7 @@ def _prepare(key: AttackKey) -> PreparedAttack:
     )
     return PreparedAttack(
         style=key.style,
+        strength_ranged=key.strength_ranged,
         attack_level=key.attack_level * attack_prayer // 100
         + (9 if magical else 8)
         + attack_stance,
@@ -322,7 +330,10 @@ class PreparedCombat:
         # each entry prevents identity reuse until eviction; levels are mutable
         # mappings, so read their actual numerical dependencies on every call.
         attack_level = levels[style if style in {"magic", "ranged"} else "attack"]
-        strength_level = levels.get("ranged" if style == "ranged" else "strength", 0)
+        strength_ranged = style == "ranged" and weapon is not None and weapon.id == HUNTER_SPEAR
+        strength_level = levels.get(
+            "ranged" if style == "ranged" and not strength_ranged else "strength", 0
+        )
         magic_level, defence_level = levels.get("magic", 0), levels.get("defence", 0)
         identity = (
             style,
@@ -359,15 +370,10 @@ class PreparedCombat:
     ) -> PreparedAttack:
         target_bonus = getattr(target.bonuses, style)
         if style == "ranged":
-            kind = (
-                "heavy"
-                if weapon and weapon.ammo_for and weapon.ammo_for[0].startswith("bolt:")
-                else "standard"
-                if weapon and weapon.ammo_for
-                else "light"
-            )
+            kind = ranged_damage_type(weapon)
             subtype = getattr(target, "ranged_" + kind)
             target_bonus = target_bonus if subtype is None else subtype
+        strength_ranged = style == "ranged" and weapon is not None and weapon.id == HUNTER_SPEAR
         key = AttackKey(
             style,
             stance,
@@ -378,7 +384,7 @@ class PreparedCombat:
             weapon.attack_speed if weapon else 4,
             weapon.attack_pattern if weapon else "single",
             levels[style if style in {"magic", "ranged"} else "attack"],
-            levels.get("ranged" if style == "ranged" else "strength", 0),
+            levels.get("ranged" if style == "ranged" and not strength_ranged else "strength", 0),
             levels.get("magic", 0),
             levels.get("defence", 0),
             prayers,
@@ -388,6 +394,7 @@ class PreparedCombat:
             target.weakness_percent,
             target.flat_armour,
             target.damage_cap,
+            strength_ranged,
         )
         return _prepare(key)
 

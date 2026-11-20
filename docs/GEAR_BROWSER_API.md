@@ -212,7 +212,7 @@ tier scaling and before damage/prayer percentages and the separately rounded
 elemental weakness contribution. This is a base-hit increment, not a promise of
 exactly two additional final damage. Mismatched spells, Ancient Magicks, Iban
 Blast, and powered attacks receive no increment. Older responses may omit these
-fields. The combat model version is `normal-attacks-v4-elemental-amulets`.
+fields. These amulet mechanics were introduced in `normal-attacks-v4-elemental-amulets`.
 
 Ownership and GE purchase planning use each physical ID independently. Crafting,
 combining components, and additional equipment or special-target mechanics are
@@ -381,7 +381,7 @@ Returns `ContextResponse` (`api_version: "gear-ui-v1"`).
 | `items` | Full physical-item facts for mapped equipment candidates, including ambiguous candidates |
 | `capabilities` | Slots, access modes, spell definitions, existing encounter presets, combat disciplines, role/action limits, objective availability |
 | `catalog_version` | Loaded physical catalog revision |
-| `model_version` | Existing ordinary-attack model identifier, `normal-attacks-v1` |
+| `model_version` | Version of the ordinary-attack formulas used for this result |
 | `price_revision` | Deterministic fingerprint of cached price records |
 
 `account` preserves username, player ID, skills with source/time/XP, quests and quest
@@ -1115,7 +1115,7 @@ Support covers ordinary PvM damage for Warped sceptre, Bone staff, both trident
 families, Sanguinesti staff, Eye of Ayak, Tumeken's shadow, and the powered forms of
 Thammaron's and Accursed sceptres. Reviewed enhanced and cosmetic editions retain
 their exact physical identities. Dawnbringer remains unavailable because its raid
-context is outside this model. Wilderness bonuses, raid multipliers, special
+context is outside this model. Raid multipliers, special
 attacks, healing value, and poison/venom damage over time are not simulated.
 Sanguinesti's offensive damage proc is included. Bone staff requires a confirmed
 rat trait from the target catalog; a target name is not evidence of that trait.
@@ -1123,7 +1123,7 @@ rat trait from the target catalog; a target name is not evidence of that trait.
 Observed ownership remains factual. A separate planning projection may use an
 owned uncharged edition after charging, and results disclose that preparation.
 This does not establish that charges or charging resources are actually present.
-An uncharged weapon lock is resolved through its reviewed same-edition preparation
+An uncharged ordinary powered staff lock is resolved through its reviewed same-edition preparation
 route during optimization. The submitted scenario remains unchanged in the API
 response; selected equipment identifies the charged usable form. A matching
 explicit powered-attack selection follows that lock, while empty attack filters
@@ -1138,3 +1138,44 @@ and remain separate from the weapon purchase budget. Missing resource prices are
 unavailable, rather than zero. Alternative charging recipes use the cheapest fully
 priced reviewed recipe and disclose the selected resources. Mandatory activation
 reserves are preparation requirements, not assumed encounter consumption.
+
+### Salve amulets
+
+The ordinary combat result includes `salve_bonus` when a Salve amulet applies
+to the role's undead target. The report gives the physical `item_id`, the
+`accuracy_percent` and `damage_percent` for that attack, and whether the
+amulet overrides an otherwise eligible Slayer gear bonus. A role with a
+custom target can provide `undead` in `traits`. A catalog target uses its
+reviewed traits.
+
+### Revenant weapons
+
+The scenario's existing `wilderness` setting places every NPC fight in the
+Wilderness. A charged Viggora's or Ursine chainmace, Craw's or Webweaver bow,
+or Thammaron's or Accursed sceptre then gains its accuracy and damage passive
+on eligible attacks. The combat result reports `wilderness_weapon_passive` as
+true or false for these weapons. The scorer applies each discipline's integer
+rounding and stacking rules, including the combined on-task ranged max-hit
+factor of 33/20 with an imbued Slayer helmet.
+
+Locks identify the exact revenant weapon form. Empty chainmaces can attack and
+empty autocasting sceptres can cast using spell runes. Bows fire their own
+standard ranged projectiles when charged. The preparation shown for a weapon
+identifies its source form and any charging or sceptre mode change.
+Switch setups reuse one ready weapon when their exact item IDs match. Carrying
+two different ready forms requires two copies so the documented equip actions
+can be performed during combat.
+
+Charging an empty weapon requires a recoverable reserve of 1,000 revenant ether
+and up to 16,000 additional ether for attacks. Each charged mace swing, bow
+shot, or sceptre cast consumes one ether, including misses and attacks outside
+the Wilderness. Autocasting also consumes the spell's runes. GP/hour assumes
+continuous attacking at the selected interval. Fixed-trip death loss includes
+the starting reserve and the loaded ether even when the weapon is protected.
+Remaining charges in observed items are unknown.
+
+Both uncharged sceptre modes have GE listings. Purchase planning uses the
+cheaper eligible quote in the frozen snapshot and prefers the matching mode
+when quotes tie. If several ready copies require the same purchase, the row
+includes `quantity` and its `cost_gp` covers the whole row. An omitted quantity
+means one copy. The combat revision is `normal-attacks-v13-revenant-weapons`.

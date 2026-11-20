@@ -4,18 +4,20 @@ from __future__ import annotations
 
 import json
 from array import array
-from collections.abc import Callable, Set
+from collections.abc import Callable, Mapping, Set
 from dataclasses import dataclass
 from math import isfinite
 from typing import Any
 
 from tracker.gear.compact_acquisition import AcquisitionFacts
 from tracker.gear.compact_states import SLOT_NAMES
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
 from tracker.gear.running_costs import SPELL_RECIPES, STAFF_RUNES
 from tracker.gear.wilderness_runes import RUNE_IDS
 
 MAX_NATIVE_ITEM_COST = (2**53 - 1) // (4 * len(SLOT_NAMES))
 MAX_NATIVE_RISK = 2**63 - 1
+UNKNOWN_COPY_COST = -(2**63)
 
 
 @dataclass(frozen=True)
@@ -49,6 +51,9 @@ class RuneStageData:
 class StageData:
     markets: array[int]
     costs: array[int]
+    copy_family_offsets: array[int]
+    copy_form_bits: array[int]
+    copy_adjustments: array[int]
     untradeable: array[int]
     weights: array[float]
     marginals: array[float]
@@ -103,7 +108,38 @@ def preflight(search: Any, acquisition: AcquisitionFacts | None = None) -> str |
             or not 0 <= amount <= MAX_NATIVE_ITEM_COST
         ):
             return "Native acquisition integers exceed the supported range"
+    if acquisition.revenant_adjustments:
+        amounts = [abs(n) for n in acquisition.revenant_adjustments.values() if n is not None]
+        highest_quote = max((q[1] for q in acquisition.quotes.values() if q), default=0)
+        # At most four weapon families can contribute a signed adjustment.
+        if (len(SLOT_NAMES) * highest_quote + max(amounts, default=0)) * len(roles) >= 2**53:
+            return "Native acquisition adjustments exceed the supported range"
     return None
+
+
+def _pack_copy_adjustments(
+    ids: tuple[int, ...], adjustments: Mapping[frozenset[int], int | None]
+) -> tuple[array[int], array[int], array[int]]:
+    """Each weapon family has at most four forms, hence at most sixteen union costs."""
+    offsets = array("i", [0]) * len(ids)
+    bits = array("i", [0]) * len(ids)
+    costs = array("q", [0])
+    affected = {REVENANT_FORMS[i].market_id for subset in adjustments for i in subset}
+    families: dict[int, list[tuple[int, int]]] = {}
+    if affected:
+        for index, item in enumerate(ids):
+            form = REVENANT_FORMS.get(item)
+            if form is not None and form.market_id in affected:
+                families.setdefault(form.market_id, []).append((index, item))
+    for members in families.values():
+        for position, (index, _) in enumerate(members):
+            offsets[index] = len(costs)
+            bits[index] = 1 << position
+        for mask in range(1 << len(members)):
+            subset = frozenset(item for pos, (_, item) in enumerate(members) if mask & (1 << pos))
+            value = adjustments.get(subset, 0)
+            costs.append(UNKNOWN_COPY_COST if value is None else value)
+    return offsets, bits, costs
 
 
 def pack_stage(search: Any, scoring: Any) -> StageData:
@@ -140,9 +176,15 @@ def pack_stage(search: Any, scoring: Any) -> StageData:
     )
     if not all(isfinite(value) and abs(value) <= 1e100 for value in marginals):
         raise ValueError("Native stage ranking requires finite values")
+    offsets, bits, adjustments = _pack_copy_adjustments(
+        scoring.dense_ids, acquisition.revenant_adjustments
+    )
     return StageData(
         markets=markets,
         costs=costs,
+        copy_family_offsets=offsets,
+        copy_form_bits=bits,
+        copy_adjustments=adjustments,
         untradeable=untradeable,
         weights=weights,
         marginals=marginals,

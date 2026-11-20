@@ -71,6 +71,7 @@ class EquipmentDefinition(GearModel):
     size_damage_bonus: SizeDamageBonus | None = None
     slayer_bonus: Literal["melee", "all"] | None = None
     slayer_staff_enchanted: bool = False
+    salve_bonus: Literal[0, 1, 2, 3, 4] = 0
     tome_effect: TomeEffect | None = None
     elemental_spell_bonus: ElementalSpellBonus | None = None
     bolt_effect: Literal["opal", "pearl", "ruby", "diamond", "dragonstone", "onyx"] | None = None
@@ -253,7 +254,15 @@ class DragonbaneBonus(GearModel):
     slayer_damage_additive: bool = False
 
 
+class SalveBonus(GearModel):
+    item_id: int
+    accuracy_percent: float
+    damage_percent: float
+    suppresses_slayer: bool
+
+
 class CombatPerformance(GearModel):
+    wilderness_weapon_passive: bool | None = None
     size_damage_bonus: SizeDamagePerformance | None = None
     direct_dps: float | None = None
     status_damage: StatusDamage | None = None
@@ -262,6 +271,7 @@ class CombatPerformance(GearModel):
     leafy_bonus: LeafyBonus | None = None
     seeking_arrow_bonus: SeekingArrowBonus | None = None
     slayer_effects: tuple[SlayerEffect, ...] = ()
+    salve_bonus: SalveBonus | None = None
     tome_bonus: TomeBonus | None = None
     aquanite_hopper: HopperPerformance | None = None
     elemental_amulet_bonus: ElementalAmuletBonus | None = None

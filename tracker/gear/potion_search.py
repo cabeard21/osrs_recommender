@@ -10,6 +10,7 @@ from typing import Any
 
 from tracker.gear.discipline_assignments import has_auto
 from tracker.gear.potions import PotionPolicy, potion_setups, relevant_boost_skills
+from tracker.gear.ranged_resources import HUNTER_SPEAR
 from tracker.gear.vector_archive import own_vector_archives
 
 
@@ -263,6 +264,35 @@ def _no_potion_scores(
     return [best(limit) for limit in range(request.max_swaps + 1)]
 
 
+def _hunter_spear_available(
+    snapshot: Any, request: Any, catalog: Any, content: Any, prices: Any, now: Any, prepared: Any
+) -> bool:
+    """Determine Strength potion relevance without preparing every item for worker runs."""
+    if HUNTER_SPEAR not in catalog.items or HUNTER_SPEAR in request.excluded_item_ids:
+        return False
+    if prepared is not None:
+        spear = prepared.eligible.get(HUNTER_SPEAR)
+        return spear is not None and not spear.unsupported_effects
+    from tracker.gear.evaluation import item_problems
+    from tracker.gear.facts import equipment_fact, hypothetical_snapshot
+    from tracker.gear.support import project_catalog
+
+    reviewed = project_catalog(catalog, request.support_policy)
+    spear = reviewed.items[HUNTER_SPEAR]
+    if spear.unsupported_effects:
+        return False
+    account = hypothetical_snapshot(snapshot, request.skill_overrides, request.quest_overrides, now)
+    fact = equipment_fact(
+        account,
+        spear,
+        content,
+        prices,
+        now,
+        support_assumptions=getattr(reviewed, "community_assumptions", {}).get(HUNTER_SPEAR, ()),
+    )
+    return not item_problems(HUNTER_SPEAR, fact, request)
+
+
 @own_vector_archives
 def optimize_potions(
     snapshot: Any, request: Any, catalog: Any, content: Any, prices: Any, now: Any, **options: Any
@@ -278,6 +308,9 @@ def optimize_potions(
 
     auto = has_auto(request)
     disciplines = list(branch_requests(request)) if auto else [(None, request)]
+    hunter_spear_available = any(
+        "ranged" in (role.allowed_disciplines or (role.style,)) for role in request.roles
+    ) and _hunter_spear_available(snapshot, request, catalog, content, prices, now, prepared)
     jobs = [
         (
             discipline,
@@ -291,7 +324,9 @@ def optimize_potions(
             request.potions.allowed_ids,
             prices,
             now,
-            relevant_skills=relevant_boost_skills(concrete),
+            relevant_skills=relevant_boost_skills(
+                concrete, hunter_spear_available=hunter_spear_available
+            ),
         )
     ]
     requests = [fixed for _, fixed in jobs]

@@ -38,6 +38,7 @@ from tracker.gear.optimizer import ItemId
 from tracker.gear.prayers import CATALOG_REVISION as PRAYER_CATALOG_REVISION
 from tracker.gear.prayers import MODEL_VERSION as PRAYER_MODEL_VERSION
 from tracker.gear.running_frontier import aggregate_cost, running_cost_assumptions
+from tracker.gear.salve import MODEL_VERSION as SALVE_MODEL_VERSION
 from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, support_context
@@ -258,6 +259,13 @@ def calculate_evaluation(
     referenced.update(
         p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
     )
+    referenced.update(
+        item
+        for side in (result["baseline"], result["proposed"])
+        for prep in side["preparations"]
+        for key in ("source_item_id", "market_item_id")
+        if (item := prep[key]) in catalog.items
+    )
     from tracker.gear.evaluation import resolve_bolt_context, wilderness_provenance
     from tracker.gear.potions import potion_summary
 
@@ -271,6 +279,7 @@ def calculate_evaluation(
         "fire_tome_pages": scenario.fire_tome_pages,
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
+        "salve_model_version": SALVE_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
@@ -358,7 +367,12 @@ def calculate_evaluation(
         ).hexdigest(),
         items=[
             gear.physical_item(
-                projected, i, price_records=prices, now=now, support_policy=scenario.support_policy
+                projected,
+                i,
+                price_records=prices,
+                now=now,
+                support_policy=scenario.support_policy,
+                excluded_item_ids=scenario.excluded_item_ids,
             )
             for i in sorted(referenced)
         ],

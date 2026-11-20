@@ -175,6 +175,7 @@ def _shared_assignments(
 def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
     """Round-robin metric, component, damage and affordable candidates."""
     from tracker.gear.optimizer import SLOTS
+    from tracker.gear.salve import contextual_candidates as salve_candidates
 
     pools: dict[str, list[int | None]] = {}
     for slot in SLOTS:
@@ -229,6 +230,10 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
                 if item not in keep:
                     keep.append(item)
                 queues.append(lane)
+        if slot == "neck":
+            keep = list(
+                dict.fromkeys([*keep, *salve_candidates(search.request.roles, search.eligible)])
+            )
         pools[slot] = [None, *keep]
     return pools
 

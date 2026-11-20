@@ -1,10 +1,11 @@
 import { ItemSprite } from "./EquipmentGrid";
+import type { PurchaseDTO } from "../api/contracts";
 
-type Purchase = {
-  item_id: number;
-  cost_gp: number | null;
-  conditional: boolean;
-};
+export function purchaseName(purchase: PurchaseDTO, name: string): string {
+  return purchase.quantity && purchase.quantity > 1
+    ? `${purchase.quantity.toLocaleString()} × ${name}`
+    : name;
+}
 
 export function purchaseSummary(count: number, costGp: number): string {
   if (!count) return "No additional purchases";
@@ -16,7 +17,7 @@ export function PurchaseRows({
   itemName,
   usedBy,
 }: {
-  purchases: Purchase[];
+  purchases: PurchaseDTO[];
   itemName: (id: number) => string;
   usedBy?: (id: number) => string[];
 }) {
@@ -36,7 +37,7 @@ export function PurchaseRows({
           <li key={purchase.item_id}>
             <ItemSprite id={purchase.item_id} />
             <div>
-              <span>{`${itemName(purchase.item_id)} · ${price}${note}`}</span>
+              <span>{`${purchaseName(purchase, itemName(purchase.item_id))} · ${price}${note}`}</span>
               {roles.length > 0 && <small>Used by {roles.join(", ")}</small>}
             </div>
           </li>

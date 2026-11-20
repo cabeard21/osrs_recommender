@@ -3,6 +3,7 @@
 """Native expansion, constraints and stable retention for ordinary gear beams."""
 
 from libc.math cimport fabs, isfinite
+from libc.limits cimport LLONG_MIN
 from libc.string cimport memset, memcpy
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libcpp.vector cimport vector
@@ -96,6 +97,8 @@ cdef class StageContext:
     cdef ScoringContext scoring
     cdef object data
     cdef long long[::1] markets, costs
+    cdef long long[::1] copy_adjustments
+    cdef int[::1] copy_family_offsets, copy_form_bits
     cdef int[::1] untradeable, edges, melee, scored
     cdef double[::1] weights, marginals
     cdef vector[string] role_names, slot_names
@@ -123,6 +126,9 @@ cdef class StageContext:
         self.data = pack_stage(search, scoring)
         self.markets = self.data.markets
         self.costs = self.data.costs
+        self.copy_adjustments = self.data.copy_adjustments
+        self.copy_family_offsets = self.data.copy_family_offsets
+        self.copy_form_bits = self.data.copy_form_bits
         self.untradeable = self.data.untradeable
         self.edges = self.data.edges
         self.melee = self.data.melee
@@ -396,7 +402,37 @@ cdef class StageContext:
         self.fill_rune_mask(slots, role_index, metric, 10, mask)
         return PyBytes_FromStringAndSize(<char*>&mask[0], mask.size()) if mask.size() else None
 
-    cdef bint purchase_fits(self, const int* physical, int count, long long cost,
+    cdef long long copy_cost_delta(self, Candidate* row, int role_count) noexcept nogil:
+        """A repeated physical form shares one weapon across the role union."""
+        cdef int groups[4]
+        cdef int masks[4]
+        cdef int group_count = 0, r, j, item, family
+        cdef long long total = 0, adjustment
+        if self.copy_adjustments.shape[0] == 1:
+            return 0
+        for r in range(role_count):
+            if row.kind != 0 and not (row.present & (1 << r)):
+                continue
+            item = row.slots[r * 11]
+            family = self.copy_family_offsets[item]
+            if family == 0:
+                continue
+            for j in range(group_count):
+                if groups[j] == family:
+                    masks[j] |= self.copy_form_bits[item]
+                    break
+            else:
+                groups[group_count] = family
+                masks[group_count] = self.copy_form_bits[item]
+                group_count += 1
+        for j in range(group_count):
+            adjustment = self.copy_adjustments[groups[j] + masks[j]]
+            if adjustment == LLONG_MIN:
+                return LLONG_MIN
+            total += adjustment
+        return total
+
+    cdef bint purchase_fits(self, const int* physical, int count, long long cost, long long copy_delta,
                             bint head_pending) noexcept:
         if self.purchase_budget < 0:
             return True
@@ -405,7 +441,8 @@ cdef class StageContext:
         # A Wilderness synergy seed may still replace its provisional head.
         # Market aliases use the highest physical ID among settled items.
         cdef int j, k, item, later
-        cdef long long market, settled_cost = 0
+        # These adjustments concern weapons, already settled independently of head.
+        cdef long long market, settled_cost = copy_delta
         for j in range(count):
             item = physical[j]
             market = self.markets[item]
@@ -423,7 +460,8 @@ cdef class StageContext:
         """Only the Python partial beam's compatibility, eligibility and cost filters."""
         cdef int physical[11]
         cdef int count = 0, s, j, k, item, role, dimension
-        cdef long long cost = 0
+        cdef long long copy_delta = self.copy_cost_delta(row, 1)
+        cdef long long cost = copy_delta
         cdef bint duplicate, later, supported
         cdef double maximum[65]
         cdef Sum totals[65]
@@ -431,6 +469,8 @@ cdef class StageContext:
         cdef double denominator, risk_bound = 0.0
         cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
         cdef vector[unsigned char] mask
+        if copy_delta == LLONG_MIN:
+            return False
         if row.slots[0] and row.slots[1] and self.scoring.two_handed[row.slots[0]]:
             return False
         if slot == 2 and self.risk_feasible is not None and not self.may_equip_ammunition(row.slots, roles, nroles):
@@ -468,7 +508,7 @@ cdef class StageContext:
                     break
             if not later:
                 cost += self.costs[item]
-        if not self.purchase_fits(physical, count, cost, slot < 3):
+        if not self.purchase_fits(physical, count, cost, copy_delta, slot < 3):
             return False
         if self.risk_feasible is not None and not self.wilderness_bound(row, slot, &risk_bound):
             return False
@@ -562,7 +602,7 @@ cdef class StageContext:
         cdef int count = 0
         cdef int index, item, previous, r, s, j, k, d, outside
         cdef int equipment_offset
-        cdef long long cost = 0
+        cdef long long cost, copy_delta
         cdef long long amount, market, untradeable = 0, strength = 0
         cdef bint duplicate, later, complete, all_melee = True
         cdef Score score
@@ -570,6 +610,10 @@ cdef class StageContext:
         cdef Sum secondary = Sum(0.0, 0.0)
         cdef Sum weight = Sum(0.0, 0.0)
         cdef int row_roles = 1 if row.kind == 0 else self.scoring.role_count
+        copy_delta = self.copy_cost_delta(row, row_roles)
+        if copy_delta == LLONG_MIN:
+            return False
+        cost = copy_delta
         if self.risk_feasible is not None:
             if row.kind == 0 and slot == 2 and not self.may_equip_ammunition(row.slots, roles, nroles):
                 return False
@@ -616,7 +660,7 @@ cdef class StageContext:
                     break
             if not later:
                 cost += self.costs[item]
-        if not self.purchase_fits(physical, count, cost, row.kind != 2 and slot < 3):
+        if not self.purchase_fits(physical, count, cost, copy_delta, row.kind != 2 and slot < 3):
             return False
         if self.risk_feasible is not None and not self.wilderness_bound(row, slot):
             return False
@@ -647,10 +691,15 @@ cdef class StageContext:
             r = roles[index]
             if row.kind != 0 and not row.present & (1 << r):
                 continue
-            all_melee = all_melee and self.melee[r]
+            equipment_offset = 0 if row.kind == 0 else r * 11
+            all_melee = all_melee and (
+                self.melee[r] or (
+                    self.scoring.role_styles[r] == 3
+                    and self.scoring.original_ids[row.slots[equipment_offset]] == 29305
+                )
+            )
             if not self.scored[r]:
                 continue
-            equipment_offset = 0 if row.kind == 0 else r * 11
             if self.packed_runes and self.scoring.role_styles[r] == 4 and (row.kind == 2 or slot >= 2):
                 mask.clear()
                 self.fill_rune_mask(&row.slots[equipment_offset], r, metric, 10 if row.kind == 2 else slot, mask)

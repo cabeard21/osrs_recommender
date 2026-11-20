@@ -7,8 +7,23 @@ export function TargetSusceptibilityFields({
   target: CombatTarget;
   onChange: (patch: Partial<CombatTarget>) => void;
 }) {
+  const traits = target.traits ?? [];
   return (
     <>
+      <label>
+        <input
+          type="checkbox"
+          checked={traits.includes("undead")}
+          onChange={(event) =>
+            onChange({
+              traits: event.target.checked
+                ? [...traits, "undead"]
+                : traits.filter((trait) => trait !== "undead"),
+            })
+          }
+        />
+        Undead target
+      </label>
       {(["poison", "venom"] as const).map((kind) => {
         const key = `${kind}_susceptibility` as const;
         return (

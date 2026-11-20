@@ -22,6 +22,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     field_serializer,
     model_serializer,
     model_validator,
@@ -51,7 +52,7 @@ from tracker.gear.evaluation import (
     purchase_cost,
     purchases,
     resolve_bolt_context,
-    resolve_tome_context,
+    resolve_scenario_combat_context,
     unowned_untradeables,
     validate_request_context,
     wilderness_provenance,
@@ -90,7 +91,17 @@ from tracker.gear.prayers import (
 )
 from tracker.gear.priorities import SecondaryPriority, secondary_value
 from tracker.gear.progress import NULL_REPORTER, StageReporter
+from tracker.gear.ranged_resources import HUNTER_SPEAR
 from tracker.gear.refinement import refine_ammunition, refine_magic_staves, refine_shared_slots
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
+from tracker.gear.revenant_acquisition import (
+    copies_available,
+    joint_sources,
+    loadout_preparations,
+    preferred_sources,
+)
+from tracker.gear.salve import MODEL_VERSION as SALVE_MODEL_VERSION
+from tracker.gear.salve import contextual_candidates as salve_candidates
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
@@ -145,6 +156,7 @@ class CombatOptionFilters(BaseModel):
 
 class RoleConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    _in_wilderness: bool = PrivateAttr(default=False)
     safe_spotting: bool = Field(default=False, strict=True)
     fight_duration_seconds: int = Field(default=60, ge=1, le=3600, strict=True)
     on_slayer_task: bool = Field(default=False, strict=True)
@@ -337,7 +349,7 @@ class OptimizationRequest(BaseModel):
             )
             for slot, review_form in preparers:
                 source = locks.get(slot)
-                if source is None:
+                if source is None or source in REVENANT_FORMS:
                     continue
                 form = review_form(source)
                 if form is None or source != form.uncharged_id or source == form.charged_id:
@@ -355,7 +367,7 @@ class OptimizationRequest(BaseModel):
             locks = prepared(role.locks)
             options = role.combat_options
             staff = powered_review(source) if source is not None else None
-            if options is not None and staff is not None and source == staff.uncharged_id:
+            if options is not None and staff is not None and source in conversions:
                 spells = tuple(
                     dict.fromkeys(
                         f"powered:{staff.charged_id}" if s == f"powered:{source}" else s
@@ -482,9 +494,7 @@ class _Search:
         request = request.model_copy(
             update={
                 "roles": tuple(
-                    resolve_tome_context(
-                        resolve_bolt_context(role, snapshot), request.fire_tome_pages
-                    )
+                    resolve_scenario_combat_context(resolve_bolt_context(role, snapshot), request)
                     for role in request.roles
                 )
             }
@@ -549,6 +559,7 @@ class _Search:
 
             self._assignment_json = assignment_json
             self._acquisition = acquisition
+            self._ready_copy_check = acquisition_facts.ready_copy_adjustment
         self.compact_multi = len(request.roles) > 1 and self.factored_evaluation
         self.levels: Mapping[str, int] = {k: v.level for k, v in snapshot.skills.items()}
         if request.potions.mode == "fixed":
@@ -717,6 +728,8 @@ class _Search:
         return purchase_cost(ids if isinstance(ids, set) else set(ids), self.facts, self.request)
 
     def within_budget(self, ids: set[int] | frozenset[int], *, complete: bool = False) -> bool:
+        if not self.ready_copies_available(ids):
+            return False
         purchase_budget = self.request.purchase_budget
         if purchase_budget is not None and self.cost(ids) > purchase_budget:
             return False
@@ -727,6 +740,8 @@ class _Search:
         return self.wilderness.partial_feasible(ids)
 
     def feasible_purchase_cost(self, ids: set[int] | frozenset[int]) -> int | None:
+        if not self.ready_copies_available(ids):
+            return None
         cost = self.cost(ids)
         purchase_budget = self.request.purchase_budget
         if purchase_budget is not None and cost > purchase_budget:
@@ -740,6 +755,15 @@ class _Search:
             if not fits(ids):
                 return None
         return cost
+
+    def ready_copies_available(self, ids: set[int] | frozenset[int]) -> bool:
+        if len(self.request.roles) < 2:
+            return True
+        if self.compact_states:
+            return self._ready_copy_check(frozenset(ids)) is not None
+        return copies_available(
+            joint_sources(ids, self.facts, self.request), self.facts, self.request
+        )
 
     def slot_budget(
         self,
@@ -943,6 +967,7 @@ class _Search:
             weapon.id if weapon else None,
             shield.id if shield else None,
             role.fire_tome_pages,
+            role._in_wilderness,
             role.on_slayer_task,
             role.mark_of_darkness,
             getattr(self, "metric_first", False),
@@ -1674,6 +1699,10 @@ class _Search:
                         ]
                     )
                 )
+            if slot == "neck":
+                retained = list(
+                    dict.fromkeys([*retained, *salve_candidates(self.request.roles, self.eligible)])
+                )
             if slot in {"weapon", "ammunition"} and any(
                 r.target is not None and "leafy" in r.target.traits for r in self.request.roles
             ):
@@ -1721,6 +1750,22 @@ class _Search:
                     dict.fromkeys([*retained, *(i for i in ordered if self.items[i].tome_effect)])
                 )
             if slot == "weapon":
+                if self.request.wilderness is not None or any(
+                    goal.kind == "gp_per_damage" for goal in self.request.objectives or ()
+                ):
+                    # Weapon-only rankings can discard the cheaper uncharged attack or
+                    # the charged alternative before full gear, cost and risk are scored.
+                    revenant_forms = (
+                        i
+                        for i in ordered
+                        if i in REVENANT_FORMS
+                        and any(
+                            self.marginals[r.id, i] >= 0
+                            for r in self.request.roles
+                            if r.style != "special"
+                        )
+                    )
+                    retained = list(dict.fromkeys([*retained, *revenant_forms]))
                 # Preserve weapon families whose complete-gear synergy is invisible
                 # to weapon-only scaffolds, without changing the DPS objective.
                 families: dict[str, int] = {}
@@ -2084,7 +2129,11 @@ class _Search:
                 # remains the first key and the final solution's only damage score.
                 strength = (
                     sum(self.items[i].bonuses.melee_strength for i in _equipment_ids(e))
-                    if all(r.style in {"stab", "slash", "crush"} for r in roles)
+                    if all(
+                        r.style in {"stab", "slash", "crush"}
+                        or (r.style == "ranged" and e.get("weapon") == HUNTER_SPEAR)
+                        for r in roles
+                    )
                     else 0
                 )
                 return (
@@ -2162,6 +2211,7 @@ class _Search:
             if r.style != "special"
         ) / (weight or 1)
         peak = max([*occupancies, *(t["max_gear_inventory_slots"] for t in transitions)], default=0)
+        preparations = loadout_preparations(carried, self.facts, self.request)
         result = {
             "score": score,
             "secondary_priority": self.request.secondary_priority,
@@ -2172,9 +2222,9 @@ class _Search:
                 r.id: {
                     "equipment": dict(loadouts[r.id]),
                     "preparations": [
-                        self.facts[i]["preparation"]
+                        preparations[i]
                         for i in sorted(loadouts[r.id].values())
-                        if self.facts[i].get("preparation")
+                        if i in preparations
                     ],
                     "discipline": (
                         None
@@ -2385,6 +2435,7 @@ def prepare_optimization(
             content,
             price_records,
             now,
+            excluded_item_ids=request.excluded_item_ids,
             support_assumptions=getattr(catalog, "community_assumptions", {}).get(i, ()),
         )
         for i, item in catalog.items.items()
@@ -2836,6 +2887,7 @@ def optimize(
         **wilderness_provenance(request),
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
+        "salve_model_version": SALVE_MODEL_VERSION,
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
@@ -2909,12 +2961,22 @@ def optimize(
         }
     # Purchase identities can differ from the usable equipment after charging.
     referenced |= {
-        market_id
+        related
         for i in tuple(referenced)
         if i in facts
-        for market_id in [(facts[i].get("preparation") or {}).get("market_item_id")]
-        if market_id is not None
+        for key in ("source_item_id", "market_item_id")
+        for related in [(facts[i].get("preparation") or {}).get(key)]
+        if related is not None
     }
+    # A joint loadout can allocate a different observed copy than the item's
+    # stand-alone preparation. Include that sibling's physical metadata.
+    referenced.update(
+        source
+        for i in tuple(referenced)
+        if i in REVENANT_FORMS
+        for source in preferred_sources(i)
+        if source in facts and facts[source]["ownership"]["status"] == "owned"
+    )
     total_weight = sum(r.weight for r in request.roles if r.style != "special")
     if request.objectives is not None and not _complete_frontiers:
         from tracker.gear.vector_publish import filter_groups

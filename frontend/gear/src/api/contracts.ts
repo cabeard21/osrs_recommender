@@ -211,6 +211,7 @@ export interface WildernessRisk {
     item_id: number;
     outcome:
       | "kept"
+      | "gravestone"
       | "dropped"
       | "broken"
       | "mangled"
@@ -355,6 +356,7 @@ export interface Solution {
 }
 export interface PurchaseDTO {
   item_id: number;
+  quantity?: number;
   cost_gp: number | null;
   conditional: boolean;
 }
@@ -529,6 +531,7 @@ export interface BoltPerformance {
   expected_damage_delta: number;
 }
 export interface CombatPerformance {
+  wilderness_weapon_passive?: boolean | null;
   direct_dps?: number | null;
   status_damage?: {
     kind: "venom" | "poison" | "unknown";
@@ -565,6 +568,12 @@ export interface CombatPerformance {
   seeking_arrow_bonus?: {
     item_id: number;
     minimum_hit: number;
+  } | null;
+  salve_bonus?: {
+    item_id: number;
+    accuracy_percent: number;
+    damage_percent: number;
+    suppresses_slayer: boolean;
   } | null;
   slayer_effects?: {
     item_id: number;

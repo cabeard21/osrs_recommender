@@ -454,6 +454,7 @@ class VectorSearch:
 
     def candidate_pools(self) -> dict[str, list[int | None]]:
         from tracker.gear.optimizer import SLOTS
+        from tracker.gear.salve import contextual_candidates as salve_candidates
 
         fields = {
             "prayer_bonus": "prayer",
@@ -549,6 +550,12 @@ class VectorSearch:
                     if item not in keep:
                         keep.append(item)
                     queues.append(lane)
+            if slot == "neck":
+                keep = list(
+                    dict.fromkeys(
+                        [*keep, *salve_candidates(self.search.request.roles, self.search.eligible)]
+                    )
+                )
             pools[slot] = keep
         return pools
 

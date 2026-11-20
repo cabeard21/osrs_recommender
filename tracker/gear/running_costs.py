@@ -21,11 +21,13 @@ from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import STAFFS, review
 from tracker.gear.ranged_resources import THROWN_IDS
+from tracker.gear.revenant import ETHER_ID
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v9-halberds-demonbane"
+COST_MODEL_VERSION = "ordinary-resource-cost-v10-revenant-weapons"
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -134,6 +136,7 @@ def resource_item_ids() -> frozenset[int]:
     return (
         potion_item_ids()
         | MARKET_FORMS
+        | {ETHER_ID, *(form.uncharged_id for form in REVENANT_FORMS.values())}
         | TOME_MARKET_FORMS
         | frozenset({4170, 21257, 4207, 12929, 12934})
         | frozenset(_RUNES)
@@ -222,10 +225,12 @@ def evaluate_running_cost(
         and bool(getattr(equipment.get("weapon"), "slayer_staff_enchanted", False))
     )
     demonbane_cost = mark_of_darkness or any(i.id in {19675, 732} for i in equipment.values())
+    weapon = equipment.get("weapon")
     if (
         active()
         or enchanted_dart
         or demonbane_cost
+        or (weapon is not None and weapon.id in REVENANT_FORMS)
         or any(i.id in {23987, 12931} for i in equipment.values())
     ):
         prepared = evaluator(price_records, now).prepare(
@@ -309,13 +314,6 @@ def evaluate_running_cost(
                 )
                 for item_id, quantity in recipe.items()
             ]
-            # Charged autocasting sceptres consume ether as well as spell runes.
-            # Their uncharged (a) forms can autocast without the ether effect.
-            if weapon and weapon.id in {27788, 27679}:
-                resources = [
-                    *resources,
-                    _resource(21820, "Revenant ether", 1, 0, None, price_records, now),
-                ]
     elif style in {"ranged", "light", "standard", "heavy"}:
         resources, reasons = _ranged_resources(equipment, price_records, now)
     elif style not in {"stab", "slash", "crush"}:

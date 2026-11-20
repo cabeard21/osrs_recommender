@@ -186,6 +186,16 @@ def direct_departure_loss(request, selections, projected, catalog, content, pric
     carried = {item for equipment in loadouts.values() for item in equipment.values()}
     if not carried <= catalog.items.keys():
         raise ValueError("Unknown item in the selected trip")
+    from tracker.gear.revenant import FORMS as REVENANT_FORMS
+    from tracker.gear.revenant_acquisition import copies_available, joint_sources, preferred_sources
+
+    sources = {
+        source
+        for i in carried
+        if i in REVENANT_FORMS
+        for source in preferred_sources(i)
+        if source in catalog.items
+    }
     facts = {
         i: equipment_fact(
             projected,
@@ -193,14 +203,17 @@ def direct_departure_loss(request, selections, projected, catalog, content, pric
             content,
             prices,
             now,
+            excluded_item_ids=request.excluded_item_ids,
             support_assumptions=catalog.community_assumptions.get(i, ()),
         )
-        for i in carried
+        for i in carried | sources
     }
     for role in request.roles:
         problems = loadout_problems(loadouts[role.id], catalog.items, facts, request, role)
         if problems:
             raise ValueError(problems[0]["message"])
+    if not copies_available(joint_sources(carried, facts, request), facts, request):
+        raise ValueError("The selected setups require additional ready copies of the weapon")
     if purchase_cost(carried, facts, request) > request.budget_gp:
         raise ValueError("Additional purchases exceed the scenario budget")
     options = {
@@ -250,7 +263,7 @@ def calculate_timeline(
     from tracker.gear.evaluation import (
         evaluate_configurations,
         resolve_bolt_context,
-        resolve_tome_context,
+        resolve_scenario_combat_context,
     )
     from tracker.gear.facts import hypothetical_snapshot
     from tracker.gear.halberd_charging import cost_context
@@ -345,8 +358,8 @@ def calculate_timeline(
                     + "; ".join(r["message"] for r in checked["reasons"])
                 )
             option = CombatOption(**selected)
-            configured = resolve_tome_context(
-                resolve_bolt_context(role, snapshot), request.fire_tome_pages
+            configured = resolve_scenario_combat_context(
+                resolve_bolt_context(role, snapshot), request
             ).model_copy(
                 update={
                     "style": option.style,

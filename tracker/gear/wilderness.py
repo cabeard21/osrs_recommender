@@ -17,6 +17,9 @@ from pydantic import Field, SerializerFunctionWrapHandler, model_serializer, mod
 
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.models import EquipmentDefinition, GearModel
+from tracker.gear.revenant import ACTIVATION_RESERVE, ETHER_ID, MAX_CHARGES
+from tracker.gear.revenant import FORMS as REVENANT_FORMS
+from tracker.gear.salve import FORMS as SALVE_FORMS
 from tracker.gear.wilderness_data import (
     ALWAYS_KEPT,
     CHARGED_ETHER,
@@ -32,7 +35,9 @@ from tracker.gear.wilderness_data import (
 )
 from tracker.gear.wilderness_runes import RUNE_IDS
 
-Outcome = Literal["kept", "dropped", "broken", "mangled", "destroyed", "converted", "unknown"]
+Outcome = Literal[
+    "kept", "gravestone", "dropped", "broken", "mangled", "destroyed", "converted", "unknown"
+]
 MAX_STACK = 2**31 - 1
 NO_RUNES: Mapping[int, int] = MappingProxyType({})
 
@@ -175,6 +180,11 @@ def _physical_death_rule(
     item_id = item.id
     if item_id in ALWAYS_KEPT:
         return DeathItem(None, 0, "kept", protection_slot=False)
+    if item_id in SALVE_FORMS:
+        # Non-breaking untradeables go to a grave intact even above level 20.
+        # Exact protection order is unverified, so allow either ranking.
+        # https://secure.runescape.com/m=news/bank-tags-trouver-system-rework--more?oldschool=1
+        return DeathItem(None, 0, "gravestone")
     depth_rule = DEPTH_LOSSES.get(item_id)
     if depth_rule:
         priority, shallow_fee, deep_fee, deep_outcome = depth_rule
@@ -193,12 +203,14 @@ def _physical_death_rule(
         return DeathItem(priority, repair + quote if quote is not None else None, "broken")
     if item_id in CHARGED_ETHER:
         base = CHARGED_ETHER[item_id]
-        unit = _price({}, 21820, prices, now)
+        unit = _price({}, ETHER_ID, prices, now)
         return DeathItem(
             None,
-            _price(fact, base, prices, now),
+            _price({}, base, prices, now),
             "converted",
-            charge=Charge(((21820, 1, unit),), 1_001, 17_000),
+            charge=Charge(
+                ((ETHER_ID, 1, unit),), ACTIVATION_RESERVE + 1, ACTIVATION_RESERVE + MAX_CHARGES
+            ),
         )
     if charged := CHARGED_RECIPES.get(item_id):
         base, maximum, recipe = charged
@@ -224,7 +236,7 @@ def _physical_death_rule(
         return None
     return DeathItem(
         priority,
-        _price(fact, item_id, prices, now),
+        _price({} if item_id in REVENANT_FORMS else fact, item_id, prices, now),
         ammo=ammo,
     )
 

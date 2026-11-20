@@ -340,6 +340,41 @@ it("accepts one market purchase for a prepared staff shared by both roles", () =
     /preparation/,
   );
 });
+it("accepts two copies of one listing prepared as distinct carried weapons", () => {
+  const { scenario, reply } = example();
+  const raw = structuredClone(
+    reply.result.selected_solution,
+  ) as JointSolutionDTO;
+  const original = context.items.map(parseItem).find((i) => i.id === 4151)!;
+  const items = Object.values(raw.loadouts).map((loadout, index) => {
+    const id = index === 0 ? 27665 : 27679;
+    const preparation = {
+      source_item_id: null,
+      usable_item_id: id,
+      market_item_id: 27662,
+      charging_required: true,
+      charges: "unknown" as const,
+      activation_reserve: [],
+      message: "Charge the staff",
+    };
+    loadout.equipment = { weapon: id };
+    loadout.preparations = [preparation];
+    return {
+      ...original,
+      id,
+      facts: { ...original.facts!, item_id: id, preparation },
+    };
+  });
+  raw.carried_item_ids = items.map((i) => i.id);
+  raw.distinct_items = 2;
+  raw.purchases = [
+    { item_id: 27662, quantity: 2, cost_gp: 1000, conditional: false },
+  ];
+  raw.purchase_cost_gp = 1000;
+  const solution = parseJointSolution(raw, scenario, items, "curve-1", 1);
+  expect(solution.live?.purchases[0].quantity).toBe(2);
+  expect(solution.cost).toBe(1000);
+});
 const invalidSolutions: [string, (raw: JointSolutionDTO) => void][] = [
   [
     "negative occupancy",
@@ -399,6 +434,18 @@ const invalidSolutions: [string, (raw: JointSolutionDTO) => void][] = [
     "invalid price",
     (r) => {
       r.purchases[0].cost_gp = -1;
+    },
+  ],
+  [
+    "zero quantity",
+    (r) => {
+      r.purchases[0].quantity = 0;
+    },
+  ],
+  [
+    "more copies than selected forms",
+    (r) => {
+      r.purchases[0].quantity = 2;
     },
   ],
   [

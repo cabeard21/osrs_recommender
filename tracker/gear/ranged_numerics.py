@@ -8,13 +8,12 @@ from functools import lru_cache
 from math import floor
 from typing import NamedTuple, cast
 
-Key = (
-    tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None]
-    | tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None, int, int]
-    | tuple[
-        int | None, int, int, int, str, int, int, int, str, int, int, int, int | None, int, int, int
-    ]
-)
+BaseKey = tuple[int | None, int, int, int, str, int, int, int, str, int, int, int, int | None]
+MaskKey = tuple[*BaseKey, int, int]
+FloorKey = tuple[*MaskKey, int]
+WildernessKey = tuple[*FloorKey, bool]
+DamageKey = tuple[int, int, bool, int]
+Key = BaseKey | MaskKey | FloorKey | WildernessKey | tuple[*WildernessKey, DamageKey]
 
 
 class CacheInfo(NamedTuple):
@@ -54,13 +53,29 @@ def calculate(key: Key) -> Outgoing:
         cap,
     ) = key[:13]
     numerator, denominator = cast(tuple[int, int], key[13:15]) if len(key) >= 15 else (1, 1)
-    accurate_floor = cast(int, key[-1]) if len(key) == 16 else 1
+    if len(key) >= 17:
+        accurate_floor, wilderness_weapon = cast(tuple[int, bool], key[15:17])
+    else:
+        accurate_floor = cast(int, key[-1]) if len(key) == 16 else 1
+        wilderness_weapon = False
     stance_bonus = 3 if stance == "accurate" else 0
     effective_strength = level * strength_prayer // 100 + 8 + stance_bonus
     maximum = max(0, floor(0.5 + effective_strength * (strength_bonus + 64) / 640))
-    attack = (level * accuracy_prayer // 100 + 8 + stance_bonus) * (attack_bonus + 64)
-    maximum = maximum * numerator // denominator
+    damage_num, damage_den, task_additive, attack_level = (
+        cast(tuple[*WildernessKey, DamageKey], key)[17]
+        if len(key) == 18
+        else (numerator, denominator, numerator != denominator, level)
+    )
+    attack = (attack_level * accuracy_prayer // 100 + 8 + stance_bonus) * (attack_bonus + 64)
+    if wilderness_weapon and task_additive:
+        maximum = maximum * 33 // 20
+    else:
+        maximum = maximum * damage_num // damage_den
+        if wilderness_weapon:
+            maximum = maximum * 3 // 2
     attack = attack * numerator // denominator
+    if wilderness_weapon:
+        attack = attack * 3 // 2
     defence = (defence_level + 9) * (defence_bonus + 64)
     if stance == "rapid":
         speed = max(1, speed - 1)

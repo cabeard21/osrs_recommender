@@ -72,7 +72,7 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
     # Preparation purchases need market-form quotes even when the uncharged
     # physical row itself remains blocked from combat.
     assert {22552, 28583, 31115, 27662} <= _price_scope(content)
-    assert {20143, 21820, 23227, 22550, 27652} <= _price_scope(content)
+    assert {20143, 21820, 23227, 22547, 27652} <= _price_scope(content)
     assert 1207 in _price_scope(content)  # Community Steel dagger, absent from authored scope.
 
 

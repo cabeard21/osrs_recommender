@@ -34,8 +34,31 @@ splash. Sources: [Magic Dart](https://oldschool.runescape.wiki/w/Magic_Dart),
 [Slayer's staff (e)](https://oldschool.runescape.wiki/w/Slayer%27s_staff_%28e%29).
 
 Black mask's random defence drain, helmet protection, assignment length and
-Slayer XP effects are outside this ordinary outgoing-damage model. Existing
-unsupported mechanics, including Salve effects, retain their existing policy.
+Slayer XP effects are outside this ordinary outgoing-damage model.
+
+## Salve amulets
+
+Salve bonuses use the configured target's undead trait. The four variants
+preserve their physical item IDs, including the three sources of each imbue.
+Base Salve gives 7/6 melee accuracy and damage. Enchanted Salve gives 6/5.
+Imbuing extends the effect to Ranged and Magic. Unenchanted imbued Salve gives
+7/6 Ranged and 15% Magic. Enchanted imbued Salve gives 20% to both.
+
+An applicable Salve effect takes precedence over the Black mask or Slayer
+helmet for each roll independently. Hunter's spear uses melee Strength for
+damage and Ranged for accuracy. The unimbued Salve can affect its damage.
+The Slayer's staff (e) still uses its own Magic Dart rule. Ranged Salve and
+an applicable dragonbane or Wilderness weapon bonus multiply and truncate at
+each step. Magic damage adds the Salve percentage alongside gear and prayer
+bonuses after Tumeken's shadow scales worn equipment.
+
+Salve has no charge cost. Acquisition uses the untradeable policy with
+source-specific imbue guidance. An unprotected Salve goes to the gravestone
+with its imbue intact in either Wilderness depth band. Risk calculation uses
+the worst plausible loss when the Salve's protection priority is uncertain.
+
+Sources [attribute affinities](https://oldschool.runescape.wiki/w/Attribute_affinities)
+and [Wiki DPS calculator formula order](https://github.com/weirdgloop/osrs-dps-calc/blob/3da927f4280c73154fa59e4e90eb374af5123d32/src/lib/PlayerVsNPCCalc.ts).
 
 ## Turoths and leafy targets
 

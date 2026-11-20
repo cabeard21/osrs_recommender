@@ -21,6 +21,8 @@ from tracker.gear.facts import observed_ownership
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import review as powered_review
 from tracker.gear.powered import supports_powered
+from tracker.gear.ranged_resources import ranged_damage_type
+from tracker.gear.revenant import CHARGED_AUTOCAST, CHARGED_BOWS, CHARGED_MACES
 from tracker.gear.slayer import MAGIC_DART_STAVES
 
 MELEE_TYPES = frozenset({"stab", "slash", "crush"})
@@ -67,13 +69,6 @@ def _standard_spellbook_status(snapshot: AccountSnapshot) -> Tri:
     if "spellbook_standard" not in snapshot.unlocks:
         return Tri.SATISFIED
     return evaluate_requirement(snapshot, UnlockLeaf(key="spellbook_standard")).status
-
-
-def _ranged_type(weapon: EquipmentDefinition) -> str:
-    # Mirrors the target-defence category used by the shared combat scorer.
-    if weapon.ammo_for and weapon.ammo_for[0].startswith("bolt:"):
-        return "heavy"
-    return "standard" if weapon.ammo_for else "light"
 
 
 def _ammunition_status(
@@ -133,6 +128,7 @@ def enumerate_combat_options(
                 stance=stance,
                 availability=account[0],
                 reasons=account[1],
+                charges="unknown" if weapon and weapon.id in CHARGED_MACES else "not_applicable",
             )
             for attack, stance in profiles
             if attack in MELEE_TYPES and stance in MELEE_STANCES
@@ -140,7 +136,7 @@ def enumerate_combat_options(
     if discipline == "ranged":
         if weapon is None:
             return ()
-        kind = _ranged_type(weapon)
+        kind = ranged_damage_type(weapon)
         status, reasons = _account_status(
             (_skill_status(snapshot, "ranged", 1), "Ranged level is unknown"),
         )
@@ -151,6 +147,7 @@ def enumerate_combat_options(
                 availability=status,
                 reasons=reasons,
                 ammunition=_ammunition_status(snapshot, weapon),
+                charges="unknown" if weapon.id in CHARGED_BOWS else "not_applicable",
             )
             for attack, stance in weapon.attack_profiles
             if attack == "ranged" and stance in RANGED_STANCES
@@ -256,7 +253,9 @@ def enumerate_combat_options(
                 availability=status,
                 reasons=reasons,
                 runes="unknown",
-                charges="unknown" if spell == "iban_blast" else "not_applicable",
+                charges="unknown"
+                if spell == "iban_blast" or (weapon and weapon.id in CHARGED_AUTOCAST)
+                else "not_applicable",
             )
             for stance in sorted(stances)
         )

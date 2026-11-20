@@ -89,6 +89,7 @@ const lossEstimate = (value: unknown) =>
   value === null || (Number.isSafeInteger(value) && Number(value) >= 0);
 const outcomes = new Set([
   "kept",
+  "gravestone",
   "dropped",
   "broken",
   "mangled",

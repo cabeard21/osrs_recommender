@@ -11,6 +11,7 @@ from tracker.gear.ammo_armour import COMPATIBLE_BODIES, INTERFERING_BODIES
 from tracker.gear.compact_costs import CostEvaluator
 from tracker.gear.halberd_charging import cost_context
 from tracker.gear.ranged_resources import THROWN_IDS
+from tracker.gear.revenant import CHARGED_BOWS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 
 
@@ -61,7 +62,8 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         duration = getattr(configured, "fight_duration_seconds", 60)
         batches = 1 + (duration * 5 - 1) // 270
         ranged = option.attack_type in {"ranged", "light", "standard", "heavy"}
-        option_kind.append(int(ranged))
+        # Internally supplied bows use their pre-priced ether recipe for every shot.
+        option_kind.append(int(ranged and weapon_id not in CHARGED_BOWS))
         weapon = search.items.get(weapon_id)
         base_interval = weapon.attack_speed * 0.6 if weapon else 2.4
         serp_cost.append(

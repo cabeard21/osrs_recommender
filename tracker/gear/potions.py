@@ -219,7 +219,7 @@ def potion_setups(
     return sorted(states.values(), key=rank)
 
 
-def relevant_boost_skills(request: Any) -> frozenset[str]:
+def relevant_boost_skills(request: Any, *, hunter_spear_available: bool = False) -> frozenset[str]:
     """Skills affecting ordinary attack scoring across configured roles/Auto branches."""
     skills_by_style = {
         "stab": ("attack", "strength"),
@@ -238,10 +238,21 @@ def relevant_boost_skills(request: Any) -> frozenset[str]:
         from tracker.gear.objectives import required_objective_skills
 
         defensive = required_objective_skills(objectives)
-    return defensive | frozenset(
-        skill
+    from tracker.gear.ranged_resources import HUNTER_SPEAR
+
+    spear_strength = hunter_spear_available and any(
+        "ranged" in (getattr(role, "allowed_disciplines", None) or (role.style,))
+        and {**request.locks, **role.locks}.get("weapon", HUNTER_SPEAR) == HUNTER_SPEAR
         for role in request.roles
-        if role.style != "special"
-        for style in (getattr(role, "allowed_disciplines", None) or (role.style,))
-        for skill in skills_by_style.get(style, ())
+    )
+    return (
+        defensive
+        | ({"strength"} if spear_strength else set())
+        | frozenset(
+            skill
+            for role in request.roles
+            if role.style != "special"
+            for style in (getattr(role, "allowed_disciplines", None) or (role.style,))
+            for skill in skills_by_style.get(style, ())
+        )
     )

@@ -286,6 +286,11 @@ export function NpcTargetPicker({
               ammunition, or Magic Dart.
             </p>
           )}
+          {base?.traits?.includes("undead") && (
+            <p className="npc-note" aria-label="Undead NPC trait">
+              Undead target. Salve amulet bonuses apply by attack style.
+            </p>
+          )}
           {selection &&
             detail.catalog_revision !== selection.catalog_revision && (
               <p role="alert">

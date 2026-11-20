@@ -8,6 +8,7 @@ import { wildernessRiskCap } from "../api/wilderness";
 const outcomeNames: Record<WildernessRisk["items"][number]["outcome"], string> =
   {
     kept: "Kept",
+    gravestone: "Recover from gravestone",
     dropped: "Dropped",
     broken: "Broken",
     mangled: "Mangled",
@@ -15,7 +16,7 @@ const outcomeNames: Record<WildernessRisk["items"][number]["outcome"], string> =
     converted: "Converted",
     unknown: "Unknown",
   };
-const resourceNames: Record<number, string> = {
+export const resourceNames: Readonly<Partial<Record<number, string>>> = {
   554: "Fire rune",
   555: "Water rune",
   556: "Air rune",

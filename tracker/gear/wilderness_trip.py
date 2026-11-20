@@ -11,6 +11,7 @@ from tracker.gear.hopper import PROC_CHANCE
 from tracker.gear.hopper import active as hopper_active
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.ranged_resources import THROWN_IDS
+from tracker.gear.revenant import CHARGED_AUTOCAST, CHARGED_BOWS, CHARGED_MACES
 
 if TYPE_CHECKING:
     from tracker.gear.wilderness import DeathItem
@@ -41,12 +42,14 @@ def trip_resources(
             uses_charge = (
                 special
                 or option.get("powered_attack")
-                or (weapon_id in {22542, 27660} and attack_type in {"stab", "slash", "crush"})
+                or (weapon_id in CHARGED_MACES and attack_type in {"stab", "crush"})
                 or (
-                    weapon_id in {22547, 27655}
+                    weapon_id in CHARGED_BOWS
                     and attack_type in {"ranged", "light", "standard", "heavy"}
                 )
-                or (weapon_id in {27788, 27679} and attack_type == "magic" and option.get("spell"))
+                or (
+                    weapon_id in CHARGED_AUTOCAST and attack_type == "magic" and option.get("spell")
+                )
             )
             charges[weapon_id] += count if uses_charge else 0
             continue

@@ -317,6 +317,12 @@ it("shows Wilderness risk, the loss without Protect Item, and packing quantities
                       outcome: "dropped",
                       loss_gp: 100,
                     },
+                    {
+                      item_id: 12018,
+                      quantity: 1,
+                      outcome: "gravestone",
+                      loss_gp: 0,
+                    },
                   ],
                   quantities: [
                     {
@@ -365,6 +371,8 @@ it("shows Wilderness risk, the loss without Protect Item, and packing quantities
   ).toBeVisible();
   expect(screen.getByText("0 GP additional purchases")).toBeVisible();
   expect(screen.getByText(/100 GP max gear loss if PK’d/)).toBeVisible();
+  await user.click(screen.getByText("Items kept and lost"));
+  expect(screen.getByText("Recover from gravestone")).toBeVisible();
 });
 it("submits a single domain role with physical locks and exact budget, without fixture-only fields", async () => {
   const fetcher = vi.fn(

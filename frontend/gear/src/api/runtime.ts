@@ -42,6 +42,11 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
   )
     throw new Error("Invalid combat performance metadata");
   if (
+    value.wilderness_weapon_passive != null &&
+    typeof value.wilderness_weapon_passive !== "boolean"
+  )
+    throw new Error("Invalid Wilderness weapon passive");
+  if (
     value.direct_dps != null &&
     (!Number.isFinite(value.direct_dps) || value.direct_dps < 0)
   )
@@ -152,6 +157,21 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     const effect = value.seeking_arrow_bonus;
     if (effect.item_id !== 33601 || effect.minimum_hit !== 3)
       throw new Error("Invalid Seeking arrow effect metadata");
+  }
+  if (value.salve_bonus != null) {
+    const effect = object(value.salve_bonus);
+    const { item_id, accuracy_percent, damage_percent, suppresses_slayer } =
+      effect;
+    if (
+      !Number.isSafeInteger(item_id) ||
+      Number(item_id) <= 0 ||
+      ![accuracy_percent, damage_percent].every(
+        (n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 20,
+      ) ||
+      (accuracy_percent === 0 && damage_percent === 0) ||
+      typeof suppresses_slayer !== "boolean"
+    )
+      throw new Error("Invalid Salve amulet effect metadata");
   }
   if (value.slayer_effects !== undefined) {
     if (
