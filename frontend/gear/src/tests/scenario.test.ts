@@ -460,7 +460,43 @@ it("preserves incomplete draft fields through reload without persisting results"
     readDrafts(contextFixture.playerId, sessionStorage)?.single.budget,
   ).toBe("");
 });
-it("rejects publication when the account fixture changes during a pending run", async () => {
+it("records a rejected result as a finished failed attempt", async () => {
+  const result = await reply();
+  const startedAt = "2026-11-20T17:00:00.000Z";
+  const finishedAt = "2026-11-20T17:01:00.000Z";
+  const pending = reducer(initialState(), {
+    type: "start",
+    mode: "single",
+    scenario: result.scenario,
+    generation: 1,
+    attempt: {
+      status: "running",
+      playerId: contextFixture.playerId,
+      snapshotId: result.snapshotId,
+      startedAt,
+      finishedAt: null,
+      error: null,
+      progressId: null,
+      progress: null,
+      retryCount: 0,
+    },
+  });
+  const state = reducer(pending, {
+    type: "success",
+    mode: "single",
+    generation: 1,
+    at: finishedAt,
+    result: { ...result, snapshotId: "unrelated-snapshot" },
+  });
+  expect(state.single.pending).toBe(false);
+  expect(state.single.result).toBeNull();
+  expect(state.single.attempt).toMatchObject({
+    status: "failed",
+    finishedAt,
+    error: { code: "invalid_response", message: state.single.error },
+  });
+});
+it("retains the submitted snapshot when account observations change during a pending run", async () => {
   const result = await reply();
   let state = initialState();
   state = reducer(state, {
@@ -479,8 +515,9 @@ it("rejects publication when the account fixture changes during a pending run", 
     generation: 1,
     result,
   });
-  expect(state.single.result).toBeNull();
-  expect(state.single.error).toContain("context changed");
+  expect(state.single.result?.snapshotId).toBe(result.snapshotId);
+  expect(state.single.contextStale).toBe(true);
+  expect(state.single.error).toBeNull();
 });
 
 it.each(["", "1.5", "10001", "-10001"])(

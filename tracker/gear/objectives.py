@@ -175,30 +175,34 @@ def required_objective_skills(objectives: Iterable[ObjectiveDescriptor]) -> froz
 def annotate_solution(
     solution: Mapping[str, Any], objectives: tuple[ObjectiveDescriptor, ...], roles: Iterable[Any]
 ) -> dict[str, Any]:
+    return {
+        **solution,
+        "objective_definitions": objective_definitions(objectives),
+        "objective_values": solution_objectives(solution, objectives, roles),
+    }
+
+
+def solution_objectives(
+    solution: Mapping[str, Any], objectives: tuple[ObjectiveDescriptor, ...], roles: Iterable[Any]
+) -> dict[str, float]:
     included = [
         role for role in roles if role.style != "special" and role.id in solution["loadouts"]
     ]
     weight = sum(role.weight for role in included) or 1
     return {
-        **solution,
-        "objective_definitions": objective_definitions(objectives),
-        "objective_values": {
-            objective.id: sum(
-                objective_value(objective, solution["loadouts"][role.id]["performance"])
-                * role.weight
-                for role in included
-            )
-            / weight
-            for objective in objectives
-            if objective.kind not in MINIMIZED_OBJECTIVES
-        }
-        | objective_values(
-            (objective for objective in objectives if objective.kind in MINIMIZED_OBJECTIVES),
-            {},
-            solution.get("running_cost"),
-            solution.get("wilderness_risk"),
-        ),
-    }
+        objective.id: sum(
+            objective_value(objective, solution["loadouts"][role.id]["performance"]) * role.weight
+            for role in included
+        )
+        / weight
+        for objective in objectives
+        if objective.kind not in MINIMIZED_OBJECTIVES
+    } | objective_values(
+        (objective for objective in objectives if objective.kind in MINIMIZED_OBJECTIVES),
+        {},
+        solution.get("running_cost"),
+        solution.get("wilderness_risk"),
+    )
 
 
 def objective_policy(

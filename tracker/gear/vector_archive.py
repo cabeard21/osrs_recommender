@@ -9,7 +9,7 @@ import sqlite3
 import tempfile
 from collections.abc import Callable, Iterator, Mapping
 from contextvars import ContextVar
-from functools import wraps
+from functools import cached_property, wraps
 from typing import Any, cast
 
 from tracker.gear.objectives import MINIMIZED_OBJECTIVES
@@ -114,6 +114,38 @@ def solution_identity(solution: Mapping[str, Any]) -> str:
     ).hexdigest()
 
 
+class ArchiveCandidate:
+    """One immutable report offered to several independent action-cap archives."""
+
+    def __init__(self, solution: Mapping[str, Any], ids: tuple[str, ...]) -> None:
+        self.solution = solution
+        self.vector = (
+            solution_vector(solution, ids)
+            if all(solution["objective_values"].get(key) is not None for key in ids)
+            else None
+        )
+
+    @cached_property
+    def identity(self) -> str:
+        return solution_identity(self.solution)
+
+    @cached_property
+    def prefix(self) -> tuple[Any, ...]:
+        return resource_tie_prefix(self.solution)
+
+    @cached_property
+    def tie(self) -> tuple[Any, ...]:
+        return (*self.prefix, json.dumps(self.solution["loadouts"], sort_keys=True), self.identity)
+
+    @cached_property
+    def baseline_prefix(self) -> tuple[Any, ...]:
+        return (*cost_baseline_axes(self.solution), self.prefix)
+
+    @cached_property
+    def report(self) -> str:
+        return json.dumps(self.solution, sort_keys=True, separators=(",", ":"))
+
+
 class VectorArchive:
     """Disk-backed exact archive; rich reports never accumulate in process memory.
 
@@ -196,7 +228,7 @@ class VectorArchive:
     @property
     def _native_row_capacity(self) -> int:
         # Include the digest, vector storage, container entries, and allocator overhead.
-        return _INDEX_CAPACITY_BYTES // (256 + 8 * (len(self.objective_ids) + 1))
+        return _INDEX_CAPACITY_BYTES // (512 + 8 * (len(self.objective_ids) + 1))
 
     @property
     def native_candidate_index(self) -> Any:
@@ -250,23 +282,23 @@ class VectorArchive:
         self.connection.executemany(f"INSERT INTO candidates VALUES({placeholders})", rows)
 
     def add(self, solution: Mapping[str, Any]) -> bool:
-        if any(solution["objective_values"].get(key) is None for key in self.objective_ids):
+        return self.add_candidate(ArchiveCandidate(solution, self.objective_ids))
+
+    def add_candidate(self, candidate: ArchiveCandidate) -> bool:
+        vector = candidate.vector
+        if vector is None or self.strictly_dominated(vector):
             return False
-        identity = solution_identity(solution)
-        vector = solution_vector(solution, self.objective_ids)
         names = tuple(f"v{index}" for index in range(len(vector)))
         equal = " AND ".join(f"{name}=?" for name in names)
         previous = self.connection.execute(
             f"SELECT identity,report FROM candidates WHERE {equal}", vector
         ).fetchone()
         if previous is not None:
-            if resource_tie(json.loads(previous[1])) <= resource_tie(solution):
+            if resource_tie(json.loads(previous[1])) <= candidate.tie:
                 return False
             self.connection.execute("DELETE FROM candidates WHERE identity=?", (previous[0],))
             if self._native_index is not None:
                 self._native_index.discard(previous[0])
-        if self.strictly_dominated(vector):
-            return False
         lesser = " AND ".join(f"{name}<=?" for name in names)
         strict_less = " OR ".join(f"{name}<?" for name in names)
         self.connection.execute(
@@ -275,11 +307,11 @@ class VectorArchive:
         parameters = ",".join("?" for _ in range(len(vector) + 2))
         self.connection.execute(
             f"INSERT OR REPLACE INTO candidates VALUES({parameters})",
-            (identity, *vector, json.dumps(solution, sort_keys=True, separators=(",", ":"))),
+            (candidate.identity, *vector, candidate.report),
         )
         if self._native_index is not None:
             self._native_index.remove_dominated(vector)
-            self._native_index.insert(identity, vector)
+            self._native_index.insert(candidate.identity, vector, candidate.prefix)
             if len(self._native_index) > self._native_row_capacity:
                 self._disable_native_index("capacity")
         return True
@@ -344,7 +376,8 @@ class VectorArchive:
             os.unlink(self.path)
 
 
-def resource_tie(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+def resource_tie_prefix(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    """Exact resource order through the last field available on a compact candidate."""
     potions = solution.get("potions") or {}
     return (
         solution.get("max_gear_inventory_slots", 0),
@@ -357,6 +390,28 @@ def resource_tie(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         solution.get("distinct_items", 0)
         if "gp_per_damage" in solution.get("objective_values", {})
         else 0,
+    )
+
+
+def resource_tie(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    return (
+        *resource_tie_prefix(solution),
         json.dumps(solution["loadouts"], sort_keys=True),
         solution_identity(solution),
+    )
+
+
+def cost_baseline_axes(solution: Mapping[str, Any]) -> tuple[Any, ...]:
+    values = solution.get("objective_values", {})
+    cost = values.get("gp_per_damage")
+    return (
+        -solution["score"],
+        cost is None,
+        cost or 0,
+        values.get("wilderness_loss_gp", 0),
+        tuple(
+            -values[key]
+            for key in sorted(values)
+            if key not in {"gp_per_damage", "wilderness_loss_gp"}
+        ),
     )

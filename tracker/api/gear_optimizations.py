@@ -47,9 +47,22 @@ router = APIRouter(
 )
 
 
-def error(code: str, message: str, status: int = 422, field: str = "scenario") -> HTTPException:
+def error(
+    code: str,
+    message: str,
+    status: int = 422,
+    field: str = "scenario",
+    *,
+    phase: Literal["admission"] | None = None,
+) -> HTTPException:
     return HTTPException(
-        status, {"code": code, "message": message, "fields": [{"path": field, "message": message}]}
+        status,
+        {
+            "code": code,
+            "message": message,
+            "fields": [{"path": field, "message": message}],
+            **({"phase": phase} if phase else {}),
+        },
     )
 
 
@@ -773,6 +786,7 @@ async def optimizations(
             "Account observations changed; refresh and rerun",
             409,
             "expected_snapshot_id",
+            phase="admission",
         )
     stopped = Event()
     worker = asyncio.create_task(
@@ -798,27 +812,17 @@ async def optimizations(
         result = worker.result()
         if isinstance(result, dict):
             archive_result = result["result"]
-        fresh, _, _ = await asyncio.to_thread(resources, request)
-        if fresh is None or fresh.fingerprint != snapshot.fingerprint:
-            raise error(
-                "snapshot_changed",
-                "Account observations changed during optimization; refresh and rerun",
-                409,
-                "expected_snapshot_id",
-            )
-        if isinstance(result, dict):
-            raw_result = result["result"]
             metadata = TypeAdapter(dict[str, Any]).dump_python(
                 {key: value for key, value in result.items() if key != "result"}, mode="json"
             )
             publisher = asyncio.create_task(
                 asyncio.to_thread(
                     gear.objective_store.publish_result,
-                    raw_result,
+                    archive_result,
                     metadata={
                         **metadata,
-                        "model_version": raw_result["model_version"],
-                        "catalog_version": raw_result["catalog_version"],
+                        "model_version": archive_result["model_version"],
+                        "catalog_version": archive_result["catalog_version"],
                     },
                     player_id=str(snapshot.player_id),
                     cancelled=stopped.is_set,

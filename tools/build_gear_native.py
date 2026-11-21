@@ -92,7 +92,7 @@ def main() -> None:
         "source_hashes": {
             str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted((root / "tracker" / "gear" / "native").iterdir())
-            if path.suffix in {".pyx", ".pxd"}
+            if path.suffix in {".pyx", ".pxd", ".pxi"}
         },
     }
     from tracker.gear.native.readiness import MANIFEST, release_manifest

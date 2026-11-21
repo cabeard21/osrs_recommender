@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import json
 import sqlite3
+import subprocess
 import zlib
 from collections.abc import Iterator
 from contextlib import ExitStack, closing, contextmanager, nullcontext
@@ -61,6 +62,70 @@ def historical_prices(
     return recovered if price_revision(recovered) == revision else None
 
 
+def draft_request(draft: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    """Normalize an exported draft using the same TypeScript as the Optimize button."""
+    frontend = Path(__file__).resolve().parents[1] / "frontend" / "gear"
+    run = subprocess.run(
+        ["node", "scripts/benchmark-draft.mjs"],
+        cwd=frontend,
+        input=json.dumps({"draft": draft, "context": context}),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if run.returncode:
+        raise ValueError(f"Browser draft normalization failed: {run.stderr.strip()}")
+    return json.loads(run.stdout)
+
+
+def attempt_request(data: dict[str, Any], snapshot_id: str) -> tuple[dict[str, Any], str] | None:
+    attempt = data.get("attempt") or {}
+    if attempt.get("status") not in {"running", "failed", "cancelled"}:
+        return None
+    original = attempt["request"]
+    return {**original, "expected_snapshot_id": snapshot_id}, original["expected_snapshot_id"]
+
+
+def freeze_fresh(
+    data: dict[str, Any], output: Path, snapshot: Any, prices: Any, content: Any, gear: Any
+) -> None:
+    from tracker.api.gear_optimizations import BrowserOptimizationRequest, validate_scenario
+    from tracker.api.gear_ui import combat_option_capabilities
+
+    captured = attempt_request(data, snapshot.fingerprint)
+    if captured is not None:
+        request, original_id = captured
+        provenance = {"account_input": "fresh_for_attempt", "original_snapshot_id": original_id}
+    else:
+        capabilities = {
+            "combat_options": combat_option_capabilities(snapshot, gear),
+            "potion_combat_options": combat_option_capabilities(snapshot, gear, potion_boost=True),
+        }
+        context = {
+            "snapshotId": snapshot.fingerprint,
+            "live": {"account": snapshot.summary(), "capabilities": capabilities},
+        }
+        request = draft_request(data["draft"], context)
+        provenance = {"account_input": "fresh_for_draft"}
+    scenario = BrowserOptimizationRequest.model_validate(request)
+    validate_scenario(scenario, gear, snapshot)
+    case = Case(
+        "handoff", snapshot, scenario, gear.equipment_catalog(), content, prices, datetime.now(UTC)
+    )
+    write_json(
+        output,
+        {
+            **frozen_inputs(case),
+            "benchmark": {
+                **provenance,
+                "optimization_mode": scenario.optimization_mode,
+                "price_input": "fresh",
+                "price_revision": price_revision(prices),
+            },
+        },
+    )
+
+
 def freeze(handoff: Path, output: Path) -> None:
     from tracker.content.loader import load_content
     from tracker.gear.catalog import load_catalog
@@ -68,14 +133,23 @@ def freeze(handoff: Path, output: Path) -> None:
     from tracker.gear.optimizer import OptimizationRequest
     from tracker.gear_desktop import DesktopSettings
 
-    result = json.loads(handoff.read_bytes())["result"]
-    live = result["live"]
+    data = json.loads(handoff.read_bytes())
+    result = data["result"]
     settings = DesktopSettings()
     snapshot, prices = RemoteGearDataSource(
         settings.pi_url, settings.player_id, settings.read_token.get_secret_value()
     ).load()
     content = load_content(settings.content_dir)
+    if snapshot is None:
+        raise ValueError("A handoff capture requires a current account")
+    if result is None or attempt_request(data, snapshot.fingerprint) is not None:
+        from tracker.gear.service import GearService
+
+        gear = GearService(content, equipment_root=settings.content_dir / "equipment")
+        freeze_fresh(data, output, snapshot, prices, content, gear)
+        return
     catalog = load_catalog(content)
+    live = result["live"]
     if snapshot.fingerprint != result["snapshotId"] or catalog.revision != result["catalogVersion"]:
         raise ValueError("Current account and catalog must match the handoff")
     expected_revision = result["priceRevision"]
@@ -346,6 +420,7 @@ def desktop_service(case: Case, workers: int) -> Iterator[tuple[Any, dict[str, A
             factored_evaluation=True,
             compact_states=True,
             native_search=True,
+            native_required=True,
         )
         service._equipment = case.catalog
         yield service, build
@@ -439,6 +514,19 @@ def replay(
                     )
 
 
+def joint_kernel_counts(native: dict[str, Any]) -> dict[str, int]:
+    def total(name: str, field: str) -> int:
+        return sum(
+            event.get(field, 0) for event in native.get("events", ()) if event["event"] == name
+        )
+
+    return {
+        "transition_solves": total("transition_solver", "solves"),
+        "priced_screened": total("completed_candidate_admission", "screened"),
+        "unpriced_screened": total("completed_candidate_admission", "unpriced_screened"),
+    }
+
+
 def compare_observations(
     reference: list[dict[str, Any]],
     candidate: list[dict[str, Any]],
@@ -446,6 +534,7 @@ def compare_observations(
     raw_reference: dict[str, Any] | None = None,
     raw_candidate: dict[str, Any] | None = None,
     control: bool = False,
+    joint: bool = False,
 ) -> dict[str, Any]:
     if len(reference) != len(candidate) or not reference:
         raise ValueError("Supply equal nonempty reference and candidate cohorts")
@@ -467,7 +556,11 @@ def compare_observations(
         for row in observations
     )
     thresholds = {"optimizer": 0.5, "service": 0.5, "merge": 0.2}
-    if control:
+    if joint:
+        if control:
+            raise ValueError("Choose either joint-case or control thresholds")
+        thresholds = {"service": 0.5}
+    elif control:
         thresholds = {"optimizer": 1.05, "service": 1.05}
     ratios = {
         phase: median(row["seconds"][phase] for row in candidate)
@@ -475,6 +568,11 @@ def compare_observations(
         for phase in thresholds
     }
     no_fallback = all(row["native"].get("fallback_requests") == 0 for row in candidate)
+    kernel_counts = [joint_kernel_counts(row["native"]) for row in candidate] if joint else []
+    kernels_exercised = all(
+        row["transition_solves"] > 0 and row["priced_screened"] + row["unpriced_screened"] > 0
+        for row in kernel_counts
+    )
     raw_parity = (
         raw_reference is not None
         and raw_candidate is not None
@@ -485,12 +583,14 @@ def compare_observations(
         "pairs": len(reference),
         "complete_publication_parity": parity,
         "zero_candidate_fallbacks": no_fallback,
+        **({"native_kernel_counts": kernel_counts} if joint else {}),
         "raw_optimizer_parity": raw_parity,
         "candidate_to_reference_ratios": ratios,
         "qualified": len(reference) >= 3
         and parity
         and raw_parity
         and no_fallback
+        and kernels_exercised
         and all(ratios[phase] <= threshold for phase, threshold in thresholds.items()),
     }
 
@@ -521,6 +621,11 @@ def main() -> None:
     compare.add_argument("--reference", type=Path, nargs="+", required=True)
     compare.add_argument("--candidate", type=Path, nargs="+", required=True)
     compare.add_argument("--control", action="store_true")
+    compare.add_argument(
+        "--joint",
+        action="store_true",
+        help="Qualify full joint desktop service latency and native work",
+    )
     compare.add_argument("--reference-raw", type=Path)
     compare.add_argument("--candidate-raw", type=Path)
     args = parser.parse_args()
@@ -543,6 +648,7 @@ def main() -> None:
                     raw_reference=raw_reference,
                     raw_candidate=raw_candidate,
                     control=args.control,
+                    joint=args.joint,
                 )
             )
         )

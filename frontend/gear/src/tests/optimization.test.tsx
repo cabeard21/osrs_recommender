@@ -557,57 +557,153 @@ it("rejects malformed, mismatched and unsupported optimization responses", () =>
       parseOptimization({ ...response(), ...patch }, scenario),
     ).toThrow();
 });
-it("cancels and rejects an account refresh during optimization", async () => {
-  const user = userEvent.setup();
-  let finish!: (r: Response) => void;
-  let signal: AbortSignal | null | undefined;
-  let reads = 0;
-  const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    if (String(url).includes("/optimizations/progress?"))
-      return new Response(
-        JSON.stringify({
-          progress_id: new URL(
-            String(url),
-            "http://localhost",
-          ).searchParams.get("progress_id"),
+it.each([false, true])(
+  "handles an account refresh with player switch %s during optimization",
+  async (switchPlayer) => {
+    const user = userEvent.setup();
+    let finish!: () => void;
+    let signal: AbortSignal | null | undefined;
+    let reads = 0;
+    const fetcher: typeof fetch = async (url, init) => {
+      const path = new URL(String(url), "http://localhost");
+      if (path.pathname.endsWith("/progress"))
+        return Response.json({
+          progress_id: path.searchParams.get("progress_id"),
           progress: null,
-        }),
-      );
-    if (String(url).endsWith("/context"))
-      return new Response(
-        JSON.stringify(
+        });
+      if (path.pathname.endsWith("/context"))
+        return Response.json(
           reads++
             ? {
                 ...context,
-                account: { ...context.account, snapshot_id: "new-account" },
+                account: {
+                  ...context.account,
+                  snapshot_id: "new-snapshot",
+                  player_id: switchPlayer ? 2 : context.account.player_id,
+                },
               }
             : context,
-        ),
+        );
+      signal = init?.signal;
+      const reply = dpsObjectiveResponse({
+        ...response(),
+        scenario: JSON.parse(String(init?.body)),
+      });
+      return new Promise<Response>((resolve) => {
+        finish = () => resolve(Response.json(reply));
+      });
+    };
+    const client = new HttpGearClient("/ui-api/gear", fetcher);
+    const mount = () =>
+      render(
+        <GearProvider client={client}>
+          <App />
+        </GearProvider>,
       );
-    signal = init?.signal;
-    return new Promise<Response>((resolve) => {
-      finish = resolve;
-    });
-  }) as unknown as typeof fetch;
-  render(
-    <GearProvider client={new HttpGearClient("/ui-api/gear", fetcher)}>
-      <App />
-    </GearProvider>,
-  );
-  await screen.findByText("Synchronized ranger", { exact: true });
-  await user.click(screen.getByRole("button", { name: "Run optimization" }));
-  await user.click(screen.getByRole("button", { name: "Refresh account" }));
-  await screen.findByText(
-    "Account changed during optimization. Refresh and rerun.",
-  );
-  expect(signal?.aborted).toBe(true);
-  finish(new Response(JSON.stringify(response())));
-  await waitFor(() =>
-    expect(
-      screen.queryByRole("heading", { name: /Best configuration found/ }),
-    ).not.toBeInTheDocument(),
-  );
-});
+    const view = mount();
+    await screen.findByText("Synchronized ranger", { exact: true });
+    await user.click(screen.getByRole("button", { name: "Run optimization" }));
+    await user.click(screen.getByRole("button", { name: "Refresh account" }));
+    expect(signal?.aborted).toBe(switchPlayer);
+    finish();
+    const heading = { name: /Best configuration found/ };
+    if (switchPlayer) {
+      await waitFor(() =>
+        expect(screen.queryByRole("heading", heading)).not.toBeInTheDocument(),
+      );
+      expect(sessionStorage.getItem("gear-results:live:2:single")).toBeNull();
+    } else {
+      await screen.findByRole("heading", heading);
+      expect(screen.getByText(/Result outdated/)).toBeVisible();
+      view.unmount();
+      mount();
+      await screen.findByRole("heading", heading);
+      expect(screen.getByText(/Result outdated/)).toBeVisible();
+    }
+  },
+);
+it.each([false, true])(
+  "refreshes once on a pre-admission conflict, second conflict %s",
+  async (secondConflict) => {
+    const user = userEvent.setup();
+    let reads = 0;
+    const submissions: {
+      snapshot: string;
+      progressId: string | null;
+      budget: number;
+    }[] = [];
+    const fetcher: typeof fetch = async (url, init) => {
+      const path = new URL(String(url), "http://localhost");
+      if (path.pathname.endsWith("/progress"))
+        return Response.json({
+          progress_id: path.searchParams.get("progress_id"),
+          progress: null,
+        });
+      if (path.pathname.endsWith("/context"))
+        return Response.json(
+          reads++
+            ? {
+                ...context,
+                account: { ...context.account, snapshot_id: "fresh-snapshot" },
+              }
+            : context,
+        );
+      const scenario = JSON.parse(String(init?.body));
+      submissions.push({
+        snapshot: scenario.expected_snapshot_id,
+        progressId: path.searchParams.get("progress_id"),
+        budget: scenario.budget_gp,
+      });
+      if (submissions.length === 1 || secondConflict)
+        return Response.json(
+          {
+            error: {
+              phase: "admission",
+              code: "snapshot_changed",
+              message: "Account observations changed",
+              fields: [
+                {
+                  field: "expected_snapshot_id",
+                  message: "Account observations changed",
+                },
+              ],
+            },
+          },
+          { status: 409 },
+        );
+      const base = response();
+      return Response.json(
+        dpsObjectiveResponse({
+          ...base,
+          scenario,
+          result: {
+            ...base.result,
+            snapshot_id: scenario.expected_snapshot_id,
+          },
+        }),
+      );
+    };
+    render(
+      <GearProvider client={new HttpGearClient("/ui-api/gear", fetcher)}>
+        <App />
+      </GearProvider>,
+    );
+    await screen.findByText("Synchronized ranger", { exact: true });
+    const budget = screen.getByLabelText("Additional purchase budget (GP)");
+    await user.clear(budget);
+    await user.type(budget, "1234");
+    await user.click(screen.getByRole("button", { name: "Run optimization" }));
+    if (secondConflict) await screen.findByText(/Account observations changed/);
+    else
+      await screen.findByRole("heading", { name: /Best configuration found/ });
+    expect(submissions.map((s) => [s.snapshot, s.budget])).toEqual([
+      [context.account.snapshot_id, 1234],
+      ["fresh-snapshot", 1234],
+    ]);
+    expect(submissions[0].progressId).toBeTruthy();
+    expect(submissions[1].progressId).not.toBe(submissions[0].progressId);
+  },
+);
 it("draft edits abort pending work and late successes cannot publish", async () => {
   const user = userEvent.setup();
   let finish!: (r: Response) => void;

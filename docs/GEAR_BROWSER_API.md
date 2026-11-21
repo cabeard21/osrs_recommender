@@ -254,9 +254,8 @@ Existing browser callers without a mode and existing NiceGUI/Python/MCP callers
 retain Fast behavior. The MCP `optimize_gear` operation accepts optional per-role
 combat filters and returns the selected option with each loadout; no new tool is needed.
 `GearService.optimize` exposes a Python-only `local_refinement=False` keyword used
-by the browser adapter. Busy rejection, worker-thread execution, cooperative
-cancellation and pre/post snapshot checks retain their existing behavior. No queue,
-job persistence or background storage is added. Progress telemetry is described
+by the browser adapter. Both modes check the snapshot at admission, reject busy
+workers and support cooperative cancellation. Progress telemetry is described
 under the optimization progress endpoint below.
 
 See [optimization mode acceptance](GEAR_OPTIMIZATION_MODES.md) for deployment limits.
@@ -719,19 +718,27 @@ unavailable baseline does not prevent optimization.
 ### Execution and errors
 
 Account/price reads and CPU work run outside the FastAPI event loop. The app-scoped
-service's nonblocking lock rejects overlapping searches. No result/job persistence or
-external queue is introduced. A fresh account read after the worker completes must
-match the submitted snapshot before any result is returned.
+service's nonblocking lock rejects overlapping searches. At admission the API captures
+account facts and prices and checks the submitted `expected_snapshot_id`. Search,
+baseline evaluation, item projections and objective archive publication use those
+captured inputs through completion. A later account sync or price update applies to
+future runs. The response identifies its inputs with `result.snapshot_id` and
+`price_revision`.
 
 | Status | Code / behavior |
 | --- | --- |
 | 200 | Completed search, including a null selected solution |
 | 403 | `origin_rejected` for cross-origin browser POSTs |
-| 409 | `snapshot_changed` or `account_unavailable`; refresh and rerun |
+| 409 | At admission, `snapshot_changed` for a stale expected snapshot or `account_unavailable` for a missing account |
 | 422 | `invalid_request`; `error.fields` contains `{path, message}` entries |
 | 499 | `optimization_cancelled` when a disconnected request is observed |
 | 503 | `optimizer_busy`; retry after the active search finishes |
 | 500 | Generic `gear_unavailable`; details logged server-side |
+
+For an expected snapshot mismatch, the error includes `"phase": "admission"`.
+This marker confirms that the server rejected the request before starting the
+search. Older servers can send `snapshot_changed` after running the search and
+omit the marker.
 
 Same-origin browser POSTs are required; Vite's documented proxy preserves the browser
 Host/Origin pair. Non-browser calls without Origin retain the private network boundary.
@@ -832,7 +839,10 @@ equipment. Manual previews change one slot and leave accepted results and drafts
 untouched. Revert discards the trial; lock/exclude updates the draft and marks the
 accepted result outdated until reoptimization. Trial generations and abort signals
 prevent stale responses from publishing. Account, catalog, model and price changes
-invalidate dependent trials. Results and evaluations are never persisted.
+invalidate dependent trials. The tab saves accepted results and selected solutions
+in session storage for the submitting player and workspace. Reloading restores
+that player's saved result while its associated archive is available. Manual
+trial evaluations last only for the current view.
 
 Multi inspection reuses physical facts, ownership, requirements and prices. Global
 and role-specific lock edits and global exclusions modify only the draft and mark

@@ -55,3 +55,18 @@ def test_archive_index_removes_only_strictly_dominated_rows(kernel):
     index.discard("equal")
     assert not index.strictly_dominated((1, 1))
     assert index.strictly_dominated((2, 0))
+
+
+def test_multi_cap_admission_keeps_unresolved_ties_and_missing_indexes(kernel):
+    first, second = kernel.ArchiveIndex(2), kernel.ArchiveIndex(2)
+    first.insert("cheap", (2, 3), (1, 100))
+    second.insert("expensive", (2, 3), (2, 100))
+    indices = (first, second, None)
+    assert kernel.admission_mask(indices, (1, 2), (0, 0)) == 0b100
+    assert kernel.admission_mask(indices, (2, 3), (2, 100)) == 0b110
+    assert kernel.admission_mask(indices, (2, 3), (0, 100)) == 0b111
+    assert kernel.admission_mask(indices, (3, 2), (9, 100)) == 0b111
+    first.discard("cheap")
+    assert kernel.admission_mask(indices, (2, 3), (9, 100)) == 0b101
+    with pytest.raises(ValueError, match="dimensions"):
+        kernel.admission_mask((first,), (1,), ())

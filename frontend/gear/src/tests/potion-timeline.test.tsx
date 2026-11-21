@@ -314,6 +314,25 @@ it("retries failed requests and hides secondary graph for default priority", asy
   expect(screen.queryByRole("img", { name: "Accuracy over time" })).toBeNull();
 });
 
+it("uses the selected archive when a rerun produces the same loadout", async () => {
+  const load = vi.fn().mockResolvedValue(timeline);
+  const client = { potionTimeline: load } as unknown as GearClient;
+  const panel = (runId: string) => (
+    <PotionTimelinePanel
+      result={{
+        ...result,
+        live: { run_id: runId } as OptimizationReply["live"],
+      }}
+      solution={solution}
+      client={client}
+    />
+  );
+  const view = render(panel("first-run"));
+  await screen.findByRole("img", { name: "DPS over time" });
+  view.rerender(panel("second-run"));
+  await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+  expect(load.mock.calls[1][0].live.run_id).toBe("second-run");
+});
 it("aborts stale selections and does not display their responses", async () => {
   let resolve!: (value: PotionTimeline) => void;
   const load = vi

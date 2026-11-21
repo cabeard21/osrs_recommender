@@ -8,7 +8,11 @@ import { SupportPolicySummary } from "./SupportPolicySummary";
 import { Shield } from "lucide-react";
 import { emptyEquipment, slots } from "../api/contracts";
 import type { OptimizationReply } from "../api/contracts";
-import { archiveRunId, resolveResultSelection } from "../state/resultSelection";
+import {
+  archiveRunId,
+  hasFrozenTimeline,
+  resolveResultSelection,
+} from "../state/resultSelection";
 import { useGear } from "../state/GearProvider";
 import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
@@ -135,6 +139,8 @@ export function LiveResultWorkspace() {
       : undefined;
   const isAttackStyleOptimized =
     !!request.roles[0].autoDiscipline || !!request.roles[0].combatOptions;
+  const newerSnapshot =
+    !!state.context && state.context.snapshotId !== result.snapshotId;
   const isUnsynced = !state.context?.live?.account?.last_sync_at;
   const itemName = (id: number) => itemById(id)?.name ?? `Item #${id}`;
   const roleName = (roleId: string) =>
@@ -178,6 +184,7 @@ export function LiveResultWorkspace() {
           outdated={current.outdated}
           draftChanged={current.draftChanged}
           contextStale={current.contextStale}
+          newerSnapshot={newerSnapshot}
         />
         {request.mode === "future" && (
           <p className="notice">
@@ -457,7 +464,11 @@ export function LiveResultWorkspace() {
         <SupportPolicySummary result={viewResult!} />
         <SecondaryPrioritySummary
           client={client}
-          outdated={current.outdated || current.pending}
+          outdated={
+            current.pending ||
+            (current.outdated &&
+              (current.draftChanged || !hasFrozenTimeline(result)))
+          }
           result={viewResult!}
           solution={selected}
           potionCatalog={state.context?.live?.potion_catalog}

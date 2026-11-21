@@ -19,6 +19,7 @@ import { Dialog } from "./components/Dialog";
 import { Timestamp } from "./components/Timestamp";
 import { RunStatus } from "./components/RunStatus";
 import type { FixtureFailure } from "./api/contracts";
+import { optimizationRequest } from "./api/optimizationRequest";
 
 const STACKED_LAYOUT_QUERY = "(max-width: 900px)";
 
@@ -168,12 +169,28 @@ export default function App() {
     current.draft.assumptions.skillLevels ||
     current.draft.assumptions.completedQuests;
   const downloadHandoff = () => {
+    const { attempt, submitted } = current;
     const handoffText = JSON.stringify(
       {
         source: liveMode
-          ? "LIVE PYTHON OPTIMIZER — SUBMITTED SCENARIO AND ACCOUNT OBSERVATIONS"
+          ? "Live Gear optimizer"
           : "DETERMINISTIC FIXTURE — NOT ACCOUNT DATA",
-        submitted: current.result?.scenario ?? null,
+        submitted,
+        attempt:
+          attempt && submitted
+            ? {
+                ...attempt,
+                request: optimizationRequest(submitted),
+                elapsed_seconds: Math.max(
+                  0,
+                  ((attempt.finishedAt
+                    ? Date.parse(attempt.finishedAt)
+                    : Date.now()) -
+                    Date.parse(attempt.startedAt)) /
+                    1000,
+                ),
+              }
+            : null,
         draft: current.draft,
         result: current.result,
         trial: current.trial,

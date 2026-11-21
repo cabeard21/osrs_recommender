@@ -6,6 +6,7 @@ import type {
   PotionTimeline,
   PotionTimelineMeasurement,
 } from "../api/contracts";
+import { archiveRunId } from "../state/resultSelection";
 import { secondaryPriorityLabel } from "../api/secondaryPriorities";
 
 const clock = (seconds: number) =>
@@ -203,6 +204,8 @@ export function PotionTimelinePanel({
     [role, setRole] = useState(""),
     [objectiveId, setObjectiveId] = useState("");
   const key = JSON.stringify([
+    archiveRunId(result),
+    result.priceRevision,
     result.snapshotId,
     result.catalogVersion,
     result.modelVersion,

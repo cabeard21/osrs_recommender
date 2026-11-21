@@ -16,6 +16,8 @@ from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.native import record
 from tracker.gear.native.stage_context import pack_stage, pack_runes
 
+include "_transitions.pxi"
+
 
 cdef struct Candidate:
     int slots[44]

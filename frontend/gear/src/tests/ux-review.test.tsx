@@ -247,7 +247,7 @@ it("restores the last result after a reload", async () => {
   ).toBeVisible();
 });
 
-it("does not restore a result from a different account snapshot", async () => {
+it("does not restore another player�s result", async () => {
   const user = userEvent.setup();
   mount(fetcherFor());
   await ready();
@@ -255,7 +255,11 @@ it("does not restore a result from a different account snapshot", async () => {
   cleanup();
   const resynced = {
     ...context,
-    account: { ...context.account, snapshot_id: "a-newer-snapshot" },
+    account: {
+      ...context.account,
+      player_id: 2,
+      snapshot_id: "another-player",
+    },
   };
   mount(fetcherFor(reply, resynced));
   await ready();

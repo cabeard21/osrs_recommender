@@ -30,6 +30,70 @@ async function showObjectives(page: Page) {
     .click();
 }
 
+test("a same-player sync preserves the pending result, archived Lab selection and reload", async ({
+  page,
+}) => {
+  await page.request.post("/test/seed-optimization");
+  await page.goto("/gear");
+  await showObjectives(page);
+  await page.getByRole("checkbox", { name: "Accuracy", exact: true }).check();
+  let publish!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    publish = resolve;
+  });
+  let captured!: (snapshot: string) => void;
+  const pinned = new Promise<string>((resolve) => {
+    captured = resolve;
+  });
+  let posts = 0;
+  await page.route(
+    (url) => url.pathname === "/ui-api/gear/optimizations",
+    async (route) => {
+      posts++;
+      const response = await route.fetch();
+      expect(response.ok(), await response.text()).toBe(true);
+      captured((await response.json()).result.snapshot_id);
+      await gate;
+      await route.fulfill({ response });
+    },
+  );
+  await page
+    .getByRole("button", { name: "Run optimization", exact: true })
+    .click();
+  const snapshot = await pinned;
+  await page.request.post("/test/seed-optimization");
+  const refreshed = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === "/ui-api/gear/context",
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  expect((await (await refreshed).json()).account.snapshot_id).not.toBe(
+    snapshot,
+  );
+  await expect(
+    page.getByRole("status", { name: "Optimization progress" }),
+  ).toBeVisible();
+  publish();
+  const notice = page.getByText(/Newer account observations are available/);
+  await expect(notice).toBeVisible();
+  await page.reload();
+  await expect(notice).toBeVisible();
+  const lab = await openLab(page);
+  await lab.getByText("Browse saved configurations", { exact: true }).click();
+  await lab
+    .getByRole("table", { name: "Saved configurations", exact: true })
+    .getByRole("button", { name: "Loadout 001", exact: true })
+    .click();
+  await lab
+    .getByRole("button", { name: "Use this setup in Gear optimizer" })
+    .click();
+  await expect(
+    lab
+      .getByRole("complementary", { name: "Selected configuration" })
+      .getByRole("status"),
+  ).toContainText("Loadout 001 selected in the original Gear optimizer tab.");
+  expect(posts).toBe(1);
+});
+
 test("colored default opens a full lab for the actual result without randomUUID", async ({
   page,
 }, testInfo) => {

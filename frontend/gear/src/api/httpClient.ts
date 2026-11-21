@@ -708,7 +708,9 @@ export function parseOptimization(
     }
   }
   if (result.snapshot_id !== scenario.request.expected_snapshot_id)
-    throw new Error("Account changed during optimization. Refresh and rerun.");
+    throw new Error(
+      "The result does not match the submitted account snapshot.",
+    );
   const dto = structuredClone(value) as OptimizationDTO;
   if (dto.result.discipline_results)
     dto.result.discipline_results = dto.result.discipline_results.map(
@@ -747,6 +749,8 @@ export class GearApiError extends Error {
   constructor(
     message: string,
     public code: string,
+    public status?: number,
+    public phase?: string,
   ) {
     super(message);
   }
@@ -1395,9 +1399,9 @@ export class HttpGearClient implements GearClient {
     scenario: Scenario,
     signal: AbortSignal,
     onProgress?: (progress: OptimizationProgress) => void,
+    progressId: string | null = onProgress ? createProgressId() : null,
   ): Promise<OptimizationReply> {
     const submitted = structuredClone(scenario);
-    const progressId = onProgress ? createProgressId() : null;
     const stop =
       progressId && onProgress
         ? pollOptimizationProgress(
@@ -1434,6 +1438,8 @@ export class HttpGearClient implements GearClient {
         throw new GearApiError(
           `${typeof error.message === "string" ? error.message : `Optimization failed (${response.status})`}${fields ? ` · ${fields}` : ""}`,
           String(error.code ?? "optimization_failed"),
+          response.status,
+          typeof error.phase === "string" ? error.phase : undefined,
         );
       }
       return parseOptimization(body, submitted);

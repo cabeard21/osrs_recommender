@@ -24,7 +24,7 @@ def source_hashes(directory: Path) -> dict[str, str]:
     return {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(directory.iterdir())
-        if path.suffix in {".py", ".pyx", ".pxd"}
+        if path.suffix in {".py", ".pyx", ".pxd", ".pxi"}
     }
 
 
