@@ -6,6 +6,7 @@ import json
 from collections import deque
 from collections.abc import Iterable, Mapping
 from itertools import product
+from math import isnan
 from typing import Any
 
 from tracker.gear.compact_costs import aggregate_numeric_cost
@@ -13,6 +14,7 @@ from tracker.gear.evaluation import loadout_problems, planning_owned
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.objectives import annotate_solution, objective_policy, solution_objectives
 from tracker.gear.vector_archive import ArchiveCandidate, VectorArchive
+from tracker.gear.vector_option_product import PackedOptionsCache, remaining_product
 from tracker.gear.vector_options import OptionVariant, VectorOptions
 from tracker.gear.vector_publish import FrontierPoints
 from tracker.gear.vector_refinement import _safe_improvement
@@ -29,6 +31,7 @@ class VectorSearch:
         self.ids = tuple(objective.id for objective in self.objectives)
         self.policy = objective_policy(self.objectives, thorough)
         self.options = VectorOptions(search)
+        self._packed_options = PackedOptionsCache()
         self.prayer_ammunition: tuple[EquipmentDefinition, ...] = ()
         if len(search.request.roles) == 1 and "prayer_bonus" in self.ids:
             self.prayer_ammunition = tuple(
@@ -69,7 +72,7 @@ class VectorSearch:
         self.seen = self.archives[None].connection
         self.seen.execute(
             "CREATE TABLE seen_assignments(identity TEXT PRIMARY KEY,"
-            "cursor INTEGER NOT NULL,complete INTEGER NOT NULL,base_order TEXT)"
+            "cursor BLOB NOT NULL,complete INTEGER NOT NULL,base_order TEXT)"
         )
         self.nodes = 0
         self.option_attempts = 0
@@ -85,6 +88,9 @@ class VectorSearch:
     def tick(self) -> bool:
         if self.search.cancelled and self.search.cancelled():
             raise ValueError("optimization_cancelled")
+        return self._charge_node()
+
+    def _charge_node(self) -> bool:
         if self.nodes >= self.phase_limit:
             return False
         self.nodes += 1
@@ -305,7 +311,7 @@ class VectorSearch:
         ).fetchone()
         if previous is not None and previous[1]:
             return
-        cursor = previous[0] if previous is not None else 0
+        cursor = int(previous[0]) if previous is not None else 0
         if any(
             loadout_problems(
                 assignment[role.id], self.search.items, self.search.facts, self.search.request, role
@@ -325,13 +331,10 @@ class VectorSearch:
         if feasibility is None:
             self._remember_assignment(identity, cursor, complete=True)
             return
-        applicable = tuple(
-            dict.fromkeys(
-                archive
-                for cap, archive in self.archives.items()
-                if cap is None or feasibility.maximum_actions <= cap
-            )
+        caps = tuple(
+            cap for cap in self.archives if cap is None or feasibility.maximum_actions <= cap
         )
+        applicable = tuple(dict.fromkeys(self.archives[cap] for cap in caps))
 
         risk_index = self.options.risk_index
         trip_loss = trip_loss_lookup(self.search, assignment) if risk_index is not None else None
@@ -342,27 +345,18 @@ class VectorSearch:
             and roles[0].weight == 1
             and self.options.cost_index is None
         )
-        if (
-            single_vector
-            and len(applicable) == 1
-            and applicable[0].native_candidate_index is not None
-        ):
-            position = self._scan_native_options(
-                assignment, alternatives[0], applicable[0], cursor, charge, trip_loss, risk_index
+        if native and (not charge or self.nodes < self.phase_limit):
+            cursor, complete = self._scan_native_options(
+                assignment, alternatives, caps, applicable, cursor, charge, trip_loss
             )
-            if position == len(alternatives[0]):
+            if complete:
                 self._remember_assignment(identity, cursor, complete=True)
                 return
-            if charge and self.nodes >= self.phase_limit:
-                self._remember_assignment(identity, position, complete=False)
-                return
-            cursor = position
-        for position, selected in enumerate(product(*alternatives)):
-            if position < cursor:
-                continue
+        for position, selected in enumerate(remaining_product(alternatives, cursor), start=cursor):
             if self.search.cancelled and self.search.cancelled():
+                self._remember_assignment(identity, position, complete=False)
                 raise ValueError("optimization_cancelled")
-            if charge and not self.tick():
+            if charge and not self._charge_node():
                 self._remember_assignment(identity, position, complete=False)
                 return
             self.option_attempts += 1
@@ -380,9 +374,8 @@ class VectorSearch:
                 # A feasible unpriced option may still be a cap's highest-DPS baseline.
                 score = self.weighted_values(selected, roles)[0]
                 if all(
-                    row is not None and row["score"] > score
-                    for cap, row in self.baselines.items()
-                    if cap is None or feasibility.maximum_actions <= cap
+                    (row := self.baselines[cap]) is not None and row["score"] > score
+                    for cap in caps
                 ):
                     continue
             elif all(archive.strictly_dominated(vector) for archive in applicable):
@@ -397,51 +390,80 @@ class VectorSearch:
     def _scan_native_options(
         self,
         assignment: Mapping[str, Mapping[str, int]],
-        variants: tuple[OptionVariant, ...],
-        archive: VectorArchive,
+        alternatives: tuple[tuple[OptionVariant, ...], ...],
+        caps: tuple[int | None, ...],
+        archives: tuple[VectorArchive, ...],
         position: int,
         charge: bool,
         trip_loss: Any,
-        risk_index: int | None,
-    ) -> int:
-        """Advance to each viable option in order, then recheck the updated archive."""
-        while position < len(variants) and (index := archive.native_candidate_index) is not None:
-            if self.search.cancelled and self.search.cancelled():
-                raise ValueError("optimization_cancelled")
-            stop = min(position + 128, len(variants))
+    ) -> tuple[int, bool]:
+        """Consume a contiguous prefix, refreshing cap membership and baselines after offers."""
+        indices = tuple(archive.native_candidate_index for archive in archives)
+        if None in indices:
+            return position, False
+        scan = self._packed_options.product(
+            alternatives,
+            self.search.request.roles,
+            len(self.ids) + 1,
+            self.options.cost_index,
+            self.options.risk_index,
+        )
+        if scan is None:
+            return position, False
+        floor = self._option_baseline_floor(caps)
+        while position < scan.size:
+            count = min(128, scan.size - position)
             if charge:
-                quota = min(self.phase_limit - self.nodes, 1024 - (self.nodes & 1023))
-                if quota <= 0:
-                    break
-                stop = min(stop, position + quota)
-            candidate = index.next_candidate(
-                variants, position, stop, trip_loss, -1 if risk_index is None else risk_index
+                count = min(count, self.phase_limit - self.nodes, 1024 - (self.nodes & 1023))
+                if count <= 0:
+                    return position, False
+            consumed, selected, status = scan.scan(
+                position, count, indices, floor, trip_loss, self.search.cancelled
             )
-            if candidate < 0:
-                break
-            end = min(candidate + 1, stop)
-            consumed = end - position
+            position += consumed
             self.option_attempts += consumed
             self.complete_attempts += consumed
             self.native_option_attempts += consumed
             self.native_option_screened += consumed
-            if charge:
+            if charge and consumed:
                 self.nodes += consumed
                 if not self.nodes & 1023:
                     self.search.reporter.fraction(0.65 * self.nodes / self.limit)
-            if candidate < stop:
+            if status == "cancelled":
+                self._remember_assignment(self.identity(assignment), position, complete=False)
+                raise ValueError("optimization_cancelled")
+            if status == "reference":
+                return position, False
+            if selected is not None:
                 self.native_option_reports += 1
-                solution = self.options.solution(assignment, (variants[candidate],))
+                solution = self.options.solution(assignment, selected)
                 if solution is not None:
                     self.offer(solution)
-            position = end
-        return position
+                    if position < scan.size:
+                        indices = tuple(archive.native_candidate_index for archive in archives)
+                        if None in indices:
+                            return position, False
+                        floor = self._option_baseline_floor(caps)
+        return position, True
+
+    def _option_baseline_floor(self, caps: tuple[int | None, ...]) -> float:
+        if self.options.cost_index is None:
+            return float("-inf")
+        floor = float("inf")
+        for cap in caps:
+            row = self.baselines[cap]
+            if row is None or isnan(row["score"]):
+                return float("-inf")
+            floor = min(floor, row["score"])
+        return floor
 
     def _remember_assignment(self, identity: str, cursor: int, *, complete: bool) -> None:
         self.seen.execute(
             "INSERT INTO seen_assignments VALUES(?,?,?,NULL) "
             "ON CONFLICT(identity) DO UPDATE SET cursor=excluded.cursor,complete=excluded.complete",
-            (identity, cursor, complete),
+            # SQLite integers are signed 64-bit. No column affinity means a larger
+            # ordinal stored as decimal text round-trips without conversion to REAL.
+            (identity, cursor if cursor < 1 << 63 else str(cursor), complete),
         )
 
     def weighted(

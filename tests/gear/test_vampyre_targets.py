@@ -65,7 +65,7 @@ def test_reviewed_target_limitations(npc_id, note):
     assert note in " ".join(profile(npc_id)["limitations"])
 
 
-@pytest.mark.parametrize("npc_id", [3481, 6393, 8252, 9561, 9567, 4442, 16204, 16213, 16212])
+@pytest.mark.parametrize("npc_id", [3481, 6393, 8252, 9561, 3734, 4442, 16204, 16213, 16212])
 def test_scripted_profiles_have_named_reason(npc_id):
     entry = profile(npc_id)
     assert entry["support_status"] == "unsupported"
@@ -155,3 +155,26 @@ def test_kroy_uses_base_combat_stats_without_quest_progress():
     assert all("Sins of the Father" not in note for note in profile(9560)["limitations"])
     validate_access(9560)
     validate_access(9560, quests={"sins_of_the_father": QuestStatus.NOT_STARTED}, on_task=True)
+
+
+def test_vanstrom_quest_profile_and_access():
+    entry = profile(9567)
+    assert entry["support_status"] == "supported"
+    assert entry["variant"] == "Sins of the Father"
+    crush = role(9567).model_copy(update={"style": "crush"})
+    resolved = resolve_target(crush)
+    assert resolved.target.hitpoints == 750
+    assert resolved.target.defence_level == 180
+    assert resolved.target.poison_susceptibility == resolved.target.venom_susceptibility == "immune"
+    with pytest.raises(ValueError, match="cannot be overridden"):
+        resolve_target(
+            resolved.model_copy(
+                update={"target": resolved.target.model_copy(update={"traits": ("vampyre3",)})}
+            )
+        )
+    for style in ("ranged", "magic"):
+        with pytest.raises(ValueError, match="Blisterwood flail"):
+            resolve_target(crush.model_copy(update={"style": style}))
+    with pytest.raises(ValueError, match="Sins of the Father"):
+        validate_access(9567)
+    validate_access(9567, quests={"sins_of_the_father": QuestStatus.IN_PROGRESS}, on_task=True)

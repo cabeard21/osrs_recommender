@@ -57,7 +57,14 @@ from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 from tracker.gear.slayer import MAGIC_DART_STAVES, dart_base, mask_factor
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import applied_tome
-from tracker.gear.vampyres import EFARITAYS_AID, SILVER_BOLTS, SILVER_POISON_SEVERITY
+from tracker.gear.vampyres import (
+    BLISTERWOOD_FLAIL,
+    BLISTERWOOD_FLAIL_ONLY,
+    BLISTERWOOD_FLAIL_REQUIRED,
+    EFARITAYS_AID,
+    SILVER_BOLTS,
+    SILVER_POISON_SEVERITY,
+)
 from tracker.gear.void_ranged import RANGER_HELMS, is_elite_ranged
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
@@ -272,7 +279,12 @@ def _evaluate_prepared(
         if tier
         else None
     )
-    if vampyre and not vampyre.legal:
+    # Native packing checks this weapon/style rule while preparing each option.
+    if BLISTERWOOD_FLAIL_ONLY in target.traits and (
+        style != "crush" or weapon is None or weapon.id != BLISTERWOOD_FLAIL
+    ):
+        problems.append(BLISTERWOOD_FLAIL_REQUIRED)
+    elif vampyre and not vampyre.legal:
         problems.append(
             "Tier 2 vampyres require a silver attack or Efaritay's aid."
             if tier == 2

@@ -11,6 +11,9 @@ from pydantic_core import InitErrorDetails
 from tracker.gear.combat import SPELLS
 
 Issue = Callable[[tuple[str | int, ...], str], None]
+_MIN_TARGET_DEFENCE_BONUS = -100  # Lowest bonus in the pinned NPC catalog.
+_MAX_TARGET_DEFENCE_BONUS = 10000
+_TARGET_DEFENCE_RANGE = f"{_MIN_TARGET_DEFENCE_BONUS} and {_MAX_TARGET_DEFENCE_BONUS}"
 
 
 def validate_browser_scenario(data: Any) -> Any:
@@ -193,14 +196,20 @@ def _validate_target(target: Any, path: tuple[str | int, ...], issue: Issue) -> 
         elif (
             name.startswith("ranged_")
             and target[name] is not None
-            and not -64 <= target[name] <= 10000
+            and not _MIN_TARGET_DEFENCE_BONUS <= target[name] <= _MAX_TARGET_DEFENCE_BONUS
         ):
-            issue((*path, "target", name), "Target ranged defence must be between -64 and 10000")
+            issue(
+                (*path, "target", name),
+                f"Target ranged defence must be between {_TARGET_DEFENCE_RANGE}",
+            )
     bonuses = target.get("bonuses", {})
     if isinstance(bonuses, dict):
         for name, value in bonuses.items():
-            if type(value) is not int or not -64 <= value <= 10000:
+            if (
+                type(value) is not int
+                or not _MIN_TARGET_DEFENCE_BONUS <= value <= _MAX_TARGET_DEFENCE_BONUS
+            ):
                 issue(
                     (*path, "target", "bonuses", name),
-                    "Target defence bonuses require integers between -64 and 10000",
+                    f"Target defence bonuses require integers between {_TARGET_DEFENCE_RANGE}",
                 )
