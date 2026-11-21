@@ -269,3 +269,6 @@ def admission_mask(tuple indexes, tuple values, tuple resource_prefix):
         if index is None or index.may_admit(row, resource_prefix):
             mask |= (<unsigned int>1) << cap
     return mask
+
+
+include "_option_product.pxi"

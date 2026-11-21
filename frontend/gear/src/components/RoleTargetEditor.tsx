@@ -2,7 +2,10 @@ import { TargetSusceptibilityFields } from "./TargetSusceptibilityFields";
 import { TargetHitpointsFields } from "./TargetHitpointsFields";
 import { NpcTargetPicker } from "./NpcTargetPicker";
 import type { CombatTarget, Draft, Role } from "../api/contracts";
-import { targetFieldErrors } from "../state/setupValidation";
+import {
+  MIN_TARGET_DEFENCE_BONUS,
+  targetFieldErrors,
+} from "../state/setupValidation";
 import { FieldError, fieldProps } from "./FieldError";
 
 /** The target a configuration uses, falling back to the draft-level target. */
@@ -179,7 +182,7 @@ export function RoleTargetEditor({
                   {bonus} defence bonus
                   <input
                     type="number"
-                    min="-64"
+                    min={MIN_TARGET_DEFENCE_BONUS}
                     max="10000"
                     value={
                       role.targetInputs?.[`bonuses.${bonus}`] ??
@@ -220,7 +223,7 @@ export function RoleTargetEditor({
                         ? "-10000"
                         : field === "damage_cap"
                           ? "1"
-                          : "-64"
+                          : MIN_TARGET_DEFENCE_BONUS
                     }
                     max={
                       field === "damage_cap" ? Number.MAX_SAFE_INTEGER : 10000

@@ -104,6 +104,8 @@ export function validateTargetFlatArmour(
     );
 }
 
+export const MIN_TARGET_DEFENCE_BONUS = -100;
+
 export function roleTargetNumber(key: string, value: string, roleName: string) {
   const optional = [
     "ranged_light",
@@ -117,7 +119,7 @@ export function roleTargetNumber(key: string, value: string, roleName: string) {
     key === "flat_armour"
       ? -10000
       : key.startsWith("bonuses.") || key.startsWith("ranged_")
-        ? -64
+        ? MIN_TARGET_DEFENCE_BONUS
         : key === "damage_cap"
           ? 1
           : 0;

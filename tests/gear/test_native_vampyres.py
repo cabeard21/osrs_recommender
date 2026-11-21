@@ -3,8 +3,11 @@
 import pytest
 
 from tests.gear.test_native_scoring import context
+from tracker.content.loader import load_content
+from tracker.gear.catalog import load_catalog
 from tracker.gear.combat import evaluate_prepared_score
 from tracker.gear.models import CombatTarget, EquipmentDefinition
+from tracker.gear.npcs import npc_catalog
 from tracker.gear.scoring import prepare_equipment
 
 
@@ -68,6 +71,31 @@ def test_compiled_evaluates_actual_attack(tier, style, weapon_id, ammo_id, ring,
         assert actual["dps"] == expected.dps
         assert actual["accuracy"] == expected.accuracy
         assert actual["ring_charge_probability"] == expected.ring_charge_probability
+
+
+def test_compiled_vanstrom_allows_only_the_blisterwood_flail():
+    from tracker.gear.native._scoring import ScoringContext
+
+    entry = next(row for row in npc_catalog().entries.values() if row["npc_id"] == 9567)
+    search = context("crush")
+    catalog = load_catalog(load_content())
+    search.items = search.eligible = {i: catalog.items[i] for i in (24699, 22398, 21140)}
+    role = search.request.roles[0].model_copy(
+        update={
+            "target": CombatTarget.model_validate(entry["target"]),
+        }
+    )
+    search.request.roles = (role,)
+    scorer = ScoringContext(search)
+    for weapon_id in (24699, 22398):
+        gear = {"weapon": weapon_id, "ring": 21140}
+        actual = scorer.score(gear, 0)
+        expected = evaluate_prepared_score(
+            prepare_equipment([search.items[i] for i in gear.values()]), role, search.levels
+        )
+        assert actual["supported"] == expected.supported == (weapon_id == 24699)
+        if expected.supported:
+            assert actual["dps"] == expected.dps > 0
 
 
 @pytest.mark.parametrize("full_set", [True, False])

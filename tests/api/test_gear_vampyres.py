@@ -12,6 +12,7 @@ from tracker.gear.npcs import npc_catalog
         (9560, "slash", (4151,), 1),
         (4427, "slash", (4151, 21140), 2),
         (9756, "ranged", (33716, 21140), 3),
+        (9567, "crush", (24699, 22398, 21140), 3),
     ],
 )
 def test_selected_vampyre_round_trip(client, session_factory, npc_id, style, ids, tier):
@@ -34,6 +35,9 @@ def test_selected_vampyre_round_trip(client, session_factory, npc_id, style, ids
     if tier == 1:
         body["quest_overrides"] = {}
     catalog = npc_catalog()
+    if npc_id == 9567:
+        body["quest_overrides"]["sins_of_the_father"] = "in_progress"
+        body["locks"] = {}
     entry = next(e for e in catalog.entries.values() if e["npc_id"] == npc_id)
     body["roles"] = [
         {
@@ -73,3 +77,30 @@ def test_selected_vampyre_round_trip(client, session_factory, npc_id, style, ids
         assert blocked.status_code == 200, blocked.text
         assert blocked.json()["result"]["selected_solution"] is None
         assert "Efaritay" in " ".join(blocked.json()["result"]["limitations"])
+    if npc_id == 9567:
+        assert loadout["equipment"]["weapon"] == 24699
+        assert loadout["performance"]["dps"] > 0
+        auto = {
+            **body,
+            "roles": [
+                {
+                    **body["roles"][0],
+                    "style": "slash",
+                    "allowed_disciplines": ["melee", "ranged", "magic"],
+                    "combat_options": {
+                        "attack_types": ["stab", "slash", "crush", "light"],
+                        "stances": ["accurate", "aggressive", "defensive", "rapid"],
+                        "spells": [],
+                    },
+                }
+            ],
+        }
+        automatic = client.post("/ui-api/gear/optimizations", json=auto)
+        assert automatic.status_code == 200, automatic.text
+        selected = automatic.json()["result"]["selected_solution"]
+        assert selected["loadouts"]["vyre"]["equipment"]["weapon"] == 24699
+        body["locks"]["weapon"] = 22398
+        blocked = client.post("/ui-api/gear/optimizations", json=body)
+        assert blocked.status_code == 200, blocked.text
+        assert blocked.json()["result"]["selected_solution"] is None
+        assert "Blisterwood flail" in " ".join(blocked.json()["result"]["limitations"])

@@ -2577,7 +2577,7 @@ fallbacks, 39,199,828 explored nodes and 9,881,403 combat-option attempts.
 The selected solution, unrestricted solution, swap curve, published frontiers
 and full archive digests matched. Sampling across seven discipline pairings
 put the remaining Python option scan at about 6% of worker time across those
-pairings, so it stays in Python. The repeated timing cohort was stopped once
+pairings, so that release kept it in Python. The repeated timing cohort was stopped once
 the single comparison was accepted. A final-release median was not measured.
 
 To reproduce a comparison, freeze the exported handoff with
@@ -2588,3 +2588,25 @@ and capture raw digests once per release. Use `tools.benchmark_native_hot_loops 
 the three observation files from each release and both raw digest files.
 The comparison checks complete archive and raw optimizer parity, native kernel
 activity, zero candidate fallbacks, and at least a twofold service-time speedup.
+
+### Priced joint option screening
+
+The later priced Juvinate and Nail beast handoff explored 128,073,075 combat
+options across 40 branches. It returned 951 distinct tradeoff solutions with
+2,062 memberships across swap caps. Removing five Vampyre-related quotes
+kept the same 879 eligible items and produced empty cost frontiers. Those two
+runs took 21m 44s and 9m 01s of optimizer time respectively, before the scanner
+change.
+
+The desktop frontier extension now packs alternatives per role and scans their
+Cartesian product in the same order as Python. It stops when an option can
+survive any feasible swap cap, including an unpriced contender for a DPS
+baseline. Python builds the full report, resolves ties, and updates the archives
+before the scan continues. The cursor counts consumed options so a phase
+boundary or an unavailable native index can resume at the next combination.
+
+The small two-target acceptance fixture matched the complete Python result in
+both price conditions. It retained 18 priced memberships across nine feasible
+caps and preserved each cap's DPS baseline when the quotes were removed. A
+four-role fixture with a Wilderness loss objective also matched Python through
+the desktop service and its spawned potion workers.

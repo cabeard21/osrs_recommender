@@ -588,6 +588,24 @@ it("preserves global and per-role target size", () => {
   expect(request.roles[0].combatTarget?.size).toBe(3);
 });
 
+it("preserves role defence bonuses of -100 when edited", () => {
+  const draft = newDraft();
+  draft.roles[0].combatTarget = {
+    name: "Acidic Bloodveld",
+    defence_level: 2,
+    magic_level: 1,
+    bonuses: { slash: -100 },
+    ranged_heavy: -100,
+  };
+  draft.roles[0].targetInputs = {
+    "bonuses.slash": "-100",
+    ranged_heavy: "-100",
+  };
+  const target = normalize(draft, "snapshot").request.roles[0].combatTarget;
+  expect(target?.bonuses.slash).toBe(-100);
+  expect(target?.ranged_heavy).toBe(-100);
+});
+
 it("preserves a zero size without assuming a footprint", () => {
   const draft = newDraft();
   const target = {

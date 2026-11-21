@@ -12,7 +12,10 @@ from typing import Any
 
 from tracker.content.requirements import QuestLeaf, SkillLeaf
 
-MODEL_VERSION = "vampyre-v1"
+MODEL_VERSION = "vampyre-v2"
+BLISTERWOOD_FLAIL = 24699
+BLISTERWOOD_FLAIL_ONLY = "blisterwood_flail_only"
+BLISTERWOOD_FLAIL_REQUIRED = "Vanstrom Klause requires crush attacks with the Blisterwood flail."
 BLISTERWOOD_STAKE = 33716
 EFARITAYS_AID = 21140
 RODS = frozenset(range(7639, 7649))
