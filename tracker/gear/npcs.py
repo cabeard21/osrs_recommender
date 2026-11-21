@@ -16,6 +16,10 @@ from tracker.gear.dragonbane import REVISION as DRAGONBANE_REVISION
 from tracker.gear.leafy import NPC_SLAYER
 from tracker.gear.leafy import REVISION as LEAFY_REVISION
 from tracker.gear.models import CombatTarget
+from tracker.gear.vampyre_targets import PROFILES as VAMPYRES
+from tracker.gear.vampyre_targets import REVISION as VAMPYRE_TARGET_REVISION
+from tracker.gear.vampyre_targets import TIER_NOTES, unsupported_reason
+from tracker.gear.vampyres import REVISION as VAMPYRE_REVISION
 
 if TYPE_CHECKING:
     from tracker.gear.optimizer import OptimizationRequest, RoleConfig
@@ -30,9 +34,6 @@ ORDINARY_ATTRIBUTES = frozenset(
     {"undead", "demon", "dragon", "fiery", "golem", "kalphite", "rat", "shade", "spectral", "leafy"}
 )
 MECHANICAL_ATTRIBUTES = {
-    "vampyre1": "Vampyre targets have weapon-specific damage adjustments.",
-    "vampyre2": "Vampyre targets restrict weapons and damage.",
-    "vampyre3": "Vampyre targets require vampyrebane weapon restrictions.",
     "penance": "Penance targets require Barbarian Assault role and damage rules.",
     "xerician": "Xerician targets require raid scaling and encounter rules.",
     "flying": "Flying targets require attack-style reach and immunity rules.",
@@ -63,6 +64,8 @@ class NpcCatalog:
             + LEAFY_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
+            + VAMPYRE_TARGET_REVISION
+            + VAMPYRE_REVISION
         ).hexdigest()
         self.entries: dict[str, dict[str, Any]] = {}
         rows = json.loads(payload)
@@ -83,7 +86,11 @@ class NpcCatalog:
 
     def _entry(self, key: str, row: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
         skills, defence = row.get("skills", {}), row.get("defensive", {})
-        guild_cyclops = (row["id"], row["name"], row.get("version", "")) in WARRIORS_GUILD_CYCLOPES
+        identity = (row["id"], row["name"], row.get("version", ""))
+        guild_cyclops = identity in WARRIORS_GUILD_CYCLOPES
+        vampyre = VAMPYRES.get(identity)
+        attributes = set(row.get("attributes", ()))
+        tiers = attributes.intersection(TIER_NOTES)
         required = [skills.get("def"), skills.get("magic")] + [
             defence.get(k)
             for k in ("stab", "slash", "crush", "magic", "light", "standard", "heavy")
@@ -95,6 +102,12 @@ class NpcCatalog:
         ):
             review = None
         status = "supported"
+        if vampyre and tiers != {vampyre.trait}:
+            status = "unsupported"
+            reasons.append(f"The reviewed vampyre tier for {row['name']} has changed.")
+        elif tiers and not vampyre:
+            status = "unsupported"
+            reasons.append(unsupported_reason(row["name"], row.get("version", ""), row["id"]))
         if (row["id"], row["name"]) in {
             (13675, "Acidic Araxyte"),
             (13671, "Mirrorback Araxyte"),
@@ -109,7 +122,7 @@ class NpcCatalog:
             if attribute in MECHANICAL_ATTRIBUTES:
                 status = "unsupported"
                 reasons.append(MECHANICAL_ATTRIBUTES[attribute])
-            elif attribute not in ORDINARY_ATTRIBUTES:
+            elif attribute not in ORDINARY_ATTRIBUTES and attribute not in TIER_NOTES:
                 if status == "supported":
                     status = "not_reviewed"
                 reasons.append(f"Unknown NPC mechanic attribute: {attribute}.")
@@ -153,15 +166,18 @@ class NpcCatalog:
                 target = CombatTarget(
                     size=row.get("size", 1),
                     hitpoints=skills.get("hp"),
-                    **self.status_facts.get(
-                        json.dumps(
-                            [row["id"], row["name"], row.get("version", "")], ensure_ascii=True
-                        ),
-                        {},
+                    **(
+                        {
+                            "poison_susceptibility": vampyre.susceptibility,
+                            "venom_susceptibility": vampyre.susceptibility,
+                        }
+                        if vampyre
+                        else self.status_facts.get(json.dumps(identity, ensure_ascii=True), {})
                     ),
                     traits=tuple(
                         sorted(
-                            (set(row.get("attributes", ())) & ORDINARY_ATTRIBUTES)
+                            (attributes & ORDINARY_ATTRIBUTES)
+                            | (tiers if vampyre else set())
                             | (
                                 {"holy_water_special"}
                                 if row["id"] in HOLY_WATER_SPECIAL_TARGETS
@@ -207,6 +223,8 @@ class NpcCatalog:
                     "downtime are not simulated."
                 ]
                 if row["id"] in {13011, 13012, 13013}
+                else vampyre.limitations()
+                if vampyre
                 else review.get("limitations", [])
                 if review
                 else [
@@ -307,6 +325,15 @@ def discipline_problem(role: RoleConfig) -> str | None:
     if role.target_selection is None:
         return None
     entry = npc_catalog().detail(role.target_selection.key)
+    if (
+        role.style == "magic"
+        and entry["support_status"] == "supported"
+        and "vampyre3" in entry["target"]["traits"]
+    ):
+        return (
+            "Tier 3 vampyres are immune to magic. Choose a melee vampyrebane weapon "
+            "or ranged blisterwood stakes."
+        )
     if entry["npc_id"] in {2042, 2043, 2044} and role.style in {"stab", "slash", "crush"}:
         return "Zulrah is immune to melee damage; choose a ranged or magic role."
     if (

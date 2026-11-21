@@ -20,7 +20,6 @@ from tracker.gear.models import EquipmentDefinition
 from tracker.gear.powered import review
 from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.revenant import CHARGED_AUTOCAST, CHARGED_BOWS, CHARGED_MACES, ETHER_ID
-from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.running_costs import (
     _CHARGES,
     _RESOURCE_NAMES,
@@ -28,8 +27,21 @@ from tracker.gear.running_costs import (
     COST_MODEL_VERSION,
     SPELL_RECIPES,
     STAFF_RUNES,
+    repair_limitations,
 )
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
+from tracker.gear.vampyres import EFARITAYS_AID
+
+
+def ring_charge_chance(performance: Mapping[str, Any]) -> float | None:
+    """Read the same attack-level probability from a compact score or a rich report."""
+    bonus = performance.get("vampyre_bonus")
+    chance = (
+        bonus.get("ring_charge_probability")
+        if bonus and bonus.get("ring_active")
+        else performance.get("ring_charge_probability")
+    )
+    return chance if isinstance(chance, (float, int)) else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,9 +115,15 @@ class PreparedCost:
     per_second_resources: tuple[Resource, ...] = ()
     per_second_cost: float | None = 0
     consumption_assumption: str | None = None
+    ring_replacement: Resource | None = None
 
     def score(
-        self, interval: float | None, dps: float | None, accuracy: float | None = None
+        self,
+        interval: float | None,
+        dps: float | None,
+        accuracy: float | None = None,
+        *,
+        ring_charge_probability: float | None = None,
     ) -> NumericCost:
         cost = self.gp_per_attack
         valid_accuracy = accuracy is not None and isfinite(accuracy) and 0 <= accuracy <= 1
@@ -127,6 +145,16 @@ class PreparedCost:
                 and interval > 0
                 else None
             )
+        if self.ring_replacement is not None:
+            ring = self.ring_replacement
+            cost = (
+                cost + ring_charge_probability * (ring.quantity * ring.unit_price)
+                if cost is not None
+                and ring.unit_price is not None
+                and ring_charge_probability is not None
+                and 0 <= ring_charge_probability <= 1
+                else None
+            )
         rate = cost / interval if cost is not None and interval and interval > 0 else None
         return NumericCost(
             "unavailable" if self.limitations or self.missing_prices or cost is None else "known",
@@ -137,9 +165,14 @@ class PreparedCost:
         )
 
     def report(
-        self, numeric: NumericCost, accuracy: float | None = None, *, interval: float | None = None
+        self,
+        numeric: NumericCost,
+        accuracy: float | None = None,
+        *,
+        interval: float | None = None,
+        ring_charge_probability: float | None = None,
     ) -> dict[str, Any]:
-        assumptions = (
+        assumptions: tuple[str, ...] = (
             ("Cheapest priced charging recipe; actual charges unknown.",)
             if self.alternatives
             else ()
@@ -163,6 +196,21 @@ class PreparedCost:
         if self.tome_assumption:
             assumptions = (*assumptions, TOME_ASSUMPTION)
         assumptions = (*assumptions, *self.extra_assumptions)
+        ring_resource = self.ring_replacement
+        valid_ring_chance = (
+            ring_charge_probability is not None and 0 <= ring_charge_probability <= 1
+        )
+        if ring_resource is not None:
+            assumptions += (
+                "Efaritay's aid consumes one of 200 charges per successful attack against "
+                "the configured vampyre. The account's remaining charges are unknown.",
+            )
+            if valid_ring_chance and ring_charge_probability is not None:
+                conditional += (
+                    replace(
+                        ring_resource, quantity=ring_resource.quantity * ring_charge_probability
+                    ),
+                )
         return {
             "model_version": COST_MODEL_VERSION,
             "status": numeric.status,
@@ -182,6 +230,11 @@ class PreparedCost:
                 *(
                     ("Accuracy is unavailable for expected enchantment consumption.",)
                     if self.on_hit_resources and not valid_accuracy
+                    else ()
+                ),
+                *(
+                    ("Successful-attack probability is unavailable for Efaritay's aid.",)
+                    if ring_resource is not None and not valid_ring_chance
                     else ()
                 ),
             ],
@@ -233,12 +286,15 @@ class CostEvaluator:
         crystal_halberd_charging: CrystalChargingPolicy | None = None,
         mark_of_darkness: bool = False,
         base_magic: int | None = None,
+        vampyre_target: bool = False,
     ) -> PreparedCost:
         weapon, ammo, cape = (equipment.get(s) for s in ("weapon", "ammunition", "cape"))
         body, shield = equipment.get("body"), equipment.get("shield")
         head = equipment.get("head")
+        ring = equipment.get("ring")
+        ring_active = vampyre_target and ring is not None and ring.id == EFARITAYS_AID
         charging = crystal_halberd_charging or CrystalChargingPolicy()
-        torag = any(i.id in TORAG_USABLE_IDS for i in equipment.values())
+        repair_notes = repair_limitations(equipment)
         tome_assumption = any(i.tome_effect for i in equipment.values())
         key = (
             (weapon.id, weapon.name, weapon.ammo_for) if weapon else None,
@@ -251,7 +307,7 @@ class CostEvaluator:
             charging.coin_recharge_cost_gp,
             charging.shard_value_gp,
             (shield.id, shield.name, shield.slot, shield.tome_effect) if shield else None,
-            torag,
+            repair_notes,
             tome_assumption,
             option.get("attack_type"),
             option.get("spell"),
@@ -260,6 +316,7 @@ class CostEvaluator:
             bool(getattr(weapon, "slayer_staff_enchanted", False)),
             mark_of_darkness,
             base_magic,
+            ring_active,
         )
         if key in self._recipes:
             self._recipes.move_to_end(key)
@@ -267,13 +324,14 @@ class CostEvaluator:
         result = self._prepare(
             equipment,
             option,
-            torag,
+            repair_notes,
             tome_assumption,
             on_slayer_task,
             fight_duration_seconds,
             charging,
             mark_of_darkness,
             base_magic,
+            ring_active,
         )
         if self.capacity:
             self._recipes[key] = result
@@ -285,13 +343,14 @@ class CostEvaluator:
         self,
         equipment: Mapping[str, EquipmentDefinition],
         option: Mapping[str, Any],
-        torag: bool,
+        repair_notes: tuple[str, ...],
         tome_assumption: bool,
         on_slayer_task: bool,
         fight_duration_seconds: int,
         charging: CrystalChargingPolicy,
         mark_of_darkness: bool,
         base_magic: int | None,
+        ring_active: bool,
     ) -> PreparedCost:
         weapon = equipment.get("weapon")
         style = option.get("attack_type")
@@ -376,8 +435,7 @@ class CostEvaluator:
                 f"Fresh {fight_duration_seconds}s continuous combat window: "
                 "10 scales at entry and every 54 seconds; actual remaining scales unknown.",
             )
-        if torag:
-            limitations += ("Torag's hammers degradation and repair costs have not been reviewed.",)
+        limitations += repair_notes
         on_hit_resources: tuple[Resource, ...] = (
             (self.resource(21257, "Slayer's enchantment", 1 / 2500),)
             if on_slayer_task
@@ -414,11 +472,16 @@ class CostEvaluator:
                     "Mark of Darkness is maintained using the selected weapon and base Magic; "
                     "rune upkeep is time based."
                 )
+        ring_replacement = (
+            self.resource(EFARITAYS_AID, "Efaritay's aid", 1 / 200) if ring_active else None
+        )
         missing = tuple(
             r.name
             for r in (*resources, *on_hit_resources, *timed)
             if r.consumed and r.unit_price is None
         )
+        if ring_replacement is not None and ring_replacement.unit_price is None:
+            missing += (ring_replacement.name,)
         cost = None if limitations or missing else _resource_sum(resources)
         return PreparedCost(
             resources,
@@ -433,6 +496,7 @@ class CostEvaluator:
             timed,
             _resource_sum(timed),
             assumption,
+            ring_replacement,
         )
 
     def _alternative(self, recipe: tuple[tuple[int, int], ...]) -> ChargeAlternative:

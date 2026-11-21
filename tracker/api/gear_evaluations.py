@@ -43,6 +43,7 @@ from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, support_context
 from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
+from tracker.gear.vampyres import MODEL_VERSION as VAMPYRE_MODEL_VERSION
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -283,6 +284,7 @@ def calculate_evaluation(
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
+        "vampyre_model_version": VAMPYRE_MODEL_VERSION,
         "size_damage_model_version": SIZE_DAMAGE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in scenario.roles},
         "marks_of_darkness": {role.id: role.mark_of_darkness for role in scenario.roles},

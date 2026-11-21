@@ -86,7 +86,7 @@ def test_native_cost_table_records_thrown_repair_and_interference_flags():
     scoring = SimpleNamespace(dense_ids=(0, 806, 4747), option_weapons=(), option_records=())
     packed = pack_costs(search, scoring)
     assert packed.ranged_kind[1] == 2
-    assert packed.torag[2] == 1
+    assert packed.unpriced_repair[2] == 1
 
 
 def test_native_body_recovery_uses_reviewed_body_identity():

@@ -12,7 +12,7 @@ from tracker.gear.compact_costs import CostEvaluator
 from tracker.gear.halberd_charging import cost_context
 from tracker.gear.ranged_resources import THROWN_IDS
 from tracker.gear.revenant import CHARGED_BOWS
-from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
+from tracker.gear.running_costs import UNPRICED_REPAIRS
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ class CostData:
     unit_prices: array[float]
     recovery: array[float]
     body_recovery: array[int]
-    torag: array[int]
+    unpriced_repair: array[int]
     supply_class: array[int]
     supply_count: int
     serp_head: array[int]
@@ -94,7 +94,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
             )
     ranged_kind, ammo_valid = array("i", [0]), array("i", [0])
     unit_prices, recovery = array("d", [-1]), array("d", [0])
-    body_recovery, torag = array("i", [0]), array("i", [0])
+    body_recovery, unpriced_repair = array("i", [0]), array("i", [0])
     for item_id in scoring.dense_ids[1:]:
         item = search.items[item_id]
         ranged_kind.append(
@@ -118,7 +118,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
             if item_id in COMPATIBLE_BODIES
             else 3
         )
-        torag.append(int(item_id in TORAG_USABLE_IDS))
+        unpriced_repair.append(int(item_id in UNPRICED_REPAIRS))
     return CostData(
         option_kind,
         option_cost,
@@ -129,7 +129,7 @@ def pack_costs(search: Any, scoring: Any) -> CostData:
         unit_prices,
         recovery,
         body_recovery,
-        torag,
+        unpriced_repair,
         supply_class,
         len(supply_ids),
         array("i", [0, *(int(i == 12931) for i in scoring.dense_ids[1:])]),

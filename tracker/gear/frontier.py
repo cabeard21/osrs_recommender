@@ -176,6 +176,7 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
     """Round-robin metric, component, damage and affordable candidates."""
     from tracker.gear.optimizer import SLOTS
     from tracker.gear.salve import contextual_candidates as salve_candidates
+    from tracker.gear.search_scaffolds import contextual_candidates as scaffold_candidates
 
     pools: dict[str, list[int | None]] = {}
     for slot in SLOTS:
@@ -234,7 +235,10 @@ def _metric_pools(search: Any, original: Any) -> dict[str, list[int | None]]:
             keep = list(
                 dict.fromkeys([*keep, *salve_candidates(search.request.roles, search.eligible)])
             )
-        pools[slot] = [None, *keep]
+        pools[slot] = [
+            None,
+            *dict.fromkeys([*keep, *scaffold_candidates(search, slot, candidates)]),
+        ]
     return pools
 
 

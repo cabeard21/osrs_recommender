@@ -530,7 +530,24 @@ export interface BoltPerformance {
   diary_boosted: boolean;
   expected_damage_delta: number;
 }
+export interface VampyreBonus {
+  tier: 1 | 2 | 3;
+  attack_source: "ordinary" | "silver" | "ivandis_rod" | "specialist";
+  weapon_accuracy_percent: number;
+  weapon_damage_percent: number;
+  ring_active: boolean;
+  ring_charge_probability: number;
+  ring_accuracy_percent: number;
+  ring_damage_percent: number;
+  damage_divisor: 1 | 2;
+  hit_cap: 10 | null;
+}
 export interface CombatPerformance {
+  vampyre_bonus?: VampyreBonus | null;
+  elite_void_ranged_bonus?: {
+    accuracy_percent: number;
+    strength_percent: number;
+  } | null;
   wilderness_weapon_passive?: boolean | null;
   direct_dps?: number | null;
   status_damage?: {

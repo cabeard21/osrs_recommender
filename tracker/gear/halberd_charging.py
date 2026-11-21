@@ -27,9 +27,13 @@ def charge_cost(policy: CrystalChargingPolicy) -> float | None:
 
 def cost_context(request: object, role_or_id: object) -> dict[str, Any]:
     """Cost settings use the same role window as outgoing status damage."""
+    from tracker.gear.vampyre_combat import target_tier
+
     roles = getattr(request, "roles", ())
     role = next((r for r in roles if r.id == role_or_id), role_or_id)
+    target = getattr(role, "target", None)
     return {
         "fight_duration_seconds": getattr(role, "fight_duration_seconds", 60),
         "crystal_halberd_charging": getattr(request, "crystal_halberd_charging", None),
+        "vampyre_target": target is not None and bool(target_tier(target.traits)),
     }

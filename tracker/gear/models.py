@@ -139,7 +139,9 @@ class CombatTarget(GearModel):
     current_hitpoints: int | None = Field(default=None, ge=1, le=1000000, strict=True)
 
     @model_validator(mode="after")
-    def validate_hitpoints(self) -> CombatTarget:
+    def validate_mechanics(self) -> CombatTarget:
+        if len(set(self.traits).intersection({"vampyre1", "vampyre2", "vampyre3"})) > 1:
+            raise ValueError("A target may have only one vampyre tier.")
         if (
             self.hitpoints is not None
             and self.current_hitpoints is not None
@@ -254,6 +256,24 @@ class DragonbaneBonus(GearModel):
     slayer_damage_additive: bool = False
 
 
+class VampyreBonus(GearModel):
+    tier: int = Field(ge=1, le=3)
+    attack_source: Literal["ordinary", "silver", "ivandis_rod", "specialist"]
+    weapon_accuracy_percent: int
+    ring_accuracy_percent: int
+    weapon_damage_percent: int
+    ring_damage_percent: int
+    damage_divisor: int
+    hit_cap: int | None
+    ring_active: bool
+    ring_charge_probability: float = Field(ge=0, le=1)
+
+
+class EliteVoidRangedBonus(GearModel):
+    accuracy_percent: int = 10
+    strength_percent: float = 12.5
+
+
 class SalveBonus(GearModel):
     item_id: int
     accuracy_percent: float
@@ -262,6 +282,8 @@ class SalveBonus(GearModel):
 
 
 class CombatPerformance(GearModel):
+    vampyre_bonus: VampyreBonus | None = None
+    elite_void_ranged_bonus: EliteVoidRangedBonus | None = None
     wilderness_weapon_passive: bool | None = None
     size_damage_bonus: SizeDamagePerformance | None = None
     direct_dps: float | None = None

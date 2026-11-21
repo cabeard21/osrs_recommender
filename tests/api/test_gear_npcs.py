@@ -30,6 +30,37 @@ def test_npc_detail_preserves_target_size(client):
     assert detail["target"]["size"] == 5
 
 
+@pytest.mark.parametrize("endpoint", ["optimizations", "evaluations"])
+def test_sentinel_selection_reports_required_quest_on_both_routes(
+    client, session_factory, endpoint
+):
+    body = scenario(client, session_factory)
+    result = client.get("/ui-api/gear/targets", params={"q": "Vyrewatch Sentinel"}).json()
+    assert result["total"] == 8
+    assert all(entry["support_status"] == "supported" for entry in result["items"])
+    entry = result["items"][0]
+    detail = client.get("/ui-api/gear/targets/" + entry["key"]).json()
+    assert detail["target"]["traits"] == ["vampyre3"]
+    assert "Tier 3" in detail["limitations"][0]
+    body["roles"][0].update(
+        style="slash",
+        target=detail["target"],
+        target_selection={"key": entry["key"], "catalog_revision": result["catalog_revision"]},
+    )
+    payload = (
+        body
+        if endpoint == "optimizations"
+        else {
+            "scenario": body,
+            "baseline_loadouts": {"single": {}},
+            "proposed_loadouts": {"single": {}},
+        }
+    )
+    reply = client.post("/ui-api/gear/" + endpoint, json=payload)
+    assert reply.status_code == 422, reply.text
+    assert "Sins of the Father" in reply.text
+
+
 @pytest.mark.parametrize("size", [0, 1, 5, 64])
 def test_custom_size_roundtrip(client, session_factory, size):
     body = scenario(client, session_factory)

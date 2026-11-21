@@ -14,6 +14,7 @@ import { EquipmentGrid } from "./EquipmentGrid";
 import { PerformanceSummary } from "./PerformanceSummary";
 import { purchaseSummary } from "./PurchaseRows";
 import { ResultFreshness } from "./ResultFreshness";
+import { NoSolutionHints } from "./NoSolutionHints";
 import { SecondaryPrioritySummary } from "./SecondaryPrioritySummary";
 import { OptimizationModeSummary } from "./OptimizationModeSummary";
 import { CombatOptionSummary } from "./CombatOptionSummary";
@@ -259,6 +260,9 @@ export function LiveResultWorkspace() {
         ) : (
           <section className="panel">
             <h2>No feasible solution found within this search</h2>
+            <NoSolutionHints
+              hints={viewResult.live?.result.search.no_solution_hints}
+            />
             {isUnsynced && (
               <p className="notice">
                 No account data has been synced, so nothing can be confirmed as

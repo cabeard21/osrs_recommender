@@ -168,7 +168,12 @@ class VectorOptions:
             interval = performance.get("interval")
             if interval is None:
                 interval = numeric_attack_interval(gear.get("weapon"), configured)
-            numeric = recipe.score(interval, performance["dps"], performance["accuracy"])
+            numeric = recipe.score(
+                interval,
+                performance["dps"],
+                performance["accuracy"],
+                ring_charge_probability=performance.get("ring_charge_probability"),
+            )
             # Only partial beam ranking uses a finite floor for an unpriced option.
             values["gp_per_damage"] = (
                 -numeric.gp_per_damage
@@ -197,8 +202,12 @@ class VectorOptions:
         if native is not None:
             index = self.role_indices[role.id]
             result = []
-            for option_index, values, accuracy, interval in native.score_variants(
-                equipment, index, compact=True, **self.native_rune_filter(role, equipment)
+            for option_index, values, accuracy, interval, ring_chance in native.score_variants(
+                equipment,
+                index,
+                compact=True,
+                include_charge_probability=True,
+                **self.native_rune_filter(role, equipment),
             ):
                 configured, option = native.option_records[option_index]
                 if self.cost_evaluator is None:
@@ -213,6 +222,7 @@ class VectorOptions:
                                 "supported": True,
                                 "dps": values[0],
                                 "accuracy": accuracy,
+                                "ring_charge_probability": ring_chance,
                                 "interval": interval,
                             },
                             dict(zip(native.objective_ids, values[1:], strict=True)),
@@ -265,6 +275,7 @@ class VectorOptions:
                 "supported": True,
                 "dps": score.dps,
                 "accuracy": score.accuracy,
+                "ring_charge_probability": score.ring_charge_probability,
                 "bonuses": score.bonuses.__dict__,
                 "player_defence_rolls": score.player_defence_rolls,
             }

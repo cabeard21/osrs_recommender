@@ -26,8 +26,20 @@ from tracker.gear.revenant import FORMS as REVENANT_FORMS
 from tracker.gear.reviewed_attacks import TORAG_USABLE_IDS
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
+from tracker.gear.void_ranged import BLOOD_MOON_ARMOUR
 
-COST_MODEL_VERSION = "ordinary-resource-cost-v10-revenant-weapons"
+COST_MODEL_VERSION = "ordinary-resource-cost-v11-vampyres"
+UNPRICED_REPAIRS = MappingProxyType(
+    {
+        **dict.fromkeys(
+            TORAG_USABLE_IDS, "Torag's hammers degradation and repair costs have not been reviewed."
+        ),
+        **dict.fromkeys(
+            BLOOD_MOON_ARMOUR,
+            "Blood Moon armour degradation and repair costs have not been reviewed.",
+        ),
+    }
+)
 _RESOURCE_NAMES = {
     995: "Coins",
     12934: "Zulrah's scales",
@@ -128,6 +140,12 @@ _CHARGES = MappingProxyType(
 )
 
 
+def repair_limitations(equipment: Mapping[str, EquipmentDefinition]) -> tuple[str, ...]:
+    return tuple(
+        sorted({UNPRICED_REPAIRS[i.id] for i in equipment.values() if i.id in UNPRICED_REPAIRS})
+    )
+
+
 def resource_item_ids() -> frozenset[int]:
     """Extra market scope; normal supported ammunition is already equipment-scoped."""
     from tracker.gear.potions import resource_item_ids as potion_item_ids
@@ -214,9 +232,11 @@ def evaluate_running_cost(
     crystal_halberd_charging: CrystalChargingPolicy | None = None,
     mark_of_darkness: bool = False,
     base_magic: int | None = None,
+    vampyre_target: bool = False,
 ) -> dict[str, Any]:
     """Value consumed resources at replacement prices, even when already owned."""
-    from tracker.gear.compact_costs import active, evaluator
+    from tracker.gear.compact_costs import active, evaluator, ring_charge_chance
+    from tracker.gear.vampyres import EFARITAYS_AID
 
     enchanted_dart = (
         on_slayer_task
@@ -226,10 +246,13 @@ def evaluate_running_cost(
     )
     demonbane_cost = mark_of_darkness or any(i.id in {19675, 732} for i in equipment.values())
     weapon = equipment.get("weapon")
+    vampyre_target = vampyre_target or bool(performance.get("vampyre_bonus"))
+    ring = equipment.get("ring")
     if (
         active()
         or enchanted_dart
         or demonbane_cost
+        or (vampyre_target and ring is not None and ring.id == EFARITAYS_AID)
         or (weapon is not None and weapon.id in REVENANT_FORMS)
         or any(i.id in {23987, 12931} for i in equipment.values())
     ):
@@ -241,12 +264,20 @@ def evaluate_running_cost(
             crystal_halberd_charging=crystal_halberd_charging,
             mark_of_darkness=mark_of_darkness,
             base_magic=base_magic,
+            vampyre_target=vampyre_target,
         )
         accuracy = performance.get("accuracy")
+        charge_chance = ring_charge_chance(performance)
         return prepared.report(
-            prepared.score(performance.get("attack_interval"), performance.get("dps"), accuracy),
+            prepared.score(
+                performance.get("attack_interval"),
+                performance.get("dps"),
+                accuracy,
+                ring_charge_probability=charge_chance,
+            ),
             accuracy,
             interval=performance.get("attack_interval"),
+            ring_charge_probability=charge_chance,
         )
     style = combat_option.get("attack_type")
     resources: list[dict[str, Any]] = []
@@ -319,8 +350,7 @@ def evaluate_running_cost(
     elif style not in {"stab", "slash", "crush"}:
         reasons = ["Attack resource consumption has not been reviewed."]
     # Ordinary damage support does not imply reviewed repair costs.
-    if any(item.id in TORAG_USABLE_IDS for item in equipment.values()):
-        reasons.append("Torag's hammers degradation and repair costs have not been reviewed.")
+    reasons.extend(repair_limitations(equipment))
     reasons += [
         f"No price available for {r['name']}."
         for r in resources

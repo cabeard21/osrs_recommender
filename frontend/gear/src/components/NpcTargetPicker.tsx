@@ -8,7 +8,7 @@ import {
   rememberNpc,
   sortNpcEntries,
 } from "./npcEntries";
-import { sameValue } from "../api/runtime";
+import { sameValue, strings } from "../api/runtime";
 import { getTarget, searchTargets } from "../api/targetCatalog";
 import type { CombatTarget, Role, TargetSelection } from "../api/contracts";
 import { targetFieldErrors } from "../state/setupValidation";
@@ -24,6 +24,7 @@ interface Entry {
   reasons: string[];
 }
 interface Detail extends Entry {
+  limitations?: string[];
   catalog_revision: string;
   target: CombatTarget | null;
   wiki_url: string;
@@ -280,6 +281,19 @@ export function NpcTargetPicker({
           {detail.reasons.map((reason) => (
             <p key={reason}>{reason}</p>
           ))}
+          {detail.support_status === "supported" &&
+            base?.traits?.some((trait) =>
+              ["vampyre1", "vampyre2", "vampyre3"].includes(trait),
+            ) &&
+            strings(detail.limitations) && (
+              <div aria-label="Vampyre target restrictions">
+                {detail.limitations.map((note) => (
+                  <p key={note} className="npc-note">
+                    {note}
+                  </p>
+                ))}
+              </div>
+            )}
           {base?.traits?.includes("leafy") && (
             <p className="npc-note" aria-label="Leafy target restrictions">
               This target requires leaf-bladed melee weapons, compatible broad

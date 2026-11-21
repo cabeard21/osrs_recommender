@@ -4,7 +4,10 @@
 from libc.math cimport floor, pow, fabs, isfinite
 from libc.string cimport memset
 from libcpp.vector cimport vector
-from tracker.gear.native._effects cimport BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total
+from tracker.gear.native._effects cimport (
+    BoltResult, bolt_damage, damage_mean, floor_div, marked_damage_total, vampyre_hit,
+    vampyre_mean, positive_chance, V_LEGAL, V_WEAPON_ACCURACY, V_RING_ACCURACY, V_WIDTH,
+)
 
 from tracker.gear.compact_states import SLOT_NAMES
 
@@ -141,7 +144,8 @@ cdef double armoured_mean(long long maximum, long long armour, long long hit_flo
     return (min(hit_floor, maximum + 1) * max(0, hit_floor - armour) + positive_sum) / (maximum + 1)
 
 
-cdef double status_damage(double chance, int speed, int duration, int kind) noexcept nogil:
+cdef double status_damage(double chance, int speed, int duration, int kind,
+                          int severity=26, bint exact=False) noexcept nogil:
     cdef double states[27]
     cdef double total = 0.0, unchanged, applied
     cdef int phase, tick, state, attacks, count
@@ -160,8 +164,11 @@ cdef double status_damage(double chance, int speed, int duration, int kind) noex
                 applied = states[0] * (1 - unchanged)
                 states[0] *= unchanged
                 states[1] += applied
-                for state in range(1, 9):
-                    total += states[state] * (4 + 2 * state)
+                if not exact:
+                    for state in range(1, 9):
+                        total += states[state] * (4 + 2 * state)
+                else:
+                    total += status_tick_total(states, 8, True)
                 for state in range(8, 1, -1):
                     if state == 8:
                         states[state] += states[state - 1]
@@ -169,17 +176,35 @@ cdef double status_damage(double chance, int speed, int duration, int kind) noex
                         states[state] = states[state - 1]
                 states[1] = 0
             else:
-                for state in range(27):
+                for state in range(severity + 1):
                     states[state] *= unchanged
-                states[26] += 1 - unchanged
-                for state in range(1, 27):
-                    total += states[state] * ((state + 4) // 5)
+                states[severity] += 1 - unchanged
+                if not exact:
+                    for state in range(1, severity + 1):
+                        total += states[state] * ((state + 4) // 5)
+                else:
+                    total += status_tick_total(states, severity, False)
                 states[0] += states[1]
-                for state in range(1, 26):
+                for state in range(1, severity):
                     states[state] = states[state + 1]
-                states[26] = 0
+                states[severity] = 0
             tick += 30
     return total / 30
+
+
+cdef double status_tick_total(double* states, int maximum, bint venom) noexcept nogil:
+    # Match sum(weighted_state_damage) for one timer tick in the Python reference.
+    cdef double high = 0, low = 0, term, updated
+    cdef int state
+    for state in range(1, maximum + 1):
+        term = states[state] * (4 + 2 * state if venom else (state + 4) // 5)
+        updated = high + term
+        if high >= term:
+            low += (high - updated) + term
+        else:
+            low += (term - updated) + high
+        high = updated
+    return high + low
 
 
 cdef class ScoringContext:
@@ -232,6 +257,13 @@ cdef class ScoringContext:
         self.broad_ammo = packed["broad_ammo"]
         self.seeking_ammo = packed["seeking_ammo"]
         self.target_leafy = packed["target_leafy"]
+        self.vampyre_rule_offset = packed["vampyre_rule_offset"]
+        self.vampyre_rules = packed["vampyre_rules"]
+        self.silver_bolts = packed["silver_bolts"]
+        self.silver_poison = packed["silver_poison"]
+        self.target_poisonable = packed["target_poisonable"]
+        self.efaritay = packed["efaritay"]
+        self.elite_void_piece = packed["elite_void_piece"]
         self.size_damage_per_size = packed["size_damage_per_size"]
         self.size_damage_max_size = packed["size_damage_max_size"]
         self.target_size = packed["target_size"]
@@ -269,7 +301,7 @@ cdef class ScoringContext:
             self.ranged_kind = costs.ranged_kind
             self.ammo_valid = costs.ammo_valid
             self.body_recovery = costs.body_recovery
-            self.torag = costs.torag
+            self.unpriced_repair = costs.unpriced_repair
             self.unit_prices = costs.unit_prices
             self.recovery = costs.recovery
 
@@ -277,23 +309,27 @@ cdef class ScoringContext:
         cdef int option = score.option_index
         cdef int cost_index
         cdef int weapon = slots[0], ammo = slots[2], cape = slots[4], shield = slots[1], slot, source
-        cdef double rate, head_cost = 0.0, quantity = 1.0
+        cdef double rate, head_cost = 0.0, quantity = 1.0, ring_cost = 0.0
         if not score.supported or option < 0:
             return -1
+        if score.ring_charge_probability >= 0:
+            if self.unit_prices[slots[10]] < 0:
+                return -1
+            ring_cost = score.ring_charge_probability * (self.unit_prices[slots[10]] * 0.005)
         if self.serp_head[slots[3]]:
             if self.serp_cost[option] < 0:
                 return -1
             head_cost = self.serp_cost[option]
         for slot in range(11):
-            if self.torag[slots[slot]]:
+            if self.unpriced_repair[slots[slot]]:
                 return -1
         if not self.option_kind[option]:
             cost_index = option * self.supply_count + self.supply_class[shield]
             if self.option_cost[cost_index] < 0 or self.option_on_hit_cost[cost_index] < 0 or self.option_per_second_cost[cost_index] < 0:
                 return -1
-            return (self.option_cost[cost_index] + head_cost) + score.accuracy * self.option_on_hit_cost[cost_index] + self.option_per_second_cost[cost_index] * score.interval
+            return (self.option_cost[cost_index] + head_cost) + score.accuracy * self.option_on_hit_cost[cost_index] + self.option_per_second_cost[cost_index] * score.interval + ring_cost
         if self.ranged_kind[weapon] == 3:
-            return self.unit_prices[weapon] + head_cost if self.unit_prices[weapon] >= 0 else -1
+            return self.unit_prices[weapon] + head_cost + ring_cost if self.unit_prices[weapon] >= 0 else -1
         if self.ranged_kind[weapon] == 1:
             if not ammo or not self.ammo_valid[ammo]:
                 return -1
@@ -316,7 +352,7 @@ cdef class ScoringContext:
         if self.ranged_kind[weapon] == 1 and self.reviewed_crossbow[weapon] and self.hopper_shield[shield] and ammo:
             # evaluate() already checked physical ammunition compatibility.
             quantity = 1.11
-        return (quantity - quantity * rate) * self.unit_prices[source] + head_cost
+        return (quantity - quantity * rate) * self.unit_prices[source] + head_cost + ring_cost
 
     cdef double secondary_for(self, const double* bonuses, double accuracy, int option_index) noexcept nogil:
         cdef double rolls[5]
@@ -394,6 +430,8 @@ cdef class ScoringContext:
         else:
             ammo_ok = True
         gear.ammo_ok = ammo_ok
+        gear.elite_void_ranged = (self.elite_void_piece[slots[3]] and self.elite_void_piece[slots[6]]
+                                  and self.elite_void_piece[slots[7]] and self.elite_void_piece[slots[8]])
 
     cdef void evaluate(self, const int* slots, int role_index, bint metric, Score* output,
                        const int* order=NULL, int specific_option=-1,
@@ -413,14 +451,20 @@ cdef class ScoringContext:
         cdef double secondary_accuracy
         cdef double status_proc, positive
         cdef long long maximum, attack, defence, strength, armor, cap, first, second
+        cdef long long effective_attack, effective_strength
         cdef double accuracy, dps, expected, secondary, second_probability, magic_bonus, term
         cdef double* bonuses
+        cdef const int* vampyre
+        cdef int rule_offset
+        cdef long long roll, marked_total, marked_hit
+        cdef double miss, bypass, ring_chance
         if prepared == NULL:
             self.prepare_gear(slots, order, &local)
             prepared = &local
         bonuses = prepared.bonuses
         memset(output, 0, sizeof(Score))
         output.option_index = -1
+        output.ring_charge_probability = -1
         for field in range(14):
             output.bonuses[field] = bonuses[field]
         if self.fixed_roles[role_index]:
@@ -456,6 +500,16 @@ cdef class ScoringContext:
                 continue
             if ranged and not prepared.ammo_ok:
                 continue
+            rule_offset = self.vampyre_rule_offset[index]
+            vampyre = NULL
+            if rule_offset >= 0:
+                if ranged and self.ammo_required[weapon] and self.silver_bolts[ammo]:
+                    rule_offset += 2 * V_WIDTH
+                if self.efaritay[slots[10]]:
+                    rule_offset += V_WIDTH
+                vampyre = &self.vampyre_rules[rule_offset]
+                if not vampyre[V_LEGAL]:
+                    continue
             if self.target_leafy[index]:
                 if style < 3 and not self.leafy_weapon[weapon]:
                     continue
@@ -485,6 +539,10 @@ cdef class ScoringContext:
                     strength -= self.item_bonuses[ammo * 14 + 6]
                 attack -= self.item_bonuses[ammo * 14 + 3]
             minimum = 0
+            effective_attack, effective_strength = self.options[base + 1], self.options[base + 2]
+            if ranged and prepared.elite_void_ranged:
+                effective_attack = floor_div(effective_attack * 11, 10)
+                effective_strength = floor_div(effective_strength * 9, 8)
             element = self.spell_element[index]
             tome = element != 0 and self.tome_element[slots[1]] == element
             if style == 4:
@@ -505,10 +563,10 @@ cdef class ScoringContext:
                 if self.options[base + 12]:
                     attack *= 3
             else:
-                maximum = <long long>floor(0.5 + self.options[base + 2] * (strength + 64) / 640.0)
+                maximum = <long long>floor(0.5 + effective_strength * (strength + 64) / 640.0)
             if holy:
                 maximum = <long long>floor(0.5 + (self.ranged_level[index] + 10) * (self.item_bonuses[weapon * 14 + 6] + 64) / 640.0)
-            attack = self.options[base + 1] * (attack + 64)
+            attack = effective_attack * (attack + 64)
             if style == 4:
                 weakness_roll = floor_div(attack * self.options[base + 13], 100)
                 if salve_magic:
@@ -562,6 +620,9 @@ cdef class ScoringContext:
                 maximum = floor_div(maximum * (100 + dragon_damage), 100)
             if demon_accuracy:
                 attack += floor_div(attack * floor_div(demon_accuracy * vulnerability, 100), 100)
+            if vampyre != NULL:
+                attack = floor_div(attack * (100 + vampyre[V_WEAPON_ACCURACY]), 100)
+                attack = floor_div(attack * (100 + vampyre[V_RING_ACCURACY]), 100)
             if demon_damage and not demon_spell and not (self.scorching_bow[weapon] and ranged_task_damage):
                 maximum += floor_div(maximum * floor_div(demon_damage * vulnerability, 100), 100)
             if style < 3 and self.target_leafy[index] and self.leafy_weapon[weapon] == 2:
@@ -578,7 +639,15 @@ cdef class ScoringContext:
                 first = maximum // 2
                 second = maximum - first
             if cap >= 0:
-                if demon_spell and self.mark_of_darkness[index]:
+                if vampyre != NULL:
+                    marked_hit = first
+                    if demon_spell and self.mark_of_darkness[index]:
+                        marked_hit += floor_div(floor_div(first * demon_damage, 100) * vulnerability, 100)
+                    if self.options[base + 15]:
+                        marked_hit = max(1, marked_hit) + 8
+                    if vampyre_hit(marked_hit, vampyre, armor, hit_floor) > cap or (pattern != 0 and vampyre_hit(second, vampyre, armor, hit_floor) > cap):
+                        continue
+                elif demon_spell and self.mark_of_darkness[index]:
                     if max(hit_floor, first) + floor_div(floor_div(max(hit_floor, first) * demon_damage, 100) * vulnerability, 100) > cap:
                         continue
                 elif max(hit_floor, first) + 8 * self.options[base + 15] > cap or (pattern != 0 and max(hit_floor, second) > cap):
@@ -594,6 +663,18 @@ cdef class ScoringContext:
                 expected = accuracy * (minimum + maximum) / 2
             if self.options[base + 15]:
                 expected += accuracy * 0.2 * 8
+            if vampyre != NULL:
+                expected = accuracy * vampyre_mean(first, vampyre, armor, hit_floor, 0, 1, minimum)
+                if pattern != 0:
+                    expected += second_probability * vampyre_mean(second, vampyre, armor, hit_floor)
+                if demon_spell and self.mark_of_darkness[index]:
+                    marked_total = 0
+                    for roll in range(maximum + 1):
+                        marked_hit = roll + floor_div(floor_div(roll * demon_damage, 100) * vulnerability, 100)
+                        marked_total += vampyre_hit(marked_hit, vampyre, armor, hit_floor)
+                    expected = accuracy * (<double>marked_total / (maximum + 1))
+                if self.options[base + 15]:
+                    expected = accuracy * (0.8 * vampyre_mean(first, vampyre, armor, hit_floor, 0, 1, minimum) + 0.2 * vampyre_mean(first, vampyre, armor, 1, 0, 1, 0, True))
             family = self.bolt_family[ammo] if ranged and self.ammo_required[weapon] else 0
             proc.activation = 0
             if family:
@@ -601,7 +682,7 @@ cdef class ScoringContext:
                     continue
                 proc = bolt_damage(family, self.ranged_level[index], maximum, accuracy,
                     self.target_hp[index], self.diary[index], self.zaryte[weapon],
-                    self.target_traits[index], armor, 1, 1.0)
+                    self.target_traits[index], armor, 1, 1.0, vampyre)
                 if cap >= 0 and proc.maximum > cap:
                     continue
                 expected = proc.expected
@@ -611,15 +692,21 @@ cdef class ScoringContext:
                 if family:
                     extra = bolt_damage(family, self.ranged_level[index], maximum, secondary_accuracy,
                         self.target_hp[index], self.diary[index], self.zaryte[weapon],
-                        self.target_traits[index], armor, 3, (1 - proc.activation) / 3)
+                        self.target_traits[index], armor, 3, (1 - proc.activation) / 3, vampyre)
                     expected += 0.11 * extra.expected
                 else:
-                    expected += 0.11 * (secondary_accuracy * damage_mean(maximum, armor, 0, 3))
+                    expected += 0.11 * (secondary_accuracy * damage_mean(maximum, armor, 0, 3, vampyre))
             dps = expected / (self.options[base + 4] * 0.6)
             status_proc = (0.5 if self.serpentine[slots[3]] else 1.0 / 3) if self.original_ids[weapon] == 29796 else (1.0 / 6 if self.halberd[weapon] and self.serpentine[slots[3]] else 0.0)
             if style < 3 and status_proc and self.status_kind[index]:
-                positive = 1.0 if armor < 1 else max(0.0, maximum - armor) / (maximum + 1)
-                dps += status_damage(status_proc * accuracy * positive, <int>self.options[base + 4], self.status_duration[index], self.status_kind[index]) / self.status_duration[index]
+                positive = positive_chance(maximum, vampyre, armor)
+                dps += status_damage(status_proc * accuracy * positive, <int>self.options[base + 4], self.status_duration[index], self.status_kind[index], 26, vampyre != NULL) / self.status_duration[index]
+            elif ranged and self.ammo_required[weapon] and self.silver_poison[ammo] and self.target_poisonable[index]:
+                status_proc = 0.125 * accuracy * positive_chance(maximum, vampyre, armor)
+                if hopper:
+                    positive = 0.11 * 0.125 * secondary_accuracy * positive_chance(maximum, vampyre, armor, 3)
+                    status_proc = 1 - (1 - status_proc) * (1 - positive)
+                dps += status_damage(status_proc, <int>self.options[base + 4], self.status_duration[index], 2, self.silver_poison[ammo], True) / self.status_duration[index]
             secondary = self.secondary_for(bonuses, accuracy, index)
             # Ranged offensive bonus priorities use the ammunition-adjusted view.
             if ranged and ammo and not self.ammo_required[weapon] and self.priority == 10:
@@ -637,6 +724,16 @@ cdef class ScoringContext:
                     if dps < output.dps or (dps == output.dps and tie <= best_tie):
                         continue
             output.supported = True
+            ring_chance = -1
+            if vampyre != NULL and self.efaritay[slots[10]]:
+                bypass = proc.activation if family in (1, 2, 3, 4) else 0.0
+                miss = (1 - accuracy) * (1 - bypass)
+                if pattern == 1:
+                    miss *= 1 - accuracy
+                if hopper:
+                    miss *= 1 - 0.11 * (secondary_accuracy + (1 - secondary_accuracy) * bypass / 3)
+                ring_chance = 1 - miss
+            output.ring_charge_probability = ring_chance
             output.dps, output.accuracy, output.secondary = dps, accuracy, secondary
             output.option_index = index
             output.interval = self.options[base + 4] * 0.6
@@ -779,7 +876,8 @@ cdef class ScoringContext:
         return tuple(maximum[dimension] for dimension in range(self.objective_kinds.shape[0] + 1)) if supported else None
 
     def score_variants(self, equipment, int role_index, *, option_allowed=None,
-                       const unsigned char[::1] option_mask=None, bint compact=False):
+                       const unsigned char[::1] option_mask=None, bint compact=False,
+                       bint include_charge_probability=False):
         """Score every concrete configured option, without projection-based pruning."""
         cdef int slots[11]
         cdef int order[11]
@@ -820,16 +918,20 @@ cdef class ScoringContext:
                 continue
             self.project_objectives(slots, &result, values)
             if compact:
-                rows.append((result.option_index, (result.dps, *(
+                row = (result.option_index, (result.dps, *(
                     (None if values[position] == -1e100 else -values[position])
                     if self.objective_kinds[position] == 6 else values[position]
                     for position in range(self.objective_kinds.shape[0])
-                )), result.accuracy, result.interval))
+                )), result.accuracy, result.interval)
+                if include_charge_probability:
+                    row += (result.ring_charge_probability if result.ring_charge_probability >= 0 else None,)
+                rows.append(row)
                 continue
             rows.append({
                 "supported": True,
                 "dps": result.dps,
                 "accuracy": result.accuracy,
+                "ring_charge_probability": result.ring_charge_probability if result.ring_charge_probability >= 0 else None,
                 "secondary": result.secondary,
                 "interval": result.interval,
                 "player_defence_rolls": {name: result.defence_rolls[position] if result.defence_rolls[position] >= 0 else None for position, name in enumerate(("stab", "slash", "crush", "ranged", "magic"))},
@@ -882,6 +984,7 @@ cdef class ScoringContext:
             "supported": bool(result.supported),
             "dps": result.dps if result.supported else None,
             "accuracy": result.accuracy if result.supported else None,
+            "ring_charge_probability": result.ring_charge_probability if result.ring_charge_probability >= 0 else None,
             "secondary": result.secondary,
             "interval": result.interval if result.supported else None,
             "player_defence_rolls": {name: result.defence_rolls[index] if result.defence_rolls[index] >= 0 else None for index, name in enumerate(("stab", "slash", "crush", "ranged", "magic"))},

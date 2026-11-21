@@ -10,6 +10,7 @@ from typing import Any
 from tracker.accounts.requirements import evaluate_requirement
 from tracker.accounts.snapshot import AccountSnapshot
 from tracker.content.loader import Content
+from tracker.content.requirements import Requirement
 from tracker.domain.types import Container, QuestStatus, SkillState, Source
 from tracker.estimation.prices import PriceRecord, resolve_price
 from tracker.gear.powered import MARKET_FORMS, REVIEWS, review
@@ -20,6 +21,8 @@ from tracker.gear.salve import FORMS as SALVE_FORMS
 from tracker.gear.salve import acquisition_requirement
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import review as tome_review
+from tracker.gear.vampyres import ACQUISITION_REQUIREMENTS as VAMPYRE_ACQUISITION
+from tracker.gear.void_ranged import ELITE_ROBES, ELITE_TOPS, ELITE_UPGRADE
 
 # New purchases use ordinary editions; owned editions keep exact preparation routes.
 _POWERED_MARKET_FORMS = MARKET_FORMS
@@ -259,15 +262,20 @@ def equipment_fact(
     price = (
         resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None
     )
+    acquisition_gate: Requirement | None = VAMPYRE_ACQUISITION.get(item.id)
+    if item.id in SALVE_FORMS:
+        acquisition_gate = acquisition_requirement(item.id)
+    elif item.id in ELITE_TOPS or item.id in ELITE_ROBES:
+        acquisition_gate = ELITE_UPGRADE
     return {
         "item_id": item.id,
         **(
             {
                 "acquisition_requirement": evaluate_requirement(
-                    snapshot, acquisition_requirement(item.id)
+                    snapshot, acquisition_gate
                 ).model_dump(mode="json")
             }
-            if item.id in SALVE_FORMS and ownership["status"] != "owned"
+            if acquisition_gate is not None and ownership["status"] != "owned"
             else {}
         ),
         "name": item.name,

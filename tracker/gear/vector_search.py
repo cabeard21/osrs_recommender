@@ -455,6 +455,7 @@ class VectorSearch:
     def candidate_pools(self) -> dict[str, list[int | None]]:
         from tracker.gear.optimizer import SLOTS
         from tracker.gear.salve import contextual_candidates as salve_candidates
+        from tracker.gear.search_scaffolds import contextual_candidates as scaffold_candidates
 
         fields = {
             "prayer_bonus": "prayer",
@@ -556,7 +557,9 @@ class VectorSearch:
                         [*keep, *salve_candidates(self.search.request.roles, self.search.eligible)]
                     )
                 )
-            pools[slot] = keep
+            pools[slot] = list(
+                dict.fromkeys([*keep, *scaffold_candidates(self.search, slot, candidates)])
+            )
         return pools
 
     def equipment(
@@ -570,7 +573,9 @@ class VectorSearch:
             if any(slot in locks and locks[slot] != item for slot, item in role.locks.items()):
                 return []
             locks = {**locks, **role.locks}
-        states: list[dict[str, int]] = [{}]
+        from tracker.gear.search_scaffolds import attack_seeds
+
+        states: list[dict[str, int]] = [{}, *attack_seeds(self.search, roles)]
         for slot in SLOTS:
             choices = [locks[slot]] if slot in locks else self.pools[slot]
             expanded = (

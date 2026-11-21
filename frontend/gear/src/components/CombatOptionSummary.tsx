@@ -3,6 +3,7 @@ import type {
   CombatPerformance,
   PrayerDefinition,
   Role,
+  VampyreBonus,
 } from "../api/contracts";
 import { prayerDisplayName, prayerEffectText } from "./prayerFormat";
 
@@ -37,6 +38,37 @@ function PrayerSummary({
         ? ids.map((id) => prayerDisplayName(id, catalog)).join(", ")
         : "None"}
       {effects.length > 0 && <small>{effects.join(" · ")}</small>}
+    </p>
+  );
+}
+
+function VampyreSummary({ effect }: { effect: VampyreBonus }) {
+  const source = {
+    ordinary: "Ordinary attack",
+    silver: "Silver attack",
+    ivandis_rod: "Rod of Ivandis",
+    specialist: "Vampyrebane attack",
+  }[effect.attack_source];
+  const weaponBonus = attackBonusText(
+    effect.weapon_accuracy_percent,
+    effect.weapon_damage_percent,
+  );
+  const ringBonus = attackBonusText(
+    effect.ring_accuracy_percent,
+    effect.ring_damage_percent,
+  );
+  return (
+    <p aria-label="Vampyre effect">
+      Tier {effect.tier} vampyre · {source}
+      {weaponBonus && ` · Weapon grants ${weaponBonus}`}
+      {effect.ring_active &&
+        ` · Efaritay’s aid ${ringBonus ? `grants ${ringBonus}` : "active"}`}
+      {effect.damage_divisor === 2 &&
+        " · Each hit deals half damage, rounded down"}
+      {effect.hit_cap !== null &&
+        ` · Each hit is capped at ${effect.hit_cap} damage`}
+      {effect.ring_active &&
+        ` · Average ${Number(effect.ring_charge_probability.toFixed(3))} charges per attack (200 per ring)`}
     </p>
   );
 }
@@ -114,6 +146,17 @@ export function CombatOptionSummary({
             </p>
           ))}
         </div>
+      )}
+      {performance?.elite_void_ranged_bonus && (
+        <p aria-label="Elite Void ranged effect">
+          Elite Void set · +
+          {performance.elite_void_ranged_bonus.accuracy_percent}% Ranged
+          accuracy and +{performance.elite_void_ranged_bonus.strength_percent}%
+          Ranged strength
+        </p>
+      )}
+      {performance?.vampyre_bonus && (
+        <VampyreSummary effect={performance.vampyre_bonus} />
       )}
       {performance?.dragonbane_bonus && (
         <p aria-label="Dragonbane effect">
