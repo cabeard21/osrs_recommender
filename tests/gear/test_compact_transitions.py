@@ -9,9 +9,21 @@ import pytest
 from tracker.gear.transitions import plan_transition
 
 
-def test_reduced_exhaustive_transition_reports_match_original():
-    from tracker.gear.compact_transitions import compact_transition
+@pytest.fixture(params=["python", "native"])
+def compact_planner(request):
+    from tracker.gear.compact_transitions import compact_transition, prepare_transition
 
+    if request.param == "python":
+        return compact_transition
+    stages = pytest.importorskip("tracker.gear.native._stages")
+
+    def plan(source, destination, items, **kwargs):
+        return stages.solve_transition(prepare_transition(source, destination, **kwargs), items)
+
+    return plan
+
+
+def test_reduced_exhaustive_transition_reports_match_original(compact_planner):
     items = {i: SimpleNamespace(two_handed=i == 3) for i in range(1, 6)}
     states = [
         {
@@ -25,7 +37,7 @@ def test_reduced_exhaustive_transition_reports_match_original():
     for source, destination, capacity in product(states, states, (0, 1, 2, 3, 4, 28)):
         for carried in (None, frozenset((1, 2, 3, 4, 5)), frozenset((1, 4))):
             kwargs = {"carried": carried, "capacity": capacity}
-            assert compact_transition(source, destination, items, **kwargs) == plan_transition(
+            assert compact_planner(source, destination, items, **kwargs) == plan_transition(
                 source, destination, items, **kwargs
             )
 
@@ -93,8 +105,8 @@ def test_queued_states_omit_invariant_non_hand_slots(monkeypatch):
     assert widths and set(widths) == {1}
 
 
-def test_randomized_full_slot_shared_equipment_matches_baseline():
-    from tracker.gear.compact_transitions import SLOTS, compact_transition
+def test_randomized_full_slot_shared_equipment_matches_baseline(compact_planner):
+    from tracker.gear.compact_transitions import SLOTS
 
     rng = Random(8544)
     items = {i: SimpleNamespace(two_handed=i in (3, 13)) for i in range(1, 23)}
@@ -111,9 +123,20 @@ def test_randomized_full_slot_shared_equipment_matches_baseline():
         carried = frozenset((*source.values(), *destination.values(), 21, 22))
         for capacity in (0, 2, 5, 28):
             kwargs = {"carried": carried, "capacity": capacity}
-            assert compact_transition(source, destination, items, **kwargs) == plan_transition(
+            assert compact_planner(source, destination, items, **kwargs) == plan_transition(
                 source, destination, items, **kwargs
             )
+
+
+def test_native_full_slot_search_checks_cancellation_between_batches():
+    from tracker.gear.compact_transitions import SLOTS, prepare_transition
+
+    native = pytest.importorskip("tracker.gear.native._stages")
+    goal = dict(zip(SLOTS, range(1, 12), strict=True))
+    items = {item: SimpleNamespace(two_handed=False) for item in goal.values()}
+    checks = iter((False, True))
+    with pytest.raises(ValueError, match="optimization_cancelled"):
+        native.solve_transition(prepare_transition({}, goal), items, lambda: next(checks))
 
 
 @pytest.mark.parametrize(

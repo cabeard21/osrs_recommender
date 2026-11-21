@@ -838,6 +838,7 @@ export interface GearClient {
     scenario: Scenario,
     signal: AbortSignal,
     onProgress?: (progress: OptimizationProgress) => void,
+    progressId?: string | null,
   ): Promise<OptimizationReply>;
   evaluate(
     result: OptimizationReply,

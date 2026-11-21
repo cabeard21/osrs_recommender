@@ -7,6 +7,12 @@ export function archiveRunId(result: OptimizationReply | null | undefined) {
   return result?.live?.run_id ?? result?.live?.result?.run_id;
 }
 
+export function hasFrozenTimeline(result: OptimizationReply) {
+  return (
+    !!archiveRunId(result) && result.scenario.request.objectives !== undefined
+  );
+}
+
 export function isDisciplineSolution(id: string, discipline: string) {
   return (
     id.startsWith(`discipline-${discipline}-`) ||

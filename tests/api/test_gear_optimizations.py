@@ -4,13 +4,14 @@ import asyncio
 from datetime import UTC, datetime
 from threading import Event
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
 from tests.api.test_gear_ui import seed
 from tracker.accounts.service import AccountService
-from tracker.db.models import ItemPrice, Player, SkillSnapshot
-from tracker.domain.types import PriceSourceLayer, Source
+from tracker.db.models import ItemPrice, ObservedItem, Player, SkillSnapshot
+from tracker.domain.types import Container, PriceSourceLayer, Source
 
 NOW = datetime(2026, 10, 23, tzinfo=UTC)
 
@@ -166,29 +167,69 @@ def test_stale_snapshot_rejected_before_service(client, app, session_factory, mo
     reply = client.post("/ui-api/gear/optimizations", json=body)
     assert reply.status_code == 409
     assert reply.json()["error"]["code"] == "snapshot_changed"
+    assert reply.json()["error"]["phase"] == "admission"
 
 
-@pytest.mark.parametrize("multi", [False, True])
-def test_account_changes_during_optimization_not_published(
-    client, app, session_factory, monkeypatch, multi
+@pytest.mark.parametrize("kind", ["single", "multi", "objective", "objective_publishing"])
+def test_sync_during_optimization_publishes_admitted_facts(
+    client, app, session_factory, monkeypatch, kind
 ):
+    from tracker.api import gear_optimizations
+
     body = scenario(client, session_factory)
-    if multi:
+    if kind == "multi":
         body["roles"].append({"id": "second", "style": "slash"})
-    original = app.state.gear_service.optimize
+    if kind.startswith("objective"):
+        body["objectives"] = [{"kind": "prayer_bonus"}]
+    service = app.state.gear_service
+    owner, method = (
+        (service.objective_store, "publish_result")
+        if kind == "objective_publishing"
+        else (service, "optimize")
+    )
+    original = getattr(owner, method)
+    initial_prices = client.get("/ui-api/gear/context").json()["price_revision"]
+    load_inputs = Mock(wraps=gear_optimizations.resources)
+    monkeypatch.setattr(gear_optimizations, "resources", load_inputs)
 
     def changed(*args, **kwargs):
-        result = original(*args, **kwargs)
         with session_factory() as session:
             player = session.get(Player, 1)
             player.last_sync_at = NOW
+            session.delete(session.get(ObservedItem, (1, 4151, Container.EQUIPMENT)))
+            session.add(
+                ItemPrice(
+                    item_id=4151,
+                    high_price_gp=100,
+                    high_trade_at=NOW,
+                    fetched_at=NOW,
+                    source=PriceSourceLayer.LIVE,
+                    provider="osrs_wiki",
+                )
+            )
             session.commit()
-        return result
+        return original(*args, **kwargs)
 
-    monkeypatch.setattr(app.state.gear_service, "optimize", changed)
+    monkeypatch.setattr(owner, method, changed)
     reply = client.post("/ui-api/gear/optimizations", json=body)
-    assert reply.status_code == 409
-    assert reply.json()["error"]["code"] == "snapshot_changed"
+    assert reply.status_code == 200, reply.text
+    load_inputs.assert_called_once()
+    data = reply.json()
+    assert data["result"]["snapshot_id"] == body["expected_snapshot_id"]
+    assert data["baseline"]["equipment"] == {"weapon": 4151}
+    assert data["result"]["selected_solution"]["loadouts"]["single"]["equipment"]["weapon"] == 4151
+    assert data["price_revision"] == initial_prices
+    current = client.get("/ui-api/gear/context").json()
+    assert current["account"]["snapshot_id"] != body["expected_snapshot_id"]
+    assert current["current_equipment"]["equipment"] == {}
+    assert current["price_revision"] != initial_prices
+    if kind.startswith("objective"):
+        run_id = data["run_id"]
+        frozen = service.objective_store.get_context(run_id, player_id=1)
+        assert frozen["snapshot"].fingerprint == body["expected_snapshot_id"]
+        assert (4151, Container.EQUIPMENT) in frozen["snapshot"].observed_items
+        assert 4151 not in frozen["prices"]
+        assert client.get(f"/ui-api/gear/optimization-runs/{run_id}").json()["response"] == data
 
 
 @pytest.mark.parametrize("multi", [False, True])

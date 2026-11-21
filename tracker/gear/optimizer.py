@@ -605,9 +605,11 @@ class _Search:
                 solve_transition,
             )
 
+            transition_solver = solve_transition
+
             @lru_cache(maxsize=1024)
             def reduced_transition(problem: TransitionProblem) -> dict[str, Any] | None:
-                return solve_transition(problem, items)
+                return transition_solver(problem, items)
 
             self._transition_reduced = reduced_transition
 
@@ -683,6 +685,12 @@ class _Search:
         from tracker.gear.native import create_context
 
         self.native_context = create_context(self)
+        if self.native_context is not None:
+            from functools import partial
+
+            from tracker.gear.native._stages import solve_transition as native_transition
+
+            transition_solver = partial(native_transition, cancelled=cancelled)
         self.native_limit = MAX_EXPANSIONS
         self.pools = self.candidate_pools()
 
@@ -2330,22 +2338,9 @@ def _objective_winner_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
             for definition in solution.get("objective_definitions", ())
         )
     ):
-        from tracker.gear.vector_archive import resource_tie
+        from tracker.gear.vector_archive import cost_baseline_axes, resource_tie
 
-        cost = values.get("gp_per_damage")
-        remaining = tuple(
-            -values[key]
-            for key in sorted(values)
-            if key not in {"gp_per_damage", "wilderness_loss_gp"}
-        )
-        return (
-            -solution["score"],
-            cost is None,
-            cost or 0,
-            values.get("wilderness_loss_gp", 0),
-            remaining,
-            resource_tie(solution),
-        )
+        return (*cost_baseline_axes(solution), resource_tie(solution))
     return _solution_key(solution)
 
 
@@ -3011,6 +3006,12 @@ def optimize(
 
         objective_frontiers = filter_groups(objective_frontiers, request.max_dps_loss_pct)
     no_solution_hints = vampyre_hints(request.roles) if winners[-1] is None else []
+    if search.native_context is not None and (
+        solves := search._transition_reduced.cache_info().misses
+    ):
+        from tracker.gear.native import record
+
+        record("transition_solver", solves=solves)
     return {
         "snapshot_id": snapshot.fingerprint,
         **support_context(catalog, request.support_policy),

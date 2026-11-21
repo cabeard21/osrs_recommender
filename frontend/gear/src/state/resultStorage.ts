@@ -6,6 +6,7 @@ const keyFor = (player: string, mode: Workspace) =>
   `gear-results:${player}:${mode}`;
 
 export interface SavedResult {
+  playerId?: string;
   result: OptimizationReply;
   solutionId: string;
   outdated: boolean;

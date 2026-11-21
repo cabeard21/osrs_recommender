@@ -4,6 +4,7 @@ import type {
   Draft,
   GearContext,
   OptimizationReply,
+  OptimizationProgress,
   Scenario,
   Slot,
   Trial,
@@ -550,11 +551,24 @@ export function normalize(
     },
   };
 }
+export interface OptimizationAttempt {
+  playerId: string;
+  snapshotId: string;
+  startedAt: string;
+  finishedAt: string | null;
+  status: "running" | "succeeded" | "failed" | "cancelled";
+  progressId: string | null;
+  progress: OptimizationProgress | null;
+  error: { code: string; message: string } | null;
+  retryCount: number;
+}
 export interface WorkspaceState {
   objectiveSwapLimit?: number | null;
   objectiveGroupId?: string;
   draft: Draft;
   acceptedDraft?: Draft;
+  resultPlayerId?: string;
+  attempt: OptimizationAttempt | null;
   revision: number;
   submitted: Scenario | null;
   result: OptimizationReply | null;
@@ -589,6 +603,7 @@ const workspace = (): WorkspaceState => ({
   draft: newDraft(),
   revision: 0,
   submitted: null,
+  attempt: null,
   result: null,
   previous: null,
   trial: null,
@@ -643,10 +658,24 @@ export type Action =
       drafts: { single: Draft; multi: Draft; multiSeeded: boolean };
     }
   | { type: "restore-results"; results: SavedResults }
-  | { type: "edit"; mode: Workspace; draft: Draft }
-  | { type: "start"; mode: Workspace; scenario: Scenario; generation: number }
+  | { type: "edit"; mode: Workspace; draft: Draft; at?: string }
+  | {
+      type: "start";
+      mode: Workspace;
+      scenario: Scenario;
+      generation: number;
+      attempt?: OptimizationAttempt;
+    }
+  | {
+      type: "progress";
+      mode: Workspace;
+      generation: number;
+      progressId: string | null;
+      progress: OptimizationProgress;
+    }
   | {
       type: "success";
+      at?: string;
       mode: Workspace;
       generation: number;
       result: OptimizationReply;
@@ -659,8 +688,10 @@ export type Action =
       generation: number;
       error: string;
       validation?: boolean;
+      at?: string;
+      code?: string;
     }
-  | { type: "cancel"; mode: Workspace }
+  | { type: "cancel"; mode: Workspace; at?: string }
   | {
       type: "ui";
       mode: Workspace;
@@ -683,6 +714,7 @@ export type Action =
   | { type: "trial-cancel"; mode: Workspace };
 export function contextIdentity(context: GearContext | null) {
   return JSON.stringify([
+    context?.playerId,
     context?.snapshotId,
     context?.live?.catalog_version,
     context?.live?.model_version,
@@ -766,6 +798,42 @@ function resultStatus(
   return { draftChanged, contextStale, outdated: draftChanged || contextStale };
 }
 export function reducer(state: State, action: Action): State {
+  const updated = reduceState(state, action);
+  if (
+    !("mode" in action) ||
+    !("at" in action) ||
+    !action.at ||
+    updated === state
+  )
+    return updated;
+  const run = updated[action.mode];
+  const attempt = run.attempt;
+  if (run.pending || attempt?.status !== "running") return updated;
+  const failed =
+    action.type === "error" || (action.type === "success" && !!run.error);
+  const status = failed
+    ? "failed"
+    : action.type === "success"
+      ? "succeeded"
+      : "cancelled";
+  const error = failed
+    ? {
+        code:
+          action.type === "error"
+            ? (action.code ?? "optimization_failed")
+            : "invalid_response",
+        message: run.error!,
+      }
+    : null;
+  return {
+    ...updated,
+    [action.mode]: {
+      ...run,
+      attempt: { ...attempt, status, finishedAt: action.at, error },
+    },
+  };
+}
+function reduceState(state: State, action: Action): State {
   if (action.type === "restore-results")
     return {
       ...state,
@@ -774,12 +842,18 @@ export function reducer(state: State, action: Action): State {
           .filter(
             ([mode, saved]) =>
               !state[mode].result &&
-              saved.result.snapshotId === state.context?.snapshotId,
+              !state[mode].pending &&
+              !state[mode].attempt &&
+              !!state.context &&
+              (saved.playerId !== undefined
+                ? saved.playerId === state.context.playerId
+                : saved.result.snapshotId === state.context.snapshotId),
           )
           .map(([mode, saved]) => {
             const restored = {
               ...state[mode],
               result: saved.result,
+              resultPlayerId: state.context!.playerId,
               submitted: saved.result.scenario,
               acceptedDraft: saved.acceptedDraft,
               solutionId: saved.solutionId,
@@ -794,7 +868,17 @@ export function reducer(state: State, action: Action): State {
           }),
       ),
     };
-  if (action.type === "context")
+  if (action.type === "context") {
+    if (state.context && state.context.playerId !== action.context.playerId) {
+      const fresh = initialState();
+      return {
+        ...fresh,
+        context: action.context,
+        mode: state.mode,
+        single: { ...fresh.single, generation: state.single.generation + 1 },
+        multi: { ...fresh.multi, generation: state.multi.generation + 1 },
+      };
+    }
     return {
       ...state,
       context: action.context,
@@ -807,21 +891,12 @@ export function reducer(state: State, action: Action): State {
             contextIdentity(state.context) !== contextIdentity(action.context)
               ? clearedTrial(state[mode])
               : {}),
-            ...(state.context &&
-            contextIdentity(state.context) !== contextIdentity(action.context)
-              ? {
-                  generation: state[mode].generation + 1,
-                  pending: false,
-                  error: state[mode].pending
-                    ? "Account changed during optimization. Refresh and rerun."
-                    : state[mode].error,
-                }
-              : {}),
             ...resultStatus(state[mode], action.context),
           },
         ]),
       ),
     };
+  }
   if (action.type === "use-single-in-multi") {
     const loadout = state.single.result?.solutions.find(
       (s) => s.id === state.single.solutionId,
@@ -942,12 +1017,26 @@ export function reducer(state: State, action: Action): State {
       next = {
         ...current,
         submitted: structuredClone(action.scenario),
+        attempt: action.attempt ?? null,
         generation: action.generation,
         pending: true,
         error: null,
         errorIsValidation: false,
         runNotice: null,
         ...clearedTrial(current),
+      };
+      break;
+    case "progress":
+      if (
+        !current.pending ||
+        current.generation !== action.generation ||
+        !current.attempt ||
+        current.attempt.progressId !== action.progressId
+      )
+        return state;
+      next = {
+        ...current,
+        attempt: { ...current.attempt, progress: action.progress },
       };
       break;
     case "success":
@@ -1100,8 +1189,8 @@ export function reducer(state: State, action: Action): State {
           },
         };
       if (
-        state.context &&
-        state.context.snapshotId !== action.result.snapshotId
+        current.submitted?.request.expected_snapshot_id !==
+        action.result.snapshotId
       )
         return {
           ...state,
@@ -1109,8 +1198,7 @@ export function reducer(state: State, action: Action): State {
             ...current,
             pending: false,
             outdated: !!current.result,
-            error:
-              "Account context changed during the run. Re-run with the current context.",
+            error: "The result does not match the submitted account snapshot.",
           },
         };
       next = {
@@ -1119,6 +1207,7 @@ export function reducer(state: State, action: Action): State {
         acceptedDraft: structuredClone(action.submittedDraft ?? current.draft),
         previous: current.result,
         result: structuredClone(action.result),
+        resultPlayerId: current.attempt?.playerId ?? state.context?.playerId,
         submitted: structuredClone(action.result.scenario),
         ...clearedTrial(current),
         solutionId:

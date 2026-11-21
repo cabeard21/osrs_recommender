@@ -9,7 +9,11 @@ import { slots } from "../api/contracts";
 import type { JointSolutionDTO, Slot } from "../api/contracts";
 import { performanceMetrics } from "../api/httpClient";
 import { useGear } from "../state/GearProvider";
-import { archiveRunId, resolveResultSelection } from "../state/resultSelection";
+import {
+  archiveRunId,
+  hasFrozenTimeline,
+  resolveResultSelection,
+} from "../state/resultSelection";
 import { ResultFreshness } from "./ResultFreshness";
 import { NoSolutionHints } from "./NoSolutionHints";
 import { EquipmentGrid } from "./EquipmentGrid";
@@ -89,6 +93,8 @@ export function LiveMultiResultWorkspace() {
     >,
   ) => dispatch({ type: "ui", mode: "multi", patch });
   const shared = solution ? sharedIds(solution, roleIds) : [];
+  const newerSnapshot =
+    !!state.context && state.context.snapshotId !== result.snapshotId;
   const isUnsynced = !state.context?.live?.account?.last_sync_at;
   function equipmentCard(id: string) {
     if (!solution?.loadouts[id]) return null;
@@ -275,6 +281,7 @@ export function LiveMultiResultWorkspace() {
         outdated={current.outdated}
         draftChanged={current.draftChanged}
         contextStale={current.contextStale}
+        newerSnapshot={newerSnapshot}
       />
       {result.scenario.request.mode === "future" && (
         <p className="notice">
@@ -501,7 +508,11 @@ export function LiveMultiResultWorkspace() {
       <SupportPolicySummary result={result} />
       <SecondaryPrioritySummary
         client={client}
-        outdated={current.outdated || current.pending}
+        outdated={
+          current.pending ||
+          (current.outdated &&
+            (current.draftChanged || !hasFrozenTimeline(result)))
+        }
         result={result}
         solution={solution}
         potionCatalog={state.context?.live?.potion_catalog}

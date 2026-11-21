@@ -12,7 +12,7 @@ import type {
   Draft,
   Equipment,
   FixtureFailure,
-  OptimizationProgress,
+  GearContext as AccountContext,
   GearClient,
   Workspace,
   JointSolutionDTO,
@@ -45,13 +45,11 @@ function useGearState(client: GearClient) {
   const [equipmentStatus, setEquipmentStatus] = useState<
     "observed" | "partial" | "unknown"
   >("observed");
-  const [progress, setProgress] = useState<
-    Partial<Record<Workspace, OptimizationProgress>>
-  >({});
   const [failure, setFailure] = useState<FixtureFailure>("none");
-  const restored = useRef(false);
+  const [restoredPlayer, setRestoredPlayer] = useState<string | null>(null);
   const contextGeneration = useRef(0);
-  const snapshotId = useRef<string | null>(null);
+  const account = useRef<AccountContext | null>(null);
+  const contextRead = useRef<Promise<AccountContext | undefined> | null>(null);
   const controllers = useRef<
     Partial<Record<"single" | "multi", AbortController>>
   >({});
@@ -78,6 +76,14 @@ function useGearState(client: GearClient) {
       action.type === "use-single-in-multi"
     ) {
       abortTrial(latest.mode);
+      if (action.type === "use-single-in-multi" && latest.multi.pending) {
+        controllers.current.multi?.abort();
+        rawDispatch({
+          type: "cancel",
+          mode: "multi",
+          at: new Date().toISOString(),
+        });
+      }
     } else if ("mode" in action) {
       const workspace = latest[action.mode];
       if (
@@ -100,75 +106,34 @@ function useGearState(client: GearClient) {
     }
     rawDispatch(action);
   }
-  async function loadContext() {
+  function loadContext() {
+    if (!contextRead.current) {
+      const pending = readContext().finally(() => {
+        if (contextRead.current === pending) contextRead.current = null;
+      });
+      contextRead.current = pending;
+    }
+    return contextRead.current;
+  }
+  async function readContext() {
     const generation = ++contextGeneration.current;
     try {
       const context = await client.getContext();
       if (generation !== contextGeneration.current) return;
-      if (
-        snapshotId.current !== null &&
-        contextIdentity(stateRef.current.context) !== contextIdentity(context)
-      )
+      const playerChanged = account.current?.playerId !== context.playerId;
+      if (account.current && playerChanged)
         Object.values(controllers.current).forEach((c) => c.abort());
-      snapshotId.current = context.snapshotId;
-      const isFirstLoad = !restored.current;
-      if (isFirstLoad) {
+      account.current = context;
+      dispatch({ type: "context", context });
+      if (playerChanged) {
+        setRestoredPlayer(null);
         const drafts = readDrafts(context.playerId, sessionStorage);
         if (drafts) dispatch({ type: "restore", drafts });
-        restored.current = true;
-      }
-      dispatch({ type: "context", context });
-      if (isFirstLoad && context.live) {
-        const savedResults = readResults(context.playerId, sessionStorage);
-        const restoredResults = await Promise.all(
-          Object.entries(savedResults).map(async ([mode, saved]) => {
-            const runId = archiveRunId(saved.result);
-            if (!runId)
-              return { mode: mode as Workspace, saved, expired: false };
-            try {
-              const response = await fetch(
-                `/ui-api/gear/optimization-runs/${encodeURIComponent(runId)}`,
-                { credentials: "same-origin", cache: "no-store" },
-              );
-              return {
-                mode: mode as Workspace,
-                saved,
-                expired: response.status === 410,
-              };
-            } catch {
-              // Keep the frozen report during a temporary connection failure;
-              // the archive panel exposes its own retryable retrieval error.
-              return { mode: mode as Workspace, saved, expired: false };
-            }
-          }),
-        );
-        if (generation !== contextGeneration.current) return;
-        const available = Object.fromEntries(
-          restoredResults
-            .filter(
-              (entry) =>
-                !entry.expired &&
-                !stateRef.current[entry.mode].pending &&
-                !stateRef.current[entry.mode].result,
-            )
-            .map((entry) => [entry.mode, entry.saved]),
-        );
-        saveResults(context.playerId, available, sessionStorage);
-        dispatch({ type: "restore-results", results: available });
-        for (const entry of restoredResults) {
-          const workspace = stateRef.current[entry.mode];
-          if (entry.expired && !workspace.pending && !workspace.result)
-            dispatch({
-              type: "error",
-              mode: entry.mode,
-              generation: workspace.generation,
-              error:
-                "The previous optimization session has expired. Run optimization again to browse its tradeoffs.",
-              validation: false,
-            });
-        }
+        if (stateRef.current.mode === "multi")
+          dispatch({ type: "navigate", mode: "multi" });
       }
       setContextError(null);
+      return context;
     } catch (error) {
       if (generation === contextGeneration.current)
         setContextError((error as Error).message);
@@ -182,6 +147,8 @@ function useGearState(client: GearClient) {
     window.addEventListener("focus", refresh);
     const timer = setInterval(refresh, 30000);
     return () => {
+      contextGeneration.current++;
+      contextRead.current = null;
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
       Object.values(controllers.current).forEach((c) => c.abort());
@@ -189,11 +156,65 @@ function useGearState(client: GearClient) {
     };
   }, [client]); // client is stable for the provider lifetime
   useEffect(() => {
+    const playerId = state.context?.playerId;
+    if (!playerId || !state.context?.live) return;
+    let active = true;
+    async function restorePlayerResults(owner: string) {
+      const savedResults = readResults(owner, sessionStorage);
+      const restoredResults = await Promise.all(
+        Object.entries(savedResults).map(async ([mode, saved]) => {
+          const runId = archiveRunId(saved.result);
+          if (!runId) return { mode: mode as Workspace, saved, expired: false };
+          try {
+            const response = await fetch(
+              `/ui-api/gear/optimization-runs/${encodeURIComponent(runId)}`,
+              { credentials: "same-origin", cache: "no-store" },
+            );
+            return {
+              mode: mode as Workspace,
+              saved,
+              expired: response.status === 410,
+            };
+          } catch {
+            // Keep the frozen report during a temporary connection failure;
+            // the archive panel exposes its own retryable retrieval error.
+            return { mode: mode as Workspace, saved, expired: false };
+          }
+        }),
+      );
+      if (!active || account.current?.playerId !== owner) return;
+      const available = Object.fromEntries(
+        restoredResults
+          .filter((entry) => !entry.expired)
+          .map((entry) => [entry.mode, entry.saved]),
+      );
+      dispatch({ type: "restore-results", results: available });
+      for (const entry of restoredResults) {
+        const workspace = stateRef.current[entry.mode];
+        if (entry.expired && !workspace.attempt && !workspace.result)
+          dispatch({
+            type: "error",
+            mode: entry.mode,
+            generation: workspace.generation,
+            error:
+              "The previous optimization session has expired. Run optimization again to browse its tradeoffs.",
+            validation: false,
+          });
+      }
+      setRestoredPlayer(owner);
+    }
+    void restorePlayerResults(playerId);
+    return () => {
+      active = false;
+    };
+  }, [state.context?.playerId]);
+  useEffect(() => {
     saveDrafts(state, sessionStorage);
   }, [state.single.draft, state.multi.draft, state.context, state.multiSeeded]);
   useEffect(() => {
-    if (!state.context?.live) return;
-    const { playerId, snapshotId: currentSnapshot } = state.context;
+    if (!state.context?.live || restoredPlayer !== state.context.playerId)
+      return;
+    const { playerId } = state.context;
     const saved = Object.fromEntries(
       (["single", "multi"] as const).flatMap((mode) => {
         const {
@@ -203,12 +224,12 @@ function useGearState(client: GearClient) {
           acceptedDraft,
           objectiveGroupId,
         } = state[mode];
-        // A result from another snapshot may belong to another account.
-        return result?.snapshotId === currentSnapshot
+        return result && state[mode].resultPlayerId === playerId
           ? [
               [
                 mode,
                 {
+                  playerId,
                   result,
                   solutionId,
                   outdated,
@@ -222,6 +243,7 @@ function useGearState(client: GearClient) {
     );
     saveResults(playerId, saved, sessionStorage);
   }, [
+    restoredPlayer,
     state.context?.playerId,
     state.context?.snapshotId,
     state.single.result,
@@ -253,74 +275,140 @@ function useGearState(client: GearClient) {
   const current = state[state.mode];
   function edit(draft: Draft) {
     controllers.current[state.mode]?.abort();
-    dispatch({ type: "edit", mode: state.mode, draft });
+    dispatch({
+      type: "edit",
+      mode: state.mode,
+      draft,
+      at: new Date().toISOString(),
+    });
   }
   async function run({ fromInspector = false } = {}) {
     const mode = state.mode,
       generation = current.generation + 1;
     const inspectorSlot = fromInspector ? current.slot : null;
     const submittedDraft = current.draft;
+    if (current.pending) return;
+    const initial = state.context;
+    const startedAt = new Date().toISOString();
+    const controller = new AbortController();
+    controllers.current[mode]?.abort();
+    controllers.current[mode] = controller;
     let started = false;
     let isValidating = true;
+    const isCurrent = () =>
+      !controller.signal.aborted &&
+      controllers.current[mode] === controller &&
+      account.current?.playerId === initial?.playerId;
     try {
-      if (current.pending) return;
-      const live = !(client instanceof FixtureGearClient);
-      if (!state.context?.snapshotId)
+      if (!initial?.snapshotId)
         throw new Error("Synchronize an account before optimizing.");
-      const scenario = normalize(
-        submittedDraft,
-        state.context.snapshotId,
-        live,
-        state.context,
-      );
-      isValidating = false;
-      const controller = new AbortController();
-      controllers.current[mode]?.abort();
-      controllers.current[mode] = controller;
-      setProgress((previous) => ({ ...previous, [mode]: undefined }));
-      dispatch({ type: "start", mode, scenario, generation });
-      started = true;
+      const live = !(client instanceof FixtureGearClient);
       if (client instanceof FixtureGearClient) client.failure = failure;
-      const result = await client.optimize(
-        scenario,
-        controller.signal,
-        (value) => {
-          if (
-            !controller.signal.aborted &&
-            controllers.current[mode] === controller
-          )
-            setProgress((previous) => ({ ...previous, [mode]: value }));
-        },
-      );
-      if (controller.signal.aborted) return;
-      dispatch({
-        type: "success",
-        mode,
-        generation,
-        result,
-        submittedDraft,
-        inspectorSlot:
-          stateRef.current[mode].slot === inspectorSlot ? inspectorSlot : null,
-      });
-    } catch (error) {
-      if (
-        error instanceof GearApiError &&
-        ["snapshot_changed", "stale_context"].includes(error.code)
-      )
-        void loadContext();
-      if ((error as Error).name !== "AbortError")
+      let context = initial;
+      for (const retryCount of [0, 1]) {
+        isValidating = true;
+        const scenario = normalize(
+          submittedDraft,
+          context.snapshotId,
+          live,
+          context,
+        );
+        const progressId = createBrowserUuid();
+        isValidating = false;
         dispatch({
-          type: "error",
+          type: "start",
           mode,
-          generation: started ? generation : current.generation,
-          error: (error as Error).message,
-          validation: isValidating,
+          scenario,
+          generation,
+          attempt: {
+            status: "running",
+            startedAt,
+            finishedAt: null,
+            error: null,
+            playerId: context.playerId,
+            snapshotId: context.snapshotId,
+            progressId,
+            progress: null,
+            retryCount,
+          },
         });
+        started = true;
+        try {
+          const result = await client.optimize(
+            scenario,
+            controller.signal,
+            (progress) => {
+              if (isCurrent())
+                dispatch({
+                  type: "progress",
+                  mode,
+                  generation,
+                  progressId,
+                  progress,
+                });
+            },
+            progressId,
+          );
+          if (isCurrent())
+            dispatch({
+              type: "success",
+              mode,
+              generation,
+              result,
+              submittedDraft,
+              at: new Date().toISOString(),
+              inspectorSlot:
+                stateRef.current[mode].slot === inspectorSlot
+                  ? inspectorSlot
+                  : null,
+            });
+          return;
+        } catch (error) {
+          if (!isCurrent()) return;
+          if (
+            retryCount ||
+            !(error instanceof GearApiError) ||
+            error.code !== "snapshot_changed" ||
+            error.status !== 409 ||
+            error.phase !== "admission"
+          )
+            throw error;
+          // A focus poll that began before the conflict may return the old snapshot.
+          if (contextRead.current) await contextRead.current;
+          if (!isCurrent()) return;
+          const refreshed = await loadContext();
+          if (!isCurrent()) return;
+          if (!refreshed?.snapshotId || refreshed.playerId !== initial.playerId)
+            throw error;
+          context = refreshed;
+        }
+      }
+    } catch (error) {
+      if (controller.signal.aborted || (error as Error).name === "AbortError")
+        return;
+      dispatch({
+        type: "error",
+        mode,
+        generation: started ? generation : current.generation,
+        error: (error as Error).message,
+        validation: isValidating,
+        code:
+          error instanceof GearApiError
+            ? error.code
+            : isValidating
+              ? "invalid_request"
+              : "optimization_failed",
+        at: new Date().toISOString(),
+      });
     }
   }
   function cancel() {
     controllers.current[state.mode]?.abort();
-    dispatch({ type: "cancel", mode: state.mode });
+    dispatch({
+      type: "cancel",
+      mode: state.mode,
+      at: new Date().toISOString(),
+    });
   }
   async function previewTrial(equipment: Equipment): Promise<void> {
     const latest = stateRef.current,
@@ -430,7 +518,11 @@ function useGearState(client: GearClient) {
       const latest = stateRef.current;
       const workspace = latest[target.workspace];
       const result = workspace.result;
-      if (!result || latest.context?.snapshotId !== result.snapshotId)
+      if (
+        !result ||
+        !latest.context ||
+        latest.context.playerId !== workspace.resultPlayerId
+      )
         throw new Error(
           "Return to Gear and open the lab from the current result.",
         );
@@ -471,7 +563,9 @@ function useGearState(client: GearClient) {
       state[state.mode].result?.items?.find((item) => item.id === id) ??
       state.context?.items.find((item) => item.id === id),
     current,
-    progress: current.pending ? progress[state.mode] : undefined,
+    progress: current.pending
+      ? (current.attempt?.progress ?? undefined)
+      : undefined,
     dispatch,
     client,
     edit,

@@ -255,7 +255,7 @@ it("uses one product name and no milestone labels in the shell", async () => {
   expect(screen.queryByText(/MILESTONE/)).not.toBeInTheDocument();
 });
 
-it("downloads the submitted scenario and current draft as a ChatGPT handoff", async () => {
+async function downloadedHandoff(user: ReturnType<typeof userEvent.setup>) {
   const objectUrl = "blob:handoff";
   const createObjectURL = vi.fn((_file: Blob) => objectUrl);
   const revokeObjectURL = vi.fn();
@@ -272,17 +272,10 @@ it("downloads the submitted scenario and current draft as a ChatGPT handoff", as
       expect(this.download).toBe("gear-chatgpt-handoff.json");
       expect(this.href).toBe(objectUrl);
     });
-  const user = userEvent.setup();
-  setup();
-  await ready();
-  await user.click(screen.getByRole("button", { name: "Run optimization" }));
-  await screen.findByRole("heading", { name: /Best configuration found/ });
   await user.click(
     screen.getByRole("button", { name: "Download ChatGPT handoff" }),
   );
   expect(download).toHaveBeenCalledOnce();
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(createObjectURL).toHaveBeenCalledOnce();
   const file = createObjectURL.mock.calls[0][0];
   expect(file.type).toBe("application/json");
   const text = await new Promise<string>((resolve, reject) => {
@@ -291,17 +284,67 @@ it("downloads the submitted scenario and current draft as a ChatGPT handoff", as
     reader.onerror = () => reject(reader.error);
     reader.readAsText(file);
   });
-  const handoff = JSON.parse(text);
-  expect(handoff).toEqual({
-    source: expect.stringMatching(/^LIVE PYTHON OPTIMIZER/),
-    submitted: expect.any(Object),
-    draft: expect.any(Object),
-    result: expect.any(Object),
-    trial: null,
-  });
-  expect(handoff.submitted).toEqual(handoff.result.scenario);
   await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith(objectUrl));
+  return JSON.parse(text);
+}
+
+it("downloads the accepted scenario and attempt timing", async () => {
+  const user = userEvent.setup();
+  setup();
+  await ready();
+  await user.click(screen.getByRole("button", { name: "Run optimization" }));
+  await screen.findByRole("heading", { name: /Best configuration found/ });
+  const handoff = await downloadedHandoff(user);
+  expect(handoff.submitted).toEqual(handoff.result.scenario);
+  expect(handoff.attempt.elapsed_seconds).toBeGreaterThanOrEqual(0);
 });
+
+it.each([false, true])(
+  "exports the actual failed request independently of any previous result (previous %s)",
+  async (previous) => {
+    const user = userEvent.setup();
+    let succeed = previous;
+    setup({
+      optimize: (init) =>
+        succeed
+          ? new Response(JSON.stringify(reply(JSON.parse(String(init?.body)))))
+          : new Response(
+              JSON.stringify({
+                error: { code: "optimizer_busy", message: "Worker busy" },
+              }),
+              { status: 503 },
+            ),
+    });
+    await ready();
+    if (previous) {
+      await user.click(
+        screen.getByRole("button", { name: "Run optimization" }),
+      );
+      await screen.findByRole("heading", { name: /Best configuration found/ });
+      succeed = false;
+    }
+    const budget = screen.getByLabelText("Additional purchase budget (GP)");
+    await user.clear(budget);
+    await user.type(budget, "12345");
+    await user.click(
+      screen.getByRole("button", {
+        name: previous ? "Reoptimize" : "Run optimization",
+      }),
+    );
+    await screen.findByText(/Worker busy/);
+    const handoff = await downloadedHandoff(user);
+    expect(handoff.submitted.request.budget_gp).toBe(12345);
+    expect(handoff.attempt.request).toMatchObject({
+      budget_gp: 12345,
+      expected_snapshot_id: context.account.snapshot_id,
+    });
+    expect(handoff.attempt.elapsed_seconds).toBeGreaterThanOrEqual(0);
+    expect(JSON.stringify(handoff.attempt)).toContain("optimizer_busy");
+    if (previous)
+      expect(handoff.result.scenario.request.budget_gp).not.toBe(12345);
+    else expect(handoff.result).toBeNull();
+  },
+);
 
 it("explains that editing settings cancelled a run", async () => {
   const user = userEvent.setup();

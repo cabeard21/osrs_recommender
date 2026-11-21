@@ -2541,3 +2541,50 @@ parity and native serial/six-worker parity. Both native observations recorded
 twelve contexts covering melee, ranged and magic, zero fallbacks, and actual
 ranged DPS/secondary/running-cost stage execution. This removes the fallback
 observed in temp2.txt without assigning guessed costs to unknown recovery.
+
+## Joint Vampyre Juvinate and Nail beast handoff (2026-11-20)
+
+The failed handoff contained the browser draft. Its historical account and price
+inputs were unavailable. The replay uses the browser's normalization and request
+serialization on vampyre-capable revision `e7bd8a2`, then freezes one replacement
+account, catalog, price set and evaluation time for both releases. Per-role
+targets select the Vampyre Juvinate and Nail beast. Auto and the divine potion
+allowlist expand to 40 searches across nine discipline assignments. Both
+releases use six desktop workers and the original fast search budget.
+
+The native transition solver evaluates inventory capacity, two-handed equipment
+and action ordering on each cache miss. Completed gear assignments use native
+swap-cap screening before building full reports. An unpriced assignment still
+competes for each feasible cap's DPS baseline, including unrestricted. Numeric
+ties retain the existing report comparison. Revisited base gear with identical
+ordered equipment can reuse its evaluation while its combat-option search
+cursor continues independently.
+
+The replacement account produced a DPS winner and ten empty GP/damage Pareto
+groups. A separate eight-item priced control using the same two targets returned
+two points at each of caps 1 through 8 and unrestricted. The reference and
+candidate matched on all 18 memberships, ordered IDs, full reports, and 36
+reported transition actions. The same control with resource quotes removed
+retained identical selected and unrestricted reports, eight feasible bounded
+cap winners and all ten empty Pareto groups. The final build screened 2,719
+unpriced candidates in native code with zero fallbacks. These controls use
+synthetic ownership and prices.
+
+The first six-worker comparison took **64m 57s** on the reference and **8m 56s**
+on the implementation before the final native unpriced-baseline change, a
+**7.27×** service-time speedup. Each completed 40 native searches with zero
+fallbacks, 39,199,828 explored nodes and 9,881,403 combat-option attempts.
+The selected solution, unrestricted solution, swap curve, published frontiers
+and full archive digests matched. Sampling across seven discipline pairings
+put the remaining Python option scan at about 6% of worker time across those
+pairings, so it stays in Python. The repeated timing cohort was stopped once
+the single comparison was accepted. A final-release median was not measured.
+
+To reproduce a comparison, freeze the exported handoff with
+`python -m tools.benchmark_native_hot_loops freeze HANDOFF FROZEN`. Run
+`python -m tools.benchmark_joint_gear FROZEN OUTPUT --workers 6 --observations 3 --save-raw`
+on each release, or alternate releases with one observation per output directory
+and capture raw digests once per release. Use `tools.benchmark_native_hot_loops compare --joint` with
+the three observation files from each release and both raw digest files.
+The comparison checks complete archive and raw optimizer parity, native kernel
+activity, zero candidate fallbacks, and at least a twofold service-time speedup.

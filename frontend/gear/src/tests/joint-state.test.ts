@@ -156,7 +156,7 @@ it("copies a Single result's submitted target into an existing Multi draft", asy
   expect(state.multi.draft.target).toBe("Different Multi target");
 });
 
-it("keeps visualization selections separate and rejects a pending result after catalog changes", async () => {
+it("keeps the pending Multi run and its transition selection across a catalog refresh", async () => {
   let state = initialState();
   state = reducer(state, {
     type: "context",
@@ -185,15 +185,17 @@ it("keeps visualization selections separate and rejects a pending result after c
     type: "context",
     context: { ...contextFixture, live: { catalog_version: "new" } as never },
   });
+  expect(state.multi.pending).toBe(true);
+  expect(state.multi.selectedTransition).toBe("role-2:role-1");
   state = reducer(state, {
     type: "success",
     mode: "multi",
     generation: 1,
     result,
   });
-  expect(state.multi.result).toBeNull();
+  expect(state.multi.result).toEqual(result);
+  expect(state.multi.contextStale).toBe(true);
   expect(state.multi.pending).toBe(false);
-  expect(state.multi.selectedTransition).toBe("role-2:role-1");
   expect(state.single.result).toBeNull();
 });
 

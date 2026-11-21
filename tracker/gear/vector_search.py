@@ -11,8 +11,8 @@ from typing import Any
 from tracker.gear.compact_costs import aggregate_numeric_cost
 from tracker.gear.evaluation import loadout_problems, planning_owned
 from tracker.gear.models import EquipmentDefinition
-from tracker.gear.objectives import annotate_solution, objective_policy
-from tracker.gear.vector_archive import VectorArchive
+from tracker.gear.objectives import annotate_solution, objective_policy, solution_objectives
+from tracker.gear.vector_archive import ArchiveCandidate, VectorArchive
 from tracker.gear.vector_options import OptionVariant, VectorOptions
 from tracker.gear.vector_publish import FrontierPoints
 from tracker.gear.vector_refinement import _safe_improvement
@@ -45,6 +45,7 @@ class VectorSearch:
             )
         caps = [*range(search.request.max_swaps + 1), None]
         self.baselines: dict[int | None, dict[str, Any] | None] = dict.fromkeys(caps)
+        self._baseline_rows: dict[int | None, ArchiveCandidate] = {}
         common = VectorArchive(self.ids) if len(search.request.roles) == 1 else None
         self.archives = {
             cap: common if common is not None else VectorArchive(self.ids) for cap in caps
@@ -52,10 +53,23 @@ class VectorSearch:
         if getattr(search, "native_context", None) is not None:
             for archive in dict.fromkeys(self.archives.values()):
                 archive.enable_native_index()
+        # These compact fields are available before expanding purchases, transitions,
+        # role reports and running resource detail. Other projections use the full report.
+        self._screen_base = (
+            getattr(search, "native_context", None) is not None
+            and self.options.cost_index is not None
+            and all(obj.kind in {"gp_per_damage", "prayer_bonus"} for obj in self.objectives)
+        )
+        self._native_baselines = None
+        if self._screen_base:
+            from tracker.gear.native._frontier import CapBaselines
+
+            self._native_baselines = CapBaselines(search.request.max_swaps)
+        self._base_screened = self._unpriced_screened = self._base_skipped = self._base_reused = 0
         self.seen = self.archives[None].connection
         self.seen.execute(
             "CREATE TABLE seen_assignments(identity TEXT PRIMARY KEY,"
-            "cursor INTEGER NOT NULL,complete INTEGER NOT NULL)"
+            "cursor INTEGER NOT NULL,complete INTEGER NOT NULL,base_order TEXT)"
         )
         self.nodes = 0
         self.option_attempts = 0
@@ -89,8 +103,18 @@ class VectorSearch:
     def offer(self, solution: Mapping[str, Any] | None) -> None:
         if solution is None:
             return
+        from tracker.gear.compact_solutions import CompactSolution
         from tracker.gear.variant_reporting import materialize
 
+        caps = tuple(
+            cap for cap in self.archives if cap is None or solution["maximum_actions"] <= cap
+        )
+        archives = tuple(dict.fromkeys(self.archives[cap] for cap in caps))
+        if self._screen_base and isinstance(solution, CompactSolution):
+            survivors = self._screen_compact(solution, archives)
+            if survivors is None:
+                return
+            archives = survivors
         solution = materialize(solution if isinstance(solution, dict) else dict(solution))
         annotated = annotate_solution(solution, self.objectives, self.search.request.roles)
         if (
@@ -98,37 +122,71 @@ class VectorSearch:
             and annotated["objective_values"].get("wilderness_loss_gp") is None
         ):
             return
+        candidate = ArchiveCandidate(annotated, self.ids)
         if self.options.cost_index is not None:
-            from tracker.gear.optimizer import _objective_winner_key
-
-            for cap, previous in self.baselines.items():
-                if cap is not None and annotated["maximum_actions"] > cap:
-                    continue
+            for cap in caps:
+                previous = self._baseline_rows.get(cap)
                 if (
                     previous is None
-                    or annotated["score"] > previous["score"]
+                    or candidate.baseline_prefix < previous.baseline_prefix
                     or (
-                        annotated["score"] == previous["score"]
-                        and _objective_winner_key(annotated) < _objective_winner_key(previous)
+                        candidate.baseline_prefix == previous.baseline_prefix
+                        and candidate.tie < previous.tie
                     )
                 ):
                     self.baselines[cap] = annotated
-        updated = set()
+                    self._baseline_rows[cap] = candidate
+                    if self._native_baselines is not None:
+                        self._native_baselines.update(
+                            cap, annotated["score"], candidate.baseline_prefix
+                        )
         cleaned = None
-        for cap, archive in self.archives.items():
-            if (cap is None or annotated["maximum_actions"] <= cap) and id(archive) not in updated:
-                updated.add(id(archive))
-                if archive.add(annotated):
-                    self.accepted += 1
-                    if self.options.cost_index is not None:
-                        if cleaned is None:
-                            cleaned = self.clean_ammunition(annotated)
-                        if cleaned is not annotated:
-                            self.accepted += int(archive.add(cleaned))
-                    if self.prayer_ammunition:
-                        upgrade = self._prayer_ammunition_upgrade(annotated)
-                        if upgrade is not None:
-                            self.accepted += int(archive.add(upgrade))
+        for archive in archives:
+            if not archive.add_candidate(candidate):
+                continue
+            self.accepted += 1
+            if self.options.cost_index is not None:
+                if cleaned is None:
+                    row = self.clean_ammunition(annotated)
+                    cleaned = candidate if row is annotated else ArchiveCandidate(row, self.ids)
+                if cleaned is not candidate:
+                    self.accepted += int(archive.add_candidate(cleaned))
+            if self.prayer_ammunition:
+                upgrade = self._prayer_ammunition_upgrade(annotated)
+                if upgrade is not None:
+                    self.accepted += int(archive.add(upgrade))
+
+    def _screen_compact(
+        self,
+        solution: Mapping[str, Any],
+        archives: tuple[VectorArchive, ...],
+    ) -> tuple[VectorArchive, ...] | None:
+        """Keep an equal numeric tie for the exact lexical report comparison."""
+        from tracker.gear.native._frontier import admission_mask
+
+        values = solution_objectives(solution, self.objectives, self.search.request.roles)
+        compact = ArchiveCandidate({**solution, "objective_values": values}, self.ids)
+        mask = 0
+        if compact.vector is not None:
+            indexes = tuple(archive.native_candidate_index for archive in archives)
+            try:
+                mask = admission_mask(indexes, compact.vector, compact.prefix)
+            except ValueError:
+                # The normal per-archive path handles numeric-range fallback.
+                return archives
+            if any(index is not None for index in indexes):
+                self._base_screened += 1
+        if not mask:
+            assert self._native_baselines is not None
+            may_win = self._native_baselines.may_win(
+                solution["maximum_actions"], solution["score"], compact
+            )
+            if compact.vector is None:
+                self._unpriced_screened += 1
+            if not may_win:
+                self._base_skipped += 1
+                return None
+        return tuple(archive for i, archive in enumerate(archives) if mask & (1 << i))
 
     def clean_ammunition(self, row: dict[str, Any]) -> dict[str, Any]:
         from tracker.gear.optimizer import _solution_key
@@ -202,11 +260,37 @@ class VectorSearch:
         """Archive the DPS configuration already scored; queue paid option exploration."""
         if any(role.id not in assignment for role in self.search.request.roles):
             return
-        self.offer(self.search.solution(assignment, None))
-        if self.objectives:
-            self.seen.execute(
-                "INSERT OR IGNORE INTO seen_assignments VALUES(?,0,0)", (self.identity(assignment),)
+        if self._screen_base and getattr(self.search, "compact_states", False):
+            from tracker.gear.compact_states import AssignmentState
+
+            state = AssignmentState.from_mapping(assignment)
+            # The base winner is deterministic within this frozen branch. Compact
+            # scoring preserves insertion order, and seeded overrides can differ
+            # even for the same gear. Only memoize unseeded, identically ordered gear.
+            seeded = any(
+                (role, gear.identity) in self.search.performance_cache
+                or (role, gear.identity) in self.search.option_cache
+                for role, gear in state.roles
             )
+            order = (
+                None if seeded else json.dumps([(role, gear.order) for role, gear in state.roles])
+            )
+            queued = self.seen.execute(
+                "INSERT INTO seen_assignments VALUES(?,0,0,?) ON CONFLICT(identity) "
+                "DO UPDATE SET base_order=excluded.base_order "
+                "WHERE excluded.base_order IS NULL OR base_order IS NOT excluded.base_order",
+                (self.identity(state), order),
+            )
+            if not queued.rowcount:
+                self._base_reused += 1
+                return
+            assignment = state
+        elif self.objectives:
+            self.seen.execute(
+                "INSERT OR IGNORE INTO seen_assignments VALUES(?,0,0,NULL)",
+                (self.identity(assignment),),
+            )
+        self.offer(self.search.solution(assignment, None))
 
     def capture(self, assignment: Mapping[str, Mapping[str, int]], *, charge: bool = True) -> None:
         """Consider every concrete option product before equipment beam retention."""
@@ -355,7 +439,7 @@ class VectorSearch:
 
     def _remember_assignment(self, identity: str, cursor: int, *, complete: bool) -> None:
         self.seen.execute(
-            "INSERT INTO seen_assignments VALUES(?,?,?) "
+            "INSERT INTO seen_assignments VALUES(?,?,?,NULL) "
             "ON CONFLICT(identity) DO UPDATE SET cursor=excluded.cursor,complete=excluded.complete",
             (identity, cursor, complete),
         )
@@ -769,7 +853,7 @@ class VectorSearch:
         for seed in candidates:
             self.offer(seed)
             self.seen.execute(
-                "INSERT OR IGNORE INTO seen_assignments VALUES(?,0,0)",
+                "INSERT OR IGNORE INTO seen_assignments VALUES(?,0,0,NULL)",
                 (self.identity({key: row["equipment"] for key, row in seed["loadouts"].items()}),),
             )
         if not self.objectives:
@@ -821,6 +905,21 @@ class VectorSearch:
         return result
 
     def publish(self) -> dict[str, Any]:
+        if (
+            self._base_screened
+            or self._unpriced_screened
+            or self._base_skipped
+            or self._base_reused
+        ):
+            from tracker.gear.native import record
+
+            record(
+                "completed_candidate_admission",
+                screened=self._base_screened,
+                unpriced_screened=self._unpriced_screened,
+                skipped_reports=self._base_skipped,
+                repeated_assignments=self._base_reused,
+            )
         if self.native_option_attempts:
             from tracker.gear.native import record
 

@@ -117,6 +117,9 @@ def test_native_cost_objective_frontiers_match_python_and_execute(name):
     assert diagnostics["native_requests"] >= 1
     assert diagnostics["fallback_requests"] == 0
     assert any(row["event"] == "stage" for row in diagnostics["events"])
+    assert any(
+        row["event"] == "transition_solver" and row["solves"] > 0 for row in diagnostics["events"]
+    )
 
 
 def test_spawned_workers_preserve_native_results_and_merge_evidence():

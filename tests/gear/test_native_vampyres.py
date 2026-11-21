@@ -238,3 +238,8 @@ def test_complete_compiled_search_keeps_legal_vampyre_setups(mode, monkeypatch):
     diagnostics = evidence.snapshot()
     assert diagnostics["native_requests"] > 0 and diagnostics["fallback_requests"] == 0
     assert any(row["event"] == "stage" for row in diagnostics["events"])
+    if mode == "mixed":
+        assert any(
+            row["event"] == "completed_candidate_admission" and row["screened"] > 0
+            for row in diagnostics["events"]
+        )

@@ -4,6 +4,8 @@ import { expect, it, vi } from "vitest";
 import { LiveMultiResultWorkspace } from "../components/LiveMultiResultWorkspace";
 import { useGear } from "../state/GearProvider";
 import { emptyEquipment } from "../api/contracts";
+import { parseContext } from "../api/httpClient";
+import context from "./live-context.json";
 
 vi.mock("../state/GearProvider", () => ({ useGear: vi.fn() }));
 
@@ -168,6 +170,60 @@ function setup({
   const rendered = render(<LiveMultiResultWorkspace />);
   return { ...rendered, dispatch, result, current };
 }
+
+it.each(["archived", "live", "pending", "edited"])(
+  "displays the %s potion timeline after a price-only refresh",
+  (kind) => {
+    const { result, rerender } = setup({ outdated: true });
+    const gear = useGear();
+    const captured = parseContext(context);
+    const updated = {
+      ...captured,
+      snapshotId: result.snapshotId,
+      live: {
+        ...captured.live!,
+        price_revision: "new-prices",
+        catalog_version: result.catalogVersion,
+        model_version: result.modelVersion,
+      },
+    };
+    Object.assign(result.scenario.request, { objectives: [] });
+    if (kind !== "live") Object.assign(result.live, { run_id: "archived-run" });
+    Object.assign(result.live.result.selected_solution!, {
+      potions: {
+        selected_ids: ["ranging"],
+        boosted_levels: { ranged: 86 },
+        base_levels: { ranged: 75 },
+      },
+    });
+    const timeline = vi.fn(() => new Promise<never>(() => {}));
+    vi.mocked(useGear).mockReturnValue({
+      ...gear,
+      current: {
+        ...gear.current,
+        contextStale: true,
+        pending: kind === "pending",
+        draftChanged: kind === "edited",
+      },
+      client: { ...gear.client, potionTimeline: timeline },
+      state: { ...gear.state, context: updated },
+    });
+    rerender(<LiveMultiResultWorkspace />);
+    if (kind === "archived") {
+      expect(timeline).toHaveBeenCalledOnce();
+      expect(timeline.mock.calls[0]).toEqual([
+        result,
+        result.live.result.selected_solution,
+        expect.any(AbortSignal),
+      ]);
+    } else {
+      expect(timeline).not.toHaveBeenCalled();
+      expect(
+        screen.getByText(/Rerun optimization to show potion decay/),
+      ).toBeVisible();
+    }
+  },
+);
 
 it("renders every joint configuration at once with shared items and distinct inventory counts", () => {
   setup();

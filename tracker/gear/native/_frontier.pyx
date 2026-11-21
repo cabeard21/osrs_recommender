@@ -46,6 +46,42 @@ cdef double finite(double value) except *:
     return value
 
 
+cdef class CapBaselines:
+    """DPS baseline eligibility across feasible swap caps and the unrestricted cap."""
+
+    cdef int unrestricted
+    cdef vector[double] scores
+    cdef list prefixes
+
+    def __init__(self, int max_swaps):
+        if not 0 <= max_swaps < 31:
+            raise ValueError("Invalid maximum swap count")
+        self.unrestricted = max_swaps + 1
+        self.scores.resize(max_swaps + 2)
+        self.prefixes = [None] * (max_swaps + 2)
+
+    def update(self, cap, double score, tuple prefix):
+        cdef int index = self.unrestricted if cap is None else cap
+        if not 0 <= index <= self.unrestricted:
+            raise ValueError("Invalid swap cap")
+        self.scores[index] = finite(score)
+        self.prefixes[index] = prefix
+
+    def may_win(self, int maximum_actions, double score, candidate):
+        cdef int index
+        if maximum_actions < 0:
+            raise ValueError("Invalid action count")
+        finite(score)
+        for index in range(min(maximum_actions, self.unrestricted), self.unrestricted + 1):
+            previous = self.prefixes[index]
+            if previous is None or score > self.scores[index]:
+                return True
+            if score == self.scores[index] and candidate.baseline_prefix <= previous:
+                # Rich lexical comparison resolves any ties surviving the prefix.
+                return True
+        return False
+
+
 def pareto_indices(const double[::1] values, int dimensions, cancelled=None):
     """Return exact skyline row handles in input order, retaining equal rows."""
     if not 1 <= dimensions <= 65 or values.shape[0] % dimensions:
@@ -96,11 +132,13 @@ cdef class ArchiveIndex:
     cdef vector[double] data
     cdef vector[string] keys
     cdef unordered_map[string, size_t] offsets
+    cdef list resource_prefixes
 
     def __init__(self, int dimensions):
         if not 1 <= dimensions <= 65:
             raise ValueError("Invalid frontier dimensions")
         self.width = dimensions
+        self.resource_prefixes = []
 
     cdef void pack(self, object vector, double* row) except *:
         if len(vector) != self.width:
@@ -120,6 +158,23 @@ cdef class ArchiveIndex:
         cdef double row[65]
         self.pack(vector, row)
         return self.contains_dominator(row)
+
+    cdef bint may_admit(self, const double* row, tuple prefix) except -1:
+        cdef size_t index, dimension
+        cdef const double* stored
+        cdef bint strict
+        for index in range(self.keys.size()):
+            stored = &self.data[index * self.width]
+            strict = False
+            for dimension in range(self.width):
+                if stored[dimension] < row[dimension]:
+                    break
+                strict |= stored[dimension] > row[dimension]
+            else:
+                previous = self.resource_prefixes[index]
+                if strict or (previous is not None and previous < prefix):
+                    return False
+        return True
 
     def next_candidate(self, tuple variants, Py_ssize_t start, Py_ssize_t stop,
                        trip_loss=None, int risk_dimension=-1):
@@ -146,7 +201,7 @@ cdef class ArchiveIndex:
                 return position
         return stop
 
-    def insert(self, str identity, vector):
+    def insert(self, str identity, vector, tuple resource_prefix=None):
         cdef string key = identity.encode()
         cdef double row[65]
         cdef size_t index, dimension
@@ -156,8 +211,10 @@ cdef class ArchiveIndex:
             self.offsets[key] = index
             self.keys.push_back(key)
             self.data.resize((index + 1) * self.width)
+            self.resource_prefixes.append(resource_prefix)
         else:
             index = self.offsets[key]
+            self.resource_prefixes[index] = resource_prefix
         for dimension in range(self.width):
             self.data[index * self.width + dimension] = row[dimension]
 
@@ -168,9 +225,11 @@ cdef class ArchiveIndex:
         if index != last:
             self.keys[index] = self.keys[last]
             self.offsets[self.keys[index]] = index
+            self.resource_prefixes[index] = self.resource_prefixes[last]
             for dimension in range(self.width):
                 self.data[index * self.width + dimension] = self.data[last * self.width + dimension]
         self.keys.pop_back()
+        self.resource_prefixes.pop()
         self.data.resize(last * self.width)
 
     def discard(self, str identity):
@@ -190,3 +249,23 @@ cdef class ArchiveIndex:
 
     def __len__(self):
         return self.keys.size()
+
+
+def admission_mask(tuple indexes, tuple values, tuple resource_prefix):
+    """Check a complete numeric row across swap caps before allocating its report."""
+    cdef size_t width = len(values)
+    if not 1 <= width <= 65 or len(indexes) > 32:
+        raise ValueError("Invalid frontier dimensions")
+    cdef double row[65]
+    cdef size_t dimension, cap
+    cdef unsigned int mask = 0
+    cdef ArchiveIndex index
+    for dimension in range(width):
+        row[dimension] = finite(values[dimension])
+    for cap in range(len(indexes)):
+        index = indexes[cap]
+        if index is not None and index.width != width:
+            raise ValueError("Invalid frontier dimensions")
+        if index is None or index.may_admit(row, resource_prefix):
+            mask |= (<unsigned int>1) << cap
+    return mask

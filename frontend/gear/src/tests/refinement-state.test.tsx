@@ -7,6 +7,7 @@ import {
 } from "../api/contracts";
 import {
   HttpGearClient,
+  GearApiError,
   optimizationRequest,
   parseContext,
   parseOptimization,
@@ -501,6 +502,79 @@ async function mountClient() {
   );
   return { client, accepted };
 }
+it.each([
+  "edit",
+  "cancel",
+  "player",
+  "unavailable",
+  "invalid",
+  "legacy-conflict",
+])("stops an admission retry on %s", async (condition) => {
+  const initial = parseContext(context);
+  const finish: { refresh?: (value: typeof initial) => void } = {};
+  const client: GearClient = {
+    getContext: vi
+      .fn()
+      .mockResolvedValueOnce(initial)
+      .mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finish.refresh = resolve;
+          }),
+      ),
+    getItem: vi.fn(),
+    alternatives: vi.fn(),
+    evaluate: vi.fn(),
+    optimize: vi
+      .fn()
+      .mockRejectedValue(
+        new GearApiError(
+          "Account observations changed",
+          "snapshot_changed",
+          409,
+          condition === "legacy-conflict" ? undefined : "admission",
+        ),
+      ),
+  };
+  render(
+    <GearProvider client={client}>
+      <Harness />
+    </GearProvider>,
+  );
+  await screen.findByText(context.account.snapshot_id);
+  let running!: Promise<void>;
+  act(() => {
+    running = current.run();
+  });
+  if (condition === "legacy-conflict") {
+    await act(() => running);
+    expect(client.getContext).toHaveBeenCalledTimes(1);
+  } else {
+    await waitFor(() => expect(finish.refresh).toBeDefined());
+    if (condition === "edit")
+      act(() => current.edit({ ...current.current.draft, budget: "500" }));
+    if (condition === "cancel") act(() => current.cancel());
+    const refreshed = structuredClone(initial);
+    if (condition === "player") refreshed.playerId = "live:2";
+    if (condition === "unavailable")
+      Object.assign(refreshed, { playerId: "live:no-account", snapshotId: "" });
+    if (condition === "invalid")
+      refreshed.live!.capabilities.combat_options = null;
+    await act(async () => {
+      finish.refresh!(refreshed);
+      await running;
+    });
+  }
+  expect(client.optimize).toHaveBeenCalledTimes(1);
+  expect(current.current.pending).toBe(false);
+  expect(current.current.result).toBeNull();
+  if (condition === "edit" || condition === "cancel")
+    expect(current.current.attempt?.status).toBe("cancelled");
+  if (condition === "player" || condition === "unavailable")
+    expect(current.current.attempt).toBeNull();
+  if (condition === "legacy-conflict" || condition === "invalid")
+    expect(current.current.attempt?.status).toBe("failed");
+});
 describe("trial request isolation", () => {
   it("ignores older same-result trials and leaves accepted/draft equipment untouched", async () => {
     const { client, accepted } = await mountClient();
