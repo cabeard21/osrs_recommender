@@ -12,6 +12,7 @@ from time import perf_counter
 from typing import Any, Literal, NamedTuple
 
 from tracker.gear import hopper
+from tracker.gear import vampyre_combat as vamp
 from tracker.gear.bolts import expected_bolt_damage
 from tracker.gear.defensive_rolls import player_defence_rolls, raw_player_defence_rolls
 from tracker.gear.demonbane import SPELLS as DEMONBANE_SPELLS
@@ -29,6 +30,7 @@ from tracker.gear.models import (
     DragonbaneBonus,
     ElementalAmuletBonus,
     ElementalWeakness,
+    EliteVoidRangedBonus,
     EquipmentBonuses,
     EquipmentDefinition,
     HitsplatPerformance,
@@ -55,6 +57,8 @@ from tracker.gear.scoring import PreparedEquipment, prepare_equipment
 from tracker.gear.slayer import MAGIC_DART_STAVES, dart_base, mask_factor
 from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import applied_tome
+from tracker.gear.vampyres import EFARITAYS_AID, SILVER_BOLTS, SILVER_POISON_SEVERITY
+from tracker.gear.void_ranged import RANGER_HELMS, is_elite_ranged
 
 # Standard spell base damage and minimum level; elemental tier scaling is applied
 # only when that tier's spell is unlocked. Spell choice is an explicit assumption.
@@ -111,7 +115,7 @@ SPELLS = {
 }
 
 
-MODEL_VERSION = "normal-attacks-v14-salve"
+MODEL_VERSION = "normal-attacks-v15-vampyres"
 
 _DEFAULT_TARGET = CombatTarget()
 
@@ -124,6 +128,7 @@ class CombatScore(NamedTuple):
     accuracy: float | None
     bonuses: EquipmentBonuses
     player_defence_rolls: Mapping[str, int | None] | None = None
+    ring_charge_probability: float | None = None
 
 
 def accuracy_probability(attack_roll: int, defence_roll: int) -> float:
@@ -248,6 +253,32 @@ def _evaluate_prepared(
     if weapon and weapon.two_handed and any(i.slot == "shield" for i in equipment):
         problems.append("Two-handed weapon cannot be equipped with a shield.")
     ammo = prepared.ammunition
+    silver_bolts = bool(
+        style == "ranged"
+        and ammo
+        and ammo.id in SILVER_BOLTS
+        and weapon
+        and ammo.ammo_type in weapon.ammo_for
+    )
+    tier = vamp.target_tier(target.traits)
+    vampyre = (
+        vamp.resolve(
+            tier,
+            style,
+            weapon.id if weapon else None,
+            silver_bolts,
+            any(item.id == EFARITAYS_AID for item in equipment),
+        )
+        if tier
+        else None
+    )
+    if vampyre and not vampyre.legal:
+        problems.append(
+            "Tier 2 vampyres require a silver attack or Efaritay's aid."
+            if tier == 2
+            else "Tier 3 vampyres require an Ivandis flail, blisterwood sickle, blisterwood flail, "
+            "Hallowed flail, Sunspear or thrown blisterwood stakes."
+        )
     if "demon" not in target.traits and (
         (style == "magic" and powered_attack is None and spell in DEMONBANE_SPELLS)
         or (style == "ranged" and weapon and weapon.id == 732)
@@ -396,6 +427,14 @@ def _evaluate_prepared(
         include_defence=include_defence,
         _constants=constants,
         _cached_ranged=cached_ranged,
+        elite_void=bool(
+            style == "ranged"
+            and selected_head
+            and selected_head.id in RANGER_HELMS
+            and is_elite_ranged(item.id for item in equipment)
+        ),
+        vampyre=vampyre,
+        poison_severity=SILVER_POISON_SEVERITY.get(ammo.id) if silver_bolts and ammo else None,
         amulet=next((item for item in equipment if item.slot == "neck"), None),
         tome=next((item for item in equipment if item.slot == "shield"), None),
         fire_tome_pages=getattr(role, "fire_tome_pages", "burnt"),
@@ -518,11 +557,23 @@ def _calculate(
     head: EquipmentDefinition | None = None,
     seeking: bool = False,
     status_duration: int = 60,
+    vampyre: vamp.VampyreRule | None = None,
+    elite_void: bool = False,
+    poison_severity: int | None = None,
 ) -> CombatPerformance | CombatScore:
     from tracker.gear.models import StatusDamage
-    from tracker.gear.status_damage import application_chance, expected_damage, status_kind
+    from tracker.gear.status_damage import (
+        application_chance,
+        expected_damage,
+        poison_ammo_kind,
+        status_kind,
+    )
 
-    proc = application_chance(weapon.id if weapon else None, head.id if head else None, style)
+    proc = (
+        1 / 8
+        if poison_severity
+        else application_chance(weapon.id if weapon else None, head.id if head else None, style)
+    )
     speed = weapon.attack_speed if weapon else 4
     leafy_axe = bool(
         weapon
@@ -633,6 +684,7 @@ def _calculate(
         or weapon_percent
         or demon_spell
         or holy_water
+        or elite_void
         or dragon_damage
         or (style == "magic" and wilderness_weapon_passive)
         or (style == "magic" and spell == "magic_dart")
@@ -648,7 +700,9 @@ def _calculate(
         if constants is None and not cached_ranged and not spell_effect
         else None
     )
-    cached_ranged = cached_ranged and not (weapon_percent or holy_water or dragon_damage)
+    cached_ranged = cached_ranged and not (
+        weapon_percent or holy_water or dragon_damage or vampyre or poison_severity or elite_void
+    )
     if cached_ranged:
         observer = ranged_observer()
         key_started = perf_counter() if observer is not None else 0.0
@@ -850,12 +904,17 @@ def _calculate(
         strength_bonus = (
             bonuses.ranged_strength if is_ranged and not strength_ranged else bonuses.melee_strength
         )
+        if elite_void:
+            effective_strength = effective_strength * 9 // 8
         max_hit = floor(0.5 + effective_strength * (strength_bonus + 64) / 640)
-        attack = (
+        effective_attack = (
             levels[skill] * (prayers.ranged_accuracy if is_ranged else prayers.attack) // 100
             + 8
             + attack_stance
-        ) * (getattr(bonuses, style) + 64)
+        )
+        if elite_void:
+            effective_attack = effective_attack * 11 // 10
+        attack = effective_attack * (getattr(bonuses, style) + 64)
         defence = (target.defence_level + 9) * (getattr(target.bonuses, style) + 64)
         if is_ranged:
             # Ordinary bows use standard defence; ordinary crossbows heavy,
@@ -894,6 +953,9 @@ def _calculate(
         max_hit += max_hit * effective_damage // 100
     if effective_accuracy:
         attack += attack * effective_accuracy // 100
+    if vampyre:
+        attack = attack * (100 + vampyre.weapon_accuracy_percent) // 100
+        attack = attack * (100 + vampyre.ring_accuracy_percent) // 100
     if leafy_axe:
         max_hit = max_hit * 47 // 40
     size_effect = (
@@ -908,7 +970,7 @@ def _calculate(
         constants is not None
         and score_only
         and constants.pattern == "single"
-        and not (bolt_family or hopper_active or proc)
+        and not (bolt_family or hopper_active or proc or vampyre)
     ):
         if (
             constants.damage_cap is not None
@@ -943,16 +1005,20 @@ def _calculate(
         else (weapon.attack_pattern if weapon and style != "magic" else "single")
     )
     maxima = (max_hit,) if pattern == "single" else (max_hit // 2, max_hit - max_hit // 2)
-    if target.damage_cap is not None and any(
-        max(accurate_floor, m)
-        + (
-            (max(accurate_floor, m) * demon_damage // 100) * vulnerability // 100
-            if demon_spell and mark_of_darkness
-            else 0
+    if (
+        vampyre is None
+        and target.damage_cap is not None
+        and any(
+            max(accurate_floor, m)
+            + (
+                (max(accurate_floor, m) * demon_damage // 100) * vulnerability // 100
+                if demon_spell and mark_of_darkness
+                else 0
+            )
+            + (8 if sang_proc else 0)
+            > target.damage_cap
+            for m in maxima
         )
-        + (8 if sang_proc else 0)
-        > target.damage_cap
-        for m in maxima
     ):
         if score_only:
             return CombatScore(False, None, None, bonuses)
@@ -982,7 +1048,7 @@ def _calculate(
             for m, p in zip(maxima, probabilities, strict=True)
         )
     )
-    if demon_spell and mark_of_darkness:
+    if demon_spell and mark_of_darkness and vampyre is None:
         expected = (
             accuracy * _marked_damage_total(max_hit, demon_damage, vulnerability) / (max_hit + 1)
         )
@@ -992,6 +1058,41 @@ def _calculate(
         expected = accuracy * (minimum_hit + max_hit) / 2
     if sang_proc:
         expected += accuracy * 0.2 * 8
+    max_hits = tuple(
+        max(0, max(accurate_floor, m) - armour) + (8 if sang_proc else 0) for m in maxima
+    )
+    positive = 1.0 if armour < 1 else max(0, max_hit - armour) / (max_hit + 1)
+    if vampyre:
+        mark = demon_damage if demon_spell and mark_of_darkness else 0
+        landed = tuple(
+            vamp.hits(
+                vampyre,
+                m,
+                armour,
+                accurate_floor,
+                minimum_hit,
+                mark=mark,
+                vulnerability=vulnerability,
+            )
+            for m in maxima
+        )
+        expected = sum(p * hit.mean for p, hit in zip(probabilities, landed, strict=True))
+        max_hits = tuple(hit.maximum for hit in landed)
+        positive = landed[0].positive_chance
+        if sang_proc:
+            boosted = vamp.hits(vampyre, max_hit, armour, sang=True)
+            expected = accuracy * (0.8 * landed[0].mean + 0.2 * boosted.mean)
+            max_hits = (boosted.maximum,)
+        if target.damage_cap is not None and max(max_hits) > target.damage_cap:
+            if score_only:
+                return CombatScore(False, None, None, bonuses)
+            return CombatPerformance(
+                supported=False,
+                bonuses=bonuses,
+                limitations=(
+                    "Damage above the target cap requires an unsupported reroll distribution.",
+                ),
+            )
     bolt_report = None
     activation = 0.0
     if bolt_family:
@@ -1007,6 +1108,7 @@ def _calculate(
             bool(weapon and weapon.id == 26374),
             target.traits,
             target.flat_armour,
+            vampyre=vampyre,
         )
         if target.damage_cap is not None and total_max > target.damage_cap:
             if score_only:
@@ -1034,11 +1136,12 @@ def _calculate(
                 expected_damage_per_attack=expected,
                 expected_damage_delta=expected - ordinary_expected,
                 total_max_hit=total_max,
-                normal_max_hit=max(0, max(1, max_hit) - target.flat_armour),
+                normal_max_hit=max_hits[0],
                 target_hitpoints=hp,
                 diary_boosted=bolt_diary,
             )
     hopper_report = None
+    secondary_accuracy = None
     if hopper_active:
         secondary_accuracy = accuracy_probability(attack * 2 // 3, defence)
         secondary, secondary_max, _ = hopper.expected_secondary_damage(
@@ -1052,6 +1155,7 @@ def _calculate(
             target.traits,
             armour,
             activation,
+            vampyre=vampyre,
         )
         delta = hopper.PROC_CHANCE * secondary
         expected += delta
@@ -1066,12 +1170,25 @@ def _calculate(
             )
     interval = speed * 0.6
     affliction = (
-        status_kind(target.poison_susceptibility, target.venom_susceptibility) if proc else None
+        poison_ammo_kind(target.poison_susceptibility)
+        if poison_severity
+        else status_kind(target.poison_susceptibility, target.venom_susceptibility)
+        if proc
+        else None
     )
-    # Status requires nonzero damage. Accurate zero rolls become one before armour.
-    positive = 1.0 if armour < 1 else max(0, max_hit - armour) / (max_hit + 1)
+    status_chance = proc * accuracy * positive
+    if poison_severity and secondary_accuracy is not None:
+        secondary_positive = (
+            vamp.hits(vampyre, max_hit, armour, divisor=3).positive_chance
+            if vampyre
+            else 1.0
+            if armour < 0
+            else max(0, max_hit - (3 * (armour + 1) - 1)) / (max_hit + 1)
+        )
+        secondary_chance = hopper.PROC_CHANCE * proc * secondary_accuracy * secondary_positive
+        status_chance = 1 - (1 - status_chance) * (1 - secondary_chance)
     status_expected = (
-        expected_damage(proc * accuracy * positive, speed, status_duration, affliction)
+        expected_damage(status_chance, speed, status_duration, affliction, poison_severity or 26)
         if affliction in {"venom", "poison"}
         else 0.0
     )
@@ -1080,6 +1197,16 @@ def _calculate(
         ("Target poison/venom susceptibility is unknown; only direct DPS is scored.",)
         if affliction == "unknown"
         else ()
+    )
+    charge_probability = (
+        vamp.charge_probability(
+            accuracy,
+            pattern,
+            activation if bolt_family in {"ruby", "diamond", "opal", "pearl"} else 0,
+            secondary_accuracy,
+        )
+        if vampyre and vampyre.ring_active
+        else None
     )
     if score_only:
         return CombatScore(
@@ -1094,15 +1221,16 @@ def _calculate(
             )
             if include_defence
             else None,
+            charge_probability,
         )
     hitsplats = tuple(
-        HitsplatPerformance(
-            accuracy=p, max_hit=max(0, max(accurate_floor, m) - armour) + (8 if sang_proc else 0)
-        )
-        for m, p in zip(maxima, probabilities, strict=True)
+        HitsplatPerformance(accuracy=p, max_hit=m)
+        for m, p in zip(max_hits, probabilities, strict=True)
     )
     return CombatPerformance(
         supported=True,
+        vampyre_bonus=vampyre.report(charge_probability or 0) if vampyre else None,
+        elite_void_ranged_bonus=EliteVoidRangedBonus() if elite_void else None,
         wilderness_weapon_passive=wilderness_weapon_passive,
         size_damage_bonus=SizeDamagePerformance(
             item_id=weapon.id,

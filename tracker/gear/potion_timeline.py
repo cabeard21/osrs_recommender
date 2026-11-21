@@ -70,7 +70,14 @@ def measure(
             objective_measurements.update(objective_values(ordinary_objectives, row))
         if prepared_costs is not None:
             cost = prepared_costs[role.id].score(
-                row.get("attack_interval"), performance.dps, performance.accuracy
+                row.get("attack_interval"),
+                performance.dps,
+                performance.accuracy,
+                **(
+                    {"ring_charge_probability": performance.vampyre_bonus.ring_charge_probability}
+                    if performance.vampyre_bonus and performance.vampyre_bonus.ring_active
+                    else {}
+                ),
             )
             costs.append((role.weight, cost, performance.dps or 0))
             objective_measurements["gp_per_damage"] = (

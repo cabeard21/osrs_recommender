@@ -85,6 +85,34 @@ export function performanceMetrics(value: CombatPerformance): Metrics {
     )
       throw new Error("Invalid tome effect metadata");
   }
+  if (
+    value.elite_void_ranged_bonus != null &&
+    (value.elite_void_ranged_bonus.accuracy_percent !== 10 ||
+      value.elite_void_ranged_bonus.strength_percent !== 12.5)
+  )
+    throw new Error("Invalid Elite Void ranged effect metadata");
+  if (value.vampyre_bonus != null) {
+    const effect = value.vampyre_bonus;
+    if (
+      ![1, 2, 3].includes(effect.tier) ||
+      !["ordinary", "silver", "ivandis_rod", "specialist"].includes(
+        effect.attack_source,
+      ) ||
+      ![
+        effect.weapon_accuracy_percent,
+        effect.weapon_damage_percent,
+        effect.ring_accuracy_percent,
+        effect.ring_damage_percent,
+      ].every((n) => Number.isSafeInteger(n) && n >= 0 && n <= 100) ||
+      typeof effect.ring_active !== "boolean" ||
+      !Number.isFinite(effect.ring_charge_probability) ||
+      effect.ring_charge_probability < 0 ||
+      effect.ring_charge_probability > 1 ||
+      ![1, 2].includes(effect.damage_divisor) ||
+      (effect.hit_cap !== null && effect.hit_cap !== 10)
+    )
+      throw new Error("Invalid vampyre effect metadata");
+  }
   if (value.dragonbane_bonus != null) {
     const effect = object(value.dragonbane_bonus);
     const crossbow = [21012, 25916, 25918].includes(Number(effect.item_id));

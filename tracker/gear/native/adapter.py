@@ -38,7 +38,12 @@ def winner(search: Any, equipment: Any, role: Any, prepared: Any = None) -> _Win
     bonuses = prepared.ranged_bonuses if configured.style == "ranged" else prepared.bonuses
     return _Winner(
         CombatScore(
-            True, result["dps"], result["accuracy"], bonuses, result.get("player_defence_rolls")
+            True,
+            result["dps"],
+            result["accuracy"],
+            bonuses,
+            result.get("player_defence_rolls"),
+            ring_charge_probability=result.get("ring_charge_probability"),
         ),
         option,
         configured,

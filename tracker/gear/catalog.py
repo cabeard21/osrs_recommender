@@ -69,6 +69,17 @@ from tracker.gear.tomes import FORMS as TOME_FORMS
 from tracker.gear.tomes import MARKET_FORMS as TOME_MARKET_FORMS
 from tracker.gear.tomes import REVISION as TOME_REVISION
 from tracker.gear.tomes import apply_review as tome_review
+from tracker.gear.vampyres import AUTOCAST_STAVES as VAMPYRE_STAVES
+from tracker.gear.vampyres import FORMS as VAMPYRE_FORMS
+from tracker.gear.vampyres import REVISION as VAMPYRE_REVISION
+from tracker.gear.vampyres import TRADEABLE as VAMPYRE_TRADEABLE
+from tracker.gear.vampyres import apply_review as vampyre_review
+from tracker.gear.vampyres import requirement as vampyre_requirement
+from tracker.gear.void_ranged import FORMS as VOID_RANGED_FORMS
+from tracker.gear.void_ranged import REVISION as VOID_RANGED_REVISION
+from tracker.gear.void_ranged import TRADEABLE as VOID_RANGED_TRADEABLE
+from tracker.gear.void_ranged import apply_review as void_ranged_review
+from tracker.gear.void_ranged import requirement as void_ranged_requirement
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -107,8 +118,27 @@ REVIEWED_EQUIVALENT_FORMS: Mapping[int, int] = MappingProxyType(
 # https://oldschool.runescape.wiki/w/Autocast
 # https://oldschool.runescape.wiki/w/Mystic_air_staff
 # https://oldschool.runescape.wiki/w/Ancient_staff
-REVIEWED_STANDARD_STAVES = frozenset(
-    {1381, 1383, 1385, 1387, 1401, 1403, 1405, 1407, 4675, 6526, 27785, 27788, 27676, 27679, 30070}
+REVIEWED_STANDARD_STAVES = (
+    frozenset(
+        {
+            1381,
+            1383,
+            1385,
+            1387,
+            1401,
+            1403,
+            1405,
+            1407,
+            4675,
+            6526,
+            27785,
+            27788,
+            27676,
+            27679,
+            30070,
+        }
+    )
+    | VAMPYRE_STAVES
 )
 # Exact ordinary Ancient autocast review; no blessing of special staff effects.
 # https://oldschool.runescape.wiki/w/Ancient_staff
@@ -243,6 +273,8 @@ def load_catalog(
         row = size_damage_review(
             dragonbane_review(demonbane_review(halberd_review(leafy_review(row))))
         )
+        row = vampyre_review(row)
+        row = void_ranged_review(row)
         if row["id"] == 12931:
             if row["slot"] != "head" or row["name"] != "Serpentine helm":
                 raise ValueError("Reviewed serpentine physical form changed")
@@ -330,6 +362,10 @@ def load_catalog(
             )
         if row["id"] in DRAGONBANE_FORMS:
             requirement = dragonbane_requirement(row["id"])
+        if row["id"] in VAMPYRE_FORMS and row["id"] not in DEMONBANE_FORMS:
+            requirement = vampyre_requirement(row["id"])
+        if row["id"] in VOID_RANGED_FORMS:
+            requirement = void_ranged_requirement(row["id"])
         acquisition = {item.acquisition for item in entries}
         result[row["id"]] = EquipmentDefinition.model_validate(
             {
@@ -340,6 +376,8 @@ def load_catalog(
                 "requires": requirement,
                 "requirements_complete": bool(
                     entries
+                    or row["id"] in VAMPYRE_FORMS
+                    or row["id"] in VOID_RANGED_FORMS
                     or row["id"] in DRAGONBANE_FORMS
                     or row["id"] in DEMONBANE_FORMS
                     or row["id"] in LEAFY_FORMS
@@ -364,6 +402,10 @@ def load_catalog(
                     if row["id"] in HALBERD_FORMS
                     else row["id"] in DEMONBANE_TRADEABLE
                     if row["id"] in DEMONBANE_FORMS
+                    else row["id"] in VAMPYRE_TRADEABLE
+                    if row["id"] in VAMPYRE_FORMS
+                    else row["id"] in VOID_RANGED_TRADEABLE
+                    if row["id"] in VOID_RANGED_FORMS
                     else row["id"] in LEAFY_TRADEABLE
                     if row["id"] in LEAFY_FORMS
                     else (row["id"] == 4170 or row["name"] == "Black mask")
@@ -425,6 +467,8 @@ def load_catalog(
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
+            + VAMPYRE_REVISION
+            + VOID_RANGED_REVISION
             + SIZE_DAMAGE_REVISION
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()
@@ -449,6 +493,8 @@ def load_catalog(
             + HALBERD_REVISION
             + DEMONBANE_REVISION
             + DRAGONBANE_REVISION
+            + VAMPYRE_REVISION
+            + VOID_RANGED_REVISION
             + SIZE_DAMAGE_REVISION
             + json.dumps(sorted(REVIEWED_POWERED_TRADEABLE)).encode()
             + json.dumps(dict(DOUBLE_ATTACKS), sort_keys=True).encode()

@@ -7,10 +7,14 @@ the attack roll to floor(2*roll/3), never by multiplying the hit chance.
 """
 
 import json
+from typing import TYPE_CHECKING
 
 from tracker.gear.bolts import _mean, expected_bolt_damage
 from tracker.gear.bolts_catalog import CROSSBOWS
 from tracker.gear.models import EquipmentDefinition
+
+if TYPE_CHECKING:
+    from tracker.gear.vampyre_combat import VampyreRule
 
 MODEL_VERSION = "aquanite-hopper-v1-approximate"
 PROC_CHANCE = 0.11
@@ -54,6 +58,8 @@ def expected_secondary_damage(
     traits: tuple[str, ...],
     armour: int = 0,
     primary_activation: float = 0,
+    *,
+    vampyre: "VampyreRule | None" = None,
 ) -> tuple[float, int, float]:
     """Expected damage, maximum and proc probability conditional on hopper firing.
 
@@ -62,6 +68,11 @@ def expected_secondary_damage(
     PROC_CHANCE once at the caller to obtain damage added per ordinary attack.
     """
     if family is None:
+        if vampyre is not None:
+            from tracker.gear.vampyre_combat import hits
+
+            mean, high, _ = hits(vampyre, maximum, armour, divisor=3)
+            return accuracy * mean, high, 0.0
         return (
             accuracy * _mean(maximum, armour, divisor=3),
             max(0, max(1, maximum) // 3 - armour),
@@ -79,4 +90,5 @@ def expected_secondary_damage(
         armour,
         damage_divisor=3,
         chance_multiplier=(1 - primary_activation) / 3,
+        vampyre=vampyre,
     )

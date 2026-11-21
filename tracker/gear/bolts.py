@@ -6,6 +6,10 @@ become one; additive effects precede that adjustment, ruby follows it.
 """
 
 from math import floor
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tracker.gear.vampyre_combat import VampyreRule
 
 
 def _floor_sum(maximum: int, divisor: int) -> int:
@@ -52,10 +56,15 @@ def expected_bolt_damage(
     *,
     damage_divisor: int = 1,
     chance_multiplier: float = 1,
+    vampyre: "VampyreRule | None" = None,
 ) -> tuple[float, int, float]:
     """Return expected damage, possible maximum and actual activation probability."""
     ordinary = _mean(maximum, armour, divisor=damage_divisor)
     normal_max = max(0, max(1, maximum) // damage_divisor - armour)
+    if vampyre is not None:
+        from tracker.gear.vampyre_combat import hits
+
+        ordinary, normal_max, _ = hits(vampyre, maximum, armour, divisor=damage_divisor)
     base = accuracy * ordinary
     chance = (
         {
@@ -79,12 +88,18 @@ def expected_bolt_damage(
         if hp is None:
             raise ValueError("Ruby bolts require target current or base hitpoints.")
         damage = min(110 if zaryte else 100, hp * (22 if zaryte else 20) // 100)
-        damage = max(0, damage // damage_divisor - armour)
+        damage //= damage_divisor
+        damage = max(0, (vampyre.limit(damage) if vampyre else damage) - armour)
         return (1 - chance) * base + chance * damage, max(normal_max, damage), chance
     if family in {"diamond", "onyx"}:
         multiplier = (126 if zaryte else 115) if family == "diamond" else (132 if zaryte else 120)
         effect_max = maximum * multiplier // 100
         effect_mean = _mean(effect_max, armour, divisor=damage_divisor)
+        high = max(0, max(1, effect_max) // damage_divisor - armour)
+        if vampyre is not None:
+            effect_mean, high, _ = hits(
+                vampyre, effect_max, armour, divisor=damage_divisor, replace_roll=True
+            )
         activation = chance if family == "diamond" else chance * accuracy
         mean = (
             (1 - chance) * base + chance * effect_mean
@@ -93,7 +108,7 @@ def expected_bolt_damage(
         )
         return (
             mean,
-            max(normal_max, max(0, max(1, effect_max) // damage_divisor - armour)),
+            max(normal_max, high),
             activation,
         )
     if family == "opal":
@@ -106,16 +121,24 @@ def expected_bolt_damage(
     activation = chance * accuracy if family == "dragonstone" else chance
     # An accurate zero already contributes one ordinarily; replace that outcome
     # before adding the proc bonus. A proc on a miss adds only its bonus.
-    increment = _mean(maximum, armour, bonus, damage_divisor) - ordinary
+    proc_mean = _mean(maximum, armour, bonus, damage_divisor)
+    proc_maximum = max(0, max(1, maximum + bonus) // damage_divisor - armour)
+    miss_bonus = bonus // damage_divisor
+    if vampyre is not None:
+        proc_mean, proc_maximum, _ = hits(
+            vampyre, maximum, armour, bonus=bonus, divisor=damage_divisor
+        )
+        miss_bonus = vampyre.limit(miss_bonus)
+    increment = proc_mean - ordinary
     mean = base + chance * accuracy * increment
     if family != "dragonstone":
-        mean += chance * (1 - accuracy) * (bonus // damage_divisor)
+        mean += chance * (1 - accuracy) * miss_bonus
     return (
         mean,
         max(
             normal_max,
-            max(0, max(1, maximum + bonus) // damage_divisor - armour),
-            bonus // damage_divisor if family != "dragonstone" else 0,
+            proc_maximum,
+            miss_bonus if family != "dragonstone" else 0,
         ),
         activation,
     )

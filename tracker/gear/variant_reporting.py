@@ -225,6 +225,7 @@ def compact_variant(
         "supported": True,
         "dps": score.dps,
         "accuracy": score.accuracy,
+        "ring_charge_probability": score.ring_charge_probability,
         "bonuses": score.bonuses.__dict__,
         "player_defence_rolls": score.player_defence_rolls,
         "attack_interval": numeric_attack_interval(prepared.weapon, configured),

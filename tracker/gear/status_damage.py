@@ -1,4 +1,4 @@
-"""Expected ordinary halberd status damage over a finite exposure window.
+"""Expected ordinary weapon status damage over a finite exposure window.
 
 Sources: https://oldschool.runescape.wiki/w/Venom and /w/Poison.
 NPC timer phase is averaged uniformly over 1..30 game ticks. Attacks land
@@ -33,8 +33,16 @@ def status_kind(poison: str, venom: str) -> Literal["venom", "poison", "unknown"
     return None if venom == poison == "immune" else "unknown"
 
 
+def poison_ammo_kind(poison: str) -> Literal["poison", "unknown"] | None:
+    if poison == "susceptible":
+        return "poison"
+    return None if poison == "immune" else "unknown"
+
+
 @lru_cache(maxsize=8192)
-def expected_damage(chance: float, speed: int, duration: int, kind: str) -> float:
+def expected_damage(
+    chance: float, speed: int, duration: int, kind: str, severity: int = 26
+) -> float:
     """Exact expectation across application outcomes and discrete timer phases."""
     if (
         not isfinite(chance)
@@ -42,12 +50,13 @@ def expected_damage(chance: float, speed: int, duration: int, kind: str) -> floa
         or speed < 1
         or not 1 <= duration <= 3600
         or kind not in {"venom", "poison"}
+        or severity not in {6, 11, 16, 26}
     ):
         raise ValueError("Invalid status damage context")
     if not chance:
         return 0.0
     end = duration * 5 // 3
-    maximum = 8 if kind == "venom" else 26
+    maximum = 8 if kind == "venom" else severity
     total = 0.0
     for phase in range(1, 31):
         states = [1.0, *([0.0] * maximum)]
@@ -63,7 +72,7 @@ def expected_damage(chance: float, speed: int, duration: int, kind: str) -> floa
                 states = [states[0], 0.0, *states[1:7], states[7] + states[8]]
             else:
                 states = [v * unchanged for v in states]
-                states[26] += 1 - unchanged
-                total += sum(states[s] * ((s + 4) // 5) for s in range(1, 27))
+                states[severity] += 1 - unchanged
+                total += sum(states[s] * ((s + 4) // 5) for s in range(1, severity + 1))
                 states = [states[0] + states[1], *states[2:], 0.0]
     return total / 30

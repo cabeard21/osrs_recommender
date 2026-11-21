@@ -103,6 +103,9 @@ from tracker.gear.revenant_acquisition import (
 from tracker.gear.salve import MODEL_VERSION as SALVE_MODEL_VERSION
 from tracker.gear.salve import contextual_candidates as salve_candidates
 from tracker.gear.scoring import EquipmentScorer, PreparedEquipment
+from tracker.gear.search_scaffolds import attack_seeds, vampyre_seeds
+from tracker.gear.search_scaffolds import contextual_candidates as scaffold_candidates
+from tracker.gear.search_scaffolds import no_solution_hints as vampyre_hints
 from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, project_catalog, support_context
 from tracker.gear.targeted_retention import refine_omitted_heads
@@ -110,6 +113,8 @@ from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
 from tracker.gear.tomes import applied_tome
 from tracker.gear.tomes import review as tome_review
 from tracker.gear.transitions import inventory_slots, plan_transition
+from tracker.gear.vampyres import EFARITAYS_AID
+from tracker.gear.vampyres import MODEL_VERSION as VAMPYRE_MODEL_VERSION
 from tracker.gear.vector_archive import own_vector_archives
 from tracker.gear.wilderness import WildernessPolicy, WildernessRisk
 from tracker.gear.wilderness_ammo import (
@@ -1227,6 +1232,7 @@ class _Search:
                     native_score["player_defence_rolls"]
                     if include_defence and native_score["supported"]
                     else None,
+                    ring_charge_probability=native_score.get("ring_charge_probability"),
                 )
                 if native_score is not None
                 else evaluate_prepared_score(
@@ -1252,6 +1258,7 @@ class _Search:
             "supported": cached.supported,
             "dps": cached.dps,
             "accuracy": cached.accuracy,
+            "ring_charge_probability": cached.ring_charge_probability,
             "bonuses": cached.bonuses.__dict__,
             "player_defence_rolls": cached.player_defence_rolls,
         }
@@ -1289,6 +1296,7 @@ class _Search:
             "supported": score.supported,
             "dps": score.dps,
             "accuracy": score.accuracy,
+            "ring_charge_probability": score.ring_charge_probability,
             "bonuses": score.bonuses.__dict__,
             "player_defence_rolls": rolls,
         }
@@ -1358,6 +1366,7 @@ class _Search:
             "supported": score.supported,
             "dps": score.dps,
             "accuracy": score.accuracy,
+            "ring_charge_probability": score.ring_charge_probability,
             "bonuses": score.bonuses.__dict__,
             "player_defence_rolls": rolls,
             "attack_interval": (
@@ -1776,7 +1785,8 @@ class _Search:
                     ):
                         families.setdefault(model, i)
                 retained = list(dict.fromkeys([*retained, *families.values()]))
-            pools[slot] = [None, *retained]
+            protected = scaffold_candidates(self, slot, ordered)
+            pools[slot] = [None, *dict.fromkeys([*retained, *protected])]
         return pools
 
     def baselines(self, role: RoleConfig) -> list[dict[str, int]]:
@@ -1799,10 +1809,20 @@ class _Search:
                 )
             else:
                 bases.append(base)
-        bases.extend(self.synergy_seeds((role,))[1:])
+        bases.extend(self.halberd_seeds((role,))[1:])
+        if {"ring": EFARITAYS_AID} in vampyre_seeds(self, (role,)):
+            bases += [{**base, "ring": EFARITAYS_AID} for base in bases]
         return [b for b in bases if performance(b, role)["supported"]]
 
     def synergy_seeds(
+        self, roles: tuple[RoleConfig, ...], *, best_only: bool = False
+    ) -> list[dict[str, int]]:
+        return [
+            *self.halberd_seeds(roles, best_only=best_only),
+            *attack_seeds(self, roles, best_only=best_only),
+        ]
+
+    def halberd_seeds(
         self, roles: tuple[RoleConfig, ...], *, best_only: bool = False
     ) -> list[dict[str, int]]:
         """Trial complete reviewed halberd/head pairs before isolated slots prune them."""
@@ -1858,6 +1878,13 @@ class _Search:
             _assignment_state({r.id: equipment for r, equipment in zip(roles, rows, strict=True)})
             for rows in product(*(self.synergy_seeds((r,), best_only=True) for r in roles))
         ]
+        # A zero-swap edge can reject an advance ring/ammo choice before the other
+        # role reaches that slot. Trial the matching shared choice from the outset.
+        if len(roles) > 1 and any(not attack_seeds(self, (r,)) for r in roles):
+            beam.extend(
+                _assignment_state({r.id: seed for r in roles})
+                for seed in attack_seeds(self, roles, best_only=True)
+            )
         for index, slot in enumerate(SLOTS):
             self.reporter.slots(index / len(SLOTS))
             final_slot = index == len(SLOTS) - 1
@@ -2891,6 +2918,7 @@ def optimize(
         "leafy_model_version": LEAFY_MODEL_VERSION,
         "demonbane_model_version": DEMONBANE_MODEL_VERSION,
         "dragonbane_model_version": DRAGONBANE_MODEL_VERSION,
+        "vampyre_model_version": VAMPYRE_MODEL_VERSION,
         "size_damage_model_version": SIZE_DAMAGE_MODEL_VERSION,
         "slayer_tasks": {role.id: role.on_slayer_task for role in request.roles},
         "marks_of_darkness": {role.id: role.mark_of_darkness for role in request.roles},
@@ -2982,6 +3010,7 @@ def optimize(
         from tracker.gear.vector_publish import filter_groups
 
         objective_frontiers = filter_groups(objective_frontiers, request.max_dps_loss_pct)
+    no_solution_hints = vampyre_hints(request.roles) if winners[-1] is None else []
     return {
         "snapshot_id": snapshot.fingerprint,
         **support_context(catalog, request.support_policy),
@@ -3029,6 +3058,7 @@ def optimize(
         ),
         "search": {
             "quality": "best_found",
+            **({"no_solution_hints": no_solution_hints} if no_solution_hints else {}),
             **(
                 {
                     "timings_seconds": {
@@ -3064,6 +3094,7 @@ def optimize(
         },
         "limitations": [
             "Best found within bounded candidates and beams; global optimum is not proven.",
+            *no_solution_hints,
             *dict.fromkeys(
                 problem for role in request.roles if (problem := discipline_problem(role))
             ),

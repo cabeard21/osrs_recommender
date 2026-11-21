@@ -7,6 +7,7 @@ Exact forms only: stackability also describes reusable ranged equipment.
 
 from tracker.gear.models import EquipmentDefinition
 from tracker.gear.revenant import CHARGED_BOWS
+from tracker.gear.vampyres import BLISTERWOOD_STAKE
 
 HUNTER_SPEAR = 29305
 
@@ -40,6 +41,7 @@ THROWN_IDS = frozenset(
         25849,
         20849,
         HUNTER_SPEAR,
+        BLISTERWOOD_STAKE,
         22636,
         22634,
         11230,

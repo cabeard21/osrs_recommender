@@ -15,6 +15,8 @@ from tracker.gear.compact_states import EquipmentState
 from tracker.gear.facts import equipment_fact, hypothetical_snapshot
 from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
+from tracker.gear.vampyre_targets import PROFILES as VAMPYRES
+from tracker.gear.vampyre_targets import validate_access as validate_vampyre_access
 from tracker.gear.wilderness import WildernessRisk
 from tracker.gear.wilderness_ammo import idle_ammunition
 from tracker.gear.wilderness_runes import wilderness_spell_runes
@@ -138,6 +140,16 @@ def validate_request_context(
 
         if role.target_selection is not None:
             entry = npc_catalog().detail(role.target_selection.key)
+            vampyre = VAMPYRES.get((entry["npc_id"], entry["name"], entry["variant"]))
+            if vampyre:
+                validate_vampyre_access(
+                    vampyre,
+                    entry["name"],
+                    levels,
+                    snapshot.quests,
+                    request.quest_overrides,
+                    role.on_slayer_task,
+                )
             minimum = NPC_SLAYER.get(entry["npc_id"])
             if minimum is not None and (levels.get("slayer") or 0) < minimum:
                 raise ValueError(

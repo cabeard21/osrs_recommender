@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from math import isfinite
 from typing import TYPE_CHECKING, Any
 
+from tracker.gear.compact_costs import ring_charge_chance
 from tracker.gear.halberd_charging import cost_context
 
 if TYPE_CHECKING:
@@ -113,6 +114,7 @@ def _report_prepared_costs(
             numeric,
             accuracy,
             interval=solution["loadouts"][rid]["performance"].get("attack_interval"),
+            ring_charge_probability=ring_charge_chance(solution["loadouts"][rid]["performance"]),
         )
         for rid, prepared, numeric, accuracy in prepared_costs
     }
@@ -150,7 +152,10 @@ def _numeric_solution_costs(solution: dict[str, Any], search: Any) -> dict[str, 
         )
         performance = loadout["performance"]
         numeric = prepared.score(
-            performance.get("attack_interval"), performance.get("dps"), performance.get("accuracy")
+            performance.get("attack_interval"),
+            performance.get("dps"),
+            performance.get("accuracy"),
+            ring_charge_probability=ring_charge_chance(performance),
         )
         prepared_costs += ((rid, prepared, numeric, performance.get("accuracy")),)
         costs[rid] = numeric

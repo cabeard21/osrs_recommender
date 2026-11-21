@@ -8,6 +8,7 @@ cdef struct Score:
     double accuracy
     double secondary
     double interval
+    double ring_charge_probability
     double defence_rolls[5]
     bint missing_defence
     int option_index
@@ -17,6 +18,7 @@ cdef struct PreparedGear:
     double bonuses[14]
     bint legal
     bint ammo_ok
+    bint elite_void_ranged
 
 cdef class ScoringContext:
     cdef readonly int item_count, role_count
@@ -33,6 +35,9 @@ cdef class ScoringContext:
     cdef int[::1] salve_bonus
     cdef int[::1] wilderness_weapon
     cdef int[::1] leafy_weapon, broad_ammo, seeking_ammo, target_leafy
+    cdef int[::1] vampyre_rule_offset, vampyre_rules, silver_bolts, efaritay
+    cdef int[::1] silver_poison, target_poisonable
+    cdef int[::1] elite_void_piece
     cdef int[::1] size_damage_per_size, size_damage_max_size, target_size
     cdef int[::1] status_kind, status_duration, halberd, serpentine
     cdef int[::1] dragonbane_accuracy, dragonbane_damage
@@ -41,7 +46,7 @@ cdef class ScoringContext:
     cdef int priority
     cdef readonly object objective_ids
     cdef int[::1] objective_kinds, objective_masks, objective_means
-    cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, torag
+    cdef int[::1] option_kind, ranged_kind, ammo_valid, body_recovery, unpriced_repair
     cdef int[::1] supply_class
     cdef int[::1] serp_head
     cdef double[::1] serp_cost

@@ -19,6 +19,10 @@ from tracker.gear.models import CombatTarget, EquipmentBonuses, EquipmentDefinit
 from tracker.gear.prayers import effects
 from tracker.gear.prepared_combat import PreparedCombat
 from tracker.gear.revenant import passive_applies
+from tracker.gear.vampyre_combat import resolve as resolve_vampyre
+from tracker.gear.vampyre_combat import target_tier
+from tracker.gear.vampyres import EFARITAYS_AID, SILVER_BOLTS, SILVER_POISON_SEVERITY
+from tracker.gear.void_ranged import ELITE_ROBES, ELITE_TOPS, RANGER_HELMS, VOID_GLOVES
 
 BONUS_FIELDS = tuple(EquipmentBonuses.model_fields)
 STYLE_CODES = {"stab": 0, "slash": 1, "crush": 2, "ranged": 3, "magic": 4, "special": 5}
@@ -158,7 +162,16 @@ def _legal(weapon: Any, role: Any, levels: Any, snapshot: Any = None) -> bool:
         return False
     # The outgoing legality checks depend only on the weapon/role. Suppress the
     # candidate-dependent cap while preparing; compiled scoring checks it later.
-    target = (role.target or CombatTarget()).model_copy(update={"damage_cap": None})
+    target = role.target or CombatTarget()
+    target = target.model_copy(
+        update={
+            "damage_cap": None,
+            # Tier legality depends on the actual ring and fired bolts.
+            "traits": tuple(
+                t for t in target.traits if t not in {"vampyre1", "vampyre2", "vampyre3"}
+            ),
+        }
+    )
     configured = role.model_copy(update={"target": target})
     # Required ranged ammunition is validated per candidate in the native loop.
     if role.style == "ranged" and "leafy" in target.traits:
@@ -181,6 +194,27 @@ def _legal(weapon: Any, role: Any, levels: Any, snapshot: Any = None) -> bool:
     return evaluate_prepared_score(
         prepare_equipment([checked] if checked else []), configured, levels
     ).supported
+
+
+def _vampyre_rule_rows(tier: int, style: str, weapon_id: int) -> list[int]:
+    """Rows follow the V_WIDTH layout in _effects.pxd, indexed by silver and ring."""
+    rows: list[int] = []
+    for silver in (False, True):
+        for ring in (False, True):
+            rule = resolve_vampyre(tier, style, weapon_id, silver, ring)
+            assert rule is not None
+            rows.extend(
+                (
+                    int(rule.legal),
+                    rule.weapon_accuracy_percent,
+                    rule.ring_accuracy_percent,
+                    rule.weapon_damage_percent,
+                    rule.ring_damage_percent,
+                    rule.damage_divisor,
+                    rule.hit_cap or 0,
+                )
+            )
+    return rows
 
 
 def pack(search: Any) -> dict[str, Any]:
@@ -246,6 +280,7 @@ def pack(search: Any) -> dict[str, Any]:
             ("purging_staff", 0),
             ("scorching_bow", 0),
             ("leafy_weapon", 0),
+            ("elite_void_piece", 0),
             ("broad_ammo", 0),
             ("seeking_ammo", 0),
             ("size_damage_per_size", 0),
@@ -267,6 +302,12 @@ def pack(search: Any) -> dict[str, Any]:
             "purging_staff": int(item_id == 29594),
             "scorching_bow": int(item_id == 29591),
             "leafy_weapon": 2 if item_id == 20727 else int(item_id in {4158, 11902}),
+            "elite_void_piece": int(
+                (item.slot == "head" and item_id in RANGER_HELMS)
+                or (item.slot == "body" and item_id in ELITE_TOPS)
+                or (item.slot == "legs" and item_id in ELITE_ROBES)
+                or (item.slot == "hands" and item_id in VOID_GLOVES)
+            ),
             "broad_ammo": int(item_id in {4160, 33601, 11875, 21316}),
             "seeking_ammo": int(item_id == 33601),
             "size_damage_per_size": item.size_damage_bonus.damage_per_size
@@ -314,6 +355,8 @@ def pack(search: Any) -> dict[str, Any]:
         ammo_offsets.append(len(ammo_codes))
 
     role_count, item_count = len(search.request.roles), len(dense_ids)
+    vampyre_rules = array("i")
+    vampyre_offsets: dict[tuple[int, str, int], int] = {}
     offsets, lengths = array("i"), array("i")
     options = array("q")
     status_kinds, status_durations = array("i"), array("i")
@@ -332,6 +375,8 @@ def pack(search: Any) -> dict[str, Any]:
             "wilderness_weapon",
             "magic_dart",
             "target_leafy",
+            "target_poisonable",
+            "vampyre_rule_offset",
             "target_size",
             "target_demon",
             "demonbane_vulnerability",
@@ -352,6 +397,7 @@ def pack(search: Any) -> dict[str, Any]:
         lane = copy(search)
         lane.metric_first = metric
         for role_index, role in enumerate(search.request.roles):
+            tier = target_tier(role.target.traits) if role.target else 0
             for weapon_id in dense_ids:
                 weapon = search.items.get(weapon_id)
                 records: tuple[tuple[Any, CombatOption], ...] = ()
@@ -425,6 +471,8 @@ def pack(search: Any) -> dict[str, Any]:
                         ),
                         "magic_level": search.levels.get("magic", 0),
                         "target_leafy": int("leafy" in target.traits),
+                        "target_poisonable": int(target.poison_susceptibility == "susceptible"),
+                        "vampyre_rule_offset": -1,
                         "target_size": target.size,
                         "target_demon": int("demon" in target.traits),
                         "demonbane_vulnerability": target.demonbane_vulnerability_percent,
@@ -447,6 +495,12 @@ def pack(search: Any) -> dict[str, Any]:
                             if name in target.traits
                         ),
                     }
+                    if tier:
+                        key = (tier, configured.style, weapon_id)
+                        if key not in vampyre_offsets:
+                            vampyre_offsets[key] = len(vampyre_rules)
+                            vampyre_rules.extend(_vampyre_rule_rows(*key))
+                        metadata["vampyre_rule_offset"] = vampyre_offsets[key]
                     for name, value in metadata.items():
                         option_effects[name].append(value)
                     legal = _legal(
@@ -530,6 +584,10 @@ def pack(search: Any) -> dict[str, Any]:
         "status_kind": status_kinds,
         "status_duration": status_durations,
         "halberd": array("i", [int(i in HALBERD_IDS) for i in dense_ids]),
+        "vampyre_rules": vampyre_rules,
+        "silver_bolts": array("i", (int(i in SILVER_BOLTS) for i in dense_ids)),
+        "silver_poison": array("i", (SILVER_POISON_SEVERITY.get(i, 0) for i in dense_ids)),
+        "efaritay": array("i", (int(i == EFARITAYS_AID) for i in dense_ids)),
         "serpentine": array("i", [int(i in SERPENTINE_HEADS) for i in dense_ids]),
         **integers,
         **option_effects,
