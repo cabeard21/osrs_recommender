@@ -120,6 +120,21 @@ def test_zero_cost_zero_damage_and_whole_trip_risk(kernel):
     assert scanner.scan(0, 2, (index,), 1, lambda _: 0, None) == (2, (pool[1],), None)
 
 
+def test_carried_weight_overrides_weighted_role_values_before_screening(kernel):
+    pools = ((variant((5, 2)),), (variant((3, 4)),))
+    scanner = packed_product(kernel, pools, [(1, False), (1, True)], -1)
+    index = index_with(kernel, (5, -1.5))
+    assert scanner.scan(0, 1, (index,), -inf, weight_dimension=1, weight_kg=2) == (1, None, None)
+    assert scanner.scan(0, 1, (index,), -inf, weight_dimension=1, weight_kg=-2) == (
+        1,
+        (pools[0][0], pools[1][0]),
+        None,
+    )
+    for dimension in (0, 2):
+        with pytest.raises(ValueError, match="weight"):
+            scanner.scan(0, 1, (index,), -inf, weight_dimension=dimension, weight_kg=2)
+
+
 @pytest.mark.parametrize("specialized", [False, True])
 def test_absent_and_unavailable_costs_have_different_denominators(kernel, specialized):
     # The costless role's DPS is included in the score but excluded from GP/damage.

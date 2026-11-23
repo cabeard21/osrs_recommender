@@ -920,6 +920,17 @@ Single Auto results open on **Auto overall**. Tabs for each searched discipline 
 
 The additive `result.discipline_results` list retains each searched discipline's status, reasons, selected solution, secondary frontiers, search diagnostics, limitations, and contextual alternatives. Existing overall fields retain their meaning. Switching tabs does not run another search or change the overall Auto winner.
 
+## Carried gear weight objective
+
+Include `{"kind":"carried_weight_kg"}` in `objectives` to minimize the heaviest
+configured role's gear weight alongside DPS. Each solution reports signed kg in
+`objective_values.carried_weight_kg` and `carried_weight.heaviest_kg`.
+`carried_weight.roles[role_id]` gives `worn_kg`, `backpack_kg`, and `total_kg`.
+A shared item contributes once to each role's total, using its weight in that
+role's worn or packed form. Utility switches count even at zero active time.
+A Single loadout's backpack contribution is zero. Supply items and reserved
+slots are outside this calculation.
+
 ## Running cost objective
 
 Include `{"kind":"gp_per_damage"}` in the optimization request's `objectives` list
@@ -1008,10 +1019,11 @@ change reserved supply slots.
 searching again. Submit the original `scenario`, exact `selected_potion_ids`,
 `expected_catalog_version`, `expected_model_version`, and `loadouts` keyed by
 ordinary role ID. Each loadout contains physical `equipment`, a fixed
-`combat_option`, and `selected_prayer_ids`. When Wilderness loss is selected,
+`combat_option`, and `selected_prayer_ids`. When Wilderness loss or carried gear weight is selected,
 also supply each special utility role as an equipment-only loadout so its items
-count toward trip risk. Aggregate timeline samples retain the whole trip’s loss
-at departure as boosts decay. Other requests use ordinary roles alone.
+count toward the selected whole-kit objectives. Aggregate timeline samples retain
+the trip's departure loss and heaviest carried gear weight as boosts decay.
+Other requests use ordinary roles alone.
 Selected potions and prayers must match their fixed policies or optimize allowlists.
 
 The response includes snapshot/catalog/combat/decay model identity, a configuration

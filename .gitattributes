@@ -7,5 +7,6 @@ content/equipment/manifest.json text eol=lf
 content/equipment/requirements.json text eol=lf
 content/equipment/requirements-report.json text eol=lf
 content/equipment/community.json text eol=lf
+content/equipment/weights.json text eol=lf
 content/items/bulk_*.yaml text eol=lf
 content/npcs/** text eol=lf

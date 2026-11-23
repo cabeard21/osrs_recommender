@@ -303,17 +303,19 @@ export function PotionTimelinePanel({
     solution.potions?.selected_ids.some((id) => id.startsWith("divine_")) ??
     false;
   const unit =
-    priority === "wilderness_loss_gp"
-      ? " GP"
-      : priority === "gp_per_damage"
-        ? " GP/damage"
-        : priority === "magic_damage_bonus"
-          ? "%"
-          : priority.endsWith("_defence_roll") || priority === "defence_roll"
-            ? " roll"
-            : priority === "accuracy"
-              ? ""
-              : " bonus";
+    priority === "carried_weight_kg"
+      ? " kg"
+      : priority === "wilderness_loss_gp"
+        ? " GP"
+        : priority === "gp_per_damage"
+          ? " GP/damage"
+          : priority === "magic_damage_bonus"
+            ? "%"
+            : priority.endsWith("_defence_roll") || priority === "defence_roll"
+              ? " roll"
+              : priority === "accuracy"
+                ? ""
+                : " bonus";
   const reasons = (s: PotionTimelineMeasurement) =>
     Object.entries(s.roles)
       .filter(([id]) => !role || role === id)
@@ -336,7 +338,11 @@ export function PotionTimelinePanel({
             value={role}
             onChange={(e) => setRole(e.target.value)}
           >
-            <option value="">Weighted total</option>
+            <option value="">
+              {priority === "carried_weight_kg"
+                ? "Heaviest role"
+                : "Weighted total"}
+            </option>
             {Object.keys(data.baseline.roles).map((id) => (
               <option key={id} value={id}>
                 {result.scenario.request.roles.find((r) => r.id === id)?.name ??

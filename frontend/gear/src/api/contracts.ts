@@ -380,7 +380,7 @@ export interface Preparation {
   usable_item_id: number;
   market_item_id: number | null;
   charging_required: boolean;
-  charges: "unknown";
+  charges: "unknown" | "not_applicable";
   activation_reserve: { item_id: number; quantity: number }[];
   message: string;
 }
@@ -419,6 +419,7 @@ export interface RunningCostFrontierGroup {
   }[];
 }
 export interface JointSolutionDTO {
+  carried_weight?: import("./carriedWeight").CarriedWeight;
   wilderness_risk?: WildernessRisk | null;
   objective_values?: Record<string, number | null>;
   unowned_untradeable_item_ids?: number[];
@@ -728,6 +729,7 @@ interface TrialIdentity {
   equipment: Equipment;
 }
 export interface FixedEvaluation {
+  carried_weight?: import("./carriedWeight").CarriedWeight;
   objective_values?: Record<string, number | null>;
   wilderness_risk?: WildernessRisk | null;
   preparations?: Preparation[];
@@ -864,6 +866,7 @@ export interface PotionTimelineMeasurement {
   roles: Record<string, PotionTimelineRole>;
 }
 export interface PotionTimeline {
+  carried_weight?: import("./carriedWeight").CarriedWeight;
   objective_definitions?: ObjectiveDefinition[];
   snapshot_id: string;
   catalog_version: string;
@@ -892,6 +895,7 @@ export interface PhysicalItem {
   name: string;
   slot: Slot;
   equipment: {
+    inventory_form_id?: number | null;
     size_damage_bonus?: {
       damage_per_size: number;
       max_size: number;

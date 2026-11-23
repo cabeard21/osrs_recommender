@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from tracker.gear.carried_weight import CarriedWeight
 from tracker.gear.compact_costs import PreparedCost, aggregate_numeric_cost
 from tracker.gear.potions import boosted_levels, catalog
 
@@ -50,13 +51,16 @@ def measure(
     objectives: Sequence[Any] | None = None,
     prepared_costs: Mapping[str, PreparedCost] | None = None,
     departure_loss_gp: int | None = None,
+    carried_weight: CarriedWeight | None = None,
 ) -> dict[str, Any]:
     from tracker.gear.combat import evaluate_prepared_loadout
     from tracker.gear.priorities import secondary_value
 
     values: dict[str, dict[str, Any]] = {}
     ordinary_objectives = tuple(
-        o for o in objectives or () if o.kind not in {"gp_per_damage", "wilderness_loss_gp"}
+        o
+        for o in objectives or ()
+        if o.kind not in {"gp_per_damage", "wilderness_loss_gp", "carried_weight_kg"}
     )
     costs = []
     for role in roles:
@@ -68,6 +72,10 @@ def measure(
             from tracker.gear.objectives import objective_values
 
             objective_measurements.update(objective_values(ordinary_objectives, row))
+        if carried_weight is not None:
+            objective_measurements["carried_weight_kg"] = carried_weight["roles"][role.id][
+                "total_kg"
+            ]
         if prepared_costs is not None:
             cost = prepared_costs[role.id].score(
                 row.get("attack_interval"),
@@ -105,6 +113,9 @@ def measure(
 
         for definition in objective_definitions(objectives):
             key = definition["id"]
+            if key == "carried_weight_kg":
+                objective_totals[key] = carried_weight["heaviest_kg"] if carried_weight else None
+                continue
             if key == "wilderness_loss_gp":
                 objective_totals[key] = departure_loss_gp
                 continue

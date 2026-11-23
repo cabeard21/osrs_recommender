@@ -27,6 +27,12 @@ function acquisitionStatus(
   if (!id) return "Empty";
   if (obtainIds.includes(id)) return "Obtain";
   const preparation = preparations.find((row) => row.usable_item_id === id);
+  if (preparation?.charges === "not_applicable") {
+    if (preparation.source_item_id !== null) return "Owned";
+    return purchaseIds.includes(preparation.market_item_id ?? id)
+      ? "Buy"
+      : "Unconfirmed";
+  }
   if (preparation?.source_item_id != null) {
     if (preparation.source_item_id !== id) return "Owned source · Prepare";
     return preparation.charging_required ? "Prepare" : "Owned";

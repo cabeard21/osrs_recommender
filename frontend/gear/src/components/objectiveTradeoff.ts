@@ -1,3 +1,4 @@
+import { formatKg } from "../api/carriedWeight";
 import type { JointSolutionDTO } from "../api/contracts";
 import type { ObjectiveDefinition } from "../api/objectives";
 
@@ -29,6 +30,7 @@ export function formatTradeoffValue(
   definition?: ObjectiveDefinition,
 ) {
   if (value == null || !Number.isFinite(value)) return "Unavailable";
+  if (definition?.unit === "kg") return formatKg(value);
   if (definition?.unit === "probability") return (value * 100).toFixed(2) + "%";
   if (definition?.unit === "GP") return value.toLocaleString();
   if (definition?.unit === "percent") return value.toFixed(2) + "%";

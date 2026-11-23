@@ -14,6 +14,7 @@ from pydantic import Field, model_validator
 
 from tracker.api.gear_optimizations import (
     BrowserOptimizationRequest,
+    CarriedGearWeight,
     ObjectiveProjection,
     Purchase,
     RunningCost,
@@ -26,6 +27,7 @@ from tracker.api.gear_optimizations import (
 )
 from tracker.api.gear_ui import DTO, GearRoute, ItemResponse, Preparation, no_cache, resources
 from tracker.content.schema import ItemSlot
+from tracker.gear.carried_weight import carried_weight_assumptions, measure_carried_weight
 from tracker.gear.combat import MODEL_VERSION
 from tracker.gear.demonbane import MODEL_VERSION as DEMONBANE_MODEL_VERSION
 from tracker.gear.dragonbane import MODEL_VERSION as DRAGONBANE_MODEL_VERSION
@@ -44,6 +46,7 @@ from tracker.gear.slayer import MODEL_VERSION as SLAYER_MODEL_VERSION
 from tracker.gear.support import SupportPolicy, support_context
 from tracker.gear.tomes import MODEL_VERSION as TOME_MODEL_VERSION
 from tracker.gear.vampyres import MODEL_VERSION as VAMPYRE_MODEL_VERSION
+from tracker.gear.weight_reducers import normalize_reducer_request
 
 router = APIRouter(
     prefix="/ui-api/gear",
@@ -127,6 +130,7 @@ class EvaluationReason(DTO):
 
 
 class FixedEvaluation(ObjectiveProjection):
+    carried_weight: CarriedGearWeight | None = None
     objective_values: dict[str, int | float | None] = Field(default_factory=dict)
     preparations: list[Preparation] = Field(default_factory=list)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
@@ -216,6 +220,7 @@ def calculate_evaluation(
         )
     validate_scenario(scenario, gear, snapshot)
     catalog = gear.equipment_catalog()
+    scenario = normalize_reducer_request(scenario, catalog.items)
     role_id = scenario.roles[0].id
     for field, loadouts in (
         ("baseline_loadouts", body.baseline_loadouts),
@@ -258,7 +263,10 @@ def calculate_evaluation(
         body.proposed_loadouts[role_id].values()
     )
     referenced.update(
-        p["item_id"] for side in (result["baseline"], result["proposed"]) for p in side["purchases"]
+        p["item_id"]
+        for side in (result["baseline"], result["proposed"])
+        for p in side["purchases"]
+        if p["item_id"] in catalog.items
     )
     referenced.update(
         item
@@ -275,6 +283,7 @@ def calculate_evaluation(
 
     assumptions = {
         **policy_context(scenario),
+        **carried_weight_assumptions(scenario.objectives),
         **wilderness_provenance(scenario),
         "tome_model_version": TOME_MODEL_VERSION,
         "fire_tome_pages": scenario.fire_tome_pages,
@@ -322,9 +331,9 @@ def calculate_evaluation(
 
         definitions = objective_definitions(scenario.objectives)
 
-        def measurements(side: dict[str, Any]) -> dict[str, float | None]:
+        def measured_side(side: dict[str, Any]) -> dict[str, Any]:
             if side["status"] != "valid":
-                return {}
+                return side
             objectives = scenario.objectives or ()
             cost = None
             if any(objective.kind == "gp_per_damage" for objective in objectives):
@@ -332,22 +341,29 @@ def calculate_evaluation(
                 cost = aggregate_cost(
                     [(scenario.roles[0].weight, side["running_cost"], side["performance"]["dps"])]
                 )
+            carried_weight = None
+            if any(objective.kind == "carried_weight_kg" for objective in objectives):
+                carried_weight = measure_carried_weight({role_id: side["equipment"]}, catalog.items)
             measured = objective_values(
-                objectives, side["performance"], cost, side.get("wilderness_risk")
+                objectives, side["performance"], cost, side.get("wilderness_risk"), carried_weight
             )
-            return {definition["id"]: measured.get(definition["id"]) for definition in definitions}
+            return {
+                **side,
+                **({"carried_weight": carried_weight} if carried_weight is not None else {}),
+                "objective_values": {d["id"]: measured.get(d["id"]) for d in definitions},
+            }
 
-        baseline = measurements(result["baseline"])
-        proposed = measurements(result["proposed"])
+        baseline = measured_side(result["baseline"])
+        proposed = measured_side(result["proposed"])
         result = {
             **result,
-            "baseline": {**result["baseline"], "objective_values": baseline},
-            "proposed": {**result["proposed"], "objective_values": proposed},
+            "baseline": baseline,
+            "proposed": proposed,
         }
         if result["deltas"] is not None:
             differences = {}
-            for key, old in baseline.items():
-                new = proposed.get(key)
+            for key, old in baseline["objective_values"].items():
+                new = proposed["objective_values"].get(key)
                 differences[key] = new - old if old is not None and new is not None else None
             result = {**result, "deltas": {**result["deltas"], "objective_values": differences}}
     else:

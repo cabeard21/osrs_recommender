@@ -106,6 +106,9 @@ class EquipmentDefinition(GearModel):
     ammo_type: str | None = None
     ammo_for: tuple[str, ...] = ()
     stackable: bool = False
+    worn_weight_grams: int | None = Field(default=None, strict=True)
+    inventory_weight_grams: int | None = Field(default=None, strict=True)
+    inventory_form_id: int | None = Field(default=None, gt=0, strict=True)
     requires: Requirement | None = None
     requirements_complete: bool = False
     unsupported_effects: tuple[str, ...] = ()

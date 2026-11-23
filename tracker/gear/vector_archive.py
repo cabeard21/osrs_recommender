@@ -410,7 +410,7 @@ def cost_baseline_axes(solution: Mapping[str, Any]) -> tuple[Any, ...]:
         cost or 0,
         values.get("wilderness_loss_gp", 0),
         tuple(
-            -values[key]
+            values[key] if key in MINIMIZED_OBJECTIVES else -values[key]
             for key in sorted(values)
             if key not in {"gp_per_damage", "wilderness_loss_gp"}
         ),

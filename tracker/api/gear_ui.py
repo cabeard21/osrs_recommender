@@ -192,7 +192,7 @@ class Preparation(DTO):
     usable_item_id: int
     market_item_id: int | None
     charging_required: bool
-    charges: Literal["unknown"]
+    charges: Literal["unknown", "not_applicable"]
     activation_reserve: list[ActivationResource]
     message: str
 

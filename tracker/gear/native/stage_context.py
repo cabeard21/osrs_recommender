@@ -142,6 +142,14 @@ def _pack_copy_adjustments(
     return offsets, bits, costs
 
 
+def pack_worn_grams(search: Any, scoring: Any) -> array[float]:
+    weights = array("d", [0])
+    for item_id in scoring.dense_ids[1:]:
+        grams = search.items[item_id].worn_weight_grams
+        weights.append(float("nan") if grams is None else grams)
+    return weights
+
+
 def pack_stage(search: Any, scoring: Any) -> StageData:
     acquisition = AcquisitionFacts.from_facts(search.facts, search.request)
     reason = preflight(search, acquisition)

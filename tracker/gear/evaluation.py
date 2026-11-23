@@ -17,6 +17,7 @@ from tracker.gear.models import CombatPerformance, EquipmentDefinition
 from tracker.gear.support import project_catalog
 from tracker.gear.vampyre_targets import PROFILES as VAMPYRES
 from tracker.gear.vampyre_targets import validate_access as validate_vampyre_access
+from tracker.gear.weight_reducers import normalize_reducer_request
 from tracker.gear.wilderness import WildernessRisk
 from tracker.gear.wilderness_ammo import idle_ammunition
 from tracker.gear.wilderness_runes import wilderness_spell_runes
@@ -104,6 +105,7 @@ def validate_request_context(
     """Validate catalog-bound request facts for every transport, before any search."""
     from tracker.gear.defensive_rolls import required_defensive_skills
 
+    request = normalize_reducer_request(request, items)
     objectives = getattr(request, "objectives", None)
     if objectives is None:
         required = required_defensive_skills(request.secondary_priority)
@@ -433,7 +435,7 @@ def evaluate_configurations(
     proposed_combat_option: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Both sides share exactly one account projection, price set and calculation time."""
-    request = request.prepared_weapon_locks()
+    request = normalize_reducer_request(request, catalog.items).prepared_weapon_locks()
     if request.potions.mode == "optimize":
         raise ValueError("Fixed evaluation requires an explicit fixed potion setup")
     if (

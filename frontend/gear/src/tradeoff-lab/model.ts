@@ -1,3 +1,4 @@
+import { formatKg } from "../api/carriedWeight";
 import savedExample from "./example.json";
 
 export type MetricKey = string;
@@ -16,6 +17,7 @@ export interface LabPoint {
   defence: number;
   prayer: number;
   values?: Record<string, number | null>;
+  carriedWeight?: import("../api/carriedWeight").CarriedWeight;
   costGp: number;
   equipment: { slot: string; itemId: number; name: string }[];
   potions: string[];
@@ -33,6 +35,7 @@ export interface LabExample {
   selectedId: string;
   points: LabPoint[];
   metrics?: LabMetric[];
+  roleNames?: Record<string, string>;
   sourceDescription?: string;
   sampleCount?: number;
 }
@@ -65,6 +68,7 @@ export function formatMetric(
   metric?: LabMetric,
 ): string {
   if (!Number.isFinite(value)) return "Unavailable";
+  if (metric?.unit === "kg") return formatKg(value);
   if (metric?.unit === "probability") return `${(value * 100).toFixed(2)}%`;
   if (metric?.unit === "GP") return `${value.toLocaleString()} GP`;
   if (metric?.unit === "percent") return `${value.toFixed(2)}%`;

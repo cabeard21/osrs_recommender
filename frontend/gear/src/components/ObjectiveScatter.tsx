@@ -1,3 +1,4 @@
+import { formatKg } from "../api/carriedWeight";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import "../styles/objective-scatter.css";
 
@@ -21,6 +22,7 @@ const value = (point: Point, id: string): number =>
   id === "dps" ? point.score : (point.objective_values[id] ?? NaN);
 const format = (number: number, axis: Axis) => {
   if (!Number.isFinite(number)) return "Unavailable";
+  if (axis.unit === "kg") return formatKg(number);
   if (axis.unit === "probability") return `${(number * 100).toFixed(2)}%`;
   if (axis.unit === "GP") return `${number.toLocaleString()} GP`;
   if (axis.unit === "GP/damage") return `${number.toFixed(4)} GP/damage`;
@@ -57,21 +59,24 @@ function plotScale(
   maxValue: number,
   costScale: CostScale,
   tickGap = 0.1,
+  min = 0,
 ) {
   const isCost = axis.id === runningCostId;
   const logarithmic = isCost && costScale === "log";
-  const max = isCost ? maxValue : maxValue || 1;
+  const max = isCost || min < 0 ? maxValue : maxValue || 1;
   const logMax = Math.log1p(max);
   const position = (value: number) => {
-    if (max === 0) return 0;
-    return logarithmic ? Math.log1p(value) / logMax : value / max;
+    if (max === min) return 0;
+    return logarithmic
+      ? Math.log1p(value) / logMax
+      : (value - min) / (max - min);
   };
   const ticks =
-    max === 0
+    max === min
       ? [0]
       : logarithmic
         ? logarithmicTicks(max, logMax, tickGap)
-        : [0, max / 2, max].filter((tick, index) => index === 0 || tick > 0);
+        : [min, min < 0 && max > 0 ? 0 : (min + max) / 2, max];
   const label = isCost
     ? `${axis.label} (GP/damage${logarithmic ? ", log scale" : ""})`
     : axis.label;
@@ -143,7 +148,9 @@ export function ObjectiveScatter({
   if (!y || !available.length)
     return <p>No chart values are available for these objectives.</p>;
   const plotted = available.filter(
-    (point) => value(point, x.id) >= 0 && value(point, y.id) >= 0,
+    (point) =>
+      (x.unit === "kg" || value(point, x.id) >= 0) &&
+      (y.unit === "kg" || value(point, y.id) >= 0),
   );
   const tabStop =
     plotted.find((point) => point.id === focusedId) ??
@@ -170,6 +177,10 @@ export function ObjectiveScatter({
       axis,
       Math.max(0, ...plotted.map((point) => value(point, axis.id))),
       costScale,
+      0.1,
+      axis.unit === "kg"
+        ? Math.min(0, ...plotted.map((point) => value(point, axis.id)))
+        : 0,
     );
   const xs = scaleFor(x);
   const ys = scaleFor(y);

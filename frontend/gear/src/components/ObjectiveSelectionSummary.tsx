@@ -1,3 +1,4 @@
+import { RoleWeightBreakdown } from "../components/RoleWeightBreakdown";
 import {
   slots,
   type JointSolutionDTO,
@@ -180,6 +181,12 @@ export function ObjectiveSelectionSummary({
         Selected setup at {formatTradeoffValue(selected.score)} DPS. Purchase
         cost {gp(selected.purchase_cost_gp)}.
       </p>
+      {selected.carried_weight && (
+        <RoleWeightBreakdown
+          weight={selected.carried_weight}
+          roleName={(id) => roles.find((r) => r.id === id)?.name ?? id}
+        />
+      )}
       <details>
         <summary>Gear and combat changes · {changes.length}</summary>
         {changes.length ? (

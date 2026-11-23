@@ -20,6 +20,7 @@ function groupPreparations(roles: RoleLoadout[]) {
   >();
   for (const role of roles) {
     for (const preparation of role.loadout.preparations ?? []) {
+      if (preparation.charges === "not_applicable") continue;
       const key = JSON.stringify([
         preparation.usable_item_id,
         preparation.source_item_id,
@@ -52,7 +53,28 @@ export function AcquisitionChecklist({
   });
   const joint = roleLoadouts.length > 1;
   const preparations = groupPreparations(roleLoadouts);
-  const itemName = (id: number) => itemById(id)?.name ?? `Item #${id}`;
+  const inventoryNames = new Map(
+    roleLoadouts.flatMap(({ loadout }) =>
+      (loadout.preparations ?? [])
+        .filter(
+          (p) => p.charges === "not_applicable" && p.market_item_id !== null,
+        )
+        .map(
+          (p) => [p.market_item_id!, itemById(p.usable_item_id)?.name] as const,
+        ),
+    ),
+  );
+  const itemName = (id: number) =>
+    itemById(id)?.name ?? inventoryNames.get(id) ?? `Item #${id}`;
+  const bankEquipment = (equipment: Record<string, number>) =>
+    equipmentFor(
+      Object.fromEntries(
+        Object.entries(equipment).map(([slot, id]) => [
+          slot,
+          itemById(id)?.facts?.equipment?.inventory_form_id ?? id,
+        ]),
+      ),
+    );
   const exactForm = (id: number) => {
     const item = itemById(id);
     return item ? `${item.name} (#${id})` : `Item #${id}`;
@@ -182,7 +204,7 @@ export function AcquisitionChecklist({
             >
               {joint && <p>{name}</p>}
               <BankTagExport
-                equipment={equipmentFor(loadout.equipment)}
+                equipment={bankEquipment(loadout.equipment)}
                 name={name}
               />
             </div>

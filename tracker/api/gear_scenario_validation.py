@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from pydantic_core import InitErrorDetails
 
 from tracker.gear.combat import SPELLS
+from tracker.gear.weight_reducers import compatible_locks
 
 Issue = Callable[[tuple[str | int, ...], str], None]
 _MIN_TARGET_DEFENCE_BONUS = -100  # Lowest bonus in the pinned NPC catalog.
@@ -86,7 +87,7 @@ def _validate_roles(
         role_locks = role.get("locks", {})
         if isinstance(role_locks, dict):
             for slot, item_id in role_locks.items():
-                if slot in locks and locks[slot] != item_id:
+                if slot in locks and not compatible_locks(locks[slot], item_id):
                     issue(("roles", index, "locks", slot), "Conflicting global and role locks")
                 if item_id is not None and item_id in excluded:
                     issue(

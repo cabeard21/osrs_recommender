@@ -14,7 +14,7 @@ from tracker.gear.native._scoring cimport ScoringContext, Score, required_defenc
 
 from tracker.gear.compact_states import SLOT_NAMES
 from tracker.gear.native import record
-from tracker.gear.native.stage_context import pack_stage, pack_runes
+from tracker.gear.native.stage_context import pack_stage, pack_runes, pack_worn_grams
 
 include "_transitions.pxi"
 
@@ -112,6 +112,8 @@ cdef class StageContext:
     cdef long long[::1] risk_unavoidable, risk_recoverable
     cdef int[::1] risk_priorities, risk_unpriced
     cdef int risk_kept_slots, risk_dimension
+    cdef int weight_dimension
+    cdef double[::1] worn_grams
     cdef object risk_feasible
     cdef int[::1] guarded_ammunition
     cdef int ammunition_users, ammunition_keepers, ammunition_attack_roles
@@ -159,6 +161,10 @@ cdef class StageContext:
             record("fallback", reason="Wilderness rune bounds exceed native range")
         self.risk_dimension = (scoring.objective_ids.index("wilderness_loss_gp") + 1
                                if "wilderness_loss_gp" in scoring.objective_ids else -1)
+        self.weight_dimension = (scoring.objective_ids.index("carried_weight_kg") + 1
+                                 if "carried_weight_kg" in scoring.objective_ids else -1)
+        if self.weight_dimension >= 0:
+            self.worn_grams = pack_worn_grams(search, scoring)
         self.risk_feasible = None
         if self.data.risk is not None:
             self.risk_budget = self.data.risk.limit
@@ -469,6 +475,7 @@ cdef class StageContext:
         cdef Sum totals[65]
         cdef Sum weight = Sum(0.0, 0.0)
         cdef double denominator, risk_bound = 0.0
+        cdef double worn_weight = 0
         cdef int dimensions = self.scoring.objective_kinds.shape[0] + 1
         cdef vector[unsigned char] mask
         if copy_delta == LLONG_MIN:
@@ -544,6 +551,14 @@ cdef class StageContext:
             output[dimension] = value(&totals[dimension]) / denominator
         if self.risk_dimension >= 0:
             output[self.risk_dimension] = -risk_bound
+        if self.weight_dimension >= 0:
+            # All roles in this expansion wear the same candidate. Multi-role
+            # combination calculates the distinct carried kit before retention.
+            for j in range(count):
+                worn_weight += self.worn_grams[physical[j]]
+            if not isfinite(worn_weight):
+                return False
+            output[self.weight_dimension] = -worn_weight / 1000.0
         return True
 
     cdef void identity(self, Candidate* row) except *:

@@ -116,6 +116,7 @@ from tracker.gear.transitions import inventory_slots, plan_transition
 from tracker.gear.vampyres import EFARITAYS_AID
 from tracker.gear.vampyres import MODEL_VERSION as VAMPYRE_MODEL_VERSION
 from tracker.gear.vector_archive import own_vector_archives
+from tracker.gear.weight_reducers import compatible_locks, normalize_reducer_request
 from tracker.gear.wilderness import WildernessPolicy, WildernessRisk
 from tracker.gear.wilderness_ammo import (
     consumes_ammunition,
@@ -293,7 +294,10 @@ class OptimizationRequest(BaseModel):
                 raise ValueError("special role requires parent_role and a weapon lock")
             if role.style == "special" and role.parent_role not in scored:
                 raise ValueError("special role parent must be a scored combat role")
-            if any(k in self.locks and self.locks[k] != v for k, v in role.locks.items()):
+            if any(
+                k in self.locks and not compatible_locks(self.locks[k], v)
+                for k, v in role.locks.items()
+            ):
                 raise ValueError("conflicting global and role locks")
             if any(v is not None and v <= 0 for v in role.locks.values()):
                 raise ValueError("locked item IDs must be positive")
@@ -505,6 +509,9 @@ class _Search:
             }
         )
         self.snapshot, self.request, self.items, self.facts = snapshot, request, items, facts
+        self.minimize_carried_weight = any(
+            goal.kind == "carried_weight_kg" for goal in request.objectives or ()
+        )
         self.wilderness = wilderness
         self.rune_limits_active = (
             wilderness is not None
@@ -660,12 +667,24 @@ class _Search:
             if prepared_eligible is not None
             else {i: item for i, item in items.items() if self.allowed(i)}
         )
+        self.unknown_weight_ids = (
+            frozenset(
+                i
+                for i, item in items.items()
+                if item.worn_weight_grams is None or item.inventory_weight_grams is None
+            )
+            if self.minimize_carried_weight
+            else frozenset()
+        )
+        self.omitted_weight_ids = self.unknown_weight_ids.intersection(eligible)
         # A singleton lower bound can prune before scoring expensive marginals.
         # In the Wilderness the item can be kept, so its purchase price is irrelevant.
         self.eligible = {
             i: item
             for i, item in eligible.items()
-            if (wilderness is None or i in wilderness.rules) and self.within_budget({i})
+            if i not in self.unknown_weight_ids
+            and (wilderness is None or i in wilderness.rules)
+            and self.within_budget({i})
         }
         self.guarded_ammunition = (
             frozenset(i for i, item in self.eligible.items() if only_ranged_ammunition(item))
@@ -2191,6 +2210,11 @@ class _Search:
     def solution(
         self, loadouts: Mapping[str, Mapping[str, int]], limit: int | None
     ) -> dict[str, Any] | None:
+        if self.unknown_weight_ids and any(
+            self.unknown_weight_ids.intersection(equipment.values())
+            for equipment in loadouts.values()
+        ):
+            return None
         if self.compact_states and not getattr(self, "_compact_solution_bypass", False):
             from tracker.gear.compact_solutions import compact_solution
 
@@ -2290,6 +2314,10 @@ class _Search:
         }
         if self.wilderness is not None:
             result["wilderness_risk"] = trip or self.wilderness_report(loadouts, base, runes)
+        if self.minimize_carried_weight:
+            from tracker.gear.carried_weight import measure_carried_weight
+
+            result["carried_weight"] = measure_carried_weight(loadouts, self.items)
         if hasattr(self, "running_prices"):
             from tracker.gear.running_frontier import add_solution_costs
 
@@ -2331,7 +2359,8 @@ def _objective_winner_key(solution: Mapping[str, Any]) -> tuple[Any, ...]:
     """Rank DPS baselines consistently across vector search and branch merges."""
     values = solution.get("objective_values", {})
     if (
-        "wilderness_loss_gp" in values
+        "carried_weight_kg" in values
+        or "wilderness_loss_gp" in values
         or "gp_per_damage" in values
         or any(
             definition["id"] == "gp_per_damage"
@@ -2444,7 +2473,7 @@ def prepare_optimization(
     price_records: Mapping[int, PriceRecord],
     now: datetime,
 ) -> PreparedOptimization:
-    request = request.prepared_weapon_locks()
+    request = normalize_reducer_request(request, catalog.items).prepared_weapon_locks()
     catalog = project_catalog(catalog, request.support_policy)
     validate_request_context(request, snapshot, catalog.items, content)
     projected = hypothetical_snapshot(
@@ -2543,7 +2572,7 @@ def optimize(
         if isinstance(request, OptimizationRequest)
         else OptimizationRequest.model_validate(request)
     )
-    request = request.prepared_weapon_locks()
+    request = normalize_reducer_request(request, catalog.items).prepared_weapon_locks()
     if request.potions.mode == "optimize":
         from tracker.gear.potion_search import optimize_potions
 
@@ -2902,10 +2931,12 @@ def optimize(
         for limit, solution in enumerate(winners)
     ]
     from tracker.gear.attack_reach import policy_context
+    from tracker.gear.carried_weight import carried_weight_assumptions
     from tracker.gear.size_damage import MODEL_VERSION as SIZE_DAMAGE_MODEL_VERSION
 
     assumptions = {
         **policy_context(request),
+        **carried_weight_assumptions(request.objectives),
         **wilderness_provenance(request),
         "elemental_amulet_model_version": ELEMENTAL_AMULET_MODEL_VERSION,
         "slayer_model_version": SLAYER_MODEL_VERSION,
@@ -3095,6 +3126,14 @@ def optimize(
         },
         "limitations": [
             "Best found within bounded candidates and beams; global optimum is not proven.",
+            *(
+                [
+                    "Carried gear weight unavailable for physical item IDs: "
+                    + ", ".join(str(i) for i in sorted(search.omitted_weight_ids))
+                ]
+                if search.omitted_weight_ids
+                else []
+            ),
             *no_solution_hints,
             *dict.fromkeys(
                 problem for role in request.roles if (problem := discipline_problem(role))

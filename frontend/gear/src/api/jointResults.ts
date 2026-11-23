@@ -1,3 +1,4 @@
+import { validateSolutionWeight } from "./carriedWeight";
 import { canonicalObjectives, objectiveValues } from "./objectives";
 import { validateRunningCost } from "./runningCosts";
 import { purchaseItemIds } from "./preparedPurchases";
@@ -78,6 +79,7 @@ export function parseJointSolution(
     Object.keys(byRole).some((key) => !roles.some((r) => r.id === key))
   )
     throw new Error("Joint result role IDs do not match submitted roles");
+  validateSolutionWeight(row, scenario.request);
   const loadouts = roles.map((role) => {
     const loadout = object(byRole[role.id]),
       equipment = equipmentMap(loadout.equipment);

@@ -80,6 +80,8 @@ from tracker.gear.void_ranged import REVISION as VOID_RANGED_REVISION
 from tracker.gear.void_ranged import TRADEABLE as VOID_RANGED_TRADEABLE
 from tracker.gear.void_ranged import apply_review as void_ranged_review
 from tracker.gear.void_ranged import requirement as void_ranged_requirement
+from tracker.gear.weight_catalog import load_weights
+from tracker.gear.weight_reducers import WEIGHT_REDUCER_REVIEW_VERSION, review_reducer
 
 # Reviewed ordinary forms only, not general ownership aliases. The pinned Wiki
 # equipment_aliases.json maps these Soul Wars/Emir's Arena rings to 11773.
@@ -204,6 +206,7 @@ def load_catalog(
     payload = (root / "catalog.json").read_bytes()
     if sha256(payload).hexdigest() != manifest["catalog_sha256"]:
         raise ValueError("Equipment catalog checksum mismatch")
+    weights, weight_payload = load_weights(root, manifest)
     source_path = root / "requirements.json"
     source_payload = (
         source_path.read_bytes() if use_requirements_source and source_path.exists() else b""
@@ -367,9 +370,10 @@ def load_catalog(
         if row["id"] in VOID_RANGED_FORMS:
             requirement = void_ranged_requirement(row["id"])
         acquisition = {item.acquisition for item in entries}
-        result[row["id"]] = EquipmentDefinition.model_validate(
+        definition = EquipmentDefinition.model_validate(
             {
                 **row,
+                **weights.get(row["id"], {}),
                 "spell_compatibility": (
                     _reviewed_spells(row["id"]) or row.get("spell_compatibility", ())
                 ),
@@ -429,6 +433,7 @@ def load_catalog(
                 "content_ids": tuple(item.id for item in entries),
             }
         )
+        result[definition.id] = review_reducer(definition)
     community_path = root / "community.json"
     community_payload = community_path.read_bytes() if community_path.exists() else b""
     community = json.loads(community_payload) if community_payload else {}
@@ -449,6 +454,8 @@ def load_catalog(
     revision = (
         sha256(
             payload
+            + weight_payload
+            + WEIGHT_REDUCER_REVIEW_VERSION.encode()
             + source_payload
             + community_payload
             + reviewed_spells
@@ -477,6 +484,8 @@ def load_catalog(
         if source_payload or community_payload
         else sha256(
             payload
+            + weight_payload
+            + WEIGHT_REDUCER_REVIEW_VERSION.encode()
             + reviewed_spells
             + equivalent_reviews
             + POWERED_REVISION

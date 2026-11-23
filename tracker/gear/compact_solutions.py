@@ -386,6 +386,10 @@ def _numeric_values(
         "maximum_actions": max((t["action_count"] for t in transitions), default=0),
         "potions": None,
     }
+    if search.minimize_carried_weight:
+        from tracker.gear.carried_weight import measure_carried_weight
+
+        values["carried_weight"] = measure_carried_weight(assignment, search.items)
     if hasattr(search, "running_prices"):
         if search.request.potions.mode == "fixed":
             values["potions"] = potion_summary(

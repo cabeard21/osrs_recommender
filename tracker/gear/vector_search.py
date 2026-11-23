@@ -9,6 +9,7 @@ from itertools import product
 from math import isnan
 from typing import Any
 
+from tracker.gear.carried_weight import UnknownGearWeight, heaviest_carried_weight_kg
 from tracker.gear.compact_costs import aggregate_numeric_cost
 from tracker.gear.evaluation import loadout_problems, planning_owned
 from tracker.gear.models import EquipmentDefinition
@@ -122,7 +123,9 @@ class VectorSearch:
                 return
             archives = survivors
         solution = materialize(solution if isinstance(solution, dict) else dict(solution))
-        annotated = annotate_solution(solution, self.objectives, self.search.request.roles)
+        annotated = annotate_solution(
+            solution, self.objectives, self.search.request.roles, items=self.search.items
+        )
         if (
             self.options.risk_index is not None
             and annotated["objective_values"].get("wilderness_loss_gp") is None
@@ -213,7 +216,10 @@ class VectorSearch:
                 )
                 if cleaned is not row:
                     cleaned = annotate_solution(
-                        materialize(cleaned), self.objectives, self.search.request.roles
+                        materialize(cleaned),
+                        self.objectives,
+                        self.search.request.roles,
+                        items=self.search.items,
                     )
                     if cleaned["objective_values"] == row["objective_values"] and all(
                         candidate["combat_option"] == row["loadouts"][rid]["combat_option"]
@@ -312,6 +318,14 @@ class VectorSearch:
         if previous is not None and previous[1]:
             return
         cursor = int(previous[0]) if previous is not None else 0
+        weight_index = self.options.weight_index
+        kit_weight = 0.0
+        if weight_index is not None:
+            try:
+                kit_weight = heaviest_carried_weight_kg(assignment, self.search.items)
+            except UnknownGearWeight:
+                self._remember_assignment(identity, cursor, complete=True)
+                return
         if any(
             loadout_problems(
                 assignment[role.id], self.search.items, self.search.facts, self.search.request, role
@@ -347,7 +361,7 @@ class VectorSearch:
         )
         if native and (not charge or self.nodes < self.phase_limit):
             cursor, complete = self._scan_native_options(
-                assignment, alternatives, caps, applicable, cursor, charge, trip_loss
+                assignment, alternatives, caps, applicable, cursor, charge, trip_loss, kit_weight
             )
             if complete:
                 self._remember_assignment(identity, cursor, complete=True)
@@ -364,6 +378,8 @@ class VectorSearch:
             if native:
                 self.native_option_attempts += 1
             vector = selected[0].values if single_vector else self.weighted(selected, roles)
+            if weight_index is not None and vector is not None:
+                vector = (*vector[:weight_index], -kit_weight, *vector[weight_index + 1 :])
             if trip_loss is not None and risk_index is not None:
                 loss = trip_loss(selected)
                 if loss is None:
@@ -396,6 +412,7 @@ class VectorSearch:
         position: int,
         charge: bool,
         trip_loss: Any,
+        kit_weight: float,
     ) -> tuple[int, bool]:
         """Consume a contiguous prefix, refreshing cap membership and baselines after offers."""
         indices = tuple(archive.native_candidate_index for archive in archives)
@@ -418,7 +435,14 @@ class VectorSearch:
                 if count <= 0:
                     return position, False
             consumed, selected, status = scan.scan(
-                position, count, indices, floor, trip_loss, self.search.cancelled
+                position,
+                count,
+                indices,
+                floor,
+                trip_loss,
+                self.search.cancelled,
+                weight_dimension=self.options.weight_index or -1,
+                weight_kg=kit_weight,
             )
             position += consumed
             self.option_attempts += consumed
@@ -519,6 +543,9 @@ class VectorSearch:
             for index in range(len(self.objectives) + 1)
         )
 
+        if (index := self.options.weight_index) is not None:
+            kit_weight = heaviest_carried_weight_kg(assignment, self.search.items)
+            projection = (*projection[:index], -kit_weight, *projection[index + 1 :])
         return self.risk_projection(
             projection, {item for gear in assignment.values() for item in gear.values()}
         )
@@ -598,6 +625,12 @@ class VectorSearch:
                 lanes.extend(supply_saving_lanes(self.search, slot, candidates))
             for objective in self.objectives:
                 components = ["defence_" + style for style in objective.styles]
+                if objective.kind == "carried_weight_kg":
+                    # Protect the lightest worn and backpack forms before truncation.
+                    weights = sorted(candidates, key=self.search.budget_item_rank)
+                    for field in ("worn_weight_grams", "inventory_weight_grams"):
+                        grams = {item: getattr(self.search.items[item], field) for item in weights}
+                        lanes.append(sorted(weights, key=grams.__getitem__))
                 if objective.kind == "defence_roll":
                     from tracker.gear.defensive_rolls import raw_player_defence_rolls
                     from tracker.gear.objectives import objective_value
@@ -868,7 +901,9 @@ class VectorSearch:
 
     def explore(self, seeds: Iterable[Mapping[str, Any] | None]) -> dict[str, Any]:
         candidates = tuple(
-            annotate_solution(seed, self.objectives, self.search.request.roles)
+            annotate_solution(
+                seed, self.objectives, self.search.request.roles, items=self.search.items
+            )
             for seed in seeds
             if seed is not None
         )

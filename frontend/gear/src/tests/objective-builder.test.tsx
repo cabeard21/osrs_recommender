@@ -113,22 +113,25 @@ it("supports all 64 functions with no smaller selection cap", () => {
       }),
     ).values(),
   ];
-  expect(
-    canonicalObjectives([
-      ...unique,
-      ...(
-        [
-          "accuracy",
-          "gp_per_damage",
-          "wilderness_loss_gp",
-          "prayer_bonus",
-          "melee_strength_bonus",
-          "ranged_strength_bonus",
-          "magic_damage_bonus",
-        ] as const
-      ).map((kind) => ({ kind })),
-    ]),
-  ).toHaveLength(64);
+  const existing = canonicalObjectives([
+    ...unique,
+    ...(
+      [
+        "accuracy",
+        "gp_per_damage",
+        "wilderness_loss_gp",
+        "prayer_bonus",
+        "melee_strength_bonus",
+        "ranged_strength_bonus",
+        "magic_damage_bonus",
+      ] as const
+    ).map((kind) => ({ kind })),
+  ]);
+  expect(existing).toHaveLength(64);
+  expect(canonicalObjectives([...existing, existing[0]])).toHaveLength(64);
+  expect(() =>
+    canonicalObjectives([...existing, { kind: "carried_weight_kg" }]),
+  ).toThrow(/64/);
 });
 it("edits reductions, removes groups, and applies preset shortcuts", async () => {
   const user = userEvent.setup();

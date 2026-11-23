@@ -8,6 +8,7 @@ from copy import copy
 from dataclasses import dataclass
 from typing import Any
 
+from tracker.gear.carried_weight import heaviest_carried_weight_kg
 from tracker.gear.combat import (
     evaluate_prepared_loadout,
     evaluate_prepared_score,
@@ -47,6 +48,17 @@ class VectorOptions:
     def __init__(self, search: Any) -> None:
         self.search = search
         self.objectives = search.request.objectives or ()
+        self.role_objectives = tuple(
+            obj for obj in self.objectives if obj.kind != "carried_weight_kg"
+        )
+        self.weight_index = next(
+            (
+                index
+                for index, obj in enumerate(self.objectives, start=1)
+                if obj.kind == "carried_weight_kg"
+            ),
+            None,
+        )
         self.risk_index = next(
             (
                 i
@@ -101,10 +113,16 @@ class VectorOptions:
             if role.style != "special":
                 included.append((role, values or (0.0,) * (len(self.objectives) + 1)))
         weight = sum(role.weight for role, _ in included) or 1
-        return tuple(
+        projection = tuple(
             sum(values[index] * role.weight for role, values in included) / weight
             for index in range(len(self.objectives) + 1)
         )
+        if self.weight_index is None:
+            return projection
+        # All roles in this beam wear this one equipment set, including a
+        # special-only beam whose role has no combat projection.
+        kg = heaviest_carried_weight_kg({"shared": equipment}, self.search.items)
+        return (*projection[: self.weight_index], -kg, *projection[self.weight_index + 1 :])
 
     def envelope(self, equipment: Mapping[str, int], role: Any) -> tuple[float, ...] | None:
         """Keep only small numeric component maxima for partial-beam ranking."""
@@ -151,6 +169,9 @@ class VectorOptions:
     ) -> OptionVariant:
         numeric = None
         values = dict(measured)
+        if self.weight_index is not None:
+            # Replaced by the complete kit's weight before combination screening.
+            values["carried_weight_kg"] = 0.0
         if self.risk_index is not None:
             # The partial beam and the complete trip each supply their joint value.
             values["wilderness_loss_gp"] = 0.0
@@ -279,7 +300,7 @@ class VectorOptions:
                 "bonuses": score.bonuses.__dict__,
                 "player_defence_rolls": score.player_defence_rolls,
             }
-            values = objective_values(self.objectives, public)
+            values = objective_values(self.role_objectives, public)
             result.append(self._variant(equipment, selected, option, public, values))
         return tuple(result)
 
@@ -386,7 +407,9 @@ class VectorOptions:
             )
         solution = _Search.solution(variant, assignment, None)
         return (
-            annotate_solution(solution, self.objectives, self.search.request.roles)
+            annotate_solution(
+                solution, self.objectives, self.search.request.roles, items=self.search.items
+            )
             if solution
             else None
         )
