@@ -12,6 +12,7 @@ from types import MappingProxyType
 from typing import Literal
 
 from tracker.domain.types import QuestStatus
+from tracker.gear.vampyres import BLISTERWOOD_FLAIL_REQUIRED
 
 TIER_NOTES = MappingProxyType(
     {
@@ -44,9 +45,13 @@ class TargetReview:
     quest: QuestGate | None = None
     slayer: int | None = None
     task_eligible: bool = True
+    blisterwood_flail_only: bool = False
 
     def limitations(self) -> list[str]:
-        notes = [TIER_NOTES[self.trait], self.note]
+        requirement = (
+            BLISTERWOOD_FLAIL_REQUIRED if self.blisterwood_flail_only else TIER_NOTES[self.trait]
+        )
+        notes = [requirement, self.note]
         if self.quest:
             access = f"{self.slayer} Slayer and " if self.slayer else ""
             notes.append(f"Access requires {access}{self.quest.description}.")
@@ -126,6 +131,18 @@ _GROUPS = (
             "DPS uses Kroy's base combat stats and excludes scripted encounter mechanics.",
         ),
         ((9560, ""),),
+    ),
+    (
+        "Vanstrom Klause",
+        TargetReview(
+            "vampyre3",
+            "immune",
+            "DPS uses Vanstrom's base combat stats. The second phase, lightning, healing and "
+            "Attack drain are outside the calculation.",
+            quest=_DARKMEYER,
+            blisterwood_flail_only=True,
+        ),
+        ((9567, "Sins of the Father"),),
     ),
     ("Vampyre Juvinate", _JUVINATE, ((4427, "Level 54 (Burgh de Rott)"),)),
     (

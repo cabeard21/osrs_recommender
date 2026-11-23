@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from tracker.content.schema import ItemSlot
 from tracker.gear.vampyre_combat import target_tier
 from tracker.gear.vampyres import (
+    BLISTERWOOD_FLAIL_ONLY,
+    BLISTERWOOD_FLAIL_REQUIRED,
     BLISTERWOOD_STAKE,
     EFARITAYS_AID,
     RODS,
@@ -125,7 +127,9 @@ def no_solution_hints(roles: tuple[RoleConfig, ...]) -> list[str]:
     hints = []
     for role in roles:
         n = tier(role)
-        if n == 2:
+        if role.target and BLISTERWOOD_FLAIL_ONLY in role.target.traits:
+            hints.append(f"{role.id}: {BLISTERWOOD_FLAIL_REQUIRED}")
+        elif n == 2:
             hints.append(
                 f"{role.id}: check weapon, ammunition and ring locks. A tier 2 vampyre requires "
                 "a silver attack, an Ivandis or stronger vampyrebane attack, or Efaritay's aid."

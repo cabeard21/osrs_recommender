@@ -53,19 +53,27 @@ test("a restored Feral Vampyre target accepts ordinary gear and reports its tier
   );
 });
 
-test("the NPC picker explains the restriction on the Vanstrom quest encounter", async ({
+test("the NPC picker offers the Sins of the Father Vanstrom encounter", async ({
   page,
 }) => {
   await page.goto("/gear-next/");
   const vanstrom = await selectNpc(page, 9567);
-  expect(vanstrom.support_status).toBe("unsupported");
+  expect(vanstrom.support_status).toBe("supported");
+  await expect(page.getByLabel("Vampyre target restrictions")).toContainText(
+    "crush attacks with the Blisterwood flail",
+  );
+  await expect(page.getByLabel("Vampyre target restrictions")).toContainText(
+    "second phase",
+  );
+  const other = await selectNpc(page, 3734);
+  expect(other.support_status).toBe("unsupported");
   await expect(
     page
       .getByRole("alert")
       .filter({ hasText: /Vanstrom Klause cannot be optimized/ }),
   ).toBeVisible();
   await expect(
-    page.getByText(vanstrom.reasons[0], { exact: true }).first(),
+    page.getByText(other.reasons[0], { exact: true }).first(),
   ).toBeVisible();
 });
 

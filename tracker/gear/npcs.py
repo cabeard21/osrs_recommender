@@ -19,6 +19,7 @@ from tracker.gear.models import CombatTarget
 from tracker.gear.vampyre_targets import PROFILES as VAMPYRES
 from tracker.gear.vampyre_targets import REVISION as VAMPYRE_TARGET_REVISION
 from tracker.gear.vampyre_targets import TIER_NOTES, unsupported_reason
+from tracker.gear.vampyres import BLISTERWOOD_FLAIL_ONLY, BLISTERWOOD_FLAIL_REQUIRED
 from tracker.gear.vampyres import REVISION as VAMPYRE_REVISION
 
 if TYPE_CHECKING:
@@ -179,6 +180,11 @@ class NpcCatalog:
                             (attributes & ORDINARY_ATTRIBUTES)
                             | (tiers if vampyre else set())
                             | (
+                                {BLISTERWOOD_FLAIL_ONLY}
+                                if vampyre and vampyre.blisterwood_flail_only
+                                else set()
+                            )
+                            | (
                                 {"holy_water_special"}
                                 if row["id"] in HOLY_WATER_SPECIAL_TARGETS
                                 else set()
@@ -325,6 +331,18 @@ def discipline_problem(role: RoleConfig) -> str | None:
     if role.target_selection is None:
         return None
     entry = npc_catalog().detail(role.target_selection.key)
+    # An automatic melee branch starts with a placeholder style.
+    if (
+        entry["support_status"] == "supported"
+        and BLISTERWOOD_FLAIL_ONLY in entry["target"]["traits"]
+        and role.style != "crush"
+        and (
+            role.style not in {"stab", "slash"}
+            or role.combat_options is None
+            or "crush" not in role.combat_options.attack_types
+        )
+    ):
+        return BLISTERWOOD_FLAIL_REQUIRED
     if (
         role.style == "magic"
         and entry["support_status"] == "supported"

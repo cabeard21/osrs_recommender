@@ -30,6 +30,39 @@ def test_npc_detail_preserves_target_size(client):
     assert detail["target"]["size"] == 5
 
 
+def test_acidic_bloodveld_catalog_defences_roundtrip(client, session_factory):
+    body = scenario(client, session_factory, ids=(861, 892))
+    result = client.get("/ui-api/gear/targets", params={"q": "9573"}).json()
+    entry = result["items"][0]
+    detail = client.get("/ui-api/gear/targets/" + entry["key"]).json()
+    target = detail["target"]
+    assert target["name"] == "Acidic Bloodveld"
+    body["roles"][0].update(
+        style="ranged",
+        target=target,
+        target_selection={"key": entry["key"], "catalog_revision": result["catalog_revision"]},
+    )
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 200, reply.text
+    payload = reply.json()
+    submitted = payload["scenario"]["roles"][0]["target"]
+    assert set(submitted["bonuses"].values()) == {-100}
+    assert {submitted[f"ranged_{subtype}"] for subtype in ("light", "standard", "heavy")} == {-100}
+    assert payload["result"]["selected_solution"]["score"] > 0
+
+
+@pytest.mark.parametrize("value", [-101, 10001, -100.0, True])
+def test_custom_target_defence_bounds(client, session_factory, value):
+    body = scenario(client, session_factory)
+    body["roles"][0]["target"] = {"ranged_heavy": value, "bonuses": {"slash": value}}
+    reply = client.post("/ui-api/gear/optimizations", json=body)
+    assert reply.status_code == 422, reply.text
+    assert {error["path"] for error in reply.json()["error"]["fields"]} == {
+        "roles.0.target.ranged_heavy",
+        "roles.0.target.bonuses.slash",
+    }
+
+
 @pytest.mark.parametrize("endpoint", ["optimizations", "evaluations"])
 def test_sentinel_selection_reports_required_quest_on_both_routes(
     client, session_factory, endpoint
