@@ -13,6 +13,7 @@ export const atomicObjectives = [
   ["melee_strength_bonus", "Melee strength"],
   ["ranged_strength_bonus", "Ranged strength"],
   ["magic_damage_bonus", "Magic damage"],
+  ["carried_weight_kg", "Carried gear weight (kg)"],
   ["gp_per_damage", "Running cost (GP per damage)"],
   ["wilderness_loss_gp", "Wilderness loss if PK’d (GP)"],
   ["accuracy", "Accuracy"],
@@ -29,7 +30,8 @@ export interface ObjectiveDefinition {
   id: string;
   kind: Objective["kind"];
   label: string;
-  unit: "roll" | "bonus" | "probability" | "percent" | "GP/damage" | "GP";
+  unit:
+    "roll" | "bonus" | "probability" | "percent" | "GP/damage" | "GP" | "kg";
   direction?: "maximize" | "minimize";
   styles?: DefenceStyle[];
   aggregation?: "minimum" | "mean";
@@ -76,9 +78,9 @@ export function canonicalObjectives(value: unknown): Objective[] {
       throw new Error("Choose a valid objective.");
     return { kind: row.kind as AtomicObjective };
   });
-  return [
-    ...new Map(goals.map((goal) => [objectiveId(goal), goal])).values(),
-  ].sort((a, b) =>
+  const unique = new Map(goals.map((goal) => [objectiveId(goal), goal]));
+  if (unique.size > 64) throw new Error("Choose up to 64 distinct objectives.");
+  return [...unique.values()].sort((a, b) =>
     objectiveId(a) < objectiveId(b)
       ? -1
       : objectiveId(a) > objectiveId(b)

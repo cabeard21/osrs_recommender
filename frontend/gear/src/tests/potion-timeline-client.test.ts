@@ -415,3 +415,65 @@ describe("potion timeline transport", () => {
     ).rejects.toThrow(/combat option/i);
   });
 });
+it("validates frozen kit weights in every sample including an unscored switch", async () => {
+  const { parsePotionTimeline } = await import("../api/potionTimelines");
+  const weight = {
+    heaviest_kg: 1.6,
+    roles: {
+      [role]: { worn_kg: -3, backpack_kg: 1, total_kg: -2 },
+      spec: { worn_kg: 1, backpack_kg: 0.6, total_kg: 1.6 },
+    },
+  };
+  const selected = {
+    ...solution,
+    objective_values: { carried_weight_kg: 1.6 },
+    carried_weight: weight,
+  };
+  const run = {
+    ...result,
+    scenario: {
+      ...scenario,
+      request: {
+        ...scenario.request,
+        roles: [
+          scenario.request.roles[0],
+          { ...scenario.request.roles[0], id: "spec", utility: true },
+        ],
+        objectives: [{ kind: "carried_weight_kg" as const }],
+      },
+    },
+  };
+  const withWeight = (row: ReturnType<typeof point>) => ({
+    ...row,
+    objective_values: { carried_weight_kg: 1.6 },
+    roles: {
+      [role]: {
+        ...row.roles[role],
+        objective_values: { carried_weight_kg: -2 },
+      },
+    },
+  });
+  const data = {
+    ...timeline(),
+    carried_weight: weight,
+    baseline: withWeight(point(0, 4)),
+    samples: [withWeight(point(0, 5)), withWeight(point(60, null))],
+  };
+  expect(
+    parsePotionTimeline(data, run, selected, [role]).carried_weight,
+  ).toEqual(weight);
+  expect(() =>
+    parsePotionTimeline(
+      {
+        ...data,
+        samples: [
+          data.samples[0],
+          { ...data.samples[1], objective_values: { carried_weight_kg: -2 } },
+        ],
+      },
+      run,
+      selected,
+      [role],
+    ),
+  ).toThrow(/measurements/);
+});

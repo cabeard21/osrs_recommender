@@ -48,6 +48,17 @@ export function ObjectiveBuilder({
       setError("Enable Wilderness to use this objective.");
       return;
     }
+    if (next.length > 64) {
+      try {
+        // Empty defence groups are editable drafts and do not count as objectives.
+        canonicalObjectives(
+          next.filter((g) => g.kind !== "defence_roll" || g.styles.length),
+        );
+      } catch (err) {
+        setError((err as Error).message);
+        return;
+      }
+    }
     setError("");
     onChange(next);
   };

@@ -282,12 +282,25 @@ class ObjectiveProjection(DTO):
                 "objective_run",
                 "run_id",
                 "wilderness_risk",
+                "carried_weight",
             }
             or value
         }
 
 
+class RoleGearWeight(DTO):
+    worn_kg: float = Field(allow_inf_nan=False)
+    backpack_kg: float = Field(allow_inf_nan=False)
+    total_kg: float = Field(allow_inf_nan=False)
+
+
+class CarriedGearWeight(DTO):
+    heaviest_kg: float = Field(allow_inf_nan=False)
+    roles: dict[str, RoleGearWeight]
+
+
 class Solution(ObjectiveProjection):
+    carried_weight: CarriedGearWeight | None = None
     objective_definitions: list[dict[str, Any]] = Field(default_factory=list)
     objective_values: dict[str, int | float] = Field(default_factory=dict)
     unowned_untradeable_item_ids: list[int] = Field(default_factory=list)
@@ -448,6 +461,7 @@ def same_origin(request: Request) -> None:
 def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any) -> None:
     from tracker.gear.evaluation import wilderness_prayer_problem
     from tracker.gear.npcs import resolve_target
+    from tracker.gear.weight_reducers import normalize_reducer_request
 
     if problem := wilderness_prayer_problem(body, snapshot):
         raise error("invalid_request", problem, field="wilderness.protect_item")
@@ -484,6 +498,10 @@ def validate_scenario(body: BrowserOptimizationRequest, gear: Any, snapshot: Any
                 f"roles.{index}.target_selection",
             ) from exc
     catalog = gear.equipment_catalog()
+    try:
+        body = normalize_reducer_request(body, catalog.items)
+    except ValueError as exc:
+        raise error("invalid_request", str(exc)) from exc
     for field, keys, allowed in (
         ("skill_overrides", body.skill_overrides, gear.content.skills),
         ("quest_overrides", body.quest_overrides, gear.content.quests),
@@ -669,7 +687,11 @@ def calculate(
                 if solution is None:
                     continue
                 referenced.update(solution["carried_item_ids"])
-                referenced.update(p["item_id"] for p in solution["purchases"])
+                referenced.update(
+                    p["item_id"]
+                    for p in solution["purchases"]
+                    if p["item_id"] in gear.equipment_catalog().items
+                )
                 for loadout in solution["loadouts"].values():
                     referenced.update(loadout["equipment"].values())
                     referenced.update(

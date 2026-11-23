@@ -236,6 +236,7 @@ def pack(search: Any) -> dict[str, Any]:
         "accuracy": 5,
         "gp_per_damage": 6,
         "wilderness_loss_gp": 7,
+        "carried_weight_kg": 8,
     }
     if len(objectives) > 64:
         raise ValueError("Too many native objectives")

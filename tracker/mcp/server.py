@@ -273,6 +273,8 @@ def build_server(
             Include {"kind":"wilderness_loss_gp"} with a wilderness policy to
             minimize estimated GP lost on death. attacks_per_setup defaults to
             100. max_loss_gp is optional for fixed trips, and budget_gp caps purchases.
+            Include {"kind":"carried_weight_kg"} to minimize signed gear weight.
+            Multi counts worn gear and packed switches and scores the heaviest role.
             """
             account = accounts.get_snapshot()
             records = prices.get_prices()

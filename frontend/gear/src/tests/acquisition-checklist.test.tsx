@@ -327,3 +327,40 @@ it("replaces acquisition steps and closes the old export when the selection chan
     "1,1,6570,0,1",
   );
 });
+it("keeps automatic worn forms out of charging tasks and exports their inventory ID", async () => {
+  const row: Preparation = {
+    ...preparation,
+    source_item_id: null,
+    usable_item_id: 10074,
+    market_item_id: 10071,
+    charges: "not_applicable",
+    charging_required: false,
+  };
+  const cape = {
+    id: 10074,
+    name: "Spottier cape",
+    facts: { equipment: { inventory_form_id: 10071 } },
+  } as unknown as Item;
+  render(
+    <AcquisitionChecklist
+      solution={{
+        ...selected,
+        loadouts: {
+          boss: { ...loadout, equipment: { cape: 10074 }, preparations: [row] },
+        },
+        purchases: [{ item_id: 10071, cost_gp: 500, conditional: false }],
+      }}
+      roles={[roles[0]]}
+      itemById={(id) => (id === 10074 ? cape : undefined)}
+      selectionKey="cape"
+    />,
+  );
+  expect(screen.getByRole("region", { name: "Buy" })).toHaveTextContent(
+    "Spottier cape",
+  );
+  expect(screen.queryByRole("region", { name: "Prepare" })).toBeNull();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Export mobile bank tag" }),
+  );
+  expect(screen.getByLabelText("Bank tag code")).toHaveValue("1,1,10071,0,1");
+});

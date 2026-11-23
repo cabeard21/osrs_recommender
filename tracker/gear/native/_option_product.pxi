@@ -241,7 +241,8 @@ cdef class OptionProduct:
         return False
 
     cdef tuple scan_chunk(self, Py_ssize_t* digits, Py_ssize_t count, ProductIndexes* indexes,
-                          double floor, object trip_loss, object cancelled):
+                          double floor, object trip_loss, object cancelled,
+                          int weight_dimension, double weight_kg):
         cdef double row[65]
         cdef RowKind kind
         cdef Py_ssize_t i
@@ -251,6 +252,8 @@ cdef class OptionProduct:
             if cancelled is not None and cancelled():
                 return i, None, "cancelled"
             kind = self.pair_row(digits, row) if self.unit_pair else self.weighted_row(digits, row)
+            if weight_dimension > 0:
+                row[weight_dimension] = -weight_kg
             selected = None
             if trip_loss is not None:
                 selected = self.selection(digits)
@@ -277,7 +280,7 @@ cdef class OptionProduct:
         return count, None, None
 
     def scan(self, start, count, tuple indices not None, double baseline_floor, trip_loss=None,
-             cancelled=None):
+             cancelled=None, *, int weight_dimension=-1, double weight_kg=0):
         """Return consumed count, first surviving selection, and optional stop reason."""
         # Only builtin integer arithmetic may supply the offsets for our raw arrays.
         if type(start) is not int or type(count) is not int:
@@ -290,6 +293,12 @@ cdef class OptionProduct:
             raise ValueError("Invalid trip loss callback")
         if cancelled is not None and not callable(cancelled):
             raise ValueError("Invalid cancellation callback")
+        if weight_dimension != -1 and (
+            not 1 <= weight_dimension < self.width
+            or weight_dimension in (self.cost_index, self.risk_index)
+            or not isfinite(weight_kg)
+        ):
+            raise ValueError("Invalid carried weight dimension or value")
         cdef ProductIndexes indexes
         cdef ArchiveIndex archive
         cdef int cap
@@ -312,7 +321,8 @@ cdef class OptionProduct:
         consumed = 0
         while remaining:
             used, selected, status = self.scan_chunk(digits, min(remaining, PY_SSIZE_T_MAX),
-                                                     &indexes, baseline_floor, trip_loss, cancelled)
+                                                     &indexes, baseline_floor, trip_loss, cancelled,
+                                                     weight_dimension, weight_kg)
             consumed += used
             if selected is not None or status is not None:
                 return consumed, selected, status

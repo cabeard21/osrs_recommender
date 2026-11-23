@@ -1,3 +1,4 @@
+import { formatKg } from "../api/carriedWeight";
 import { formatDefenceRoll } from "./defenceRollFormat";
 import { PotionTimelinePanel } from "./PotionTimelinePanel";
 import { objectiveId, objectiveLabel } from "../api/objectives";
@@ -154,18 +155,26 @@ export function SecondaryPrioritySummary({
                 {objectiveLabel(objective)}:{" "}
                 {typeof value !== "number"
                   ? "not measured"
-                  : objective.kind === "defence_roll"
-                    ? `${formatDefenceRoll(value)} roll`
-                    : objective.kind === "accuracy"
-                      ? `${(value * 100).toFixed(2)}% hit chance`
-                      : objective.kind === "wilderness_loss_gp"
-                        ? `${value.toLocaleString()} GP`
-                        : objective.kind === "gp_per_damage"
-                          ? `${value.toFixed(4)} GP/damage`
-                          : `${value.toFixed(2)}${objective.kind === "magic_damage_bonus" ? "%" : " bonus"}`}
+                  : objective.kind === "carried_weight_kg"
+                    ? formatKg(value)
+                    : objective.kind === "defence_roll"
+                      ? `${formatDefenceRoll(value)} roll`
+                      : objective.kind === "accuracy"
+                        ? `${(value * 100).toFixed(2)}% hit chance`
+                        : objective.kind === "wilderness_loss_gp"
+                          ? `${value.toLocaleString()} GP`
+                          : objective.kind === "gp_per_damage"
+                            ? `${value.toFixed(4)} GP/damage`
+                            : `${value.toFixed(2)}${objective.kind === "magic_damage_bonus" ? "%" : " bonus"}`}
               </p>
             );
           })}
+          {objectives.some((o) => o.kind === "carried_weight_kg") && (
+            <p>
+              Carried gear weight includes worn gear and backpack switches.
+              Multi uses the heaviest configured role, including utility roles.
+            </p>
+          )}
           <p>
             Defence groups combine their rolls within each role before applying
             normalized active-time weights. Utility roles do not contribute.

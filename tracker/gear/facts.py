@@ -23,6 +23,8 @@ from tracker.gear.tomes import ASSUMPTION as TOME_ASSUMPTION
 from tracker.gear.tomes import review as tome_review
 from tracker.gear.vampyres import ACQUISITION_REQUIREMENTS as VAMPYRE_ACQUISITION
 from tracker.gear.void_ranged import ELITE_ROBES, ELITE_TOPS, ELITE_UPGRADE
+from tracker.gear.weight_reducers import ACQUISITION_REQUIREMENTS as REDUCER_ACQUISITION
+from tracker.gear.weight_reducers import REVIEWED_FORMS as REDUCER_FORMS
 
 # New purchases use ordinary editions; owned editions keep exact preparation routes.
 _POWERED_MARKET_FORMS = MARKET_FORMS
@@ -120,7 +122,24 @@ def equipment_fact(
     preparation = None
     staff = review(item.id)
     market_id = item.id if item.tradeable else None
-    if item.id in REVENANT_FORMS:
+    if item.id in REDUCER_FORMS and (bag_id := getattr(item, "inventory_form_id", None)):
+        market_id = bag_id if item.tradeable else None
+        source_id = item.id if ownership["status"] == "owned" else None
+        if source_id is None and bag_id not in excluded_item_ids:
+            bag = observed_ownership(snapshot, bag_id)
+            if bag["status"] == "owned":
+                source_id = bag_id
+                planning_ownership = {**bag, "meaning": "Owned matching inventory form"}
+        preparation = {
+            "source_item_id": source_id,
+            "usable_item_id": item.id,
+            "market_item_id": market_id,
+            "charging_required": False,
+            "charges": "not_applicable",
+            "activation_reserve": [],
+            "message": f"Equipping {item.name} changes inventory ID {bag_id} to worn ID {item.id}.",
+        }
+    elif item.id in REVENANT_FORMS:
         market_id = market_form(item.id, content, prices, now, excluded_item_ids)
         source_id = None
         for candidate in preferred_sources(item.id):
@@ -263,7 +282,9 @@ def equipment_fact(
         resolve_price(authored, prices.get(market_id), now=now) if market_id is not None else None
     )
     acquisition_gate: Requirement | None = VAMPYRE_ACQUISITION.get(item.id)
-    if item.id in SALVE_FORMS:
+    if item.id in REDUCER_ACQUISITION:
+        acquisition_gate = REDUCER_ACQUISITION[item.id]
+    elif item.id in SALVE_FORMS:
         acquisition_gate = acquisition_requirement(item.id)
     elif item.id in ELITE_TOPS or item.id in ELITE_ROBES:
         acquisition_gate = ELITE_UPGRADE
@@ -275,7 +296,7 @@ def equipment_fact(
                     snapshot, acquisition_gate
                 ).model_dump(mode="json")
             }
-            if acquisition_gate is not None and ownership["status"] != "owned"
+            if acquisition_gate is not None and planning_ownership["status"] != "owned"
             else {}
         ),
         "name": item.name,

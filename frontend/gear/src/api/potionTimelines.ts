@@ -1,3 +1,4 @@
+import { validateCarriedWeight } from "../api/carriedWeight";
 import {
   canonicalObjectives,
   objectiveId,
@@ -41,27 +42,50 @@ export function parsePotionTimeline(
   const objectives = result.scenario.request.objectives;
   const goals =
     objectives === undefined ? undefined : canonicalObjectives(objectives);
+  if (goals?.some((o) => o.kind === "carried_weight_kg")) {
+    validateCarriedWeight(
+      row.carried_weight,
+      result.scenario.request.roles.map((r) => r.id),
+      solution.objective_values?.carried_weight_kg,
+    );
+    for (const [id, role] of Object.entries(row.carried_weight.roles)) {
+      const expected = solution.carried_weight?.roles[id];
+      if (
+        role.worn_kg !== expected?.worn_kg ||
+        role.backpack_kg !== expected.backpack_kg
+      )
+        throw new Error(
+          "Potion timeline weight does not match the selected kit",
+        );
+    }
+  }
   const validateObjectives = (
     point: Record<string, unknown>,
-    aggregate = true,
+    roleId?: string,
   ) => {
     if (!goals) return;
     const ids = goals
       .map(objectiveId)
-      .filter((id) => aggregate || id !== "wilderness_loss_gp");
+      .filter((id) => !roleId || id !== "wilderness_loss_gp");
     const values = object(point.objective_values ?? {});
     if (
       Object.keys(values).some((id) => !ids.includes(id)) ||
       ids.some((id) =>
-        id === "wilderness_loss_gp"
-          ? !Number.isSafeInteger(values[id]) ||
-            Number(values[id]) < 0 ||
-            values[id] !== solution.wilderness_risk?.loss_gp
-          : id === "gp_per_damage"
-            ? values[id] != null && !nullableNumber(values[id], true)
-            : point.dps === null
-              ? values[id] !== undefined && !nullableNumber(values[id])
-              : typeof values[id] !== "number" || !Number.isFinite(values[id]),
+        id === "carried_weight_kg"
+          ? values[id] !==
+            (roleId
+              ? solution.carried_weight?.roles[roleId]?.total_kg
+              : solution.carried_weight?.heaviest_kg)
+          : id === "wilderness_loss_gp"
+            ? !Number.isSafeInteger(values[id]) ||
+              Number(values[id]) < 0 ||
+              values[id] !== solution.wilderness_risk?.loss_gp
+            : id === "gp_per_damage"
+              ? values[id] != null && !nullableNumber(values[id], true)
+              : point.dps === null
+                ? values[id] !== undefined && !nullableNumber(values[id])
+                : typeof values[id] !== "number" ||
+                  !Number.isFinite(values[id]),
       )
     )
       throw new Error("Invalid potion timeline objective measurements");
@@ -84,9 +108,9 @@ export function parsePotionTimeline(
       roleIds.some((id) => !(id in roles))
     )
       throw new Error("Invalid potion timeline measurement");
-    for (const value of Object.values(roles)) {
+    for (const [id, value] of Object.entries(roles)) {
       const role = object(value);
-      validateObjectives(role, false);
+      validateObjectives(role, id);
       if (
         !nullableNumber(role.dps, true) ||
         !nullableNumber(role.secondary_value) ||

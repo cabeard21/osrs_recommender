@@ -1,3 +1,4 @@
+import { validateSolutionWeight } from "./carriedWeight";
 import {
   canonicalObjectives,
   objectiveId,
@@ -391,6 +392,7 @@ export function parseOptimization(
       true,
       selected.objective_values,
     );
+    validateSolutionWeight(selected, scenario.request);
     validateRunningCost(selected.running_cost);
     validateSecondaryPriority(selected, priority, true);
     if (
@@ -568,6 +570,10 @@ export function parseOptimization(
       !Array.isArray(definitions) ||
       definitions.some((v) => {
         const d = object(v);
+        if (d.id === "carried_weight_kg")
+          return (
+            d.kind !== d.id || d.unit !== "kg" || d.direction !== "minimize"
+          );
         return (
           (d.id === "gp_per_damage" || d.id === "wilderness_loss_gp") &&
           (d.kind !== d.id ||
@@ -593,6 +599,8 @@ export function parseOptimization(
         typeof group.sampled !== "boolean"
       )
         throw new Error("Invalid objective frontier sample");
+      if (group.baseline_solution != null)
+        validateSolutionWeight(group.baseline_solution, scenario.request);
       for (const entry of group.points) {
         const point = object(entry);
         if (typeof point.id !== "string" || frontierIds.has(point.id))
@@ -778,8 +786,10 @@ function parseFixedEvaluation(
     throw new Error("Invalid fixed-equipment evaluation");
   if (
     row.status === "valid" &&
-    request.objectives?.some(
-      (o) => o.kind === "gp_per_damage" || o.kind === "wilderness_loss_gp",
+    request.objectives?.some((o) =>
+      ["gp_per_damage", "wilderness_loss_gp", "carried_weight_kg"].includes(
+        o.kind,
+      ),
     )
   )
     objectiveValues(
@@ -787,6 +797,7 @@ function parseFixedEvaluation(
       canonicalObjectives(request.objectives),
       true,
     );
+  if (row.status === "valid") validateSolutionWeight(row, request);
   const equipment = equipmentMap(row.equipment);
   if (!sameValue(equipment, expected))
     throw new Error(
@@ -1003,6 +1014,22 @@ export function parseEvaluation(
           Number(baseline.wilderness_risk?.loss_gp)
     )
       throw new Error("Invalid Wilderness loss comparison");
+    if (
+      result.scenario.request.objectives?.some(
+        (o) => o.kind === "carried_weight_kg",
+      )
+    ) {
+      const delta = object(deltas.objective_values).carried_weight_kg;
+      const expected =
+        proposed.carried_weight!.heaviest_kg -
+        baseline.carried_weight!.heaviest_kg;
+      if (
+        typeof delta !== "number" ||
+        !Number.isFinite(delta) ||
+        Math.abs(delta - expected) > 1e-8
+      )
+        throw new Error("Invalid carried weight comparison");
+    }
     for (const change of deltas.equipment_changes) {
       const row = requireFields(change, { slot: "string" }),
         slot = uiSlot(row.slot) as Slot;
@@ -1084,6 +1111,9 @@ export function parseItem(value: unknown): Item {
   });
   if (
     equipment.id !== row.item_id ||
+    (equipment.inventory_form_id != null &&
+      (!Number.isSafeInteger(equipment.inventory_form_id) ||
+        Number(equipment.inventory_form_id) < 1)) ||
     !strings(equipment.attack_styles) ||
     Object.values(object(equipment.bonuses)).some(
       (bonus) => typeof bonus !== "number" || !Number.isFinite(bonus),

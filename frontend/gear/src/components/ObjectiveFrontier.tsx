@@ -1,3 +1,4 @@
+import { validateSolutionWeight } from "../api/carriedWeight";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import type {
   JointSolutionDTO,
@@ -198,6 +199,7 @@ function FrontierGroup({
         canonicalObjectives(goals),
         id === group.baseline_solution_id || Boolean(known),
       );
+      validateSolutionWeight(solution, result.scenario.request);
       parseWildernessRisk(
         solution.wilderness_risk,
         result.scenario.request,
@@ -471,6 +473,7 @@ function bestPoint(points: TradeoffPoint[], axis: string, minimize: boolean) {
 
 function endpointLabel(id: string, label: string, minimize: boolean) {
   if (!minimize) return `Highest ${label}`;
+  if (id === "carried_weight_kg") return "Lightest setup";
   if (id === "gp_per_damage") return "Lowest GP/damage";
   if (id === "wilderness_loss_gp") return "Lowest Wilderness loss";
   return `Lowest ${label}`;

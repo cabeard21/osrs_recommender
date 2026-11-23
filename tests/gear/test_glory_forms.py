@@ -117,8 +117,11 @@ def test_equivalent_reviews_affect_catalog_revision(monkeypatch, tmp_path, with_
     content = load_content()
     root = Path("content/equipment") if with_sidecars else tmp_path
     if not with_sidecars:
-        for name in ("catalog.json", "manifest.json"):
-            shutil.copyfile(Path("content/equipment") / name, root / name)
+        bundled = Path("content/equipment")
+        shutil.copyfile(bundled / "catalog.json", root / "catalog.json")
+        manifest = json.loads((bundled / "manifest.json").read_bytes())
+        legacy = {key: value for key, value in manifest.items() if key != "weights_sha256"}
+        (root / "manifest.json").write_text(json.dumps(legacy))
     before = load_catalog(content, root)
     monkeypatch.setattr(
         catalog_module,

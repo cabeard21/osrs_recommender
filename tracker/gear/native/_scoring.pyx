@@ -803,8 +803,8 @@ cdef class ScoringContext:
                 values[index] = result.bonuses[7]
             elif kind == 5:
                 values[index] = result.accuracy
-            elif kind == 7:
-                # Whole-trip loss is filled after combining the physical loadouts.
+            elif kind == 7 or kind == 8:
+                # Whole-kit objectives are filled after combining the physical loadouts.
                 values[index] = 0.0
             else:
                 value = self.attack_cost(slots, result)

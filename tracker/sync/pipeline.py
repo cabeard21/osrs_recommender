@@ -44,7 +44,7 @@ def _price_scope(content: Content) -> frozenset[int]:
     """
     catalog = project_catalog(load_catalog(content), "community_best_effort")
     supported = frozenset(
-        item.id
+        item.inventory_form_id or item.id
         for item in catalog.items.values()
         if item.tradeable is True
         and not item.unsupported_effects

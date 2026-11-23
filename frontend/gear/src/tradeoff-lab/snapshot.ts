@@ -1,3 +1,4 @@
+import { validateCarriedWeight } from "../api/carriedWeight";
 import type {
   JointSolutionDTO,
   ObjectiveFrontierGroup,
@@ -101,6 +102,7 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
         "bonus",
         "probability",
         "percent",
+        "kg",
         "GP/damage",
         "GP",
       ].includes(String(metric.unit))
@@ -109,6 +111,12 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
     return metric.key;
   });
   if (new Set(keys).size !== keys.length || keys[0] !== "dps")
+    throw new Error(INVALID);
+  const roleNames = value.roleNames === undefined ? {} : value.roleNames;
+  if (
+    !record(roleNames) ||
+    Object.values(roleNames).some((name) => !text(name))
+  )
     throw new Error(INVALID);
   const ids = new Set<string>();
   for (const point of value.points) {
@@ -139,6 +147,13 @@ function assertSnapshot(value: unknown): asserts value is LabExample {
       !text(point.stance)
     )
       throw new Error(INVALID);
+    if (keys.includes("carried_weight_kg")) {
+      validateCarriedWeight(
+        point.carriedWeight,
+        Object.keys(roleNames),
+        point.values.carried_weight_kg,
+      );
+    }
     const slots = new Set<string>();
     for (const item of point.equipment) {
       if (
@@ -261,6 +276,7 @@ export function createLabSnapshot(
       defence: 0,
       prayer: 0,
       values,
+      ...(raw.carried_weight && { carriedWeight: raw.carried_weight }),
       costGp: raw.purchase_cost_gp,
       equipment,
       potions:
@@ -322,6 +338,9 @@ export function createLabSnapshot(
     totalCount: group.total_count ?? group.points.length,
     sampleCount: group.points.length,
     sampled: group.sampled,
+    ...(metrics.some((m) => m.key === "carried_weight_kg") && {
+      roleNames: Object.fromEntries(roles),
+    }),
     scope:
       group.swap_limit === null
         ? "Saved frontier · unrestricted swaps"

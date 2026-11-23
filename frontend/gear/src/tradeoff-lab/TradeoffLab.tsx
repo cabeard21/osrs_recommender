@@ -1,3 +1,4 @@
+import { RoleWeightBreakdown } from "../components/RoleWeightBreakdown";
 import { useState } from "react";
 import { ArrowLeft, FlaskConical, Pin, X } from "lucide-react";
 import { ColorScatter, PairwiseCharts, ParallelChart } from "./Charts";
@@ -233,6 +234,14 @@ export default function TradeoffLab({
     .filter((m): m is LabMetric => !!m);
   const baseline = data.points.find((point) => point.id === data.selectedId)!;
   const [selectedId, setSelectedId] = useState(baseline.id);
+  const [lightestFirst, setLightestFirst] = useState(false);
+  const tablePoints = lightestFirst
+    ? [...data.points].sort(
+        (a, b) =>
+          metricValue(a, "carried_weight_kg") -
+          metricValue(b, "carried_weight_kg"),
+      )
+    : data.points;
   const [pins, setPins] = useState<string[]>(() =>
     leaders(data.points, metrics)
       .slice(0, 4)
@@ -449,6 +458,12 @@ export default function TradeoffLab({
                           <p className="lab-cost">
                             Purchase cost <strong>{gp(point.costGp)}</strong>
                           </p>
+                          {point.carriedWeight && (
+                            <RoleWeightBreakdown
+                              weight={point.carriedWeight}
+                              roleName={(id) => data.roleNames?.[id] ?? id}
+                            />
+                          )}
                           <EquipmentDiff
                             point={point}
                             baseline={baseline}
@@ -474,6 +489,16 @@ export default function TradeoffLab({
                 ? "These are representative points from the complete frontier."
                 : "This view contains the complete saved frontier."}
             </p>
+            {metrics.some((m) => m.key === "carried_weight_kg") && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={lightestFirst}
+                  onChange={(e) => setLightestFirst(e.target.checked)}
+                />
+                Lightest first
+              </label>
+            )}
             <div className="lab-table-scroll">
               <table
                 aria-label={
@@ -492,7 +517,7 @@ export default function TradeoffLab({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.points.map((point) => (
+                  {tablePoints.map((point) => (
                     <tr
                       key={point.id}
                       className={point.id === selectedId ? "is-selected" : ""}
@@ -561,9 +586,11 @@ export default function TradeoffLab({
                   key={metric.key}
                   onClick={() => setSelectedId(leader.id)}
                 >
-                  {metric.direction === "minimize"
-                    ? "Lowest " + metric.shortLabel
-                    : "Highest " + metric.shortLabel}
+                  {metric.key === "carried_weight_kg"
+                    ? "Lightest setup"
+                    : metric.direction === "minimize"
+                      ? "Lowest " + metric.shortLabel
+                      : "Highest " + metric.shortLabel}
                 </button>
               );
             })}
@@ -573,6 +600,12 @@ export default function TradeoffLab({
                 : "Original export selection"}
             </button>
           </div>
+          {selected.carriedWeight && (
+            <RoleWeightBreakdown
+              weight={selected.carriedWeight}
+              roleName={(id) => data.roleNames?.[id] ?? id}
+            />
+          )}
           <EquipmentDiff
             point={selected}
             baseline={baseline}

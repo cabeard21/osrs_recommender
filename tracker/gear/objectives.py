@@ -8,7 +8,15 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-MINIMIZED_OBJECTIVES = frozenset({"gp_per_damage", "wilderness_loss_gp"})
+from tracker.gear.carried_weight import measure_carried_weight
+from tracker.gear.models import EquipmentDefinition
+
+_MINIMIZED_LABELS = {
+    "gp_per_damage": ("Running cost", "GP/damage"),
+    "wilderness_loss_gp": ("Wilderness loss if PK’d", "GP"),
+    "carried_weight_kg": ("Carried gear weight", "kg"),
+}
+MINIMIZED_OBJECTIVES = frozenset(_MINIMIZED_LABELS)
 STYLES = ("stab", "slash", "crush", "ranged", "magic")
 BONUSES = {
     "prayer_bonus": "prayer",
@@ -31,6 +39,7 @@ class ObjectiveDescriptor(BaseModel):
         "accuracy",
         "gp_per_damage",
         "wilderness_loss_gp",
+        "carried_weight_kg",
     ]
     styles: tuple[Literal["stab", "slash", "crush", "ranged", "magic"], ...] = ()
     aggregation: Literal["minimum", "mean"] | None = None
@@ -78,13 +87,13 @@ def objective_definitions(objectives: Iterable[ObjectiveDescriptor]) -> list[dic
             else objective.kind.replace("_", " ").capitalize()
         )
         if objective.kind in MINIMIZED_OBJECTIVES:
-            risk = objective.kind == "wilderness_loss_gp"
+            label, unit = _MINIMIZED_LABELS[objective.kind]
             result.append(
                 {
                     "id": objective.id,
                     "kind": objective.kind,
-                    "label": "Wilderness loss if PK’d" if risk else "Running cost",
-                    "unit": "GP" if risk else "GP/damage",
+                    "label": label,
+                    "unit": unit,
                     "direction": "minimize",
                 }
             )
@@ -116,7 +125,13 @@ def objective_value(
     performance: Mapping[str, Any],
     running_cost: Mapping[str, Any] | None = None,
     wilderness_risk: Mapping[str, Any] | None = None,
+    carried_weight: Mapping[str, Any] | None = None,
 ) -> float:
+    if objective.kind == "carried_weight_kg":
+        kg = (carried_weight or {}).get("heaviest_kg")
+        if kg is None or not isfinite(kg):
+            raise ValueError("Carried gear weight is unavailable")
+        return float(kg)
     if objective.kind == "wilderness_loss_gp":
         loss = (wilderness_risk or {}).get("loss_gp")
         if type(loss) is not int or loss < 0:
@@ -151,10 +166,13 @@ def objective_values(
     performance: Mapping[str, Any],
     running_cost: Mapping[str, Any] | None = None,
     wilderness_risk: Mapping[str, Any] | None = None,
+    carried_weight: Mapping[str, Any] | None = None,
 ) -> dict[str, float]:
     values = {}
     for objective in objectives:
         if objective.kind == "gp_per_damage" and (running_cost or {}).get(objective.id) is None:
+            continue
+        if objective.kind == "carried_weight_kg" and carried_weight is None:
             continue
         if (
             objective.kind == "wilderness_loss_gp"
@@ -162,7 +180,7 @@ def objective_values(
         ):
             continue
         values[objective.id] = objective_value(
-            objective, performance, running_cost, wilderness_risk
+            objective, performance, running_cost, wilderness_risk, carried_weight
         )
     return values
 
@@ -172,9 +190,29 @@ def required_objective_skills(objectives: Iterable[ObjectiveDescriptor]) -> froz
     return frozenset(("defence", "magic") if "magic" in styles else ("defence",) if styles else ())
 
 
+def _with_kit_weight(
+    solution: Mapping[str, Any],
+    objectives: tuple[ObjectiveDescriptor, ...],
+    items: Mapping[int, EquipmentDefinition] | None,
+) -> Mapping[str, Any]:
+    if (
+        items is None
+        or "carried_weight" in solution
+        or not any(goal.kind == "carried_weight_kg" for goal in objectives)
+    ):
+        return solution
+    assignment = {role: row["equipment"] for role, row in solution["loadouts"].items()}
+    return {**solution, "carried_weight": measure_carried_weight(assignment, items)}
+
+
 def annotate_solution(
-    solution: Mapping[str, Any], objectives: tuple[ObjectiveDescriptor, ...], roles: Iterable[Any]
+    solution: Mapping[str, Any],
+    objectives: tuple[ObjectiveDescriptor, ...],
+    roles: Iterable[Any],
+    *,
+    items: Mapping[int, EquipmentDefinition] | None = None,
 ) -> dict[str, Any]:
+    solution = _with_kit_weight(solution, objectives, items)
     return {
         **solution,
         "objective_definitions": objective_definitions(objectives),
@@ -183,8 +221,14 @@ def annotate_solution(
 
 
 def solution_objectives(
-    solution: Mapping[str, Any], objectives: tuple[ObjectiveDescriptor, ...], roles: Iterable[Any]
+    solution: Mapping[str, Any],
+    objectives: tuple[ObjectiveDescriptor, ...],
+    roles: Iterable[Any],
+    *,
+    items: Mapping[int, EquipmentDefinition] | None = None,
 ) -> dict[str, float]:
+    if items is not None:
+        solution = _with_kit_weight(solution, objectives, items)
     included = [
         role for role in roles if role.style != "special" and role.id in solution["loadouts"]
     ]
@@ -202,6 +246,7 @@ def solution_objectives(
         {},
         solution.get("running_cost"),
         solution.get("wilderness_risk"),
+        solution.get("carried_weight"),
     )
 
 

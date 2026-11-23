@@ -57,7 +57,7 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
 
     catalog = project_catalog(load_catalog(content), "community_best_effort")
     supported = frozenset(
-        item.id
+        item.inventory_form_id or item.id
         for item in catalog.items.values()
         if item.tradeable is True
         and not item.unsupported_effects
@@ -67,6 +67,8 @@ def test_price_scope_contains_reviewed_tradeable_equipment() -> None:
         _price_scope(content)
         == expected | supported | resource_item_ids() | wilderness_price_item_ids()
     )
+    assert {10069, 10071} <= supported  # Hunter capes use their inventory GE listings.
+    assert not {10073, 10074}.intersection(supported)
     assert {556, 558, 21880, 12934} <= _price_scope(content)
     assert {2436, 2440, 2444, 3040} <= _price_scope(content)  # Combat potion prices.
     # Preparation purchases need market-form quotes even when the uncharged

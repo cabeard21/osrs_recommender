@@ -82,7 +82,7 @@ def _coordinates(engine: Any, seed: Mapping[str, Any]) -> list[tuple[str, str]]:
     return [
         (role.id, slot)
         for role in engine.search.request.roles
-        if role.style != "special"
+        if role.style != "special" or "carried_weight_kg" in engine.ids
         for slot in engine.pools
         if slot not in engine.search.request.locks and slot not in role.locks
     ]
@@ -127,7 +127,11 @@ def _single_trials(engine: Any, seed: Mapping[str, Any]) -> Iterator[Assignment]
 
 def _shared_trials(engine: Any, seed: Mapping[str, Any]) -> Iterator[Assignment]:
     assignment = _assignment(seed)
-    roles = tuple(role for role in engine.search.request.roles if role.style != "special")
+    roles = tuple(
+        role
+        for role in engine.search.request.roles
+        if role.style != "special" or "carried_weight_kg" in engine.ids
+    )
     for slot, choices in engine.pools.items():
         for item in choices:
             if any(

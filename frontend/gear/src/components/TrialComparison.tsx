@@ -1,3 +1,4 @@
+import { formatKg } from "../api/carriedWeight";
 import { EquipmentBonuses } from "./EquipmentBonuses";
 import type { Trial, WildernessPolicy } from "../api/contracts";
 import { PurchaseListCopy } from "./PurchaseListCopy";
@@ -77,6 +78,20 @@ export function TrialComparison({
               ],
             ]
           : []),
+        ...(trial.live.objective_definitions?.some(
+          (d) => d.kind === "carried_weight_kg",
+        )
+          ? [
+              [
+                "Carried gear weight",
+                formatKg(baseline.objective_values?.carried_weight_kg),
+                formatKg(proposed.objective_values?.carried_weight_kg),
+                ((deltas.objective_values?.carried_weight_kg ?? 0) > 0
+                  ? "+"
+                  : "") + formatKg(deltas.objective_values?.carried_weight_kg),
+              ],
+            ]
+          : []),
         ...(baseline.wilderness_risk && proposed.wilderness_risk
           ? [
               [
@@ -131,6 +146,7 @@ export function TrialComparison({
                         ? "muted"
                         : Number.parseFloat(delta) > 0 ===
                             (label !== "GP/damage" &&
+                              label !== "Carried gear weight" &&
                               label !== "Attack interval" &&
                               label !== "Additional GP required")
                           ? "green"
