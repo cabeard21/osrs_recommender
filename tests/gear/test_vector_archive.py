@@ -46,6 +46,7 @@ def test_live_native_index_tracks_equal_replacements_and_dominated_deletions():
             archive.add(initial)
         native.enable_native_index()
         for candidate in (
+            row(3, 10, 5, 5),
             row(1, 10, 5, 5),
             row(1, 11, 2, 2),
             row(3, 9, 4, 4),
@@ -59,6 +60,96 @@ def test_live_native_index_tracks_equal_replacements_and_dominated_deletions():
     finally:
         native.close()
         reference.close()
+
+
+def test_native_archive_updates_use_primary_keys():
+    pytest.importorskip("tracker.gear.native._frontier")
+    from tracker.gear.vector_archive import solution_identity
+
+    archive = VectorArchive(("a", "b"))
+    try:
+        archive.enable_native_index()
+        trace = []
+        archive.connection.set_trace_callback(trace.append)
+        left = row(2, 10, 1, 9)
+        right = row(3, 10, 9, 1)
+        assert archive.add(left)
+        assert archive.add(right)
+        assert not any(statement.startswith("SELECT") for statement in trace)
+
+        interior = row(4, 10, 9, 9)
+        assert archive.add(interior)
+        assert {statement for statement in trace if statement.startswith("DELETE")} == {
+            f"DELETE FROM candidates WHERE identity='{solution_identity(left)}'",
+            f"DELETE FROM candidates WHERE identity='{solution_identity(right)}'",
+        }
+
+        trace.clear()
+        replacement = row(1, 10, 9, 9)
+        assert archive.add(replacement)
+        reads = [statement for statement in trace if statement.startswith("SELECT")]
+        assert len(reads) == 1
+        assert reads[0].endswith(f"WHERE identity='{solution_identity(interior)}'")
+        assert archive.solutions() == [replacement]
+    finally:
+        archive.close()
+
+
+def test_native_archive_keeps_sql_membership_after_capacity_fallback(monkeypatch):
+    pytest.importorskip("tracker.gear.native._frontier")
+    monkeypatch.setattr(VectorArchive, "_native_row_capacity", 1)
+    archive = VectorArchive(("a", "b"))
+    try:
+        archive.enable_native_index()
+        assert archive.add(row(1, 10, 1, 9))
+        assert archive.native_candidate_index is not None
+        assert archive.add(row(2, 10, 9, 1))
+        assert archive.native_candidate_index is None
+        winner = row(3, 10, 9, 9)
+        assert archive.add(winner)
+        assert archive.solutions() == [winner]
+    finally:
+        archive.close()
+
+
+def test_native_archive_uses_sql_when_probe_rejects_numeric_range():
+    pytest.importorskip("tracker.gear.native._frontier")
+    native, reference = VectorArchive(("a", "b")), VectorArchive(("a", "b"))
+    try:
+        native.enable_native_index()
+        for candidate in (row(1, 10, 2, 2), row(2, 10, float("inf"), 2), row(3, 10, 3, 2)):
+            assert native.add(candidate) == reference.add(candidate)
+            assert native.solutions() == reference.solutions()
+        assert native.native_candidate_index is None
+    finally:
+        native.close()
+        reference.close()
+
+
+def test_native_archive_is_discarded_after_insert_failure():
+    import sqlite3
+    from pathlib import Path
+
+    pytest.importorskip("tracker.gear.native._frontier")
+    from tracker.gear.vector_archive import own_vector_archives
+
+    @own_vector_archives
+    def fail_after_deleting_dominated_row():
+        archive = VectorArchive(("a", "b"))
+        archives.append(Path(archive.path))
+        archive.enable_native_index()
+        assert archive.add(row(1, 10, 1, 1))
+        archive.connection.execute(
+            "CREATE TRIGGER insert_failure BEFORE INSERT ON candidates "
+            "WHEN NOT EXISTS (SELECT 1 FROM candidates) "
+            "BEGIN SELECT RAISE(FAIL, 'archive insert failed'); END"
+        )
+        archive.add(row(2, 10, 2, 2))
+
+    archives = []
+    with pytest.raises(sqlite3.IntegrityError, match="archive insert failed"):
+        fail_after_deleting_dominated_row()
+    assert archives and not archives[0].exists()
 
 
 def test_equal_potion_resource_ties_do_not_depend_on_branch_completion_order():

@@ -286,33 +286,66 @@ class VectorArchive:
 
     def add_candidate(self, candidate: ArchiveCandidate) -> bool:
         vector = candidate.vector
-        if vector is None or self.strictly_dominated(vector):
+        if vector is None:
             return False
+        index = self._native_index
+        update: tuple[str | None, list[str]] | None = None
+        if index is not None:
+            try:
+                update = index.probe_update(vector)
+            except ValueError:
+                self._disable_native_index("numeric_range")
+                index = None
+            else:
+                if update is None:
+                    return False
+        if update is None and self.strictly_dominated(vector):
+            return False
+        connection = self.connection
         names = tuple(f"v{index}" for index in range(len(vector)))
-        equal = " AND ".join(f"{name}=?" for name in names)
-        previous = self.connection.execute(
-            f"SELECT identity,report FROM candidates WHERE {equal}", vector
-        ).fetchone()
+        if update is None:
+            equal = " AND ".join(f"{name}=?" for name in names)
+            previous = connection.execute(
+                f"SELECT identity,report FROM candidates WHERE {equal}", vector
+            ).fetchone()
+            victims: list[str] = []
+        else:
+            equal_id, victims = update
+            previous = (
+                connection.execute(
+                    "SELECT identity,report FROM candidates WHERE identity=?", (equal_id,)
+                ).fetchone()
+                if equal_id is not None
+                else None
+            )
+            if equal_id is not None and previous is None:
+                raise RuntimeError("Native archive references a missing candidate")
         if previous is not None:
             if resource_tie(json.loads(previous[1])) <= candidate.tie:
                 return False
-            self.connection.execute("DELETE FROM candidates WHERE identity=?", (previous[0],))
-            if self._native_index is not None:
-                self._native_index.discard(previous[0])
-        lesser = " AND ".join(f"{name}<=?" for name in names)
-        strict_less = " OR ".join(f"{name}<?" for name in names)
-        self.connection.execute(
-            f"DELETE FROM candidates WHERE {lesser} AND ({strict_less})", (*vector, *vector)
-        )
+            victims.append(previous[0])
+        identity, report = candidate.identity, candidate.report
+        prefix = candidate.prefix if index is not None else ()
+        if victims:
+            connection.executemany(
+                "DELETE FROM candidates WHERE identity=?", ((victim,) for victim in victims)
+            )
+        if update is None:
+            lesser = " AND ".join(f"{name}<=?" for name in names)
+            strict_less = " OR ".join(f"{name}<?" for name in names)
+            connection.execute(
+                f"DELETE FROM candidates WHERE {lesser} AND ({strict_less})", (*vector, *vector)
+            )
         parameters = ",".join("?" for _ in range(len(vector) + 2))
-        self.connection.execute(
+        connection.execute(
             f"INSERT OR REPLACE INTO candidates VALUES({parameters})",
-            (candidate.identity, *vector, candidate.report),
+            (identity, *vector, report),
         )
-        if self._native_index is not None:
-            self._native_index.remove_dominated(vector)
-            self._native_index.insert(candidate.identity, vector, candidate.prefix)
-            if len(self._native_index) > self._native_row_capacity:
+        if index is not None:
+            for victim in victims:
+                index.discard(victim)
+            index.insert(identity, vector, prefix)
+            if len(index) > self._native_row_capacity:
                 self._disable_native_index("capacity")
         return True
 

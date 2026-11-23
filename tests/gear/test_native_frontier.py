@@ -1,4 +1,5 @@
 from array import array
+from math import nextafter
 from random import Random
 
 import pytest
@@ -55,6 +56,25 @@ def test_archive_index_removes_only_strictly_dominated_rows(kernel):
     index.discard("equal")
     assert not index.strictly_dominated((1, 1))
     assert index.strictly_dominated((2, 0))
+
+
+def test_archive_update_probe_is_exact_and_read_only(kernel):
+    index = kernel.ArchiveIndex(65)
+    tail = (0.0,) * 62
+    candidate = (2.0, 2.0, 0.0, *tail)
+    index.insert("first", (1.0, 2.0, 0.0, *tail))
+    index.insert("second", (2.0, nextafter(2.0, 0.0), 0.0, *tail))
+    index.insert("equal", (2.0, 2.0, -0.0, *tail))
+    index.insert("tradeoff", (nextafter(2.0, 3.0), 1.0, 0.0, *tail))
+
+    equal, dominated = index.probe_update(candidate)
+    assert equal == "equal"
+    assert set(dominated) == {"first", "second"}
+    assert len(index) == 4
+    assert index.probe_update((1.0, 1.0, 0.0, *tail)) is None
+    assert index.probe_update((3.0, 3.0, 0.0, *tail))[0] is None
+    with pytest.raises(ValueError, match="finite"):
+        index.probe_update((float("inf"), *candidate[1:]))
 
 
 def test_multi_cap_admission_keeps_unresolved_ties_and_missing_indexes(kernel):

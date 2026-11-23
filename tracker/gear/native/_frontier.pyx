@@ -159,6 +159,32 @@ cdef class ArchiveIndex:
         self.pack(vector, row)
         return self.contains_dominator(row)
 
+    def probe_update(self, vector):
+        """Return the equal key and strict victims, or None if dominated."""
+        cdef double row[65]
+        self.pack(vector, row)
+        cdef size_t index, dimension
+        cdef const double* stored
+        cdef bint better, worse
+        equal = None
+        victims = []
+        for index in range(self.keys.size()):
+            stored = &self.data[index * self.width]
+            better = worse = False
+            for dimension in range(self.width):
+                better |= row[dimension] > stored[dimension]
+                worse |= row[dimension] < stored[dimension]
+                if better and worse:
+                    break
+            if worse:
+                if not better:
+                    return None
+            elif better:
+                victims.append(self.keys[index].decode())
+            else:
+                equal = self.keys[index].decode()
+        return equal, victims
+
     cdef bint may_admit(self, const double* row, tuple prefix) except -1:
         cdef size_t index, dimension
         cdef const double* stored
