@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
-from time import perf_counter
+from time import monotonic, perf_counter
 from typing import Any
 
 from tracker.gear.discipline_assignments import has_auto
@@ -344,10 +344,14 @@ def optimize_potions(
                 }
             )
 
-    from tracker.gear.progress import for_lane, lane_label
+    from tracker.gear.progress import for_lane, lane_key, lane_label
 
     labels = [lane_label(d, fixed.potions.selected_ids) for d, fixed in jobs]
-    report("preparation", 0, plan={"lanes": labels})
+    report(
+        "preparation",
+        0,
+        plan={"lanes": labels, "lane_keys": [lane_key(fixed) for fixed in requests]},
+    )
     if branch_runner is None:
         prepared = prepared or prepare_optimization(
             snapshot, request, catalog, content, prices, now
@@ -378,7 +382,10 @@ def optimize_potions(
             cancelled = options.get("cancelled")
             if cancelled and cancelled():
                 raise ValueError("optimization_cancelled")
-            report("profile_started", i, lane=i)
+            if progress is not None:
+                picked_up = monotonic()
+                pickup_tick = perf_counter()
+                report("lane_started", i, lane=i, started_at=picked_up, worker_slot=0)
             branches.append(
                 optimize(
                     snapshot,
@@ -388,11 +395,18 @@ def optimize_potions(
                     prices,
                     now,
                     _prepared=prepared,
-                    progress=for_lane(progress, i),
+                    progress=for_lane(progress, i, include_finish=False),
                     **branch_options,
                 )
             )
-            report("profile_completed", i + 1, lane=i, lane_status="complete")
+            if progress is not None:
+                report(
+                    "profile_completed",
+                    i + 1,
+                    lane=i,
+                    lane_status="complete",
+                    duration_seconds=perf_counter() - pickup_tick,
+                )
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")

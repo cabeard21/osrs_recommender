@@ -8,6 +8,7 @@ import type {
 /** Fast enough for a smooth bar; the endpoint is a cheap in-memory read. */
 export const PROGRESS_POLL_MS = 400;
 const MAX_TEXT = 100;
+const MAX_LANE_LABEL = 512;
 const MAX_STAGES = 12;
 const MAX_LANES = 12;
 const STAGE_STATUSES = new Set(["complete", "active", "pending"]);
@@ -58,16 +59,21 @@ function stage(row: Record<string, unknown>): ProgressStage | null {
 }
 
 function lane(row: Record<string, unknown>): ProgressLane | null {
-  return text(row.label) &&
+  return typeof row.label === "string" &&
+    row.label.length <= MAX_LANE_LABEL &&
     typeof row.status === "string" &&
     LANE_STATUSES.has(row.status) &&
     (row.stage === null || text(row.stage)) &&
     unit(row.fraction)
     ? {
+        ...(count(row.lane_id) ? { lane_id: row.lane_id } : {}),
         label: row.label,
         status: row.status as ProgressLane["status"],
         stage: row.stage as string | null,
         ...(text(row.stage_label) ? { stage_label: row.stage_label } : {}),
+        ...(unit(row.stage_fraction) || row.stage_fraction === null
+          ? { stage_fraction: row.stage_fraction }
+          : {}),
         fraction: row.fraction,
       }
     : null;
@@ -77,11 +83,20 @@ function count(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0;
 }
 
+function seconds(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 function laneCounts(value: unknown): ProgressLaneCounts | undefined {
   if (!value || typeof value !== "object") return undefined;
   const row = value as Record<string, unknown>;
   return count(row.complete) && count(row.running) && count(row.pending)
-    ? { complete: row.complete, running: row.running, pending: row.pending }
+    ? {
+        complete: row.complete,
+        running: row.running,
+        pending: row.pending,
+        ...(count(row.collecting) ? { collecting: row.collecting } : {}),
+      }
     : undefined;
 }
 
@@ -110,13 +125,14 @@ export function parseProgress(raw: unknown): OptimizationProgress | null {
   };
   if (text(body.label)) progress.label = body.label;
   if (unit(body.fraction)) progress.fraction = body.fraction;
-  if (
-    body.eta_seconds === null ||
-    (typeof body.eta_seconds === "number" &&
-      Number.isFinite(body.eta_seconds) &&
-      body.eta_seconds >= 0)
-  )
+  if (body.eta_seconds === null || seconds(body.eta_seconds))
     progress.eta_seconds = body.eta_seconds;
+  const range = body.search_eta_range_seconds;
+  if (Array.isArray(range) && range.length === 2) {
+    const [lower, upper] = range;
+    if (seconds(lower) && seconds(upper) && lower <= upper)
+      progress.search_eta_range_seconds = [lower, upper];
+  }
   const stages = rows(body.stages, MAX_STAGES, stage);
   if (stages) progress.stages = stages;
   const lanes = rows(body.lanes, MAX_LANES, lane);

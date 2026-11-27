@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Mapping
 from hashlib import sha256
-from time import perf_counter
+from time import monotonic, perf_counter
 from typing import Any
 
 from tracker.gear.discipline_assignments import branch_requests as branch_requests
@@ -26,7 +26,7 @@ def optimize_auto(
     **options: Any,
 ) -> dict[str, Any]:
     from tracker.gear.optimizer import optimize, prepare_optimization
-    from tracker.gear.progress import for_lane, lane_label
+    from tracker.gear.progress import for_lane, lane_key, lane_label
 
     started = perf_counter()
     complete_frontiers = options.pop("_complete_frontiers", False)
@@ -35,9 +35,17 @@ def optimize_auto(
     cancelled = options.get("cancelled")
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
+    plan = list(branch_requests(request))
     if progress is not None:
-        labels = [lane_label(discipline) for discipline, _ in branch_requests(request)]
-        progress({"phase": "preparation", "plan": {"lanes": labels}})
+        progress(
+            {
+                "phase": "preparation",
+                "plan": {
+                    "lanes": [lane_label(discipline) for discipline, _ in plan],
+                    "lane_keys": [lane_key(concrete) for _, concrete in plan],
+                },
+            }
+        )
     if branch_runner is not None:
         from tracker.gear.evaluation import validate_request_context
         from tracker.gear.support import project_catalog
@@ -56,7 +64,7 @@ def optimize_auto(
             **({"progress": progress} if progress is not None else {}),
         )
         by_discipline = dict(completed)
-        expected = [discipline for discipline, _ in branch_requests(request)]
+        expected = [discipline for discipline, _ in plan]
         if len(completed) != len(expected) or set(by_discipline) != set(expected):
             raise ValueError("optimizer_worker_unavailable: incomplete discipline results")
         branches = [(discipline, by_discipline[discipline]) for discipline in expected]
@@ -64,9 +72,20 @@ def optimize_auto(
         options["_prepared"] = options.get("_prepared") or prepare_optimization(
             snapshot, request, catalog, content, price_records, now
         )
-        for lane, (discipline, concrete) in enumerate(branch_requests(request)):
+        for lane, (discipline, concrete) in enumerate(plan):
             if cancelled and cancelled():
                 raise ValueError("optimization_cancelled")
+            if progress is not None:
+                picked_up = monotonic()
+                pickup_tick = perf_counter()
+                progress(
+                    {
+                        "phase": "lane_started",
+                        "lane": lane,
+                        "started_at": picked_up,
+                        "worker_slot": 0,
+                    }
+                )
             result = optimize(
                 snapshot,
                 concrete,
@@ -75,10 +94,19 @@ def optimize_auto(
                 price_records,
                 now,
                 _complete_frontiers=True,
-                progress=for_lane(progress, lane),
+                progress=for_lane(progress, lane, include_finish=False),
                 **options,
             )
             branches.append((discipline, result))
+            if progress is not None:
+                progress(
+                    {
+                        "phase": "lane_complete",
+                        "lane": lane,
+                        "lane_status": "complete",
+                        "duration_seconds": perf_counter() - pickup_tick,
+                    }
+                )
     if cancelled and cancelled():
         raise ValueError("optimization_cancelled")
 
@@ -93,6 +121,8 @@ def optimize_auto(
         cancelled=cancelled,
     )
     finished = perf_counter()
+    if progress is not None:
+        progress({"phase": "complete"})
     return {
         **result,
         "search": {

@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import nullcontext
 from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 from threading import Lock
 from typing import TYPE_CHECKING, Any, cast
@@ -224,19 +225,37 @@ class GearService:
                 execution["branch_runner"] = pool.run
                 parallel = True
             if progress_identity is not None:
+                parallelism = getattr(pool, "workers", 1) if parallel else 1
+                timing_key = _timing_key(
+                    request,
+                    local_refinement,
+                    parallel,
+                    self.optimization_profile,
+                    self.fixed_reporting,
+                    self.factored_evaluation,
+                    self.compact_states,
+                    self.native_search,
+                )
+                from tracker.gear.discipline_assignments import has_auto
+
+                schedule_key = None
+                if request.potions.mode == "optimize" or has_auto(request):
+                    price_revision = sha256(
+                        repr(sorted((price_records or {}).items())).encode()
+                    ).hexdigest()
+                    schedule_key = (
+                        timing_key,
+                        parallelism,
+                        request.model_dump_json(),
+                        snapshot.fingerprint,
+                        self.equipment_catalog().revision,
+                        price_revision,
+                    )
                 tracker = RunProgress(
                     has_frontiers=_has_frontiers(request),
-                    parallelism=getattr(pool, "workers", 1) if parallel else 1,
-                    timing_key=_timing_key(
-                        request,
-                        local_refinement,
-                        parallel,
-                        self.optimization_profile,
-                        self.fixed_reporting,
-                        self.factored_evaluation,
-                        self.compact_states,
-                        self.native_search,
-                    ),
+                    parallelism=parallelism,
+                    timing_key=timing_key,
+                    schedule_key=schedule_key,
                     model=self._timings,
                     fingerprint=progress_fingerprint,
                 )

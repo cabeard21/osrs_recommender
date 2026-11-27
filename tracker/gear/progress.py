@@ -7,17 +7,19 @@ a cheap no-op, so hot loops may call them unconditionally.
 Event vocabulary (all keys optional except ``phase``):
 
 * ``phase`` - a lane stage from :data:`LANE_STAGES`, or a run-level marker such as
-  ``merge``, ``profile_started`` or ``complete``.
+  ``merge`` or ``complete``. Lane lifecycle phases are ``lane_started``,
+  ``lane_collecting`` and ``lane_complete``.
 * ``stage_done`` / ``stage_total`` - integer progress inside the current stage.
 * ``lane`` - which independent search (Auto discipline or potion profile) this is.
-* ``lane_status`` - ``"complete"`` when that lane has finished.
-* ``plan`` - ``{"lanes": [label, ...]}`` declaring the independent searches up front.
+* ``lane_status`` - ``"complete"`` on successful lane receipt.
+* ``plan`` - labels and compatible timing keys for the independent searches.
+* ``worker_update`` - a batch of slot and future events observed together.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from time import perf_counter
+from time import monotonic, perf_counter
 from typing import Any
 
 Emit = Callable[[dict[str, Any]], None]
@@ -45,7 +47,7 @@ STAGE_SCALE = 1000
 REPORT_INTERVAL_SECONDS = 0.1
 # Hot loops call the reporter every this-many nodes (a power of two minus one mask).
 NODE_REPORT_MASK = 1023
-_LANE_LABEL_LIMIT = 60
+_LANE_LABEL_LIMIT = 512
 _SLOT_STAGES = frozenset({"candidate_ranking", "gear_search"})
 
 
@@ -121,13 +123,14 @@ class StageReporter:
 NULL_REPORTER = StageReporter()
 
 
-def for_lane(emit: Emit | None, lane: int) -> Emit | None:
-    """Tag every event from one independent search with its lane index."""
+def for_lane(emit: Emit | None, lane: int, *, include_finish: bool = True) -> Emit | None:
+    """Tag a lane's events, optionally leaving completion to its caller."""
     if emit is None:
         return None
 
     def tagged(event: dict[str, Any]) -> None:
-        emit({**event, "lane": lane})
+        if include_finish or event.get("lane_status") != "complete":
+            emit({**event, "lane": lane})
 
     return tagged
 
@@ -148,6 +151,11 @@ def lane_label(discipline: str | None, potion_ids: Sequence[str] | None = None) 
     return (" · ".join(parts) or "Search")[:_LANE_LABEL_LIMIT]
 
 
+def lane_key(request: Any) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Identity for timing a concrete lane independently of its display label."""
+    return tuple(role.style for role in request.roles), tuple(sorted(request.potions.selected_ids))
+
+
 class WorkerSlots:
     """Per-worker shared progress slots written lock-free by spawned children.
 
@@ -156,14 +164,16 @@ class WorkerSlots:
     discard torn reads instead of locking, so a killed child cannot wedge the parent.
     """
 
-    # Slot layout: sequence, lane + 1 (0 = idle), stage index, done, total.
-    WIDTH = 5
+    # Slot layout: sequence, lane + 1 (0 = idle), stage index, done, total, start.
+    WIDTH = 6
 
     def __init__(self, context: Any, workers: int) -> None:
         self.workers = workers
         self._values = context.RawArray("d", workers * self.WIDTH)
 
-    def write(self, slot: int, lane: int, stage: int, done: int, total: int) -> None:
+    def write(
+        self, slot: int, lane: int, stage: int, done: int, total: int, started_at: float
+    ) -> None:
         base = slot * self.WIDTH
         values = self._values
         values[base] += 1
@@ -171,6 +181,7 @@ class WorkerSlots:
         values[base + 2] = stage
         values[base + 3] = done
         values[base + 4] = total
+        values[base + 5] = started_at
         values[base] += 1
 
     def clear(self) -> None:
@@ -181,8 +192,8 @@ class WorkerSlots:
                 self._values[base + offset] = 0
             self._values[base] += 1
 
-    def read(self) -> list[tuple[float, int, int, int, int]]:
-        """Return consistent ``(sequence, lane, stage, done, total)`` rows for busy slots."""
+    def read(self) -> list[tuple[int, float, int, int, int, int, float]]:
+        """Return consistent rows with slot identity and worker pickup timestamp."""
         rows = []
         for slot in range(self.workers):
             base = slot * self.WIDTH
@@ -190,9 +201,10 @@ class WorkerSlots:
             if int(before) % 2:
                 continue
             lane, stage, done, total = (int(self._values[base + i]) for i in range(1, 5))
+            started_at = self._values[base + 5]
             if self._values[base] != before or lane <= 0:
                 continue
-            rows.append((before, lane - 1, stage, done, total))
+            rows.append((slot, before, lane - 1, stage, done, total, started_at))
         return rows
 
 
@@ -201,13 +213,15 @@ class SlotWriter:
 
     def __init__(self, slots: WorkerSlots, slot: int, lane: int) -> None:
         self._slots, self._slot, self._lane = slots, slot, lane
-        slots.write(slot, lane, 0, 0, 0)
+        self.started_at = monotonic()
+        slots.write(slot, lane, 0, 0, 0, self.started_at)
+
+    def returning(self) -> None:
+        """Mark the result ready for transfer after the worker's search returns."""
+        self._slots.write(self._slot, self._lane, len(LANE_STAGES), 0, 0, self.started_at)
 
     def __call__(self, event: dict[str, Any]) -> None:
         phase = event.get("phase")
-        if event.get("lane_status") == "complete":
-            self._slots.write(self._slot, self._lane, len(LANE_STAGES), 1, 1)
-            return
         if phase not in LANE_STAGES:
             return
         self._slots.write(
@@ -216,24 +230,40 @@ class SlotWriter:
             LANE_STAGES.index(phase),
             int(event.get("stage_done", 0)),
             int(event.get("stage_total", 0)),
+            self.started_at,
         )
 
 
 class SlotReader:
     """Parent-side poller converting changed worker slots into lane-tagged events."""
 
-    def __init__(self, slots: WorkerSlots, emit: Emit) -> None:
-        self._slots, self._emit = slots, emit
-        self._seen: dict[int, float] = {}
+    def __init__(self, slots: WorkerSlots) -> None:
+        self._slots = slots
+        self._seen: dict[int, tuple[float, int, bool]] = {}
 
-    def poll(self) -> None:
-        for sequence, lane, stage, done, total in self._slots.read():
-            if self._seen.get(lane) == sequence:
+    def events(self) -> list[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for slot, sequence, lane, stage, done, total, started_at in self._slots.read():
+            previous = self._seen.get(slot)
+            if previous is not None and previous[0] == sequence:
                 continue
-            self._seen[lane] = sequence
-            if stage >= len(LANE_STAGES):
-                continue  # Completion is reported authoritatively from the future.
-            self._emit(
+            returning = stage >= len(LANE_STAGES)
+            self._seen[slot] = (sequence, lane, returning)
+            if previous is None or previous[1] != lane:
+                if previous is not None and not previous[2]:
+                    events.append({"phase": "lane_collecting", "lane": previous[1]})
+                events.append(
+                    {
+                        "phase": "lane_started",
+                        "lane": lane,
+                        "started_at": started_at,
+                        "worker_slot": slot,
+                    }
+                )
+            if returning:
+                events.append({"phase": "lane_collecting", "lane": lane})
+                continue
+            events.append(
                 {
                     "phase": LANE_STAGES[stage],
                     "lane": lane,
@@ -241,3 +271,4 @@ class SlotReader:
                     "stage_total": total,
                 }
             )
+        return events
