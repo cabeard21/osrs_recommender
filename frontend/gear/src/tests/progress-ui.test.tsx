@@ -36,6 +36,33 @@ it("formats remaining time compactly", () => {
   expect(formatDuration(125)).toBe("2m 05s");
 });
 
+it("shows a rounded search-only range until a full ETA or merge arrives", async () => {
+  const update = await startRun();
+  const searching: OptimizationProgress = {
+    phase: "frontiers",
+    completed: 12,
+    total: 16,
+    elapsed_seconds: 270,
+    lane_counts: { complete: 12, running: 4, pending: 0 },
+    eta_seconds: null,
+    search_eta_range_seconds: [132.1, 181.9],
+  };
+  act(() => update(searching));
+  expect(screen.getByText(/≈ 2m–3m 15s left in searches/)).toBeVisible();
+  expect(screen.queryByText(/Estimating time left/)).not.toBeInTheDocument();
+
+  act(() => update({ ...searching, eta_seconds: 192 }));
+  expect(screen.getByText(/3m 12s left/)).toBeVisible();
+  expect(screen.queryByText(/left in searches/)).not.toBeInTheDocument();
+
+  act(() => update({ ...searching, phase: "merge", completed: 16 }));
+  expect(
+    screen.getByRole("status", { name: "Optimization progress" }),
+  ).toHaveTextContent("Combining results");
+  expect(screen.queryByText(/left in searches/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Estimating time left/)).not.toBeInTheDocument();
+});
+
 it("renders a single search's bar, stage checklist and ETA", async () => {
   const update = await startRun();
   act(() =>
@@ -181,4 +208,83 @@ it("shows current profile progress and hides cancelled late updates", async () =
   expect(
     screen.queryByRole("status", { name: "Optimization progress" }),
   ).not.toBeInTheDocument();
+});
+
+it("keeps active rows aligned across colliding labels and worker reuse", async () => {
+  const update = await startRun();
+  const collidingLabel =
+    "role-1: Magic / role-2: Ranged · Divine magic, Divine rangin";
+  const live = [33, 34, 35, 36, 37, 38].map((lane_id) => ({
+    lane_id,
+    label:
+      lane_id === 33 || lane_id === 37 ? collidingLabel : `Profile ${lane_id}`,
+    status: "running" as const,
+    stage: "frontiers",
+    stage_label: "Exploring trade-offs",
+    stage_fraction: lane_id === 37 ? 0.4 : null,
+    fraction: 0.99,
+  }));
+  const checkpoint: OptimizationProgress = {
+    phase: "frontiers",
+    completed: 33,
+    total: 40,
+    elapsed_seconds: 1031,
+    eta_seconds: null,
+    fraction: 0.92,
+    lane_counts: { complete: 33, running: 6, pending: 1 },
+    lanes: live,
+  };
+  act(() => update(checkpoint));
+  const rows = screen.getAllByRole("listitem");
+  expect(rows).toHaveLength(6);
+  expect(rows[0]).toHaveTextContent("Exploring trade-offs");
+  expect(rows[0]).not.toHaveTextContent("99%");
+  expect(rows[4]).toHaveTextContent("40%");
+  expect(screen.getByText(/Estimating time left/)).toBeVisible();
+  expect(
+    screen.getByRole("progressbar", { name: "Searches completed" }),
+  ).toHaveAttribute("aria-valuenow", "33");
+
+  act(() =>
+    update({
+      ...checkpoint,
+      lane_counts: { complete: 33, running: 6, pending: 0, collecting: 1 },
+      lanes: [
+        ...live.slice(1),
+        { ...live[0], lane_id: 39, label: "New search" },
+      ],
+    }),
+  );
+  expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  expect(screen.getAllByText(collidingLabel)).toHaveLength(1);
+  expect(rows[4]).toBeInTheDocument();
+  expect(rows[0]).not.toBeInTheDocument();
+  expect(screen.getByText(/1 collecting/)).toBeVisible();
+
+  act(() =>
+    update({
+      ...checkpoint,
+      phase: "merge",
+      completed: 40,
+      lanes: [],
+      lane_counts: { complete: 40, running: 0, pending: 0 },
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("Combining results");
+  expect(
+    screen.queryByRole("list", { name: "Parallel searches" }),
+  ).not.toBeInTheDocument();
+
+  act(() =>
+    update({
+      ...checkpoint,
+      phase: "complete",
+      completed: 40,
+      lanes: [],
+      lane_counts: { complete: 40, running: 0, pending: 0 },
+      eta_seconds: 0,
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("Finalizing results");
+  expect(screen.queryByText(/0s left/)).not.toBeInTheDocument();
 });

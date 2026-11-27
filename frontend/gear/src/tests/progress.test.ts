@@ -121,6 +121,62 @@ it("drops malformed optional telemetry but rejects malformed required fields", (
   ).toEqual({ phase: "x", completed: 1, total: 2, elapsed_seconds: 0 });
 });
 
+it("keeps stable lane identities, full labels, and unknown stage progress", () => {
+  const row = {
+    label:
+      "role-1: Magic / role-2: Ranged · Divine magic, Divine ranging, Divine super combat".repeat(
+        2,
+      ),
+    status: "running",
+    stage: "frontiers",
+    fraction: 0.9,
+  };
+  const lane_counts = { complete: 33, running: 2, pending: 4, collecting: 1 };
+  const lanes = [
+    { ...row, lane_id: 0, stage_fraction: null },
+    { ...row, lane_id: 1, stage_fraction: 0.6 },
+  ];
+  expect(parseProgress({ ...base, total: 40, lane_counts, lanes })).toEqual({
+    ...base,
+    total: 40,
+    lane_counts,
+    lanes,
+  });
+  expect(
+    parseProgress({
+      ...base,
+      lanes: [{ ...row, lane_id: -2, stage_fraction: 3 }],
+    })?.lanes,
+  ).toEqual([row]);
+});
+
+it("validates search-only ETA ranges", () => {
+  expect(
+    parseProgress({
+      ...base,
+      eta_seconds: null,
+      search_eta_range_seconds: [0, 132.5],
+    }),
+  ).toEqual({
+    ...base,
+    eta_seconds: null,
+    search_eta_range_seconds: [0, 132.5],
+  });
+  for (const range of [
+    [1],
+    [1, 2, 3],
+    [2, 1],
+    [-1, 1],
+    [0, Infinity],
+    [0, NaN],
+    [0, "2"],
+  ]) {
+    expect(parseProgress({ ...base, search_eta_range_seconds: range })).toEqual(
+      base,
+    );
+  }
+});
+
 it("creates distinct valid UUIDs without randomUUID", () => {
   const original = crypto.randomUUID;
   Object.defineProperty(crypto, "randomUUID", {

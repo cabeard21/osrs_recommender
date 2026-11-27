@@ -9,12 +9,14 @@ shape, then static defaults.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from dataclasses import dataclass, field
+from heapq import heapify, heapreplace
 from math import ceil
+from statistics import median
 from threading import Lock
 from time import monotonic
-from typing import Any
+from typing import Any, TypeVar
 
 from tracker.gear.progress import LANE_STAGES, STAGE_LABELS
 
@@ -35,31 +37,35 @@ RUNNING_CEILING = 0.99
 MIN_LIVE_FRACTION = 0.05
 MIN_LIVE_SECONDS = 1.5
 ETA_SMOOTHING = 0.35
+PROVISIONAL_LOW_FACTOR = 0.75
+PROVISIONAL_HIGH_FACTOR = 1.4
+PROVISIONAL_OVERRUN_SHARE = 0.25
 MAX_REPORTED_LANES = 12
-MAX_LABEL_LENGTH = 60
+MAX_LABEL_LENGTH = 512
 TIMING_ALPHA = 0.4
 MAX_TIMING_SHAPES = 64
+_TimingKey = TypeVar("_TimingKey", bound=Hashable)
 
 
 class TimingModel:
     """Exponentially weighted per-shape stage durations; bounded, thread-safe, in memory."""
 
     def __init__(self) -> None:
-        self._rows: dict[Hashable, dict[str, float]] = {}
+        self._rows: dict[Hashable, dict[Hashable, float]] = {}
         self._lock = Lock()
 
-    def expected(self, key: Hashable) -> dict[str, float] | None:
+    def expected(self, key: Hashable) -> dict[Hashable, float] | None:
         with self._lock:
             row = self._rows.get(key)
             return dict(row) if row is not None else None
 
-    def record(self, key: Hashable, durations: dict[str, float]) -> None:
+    def record(self, key: Hashable, durations: Mapping[_TimingKey, float]) -> None:
         with self._lock:
             previous = self._rows.get(key)
             if previous is None:
                 if len(self._rows) >= MAX_TIMING_SHAPES:
                     self._rows.pop(next(iter(self._rows)))
-                self._rows[key] = dict(durations)
+                self._rows[key] = dict(durations.items())
                 return
             self._rows[key] = {
                 name: TIMING_ALPHA * value + (1 - TIMING_ALPHA) * previous.get(name, value)
@@ -78,6 +84,11 @@ class _Lane:
     observed: bool = False
     counted: bool = False
     durations: dict[str, float] = field(default_factory=dict)
+    key: tuple[tuple[str, ...], tuple[str, ...]] | None = None
+    started: float | None = None
+    worker_slot: int | None = None
+    collecting: bool = False
+    duration: float | None = None
 
     def advance(
         self, stage: int, fraction: float, now: float, stages: Sequence[str], *, counted: bool
@@ -126,6 +137,7 @@ class RunProgress:
         has_frontiers: bool,
         parallelism: int = 1,
         timing_key: Hashable = None,
+        schedule_key: Hashable = None,
         model: TimingModel | None = None,
         fingerprint: str | None = None,
         clock: Callable[[], float] = monotonic,
@@ -134,12 +146,16 @@ class RunProgress:
         self._parallelism = max(1, parallelism)
         self._key, self._model, self._fingerprint = timing_key, model, fingerprint
         self._expected = model.expected(timing_key) if model is not None else None
+        self._schedule_key = ("schedule", schedule_key if schedule_key is not None else timing_key)
+        self._schedule = (model.expected(self._schedule_key) or {}) if model is not None else {}
         self._clock = clock
         self._started = clock()
         self._lanes = [_Lane("Search")]
         self._setup_ended: float | None = None
         self._merge_started: float | None = None
         self._merge_done = False
+        self._merge_ended: float | None = None
+        self._managed = False
         self._outcome: str | None = None
         self._ended: float | None = None
         self._overall = 0.0
@@ -153,19 +169,30 @@ class RunProgress:
             if self._outcome is not None:
                 return
             now = self._clock()
-            plan = event.get("plan")
-            if isinstance(plan, dict) and isinstance(plan.get("lanes"), list) and plan["lanes"]:
-                self._lanes = [_Lane(str(label)[:MAX_LABEL_LENGTH]) for label in plan["lanes"]]
+            events = event["events"] if event.get("phase") == "worker_update" else [event]
+            for item in events:
+                self._handle(item, now)
+
+    def _handle(self, event: dict[str, Any], now: float) -> None:
+        plan = event.get("plan")
+        if isinstance(plan, dict) and isinstance(plan.get("lanes"), list) and plan["lanes"]:
+            self._lanes = [_Lane(str(label)[:MAX_LABEL_LENGTH]) for label in plan["lanes"]]
+            keys = plan.get("lane_keys")
+            self._managed = keys is not None
+            if keys is not None:
+                for planned_lane, (styles, potions) in zip(self._lanes, keys, strict=True):
+                    planned_lane.key = (tuple(styles), tuple(potions))
+        if not self._managed:
             self._legacy_counts(event, now)
-            phase, lane = event.get("phase"), event.get("lane")
-            if phase == "merge":
-                self._merge_started = self._merge_started or now
-            elif phase == "complete":
-                self._merge_done = True
-            if isinstance(lane, int) and 0 <= lane < len(self._lanes):
-                self._lane_event(self._lanes[lane], event, now)
-            elif lane is None and len(self._lanes) == 1:
-                self._lane_event(self._lanes[0], event, now)
+        phase, lane = event.get("phase"), event.get("lane")
+        if phase == "merge" and self._merge_started is None:
+            self._merge_started = now
+        elif phase == "complete" and not self._merge_done:
+            self._merge_done, self._merge_ended = True, now
+        if isinstance(lane, int) and 0 <= lane < len(self._lanes):
+            self._lane_event(self._lanes[lane], event, now)
+        elif lane is None and len(self._lanes) == 1 and not self._managed:
+            self._lane_event(self._lanes[0], event, now)
 
     def _legacy_counts(self, event: dict[str, Any], now: float) -> None:
         """Accept profile counters from callers that do not tag lanes."""
@@ -181,16 +208,35 @@ class RunProgress:
                 lane.finish(now, self._stages)
 
     def _lane_event(self, lane: _Lane, event: dict[str, Any], now: float) -> None:
+        if lane.complete:
+            return
         phase = event.get("phase")
-        if phase in self._stages:
-            self._setup_ended = self._setup_ended or now
+        if phase == "lane_started":
+            if lane.started is None:
+                lane.started = event.get("started_at", now)
+                lane.worker_slot = event.get("worker_slot")
+                if self._setup_ended is None or lane.started < self._setup_ended:
+                    self._setup_ended = lane.started
+                lane.advance(0, 0.0, lane.started, self._stages, counted=False)
+        elif phase == "lane_collecting":
+            lane.collecting = True
+        elif phase in self._stages and not lane.collecting:
+            if self._setup_ended is None:
+                self._setup_ended = now
             total = event.get("stage_total") or 0
             done = event.get("stage_done") or 0
             counted = isinstance(total, int) and total > 0
             fraction = done / total if counted else 0.0
             lane.advance(self._stages.index(phase), fraction, now, self._stages, counted=counted)
         if event.get("lane_status") == "complete":
-            self._setup_ended = self._setup_ended or now
+            started = event.get("started_at", lane.started)
+            if started is None:
+                started = now
+            if self._setup_ended is None or started < self._setup_ended:
+                self._setup_ended = started
+            lane.duration = event.get("duration_seconds")
+            if lane.duration is None and lane.started is not None:
+                lane.duration = now - lane.started
             lane.finish(now, self._stages)
 
     def finish(self, *, succeeded: bool) -> None:
@@ -204,7 +250,24 @@ class RunProgress:
             for lane in self._lanes:
                 lane.finish(now, self._stages)
             if self._model is not None:
-                self._model.record(self._key, self._measured(now))
+                if self._managed:
+                    self._record_schedule(now)
+                else:
+                    self._model.record(self._key, self._measured(now))
+
+    def _record_schedule(self, now: float) -> None:
+        assert self._model is not None
+        timings: dict[Hashable, float] = {
+            lane.key: lane.duration
+            for lane in self._lanes
+            if lane.key is not None and lane.duration is not None and lane.duration > 0
+        }
+        if self._merge_started is not None:
+            end = self._merge_ended if self._merge_ended is not None else now
+            timings["merge"] = end - self._merge_started
+        if self._setup_ended is not None:
+            timings["setup"] = max(0.0, self._setup_ended - self._started)
+        self._model.record(self._schedule_key, timings)
 
     def _measured(self, now: float) -> dict[str, float]:
         lanes_started = self._setup_ended or now
@@ -233,24 +296,35 @@ class RunProgress:
             snapshot: dict[str, Any] = {
                 "phase": phase,
                 "label": self._label(phase),
-                "completed": sum(lane.complete for lane in self._lanes),
+                "completed": sum(lane.complete for lane in self._lanes) if multi else 0,
                 "total": len(self._lanes) if multi else 0,
                 "elapsed_seconds": elapsed,
                 "fraction": round(self._overall, 4),
-                "eta_seconds": self._eta_seconds(weights, fractions, elapsed, now),
+                "eta_seconds": (
+                    self._schedule_eta(now)
+                    if self._managed
+                    else self._eta_seconds(weights, fractions, elapsed, now)
+                ),
                 "stages": self._stage_rows(weights, now),
                 "scenario_fingerprint": self._fingerprint,
             }
+            if self._managed and snapshot["eta_seconds"] is None:
+                search_range = self._search_eta_range(now)
+                if search_range is not None:
+                    snapshot["search_eta_range_seconds"] = search_range
             if multi:
                 rows = [
-                    self._lane_row(lane, f) for lane, f in zip(self._lanes, fractions, strict=True)
+                    self._lane_row(index, lane, f)
+                    for index, (lane, f) in enumerate(zip(self._lanes, fractions, strict=True))
                 ]
                 counts = dict.fromkeys(("complete", "running", "pending"), 0)
+                if self._managed:
+                    counts["collecting"] = 0
                 for row in rows:
                     counts[row["status"]] += 1
                 snapshot["lane_counts"] = counts
                 # Few searches: show every row. Many: show only the ones running now.
-                if len(rows) > MAX_REPORTED_LANES:
+                if self._managed or len(rows) > MAX_REPORTED_LANES:
                     rows = [row for row in rows if row["status"] == "running"]
                 snapshot["lanes"] = rows[:MAX_REPORTED_LANES]
             return snapshot
@@ -352,6 +426,116 @@ class RunProgress:
         merge = 0.0 if self._merge_done else weights.merge_seconds
         return setup + lane_wall + merge
 
+    def _schedule_eta(self, now: float) -> float | None:
+        if self._outcome == "complete":
+            return 0.0
+        if self._outcome or self._merge_done:
+            return None
+        merge = self._schedule.get("merge")
+        if merge is None:
+            return None
+        if self._merge_started is not None:
+            left = merge - (now - self._merge_started)
+            return round(left, 1) if left > 0 else None
+        setup_left = 0.0
+        if self._setup_ended is None:
+            setup = self._schedule.get("setup")
+            if setup is None or setup <= now - self._started:
+                return None
+            setup_left = setup - (now - self._started)
+
+        samples = self._completed_durations()
+        remaining = []
+        for lane in self._lanes:
+            if lane.complete or lane.key is None:
+                continue
+            duration = self._schedule.get(lane.key)
+            group = samples.get(lane.key[0], [])
+            if duration is None:
+                if len(group) < 2:
+                    return None
+                duration = median(group)
+            age = now - lane.started if lane.started is not None else 0.0
+            left = duration - age
+            if left <= 0:
+                return None
+            remaining.append((lane, left))
+
+        return round(setup_left + self._project_worker_queue(remaining) + merge, 1)
+
+    def _completed_durations(self) -> dict[tuple[str, ...], list[float]]:
+        samples: dict[tuple[str, ...], list[float]] = {}
+        for lane in self._lanes:
+            if lane.key is not None and lane.duration is not None and lane.duration > 0:
+                samples.setdefault(lane.key[0], []).append(lane.duration)
+        return samples
+
+    def _search_eta_range(self, now: float) -> list[float] | None:
+        """Estimate branch work before a full-run ETA can be calibrated."""
+        if self._outcome or self._merge_started is not None:
+            return None
+        samples = self._completed_durations()
+        groups = {lane.key[0] for lane in self._lanes if lane.key is not None}
+        # Early waves can be much cheaper than later assignments. Wait until
+        # most of the distinct style assignments have finished a job.
+        if not samples or 3 * len(samples) < 2 * len(groups):
+            return None
+        observed = [value for durations in samples.values() for value in durations]
+        typical = median(observed)
+        by_first_style: dict[str, list[float]] = {}
+        for styles, durations in samples.items():
+            by_first_style.setdefault(styles[0], []).extend(durations)
+        unfinished = [lane for lane in self._lanes if not lane.complete and lane.key is not None]
+        if not unfinished:
+            return None
+        ages = [now - lane.started if lane.started is not None else 0.0 for lane in unfinished]
+        slow = max(*observed, *ages)
+        lower, upper = [], []
+        for lane, age in zip(unfinished, ages, strict=True):
+            assert lane.key is not None
+            history = self._schedule.get(lane.key)
+            peers = samples.get(lane.key[0])
+            if history is not None:
+                low, high = history, history
+            elif peers:
+                low, high = median(peers), max(peers)
+            else:
+                related = by_first_style.get(lane.key[0][0])
+                low = median(related) if related else typical
+                high = max(related) if related else slow
+            lower.append((lane, max(0.0, PROVISIONAL_LOW_FACTOR * low - age)))
+            upper.append(
+                (
+                    lane,
+                    max(1.0, PROVISIONAL_HIGH_FACTOR * high - age, age * PROVISIONAL_OVERRUN_SHARE),
+                )
+            )
+        return [round(self._project_worker_queue(bounds), 1) for bounds in (lower, upper)]
+
+    def _project_worker_queue(self, remaining: Sequence[tuple[_Lane, float]]) -> float:
+        active: list[float] = []
+        queued: list[float] = []
+        collecting: list[float] = []
+        latest: dict[int, tuple[float, float]] = {}
+        for lane, left in remaining:
+            if lane.collecting:
+                collecting.append(left)
+            if lane.started is None:
+                queued.append(left)
+            elif lane.worker_slot is not None:
+                prior = latest.get(lane.worker_slot)
+                if prior is None or lane.started >= prior[0]:
+                    latest[lane.worker_slot] = (lane.started, left)
+            elif not lane.collecting:
+                active.append(left)
+
+        active.extend(left for _, left in latest.values())
+        workers = active + [0.0] * max(0, self._parallelism - len(active))
+        heapify(workers)
+        for duration in queued:
+            heapreplace(workers, workers[0] + duration)
+        return max([*workers, *collecting])
+
     def _eta_seconds(
         self, weights: _Weights, lanes: list[float], elapsed: float, now: float
     ) -> float | None:
@@ -391,15 +575,27 @@ class RunProgress:
             return "merge" if len(self._lanes) > 1 else self._stages[-1]
         return "preparation"
 
-    def _lane_row(self, lane: _Lane, fraction: float) -> dict[str, Any]:
-        status = "complete" if lane.complete else ("running" if lane.stage >= 0 else "pending")
+    def _lane_row(self, index: int, lane: _Lane, fraction: float) -> dict[str, Any]:
+        if lane.complete:
+            status = "complete"
+        elif self._outcome:
+            status = "pending"
+        elif self._managed and lane.collecting:
+            status = "collecting"
+        else:
+            started = lane.started is not None if self._managed else lane.stage >= 0
+            status = "running" if started else "pending"
         stage = self._stages[lane.stage] if 0 <= lane.stage < len(self._stages) else None
         return {
+            "lane_id": index,
             "label": lane.label,
             "status": status,
             "stage": stage,
             "stage_label": STAGE_LABELS[stage] if stage else None,
             "fraction": round(fraction, 4),
+            "stage_fraction": (
+                round(lane.reported, 4) if lane.counted and 0 < lane.reported < 1 else None
+            ),
         }
 
     def _stage_rows(self, weights: _Weights, now: float) -> list[dict[str, Any]]:

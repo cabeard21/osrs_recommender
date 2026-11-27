@@ -88,8 +88,17 @@ def _warm() -> int:
 
 
 def _execute_branch(
-    payload: dict[str, Any], options: dict[str, Any], lane: int | None = None
+    payload: dict[str, Any],
+    options: dict[str, Any],
+    lane: int | None = None,
+    track_progress: bool = False,
 ) -> dict[str, Any]:
+    pickup_tick = perf_counter() if track_progress else None
+    progress = (
+        SlotWriter(_PROGRESS[0], _PROGRESS[1], lane)
+        if track_progress and lane is not None and _PROGRESS is not None
+        else None
+    )
     from tracker.gear.optimizer import optimize, prepare_optimization
 
     global _PREPARATION
@@ -115,11 +124,6 @@ def _execute_branch(
                 prepare_optimization(snapshot, request, catalog, content, prices, now),
             )
         prepared = _PREPARATION[1]
-    progress = (
-        SlotWriter(_PROGRESS[0], _PROGRESS[1], lane)
-        if lane is not None and _PROGRESS is not None and isinstance(_PROGRESS[1], int)
-        else None
-    )
     from contextlib import nullcontext
 
     from tracker.gear.native import capture, record
@@ -146,9 +150,12 @@ def _execute_branch(
                 roles=tuple(role.style for role in request.roles),
                 seconds=perf_counter() - started,
             )
-    if evidence is None:
-        return result
-    return {"_native_payload": result, "_native_evidence": evidence.snapshot()}
+    if evidence is not None:
+        result = {"_native_payload": result, "_native_evidence": evidence.snapshot()}
+    if progress is not None:
+        result = {**result, "_progress_pickup": (progress.started_at, pickup_tick)}
+        progress.returning()
+    return result
 
 
 class AutoProcessPool:
@@ -334,40 +341,65 @@ class AutoProcessPool:
                 self._slots.clear()
             lanes: dict[Future[dict[str, Any]], int] = {}
             for lane, job in enumerate(jobs):
-                future = self._executor.submit(_execute_branch, job, options, lane)
+                future = self._executor.submit(
+                    _execute_branch, job, options, lane, progress is not None
+                )
                 futures.append(future)
                 lanes[future] = lane
             reader = (
-                SlotReader(self._slots, progress)
+                SlotReader(self._slots)
                 if progress is not None and self._slots is not None
                 else None
             )
             pending = set(futures)
-            started = monotonic()
+            dispatch_started = monotonic()
             while pending:
                 if self._closed or (cancelled is not None and cancelled()):
                     raise ValueError("optimization_cancelled")
                 completed, pending = wait(pending, timeout=0.025, return_when=FIRST_COMPLETED)
-                for future in completed:
-                    adopt_vector_archives(future.result())
-                if reader is not None:
-                    reader.poll()
-                if progress is None:
-                    continue
+                received_at = monotonic()
+                receipt_tick = perf_counter() if progress is not None else None
+                events = []
                 for future in sorted(completed, key=lanes.__getitem__):
+                    row = future.result()
+                    adopt_vector_archives(row)
+                    if receipt_tick is not None:
+                        pickup = row.get("_progress_pickup")
+                        events.append(
+                            {
+                                "phase": "lane_complete",
+                                "lane": lanes[future],
+                                "lane_status": "complete",
+                                **(
+                                    {
+                                        "started_at": pickup[0],
+                                        "duration_seconds": receipt_tick - pickup[1],
+                                    }
+                                    if pickup is not None
+                                    else {}
+                                ),
+                            }
+                        )
+                if reader is not None:
+                    events.extend(reader.events())
+                if progress is not None and events:
                     progress(
                         {
-                            "phase": "potion_search",
-                            "lane": lanes[future],
-                            "lane_status": "complete",
+                            "phase": "worker_update",
+                            "events": events,
                             "completed_profiles": len(futures) - len(pending),
                             "total_profiles": len(futures),
-                            "elapsed_seconds": monotonic() - started,
+                            "elapsed_seconds": received_at - dispatch_started,
                         }
                     )
             if self._closed or (cancelled is not None and cancelled()):
                 raise ValueError("optimization_cancelled")
             results = [future.result() for future in futures]
+            if progress is not None:
+                results = [
+                    {key: value for key, value in row.items() if key != "_progress_pickup"}
+                    for row in results
+                ]
             if options.get("_native_search"):
                 from tracker.gear.native import merge
 

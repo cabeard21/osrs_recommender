@@ -794,16 +794,19 @@ export interface ProgressStage {
   fraction: number;
 }
 export interface ProgressLane {
+  lane_id?: number;
   label: string;
   status: "complete" | "running" | "pending";
   stage: string | null;
   stage_label?: string | null;
+  stage_fraction?: number | null;
   fraction: number;
 }
 export interface ProgressLaneCounts {
   complete: number;
   running: number;
   pending: number;
+  collecting?: number;
 }
 export interface OptimizationProgress {
   phase: string;
@@ -816,8 +819,10 @@ export interface OptimizationProgress {
   fraction?: number;
   /** Estimated seconds remaining, or null while no estimate is credible. */
   eta_seconds?: number | null;
+  /** Approximate lower and upper bounds for the remaining searches. */
+  search_eta_range_seconds?: [number, number];
   stages?: ProgressStage[];
-  /** Independent discipline assignments × potion profiles: all when few, else running. */
+  /** Running searches. Older servers may also send completed and queued rows. */
   lanes?: ProgressLane[];
   lane_counts?: ProgressLaneCounts;
 }

@@ -1230,7 +1230,7 @@ html {
 }
 .run-lanes li {
   display: grid;
-  grid-template-columns: minmax(80px, 1fr) minmax(60px, 2fr) 48px;
+  grid-template-columns: minmax(0, 3fr) minmax(32px, 2fr) 42px;
   align-items: center;
   gap: 8px;
 }
@@ -1246,12 +1246,7 @@ html {
 .run-lane-label {
   display: grid;
   min-width: 0;
-}
-.run-lane-label,
-.run-lane-stage {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .run-lane-stage {
   font-size: 11px;
@@ -1259,6 +1254,15 @@ html {
 }
 .run-lane-bar {
   height: 4px;
+}
+.run-lane-bar[data-indeterminate="true"] > span {
+  width: 35%;
+  animation: run-lane-progress 1.5s ease-in-out infinite alternate;
+}
+@keyframes run-lane-progress {
+  to {
+    transform: translateX(185%);
+  }
 }
 .run-lanes li[data-status="complete"] .run-lane-bar > span {
   background: #7fcf8e;
@@ -1270,6 +1274,7 @@ html {
   .run-progress > span,
   .run-lane-bar > span {
     transition: none;
+    animation: none;
   }
 }
 .spinner {

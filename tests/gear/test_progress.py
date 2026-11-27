@@ -175,17 +175,17 @@ def test_progress_preserves_secondary_frontier_and_skips_unselected_cost():
 
 def test_worker_slots_round_trip_lane_events_and_skip_completion():
     slots = WorkerSlots(multiprocessing.get_context("spawn"), 2)
-    events = []
-    reader = SlotReader(slots, events.append)
+    reader = SlotReader(slots)
     writer = SlotWriter(slots, 1, lane=4)
     writer({"phase": "gear_search", "stage_done": 300, "stage_total": 1000})
-    reader.poll()
-    reader.poll()  # Unchanged sequence is not re-emitted.
-    assert events == [{"phase": "gear_search", "lane": 4, "stage_done": 300, "stage_total": 1000}]
+    assert reader.events() == [
+        {"phase": "lane_started", "lane": 4, "started_at": writer.started_at, "worker_slot": 1},
+        {"phase": "gear_search", "lane": 4, "stage_done": 300, "stage_total": 1000},
+    ]
+    assert reader.events() == []  # Unchanged sequence is not re-emitted.
     writer({"phase": "lane_complete", "lane_status": "complete"})
     writer({"phase": "unknown"})
-    reader.poll()
-    assert len(events) == 1
+    assert reader.events() == []
     slots.clear()
     assert slots.read() == []
 
@@ -202,10 +202,69 @@ def test_spawned_workers_report_lane_stages_through_shared_memory():
         pool.run(snapshot, request, catalog, content, prices, now, progress=events.append)
     finally:
         pool.close()
+    events = [item for event in events for item in event.get("events", [event])]
     staged = {e["lane"] for e in events if "stage_total" in e}
     completed = sorted(e["lane"] for e in events if e.get("lane_status") == "complete")
     assert staged and staged <= {0, 1, 2}
     assert completed == [0, 1, 2]
+
+
+def test_worker_handoff_counts_collecting_separately_and_ignores_late_updates():
+    clock = Clock()
+    run = RunProgress(has_frontiers=True, parallelism=1, clock=clock)
+    run.handle(
+        {
+            "phase": "preparation",
+            "plan": {"lanes": ["Same label", "Same label"], "lane_keys": [(("ranged",), ())] * 2},
+        }
+    )
+    run.handle({"phase": "lane_started", "lane": 0})
+    run.handle(
+        {
+            "phase": "worker_update",
+            "events": [
+                {"phase": "lane_collecting", "lane": 0},
+                {"phase": "lane_started", "lane": 1},
+                {"phase": "candidate_ranking", "lane": 1, "stage_done": 0, "stage_total": 1000},
+                {"phase": "frontiers", "lane": 0, "stage_done": 700, "stage_total": 1000},
+            ],
+        }
+    )
+    snapshot = run.snapshot()
+    assert snapshot["lane_counts"] == {"complete": 0, "running": 1, "pending": 0, "collecting": 1}
+    assert [row["lane_id"] for row in snapshot["lanes"]] == [1]
+    assert snapshot["lanes"][0]["stage_fraction"] is None
+    run.handle({"phase": "lane_complete", "lane": 0, "lane_status": "complete"})
+    assert run.snapshot()["completed"] == 1
+
+
+def test_schedule_eta_includes_worker_wait_and_expires_overrun():
+    clock = Clock()
+    model = TimingModel()
+    styles = ("ranged", "magic")
+    key = (styles, ("third",))
+    model.record(("schedule", "same"), {key: 10.0, "merge": 2.0})
+    run = RunProgress(has_frontiers=True, timing_key="same", model=model, clock=clock)
+    run.handle(
+        {
+            "phase": "preparation",
+            "plan": {
+                "lanes": ["First", "Second", "Third", "Fourth"],
+                "lane_keys": [(styles, ("first",)), (styles, ("second",)), key, (styles, ())],
+            },
+        }
+    )
+    for lane, duration in enumerate((8, 12)):
+        run.handle({"phase": "lane_started", "lane": lane, "worker_slot": 0})
+        clock.now += duration
+        run.handle({"phase": "lane_complete", "lane": lane, "lane_status": "complete"})
+    run.handle({"phase": "lane_started", "lane": 2, "worker_slot": 0})
+    clock.now += 6
+    run.handle({"phase": "lane_collecting", "lane": 2})
+    # One slot needs four more seconds, then a ten-second peer and a two-second merge.
+    assert run.snapshot()["eta_seconds"] == 16
+    clock.now += 5
+    assert run.snapshot()["eta_seconds"] is None
 
 
 # Tracker --------------------------------------------------------------------------
@@ -379,7 +438,8 @@ def test_service_reports_auto_lanes_and_multi_role_runs():
     service._equipment = EquipmentCatalog(catalog.items)
     service.optimize(snapshot, request, price_records=prices, now=now, progress_identity="auto")
     progress = service.optimization_progress("auto")
-    assert [lane["label"] for lane in progress["lanes"]] == ["Melee", "Ranged", "Magic"]
+    assert progress["lanes"] == []
+    assert progress["lane_counts"] == {"complete": 3, "running": 0, "pending": 0, "collecting": 0}
     assert progress["completed"] == progress["total"] == 3
     roles = (RoleConfig(id="a", style="slash"), RoleConfig(id="b", style="ranged"))
     multi = request.model_copy(update={"roles": roles, "max_swaps": 1})
